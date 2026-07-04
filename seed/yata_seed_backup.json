@@ -1,0 +1,194 @@
+{
+  "version": 4,
+  "people": [
+    { "id": "me", "name": "You", "initials": "Y", "color": "accentC", "photoUri": null, "isMe": true, "groupId": null, "starred": false },
+    { "id": "p_ravi", "name": "Ravi Shankar", "initials": "RS", "color": "accentA", "photoUri": null, "isMe": false, "groupId": "pg_work", "starred": true },
+    { "id": "p_meera", "name": "Meera Nair", "initials": "MN", "color": "accentB", "photoUri": null, "isMe": false, "groupId": "pg_work", "starred": false },
+    { "id": "p_anjali", "name": "Anjali Menon", "initials": "AM", "color": "accentD", "photoUri": null, "isMe": false, "groupId": "pg_family", "starred": false },
+    { "id": "p_kiran", "name": "Kiran Das", "initials": "KD", "color": "accentF", "photoUri": null, "isMe": false, "groupId": null, "starred": false }
+  ],
+  "personGroups": [
+    { "id": "pg_work", "name": "Work", "color": "accentA" },
+    { "id": "pg_family", "name": "Family", "color": "accentD" }
+  ],
+  "projects": [
+    { "id": "pr_launch", "name": "Product Launch", "color": "accentA", "icon": "rocket_launch", "due": "2026-07-18", "starred": true, "commonTagIds": ["tag_urgent", "tag_work"], "defaultReminder": "1 hour before" },
+    { "id": "pr_home", "name": "Home Renovation", "color": "accentE", "icon": "home_repair_service", "due": null, "starred": false, "commonTagIds": ["tag_home"], "defaultReminder": null },
+    { "id": "pr_health", "name": "Health & Fitness", "color": "accentB", "icon": "fitness_center", "due": "2026-08-01", "starred": false, "commonTagIds": [], "defaultReminder": "At time" }
+  ],
+  "lists": [
+    { "id": "l_groceries", "name": "Groceries", "color": "accentE", "icon": "shopping_cart", "starred": true },
+    { "id": "l_errands", "name": "Errands", "color": "accentC", "icon": "directions_run", "starred": false },
+    { "id": "l_reading", "name": "Reading List", "color": "accentG", "icon": "menu_book", "starred": false }
+  ],
+  "tagGroups": [
+    { "id": "tg_context", "name": "Context", "color": "accentA" },
+    { "id": "tg_priority", "name": "Priority Areas", "color": "accentD" }
+  ],
+  "tags": [
+    { "id": "tag_urgent", "name": "urgent", "color": "error", "groupId": "tg_priority", "starred": true, "hideCompletedByDefault": false },
+    { "id": "tag_work", "name": "work", "color": "accentA", "groupId": "tg_context", "starred": false, "hideCompletedByDefault": false },
+    { "id": "tag_home", "name": "home", "color": "accentE", "groupId": "tg_context", "starred": false, "hideCompletedByDefault": true },
+    { "id": "tag_errand", "name": "errand", "color": "accentC", "groupId": "tg_context", "starred": false, "hideCompletedByDefault": false },
+    { "id": "tag_waiting", "name": "waiting-on", "color": "accentF", "groupId": "tg_priority", "starred": false, "hideCompletedByDefault": false }
+  ],
+  "tasks": [
+    {
+      "id": "t_launch_01", "title": "Finalize launch keynote deck", "listId": null, "projectId": "pr_launch",
+      "section": "Morning", "due": "2026-07-04", "time": "9:00 AM", "reminder": "30 min before",
+      "priority": "high", "flag": true, "done": false, "notes": "**Key points**\n- Vision\n- Roadmap\n- Ask\n\nSee [notes doc](https://example.com) for details.",
+      "sortOrder": 0,
+      "assigneeIds": ["me", "p_ravi"], "tagIds": [],
+      "recurrence": null,
+      "subtasks": [
+        { "id": "sub_l01_1", "title": "Draft slides", "done": true, "parentSubtaskId": null, "sortOrder": 0 },
+        { "id": "sub_l01_2", "title": "Review with team", "done": false, "parentSubtaskId": null, "sortOrder": 1 },
+        { "id": "sub_l01_2a", "title": "Get Meera's feedback", "done": false, "parentSubtaskId": "sub_l01_2", "sortOrder": 0 },
+        { "id": "sub_l01_2b", "title": "Get Ravi's feedback", "done": true, "parentSubtaskId": "sub_l01_2", "sortOrder": 1 },
+        { "id": "sub_l01_3", "title": "Print handouts", "done": false, "parentSubtaskId": null, "sortOrder": 2 }
+      ]
+    },
+    {
+      "id": "t_launch_02", "title": "Book launch venue", "listId": null, "projectId": "pr_launch",
+      "section": "Afternoon", "due": "2026-07-01", "time": null, "reminder": null,
+      "priority": "high", "flag": false, "done": false, "notes": null,
+      "sortOrder": 1,
+      "assigneeIds": ["p_meera"], "tagIds": ["tag_waiting"],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_launch_03", "title": "Send press release to media list", "listId": null, "projectId": "pr_launch",
+      "section": "Morning", "due": "2026-07-18", "time": "8:00 AM", "reminder": "1 day before",
+      "priority": "med", "flag": false, "done": false, "notes": null,
+      "sortOrder": 2,
+      "assigneeIds": ["me"], "tagIds": [],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_home_01", "title": "Get quotes for kitchen tiling", "listId": null, "projectId": "pr_home",
+      "section": "Afternoon", "due": "2026-07-06", "time": null, "reminder": null,
+      "priority": "med", "flag": false, "done": false, "notes": "Compare at least 3 quotes before deciding.",
+      "sortOrder": 0,
+      "assigneeIds": ["p_anjali"], "tagIds": ["tag_errand"],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_home_02", "title": "Paint the guest room", "listId": null, "projectId": "pr_home",
+      "section": "Morning", "due": null, "time": null, "reminder": null,
+      "priority": "low", "flag": false, "done": false, "notes": null,
+      "sortOrder": 1,
+      "assigneeIds": [], "tagIds": [],
+      "recurrence": null, "subtasks": [
+        { "id": "sub_h02_1", "title": "Buy primer", "done": false, "parentSubtaskId": null, "sortOrder": 0 },
+        { "id": "sub_h02_2", "title": "Buy paint (2 coats)", "done": false, "parentSubtaskId": null, "sortOrder": 1 }
+      ]
+    },
+    {
+      "id": "t_health_01", "title": "Morning run", "listId": null, "projectId": "pr_health",
+      "section": "Morning", "due": "2026-07-04", "time": "6:30 AM", "reminder": "At time",
+      "priority": "med", "flag": false, "done": true, "notes": null,
+      "sortOrder": 0,
+      "assigneeIds": ["me"], "tagIds": [],
+      "recurrence": { "freq": "daily", "interval": 1, "ends": { "type": "never" } },
+      "subtasks": []
+    },
+    {
+      "id": "t_health_02", "title": "Weigh-in and log progress", "listId": null, "projectId": "pr_health",
+      "section": "Morning", "due": "2026-07-06", "time": "7:00 AM", "reminder": "At time",
+      "priority": "low", "flag": false, "done": false, "notes": null,
+      "sortOrder": 1,
+      "assigneeIds": ["me"], "tagIds": [],
+      "recurrence": { "freq": "weekly", "interval": 1, "byday": ["MO"], "ends": { "type": "never" } },
+      "subtasks": []
+    },
+    {
+      "id": "t_health_03", "title": "Annual physical checkup", "listId": null, "projectId": "pr_health",
+      "section": "Afternoon", "due": "2026-08-01", "time": "3:00 PM", "reminder": "1 day before",
+      "priority": "high", "flag": true, "done": false, "notes": null,
+      "sortOrder": 2,
+      "assigneeIds": ["me"], "tagIds": ["tag_urgent"],
+      "recurrence": { "freq": "yearly", "interval": 1, "ends": { "type": "never" } },
+      "subtasks": []
+    },
+    {
+      "id": "t_gro_01", "title": "Milk, eggs, bread", "listId": "l_groceries", "projectId": null,
+      "section": "Afternoon", "due": "2026-07-04", "time": null, "reminder": null,
+      "priority": "none", "flag": false, "done": false, "notes": null,
+      "sortOrder": 0,
+      "assigneeIds": ["me"], "tagIds": ["tag_errand"],
+      "recurrence": { "freq": "weekly", "interval": 1, "byday": ["SA"], "ends": { "type": "never" } },
+      "subtasks": []
+    },
+    {
+      "id": "t_gro_02", "title": "Rice, dal, spices", "listId": "l_groceries", "projectId": null,
+      "section": "Afternoon", "due": "2026-07-05", "time": null, "reminder": null,
+      "priority": "none", "flag": false, "done": false, "notes": null,
+      "sortOrder": 1,
+      "assigneeIds": [], "tagIds": ["tag_errand"],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_gro_03", "title": "Birthday cake for Kiran", "listId": "l_groceries", "projectId": null,
+      "section": "Morning", "due": "2026-07-11", "time": "11:00 AM", "reminder": "1 day before",
+      "priority": "med", "flag": true, "done": false, "notes": null,
+      "sortOrder": 2,
+      "assigneeIds": ["p_kiran"], "tagIds": [],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_err_01", "title": "Drop off dry cleaning", "listId": "l_errands", "projectId": null,
+      "section": "Afternoon", "due": "2026-07-04", "time": "5:00 PM", "reminder": "15 min before",
+      "priority": "low", "flag": false, "done": false, "notes": null,
+      "sortOrder": 0,
+      "assigneeIds": ["me"], "tagIds": [],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_err_02", "title": "Renew car insurance", "listId": "l_errands", "projectId": null,
+      "section": "Morning", "due": "2026-07-01", "time": null, "reminder": null,
+      "priority": "high", "flag": true, "done": false, "notes": "Policy number ends in 4821.",
+      "sortOrder": 1,
+      "assigneeIds": ["me"], "tagIds": ["tag_urgent"],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_err_03", "title": "Return library books", "listId": "l_errands", "projectId": null,
+      "section": "Afternoon", "due": "2026-07-08", "time": null, "reminder": null,
+      "priority": "none", "flag": false, "done": true, "notes": null,
+      "sortOrder": 2,
+      "assigneeIds": [], "tagIds": [],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_read_01", "title": "\"Atomic Habits\" - finish ch. 5-8", "listId": "l_reading", "projectId": null,
+      "section": "Afternoon", "due": "2026-07-09", "time": null, "reminder": null,
+      "priority": "low", "flag": false, "done": false,
+      "notes": "## Notes\n- *Habit stacking* really works\n- Track streaks visually\n\n> Small habits compound.",
+      "sortOrder": 0,
+      "assigneeIds": ["me"], "tagIds": [],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_read_02", "title": "Read \"Deep Work\" intro", "listId": "l_reading", "projectId": null,
+      "section": "Morning", "due": null, "time": null, "reminder": null,
+      "priority": "none", "flag": false, "done": false, "notes": null,
+      "sortOrder": 1,
+      "assigneeIds": [], "tagIds": [],
+      "recurrence": null, "subtasks": []
+    },
+    {
+      "id": "t_noassign_01", "title": "Someday: learn pottery", "listId": null, "projectId": null,
+      "section": "Afternoon", "due": null, "time": null, "reminder": null,
+      "priority": "none", "flag": false, "done": false, "notes": null,
+      "sortOrder": 0,
+      "assigneeIds": [], "tagIds": [],
+      "recurrence": null, "subtasks": []
+    }
+  ],
+  "comments": [
+    { "id": "cm_1", "taskId": "t_launch_01", "body": "Pushed the review to Thursday, room booked.", "createdAt": 1751606400000, "authorId": "me" },
+    { "id": "cm_2", "taskId": "t_launch_01", "body": "Deck v2 looks great — added the roadmap slide.", "createdAt": 1751692800000, "authorId": "p_ravi" },
+    { "id": "cm_3", "taskId": "t_launch_02", "body": "Following up with the venue on Monday.", "createdAt": 1751520000000, "authorId": "p_meera" },
+    { "id": "cm_4", "taskId": "t_err_02", "body": "Called insurer, waiting on new quote by email.", "createdAt": 1751433600000, "authorId": "me" }
+  ]
+}

@@ -14,7 +14,9 @@ interface YataRepository {
 
     // Comments
     fun getCommentsForTask(taskId: String): Flow<List<TaskComment>>
+    fun getAllComments(): Flow<List<TaskComment>>
     suspend fun addComment(taskId: String, body: String, authorId: String?)
+    suspend fun upsertComment(comment: TaskComment)
     suspend fun deleteComment(comment: TaskComment)
 
     // Projects

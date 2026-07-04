@@ -6,10 +6,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -19,16 +24,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PersonAvatar
+import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.TaskRow
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+
+private enum class ScheduleViewMode { WEEK, MONTH }
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +50,9 @@ fun UpcomingTab(
     people: List<Person>,
     tags: List<Tag>,
     userName: String,
+    selectedDay: LocalDate,
+    onSelectedDayChange: (LocalDate) -> Unit,
+    startOfWeekSunday: Boolean = true,
     onMenuClick: () -> Unit,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -58,17 +72,31 @@ fun UpcomingTab(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
 
+    var viewMode by remember { mutableStateOf(ScheduleViewMode.WEEK) }
     val today = remember { LocalDate.now() }
-    
-    // Generate 7 days starting from today
+
+    // Week mode: 7 days starting from today
     val days = remember(today) {
         List(7) { today.plusDays(it.toLong()) }
     }
 
-    var selectedDay by remember { mutableStateOf(today) }
+    // Month mode: full month grid, padded to line up under the correct weekday column
+    var selectedMonth by remember(selectedDay) { mutableStateOf(YearMonth.from(selectedDay)) }
+    val weekStart = if (startOfWeekSunday) DayOfWeek.SUNDAY else DayOfWeek.MONDAY
+    val weekdayLabels = remember(weekStart) { (0..6).map { offset -> weekStart.plus(offset.toLong()) } }
+    val gridDays = remember(selectedMonth, weekStart) {
+        val firstOfMonth = selectedMonth.atDay(1)
+        val leadingBlank = ((firstOfMonth.dayOfWeek.value - weekStart.value) + 7) % 7
+        val daysInMonth = selectedMonth.lengthOfMonth()
+        val gridStart = firstOfMonth.minusDays(leadingBlank.toLong())
+        val totalCells = ((leadingBlank + daysInMonth + 6) / 7) * 7
+        List(totalCells) { gridStart.plusDays(it.toLong()) }
+    }
+    val tasksByDate = remember(tasks) { tasks.filter { it.due != null }.groupBy { it.due!! } }
 
-    val monthLabel = remember(selectedDay) {
-        selectedDay.format(DateTimeFormatter.ofPattern("MMMM yyyy")).uppercase(Locale.getDefault())
+    val monthLabel = remember(selectedDay, selectedMonth, viewMode) {
+        val base = if (viewMode == ScheduleViewMode.MONTH) selectedMonth.atDay(1) else selectedDay
+        base.format(DateTimeFormatter.ofPattern("MMMM yyyy")).uppercase(Locale.getDefault())
     }
 
     val selectedDayTasks = remember(tasks, selectedDay) {
@@ -113,14 +141,33 @@ fun UpcomingTab(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
-            Text(
-                text = monthLabel,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    letterSpacing = 0.5.sp
+            if (viewMode == ScheduleViewMode.MONTH) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { selectedMonth = selectedMonth.minusMonths(1) }) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous month")
+                    }
+                    Text(
+                        text = monthLabel,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            letterSpacing = 0.5.sp
+                        )
+                    )
+                    IconButton(onClick = { selectedMonth = selectedMonth.plusMonths(1) }) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next month")
+                    }
+                }
+            } else {
+                Text(
+                    text = monthLabel,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        letterSpacing = 0.5.sp
+                    )
                 )
-            )
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -145,70 +192,147 @@ fun UpcomingTab(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 2. 7-Day Agenda Strip
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            days.forEach { day ->
-                val isSelected = day == selectedDay
-                val hasTasks = tasks.any { it.due == day.toString() }
-                
-                val dayName = day.format(DateTimeFormatter.ofPattern("E")).uppercase()
-                val dayOfMonth = day.dayOfMonth.toString()
+        // Week / Month toggle
+        SegmentedControl(
+            items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
+            selectedItem = viewMode,
+            onItemSelected = { viewMode = it },
+            labelProvider = { if (it == ScheduleViewMode.WEEK) "Upcoming" else "Calendar" },
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
 
-                val pillColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
-                    label = "dayPillColor"
-                )
-                val onPillColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
-                    label = "dayPillLabelColor"
-                )
+        Spacer(modifier = Modifier.height(8.dp))
 
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(pillColor)
-                        .clickable { selectedDay = day }
-                        .padding(vertical = 10.dp, horizontal = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = dayName,
-                        color = onPillColor,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp
-                        )
+        if (viewMode == ScheduleViewMode.WEEK) {
+            // 2a. 7-Day Agenda Strip
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                days.forEach { day ->
+                    val isSelected = day == selectedDay
+                    val hasTasks = tasks.any { it.due == day.toString() }
+
+                    val dayName = day.format(DateTimeFormatter.ofPattern("E")).uppercase()
+                    val dayOfMonth = day.dayOfMonth.toString()
+
+                    val pillColor by animateColorAsState(
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
+                        label = "dayPillColor"
                     )
-                    Text(
-                        text = dayOfMonth,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
-                        )
+                    val onPillColor by animateColorAsState(
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
+                        label = "dayPillLabelColor"
                     )
-                    
-                    // Dot indicating tasks
-                    Box(
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .size(4.dp)
-                            .background(
-                                color = when {
-                                    isSelected && hasTasks -> MaterialTheme.colorScheme.onPrimary
-                                    hasTasks -> MaterialTheme.colorScheme.primary
-                                    else -> Color.Transparent
-                                },
-                                shape = CircleShape
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(pillColor)
+                            .clickable { onSelectedDayChange(day) }
+                            .padding(vertical = 10.dp, horizontal = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = dayName,
+                            color = onPillColor,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
                             )
+                        )
+                        Text(
+                            text = dayOfMonth,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                        )
+
+                        // Dot indicating tasks
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .background(
+                                    color = when {
+                                        isSelected && hasTasks -> MaterialTheme.colorScheme.onPrimary
+                                        hasTasks -> MaterialTheme.colorScheme.primary
+                                        else -> Color.Transparent
+                                    },
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
+            }
+        } else {
+            // 2b. Month grid
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                weekdayLabels.forEach { day ->
+                    Text(
+                        text = day.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center
                     )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                userScrollEnabled = false
+            ) {
+                items(gridDays) { day ->
+                    val inMonth = YearMonth.from(day) == selectedMonth
+                    val isSelected = day == selectedDay
+                    val isToday = day == today
+                    val hasTasks = tasksByDate.containsKey(day.toString())
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .aspectRatio(1f)
+                            .clip(CircleShape)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .clickable { onSelectedDayChange(day) }
+                            .padding(vertical = 6.dp),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = day.dayOfMonth.toString(),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium
+                            ),
+                            color = when {
+                                isSelected -> MaterialTheme.colorScheme.onPrimary
+                                !inMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                                isToday -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .size(4.dp)
+                                .background(
+                                    color = when {
+                                        !hasTasks -> Color.Transparent
+                                        isSelected -> MaterialTheme.colorScheme.onPrimary
+                                        else -> MaterialTheme.colorScheme.primary
+                                    },
+                                    shape = CircleShape
+                                )
+                        )
+                    }
                 }
             }
         }

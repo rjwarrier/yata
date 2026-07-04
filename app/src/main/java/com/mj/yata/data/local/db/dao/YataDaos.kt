@@ -209,6 +209,9 @@ interface TaskCommentDao {
     @Query("SELECT * FROM task_comments WHERE taskId = :taskId ORDER BY createdAt DESC")
     fun getCommentsForTask(taskId: String): Flow<List<TaskCommentEntity>>
 
+    @Query("SELECT * FROM task_comments")
+    fun getAll(): Flow<List<TaskCommentEntity>>
+
     @Upsert
     suspend fun insert(comment: TaskCommentEntity)
 

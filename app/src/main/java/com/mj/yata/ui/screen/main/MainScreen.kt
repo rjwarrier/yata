@@ -69,7 +69,7 @@ fun MainScreen(
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming, 5=Calendar
+    // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
     var selectedTab by remember { mutableIntStateOf(0) }
     var calendarSelectedDay by remember { mutableStateOf(java.time.LocalDate.now()) }
 
@@ -173,12 +173,6 @@ fun MainScreen(
                         item {
                             DrawerItem("Upcoming", Icons.Default.CalendarViewWeek, selectedTab == 4) {
                                 selectedTab = 4
-                                scope.launch { drawerState.close() }
-                            }
-                        }
-                        item {
-                            DrawerItem("Calendar", Icons.Default.CalendarMonth, selectedTab == 5) {
-                                selectedTab = 5
                                 scope.launch { drawerState.close() }
                             }
                         }
@@ -295,7 +289,7 @@ fun MainScreen(
                     1 -> "New project" to MainSheetType.NewProject
                     2 -> "Add person" to MainSheetType.NewPerson
                     3 -> "New tag" to MainSheetType.NewTag
-                    5 -> "New task" to MainSheetType.NewTask
+                    4 -> "New task" to MainSheetType.NewTask
                     else -> null
                 }
 
@@ -428,6 +422,9 @@ fun MainScreen(
                             people = people,
                             tags = tags,
                             userName = userName,
+                            selectedDay = calendarSelectedDay,
+                            onSelectedDayChange = { calendarSelectedDay = it },
+                            startOfWeekSunday = startOfWeekSunday,
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
@@ -439,22 +436,6 @@ fun MainScreen(
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) }
-                        )
-                        5 -> CalendarTab(
-                            tasks = tasks,
-                            lists = lists,
-                            projects = projects,
-                            people = people,
-                            tags = tags,
-                            userName = userName,
-                            startOfWeekSunday = startOfWeekSunday,
-                            selectedDay = calendarSelectedDay,
-                            onSelectedDayChange = { calendarSelectedDay = it },
-                            onMenuClick = { scope.launch { drawerState.open() } },
-                            onSearchClick = onNavigateToSearch,
-                            onProfileClick = onNavigateToSettings,
-                            onTaskClick = onNavigateToTaskDetail,
-                            onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } }
                         )
                     }
                 }
@@ -488,7 +469,7 @@ fun MainScreen(
                         )
                     },
                     onDismiss = { activeSheet = MainSheetType.None },
-                    initialDueDateOverride = if (selectedTab == 5) calendarSelectedDay.toString() else null
+                    initialDueDateOverride = if (selectedTab == 4) calendarSelectedDay.toString() else null
                 )
             }
         } else {
@@ -601,8 +582,7 @@ fun CustomBottomNav(
         NavIcon("Projects", Icons.Outlined.Layers, Icons.Filled.Layers),
         NavIcon("People", Icons.Outlined.People, Icons.Filled.People),
         NavIcon("Tags", Icons.Outlined.Label, Icons.Filled.Label),
-        NavIcon("Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek),
-        NavIcon("Calendar", Icons.Outlined.CalendarMonth, Icons.Filled.CalendarMonth)
+        NavIcon("Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek)
     )
 
     Surface(

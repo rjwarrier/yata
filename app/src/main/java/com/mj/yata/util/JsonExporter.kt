@@ -28,9 +28,10 @@ class JsonExporter @Inject constructor(
             val tasks = repository.getTasks().first()
             val tagGroups = repository.getTagGroups().first()
             val personGroups = repository.getPersonGroups().first()
+            val comments = repository.getAllComments().first()
 
             val root = JSONObject()
-            root.put("version", 3)
+            root.put("version", 4)
 
             // People
             val peopleArr = JSONArray()
@@ -131,6 +132,7 @@ class JsonExporter @Inject constructor(
                 o.put("flag", t.flag)
                 o.put("done", t.done)
                 o.put("notes", t.notes)
+                o.put("sortOrder", t.sortOrder)
 
                 // Assignees
                 val assArr = JSONArray()
@@ -179,6 +181,8 @@ class JsonExporter @Inject constructor(
                     sto.put("id", st.id)
                     sto.put("title", st.title)
                     sto.put("done", st.done)
+                    sto.put("parentSubtaskId", st.parentSubtaskId ?: JSONObject.NULL)
+                    sto.put("sortOrder", st.sortOrder)
                     stArr.put(sto)
                 }
                 o.put("subtasks", stArr)
@@ -186,6 +190,19 @@ class JsonExporter @Inject constructor(
                 tasksArr.put(o)
             }
             root.put("tasks", tasksArr)
+
+            // Comments
+            val commentsArr = JSONArray()
+            comments.forEach { c ->
+                val o = JSONObject()
+                o.put("id", c.id)
+                o.put("taskId", c.taskId)
+                o.put("body", c.body)
+                o.put("createdAt", c.createdAt)
+                o.put("authorId", c.authorId ?: JSONObject.NULL)
+                commentsArr.put(o)
+            }
+            root.put("comments", commentsArr)
 
             context.contentResolver.openOutputStream(uri)?.use { os ->
                 OutputStreamWriter(os).use { writer ->
@@ -371,7 +388,9 @@ class JsonExporter @Inject constructor(
                             Subtask(
                                 id = sto.getString("id"),
                                 title = sto.getString("title"),
-                                done = sto.getBoolean("done")
+                                done = sto.getBoolean("done"),
+                                parentSubtaskId = if (sto.isNull("parentSubtaskId")) null else sto.optString("parentSubtaskId", null),
+                                sortOrder = sto.optInt("sortOrder", j)
                             )
                         )
                     }
@@ -393,7 +412,25 @@ class JsonExporter @Inject constructor(
                             tagIds = tagIds,
                             recurrence = recurrence,
                             subtasks = subtasks,
-                            notes = if (o.isNull("notes")) null else o.optString("notes")
+                            notes = if (o.isNull("notes")) null else o.optString("notes"),
+                            sortOrder = o.optInt("sortOrder", i)
+                        )
+                    )
+                }
+            }
+
+            // 6. Import Comments (after tasks so the taskId foreign key exists)
+            val commentsArr = root.optJSONArray("comments")
+            if (commentsArr != null) {
+                for (i in 0 until commentsArr.length()) {
+                    val o = commentsArr.getJSONObject(i)
+                    repository.upsertComment(
+                        TaskComment(
+                            id = o.getString("id"),
+                            taskId = o.getString("taskId"),
+                            body = o.getString("body"),
+                            createdAt = o.getLong("createdAt"),
+                            authorId = if (o.isNull("authorId")) null else o.optString("authorId", null)
                         )
                     )
                 }

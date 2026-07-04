@@ -187,6 +187,10 @@ class YataRepositoryImpl @Inject constructor(
         return db.taskCommentDao().getCommentsForTask(taskId).map { list -> list.map { it.toDomain() } }
     }
 
+    override fun getAllComments(): Flow<List<TaskComment>> {
+        return db.taskCommentDao().getAll().map { list -> list.map { it.toDomain() } }
+    }
+
     override suspend fun addComment(taskId: String, body: String, authorId: String?) {
         db.taskCommentDao().insert(
             TaskCommentEntity(
@@ -197,6 +201,10 @@ class YataRepositoryImpl @Inject constructor(
                 authorId = authorId
             )
         )
+    }
+
+    override suspend fun upsertComment(comment: TaskComment) {
+        db.taskCommentDao().insert(comment.toEntity())
     }
 
     override suspend fun deleteComment(comment: TaskComment) {
