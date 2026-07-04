@@ -13,10 +13,13 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.mj.yata.data.local.datastore.UserPreferences
@@ -84,27 +87,36 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.SYSTEM -> systemDark
             }
 
-            YataTheme(darkTheme = useDarkTheme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val navController = rememberNavController()
-                    
-                    // Route to task details if launched from a notification
-                    LaunchedEffect(intent) {
-                        val navigateTo = intent.getStringExtra("navigate_to")
-                        val taskId = intent.getStringExtra("task_id")
-                        if (navigateTo == "task_detail" && !taskId.isNullOrEmpty()) {
-                            navController.navigate(com.mj.yata.ui.navigation.Screen.TaskDetail.createRoute(taskId))
-                        }
-                    }
+            val uiScale by userPreferences.uiScaleFlow.collectAsState(initial = 1.0f)
+            val baseDensity = LocalDensity.current
+            val scaledDensity = Density(
+                density = baseDensity.density * uiScale,
+                fontScale = baseDensity.fontScale * uiScale
+            )
 
-                    AppNavigation(
-                        navController      = navController,
-                        onExportRequested  = { exportLauncher.launch("yata_backup.json") },
-                        onImportRequested  = { importLauncher.launch(arrayOf("application/json")) }
-                    )
+            CompositionLocalProvider(LocalDensity provides scaledDensity) {
+                YataTheme(darkTheme = useDarkTheme) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        val navController = rememberNavController()
+
+                        // Route to task details if launched from a notification
+                        LaunchedEffect(intent) {
+                            val navigateTo = intent.getStringExtra("navigate_to")
+                            val taskId = intent.getStringExtra("task_id")
+                            if (navigateTo == "task_detail" && !taskId.isNullOrEmpty()) {
+                                navController.navigate(com.mj.yata.ui.navigation.Screen.TaskDetail.createRoute(taskId))
+                            }
+                        }
+
+                        AppNavigation(
+                            navController      = navController,
+                            onExportRequested  = { exportLauncher.launch("yata_backup.json") },
+                            onImportRequested  = { importLauncher.launch(arrayOf("application/json")) }
+                        )
+                    }
                 }
             }
         }

@@ -33,7 +33,7 @@ data class YataList(
     val name: String,
     val color: String, // accentA - accentH
     val icon: String,
-    val projectId: String,
+    val projectId: String?, // null when the list isn't linked to any project
     val starred: Boolean = false
 )
 

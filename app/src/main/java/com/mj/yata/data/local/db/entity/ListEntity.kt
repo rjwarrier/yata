@@ -22,6 +22,6 @@ data class ListEntity(
     val name: String,
     val color: String,
     val icon: String,
-    val projectId: String,
+    val projectId: String?,
     val starred: Boolean = false
 )

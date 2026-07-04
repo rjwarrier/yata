@@ -198,6 +198,7 @@ fun ListDetailScreen(
     if (isNewTaskSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             NewTaskSheet(
@@ -225,6 +226,7 @@ fun ListDetailScreen(
     if (isEditSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = { isEditSheetOpen = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             ListEditorSheet(

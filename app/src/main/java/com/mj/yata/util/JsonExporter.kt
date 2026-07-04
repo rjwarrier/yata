@@ -69,7 +69,7 @@ class JsonExporter @Inject constructor(
                 o.put("name", l.name)
                 o.put("color", l.color)
                 o.put("icon", l.icon)
-                o.put("projectId", l.projectId)
+                o.put("projectId", l.projectId ?: JSONObject.NULL)
                 o.put("starred", l.starred)
                 listsArr.put(o)
             }
@@ -236,7 +236,7 @@ class JsonExporter @Inject constructor(
                             name = o.getString("name"),
                             color = o.getString("color"),
                             icon = o.getString("icon"),
-                            projectId = o.getString("projectId"),
+                            projectId = if (o.isNull("projectId")) null else o.optString("projectId", null),
                             starred = o.optBoolean("starred", false)
                         )
                     )

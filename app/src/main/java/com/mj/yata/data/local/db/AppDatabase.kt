@@ -19,7 +19,7 @@ import com.mj.yata.data.local.db.entity.*
         TagGroupEntity::class,
         PersonGroupEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -51,6 +51,20 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE tags ADD COLUMN starred INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE people ADD COLUMN starred INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // SQLite can't drop a NOT NULL constraint in place — rebuild the table so
+                // projectId can be null (a list no longer has to belong to a project).
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `lists_new` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `projectId` TEXT, `starred` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                )
+                db.execSQL("INSERT INTO `lists_new` SELECT `id`, `name`, `color`, `icon`, `projectId`, `starred` FROM `lists`")
+                db.execSQL("DROP TABLE `lists`")
+                db.execSQL("ALTER TABLE `lists_new` RENAME TO `lists`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_lists_projectId` ON `lists` (`projectId`)")
             }
         }
     }

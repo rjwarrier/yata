@@ -77,6 +77,7 @@ fun MainScreen(
 
     // Sheet states
     var activeSheet by remember { mutableStateOf<MainSheetType>(MainSheetType.None) }
+    var isNewListSheetOpen by remember { mutableStateOf(false) }
 
     // Database updates flows
     val tasks by viewModel.tasks.collectAsState()
@@ -212,23 +213,42 @@ fun MainScreen(
                         }
 
                         // Folder lists section
-                        if (lists.isNotEmpty()) {
-                            item {
-                                Spacer(modifier = Modifier.height(16.dp))
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Text(
                                     text = "FOLDERS",
                                     style = MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    ),
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
                                 )
-                            }
-                            items(lists) { list ->
-                                DrawerItem(list.name, Icons.Default.Folder, false) {
-                                    onNavigateToListDetail(list.id)
-                                    scope.launch { drawerState.close() }
+                                IconButton(
+                                    onClick = {
+                                        isNewListSheetOpen = true
+                                        scope.launch { drawerState.close() }
+                                    },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "New folder",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
+                            }
+                        }
+                        items(lists) { list ->
+                            DrawerItem(list.name, Icons.Default.Folder, false) {
+                                onNavigateToListDetail(list.id)
+                                scope.launch { drawerState.close() }
                             }
                         }
                     }
@@ -463,6 +483,22 @@ fun MainScreen(
                     )
                     else -> { /* Do nothing */ }
                 }
+            }
+        }
+
+        if (isNewListSheetOpen) {
+            ModalBottomSheet(
+                onDismissRequest = { isNewListSheetOpen = false },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            ) {
+                ListEditorSheet(
+                    onSave = { name, color ->
+                        viewModel.addList(name, color, icon = "folder", projectId = null)
+                        isNewListSheetOpen = false
+                    },
+                    onDismiss = { isNewListSheetOpen = false }
+                )
             }
         }
     }

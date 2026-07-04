@@ -248,6 +248,7 @@ fun PeopleTab(
     if (showGroupPicker) {
         ModalBottomSheet(
             onDismissRequest = { showGroupPicker = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             GroupAssignSheet(

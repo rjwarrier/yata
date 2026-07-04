@@ -449,6 +449,7 @@ fun TaskDetailScreen(
     if (activeSheet != DetailSheetType.None) {
         ModalBottomSheet(
             onDismissRequest = { activeSheet = DetailSheetType.None },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             when (activeSheet) {

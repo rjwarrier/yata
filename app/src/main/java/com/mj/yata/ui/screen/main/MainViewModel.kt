@@ -68,6 +68,9 @@ class MainViewModel @Inject constructor(
     val defaultReminderMinute: StateFlow<Int> = userPreferences.defaultReminderMinuteFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    val uiScale: StateFlow<Float> = userPreferences.uiScaleFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
+
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
         viewModelScope.launch {
@@ -306,7 +309,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addList(name: String, color: String, icon: String, projectId: String) {
+    fun addList(name: String, color: String, icon: String, projectId: String? = null) {
         viewModelScope.launch {
             val listId = "l_" + UUID.randomUUID().toString()
             val yataList = YataList(
@@ -319,10 +322,12 @@ class MainViewModel @Inject constructor(
             repository.upsertList(yataList)
 
             // Update project list order
-            val project = projects.value.find { it.id == projectId }
-            if (project != null) {
-                val updatedIds = project.listIds + listId
-                repository.upsertProject(project.copy(listIds = updatedIds))
+            if (projectId != null) {
+                val project = projects.value.find { it.id == projectId }
+                if (project != null) {
+                    val updatedIds = project.listIds + listId
+                    repository.upsertProject(project.copy(listIds = updatedIds))
+                }
             }
         }
     }
@@ -386,6 +391,12 @@ class MainViewModel @Inject constructor(
     fun setDefaultReminderTime(hour: Int, minute: Int) {
         viewModelScope.launch {
             userPreferences.setDefaultReminderTime(hour, minute)
+        }
+    }
+
+    fun setUiScale(scale: Float) {
+        viewModelScope.launch {
+            userPreferences.setUiScale(scale)
         }
     }
 }

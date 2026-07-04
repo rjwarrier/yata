@@ -38,6 +38,7 @@ fun SettingsScreen(
     val userEmail by viewModel.userEmail.collectAsState()
     val defaultListId by viewModel.defaultListId.collectAsState()
     val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsState()
+    val uiScale by viewModel.uiScale.collectAsState()
     val lists by viewModel.lists.collectAsState()
 
     var editingName by remember { mutableStateOf(false) }
@@ -190,7 +191,76 @@ fun SettingsScreen(
                 }
             }
 
-            // 3. Backup/Data Section
+            // 3. Display Section
+            Text(
+                text = "DISPLAY",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "UI size",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = "Scales text and elements across the whole app.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    var sliderPosition by remember(uiScale) { mutableFloatStateOf(uiScale) }
+                    val presets = listOf("Small" to 0.85f, "Normal" to 1.0f, "Large" to 1.3f)
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Aa",
+                            fontSize = (28 * sliderPosition).sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Slider(
+                        value = sliderPosition,
+                        onValueChange = { sliderPosition = it },
+                        onValueChangeFinished = { viewModel.setUiScale(sliderPosition) },
+                        valueRange = 0.85f..1.3f
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        presets.forEach { (label, value) ->
+                            TextButton(onClick = {
+                                sliderPosition = value
+                                viewModel.setUiScale(value)
+                            }) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Backup/Data Section
             Text(
                 text = "BACKUP & DATA",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),

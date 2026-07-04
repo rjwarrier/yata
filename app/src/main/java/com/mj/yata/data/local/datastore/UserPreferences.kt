@@ -32,6 +32,7 @@ class UserPreferences @Inject constructor(
         val START_OF_WEEK_SUNDAY    = booleanPreferencesKey("start_of_week_sunday")
         val DEFAULT_REMINDER_HOUR   = intPreferencesKey("default_reminder_hour")
         val DEFAULT_REMINDER_MINUTE = intPreferencesKey("default_reminder_minute")
+        val UI_SCALE                = floatPreferencesKey("ui_scale")
     }
 
     val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -50,6 +51,7 @@ class UserPreferences @Inject constructor(
     val startOfWeekSundayFlow: Flow<Boolean> = dataStore.data.map { it[START_OF_WEEK_SUNDAY] ?: true }
     val defaultReminderHourFlow: Flow<Int> = dataStore.data.map { it[DEFAULT_REMINDER_HOUR] ?: 9 }
     val defaultReminderMinuteFlow: Flow<Int> = dataStore.data.map { it[DEFAULT_REMINDER_MINUTE] ?: 0 }
+    val uiScaleFlow: Flow<Float> = dataStore.data.map { it[UI_SCALE] ?: 1.0f }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME_MODE] = mode.name }
@@ -76,5 +78,9 @@ class UserPreferences @Inject constructor(
             it[DEFAULT_REMINDER_HOUR] = hour
             it[DEFAULT_REMINDER_MINUTE] = minute
         }
+    }
+
+    suspend fun setUiScale(scale: Float) {
+        dataStore.edit { it[UI_SCALE] = scale }
     }
 }

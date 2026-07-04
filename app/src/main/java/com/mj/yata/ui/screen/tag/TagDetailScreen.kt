@@ -186,6 +186,7 @@ fun TagDetailScreen(
     if (isEditSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = { isEditSheetOpen = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             TagEditorSheet(
