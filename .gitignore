@@ -1,0 +1,25 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+.kotlin/
+
+# Per-module build outputs
+**/build/
+
+# Log/Android Studio
+*.hprof
+
+# Keystore files
+*.jks
+*.keystore
+
+# Scratch/debug dumps
+.codex_tmp/
+ui_*.xml

@@ -1,0 +1,112 @@
+package com.mj.yata.domain.model
+
+data class Person(
+    val id: String,
+    val name: String,
+    val initials: String,
+    val color: String, // accentA - accentH
+    val photoUri: String? = null,
+    val isMe: Boolean = false,
+    val groupId: String? = null,
+    val starred: Boolean = false
+)
+
+data class PersonGroup(
+    val id: String,
+    val name: String,
+    val color: String // accentA - accentH
+)
+
+data class Project(
+    val id: String,
+    val name: String,
+    val color: String, // accentA - accentH
+    val icon: String,
+    val listIds: List<String>, // ordered list of list IDs
+    val due: String? = null,
+    val starred: Boolean = false,
+    val commonTagIds: List<String> = emptyList() // live-applied to every task in this project
+)
+
+data class YataList(
+    val id: String,
+    val name: String,
+    val color: String, // accentA - accentH
+    val icon: String,
+    val projectId: String,
+    val starred: Boolean = false
+)
+
+data class Tag(
+    val id: String,
+    val name: String,
+    val color: String, // accentA - accentH or "error"
+    val groupId: String? = null,
+    val starred: Boolean = false
+)
+
+data class TagGroup(
+    val id: String,
+    val name: String,
+    val color: String // accentA - accentH
+)
+
+data class Subtask(
+    val id: String,
+    val title: String,
+    val done: Boolean
+)
+
+data class Recurrence(
+    val freq: String, // "daily" | "weekly" | "monthly" | "yearly"
+    val interval: Int,
+    val byday: List<String>? = null, // e.g. ["MO", "TU", ...]
+    val bymonthday: Int? = null,
+    val ends: RecurrenceEnds = RecurrenceEnds.Never
+)
+
+sealed interface RecurrenceEnds {
+    object Never : RecurrenceEnds
+    data class After(val count: Int) : RecurrenceEnds
+    data class On(val date: String) : RecurrenceEnds // "YYYY-MM-DD"
+}
+
+data class Task(
+    val id: String,
+    val title: String,
+    val listId: String,
+    val section: String, // "Morning" | "Afternoon"
+    val due: String?, // "YYYY-MM-DD"
+    val time: String?, // "2:00 PM"
+    val reminder: String?, // "15 min before"
+    val priority: String, // "none" | "low" | "med" | "high"
+    val flag: Boolean,
+    val done: Boolean,
+    val assigneeIds: List<String>,
+    val tagIds: List<String>,
+    val recurrence: Recurrence?,
+    val subtasks: List<Subtask>,
+    val notes: String?
+)
+
+/**
+ * Tag IDs this task carries, including tag IDs its project live-syncs to every task
+ * (Project.commonTagIds). Derived, never persisted — a project's common tags always
+ * reflect the project's current state without touching individual tasks.
+ */
+fun Task.effectiveTagIds(lists: List<YataList>, projects: List<Project>): List<String> {
+    val project = lists.find { it.id == listId }?.let { l -> projects.find { it.id == l.projectId } }
+    val common = project?.commonTagIds ?: emptyList()
+    return (tagIds + common).distinct()
+}
+
+fun Task.effectiveTags(lists: List<YataList>, projects: List<Project>, tags: List<Tag>): List<Tag> {
+    val ids = effectiveTagIds(lists, projects)
+    return ids.mapNotNull { id -> tags.find { it.id == id } }
+}
+
+/** Tag IDs inherited live from the task's project — not removable at the task level. */
+fun Task.inheritedTagIds(lists: List<YataList>, projects: List<Project>): List<String> {
+    val project = lists.find { it.id == listId }?.let { l -> projects.find { it.id == l.projectId } }
+    return project?.commonTagIds ?: emptyList()
+}

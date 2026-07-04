@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YATA — M3 Expressive Screen Layouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#f0eee9; font-family: Inter, system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="m3-tokens.jsx"></script>
+<script type="text/babel" src="phone-frame.jsx"></script>
+<script type="text/babel" src="m3-components.jsx"></script>
+<script type="text/babel" src="screens-part1.jsx"></script>
+<script type="text/babel" src="screens-part2.jsx"></script>
+
+<script type="text/babel">
+function Title() {
+  return (
+    <div style={{ padding: '40px 60px 20px', maxWidth: 900 }}>
+      <div style={{
+        fontFamily: '"Inter Tight", system-ui', fontWeight: 600, fontSize: 13,
+        color: '#8E4A3B', letterSpacing: '0.12em', textTransform: 'uppercase',
+      }}>
+        YATA · Yet Another Todo App
+      </div>
+      <div style={{
+        fontFamily: '"Inter Tight", system-ui', fontWeight: 500, fontSize: 44,
+        color: '#231916', letterSpacing: '-0.02em', lineHeight: 1.05, marginTop: 10,
+      }}>
+        Material 3 Expressive — screen layouts
+      </div>
+      <div style={{
+        fontFamily: 'Inter, system-ui', fontSize: 15, color: '#53433F',
+        marginTop: 14, lineHeight: 1.55, maxWidth: 680,
+      }}>
+        Ten mock screens exploring an M3 Expressive todo app: lists, labels, search,
+        timeline, task detail, quick-add sheet, settings, and dark mode. Original visual
+        language — expressive display type, dynamic color, variable shape scale
+        (XS 8 · SM 12 · MD 16 · LG 20 · XL 28).
+      </div>
+
+      {/* Palette strip */}
+      <div style={{ marginTop: 24, display: 'flex', gap: 6, alignItems: 'center' }}>
+        {[
+          ['#8E4A3B','Primary'], ['#FFDAD1','P-container'],
+          ['#5D6140','Secondary'], ['#E2E6BC','S-container'],
+          ['#5F5791','Tertiary'], ['#E5DEFF','T-container'],
+          ['#FFF8F6','Surface'], ['#1A1110','Dark surf'],
+        ].map(([c, l], i) => (
+          <div key={i} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: c, border: '1px solid rgba(0,0,0,0.06)' }} />
+            <div style={{ fontSize: 10, color: '#53433F', fontFamily: 'JetBrains Mono, monospace' }}>{l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <Title />
+
+      <DCSection title="Core flow" subtitle="The primary screens a user touches every day — home, planning, organization.">
+        <DCArtboard label="01 · Today (home)" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenToday />
+        </DCArtboard>
+        <DCArtboard label="02 · Upcoming (timeline)" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenUpcoming />
+        </DCArtboard>
+        <DCArtboard label="03 · Browse / Lists overview" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenLists />
+        </DCArtboard>
+        <DCArtboard label="04 · List detail (Work)" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenListDetail />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="Task interactions" subtitle="Creating, viewing, and editing individual tasks — sub-tasks, labels, reminders, notes.">
+        <DCArtboard label="05 · Task detail" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenTaskDetail />
+        </DCArtboard>
+        <DCArtboard label="06 · New task (bottom sheet)" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenNewTask />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="Finding & organizing" subtitle="Full-text search across tasks, lists, labels and notes; the label manager.">
+        <DCArtboard label="07 · Search (active)" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenSearch />
+        </DCArtboard>
+        <DCArtboard label="08 · Labels" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenLabels />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection title="Account & theming" subtitle="Settings and a dark-mode evening state showing dynamic color across themes.">
+        <DCArtboard label="09 · Settings" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenSettings />
+        </DCArtboard>
+        <DCArtboard label="10 · Today · Dark" width={400} height={840} style={{ background:'transparent', boxShadow:'none' }}>
+          <ScreenDark />
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
