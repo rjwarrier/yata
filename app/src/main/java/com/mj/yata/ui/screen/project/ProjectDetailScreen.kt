@@ -1,42 +1,36 @@
 package com.mj.yata.ui.screen.project
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.AssigneeStack
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.sheets.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ProjectDetailScreen(
     viewModel: MainViewModel,
@@ -56,11 +50,8 @@ fun ProjectDetailScreen(
 
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
-    var isNewListSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-
-    // Map to keep track of expanded/collapsed list sections
-    val expandedStates = remember { mutableStateMapOf<String, Boolean>() }
+    var showRolloverDialog by remember { mutableStateOf(false) }
 
     if (project == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -70,9 +61,7 @@ fun ProjectDetailScreen(
     }
 
     val projectColor = accents.getAccent(project.color)
-    val projectLists = remember(lists, project.id) { lists.filter { it.projectId == project.id } }
-    val listIds = projectLists.map { it.id }
-    val projectTasks = remember(tasks, listIds) { tasks.filter { listIds.contains(it.listId) } }
+    val projectTasks = remember(tasks, project.id) { tasks.filter { it.projectId == project.id } }
 
     val totalTasks = projectTasks.size
     val doneTasks = projectTasks.count { it.done }
@@ -110,6 +99,14 @@ fun ProjectDetailScreen(
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                         )
                         DropdownMenuItem(
+                            text = { Text("Roll over open tasks") },
+                            onClick = {
+                                showMenu = false
+                                showRolloverDialog = true
+                            },
+                            leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
                             text = { Text("Delete project") },
                             onClick = {
                                 showMenu = false
@@ -134,6 +131,9 @@ fun ProjectDetailScreen(
             }
         }
     ) { innerPadding ->
+        val listsById = remember(lists) { lists.associateBy { it.id } }
+        val peopleById = remember(people) { people.associateBy { it.id } }
+
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
@@ -180,96 +180,39 @@ fun ProjectDetailScreen(
                 }
             }
 
-            // 2. Project Lists Sections
-            items(projectLists) { list ->
-                val listTasks = tasks.filter { it.listId == list.id }
-                val listTotal = listTasks.size
-                val listDone = listTasks.count { it.done }
-
-                val isExpanded = expandedStates[list.id] ?: true
-                val swatchColor = accents.getAccent(list.color)
-
-                // Section Header Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expandedStates[list.id] = !isExpanded }
-                        .padding(horizontal = 20.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // 2. Flat task list (projects no longer group tasks into lists)
+            if (projectTasks.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(swatchColor, CircleShape)
-                        )
                         Text(
-                            text = list.name,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            text = "No tasks in this project yet.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(9999.dp)
-                        ) {
-                            Text(
-                                text = "$listDone/$listTotal",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
                     }
+                }
+            } else {
+                items(projectTasks, key = { it.id }) { task ->
+                    val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                    val taskAssignees = remember(task.assigneeIds, peopleById) {
+                        task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                    }
+                    val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
 
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
-                        contentDescription = "Expand",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    TaskRow(
+                        task = task,
+                        list = taskList,
+                        assignees = taskAssignees,
+                        tags = taskTags,
+                        onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
+                        onTaskClick = { onNavigateToTaskDetail(task.id) },
+                        modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
                     )
-                }
-
-                // Expanded Section Task List
-                if (isExpanded) {
-                    if (listTasks.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No tasks in this list.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            )
-                        }
-                    } else {
-                        listTasks.forEach { task ->
-                            val taskAssignees = task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } }
-                            val taskTags = task.effectiveTags(lists, projects, tags)
-
-                            TaskRow(
-                                task = task,
-                                list = list,
-                                assignees = taskAssignees,
-                                tags = taskTags,
-                                onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                                onTaskClick = { onNavigateToTaskDetail(task.id) },
-                                showList = false
-                            )
-                        }
-                    }
-                }
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-            }
-
-            // 3. Add list
-            item {
-                Box(modifier = Modifier.padding(20.dp)) {
-                    AddListDashedRow(onClick = { isNewListSheetOpen = true })
                 }
             }
         }
@@ -282,12 +225,13 @@ fun ProjectDetailScreen(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             NewTaskSheet(
-                lists = projectLists, // Offer project lists only as options
+                lists = lists,
                 projects = projects,
                 people = people,
                 tags = tags,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder)
+                initialProjectId = project.id,
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId)
                     isNewTaskSheetOpen = false
                 },
                 onCreateTag = { id, name, color ->
@@ -312,30 +256,16 @@ fun ProjectDetailScreen(
             ProjectEditorSheet(
                 initialName = project.name,
                 initialColor = project.color,
+                initialIcon = project.icon,
                 initialDueDate = project.due,
                 initialCommonTagIds = project.commonTagIds,
+                initialDefaultReminder = project.defaultReminder,
                 tags = tags,
-                onSave = { newName, newColor, newDue, newCommonTagIds ->
-                    viewModel.upsertProject(project.copy(name = newName, color = newColor, due = newDue, commonTagIds = newCommonTagIds))
+                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder ->
+                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder))
                     isEditSheetOpen = false
                 },
                 onDismiss = { isEditSheetOpen = false }
-            )
-        }
-    }
-
-    if (isNewListSheetOpen) {
-        ModalBottomSheet(
-            onDismissRequest = { isNewListSheetOpen = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-        ) {
-            ListEditorSheet(
-                onSave = { name, color ->
-                    viewModel.addList(name, color, icon = "folder", projectId = project.id)
-                    isNewListSheetOpen = false
-                },
-                onDismiss = { isNewListSheetOpen = false }
             )
         }
     }
@@ -344,7 +274,7 @@ fun ProjectDetailScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Delete project?") },
-            text = { Text("All folders and tasks inside this project will be permanently deleted.") },
+            text = { Text("All tasks inside this project will be permanently deleted.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -363,49 +293,26 @@ fun ProjectDetailScreen(
             }
         )
     }
-}
 
-@Composable
-private fun AddListDashedRow(onClick: () -> Unit) {
-    val outlineColor = MaterialTheme.colorScheme.outlineVariant
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .drawBehind {
-                val stroke = Stroke(
-                    width = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                )
-                drawRoundRect(
-                    color = outlineColor,
-                    style = stroke,
-                    cornerRadius = CornerRadius(12.dp.toPx())
-                )
+    if (showRolloverDialog) {
+        val eligibleCount = remember(projectTasks) { projectTasks.count { !it.done && it.recurrence == null } }
+        AlertDialog(
+            onDismissRequest = { showRolloverDialog = false },
+            title = { Text("Roll over open tasks?") },
+            text = { Text("Duplicates $eligibleCount open task(s) with due dates shifted one month forward. Recurring tasks are skipped since they already advance on their own.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRolloverDialog = false
+                    viewModel.rolloverProjectTasks(project.id)
+                }) {
+                    Text("Roll over")
+                }
             },
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add list",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Add list",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        }
+            dismissButton = {
+                TextButton(onClick = { showRolloverDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
-
-

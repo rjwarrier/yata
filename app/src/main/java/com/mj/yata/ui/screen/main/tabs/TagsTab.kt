@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
@@ -65,6 +67,7 @@ fun TagsTab(
     onTagClick: (String) -> Unit,
     onNewTagClick: () -> Unit,
     onToggleStar: (String) -> Unit = {},
+    onDeleteGroup: (TagGroup) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -131,19 +134,27 @@ fun TagsTab(
         ) {
             val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
             val groupedIds = tagGroups.map { it.id }.toSet()
+            val tagTaskCounts = remember(tasks, projects) {
+                val counts = mutableMapOf<String, Int>()
+                tasks.forEach { task ->
+                    task.effectiveTagIds(projects).forEach { tagId ->
+                        counts[tagId] = (counts[tagId] ?: 0) + 1
+                    }
+                }
+                counts
+            }
             tagGroups.forEach { group ->
                 val groupTags = tags.filter { it.groupId == group.id }
                 if (groupTags.isNotEmpty()) {
                     TagGroupSection(
                         title = group.name,
                         tags = groupTags,
-                        tasks = tasks,
-                        lists = lists,
-                        projects = projects,
+                        taskCounts = tagTaskCounts,
                         onTagClick = onTagClick,
                         onToggleStar = onToggleStar,
                         expanded = expandedGroups[group.id] ?: true,
-                        onToggle = { expandedGroups[group.id] = !(expandedGroups[group.id] ?: true) }
+                        onToggle = { expandedGroups[group.id] = !(expandedGroups[group.id] ?: true) },
+                        onDelete = { onDeleteGroup(group) }
                     )
                 }
             }
@@ -151,9 +162,7 @@ fun TagsTab(
             TagGroupSection(
                 title = if (tagGroups.isEmpty()) null else "Ungrouped",
                 tags = ungrouped,
-                tasks = tasks,
-                lists = lists,
-                projects = projects,
+                taskCounts = tagTaskCounts,
                 onTagClick = onTagClick,
                 onToggleStar = onToggleStar,
                 trailing = { NewTagDashedPill(onNewTagClick) },
@@ -169,16 +178,16 @@ fun TagsTab(
 private fun TagGroupSection(
     title: String?,
     tags: List<Tag>,
-    tasks: List<Task>,
-    lists: List<YataList>,
-    projects: List<Project>,
+    taskCounts: Map<String, Int>,
     onTagClick: (String) -> Unit,
     onToggleStar: (String) -> Unit = {},
     trailing: (@Composable () -> Unit)? = null,
     expanded: Boolean = true,
-    onToggle: () -> Unit = {}
+    onToggle: () -> Unit = {},
+    onDelete: (() -> Unit)? = null
 ) {
     if (tags.isEmpty() && trailing == null) return
+    var showDeleteDialog by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (title != null) {
             val rotation by animateFloatAsState(
@@ -187,23 +196,39 @@ private fun TagGroupSection(
                 label = "groupChevron"
             )
             Row(
-                modifier = Modifier.clickable { onToggle() },
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = title.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = if (expanded) "Collapse group" else "Expand group",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(16.dp)
-                        .rotate(rotation)
-                )
+                Row(
+                    modifier = Modifier.clickable { onToggle() },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = title.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = if (expanded) "Collapse group" else "Expand group",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .rotate(rotation)
+                    )
+                }
+                if (onDelete != null) {
+                    IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(28.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Delete group",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
             }
         }
         AnimatedVisibility(
@@ -219,7 +244,7 @@ private fun TagGroupSection(
                 tags.forEach { tag ->
                     TagPill(
                         tag = tag,
-                        taskCount = tasks.count { it.effectiveTagIds(lists, projects).contains(tag.id) },
+                        taskCount = taskCounts[tag.id] ?: 0,
                         onClick = { onTagClick(tag.id) },
                         onToggleStar = { onToggleStar(tag.id) }
                     )
@@ -227,6 +252,22 @@ private fun TagGroupSection(
                 trailing?.invoke()
             }
         }
+    }
+
+    if (showDeleteDialog && onDelete != null && title != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete \"$title\" group?") },
+            text = { Text("Tags stay, they're just ungrouped.") },
+            confirmButton = {
+                TextButton(onClick = { showDeleteDialog = false; onDelete() }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 }
 

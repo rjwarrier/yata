@@ -13,6 +13,9 @@ import dagger.hilt.EntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
 /**
  * Handles notification action buttons:
@@ -30,8 +33,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val ACTION_COMPLETE_TASK = "com.mj.yata.ACTION_COMPLETE_TASK"
-        const val ACTION_SNOOZE_TASK   = "com.mj.yata.ACTION_SNOOZE_TASK"
+        const val ACTION_COMPLETE_TASK    = "com.mj.yata.ACTION_COMPLETE_TASK"
+        const val ACTION_SNOOZE_TASK      = "com.mj.yata.ACTION_SNOOZE_TASK"
+        const val ACTION_SNOOZE_15M       = "com.mj.yata.ACTION_SNOOZE_15M"
+        const val ACTION_SNOOZE_TOMORROW  = "com.mj.yata.ACTION_SNOOZE_TOMORROW"
         const val EXTRA_TASK_ID        = "EXTRA_TASK_ID"
         const val EXTRA_NOTIFICATION_ID = "EXTRA_NOTIFICATION_ID"
     }
@@ -61,6 +66,23 @@ class NotificationActionReceiver : BroadcastReceiver() {
                         val task = db.taskDao().getByIdDirect(taskId)
                         if (task != null) {
                             scheduler.scheduleReminderDelayed(task, 60 * 60 * 1000L) // +1 hour
+                            notifManager.cancel(notifId)
+                        }
+                    }
+                    ACTION_SNOOZE_15M -> {
+                        val task = db.taskDao().getByIdDirect(taskId)
+                        if (task != null) {
+                            scheduler.scheduleReminderDelayed(task, 15 * 60 * 1000L) // +15 min
+                            notifManager.cancel(notifId)
+                        }
+                    }
+                    ACTION_SNOOZE_TOMORROW -> {
+                        val task = db.taskDao().getByIdDirect(taskId)
+                        if (task != null) {
+                            val tomorrow9am = LocalDate.now().plusDays(1).atTime(LocalTime.of(9, 0))
+                                .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                            val delay = (tomorrow9am - System.currentTimeMillis()).coerceAtLeast(0L)
+                            scheduler.scheduleReminderDelayed(task, delay)
                             notifManager.cancel(notifId)
                         }
                     }

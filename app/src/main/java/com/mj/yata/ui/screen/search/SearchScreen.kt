@@ -13,7 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mj.yata.domain.model.Person
+import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.effectiveTags
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.TaskRow
@@ -34,96 +38,241 @@ fun SearchScreen(
 
     var query by remember { mutableStateOf("") }
 
-    val filteredTasks = remember(tasks, query) {
+    val selectedIds = remember { mutableStateListOf<String>() }
+    val selectionMode = selectedIds.isNotEmpty()
+    var showBulkTagSheet by remember { mutableStateOf(false) }
+    var showBulkMoveSheet by remember { mutableStateOf(false) }
+    var showBulkDeleteDialog by remember { mutableStateOf(false) }
+
+    val peopleById = remember(people) { people.associateBy { it.id } }
+    val tagsById = remember(tags) { tags.associateBy { it.id } }
+    val listsById = remember(lists) { lists.associateBy { it.id } }
+
+    val filteredTasks = remember(tasks, query, peopleById, tagsById) {
         if (query.isBlank()) {
             emptyList()
         } else {
-            tasks.filter { it.title.contains(query, ignoreCase = true) }
+            tasks.filter { task ->
+                task.title.contains(query, ignoreCase = true) ||
+                    task.notes?.contains(query, ignoreCase = true) == true ||
+                    task.subtasks.any { it.title.contains(query, ignoreCase = true) } ||
+                    task.tagIds.any { tagsById[it]?.name?.contains(query, ignoreCase = true) == true } ||
+                    task.assigneeIds.any { peopleById[it]?.name?.contains(query, ignoreCase = true) == true }
+            }
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    TextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        placeholder = { Text("Search tasks...") },
-                        singleLine = true,
-                        colors = TextFieldDefaults.textFieldColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
-                            if (query.isNotEmpty()) {
-                                IconButton(onClick = { query = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear search")
-                                }
-                            }
-                        }
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
+    if (selectionMode) {
+        Scaffold(
+            topBar = {
+                com.mj.yata.ui.sheets.TaskSelectionTopBar(
+                    selectedCount = selectedIds.size,
+                    onCancel = { selectedIds.clear() },
+                    onComplete = { viewModel.bulkCompleteTasks(selectedIds.toList()); selectedIds.clear() },
+                    onAddTag = { showBulkTagSheet = true },
+                    onMove = { showBulkMoveSheet = true },
+                    onDelete = { showBulkDeleteDialog = true },
+                    modifier = Modifier.statusBarsPadding()
+                )
+            }
+        ) { innerPadding ->
+            SearchResultsList(
+                query = query,
+                filteredTasks = filteredTasks,
+                lists = lists,
+                projects = projects,
+                tags = tags,
+                listsById = listsById,
+                peopleById = peopleById,
+                viewModel = viewModel,
+                selectionMode = selectionMode,
+                selectedIds = selectedIds,
+                onTaskClick = onNavigateToTaskDetail,
+                modifier = modifier.padding(innerPadding)
             )
         }
-    ) { innerPadding ->
-        LazyColumn(
+    } else {
+        // M3 SearchBar, permanently expanded since this is a dedicated search destination.
+        Box(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            if (query.isBlank()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(64.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Type something to search.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
+            SearchBar(
+                query = query,
+                onQueryChange = { query = it },
+                onSearch = {},
+                active = true,
+                onActiveChange = {},
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search tasks...") },
+                leadingIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear search")
+                        }
+                    } else {
+                        Icon(Icons.Default.Search, contentDescription = null)
                     }
                 }
-            } else if (filteredTasks.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(64.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No matching tasks found.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-            } else {
-                items(filteredTasks, key = { it.id }) { task ->
-                    val taskList = lists.find { it.id == task.listId }
-                    val taskAssignees = task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } }
-                    val taskTags = task.effectiveTags(lists, projects, tags)
+            ) {
+                SearchResultsList(
+                    query = query,
+                    filteredTasks = filteredTasks,
+                    lists = lists,
+                    projects = projects,
+                    tags = tags,
+                    listsById = listsById,
+                    peopleById = peopleById,
+                    viewModel = viewModel,
+                    selectionMode = selectionMode,
+                    selectedIds = selectedIds,
+                    onTaskClick = onNavigateToTaskDetail
+                )
+            }
+        }
+    }
 
-                    TaskRow(
-                        task = task,
-                        list = taskList,
-                        assignees = taskAssignees,
-                        tags = taskTags,
-                        onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                        onTaskClick = { onNavigateToTaskDetail(task.id) }
+    if (showBulkTagSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
+                tags = tags,
+                onSelectTag = { tagId ->
+                    viewModel.bulkAddTag(selectedIds.toList(), tagId)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
+                onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkMoveSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkMoveSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkMoveSheet(
+                projects = projects,
+                lists = lists,
+                onSelectProject = { projectId ->
+                    viewModel.bulkSetProject(selectedIds.toList(), projectId)
+                    selectedIds.clear()
+                    showBulkMoveSheet = false
+                },
+                onSelectList = { listId ->
+                    viewModel.bulkSetList(selectedIds.toList(), listId)
+                    selectedIds.clear()
+                    showBulkMoveSheet = false
+                },
+                onDismiss = { showBulkMoveSheet = false }
+            )
+        }
+    }
+
+    if (showBulkDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showBulkDeleteDialog = false },
+            title = { Text("Delete ${selectedIds.size} tasks?") },
+            text = { Text("This can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.bulkDeleteTasks(selectedIds.toList())
+                    selectedIds.clear()
+                    showBulkDeleteDialog = false
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+}
+
+@Composable
+private fun SearchResultsList(
+    query: String,
+    filteredTasks: List<Task>,
+    lists: List<YataList>,
+    projects: List<Project>,
+    tags: List<Tag>,
+    listsById: Map<String, YataList>,
+    peopleById: Map<String, Person>,
+    viewModel: MainViewModel,
+    selectionMode: Boolean,
+    selectedIds: MutableList<String>,
+    onTaskClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 32.dp)
+    ) {
+        if (query.isBlank()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Type something to search.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
+            }
+        } else if (filteredTasks.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No matching tasks found.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                }
+            }
+        } else {
+            items(filteredTasks, key = { it.id }) { task ->
+                val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                val taskAssignees = remember(task.assigneeIds, peopleById) {
+                    task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                }
+                val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
+
+                TaskRow(
+                    task = task,
+                    list = taskList,
+                    assignees = taskAssignees,
+                    tags = taskTags,
+                    onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
+                    onTaskClick = {
+                        if (selectionMode) {
+                            if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                        } else {
+                            onTaskClick(task.id)
+                        }
+                    },
+                    selectionMode = selectionMode,
+                    selected = selectedIds.contains(task.id),
+                    onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) }
+                )
             }
         }
     }

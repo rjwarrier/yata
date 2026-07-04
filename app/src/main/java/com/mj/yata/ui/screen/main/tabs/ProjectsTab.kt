@@ -125,12 +125,8 @@ fun ProjectsTab(
             modifier = Modifier.weight(1f)
         ) {
             items(projects, key = { it.id }) { project ->
-                val projectLists = remember(lists, project.id) {
-                    lists.filter { it.projectId == project.id }
-                }
-                val listIds = projectLists.map { it.id }
-                val projectTasks = remember(tasks, listIds) {
-                    tasks.filter { listIds.contains(it.listId) }
+                val projectTasks = remember(tasks, project.id) {
+                    tasks.filter { it.projectId == project.id }
                 }
 
                 val totalTasks = projectTasks.size
@@ -144,11 +140,9 @@ fun ProjectsTab(
 
                 ProjectCard(
                     project = project,
-                    listCount = projectLists.size,
                     totalTasks = totalTasks,
                     doneTasks = doneTasks,
                     progress = progress,
-                    lists = projectLists,
                     members = projectPeople,
                     onClick = { onProjectClick(project.id) },
                     onToggleStar = { onToggleProjectStar(project.id) },
@@ -166,11 +160,9 @@ fun ProjectsTab(
 @Composable
 fun ProjectCard(
     project: Project,
-    listCount: Int,
     totalTasks: Int,
     doneTasks: Int,
     progress: Float,
-    lists: List<YataList>,
     members: List<Person>,
     onClick: () -> Unit,
     onToggleStar: () -> Unit,
@@ -234,7 +226,7 @@ fun ProjectCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "$listCount lists · $doneTasks/$totalTasks done",
+                            text = "$doneTasks/$totalTasks done",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 13.sp
@@ -271,30 +263,15 @@ fun ProjectCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            if (members.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(14.dp))
 
-            // Footer: list swatches + assignee stack
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // List swatches
+                // Footer: assignee stack
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    lists.take(6).forEach { list ->
-                        val swatchColor = accents.getAccent(list.color)
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(swatchColor, CircleShape)
-                        )
-                    }
-                }
-
-                // Member avatars
-                if (members.isNotEmpty()) {
                     AssigneeStack(
                         people = members,
                         avatarSize = 24.dp

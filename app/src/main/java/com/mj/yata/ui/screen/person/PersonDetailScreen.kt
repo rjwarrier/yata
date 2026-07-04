@@ -128,6 +128,9 @@ fun PersonDetailScreen(
             }
         }
     ) { innerPadding ->
+        val listsById = remember(lists) { lists.associateBy { it.id } }
+        val peopleById = remember(people) { people.associateBy { it.id } }
+
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
@@ -147,6 +150,7 @@ fun PersonDetailScreen(
                     PersonAvatar(
                         initials = person.initials,
                         accentKey = person.color,
+                        photoUri = person.photoUri,
                         size = 72.dp
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -214,9 +218,11 @@ fun PersonDetailScreen(
                     }
                 } else {
                     items(openTasks, key = { it.id }) { task ->
-                        val taskList = lists.find { it.id == task.listId }
-                        val taskAssignees = task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } }
-                        val taskTags = task.effectiveTags(lists, projects, tags)
+                        val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                        val taskAssignees = remember(task.assigneeIds, peopleById) {
+                            task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                        }
+                        val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
 
                         TaskRow(
                             task = task,
@@ -290,9 +296,11 @@ fun PersonDetailScreen(
                     }
                 } else {
                     items(completedTasks, key = { it.id }) { task ->
-                        val taskList = lists.find { it.id == task.listId }
-                        val taskAssignees = task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } }
-                        val taskTags = task.effectiveTags(lists, projects, tags)
+                        val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                        val taskAssignees = remember(task.assigneeIds, peopleById) {
+                            task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                        }
+                        val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
 
                         TaskRow(
                             task = task,
@@ -319,8 +327,8 @@ fun PersonDetailScreen(
                 people = people,
                 tags = tags,
                 initialAssigneeId = person.id,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder)
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId)
                     isNewTaskSheetOpen = false
                 },
                 onCreateTag = { id, name, color ->
@@ -344,15 +352,16 @@ fun PersonDetailScreen(
                 initialName = person.name,
                 initialColor = person.color,
                 initialGroupId = person.groupId,
+                initialPhotoUri = person.photoUri,
                 groups = personGroups,
-                onSave = { newName, newColor, newGroupId ->
+                onSave = { newName, newColor, newGroupId, newPhotoUri ->
                     val initials = newName.split(" ")
                         .mapNotNull { it.firstOrNull()?.toString() }
                         .take(2)
                         .joinToString("")
                         .uppercase()
                     val updatedInitials = if (initials.isEmpty()) "P" else initials
-                    viewModel.upsertPerson(person.copy(name = newName, color = newColor, initials = updatedInitials, groupId = newGroupId))
+                    viewModel.upsertPerson(person.copy(name = newName, color = newColor, initials = updatedInitials, groupId = newGroupId, photoUri = newPhotoUri))
                     isEditSheetOpen = false
                 },
                 onCreateGroup = { id, name, color ->

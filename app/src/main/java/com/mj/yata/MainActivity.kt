@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
             }
 
             val uiScale by userPreferences.uiScaleFlow.collectAsState(initial = 1.0f)
+            val dynamicColorEnabled by userPreferences.dynamicColorEnabledFlow.collectAsState(initial = true)
             val baseDensity = LocalDensity.current
             val scaledDensity = Density(
                 density = baseDensity.density * uiScale,
@@ -95,7 +96,7 @@ class MainActivity : ComponentActivity() {
             )
 
             CompositionLocalProvider(LocalDensity provides scaledDensity) {
-                YataTheme(darkTheme = useDarkTheme) {
+                YataTheme(darkTheme = useDarkTheme, useDynamicColor = dynamicColorEnabled) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background

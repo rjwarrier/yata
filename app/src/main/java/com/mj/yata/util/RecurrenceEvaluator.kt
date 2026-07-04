@@ -63,7 +63,7 @@ object RecurrenceEvaluator {
         }
 
         if (r.freq == "monthly" && r.bymonthday != null) {
-            base += " on the ${getOrdinal(r.bymonthday)}"
+            base += if (r.bymonthday == -1) " on the last day" else " on the ${getOrdinal(r.bymonthday)}"
         }
 
         when (val ends = r.ends) {
@@ -108,7 +108,16 @@ object RecurrenceEvaluator {
             "daily" -> baseDate.plusDays(interval.toLong())
             "yearly" -> baseDate.plusYears(interval.toLong())
             "monthly" -> {
-                if (r.bymonthday != null) {
+                if (r.bymonthday == -1) {
+                    // Last day of month.
+                    val thisMonthLastDay = baseDate.withDayOfMonth(baseDate.lengthOfMonth())
+                    if (baseDate.isBefore(thisMonthLastDay)) {
+                        thisMonthLastDay
+                    } else {
+                        val nextMonth = baseDate.plusMonths(interval.toLong())
+                        nextMonth.withDayOfMonth(nextMonth.lengthOfMonth())
+                    }
+                } else if (r.bymonthday != null) {
                     val day = r.bymonthday.coerceIn(1, 31)
                     if (baseDate.dayOfMonth < day) {
                         val maxDays = baseDate.lengthOfMonth()

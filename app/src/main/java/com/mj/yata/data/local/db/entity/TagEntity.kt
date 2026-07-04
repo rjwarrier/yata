@@ -9,5 +9,6 @@ data class TagEntity(
     val name: String,
     val color: String,
     val groupId: String? = null,
-    val starred: Boolean = false
+    val starred: Boolean = false,
+    val hideCompletedByDefault: Boolean = false
 )

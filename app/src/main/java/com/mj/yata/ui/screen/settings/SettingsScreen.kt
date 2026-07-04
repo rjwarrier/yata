@@ -23,6 +23,8 @@ import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataTimePickerLauncher
+import com.mj.yata.util.TaskScheduleUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,8 +40,14 @@ fun SettingsScreen(
     val userEmail by viewModel.userEmail.collectAsState()
     val defaultListId by viewModel.defaultListId.collectAsState()
     val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsState()
+    val defaultReminderHour by viewModel.defaultReminderHour.collectAsState()
+    val defaultReminderMinute by viewModel.defaultReminderMinute.collectAsState()
     val uiScale by viewModel.uiScale.collectAsState()
+    val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsState()
     val lists by viewModel.lists.collectAsState()
+
+    var showDefaultListMenu by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) }
 
     var editingName by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf(userName) }
@@ -164,6 +172,32 @@ fun SettingsScreen(
                         )
                     }
 
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Material You colors",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = "Theme the app from your wallpaper's colors instead of the fixed accent theme.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = dynamicColorEnabled,
+                                onCheckedChange = { viewModel.setDynamicColorEnabled(it) }
+                            )
+                        }
+                    }
+
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     // Start of week
@@ -188,6 +222,37 @@ fun SettingsScreen(
                             onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
                         )
                     }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Default list for new tasks
+                    Box {
+                        SettingsRow(
+                            label = "Default list for new tasks",
+                            value = lists.find { it.id == defaultListId }?.name ?: "None",
+                            onClick = { showDefaultListMenu = true }
+                        )
+                        DropdownMenu(expanded = showDefaultListMenu, onDismissRequest = { showDefaultListMenu = false }) {
+                            lists.forEach { list ->
+                                DropdownMenuItem(
+                                    text = { Text(list.name) },
+                                    onClick = {
+                                        viewModel.setDefaultListId(list.id)
+                                        showDefaultListMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Default reminder time
+                    SettingsRow(
+                        label = "Default reminder time",
+                        value = TaskScheduleUtils.formatTime(defaultReminderHour, defaultReminderMinute),
+                        onClick = { showReminderTimePicker = true }
+                    )
                 }
             }
 
@@ -329,6 +394,19 @@ fun SettingsScreen(
             }
         }
     }
+
+    YataTimePickerLauncher(
+        show = showReminderTimePicker,
+        initialTime = TaskScheduleUtils.formatTime(defaultReminderHour, defaultReminderMinute),
+        onDismiss = { showReminderTimePicker = false },
+        onConfirm = { formatted ->
+            val parsed = TaskScheduleUtils.parseTime(formatted)
+            if (parsed != null) {
+                viewModel.setDefaultReminderTime(parsed.hour, parsed.minute)
+            }
+            showReminderTimePicker = false
+        }
+    )
 }
 
 @Composable

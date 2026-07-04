@@ -71,6 +71,9 @@ class MainViewModel @Inject constructor(
     val uiScale: StateFlow<Float> = userPreferences.uiScaleFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
 
+    val dynamicColorEnabled: StateFlow<Boolean> = userPreferences.dynamicColorEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
         viewModelScope.launch {
@@ -79,6 +82,97 @@ class MainViewModel @Inject constructor(
             repository.toggleTaskDone(id)
             if (!wasDone) {
                 onDoneCallback() // Trigger confetti
+            }
+        }
+    }
+
+    fun skipTaskOccurrence(id: String) {
+        viewModelScope.launch {
+            repository.skipTaskOccurrence(id)
+        }
+    }
+
+    fun bulkCompleteTasks(ids: List<String>) {
+        viewModelScope.launch {
+            ids.forEach { id ->
+                val task = tasks.value.find { it.id == id }
+                if (task != null && !task.done) {
+                    repository.toggleTaskDone(id)
+                }
+            }
+        }
+    }
+
+    fun bulkDeleteTasks(ids: List<String>) {
+        viewModelScope.launch {
+            ids.forEach { id ->
+                val task = tasks.value.find { it.id == id } ?: return@forEach
+                repository.deleteTask(task)
+            }
+        }
+    }
+
+    fun bulkAddTag(ids: List<String>, tagId: String) {
+        viewModelScope.launch {
+            ids.forEach { id ->
+                val task = tasks.value.find { it.id == id } ?: return@forEach
+                if (!task.tagIds.contains(tagId)) {
+                    repository.upsertTask(task.copy(tagIds = task.tagIds + tagId))
+                }
+            }
+        }
+    }
+
+    fun bulkSetProject(ids: List<String>, projectId: String?) {
+        viewModelScope.launch {
+            ids.forEach { id ->
+                val task = tasks.value.find { it.id == id } ?: return@forEach
+                repository.upsertTask(task.copy(projectId = projectId))
+            }
+        }
+    }
+
+    fun bulkSetList(ids: List<String>, listId: String?) {
+        viewModelScope.launch {
+            ids.forEach { id ->
+                val task = tasks.value.find { it.id == id } ?: return@forEach
+                repository.upsertTask(task.copy(listId = listId))
+            }
+        }
+    }
+
+    /**
+     * Duplicates every open, non-recurring task in a project's lists into next month
+     * (due date shifted +1 month, or no due date if the task had none). Recurring tasks
+     * already advance themselves on completion, so they're excluded here.
+     */
+    fun rolloverProjectTasks(projectId: String) {
+        viewModelScope.launch {
+            val openTasks = tasks.value.filter {
+                it.projectId == projectId && !it.done && it.recurrence == null
+            }
+            openTasks.forEach { task ->
+                val nextDue = task.due?.let { due ->
+                    try {
+                        LocalDate.parse(due).plusMonths(1).toString()
+                    } catch (e: Exception) {
+                        due
+                    }
+                }
+                repository.upsertTask(
+                    task.copy(id = "t_" + UUID.randomUUID().toString(), due = nextDue)
+                )
+            }
+        }
+    }
+
+    fun bulkAssignPerson(ids: List<String>, personId: String) {
+        viewModelScope.launch {
+            ids.forEach { id ->
+                val task = tasks.value.find { it.id == id } ?: return@forEach
+                if (!task.assigneeIds.contains(personId)) {
+                    repository.upsertTask(task.copy(assigneeIds = task.assigneeIds + personId))
+                }
             }
         }
     }
@@ -106,7 +200,7 @@ class MainViewModel @Inject constructor(
 
     fun addTask(
         title: String,
-        listId: String,
+        listId: String?,
         priority: String,
         assigneeIds: List<String>,
         tagIds: List<String>,
@@ -114,14 +208,17 @@ class MainViewModel @Inject constructor(
         notes: String? = null,
         due: String? = LocalDate.now().toString(),
         time: String? = null,
-        reminder: String? = null
+        reminder: String? = null,
+        section: String = "Afternoon",
+        projectId: String? = null
     ) {
         viewModelScope.launch {
             val newTask = Task(
                 id = "t_" + UUID.randomUUID().toString(),
                 title = title,
                 listId = listId,
-                section = "Afternoon", // Default bucket
+                projectId = projectId,
+                section = section,
                 due = due,
                 time = time,
                 reminder = reminder,
@@ -150,28 +247,19 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addProject(name: String, color: String, due: String? = null, commonTagIds: List<String> = emptyList()) {
+    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null) {
         viewModelScope.launch {
             val pid = "pr_" + UUID.randomUUID().toString()
-            val lid = "l_" + UUID.randomUUID().toString()
             val project = Project(
                 id = pid,
                 name = name,
                 color = color,
-                icon = "layers",
-                listIds = listOf(lid),
+                icon = icon,
                 due = due,
-                commonTagIds = commonTagIds
-            )
-            val defaultList = YataList(
-                id = lid,
-                name = "General",
-                color = color,
-                icon = "folder",
-                projectId = pid
+                commonTagIds = commonTagIds,
+                defaultReminder = defaultReminder
             )
             repository.upsertProject(project)
-            repository.upsertList(defaultList)
         }
     }
 
@@ -194,7 +282,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addPerson(name: String, color: String, groupId: String? = null) {
+    fun addPerson(name: String, color: String, groupId: String? = null, photoUri: String? = null) {
         viewModelScope.launch {
             val initials = name.split(" ")
                 .mapNotNull { it.firstOrNull()?.toString() }
@@ -208,7 +296,8 @@ class MainViewModel @Inject constructor(
                 initials = if (initials.isEmpty()) "P" else initials,
                 color = color,
                 isMe = false,
-                groupId = groupId
+                groupId = groupId,
+                photoUri = photoUri
             )
             repository.upsertPerson(person)
         }
@@ -260,13 +349,14 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addTag(name: String, color: String, groupId: String? = null) {
+    fun addTag(name: String, color: String, groupId: String? = null, hideCompletedByDefault: Boolean = false) {
         viewModelScope.launch {
             val tag = Tag(
                 id = "tag_" + UUID.randomUUID().toString(),
                 name = name.lowercase().trim(),
                 color = color,
-                groupId = groupId
+                groupId = groupId,
+                hideCompletedByDefault = hideCompletedByDefault
             )
             repository.upsertTag(tag)
         }
@@ -309,26 +399,15 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addList(name: String, color: String, icon: String, projectId: String? = null) {
+    fun addList(name: String, color: String, icon: String) {
         viewModelScope.launch {
-            val listId = "l_" + UUID.randomUUID().toString()
             val yataList = YataList(
-                id = listId,
+                id = "l_" + UUID.randomUUID().toString(),
                 name = name,
                 color = color,
-                icon = icon,
-                projectId = projectId
+                icon = icon
             )
             repository.upsertList(yataList)
-
-            // Update project list order
-            if (projectId != null) {
-                val project = projects.value.find { it.id == projectId }
-                if (project != null) {
-                    val updatedIds = project.listIds + listId
-                    repository.upsertProject(project.copy(listIds = updatedIds))
-                }
-            }
         }
     }
 
@@ -348,13 +427,6 @@ class MainViewModel @Inject constructor(
     fun deleteList(list: YataList) {
         viewModelScope.launch {
             repository.deleteList(list)
-            
-            // Remove list ID from project listIds
-            val project = projects.value.find { it.id == list.projectId }
-            if (project != null) {
-                val updatedIds = project.listIds.filter { it != list.id }
-                repository.upsertProject(project.copy(listIds = updatedIds))
-            }
         }
     }
 
@@ -397,6 +469,12 @@ class MainViewModel @Inject constructor(
     fun setUiScale(scale: Float) {
         viewModelScope.launch {
             userPreferences.setUiScale(scale)
+        }
+    }
+
+    fun setDynamicColorEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setDynamicColorEnabled(enabled)
         }
     }
 }

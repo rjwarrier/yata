@@ -9,8 +9,8 @@ data class ProjectEntity(
     val name: String,
     val color: String,
     val icon: String,
-    val listOrderIds: String, // comma-separated list of list IDs
     val dueDate: String? = null,
     val starred: Boolean = false,
-    val commonTagIds: String = "" // comma-separated tag IDs auto-applied (live) to every task in this project
+    val commonTagIds: String = "", // comma-separated tag IDs auto-applied (live) to every task in this project
+    val defaultReminder: String? = null
 )

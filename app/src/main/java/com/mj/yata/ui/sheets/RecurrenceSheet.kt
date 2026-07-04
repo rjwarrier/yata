@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataDatePickerDialog
 import com.mj.yata.ui.widgets.YataStepper
 import com.mj.yata.util.RecurrenceEvaluator
 import java.time.LocalDate
@@ -37,6 +38,7 @@ fun RecurrenceSheet(
     modifier: Modifier = Modifier
 ) {
     var enabled by remember { mutableStateOf(initialRecurrence != null) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
     var r by remember {
         mutableStateOf(
             initialRecurrence ?: Recurrence(
@@ -202,21 +204,41 @@ fun RecurrenceSheet(
 
             // Monthly day picker (Only for Monthly freq)
             if (r.freq == "monthly") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Day of month",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                    )
-                    YataStepper(
-                        value = r.bymonthday ?: 1,
-                        onChange = { r = r.copy(bymonthday = it) },
-                        min = 1,
-                        max = 31
-                    )
+                val isLastDay = r.bymonthday == -1
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Day of month",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        if (!isLastDay) {
+                            YataStepper(
+                                value = r.bymonthday?.takeIf { it > 0 } ?: 1,
+                                onChange = { r = r.copy(bymonthday = it) },
+                                min = 1,
+                                max = 31
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { r = r.copy(bymonthday = if (isLastDay) 1 else -1) }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Checkbox(checked = isLastDay, onCheckedChange = { r = r.copy(bymonthday = if (it) -1 else 1) })
+                        Text(
+                            text = "Last day of month",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
 
@@ -263,7 +285,8 @@ fun RecurrenceSheet(
                         text = date,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { showEndDatePicker = true }
                     )
                 }
             }
@@ -287,6 +310,18 @@ fun RecurrenceSheet(
                 Text("Save")
             }
         }
+    }
+
+    if (showEndDatePicker) {
+        val currentEndDate = (r.ends as? RecurrenceEnds.On)?.date
+        YataDatePickerDialog(
+            initialDate = currentEndDate,
+            onDismiss = { showEndDatePicker = false },
+            onConfirm = {
+                r = r.copy(ends = RecurrenceEnds.On(it))
+                showEndDatePicker = false
+            }
+        )
     }
 }
 

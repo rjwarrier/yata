@@ -9,6 +9,7 @@ interface YataRepository {
     fun getTaskById(id: String): Flow<Task?>
     suspend fun upsertTask(task: Task)
     suspend fun toggleTaskDone(id: String)
+    suspend fun skipTaskOccurrence(id: String)
     suspend fun deleteTask(task: Task)
 
     // Projects

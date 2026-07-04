@@ -65,6 +65,7 @@ fun PeopleTab(
     onAssignGroup: (personIds: List<String>, groupId: String) -> Unit,
     onCreateGroupAndAssign: (id: String, name: String, personIds: List<String>) -> Unit,
     onToggleStar: (String) -> Unit = {},
+    onDeleteGroup: (PersonGroup) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -166,12 +167,15 @@ fun PeopleTab(
                         GroupHeader(
                             title = group.name,
                             expanded = expanded,
-                            onToggle = { expandedGroups[group.id] = !expanded }
+                            onToggle = { expandedGroups[group.id] = !expanded },
+                            onDelete = { onDeleteGroup(group) }
                         )
                     }
                     if (expanded) {
                     items(groupPeople, key = { it.id }) { person ->
-                        val personTasks = tasks.filter { it.assigneeIds.contains(person.id) }
+                        val personTasks = remember(tasks, person.id) {
+                            tasks.filter { it.assigneeIds.contains(person.id) }
+                        }
                         val doneCount = personTasks.count { it.done }
                         PersonRow(
                             person = person,
@@ -321,11 +325,21 @@ fun PersonRow(
                 Spacer(modifier = Modifier.width(14.dp))
             }
 
-            PersonAvatar(
-                initials = person.initials,
-                accentKey = person.color,
-                size = 44.dp
-            )
+            val openTasks = totalTasks - doneTasks
+            BadgedBox(
+                badge = {
+                    if (openTasks > 0) {
+                        Badge { Text(if (openTasks > 99) "99+" else openTasks.toString()) }
+                    }
+                }
+            ) {
+                PersonAvatar(
+                    initials = person.initials,
+                    accentKey = person.color,
+                    photoUri = person.photoUri,
+                    size = 44.dp
+                )
+            }
 
             Spacer(modifier = Modifier.width(14.dp))
 
@@ -418,30 +432,65 @@ fun PersonRow(
 private fun GroupHeader(
     title: String,
     expanded: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 90f else 0f,
         animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
         label = "groupChevron"
     )
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Row(
-        modifier = Modifier.clickable { onToggle() },
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Icon(
-            imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
-            contentDescription = if (expanded) "Collapse group" else "Expand group",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .size(16.dp)
-                .rotate(rotation)
+        Row(
+            modifier = Modifier.clickable { onToggle() },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                contentDescription = if (expanded) "Collapse group" else "Expand group",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(16.dp)
+                    .rotate(rotation)
+            )
+        }
+        if (onDelete != null) {
+            IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Delete group",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+
+    if (showDeleteDialog && onDelete != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete \"$title\" group?") },
+            text = { Text("Members stay, they're just ungrouped.") },
+            confirmButton = {
+                TextButton(onClick = { showDeleteDialog = false; onDelete() }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+            }
         )
     }
 }

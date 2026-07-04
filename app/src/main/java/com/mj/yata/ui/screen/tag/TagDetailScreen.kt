@@ -61,11 +61,16 @@ fun TagDetailScreen(
         accents.getAccent(tag.color)
     }
 
-    val taggedTasks = remember(tasks, lists, projects, tag.id) {
-        tasks.filter { it.effectiveTagIds(lists, projects).contains(tag.id) }
+    val allTaggedTasks = remember(tasks, lists, projects, tag.id) {
+        tasks.filter { it.effectiveTagIds(projects).contains(tag.id) }
     }
-    val doneTasks = taggedTasks.count { it.done }
-    val openTasks = taggedTasks.size - doneTasks
+    val doneTasks = allTaggedTasks.count { it.done }
+    val openTasks = allTaggedTasks.size - doneTasks
+
+    var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
+    val taggedTasks = remember(allTaggedTasks, hideCompleted) {
+        if (hideCompleted) allTaggedTasks.filter { !it.done } else allTaggedTasks
+    }
 
     Scaffold(
         topBar = {
@@ -109,6 +114,9 @@ fun TagDetailScreen(
             )
         }
     ) { innerPadding ->
+        val listsById = remember(lists) { lists.associateBy { it.id } }
+        val peopleById = remember(people) { people.associateBy { it.id } }
+
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
@@ -148,7 +156,24 @@ fun TagDetailScreen(
                 }
             }
 
-            // 2. Tasks list
+            // 2. Hide-completed toggle
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Hide completed",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Switch(checked = hideCompleted, onCheckedChange = { hideCompleted = it })
+                }
+            }
+
+            // 3. Tasks list
             if (taggedTasks.isEmpty()) {
                 item {
                     Box(
@@ -166,9 +191,11 @@ fun TagDetailScreen(
                 }
             } else {
                 items(taggedTasks, key = { it.id }) { task ->
-                    val taskList = lists.find { it.id == task.listId }
-                    val taskAssignees = task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } }
-                    val taskTags = task.effectiveTags(lists, projects, tags)
+                    val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                    val taskAssignees = remember(task.assigneeIds, peopleById) {
+                        task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                    }
+                    val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
 
                     TaskRow(
                         task = task,
@@ -193,9 +220,10 @@ fun TagDetailScreen(
                 initialName = tag.name,
                 initialColor = tag.color,
                 initialGroupId = tag.groupId,
+                initialHideCompletedByDefault = tag.hideCompletedByDefault,
                 groups = tagGroups,
-                onSave = { newName, newColor, newGroupId ->
-                    viewModel.upsertTag(tag.copy(name = newName.lowercase().trim(), color = newColor, groupId = newGroupId))
+                onSave = { newName, newColor, newGroupId, newHideCompletedByDefault ->
+                    viewModel.upsertTag(tag.copy(name = newName.lowercase().trim(), color = newColor, groupId = newGroupId, hideCompletedByDefault = newHideCompletedByDefault))
                     isEditSheetOpen = false
                 },
                 onCreateGroup = { id, name, color ->

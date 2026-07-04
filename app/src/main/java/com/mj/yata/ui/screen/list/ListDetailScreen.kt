@@ -121,6 +121,8 @@ fun ListDetailScreen(
             }
         }
     ) { innerPadding ->
+        val peopleById = remember(people) { people.associateBy { it.id } }
+
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
@@ -145,7 +147,7 @@ fun ListDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Folder,
+                            imageVector = com.mj.yata.ui.widgets.iconVectorFor(list.icon),
                             contentDescription = null,
                             tint = listColor,
                             modifier = Modifier.size(32.dp)
@@ -178,8 +180,10 @@ fun ListDetailScreen(
                 }
             } else {
                 items(listTasks, key = { it.id }) { task ->
-                    val taskAssignees = task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } }
-                    val taskTags = task.effectiveTags(lists, projects, tags)
+                    val taskAssignees = remember(task.assigneeIds, peopleById) {
+                        task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                    }
+                    val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
 
                     TaskRow(
                         task = task,
@@ -206,8 +210,9 @@ fun ListDetailScreen(
                 projects = projects,
                 people = people,
                 tags = tags,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder)
+                initialListId = list.id,
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId)
                     isNewTaskSheetOpen = false
                 },
                 onCreateTag = { id, name, color ->
@@ -232,8 +237,9 @@ fun ListDetailScreen(
             ListEditorSheet(
                 initialName = list.name,
                 initialColor = list.color,
-                onSave = { newName, newColor ->
-                    viewModel.upsertList(list.copy(name = newName, color = newColor))
+                initialIcon = list.icon,
+                onSave = { newName, newColor, newIcon ->
+                    viewModel.upsertList(list.copy(name = newName, color = newColor, icon = newIcon))
                     isEditSheetOpen = false
                 },
                 onDismiss = { isEditSheetOpen = false }

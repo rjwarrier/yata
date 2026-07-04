@@ -22,10 +22,10 @@ data class Project(
     val name: String,
     val color: String, // accentA - accentH
     val icon: String,
-    val listIds: List<String>, // ordered list of list IDs
     val due: String? = null,
     val starred: Boolean = false,
-    val commonTagIds: List<String> = emptyList() // live-applied to every task in this project
+    val commonTagIds: List<String> = emptyList(), // live-applied to every task in this project
+    val defaultReminder: String? = null // pre-fills NewTaskSheet's reminder for tasks in this project
 )
 
 data class YataList(
@@ -33,7 +33,6 @@ data class YataList(
     val name: String,
     val color: String, // accentA - accentH
     val icon: String,
-    val projectId: String?, // null when the list isn't linked to any project
     val starred: Boolean = false
 )
 
@@ -42,7 +41,8 @@ data class Tag(
     val name: String,
     val color: String, // accentA - accentH or "error"
     val groupId: String? = null,
-    val starred: Boolean = false
+    val starred: Boolean = false,
+    val hideCompletedByDefault: Boolean = false
 )
 
 data class TagGroup(
@@ -61,7 +61,7 @@ data class Recurrence(
     val freq: String, // "daily" | "weekly" | "monthly" | "yearly"
     val interval: Int,
     val byday: List<String>? = null, // e.g. ["MO", "TU", ...]
-    val bymonthday: Int? = null,
+    val bymonthday: Int? = null, // 1..31, or -1 to mean "last day of month"
     val ends: RecurrenceEnds = RecurrenceEnds.Never
 )
 
@@ -74,7 +74,8 @@ sealed interface RecurrenceEnds {
 data class Task(
     val id: String,
     val title: String,
-    val listId: String,
+    val listId: String?,
+    val projectId: String?,
     val section: String, // "Morning" | "Afternoon"
     val due: String?, // "YYYY-MM-DD"
     val time: String?, // "2:00 PM"
@@ -94,19 +95,19 @@ data class Task(
  * (Project.commonTagIds). Derived, never persisted — a project's common tags always
  * reflect the project's current state without touching individual tasks.
  */
-fun Task.effectiveTagIds(lists: List<YataList>, projects: List<Project>): List<String> {
-    val project = lists.find { it.id == listId }?.let { l -> projects.find { it.id == l.projectId } }
+fun Task.effectiveTagIds(projects: List<Project>): List<String> {
+    val project = projects.find { it.id == projectId }
     val common = project?.commonTagIds ?: emptyList()
     return (tagIds + common).distinct()
 }
 
-fun Task.effectiveTags(lists: List<YataList>, projects: List<Project>, tags: List<Tag>): List<Tag> {
-    val ids = effectiveTagIds(lists, projects)
+fun Task.effectiveTags(projects: List<Project>, tags: List<Tag>): List<Tag> {
+    val ids = effectiveTagIds(projects)
     return ids.mapNotNull { id -> tags.find { it.id == id } }
 }
 
 /** Tag IDs inherited live from the task's project — not removable at the task level. */
-fun Task.inheritedTagIds(lists: List<YataList>, projects: List<Project>): List<String> {
-    val project = lists.find { it.id == listId }?.let { l -> projects.find { it.id == l.projectId } }
+fun Task.inheritedTagIds(projects: List<Project>): List<String> {
+    val project = projects.find { it.id == projectId }
     return project?.commonTagIds ?: emptyList()
 }

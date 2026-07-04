@@ -25,7 +25,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -85,8 +86,6 @@ dependencies {
 
     // Missing Dependencies
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-    implementation("androidx.glance:glance-appwidget:1.0.0")
-    implementation("androidx.glance:glance-material3:1.0.0")
 
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")

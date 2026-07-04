@@ -115,17 +115,21 @@ fun <G> GroupAssignSheet(
 fun ProjectEditorSheet(
     initialName: String = "",
     initialColor: String = "accentA",
+    initialIcon: String = "layers",
     initialDueDate: String? = null,
     initialCommonTagIds: List<String> = emptyList(),
+    initialDefaultReminder: String? = null,
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
-    onSave: (String, String, String?, List<String>) -> Unit,
+    onSave: (String, String, String, String?, List<String>, String?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf(initialName) }
     var selectedColor by remember { mutableStateOf(initialColor) }
+    var selectedIcon by remember { mutableStateOf(initialIcon) }
     var dueDate by remember { mutableStateOf<String?>(initialDueDate) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var defaultReminder by remember { mutableStateOf(initialDefaultReminder) }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
 
     Column(
@@ -164,6 +168,20 @@ fun ProjectEditorSheet(
             ColorPicker(
                 selectedColorKey = selectedColor,
                 onColorSelected = { selectedColor = it }
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Project icon",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            com.mj.yata.ui.widgets.IconPicker(
+                options = listOf("layers", "home", "star"),
+                selectedIconKey = selectedIcon,
+                accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
+                onIconSelected = { selectedIcon = it }
             )
         }
 
@@ -206,6 +224,28 @@ fun ProjectEditorSheet(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Clear due date"
                     )
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Default reminder",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Pre-fills the reminder on new tasks created in this project.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                com.mj.yata.ui.widgets.YataSelectChip("None", defaultReminder == null, { defaultReminder = null })
+                TaskScheduleUtils.reminderOptions.forEach { option ->
+                    com.mj.yata.ui.widgets.YataSelectChip(option, defaultReminder == option, { defaultReminder = option })
                 }
             }
         }
@@ -254,7 +294,7 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, dueDate, selectedTagIds.toList()) },
+                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder) },
                 enabled = name.isNotBlank()
             ) {
                 Text(buttonText)
@@ -348,8 +388,9 @@ fun PersonEditorSheet(
     initialName: String = "",
     initialColor: String = "accentA",
     initialGroupId: String? = null,
+    initialPhotoUri: String? = null,
     groups: List<com.mj.yata.domain.model.PersonGroup> = emptyList(),
-    onSave: (String, String, String?) -> Unit,
+    onSave: (String, String, String?, String?) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -357,9 +398,14 @@ fun PersonEditorSheet(
     var name by remember { mutableStateOf(initialName) }
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
+    var photoUri by remember { mutableStateOf(initialPhotoUri) }
     val isCreateMode = initialName.isEmpty()
     val bulkNames = remember(name, isCreateMode) { if (isCreateMode) parseBulkNames(name) else emptyList() }
     val isBulk = bulkNames.size > 1
+
+    val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) photoUri = uri.toString() }
 
     Column(
         modifier = modifier
@@ -390,6 +436,36 @@ fun PersonEditorSheet(
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
+
+        if (!isBulk) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                com.mj.yata.ui.widgets.PersonAvatar(
+                    initials = initialsFor(name.ifBlank { "?" }),
+                    accentKey = selectedColor,
+                    photoUri = photoUri,
+                    size = 56.dp
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = {
+                        photoPickerLauncher.launch(
+                            androidx.activity.result.PickVisualMediaRequest(
+                                androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    }) {
+                        Text(if (photoUri == null) "Add photo" else "Change photo")
+                    }
+                    if (photoUri != null) {
+                        TextButton(onClick = { photoUri = null }) {
+                            Text("Remove photo", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+        }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -430,9 +506,9 @@ fun PersonEditorSheet(
             Button(
                 onClick = {
                     if (isCreateMode) {
-                        bulkNames.forEach { onSave(it, selectedColor, selectedGroupId) }
+                        bulkNames.forEach { onSave(it, selectedColor, selectedGroupId, if (isBulk) null else photoUri) }
                     } else if (name.isNotBlank()) {
-                        onSave(name, selectedColor, selectedGroupId)
+                        onSave(name, selectedColor, selectedGroupId, photoUri)
                     }
                 },
                 enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()
@@ -448,8 +524,9 @@ fun TagEditorSheet(
     initialName: String = "",
     initialColor: String = "accentA",
     initialGroupId: String? = null,
+    initialHideCompletedByDefault: Boolean = false,
     groups: List<com.mj.yata.domain.model.TagGroup> = emptyList(),
-    onSave: (String, String, String?) -> Unit,
+    onSave: (String, String, String?, Boolean) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -457,6 +534,7 @@ fun TagEditorSheet(
     var name by remember { mutableStateOf(initialName) }
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
+    var hideCompletedByDefault by remember { mutableStateOf(initialHideCompletedByDefault) }
     val isCreateMode = initialName.isEmpty()
     val bulkNames = remember(name, isCreateMode) { if (isCreateMode) parseBulkNames(name) else emptyList() }
     val isBulk = bulkNames.size > 1
@@ -519,6 +597,27 @@ fun TagEditorSheet(
         )
 
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { hideCompletedByDefault = !hideCompletedByDefault },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Hide completed by default",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                )
+                Text(
+                    text = "This tag's detail screen opens with completed tasks hidden.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(checked = hideCompletedByDefault, onCheckedChange = { hideCompletedByDefault = it })
+        }
+
+        Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
@@ -530,9 +629,9 @@ fun TagEditorSheet(
             Button(
                 onClick = {
                     if (isCreateMode) {
-                        bulkNames.forEach { onSave(it, selectedColor, selectedGroupId) }
+                        bulkNames.forEach { onSave(it, selectedColor, selectedGroupId, hideCompletedByDefault) }
                     } else if (name.isNotBlank()) {
-                        onSave(name, selectedColor, selectedGroupId)
+                        onSave(name, selectedColor, selectedGroupId, hideCompletedByDefault)
                     }
                 },
                 enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()
@@ -547,12 +646,14 @@ fun TagEditorSheet(
 fun ListEditorSheet(
     initialName: String = "",
     initialColor: String = "accentA",
-    onSave: (String, String) -> Unit,
+    initialIcon: String = "folder",
+    onSave: (String, String, String) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf(initialName) }
     var selectedColor by remember { mutableStateOf(initialColor) }
+    var selectedIcon by remember { mutableStateOf(initialIcon) }
 
     Column(
         modifier = modifier
@@ -593,6 +694,20 @@ fun ListEditorSheet(
             )
         }
 
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Folder icon",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            com.mj.yata.ui.widgets.IconPicker(
+                options = listOf("folder", "star", "label"),
+                selectedIconKey = selectedIcon,
+                accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
+                onIconSelected = { selectedIcon = it }
+            )
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -603,7 +718,7 @@ fun ListEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor) },
+                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon) },
                 enabled = name.isNotBlank()
             ) {
                 Text(buttonText)

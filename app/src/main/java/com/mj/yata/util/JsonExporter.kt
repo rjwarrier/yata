@@ -26,9 +26,11 @@ class JsonExporter @Inject constructor(
             val lists = repository.getLists().first()
             val tags = repository.getTags().first()
             val tasks = repository.getTasks().first()
+            val tagGroups = repository.getTagGroups().first()
+            val personGroups = repository.getPersonGroups().first()
 
             val root = JSONObject()
-            root.put("version", 1)
+            root.put("version", 3)
 
             // People
             val peopleArr = JSONArray()
@@ -38,11 +40,24 @@ class JsonExporter @Inject constructor(
                 o.put("name", p.name)
                 o.put("initials", p.initials)
                 o.put("color", p.color)
-                o.put("photoUri", p.photoUri)
+                o.put("photoUri", p.photoUri ?: JSONObject.NULL)
                 o.put("isMe", p.isMe)
+                o.put("groupId", p.groupId ?: JSONObject.NULL)
+                o.put("starred", p.starred)
                 peopleArr.put(o)
             }
             root.put("people", peopleArr)
+
+            // Person groups
+            val personGroupsArr = JSONArray()
+            personGroups.forEach { g ->
+                val o = JSONObject()
+                o.put("id", g.id)
+                o.put("name", g.name)
+                o.put("color", g.color)
+                personGroupsArr.put(o)
+            }
+            root.put("personGroups", personGroupsArr)
 
             // Projects
             val projectsArr = JSONArray()
@@ -54,9 +69,10 @@ class JsonExporter @Inject constructor(
                 o.put("icon", pr.icon)
                 o.put("due", pr.due)
                 o.put("starred", pr.starred)
-                val listIdsArr = JSONArray()
-                pr.listIds.forEach { listIdsArr.put(it) }
-                o.put("listIds", listIdsArr)
+                o.put("defaultReminder", pr.defaultReminder ?: JSONObject.NULL)
+                val commonTagIdsArr = JSONArray()
+                pr.commonTagIds.forEach { commonTagIdsArr.put(it) }
+                o.put("commonTagIds", commonTagIdsArr)
                 projectsArr.put(o)
             }
             root.put("projects", projectsArr)
@@ -69,7 +85,6 @@ class JsonExporter @Inject constructor(
                 o.put("name", l.name)
                 o.put("color", l.color)
                 o.put("icon", l.icon)
-                o.put("projectId", l.projectId ?: JSONObject.NULL)
                 o.put("starred", l.starred)
                 listsArr.put(o)
             }
@@ -82,9 +97,23 @@ class JsonExporter @Inject constructor(
                 o.put("id", t.id)
                 o.put("name", t.name)
                 o.put("color", t.color)
+                o.put("groupId", t.groupId ?: JSONObject.NULL)
+                o.put("starred", t.starred)
+                o.put("hideCompletedByDefault", t.hideCompletedByDefault)
                 tagsArr.put(o)
             }
             root.put("tags", tagsArr)
+
+            // Tag groups
+            val tagGroupsArr = JSONArray()
+            tagGroups.forEach { g ->
+                val o = JSONObject()
+                o.put("id", g.id)
+                o.put("name", g.name)
+                o.put("color", g.color)
+                tagGroupsArr.put(o)
+            }
+            root.put("tagGroups", tagGroupsArr)
 
             // Tasks
             val tasksArr = JSONArray()
@@ -92,7 +121,8 @@ class JsonExporter @Inject constructor(
                 val o = JSONObject()
                 o.put("id", t.id)
                 o.put("title", t.title)
-                o.put("listId", t.listId)
+                o.put("listId", t.listId ?: JSONObject.NULL)
+                o.put("projectId", t.projectId ?: JSONObject.NULL)
                 o.put("section", t.section)
                 o.put("due", t.due)
                 o.put("time", t.time)
@@ -183,7 +213,18 @@ class JsonExporter @Inject constructor(
 
             val root = JSONObject(sb.toString())
 
-            // 1. Import People
+            // 1. Import Person groups (must exist before people reference them)
+            val personGroupsArr = root.optJSONArray("personGroups")
+            if (personGroupsArr != null) {
+                for (i in 0 until personGroupsArr.length()) {
+                    val o = personGroupsArr.getJSONObject(i)
+                    repository.upsertPersonGroup(
+                        PersonGroup(id = o.getString("id"), name = o.getString("name"), color = o.getString("color"))
+                    )
+                }
+            }
+
+            // 1b. Import People
             val peopleArr = root.optJSONArray("people")
             if (peopleArr != null) {
                 for (i in 0 until peopleArr.length()) {
@@ -195,7 +236,9 @@ class JsonExporter @Inject constructor(
                             initials = o.getString("initials"),
                             color = o.getString("color"),
                             photoUri = if (o.isNull("photoUri")) null else o.optString("photoUri"),
-                            isMe = o.optBoolean("isMe", false)
+                            isMe = o.optBoolean("isMe", false),
+                            groupId = if (o.isNull("groupId")) null else o.optString("groupId", null),
+                            starred = o.optBoolean("starred", false)
                         )
                     )
                 }
@@ -206,10 +249,12 @@ class JsonExporter @Inject constructor(
             if (projectsArr != null) {
                 for (i in 0 until projectsArr.length()) {
                     val o = projectsArr.getJSONObject(i)
-                    val listIdsArr = o.getJSONArray("listIds")
-                    val listIds = mutableListOf<String>()
-                    for (j in 0 until listIdsArr.length()) {
-                        listIds.add(listIdsArr.getString(j))
+                    val commonTagIdsArr = o.optJSONArray("commonTagIds")
+                    val commonTagIds = mutableListOf<String>()
+                    if (commonTagIdsArr != null) {
+                        for (j in 0 until commonTagIdsArr.length()) {
+                            commonTagIds.add(commonTagIdsArr.getString(j))
+                        }
                     }
                     repository.upsertProject(
                         Project(
@@ -217,9 +262,10 @@ class JsonExporter @Inject constructor(
                             name = o.getString("name"),
                             color = o.getString("color"),
                             icon = o.getString("icon"),
-                            listIds = listIds,
                             due = if (o.isNull("due")) null else o.optString("due"),
-                            starred = o.optBoolean("starred", false)
+                            starred = o.optBoolean("starred", false),
+                            commonTagIds = commonTagIds,
+                            defaultReminder = if (o.isNull("defaultReminder")) null else o.optString("defaultReminder", null)
                         )
                     )
                 }
@@ -236,14 +282,24 @@ class JsonExporter @Inject constructor(
                             name = o.getString("name"),
                             color = o.getString("color"),
                             icon = o.getString("icon"),
-                            projectId = if (o.isNull("projectId")) null else o.optString("projectId", null),
                             starred = o.optBoolean("starred", false)
                         )
                     )
                 }
             }
 
-            // 4. Import Tags
+            // 4. Import Tag groups (must exist before tags reference them)
+            val tagGroupsArr = root.optJSONArray("tagGroups")
+            if (tagGroupsArr != null) {
+                for (i in 0 until tagGroupsArr.length()) {
+                    val o = tagGroupsArr.getJSONObject(i)
+                    repository.upsertTagGroup(
+                        TagGroup(id = o.getString("id"), name = o.getString("name"), color = o.getString("color"))
+                    )
+                }
+            }
+
+            // 4b. Import Tags
             val tagsArr = root.optJSONArray("tags")
             if (tagsArr != null) {
                 for (i in 0 until tagsArr.length()) {
@@ -252,7 +308,10 @@ class JsonExporter @Inject constructor(
                         Tag(
                             id = o.getString("id"),
                             name = o.getString("name"),
-                            color = o.getString("color")
+                            color = o.getString("color"),
+                            groupId = if (o.isNull("groupId")) null else o.optString("groupId", null),
+                            starred = o.optBoolean("starred", false),
+                            hideCompletedByDefault = o.optBoolean("hideCompletedByDefault", false)
                         )
                     )
                 }
@@ -321,7 +380,8 @@ class JsonExporter @Inject constructor(
                         Task(
                             id = o.getString("id"),
                             title = o.getString("title"),
-                            listId = o.getString("listId"),
+                            listId = if (o.isNull("listId")) null else o.optString("listId", null),
+                            projectId = if (o.isNull("projectId")) null else o.optString("projectId", null),
                             section = o.getString("section"),
                             due = if (o.isNull("due")) null else o.optString("due"),
                             time = if (o.isNull("time")) null else o.optString("time"),

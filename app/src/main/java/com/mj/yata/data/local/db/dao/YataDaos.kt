@@ -60,9 +60,6 @@ interface ListDao {
     @Query("SELECT * FROM lists WHERE id = :id")
     fun getByIdDirect(id: String): ListEntity?
 
-    @Query("SELECT * FROM lists WHERE projectId = :projectId")
-    fun getByProjectId(projectId: String): Flow<List<ListEntity>>
-
     @Upsert
     suspend fun insert(list: ListEntity)
 
@@ -170,9 +167,6 @@ interface TaskDao {
     """)
     fun getPeopleForTaskDirect(taskId: String): List<PersonEntity>
 
-    @Query("SELECT * FROM task_person_cross_ref")
-    fun getAllTaskPersonCrossRefs(): Flow<List<TaskPersonCrossRef>>
-
     // Many-to-Many Tags
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTaskTagCrossRefs(crossRefs: List<TaskTagCrossRef>)
@@ -193,7 +187,4 @@ interface TaskDao {
         WHERE r.taskId = :taskId
     """)
     fun getTagsForTaskDirect(taskId: String): List<TagEntity>
-
-    @Query("SELECT * FROM task_tag_cross_ref")
-    fun getAllTaskTagCrossRefs(): Flow<List<TaskTagCrossRef>>
 }

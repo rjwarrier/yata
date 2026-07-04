@@ -34,6 +34,7 @@ import com.mj.yata.ui.widgets.*
 import com.mj.yata.ui.sheets.RecurrenceSheet
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 sealed interface DetailSheetType {
@@ -42,6 +43,7 @@ sealed interface DetailSheetType {
     object ReminderPicker : DetailSheetType
     object RecurrenceBuilder : DetailSheetType
     object ListPicker : DetailSheetType
+    object ProjectPicker : DetailSheetType
     object AssigneePicker : DetailSheetType
     object TagPicker : DetailSheetType
 }
@@ -78,17 +80,23 @@ fun TaskDetailScreen(
         return
     }
 
-    val taskList = lists.find { it.id == task.listId }
-    val project = taskList?.let { l -> projects.find { it.id == l.projectId } }
-    val taskAssignees = task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } }
+    val taskList = remember(task, lists) { lists.find { it.id == task.listId } }
+    val project = remember(task, projects) { projects.find { it.id == task.projectId } }
+    val taskAssignees = remember(task, people) { task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } } }
     val ownTagIds = task.tagIds
-    val inheritedTagIds = task.inheritedTagIds(lists, projects)
-    val ownTags = ownTagIds.mapNotNull { tid -> tags.find { it.id == tid } }
-    val inheritedTags = inheritedTagIds.filter { it !in ownTagIds }.mapNotNull { tid -> tags.find { it.id == tid } }
+    val inheritedTagIds = remember(task, projects) { task.inheritedTagIds(projects) }
+    val ownTags = remember(ownTagIds, tags) { ownTagIds.mapNotNull { tid -> tags.find { it.id == tid } } }
+    val inheritedTags = remember(inheritedTagIds, ownTagIds, tags) {
+        inheritedTagIds.filter { it !in ownTagIds }.mapNotNull { tid -> tags.find { it.id == tid } }
+    }
 
     val listColor = taskList?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {},
@@ -98,6 +106,12 @@ fun TaskDetailScreen(
                     }
                 },
                 actions = {
+                    // Skip this occurrence (recurring tasks only) — advances the due date without completing it
+                    if (task.recurrence != null && !task.done) {
+                        IconButton(onClick = { viewModel.skipTaskOccurrence(task.id) }) {
+                            Icon(Icons.Default.SkipNext, contentDescription = "Skip this occurrence")
+                        }
+                    }
                     // Flag toggle
                     IconButton(onClick = { viewModel.toggleTaskFlag(task.id) }) {
                         Icon(
@@ -106,10 +120,21 @@ fun TaskDetailScreen(
                             tint = if (task.flag) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    // Delete/Archive
+                    // Delete/Archive — deletion is deferred until the Undo snackbar times out,
+                    // so the coroutine must outlive this composable's own scope (it navigates
+                    // back only once the delete actually happens).
                     IconButton(onClick = {
-                        viewModel.deleteTask(task)
-                        onNavigateBack()
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Task deleted",
+                                actionLabel = "Undo",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.Dismissed) {
+                                viewModel.deleteTask(task)
+                                onNavigateBack()
+                            }
+                        }
                     }) {
                         Icon(Icons.Default.Delete, contentDescription = "Delete task")
                     }
@@ -188,15 +213,17 @@ fun TaskDetailScreen(
                             onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
                         )
 
-                        val listVal = if (taskList != null && project != null) {
-                            "${project.name} / ${taskList.name}"
-                        } else {
-                            "Inbox"
-                        }
+                        MetaRowItem(
+                            icon = Icons.Default.Layers,
+                            label = "Project",
+                            value = project?.name ?: "None",
+                            onClick = { activeSheet = DetailSheetType.ProjectPicker }
+                        )
+
                         MetaRowItem(
                             icon = Icons.Default.Folder,
                             label = "List",
-                            value = listVal,
+                            value = taskList?.name ?: "None",
                             swatchColor = listColor,
                             onClick = { activeSheet = DetailSheetType.ListPicker }
                         )
@@ -208,6 +235,16 @@ fun TaskDetailScreen(
                             value = task.priority.uppercase(),
                             rightContent = { PriorityBars(priority = task.priority) },
                             onClick = { viewModel.cycleTaskPriority(task.id) }
+                        )
+
+                        // Section (Morning / Afternoon bucket on the Today tab)
+                        MetaRowItem(
+                            icon = Icons.Default.WbSunny,
+                            label = "Section",
+                            value = task.section,
+                            onClick = {
+                                viewModel.upsertTask(task.copy(section = if (task.section == "Morning") "Afternoon" else "Morning"))
+                            }
                         )
                     }
                 }
@@ -545,35 +582,62 @@ fun TaskDetailScreen(
                 )
                 DetailSheetType.ListPicker -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Select folder list", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        projects.forEach { pr ->
-                            val prLists = lists.filter { it.projectId == pr.id }
-                            if (prLists.isNotEmpty()) {
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(
-                                        text = pr.name.uppercase(),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    FlowRow(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        prLists.forEach { list ->
-                                            val color = accents.getAccent(list.color)
-                                            YataSelectChip(
-                                                label = list.name,
-                                                selected = list.id == task.listId,
-                                                onClick = {
-                                                    viewModel.upsertTask(task.copy(listId = list.id))
-                                                    activeSheet = DetailSheetType.None
-                                                },
-                                                tint = color,
-                                                dotColor = color
-                                            )
-                                        }
-                                    }
+                        Text("Select list", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            YataSelectChip(
+                                label = "None",
+                                selected = task.listId == null,
+                                onClick = {
+                                    viewModel.upsertTask(task.copy(listId = null))
+                                    activeSheet = DetailSheetType.None
                                 }
+                            )
+                            lists.forEach { list ->
+                                val color = accents.getAccent(list.color)
+                                YataSelectChip(
+                                    label = list.name,
+                                    selected = list.id == task.listId,
+                                    onClick = {
+                                        viewModel.upsertTask(task.copy(listId = list.id))
+                                        activeSheet = DetailSheetType.None
+                                    },
+                                    tint = color,
+                                    dotColor = color
+                                )
+                            }
+                        }
+                    }
+                }
+                DetailSheetType.ProjectPicker -> {
+                    Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text("Select project", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            YataSelectChip(
+                                label = "None",
+                                selected = task.projectId == null,
+                                onClick = {
+                                    viewModel.upsertTask(task.copy(projectId = null))
+                                    activeSheet = DetailSheetType.None
+                                }
+                            )
+                            projects.forEach { pr ->
+                                val color = accents.getAccent(pr.color)
+                                YataSelectChip(
+                                    label = pr.name,
+                                    selected = pr.id == task.projectId,
+                                    onClick = {
+                                        viewModel.upsertTask(task.copy(projectId = pr.id))
+                                        activeSheet = DetailSheetType.None
+                                    },
+                                    tint = color,
+                                    dotColor = color
+                                )
                             }
                         }
                     }

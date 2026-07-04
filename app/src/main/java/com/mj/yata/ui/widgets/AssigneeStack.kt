@@ -1,5 +1,7 @@
 package com.mj.yata.ui.widgets
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -9,9 +11,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -26,11 +34,27 @@ fun PersonAvatar(
     modifier: Modifier = Modifier,
     size: Dp = 32.dp,
     drawRing: Boolean = false,
-    ringColor: Color = MaterialTheme.colorScheme.surface
+    ringColor: Color = MaterialTheme.colorScheme.surface,
+    photoUri: String? = null
 ) {
     val accents = LocalYataAccents.current
     val bgColor = accents.getAccent(accentKey)
     val textColor = accents.onAccent
+
+    val context = LocalContext.current
+    val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photoUri) {
+        value = if (photoUri == null) {
+            null
+        } else {
+            try {
+                context.contentResolver.openInputStream(android.net.Uri.parse(photoUri))?.use {
+                    BitmapFactory.decodeStream(it)
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
 
     Box(
         modifier = modifier
@@ -38,22 +62,33 @@ fun PersonAvatar(
             .then(
                 if (drawRing) Modifier.border(2.dp, ringColor, CircleShape) else Modifier
             )
+            .clip(CircleShape)
             .background(bgColor, CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = initials.uppercase(),
-            color = textColor,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = when {
-                    size >= 64.dp -> 20.sp
-                    size >= 40.dp -> 14.sp
-                    size >= 30.dp -> 11.sp
-                    else -> 9.sp
-                }
+        val loadedBitmap = bitmap
+        if (loadedBitmap != null) {
+            Image(
+                bitmap = loadedBitmap.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(size)
             )
-        )
+        } else {
+            Text(
+                text = initials.uppercase(),
+                color = textColor,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = when {
+                        size >= 64.dp -> 20.sp
+                        size >= 40.dp -> 14.sp
+                        size >= 30.dp -> 11.sp
+                        else -> 9.sp
+                    }
+                )
+            )
+        }
     }
 }
 
@@ -75,6 +110,7 @@ fun AssigneeStack(
                 size = avatarSize,
                 drawRing = index > 0,
                 ringColor = MaterialTheme.colorScheme.surface,
+                photoUri = person.photoUri,
                 modifier = Modifier.padding(start = (index * (avatarSize.value * 0.68f)).dp)
             )
         }

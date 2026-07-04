@@ -74,8 +74,18 @@ object NotificationHelper {
             )
             .addAction(
                 android.R.drawable.ic_lock_idle_alarm,
+                "Snooze 15m",
+                actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_15M, notifId + 2000)
+            )
+            .addAction(
+                android.R.drawable.ic_lock_idle_alarm,
                 "Snooze 1hr",
-                actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_TASK, notifId + 2000)
+                actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_TASK, notifId + 3000)
+            )
+            .addAction(
+                android.R.drawable.ic_lock_idle_alarm,
+                "Snooze tomorrow",
+                actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_TOMORROW, notifId + 4000)
             )
             .build()
     }

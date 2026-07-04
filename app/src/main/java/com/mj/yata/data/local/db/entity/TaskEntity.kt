@@ -13,14 +13,21 @@ import androidx.room.PrimaryKey
             parentColumns = ["id"],
             childColumns = ["listId"],
             onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = ProjectEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("listId")]
+    indices = [Index("listId"), Index("projectId")]
 )
 data class TaskEntity(
     @PrimaryKey val id: String,
     val title: String,
-    val listId: String,
+    val listId: String?,
+    val projectId: String?,
     val section: String, // "Morning" | "Afternoon"
     val dueDate: String?, // "YYYY-MM-DD"
     val dueTime: String?, // "2:00 PM"

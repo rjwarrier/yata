@@ -126,30 +126,34 @@ fun NewTaskSheet(
     tags: List<Tag>,
     onAddTask: (
         title: String,
-        listId: String,
+        listId: String?,
         priority: String,
         assigneeIds: List<String>,
         tagIds: List<String>,
         recurrence: Recurrence?,
         due: String?,
         time: String?,
-        reminder: String?
+        reminder: String?,
+        section: String,
+        projectId: String?
     ) -> Unit,
     onCreateTag: (id: String, name: String, color: String) -> Unit,
     onCreatePerson: (id: String, name: String, color: String) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    initialAssigneeId: String? = null
+    initialAssigneeId: String? = null,
+    initialProjectId: String? = null,
+    initialListId: String? = null
 ) {
     var title by remember { mutableStateOf(TextFieldValue("")) }
-    var selectedListId by remember { mutableStateOf(lists.firstOrNull()?.id ?: "") }
+    var selectedListId by remember { mutableStateOf(initialListId) }
+    var selectedProjectId by remember { mutableStateOf(initialProjectId) }
     var selectedPriority by remember { mutableStateOf("none") }
+    var selectedSection by remember { mutableStateOf("Afternoon") }
 
-    // Initial due date based on selected list's project due date
-    val initialDueDate = remember(lists, projects) {
-        val initialListId = lists.firstOrNull()?.id ?: ""
-        val listObj = lists.find { it.id == initialListId }
-        val projectObj = listObj?.let { l -> projects.find { it.id == l.projectId } }
+    // Initial due date based on the pre-selected project's due date, if any
+    val initialDueDate = remember(projects, initialProjectId) {
+        val projectObj = projects.find { it.id == initialProjectId }
         projectObj?.due ?: LocalDate.now().toString()
     }
     var selectedDueDate by remember { mutableStateOf<String?>(initialDueDate) }
@@ -175,18 +179,22 @@ fun NewTaskSheet(
     val list = lists.find { it.id == selectedListId }
     val listName = list?.name ?: "List"
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
-    val canCreateTask = title.text.isNotBlank() && selectedListId.isNotBlank()
+    val project = projects.find { it.id == selectedProjectId }
+    val projectColor = project?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
+    val canCreateTask = title.text.isNotBlank()
 
     val mention = remember(title) { detectMentionToken(title.text, title.selection.end) }
 
-    // Automatically sync due date to project's due date when changing list selection
+    // Automatically sync due date/reminder to the selected project's defaults when it changes
     var lastLoadedProjectId by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(selectedListId, lists, projects) {
-        val listObj = lists.find { it.id == selectedListId }
-        val projectObj = listObj?.let { l -> projects.find { it.id == l.projectId } }
+    LaunchedEffect(selectedProjectId, projects) {
+        val projectObj = projects.find { it.id == selectedProjectId }
         if (projectObj != null && projectObj.id != lastLoadedProjectId) {
             lastLoadedProjectId = projectObj.id
             selectedDueDate = projectObj.due ?: LocalDate.now().toString()
+            if (selectedReminder == null) {
+                selectedReminder = projectObj.defaultReminder
+            }
         }
     }
 
@@ -210,7 +218,9 @@ fun NewTaskSheet(
                 selectedRecurrence,
                 selectedDueDate,
                 selectedTime,
-                selectedReminder
+                selectedReminder,
+                selectedSection,
+                selectedProjectId
             )
         }
     }
@@ -310,10 +320,6 @@ fun NewTaskSheet(
                 )
             }
 
-            if (lists.isEmpty()) {
-                PanelHint("Create a project first. Each project adds a list where new tasks can live.")
-            }
-
             // Attribute chip row
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -328,11 +334,19 @@ fun NewTaskSheet(
                     showCheck = false
                 )
                 YataSelectChip(
+                    label = project?.name ?: "Project",
+                    selected = project != null,
+                    onClick = { activePanel = if (activePanel == "Project") null else "Project" },
+                    tint = projectColor,
+                    dotColor = if (project != null) projectColor else null,
+                    showCheck = false
+                )
+                YataSelectChip(
                     label = listName,
-                    selected = true,
+                    selected = list != null,
                     onClick = { activePanel = if (activePanel == "List") null else "List" },
                     tint = listColor,
-                    dotColor = listColor,
+                    dotColor = if (list != null) listColor else null,
                     showCheck = false
                 )
                 YataSelectChip(
@@ -355,6 +369,13 @@ fun NewTaskSheet(
                     onClick = { activePanel = if (activePanel == "Repeat") null else "Repeat" },
                     tint = MaterialTheme.colorScheme.tertiary,
                     leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
+                    showCheck = false
+                )
+                YataSelectChip(
+                    label = selectedSection,
+                    selected = true,
+                    onClick = { activePanel = if (activePanel == "Section") null else "Section" },
+                    tint = MaterialTheme.colorScheme.secondary,
                     showCheck = false
                 )
             }
@@ -428,8 +449,13 @@ fun NewTaskSheet(
                             selectedReminder = selectedReminder,
                             onPick = { selectedReminder = it }
                         )
-                        "List" -> ListPanel(
+                        "Project" -> ProjectPanel(
                             projects = projects,
+                            selectedProjectId = selectedProjectId,
+                            accents = accents,
+                            onSelect = { selectedProjectId = it }
+                        )
+                        "List" -> ListPanel(
                             lists = lists,
                             selectedListId = selectedListId,
                             accents = accents,
@@ -441,6 +467,14 @@ fun NewTaskSheet(
                                 selectedItem = selectedPriority,
                                 onItemSelected = { selectedPriority = it },
                                 labelProvider = { it.uppercase() }
+                            )
+                        }
+                        "Section" -> Column {
+                            SegmentedControl(
+                                items = listOf("Morning", "Afternoon"),
+                                selectedItem = selectedSection,
+                                onItemSelected = { selectedSection = it },
+                                labelProvider = { it }
                             )
                         }
                         "People" -> PeoplePanel(
@@ -496,8 +530,9 @@ fun NewTaskSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val repeatText = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) }
+            val contextText = listOfNotNull(project?.name, list?.name).joinToString(" · ").ifEmpty { "No project or list" }
             Text(
-                text = listName + (repeatText?.let { " · $it" } ?: ""),
+                text = contextText + (repeatText?.let { " · $it" } ?: ""),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -773,38 +808,66 @@ private fun ReminderPanel(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ListPanel(
-    projects: List<Project>,
     lists: List<YataList>,
-    selectedListId: String,
+    selectedListId: String?,
     accents: com.mj.yata.ui.theme.YataAccents,
-    onSelect: (String) -> Unit
+    onSelect: (String?) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        projects.forEach { pr ->
-            val prLists = lists.filter { it.projectId == pr.id }
-            if (prLists.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = pr.name.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        prLists.forEach { l ->
-                            val color = accents.getAccent(l.color)
-                            YataSelectChip(
-                                label = l.name,
-                                selected = l.id == selectedListId,
-                                onClick = { onSelect(l.id) },
-                                tint = color,
-                                dotColor = color
-                            )
-                        }
-                    }
-                }
+    if (lists.isEmpty()) {
+        PanelHint("No lists yet — create one from the drawer.")
+    } else {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            YataSelectChip(
+                label = "None",
+                selected = selectedListId == null,
+                onClick = { onSelect(null) }
+            )
+            lists.forEach { l ->
+                val color = accents.getAccent(l.color)
+                YataSelectChip(
+                    label = l.name,
+                    selected = l.id == selectedListId,
+                    onClick = { onSelect(l.id) },
+                    tint = color,
+                    dotColor = color
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ProjectPanel(
+    projects: List<Project>,
+    selectedProjectId: String?,
+    accents: com.mj.yata.ui.theme.YataAccents,
+    onSelect: (String?) -> Unit
+) {
+    if (projects.isEmpty()) {
+        PanelHint("No projects yet — create one from the Projects tab.")
+    } else {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            YataSelectChip(
+                label = "None",
+                selected = selectedProjectId == null,
+                onClick = { onSelect(null) }
+            )
+            projects.forEach { pr ->
+                val color = accents.getAccent(pr.color)
+                YataSelectChip(
+                    label = pr.name,
+                    selected = pr.id == selectedProjectId,
+                    onClick = { onSelect(pr.id) },
+                    tint = color,
+                    dotColor = color
+                )
             }
         }
     }

@@ -112,27 +112,27 @@ fun ProjectEntity.toDomain() = Project(
     name = name,
     color = color,
     icon = icon,
-    listIds = if (listOrderIds.isEmpty()) emptyList() else listOrderIds.split(","),
     due = dueDate,
     starred = starred,
-    commonTagIds = if (commonTagIds.isEmpty()) emptyList() else commonTagIds.split(",")
+    commonTagIds = if (commonTagIds.isEmpty()) emptyList() else commonTagIds.split(","),
+    defaultReminder = defaultReminder
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
     name = name,
     color = color,
     icon = icon,
-    listOrderIds = listIds.joinToString(","),
     dueDate = due,
     starred = starred,
-    commonTagIds = commonTagIds.joinToString(",")
+    commonTagIds = commonTagIds.joinToString(","),
+    defaultReminder = defaultReminder
 )
 
-fun ListEntity.toDomain() = YataList(id, name, color, icon, projectId, starred)
-fun YataList.toEntity() = ListEntity(id, name, color, icon, projectId, starred)
+fun ListEntity.toDomain() = YataList(id, name, color, icon, starred)
+fun YataList.toEntity() = ListEntity(id, name, color, icon, starred)
 
-fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred)
-fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred)
+fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault)
+fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault)
 
 fun TagGroupEntity.toDomain() = TagGroup(id, name, color)
 fun TagGroup.toEntity() = TagGroupEntity(id, name, color)
@@ -141,6 +141,7 @@ fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>) = Task(
     id = id,
     title = title,
     listId = listId,
+    projectId = projectId,
     section = section,
     due = dueDate,
     time = dueTime,
@@ -159,6 +160,7 @@ fun Task.toEntity() = TaskEntity(
     id = id,
     title = title,
     listId = listId,
+    projectId = projectId,
     section = section,
     dueDate = due,
     dueTime = time,

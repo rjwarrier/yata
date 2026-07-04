@@ -2,9 +2,13 @@ package com.mj.yata.ui.widgets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,6 +27,7 @@ import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.LocalYataAccents
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TaskRow(
     task: Task,
@@ -32,7 +37,10 @@ fun TaskRow(
     onToggleDone: () -> Unit,
     onTaskClick: () -> Unit,
     modifier: Modifier = Modifier,
-    showList: Boolean = true
+    showList: Boolean = true,
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
+    onLongClick: () -> Unit = {}
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
@@ -40,17 +48,31 @@ fun TaskRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onTaskClick() }
+            .combinedClickable(onClick = onTaskClick, onLongClick = onLongClick)
             .padding(horizontal = 20.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left round checkbox
-        SpringyCheck(
-            checked = task.done,
-            onCheckedChange = { onToggleDone() },
-            color = listColor,
-            size = 24.dp
-        )
+        if (selectionMode) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (selected) {
+                    Icon(Icons.Default.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
+                }
+            }
+        } else {
+            // Left round checkbox
+            SpringyCheck(
+                checked = task.done,
+                onCheckedChange = { onToggleDone() },
+                color = listColor,
+                size = 24.dp
+            )
+        }
 
         Spacer(modifier = Modifier.width(14.dp))
 

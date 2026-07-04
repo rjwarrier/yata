@@ -114,6 +114,45 @@ class YataRepositoryImpl @Inject constructor(
         syncReminder(updatedTask)
     }
 
+    /** Advances a recurring task to its next occurrence without marking the skipped one done. */
+    override suspend fun skipTaskOccurrence(id: String) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val taskEntity = db.taskDao().getByIdDirect(id) ?: return@withContext
+        val recurrence = deserializeRecurrence(taskEntity.recurrenceJson)
+        if (recurrence == null || taskEntity.dueDate == null) return@withContext
+
+        val nextDate = RecurrenceEvaluator.calculateNextOccurrence(recurrence, taskEntity.dueDate) ?: return@withContext
+
+        val assigneeIds = db.taskDao().getPeopleForTaskDirect(id).map { it.id }
+        val tagIds = db.taskDao().getTagsForTaskDirect(id).map { it.id }
+
+        // Keep a record of the skipped instance (not done, one-off).
+        val historicalTaskId = UUID.randomUUID().toString()
+        val skippedHistoryTask = taskEntity.copy(
+            id = historicalTaskId,
+            done = false,
+            recurrenceJson = null
+        )
+        db.taskDao().insert(skippedHistoryTask)
+        db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
+        db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
+
+        val updatedRecurrence = when (val ends = recurrence.ends) {
+            is RecurrenceEnds.After -> {
+                val newCount = ends.count - 1
+                if (newCount <= 0) null else recurrence.copy(ends = RecurrenceEnds.After(newCount))
+            }
+            else -> recurrence
+        }
+
+        val updatedTask = taskEntity.copy(
+            done = false,
+            dueDate = nextDate,
+            recurrenceJson = serializeRecurrence(updatedRecurrence)
+        )
+        db.taskDao().insert(updatedTask)
+        syncReminder(updatedTask)
+    }
+
     override suspend fun deleteTask(task: Task) {
         reminderScheduler.cancelReminder(task.toEntity())
         db.taskDao().delete(task.toEntity())
@@ -241,7 +280,7 @@ class YataRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun syncReminder(task: TaskEntity) {
+    private suspend fun syncReminder(task: TaskEntity) {
         if (task.done || task.dueDate == null || task.reminder.isNullOrBlank()) {
             reminderScheduler.cancelReminder(task)
         } else {

@@ -133,6 +133,12 @@ fun MainScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Starred projects, folders, tags & people (computed once per data change, used below)
+                    val starredProjects = remember(projects) { projects.filter { it.starred } }
+                    val starredLists = remember(lists) { lists.filter { it.starred } }
+                    val starredTags = remember(tags) { tags.filter { it.starred } }
+                    val starredPeople = remember(people) { people.filter { it.starred } }
+
                     // Navigation Links
                     LazyColumn(
                         modifier = Modifier.weight(1f),
@@ -170,10 +176,6 @@ fun MainScreen(
                         }
 
                         // Starred projects, folders, tags & people section
-                        val starredProjects = projects.filter { it.starred }
-                        val starredLists = lists.filter { it.starred }
-                        val starredTags = tags.filter { it.starred }
-                        val starredPeople = people.filter { it.starred }
                         if (starredProjects.isNotEmpty() || starredLists.isNotEmpty() || starredTags.isNotEmpty() || starredPeople.isNotEmpty()) {
                             item {
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -231,8 +233,10 @@ fun MainScreen(
                                 )
                                 IconButton(
                                     onClick = {
-                                        isNewListSheetOpen = true
-                                        scope.launch { drawerState.close() }
+                                        scope.launch {
+                                            drawerState.close()
+                                            isNewListSheetOpen = true
+                                        }
                                     },
                                     modifier = Modifier.size(28.dp)
                                 ) {
@@ -268,7 +272,11 @@ fun MainScreen(
     ) {
         Scaffold(
             bottomBar = {
-                CustomBottomNav(selectedTab = selectedTab) {
+                val todayStr = remember { java.time.LocalDate.now().toString() }
+                val todayRemainingCount = remember(tasks, todayStr) {
+                    tasks.count { it.due != null && it.due <= todayStr && !it.done }
+                }
+                CustomBottomNav(selectedTab = selectedTab, todayBadgeCount = todayRemainingCount) {
                     selectedTab = it
                 }
             },
@@ -350,7 +358,12 @@ fun MainScreen(
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
-                            onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } }
+                            onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
+                            onBulkComplete = { viewModel.bulkCompleteTasks(it) },
+                            onBulkDelete = { viewModel.bulkDeleteTasks(it) },
+                            onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
+                            onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
+                            onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) }
                         )
                         1 -> ProjectsTab(
                             projects = projects,
@@ -380,7 +393,8 @@ fun MainScreen(
                                 viewModel.upsertPersonGroup(PersonGroup(id = id, name = name, color = "accentC"))
                                 viewModel.setPeopleGroup(personIds, id)
                             },
-                            onToggleStar = { viewModel.togglePersonStarred(it) }
+                            onToggleStar = { viewModel.togglePersonStarred(it) },
+                            onDeleteGroup = { viewModel.deletePersonGroup(it) }
                         )
                         3 -> TagsTab(
                             tags = tags,
@@ -394,7 +408,8 @@ fun MainScreen(
                             onProfileClick = onNavigateToSettings,
                             onTagClick = onNavigateToTagDetail,
                             onNewTagClick = { activeSheet = MainSheetType.NewTag },
-                            onToggleStar = { viewModel.toggleTagStarred(it) }
+                            onToggleStar = { viewModel.toggleTagStarred(it) },
+                            onDeleteGroup = { viewModel.deleteTagGroup(it) }
                         )
                         4 -> UpcomingTab(
                             tasks = tasks,
@@ -407,7 +422,12 @@ fun MainScreen(
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
-                            onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } }
+                            onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
+                            onBulkComplete = { viewModel.bulkCompleteTasks(it) },
+                            onBulkDelete = { viewModel.bulkDeleteTasks(it) },
+                            onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
+                            onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
+                            onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) }
                         )
                     }
                 }
@@ -428,8 +448,8 @@ fun MainScreen(
                     projects = projects,
                     people = people,
                     tags = tags,
-                    onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder ->
-                        viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder)
+                    onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId ->
+                        viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId)
                         activeSheet = MainSheetType.None
                     },
                     onCreateTag = { id, name, color ->
@@ -453,16 +473,16 @@ fun MainScreen(
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
                         tags = tags,
-                        onSave = { name, color, due, commonTagIds ->
-                            viewModel.addProject(name, color, due, commonTagIds)
+                        onSave = { name, color, icon, due, commonTagIds, defaultReminder ->
+                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder)
                             activeSheet = MainSheetType.None
                         },
                         onDismiss = { activeSheet = MainSheetType.None }
                     )
                     MainSheetType.NewPerson -> PersonEditorSheet(
                         groups = personGroups,
-                        onSave = { name, color, groupId ->
-                            viewModel.addPerson(name, color, groupId)
+                        onSave = { name, color, groupId, photoUri ->
+                            viewModel.addPerson(name, color, groupId, photoUri)
                             activeSheet = MainSheetType.None
                         },
                         onCreateGroup = { id, name, color ->
@@ -472,8 +492,8 @@ fun MainScreen(
                     )
                     MainSheetType.NewTag -> TagEditorSheet(
                         groups = tagGroups,
-                        onSave = { name, color, groupId ->
-                            viewModel.addTag(name, color, groupId)
+                        onSave = { name, color, groupId, hideCompletedByDefault ->
+                            viewModel.addTag(name, color, groupId, hideCompletedByDefault)
                             activeSheet = MainSheetType.None
                         },
                         onCreateGroup = { id, name, color ->
@@ -493,8 +513,8 @@ fun MainScreen(
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
             ) {
                 ListEditorSheet(
-                    onSave = { name, color ->
-                        viewModel.addList(name, color, icon = "folder", projectId = null)
+                    onSave = { name, color, icon ->
+                        viewModel.addList(name, color, icon = icon)
                         isNewListSheetOpen = false
                     },
                     onDismiss = { isNewListSheetOpen = false }
@@ -545,6 +565,7 @@ private data class NavIcon(val label: String, val outlined: ImageVector, val fil
 @Composable
 fun CustomBottomNav(
     selectedTab: Int,
+    todayBadgeCount: Int = 0,
     onTabSelected: (Int) -> Unit
 ) {
     val items = listOf(
@@ -605,14 +626,22 @@ fun CustomBottomNav(
                             .background(indicatorColor),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = if (isSelected) navIcon.filled else navIcon.outlined,
-                            contentDescription = navIcon.label,
-                            tint = iconTint,
-                            modifier = Modifier
-                                .size(22.dp)
-                                .scale(iconScale.value)
-                        )
+                        BadgedBox(
+                            badge = {
+                                if (index == 0 && todayBadgeCount > 0) {
+                                    Badge { Text(if (todayBadgeCount > 99) "99+" else todayBadgeCount.toString()) }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isSelected) navIcon.filled else navIcon.outlined,
+                                contentDescription = navIcon.label,
+                                tint = iconTint,
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .scale(iconScale.value)
+                            )
+                        }
                     }
                     Text(
                         text = navIcon.label,
