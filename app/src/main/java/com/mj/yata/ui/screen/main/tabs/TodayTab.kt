@@ -48,6 +48,7 @@ fun TodayTab(
     onBulkAddTag: (List<String>, String) -> Unit = { _, _ -> },
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
+    onBulkDuplicate: (List<String>) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -115,6 +116,7 @@ fun TodayTab(
                 onComplete = { onBulkComplete(selectedIds.toList()); selectedIds.clear() },
                 onAddTag = { showBulkTagSheet = true },
                 onMove = { showBulkMoveSheet = true },
+                onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
                 modifier = Modifier.statusBarsPadding()
             )

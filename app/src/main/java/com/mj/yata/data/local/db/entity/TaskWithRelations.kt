@@ -25,5 +25,10 @@ data class TaskWithRelations(
             entityColumn = "tagId"
         )
     )
-    val tags: List<TagEntity>
+    val tags: List<TagEntity>,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "taskId"
+    )
+    val subtaskEntities: List<SubtaskEntity>
 )

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.*
@@ -32,6 +33,7 @@ fun TaskSelectionTopBar(
     onComplete: () -> Unit,
     onAddTag: () -> Unit,
     onMove: () -> Unit,
+    onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -60,6 +62,9 @@ fun TaskSelectionTopBar(
             }
             IconButton(onClick = onMove) {
                 Icon(Icons.AutoMirrored.Filled.DriveFileMove, contentDescription = "Move to list or project", tint = MaterialTheme.colorScheme.onSurface)
+            }
+            IconButton(onClick = onDuplicate) {
+                Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate", tint = MaterialTheme.colorScheme.onSurface)
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)

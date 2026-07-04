@@ -2,9 +2,6 @@ package com.mj.yata.ui.screen.project
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,9 +20,8 @@ import androidx.compose.ui.unit.dp
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
-import com.mj.yata.ui.theme.YataDur
-import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.AssigneeStack
+import com.mj.yata.ui.widgets.DragDropReorderableColumn
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.sheets.*
@@ -61,7 +57,10 @@ fun ProjectDetailScreen(
     }
 
     val projectColor = accents.getAccent(project.color)
-    val projectTasks = remember(tasks, project.id) { tasks.filter { it.projectId == project.id } }
+    val projectTasks = remember(tasks, project.id) { tasks.filter { it.projectId == project.id }.sortedBy { it.sortOrder } }
+
+    var localOrder by remember(projectTasks) { mutableStateOf(projectTasks) }
+    var pendingMoveTask by remember { mutableStateOf<Task?>(null) }
 
     val totalTasks = projectTasks.size
     val doneTasks = projectTasks.count { it.done }
@@ -134,70 +133,75 @@ fun ProjectDetailScreen(
         val listsById = remember(lists) { lists.associateBy { it.id } }
         val peopleById = remember(people) { people.associateBy { it.id } }
 
-        LazyColumn(
+        Column(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 88.dp)
+                .padding(innerPadding)
         ) {
             // 1. Header Ring Area
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(projectColor.copy(alpha = 0.12f))
-                        .padding(bottom = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    ProgressRing(
-                        progress = progress,
-                        size = 72.dp,
-                        strokeWidth = 6.dp,
-                        activeColor = projectColor
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(projectColor.copy(alpha = 0.12f))
+                    .padding(bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ProgressRing(
+                    progress = progress,
+                    size = 72.dp,
+                    strokeWidth = 6.dp,
+                    activeColor = projectColor
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "$doneTasks / $totalTasks completed",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (project.due != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "$doneTasks / $totalTasks completed",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Due " + com.mj.yata.util.TaskScheduleUtils.formatDueDate(project.due),
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    if (project.due != null) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Due " + com.mj.yata.util.TaskScheduleUtils.formatDueDate(project.due),
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    if (projectPeople.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        AssigneeStack(
-                            people = projectPeople,
-                            avatarSize = 28.dp
-                        )
-                    }
+                }
+                if (projectPeople.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    AssigneeStack(
+                        people = projectPeople,
+                        avatarSize = 28.dp
+                    )
                 }
             }
 
-            // 2. Flat task list (projects no longer group tasks into lists)
+            // 2. Flat task list — long-press to drag-reorder, or drag to the top/bottom
+            // edge and hold to move the task into a different list/project.
             if (projectTasks.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No tasks in this project yet.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No tasks in this project yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
                 }
             } else {
-                items(projectTasks, key = { it.id }) { task ->
+                DragDropReorderableColumn(
+                    items = localOrder,
+                    key = { it.id },
+                    onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
+                    onDragEnd = { viewModel.commitTaskOrder(localOrder) },
+                    onDragToTopEdge = { task -> pendingMoveTask = task },
+                    onDragToBottomEdge = { task -> pendingMoveTask = task },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 88.dp)
+                ) { task ->
                     val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                     val taskAssignees = remember(task.assigneeIds, peopleById) {
                         task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
@@ -210,11 +214,31 @@ fun ProjectDetailScreen(
                         assignees = taskAssignees,
                         tags = taskTags,
                         onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                        onTaskClick = { onNavigateToTaskDetail(task.id) },
-                        modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
+                        onTaskClick = { onNavigateToTaskDetail(task.id) }
                     )
                 }
             }
+        }
+    }
+
+    pendingMoveTask?.let { task ->
+        ModalBottomSheet(
+            onDismissRequest = { pendingMoveTask = null },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskMoveToPickerSheet(
+                lists = lists,
+                projects = projects.filter { it.id != project.id },
+                onSelectList = { targetListId ->
+                    viewModel.moveTaskToList(task.id, targetListId, null)
+                    pendingMoveTask = null
+                },
+                onSelectProject = { targetProjectId ->
+                    viewModel.moveTaskToList(task.id, null, targetProjectId)
+                    pendingMoveTask = null
+                }
+            )
         }
     }
 

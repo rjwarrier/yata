@@ -87,6 +87,13 @@ dependencies {
     // Missing Dependencies
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
+    // Glance (home-screen App Widget)
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
+
+    // Markdown rendering for task notes
+    implementation("io.noties.markwon:core:4.6.2")
+
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     androidTestImplementation(libs.room.testing)

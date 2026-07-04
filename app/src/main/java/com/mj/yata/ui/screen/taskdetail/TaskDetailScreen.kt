@@ -11,12 +11,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -119,6 +121,13 @@ fun TaskDetailScreen(
                             contentDescription = "Flag",
                             tint = if (task.flag) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
+                    }
+                    // Duplicate — clones the task (new id, done reset), keeps everything else
+                    IconButton(onClick = {
+                        viewModel.duplicateTask(task.id)
+                        scope.launch { snackbarHostState.showSnackbar("Task duplicated") }
+                    }) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate task")
                     }
                     // Delete/Archive — deletion is deferred until the Undo snackbar times out,
                     // so the coroutine must outlive this composable's own scope (it navigates
@@ -375,49 +384,114 @@ fun TaskDetailScreen(
                         )
                     }
 
+                    val topLevelSubtasks = remember(subtasks) { subtasks.filter { it.parentSubtaskId == null }.sortedBy { it.sortOrder } }
+                    val childrenByParent = remember(subtasks) { subtasks.filter { it.parentSubtaskId != null }.groupBy { it.parentSubtaskId } }
+
+                    fun toggleSubtask(id: String, done: Boolean) {
+                        val updated = subtasks.map { if (it.id == id) it.copy(done = done) else it }
+                        viewModel.upsertTask(task.copy(subtasks = updated))
+                    }
+
+                    fun deleteSubtask(id: String) {
+                        // Cascade: dropping a parent also drops its (depth-1) children.
+                        val updated = subtasks.filter { it.id != id && it.parentSubtaskId != id }
+                        viewModel.upsertTask(task.copy(subtasks = updated))
+                    }
+
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        subtasks.forEach { sub ->
+                        topLevelSubtasks.forEach { sub ->
+                            var addingChild by remember(sub.id) { mutableStateOf(false) }
+                            var childTitle by remember(sub.id) { mutableStateOf("") }
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        val updatedSubtasks = subtasks.map {
-                                            if (it.id == sub.id) it.copy(done = !it.done) else it
-                                        }
-                                        viewModel.upsertTask(task.copy(subtasks = updatedSubtasks))
-                                    }
+                                    .clickable { toggleSubtask(sub.id, !sub.done) }
                                     .padding(vertical = 6.dp)
                             ) {
-                                Checkbox(
-                                    checked = sub.done,
-                                    onCheckedChange = { checked ->
-                                        val updatedSubtasks = subtasks.map {
-                                            if (it.id == sub.id) it.copy(done = checked) else it
-                                        }
-                                        viewModel.upsertTask(task.copy(subtasks = updatedSubtasks))
-                                    }
-                                )
+                                Checkbox(checked = sub.done, onCheckedChange = { toggleSubtask(sub.id, it) })
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = sub.title,
                                     color = if (sub.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         textDecoration = if (sub.done) TextDecoration.LineThrough else TextDecoration.None
-                                    )
+                                    ),
+                                    modifier = Modifier.weight(1f)
                                 )
-                                Spacer(modifier = Modifier.weight(1f))
-                                IconButton(
-                                    onClick = {
-                                        val updatedSubtasks = subtasks.filter { it.id != sub.id }
-                                        viewModel.upsertTask(task.copy(subtasks = updatedSubtasks))
-                                    }
+                                IconButton(onClick = { addingChild = !addingChild }) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add sub-item", modifier = Modifier.size(16.dp))
+                                }
+                                IconButton(onClick = { deleteSubtask(sub.id) }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Delete subtask", modifier = Modifier.size(16.dp))
+                                }
+                            }
+
+                            // Depth-1 children — no further nesting allowed, so no "add child" here.
+                            childrenByParent[sub.id]?.sortedBy { it.sortOrder }?.forEach { child ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 32.dp)
+                                        .clickable { toggleSubtask(child.id, !child.done) }
+                                        .padding(vertical = 4.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Delete subtask",
-                                        modifier = Modifier.size(16.dp)
+                                    Checkbox(checked = child.done, onCheckedChange = { toggleSubtask(child.id, it) })
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = child.title,
+                                        color = if (child.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            textDecoration = if (child.done) TextDecoration.LineThrough else TextDecoration.None
+                                        ),
+                                        modifier = Modifier.weight(1f)
                                     )
+                                    IconButton(onClick = { deleteSubtask(child.id) }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Delete sub-item", modifier = Modifier.size(14.dp))
+                                    }
+                                }
+                            }
+
+                            if (addingChild) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 32.dp, top = 2.dp, bottom = 2.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = childTitle,
+                                        onValueChange = { childTitle = it },
+                                        placeholder = { Text("Add a sub-item...") },
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f),
+                                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    IconButton(
+                                        onClick = {
+                                            if (childTitle.isNotBlank()) {
+                                                val siblingCount = childrenByParent[sub.id]?.size ?: 0
+                                                val newChild = Subtask(
+                                                    id = "sub_" + UUID.randomUUID().toString(),
+                                                    title = childTitle.trim(),
+                                                    done = false,
+                                                    parentSubtaskId = sub.id,
+                                                    sortOrder = siblingCount
+                                                )
+                                                viewModel.upsertTask(task.copy(subtasks = subtasks + newChild))
+                                                childTitle = ""
+                                                addingChild = false
+                                            }
+                                        },
+                                        enabled = childTitle.isNotBlank()
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = "Add sub-item")
+                                    }
                                 }
                             }
                         }
@@ -446,7 +520,8 @@ fun TaskDetailScreen(
                                         val newSub = Subtask(
                                             id = "sub_" + UUID.randomUUID().toString(),
                                             title = newSubtaskTitle.trim(),
-                                            done = false
+                                            done = false,
+                                            sortOrder = topLevelSubtasks.size
                                         )
                                         viewModel.upsertTask(task.copy(subtasks = subtasks + newSub))
                                         newSubtaskTitle = ""
@@ -461,22 +536,99 @@ fun TaskDetailScreen(
                 }
             }
 
-            // 6. Notes card
+            // 6. Notes card — tap to edit raw text, tap away to render as markdown.
             item {
+                var isEditingNotes by remember(task.id) { mutableStateOf(false) }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "Notes",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    OutlinedTextField(
-                        value = task.notes ?: "",
-                        onValueChange = { viewModel.upsertTask(task.copy(notes = it)) },
-                        placeholder = { Text("Tap to add notes...") },
-                        minLines = 3,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                    if (isEditingNotes || task.notes.isNullOrBlank()) {
+                        OutlinedTextField(
+                            value = task.notes ?: "",
+                            onValueChange = { viewModel.upsertTask(task.copy(notes = it)) },
+                            placeholder = { Text("Tap to add notes... (supports markdown)") },
+                            minLines = 3,
+                            modifier = Modifier.fillMaxWidth()
+                                .onFocusChanged { if (!it.isFocused) isEditingNotes = false },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    } else {
+                        MarkdownText(
+                            markdown = task.notes ?: "",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { isEditingNotes = true }
+                                .padding(12.dp)
+                        )
+                    }
+                }
+            }
+
+            // 7. Comments card
+            item {
+                val comments by remember(task.id) { viewModel.getCommentsForTask(task.id) }.collectAsState()
+                var newComment by remember { mutableStateOf("") }
+                val peopleById = remember(people) { people.associateBy { it.id } }
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Comments",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = newComment,
+                            onValueChange = { newComment = it },
+                            placeholder = { Text("Add a comment...") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
+                                if (newComment.isNotBlank()) {
+                                    viewModel.addComment(task.id, newComment.trim())
+                                    newComment = ""
+                                }
+                            },
+                            enabled = newComment.isNotBlank()
+                        ) {
+                            Icon(Icons.AutoMirrored.Default.Send, contentDescription = "Post comment")
+                        }
+                    }
+                    comments.forEach { comment ->
+                        val author = comment.authorId?.let { peopleById[it] }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = comment.body,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = listOfNotNull(
+                                        author?.let { if (it.isMe) "You" else it.name },
+                                        com.mj.yata.util.TaskScheduleUtils.formatDueDate(
+                                            java.time.Instant.ofEpochMilli(comment.createdAt)
+                                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
+                                        )
+                                    ).joinToString(" · "),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            IconButton(onClick = { viewModel.deleteComment(comment) }) {
+                                Icon(Icons.Default.Close, contentDescription = "Delete comment", modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
                 }
             }
         }

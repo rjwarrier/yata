@@ -182,9 +182,36 @@ interface TaskDao {
     fun getTagsForTask(taskId: String): Flow<List<TagEntity>>
 
     @Query("""
-        SELECT t.* FROM tags t 
-        INNER JOIN task_tag_cross_ref r ON t.id = r.tagId 
+        SELECT t.* FROM tags t
+        INNER JOIN task_tag_cross_ref r ON t.id = r.tagId
         WHERE r.taskId = :taskId
     """)
     fun getTagsForTaskDirect(taskId: String): List<TagEntity>
+}
+
+@Dao
+interface SubtaskDao {
+    @Query("SELECT * FROM subtasks WHERE taskId = :taskId ORDER BY sortOrder ASC")
+    fun getSubtasksForTask(taskId: String): Flow<List<SubtaskEntity>>
+
+    @Query("SELECT * FROM subtasks WHERE taskId = :taskId ORDER BY sortOrder ASC")
+    suspend fun getSubtasksForTaskDirect(taskId: String): List<SubtaskEntity>
+
+    @Upsert
+    suspend fun upsertAll(subtasks: List<SubtaskEntity>)
+
+    @Query("DELETE FROM subtasks WHERE taskId = :taskId")
+    suspend fun deleteForTask(taskId: String)
+}
+
+@Dao
+interface TaskCommentDao {
+    @Query("SELECT * FROM task_comments WHERE taskId = :taskId ORDER BY createdAt DESC")
+    fun getCommentsForTask(taskId: String): Flow<List<TaskCommentEntity>>
+
+    @Upsert
+    suspend fun insert(comment: TaskCommentEntity)
+
+    @Delete
+    suspend fun delete(comment: TaskCommentEntity)
 }

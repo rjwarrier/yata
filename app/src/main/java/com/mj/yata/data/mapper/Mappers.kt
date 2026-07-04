@@ -68,38 +68,25 @@ fun deserializeRecurrence(json: String?): Recurrence? {
     }
 }
 
-fun serializeSubtasks(list: List<Subtask>): String {
-    val arr = JSONArray()
-    list.forEach { st ->
-        val obj = JSONObject()
-        obj.put("id", st.id)
-        obj.put("title", st.title)
-        obj.put("done", st.done)
-        arr.put(obj)
-    }
-    return arr.toString()
-}
+fun SubtaskEntity.toDomain() = Subtask(
+    id = id,
+    title = title,
+    done = done,
+    parentSubtaskId = parentSubtaskId,
+    sortOrder = sortOrder
+)
 
-fun deserializeSubtasks(json: String?): List<Subtask> {
-    if (json.isNullOrEmpty()) return emptyList()
-    return try {
-        val arr = JSONArray(json)
-        val list = mutableListOf<Subtask>()
-        for (i in 0 until arr.length()) {
-            val obj = arr.getJSONObject(i)
-            list.add(
-                Subtask(
-                    id = obj.getString("id"),
-                    title = obj.getString("title"),
-                    done = obj.getBoolean("done")
-                )
-            )
-        }
-        list
-    } catch (e: Exception) {
-        emptyList()
-    }
-}
+fun Subtask.toEntity(taskId: String) = SubtaskEntity(
+    id = id,
+    taskId = taskId,
+    parentSubtaskId = parentSubtaskId,
+    title = title,
+    done = done,
+    sortOrder = sortOrder
+)
+
+fun TaskCommentEntity.toDomain() = TaskComment(id, taskId, body, createdAt, authorId)
+fun TaskComment.toEntity() = TaskCommentEntity(id, taskId, body, createdAt, authorId)
 
 fun PersonEntity.toDomain() = Person(id, name, initials, color, photoUri, isMe, groupId, starred)
 fun Person.toEntity() = PersonEntity(id, name, initials, color, photoUri, isMe, groupId, starred)
@@ -137,7 +124,7 @@ fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedB
 fun TagGroupEntity.toDomain() = TagGroup(id, name, color)
 fun TagGroup.toEntity() = TagGroupEntity(id, name, color)
 
-fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>) = Task(
+fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>, subtasks: List<Subtask> = emptyList()) = Task(
     id = id,
     title = title,
     listId = listId,
@@ -152,8 +139,9 @@ fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>) = Task(
     assigneeIds = assigneeIds,
     tagIds = tagIds,
     recurrence = deserializeRecurrence(recurrenceJson),
-    subtasks = deserializeSubtasks(subtasksJson),
-    notes = notes
+    subtasks = subtasks,
+    notes = notes,
+    sortOrder = sortOrder
 )
 
 fun Task.toEntity() = TaskEntity(
@@ -170,10 +158,11 @@ fun Task.toEntity() = TaskEntity(
     done = done,
     notes = notes,
     recurrenceJson = serializeRecurrence(recurrence),
-    subtasksJson = serializeSubtasks(subtasks)
+    sortOrder = sortOrder
 )
 
 fun TaskWithRelations.toDomain() = task.toDomain(
     assigneeIds = assignees.map { it.id },
-    tagIds = tags.map { it.id }
+    tagIds = tags.map { it.id },
+    subtasks = subtaskEntities.sortedBy { it.sortOrder }.map { it.toDomain() }
 )

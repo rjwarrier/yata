@@ -65,6 +65,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- Home-screen widget showing today's open tasks -->
+        <receiver
+            android:name=".widget.YataAppWidgetReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/todo_widget_info" />
+        </receiver>
+
     </application>
 
 </manifest>

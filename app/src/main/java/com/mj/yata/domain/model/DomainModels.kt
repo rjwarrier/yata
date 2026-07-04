@@ -51,10 +51,20 @@ data class TagGroup(
     val color: String // accentA - accentH
 )
 
+data class TaskComment(
+    val id: String,
+    val taskId: String,
+    val body: String,
+    val createdAt: Long,
+    val authorId: String?
+)
+
 data class Subtask(
     val id: String,
     val title: String,
-    val done: Boolean
+    val done: Boolean,
+    val parentSubtaskId: String? = null,
+    val sortOrder: Int = 0
 )
 
 data class Recurrence(
@@ -87,7 +97,8 @@ data class Task(
     val tagIds: List<String>,
     val recurrence: Recurrence?,
     val subtasks: List<Subtask>,
-    val notes: String?
+    val notes: String?,
+    val sortOrder: Int = 0
 )
 
 /**

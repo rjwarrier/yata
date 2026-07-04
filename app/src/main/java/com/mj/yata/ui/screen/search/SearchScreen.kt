@@ -71,6 +71,7 @@ fun SearchScreen(
                     onComplete = { viewModel.bulkCompleteTasks(selectedIds.toList()); selectedIds.clear() },
                     onAddTag = { showBulkTagSheet = true },
                     onMove = { showBulkMoveSheet = true },
+                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
                     modifier = Modifier.statusBarsPadding()
                 )

@@ -1,11 +1,13 @@
 package com.mj.yata.data.local.db
 
+import android.content.ContentValues
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mj.yata.data.local.db.dao.*
 import com.mj.yata.data.local.db.entity.*
+import org.json.JSONArray
 
 @Database(
     entities = [
@@ -17,9 +19,11 @@ import com.mj.yata.data.local.db.entity.*
         TaskPersonCrossRef::class,
         TaskTagCrossRef::class,
         TagGroupEntity::class,
-        PersonGroupEntity::class
+        PersonGroupEntity::class,
+        SubtaskEntity::class,
+        TaskCommentEntity::class
     ],
-    version = 9,
+    version = 12,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,6 +34,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun tagGroupDao(): TagGroupDao
     abstract fun personGroupDao(): PersonGroupDao
+    abstract fun subtaskDao(): SubtaskDao
+    abstract fun taskCommentDao(): TaskCommentDao
 
     companion object {
         val MIGRATION_3_4 = object : Migration(3, 4) {
@@ -108,6 +114,74 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("INSERT INTO `projects_new` SELECT `id`, `name`, `color`, `icon`, `dueDate`, `starred`, `commonTagIds`, `defaultReminder` FROM `projects`")
                 db.execSQL("DROP TABLE `projects`")
                 db.execSQL("ALTER TABLE `projects_new` RENAME TO `projects`")
+            }
+        }
+
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Manual drag-and-drop reorder needs a persistent order per task. Seed it from
+                // rowid so existing tasks keep their current (insertion-order) display order.
+                db.execSQL("ALTER TABLE tasks ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE tasks SET sortOrder = rowid")
+            }
+        }
+
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `subtasks` (`id` TEXT NOT NULL, `taskId` TEXT NOT NULL, `parentSubtaskId` TEXT, `title` TEXT NOT NULL, `done` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`taskId`) REFERENCES `tasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`parentSubtaskId`) REFERENCES `subtasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_subtasks_taskId` ON `subtasks` (`taskId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_subtasks_parentSubtaskId` ON `subtasks` (`parentSubtaskId`)")
+
+                // Convert each task's subtasksJson blob into real rows (top-level only —
+                // the old flat blob never had nesting), then drop the column.
+                db.query("SELECT id, subtasksJson FROM tasks WHERE subtasksJson IS NOT NULL").use { cursor ->
+                    val idIndex = cursor.getColumnIndexOrThrow("id")
+                    val jsonIndex = cursor.getColumnIndexOrThrow("subtasksJson")
+                    while (cursor.moveToNext()) {
+                        val taskId = cursor.getString(idIndex)
+                        val json = cursor.getString(jsonIndex) ?: continue
+                        try {
+                            val arr = JSONArray(json)
+                            for (i in 0 until arr.length()) {
+                                val obj = arr.getJSONObject(i)
+                                val values = ContentValues().apply {
+                                    put("id", obj.getString("id"))
+                                    put("taskId", taskId)
+                                    putNull("parentSubtaskId")
+                                    put("title", obj.getString("title"))
+                                    put("done", if (obj.getBoolean("done")) 1 else 0)
+                                    put("sortOrder", i)
+                                }
+                                db.insert("subtasks", android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE, values)
+                            }
+                        } catch (e: Exception) {
+                            // Malformed blob for this task — skip it, don't fail the migration.
+                        }
+                    }
+                }
+
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `tasks_new` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `listId` TEXT, `projectId` TEXT, `section` TEXT NOT NULL, `dueDate` TEXT, `dueTime` TEXT, `reminder` TEXT, `priority` TEXT NOT NULL, `flag` INTEGER NOT NULL, `done` INTEGER NOT NULL, `notes` TEXT, `recurrenceJson` TEXT, `sortOrder` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`), FOREIGN KEY(`listId`) REFERENCES `lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                )
+                db.execSQL(
+                    "INSERT INTO `tasks_new` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`notes`,`recurrenceJson`,`sortOrder`) " +
+                        "SELECT `id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`notes`,`recurrenceJson`,`sortOrder` FROM `tasks`"
+                )
+                db.execSQL("DROP TABLE `tasks`")
+                db.execSQL("ALTER TABLE `tasks_new` RENAME TO `tasks`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_listId` ON `tasks` (`listId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_projectId` ON `tasks` (`projectId`)")
+            }
+        }
+
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `task_comments` (`id` TEXT NOT NULL, `taskId` TEXT NOT NULL, `body` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `authorId` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`taskId`) REFERENCES `tasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_comments_taskId` ON `task_comments` (`taskId`)")
             }
         }
     }

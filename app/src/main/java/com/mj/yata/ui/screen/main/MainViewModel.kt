@@ -142,6 +142,27 @@ class MainViewModel @Inject constructor(
     }
 
     /**
+     * Duplicates a single task, keeping every field (priority, flag, assignees, tags,
+     * subtasks) except id (fresh UUID) and done (reset to false). due is left unchanged
+     * unless the caller supplies a dueAdjustment (e.g. rollover shifts +1 month).
+     */
+    fun duplicateTask(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
+        viewModelScope.launch {
+            val task = tasks.value.find { it.id == taskId } ?: return@launch
+            val newDue = task.due?.let { due ->
+                try {
+                    dueAdjustment(LocalDate.parse(due)).toString()
+                } catch (e: Exception) {
+                    due
+                }
+            }
+            repository.upsertTask(
+                task.copy(id = "t_" + UUID.randomUUID().toString(), due = newDue, done = false)
+            )
+        }
+    }
+
+    /**
      * Duplicates every open, non-recurring task in a project's lists into next month
      * (due date shifted +1 month, or no due date if the task had none). Recurring tasks
      * already advance themselves on completion, so they're excluded here.
@@ -152,17 +173,38 @@ class MainViewModel @Inject constructor(
                 it.projectId == projectId && !it.done && it.recurrence == null
             }
             openTasks.forEach { task ->
-                val nextDue = task.due?.let { due ->
-                    try {
-                        LocalDate.parse(due).plusMonths(1).toString()
-                    } catch (e: Exception) {
-                        due
-                    }
-                }
-                repository.upsertTask(
-                    task.copy(id = "t_" + UUID.randomUUID().toString(), due = nextDue)
-                )
+                duplicateTask(task.id) { it.plusMonths(1) }
             }
+        }
+    }
+
+    fun bulkDuplicateTasks(ids: List<String>) {
+        ids.forEach { duplicateTask(it) }
+    }
+
+    /**
+     * Persists a drag-and-drop reorder: [orderedTasks] is the final order of one container
+     * (a single list's or project's tasks), sortOrder is reassigned 0..n within it only —
+     * other tasks are never touched.
+     */
+    fun commitTaskOrder(orderedTasks: List<Task>) {
+        viewModelScope.launch {
+            orderedTasks.forEachIndexed { index, task ->
+                if (task.sortOrder != index) {
+                    repository.upsertTask(task.copy(sortOrder = index))
+                }
+            }
+        }
+    }
+
+    /** Moves a task to a different list/project (drag-to-edge cross-container move), appended to the end. */
+    fun moveTaskToList(taskId: String, targetListId: String?, targetProjectId: String? = null) {
+        viewModelScope.launch {
+            val task = tasks.value.find { it.id == taskId } ?: return@launch
+            val targetSiblings = tasks.value.filter { it.listId == targetListId && it.projectId == targetProjectId }
+            repository.upsertTask(
+                task.copy(listId = targetListId, projectId = targetProjectId, sortOrder = targetSiblings.size)
+            )
         }
     }
 
@@ -244,6 +286,22 @@ class MainViewModel @Inject constructor(
     fun deleteTask(task: Task) {
         viewModelScope.launch {
             repository.deleteTask(task)
+        }
+    }
+
+    fun getCommentsForTask(taskId: String): StateFlow<List<TaskComment>> =
+        repository.getCommentsForTask(taskId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun addComment(taskId: String, body: String) {
+        viewModelScope.launch {
+            val authorId = people.value.find { it.isMe }?.id
+            repository.addComment(taskId, body, authorId)
+        }
+    }
+
+    fun deleteComment(comment: TaskComment) {
+        viewModelScope.launch {
+            repository.deleteComment(comment)
         }
     }
 

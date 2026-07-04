@@ -78,6 +78,7 @@ import com.mj.yata.ui.widgets.YataDashedAddChip
 import com.mj.yata.ui.widgets.YataDatePickerDialog
 import com.mj.yata.ui.widgets.YataSelectChip
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
+import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
 import java.time.LocalDate
 
@@ -143,7 +144,8 @@ fun NewTaskSheet(
     modifier: Modifier = Modifier,
     initialAssigneeId: String? = null,
     initialProjectId: String? = null,
-    initialListId: String? = null
+    initialListId: String? = null,
+    initialDueDateOverride: String? = null
 ) {
     var title by remember { mutableStateOf(TextFieldValue("")) }
     var selectedListId by remember { mutableStateOf(initialListId) }
@@ -151,16 +153,26 @@ fun NewTaskSheet(
     var selectedPriority by remember { mutableStateOf("none") }
     var selectedSection by remember { mutableStateOf("Afternoon") }
 
-    // Initial due date based on the pre-selected project's due date, if any
-    val initialDueDate = remember(projects, initialProjectId) {
+    // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
+    // otherwise fall back to the pre-selected project's due date, otherwise today.
+    val initialDueDate = remember(projects, initialProjectId, initialDueDateOverride) {
         val projectObj = projects.find { it.id == initialProjectId }
-        projectObj?.due ?: LocalDate.now().toString()
+        initialDueDateOverride ?: projectObj?.due ?: LocalDate.now().toString()
     }
     var selectedDueDate by remember { mutableStateOf<String?>(initialDueDate) }
     var selectedTime by remember { mutableStateOf<String?>(null) }
     var selectedReminder by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+
+    // Quick-add: typing a date/time phrase in the title (e.g. "tomorrow 3pm") prefills these
+    // chips. Once the user picks a due date/time manually, their choice always wins over
+    // further parsing — see setDueDate/setTime below.
+    var dueManuallySet by remember { mutableStateOf(initialDueDateOverride != null) }
+    var timeManuallySet by remember { mutableStateOf(false) }
+    var quickAddDismissed by remember { mutableStateOf(false) }
+    val setDueDate: (String?) -> Unit = { selectedDueDate = it; dueManuallySet = true }
+    val setTime: (String?) -> Unit = { selectedTime = it; timeManuallySet = true }
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
     val selectedAssigneeIds = remember { mutableStateListOf<String>() }
@@ -185,13 +197,22 @@ fun NewTaskSheet(
 
     val mention = remember(title) { detectMentionToken(title.text, title.selection.end) }
 
+    val quickAdd = remember(title.text) { NaturalLanguageParser.parse(title.text) }
+    val quickAddMatched = !quickAddDismissed && quickAdd.title != title.text.trim()
+    LaunchedEffect(quickAdd, quickAddDismissed) {
+        if (!quickAddDismissed) {
+            if (!dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
+            if (!timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
+        }
+    }
+
     // Automatically sync due date/reminder to the selected project's defaults when it changes
     var lastLoadedProjectId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(selectedProjectId, projects) {
         val projectObj = projects.find { it.id == selectedProjectId }
         if (projectObj != null && projectObj.id != lastLoadedProjectId) {
             lastLoadedProjectId = projectObj.id
-            selectedDueDate = projectObj.due ?: LocalDate.now().toString()
+            setDueDate(projectObj.due ?: LocalDate.now().toString())
             if (selectedReminder == null) {
                 selectedReminder = projectObj.defaultReminder
             }
@@ -210,7 +231,7 @@ fun NewTaskSheet(
     val submit = {
         if (canCreateTask) {
             onAddTask(
-                title.text.trim(),
+                if (quickAddMatched) quickAdd.title else title.text.trim(),
                 selectedListId,
                 selectedPriority,
                 selectedAssigneeIds.toList(),
@@ -259,7 +280,10 @@ fun NewTaskSheet(
             // Big borderless title input with primary underline
             BasicTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = { newValue ->
+                    if (newValue.text != title.text) quickAddDismissed = false
+                    title = newValue
+                },
                 singleLine = true,
                 textStyle = TextStyle(
                     fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
@@ -318,6 +342,39 @@ fun NewTaskSheet(
                         title = consumeMentionToken(title, mention)
                     }
                 )
+            }
+
+            if (quickAddMatched) {
+                val detectedLabel = listOfNotNull(
+                    quickAdd.due?.let { TaskScheduleUtils.formatDueDate(it) },
+                    quickAdd.time
+                ).joinToString(" · ")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Today,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = "Detected: $detectedLabel",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Ignore detected date/time",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .clickable { quickAddDismissed = true }
+                    )
+                }
             }
 
             // Attribute chip row
@@ -434,14 +491,14 @@ fun NewTaskSheet(
                     when (activePanel) {
                         "DueDate" -> DueDatePanel(
                             selectedDueDate = selectedDueDate,
-                            onPick = { selectedDueDate = it },
-                            onClear = { selectedDueDate = null; selectedTime = null; selectedReminder = null },
+                            onPick = { setDueDate(it) },
+                            onClear = { setDueDate(null); setTime(null); selectedReminder = null },
                             onPickDate = { showDatePicker = true }
                         )
                         "Time" -> TimePanel(
                             hasDueDate = selectedDueDate != null,
                             selectedTime = selectedTime,
-                            onPick = { selectedTime = it },
+                            onPick = { setTime(it) },
                             onCustom = { showTimePicker = true }
                         )
                         "Reminder" -> ReminderPanel(
@@ -561,7 +618,7 @@ fun NewTaskSheet(
             initialDate = selectedDueDate,
             onDismiss = { showDatePicker = false },
             onConfirm = {
-                selectedDueDate = it
+                setDueDate(it)
                 showDatePicker = false
             }
         )
@@ -571,7 +628,7 @@ fun NewTaskSheet(
         show = showTimePicker,
         initialTime = selectedTime,
         onDismiss = { showTimePicker = false },
-        onConfirm = { selectedTime = it }
+        onConfirm = { setTime(it) }
     )
 }
 

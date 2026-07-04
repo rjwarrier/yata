@@ -23,7 +23,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "yata_expressive.db"
         )
-        .addMigrations(AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6, AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9)
+        .addMigrations(AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6, AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10, AppDatabase.MIGRATION_10_11, AppDatabase.MIGRATION_11_12)
         .fallbackToDestructiveMigration()
         .build()
     }
@@ -35,4 +35,6 @@ object DatabaseModule {
     @Provides fun provideTaskDao(db: AppDatabase): TaskDao = db.taskDao()
     @Provides fun provideTagGroupDao(db: AppDatabase): TagGroupDao = db.tagGroupDao()
     @Provides fun providePersonGroupDao(db: AppDatabase): PersonGroupDao = db.personGroupDao()
+    @Provides fun provideSubtaskDao(db: AppDatabase): SubtaskDao = db.subtaskDao()
+    @Provides fun provideTaskCommentDao(db: AppDatabase): TaskCommentDao = db.taskCommentDao()
 }

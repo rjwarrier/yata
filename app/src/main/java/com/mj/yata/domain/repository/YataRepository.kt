@@ -12,6 +12,11 @@ interface YataRepository {
     suspend fun skipTaskOccurrence(id: String)
     suspend fun deleteTask(task: Task)
 
+    // Comments
+    fun getCommentsForTask(taskId: String): Flow<List<TaskComment>>
+    suspend fun addComment(taskId: String, body: String, authorId: String?)
+    suspend fun deleteComment(comment: TaskComment)
+
     // Projects
     fun getProjects(): Flow<List<Project>>
     fun getProjectById(id: String): Flow<Project?>

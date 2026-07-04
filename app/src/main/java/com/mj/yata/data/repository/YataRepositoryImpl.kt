@@ -7,6 +7,7 @@ import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.notification.TaskReminderScheduler
 import com.mj.yata.util.RecurrenceEvaluator
+import com.mj.yata.widget.WidgetUpdater
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -17,7 +18,8 @@ import javax.inject.Singleton
 @Singleton
 class YataRepositoryImpl @Inject constructor(
     private val db: AppDatabase,
-    private val reminderScheduler: TaskReminderScheduler
+    private val reminderScheduler: TaskReminderScheduler,
+    private val widgetUpdater: WidgetUpdater
 ) : YataRepository {
 
     override fun getTasks(): Flow<List<Task>> {
@@ -50,7 +52,15 @@ class YataRepositoryImpl @Inject constructor(
             db.taskDao().insertTaskTagCrossRefs(refs)
         }
 
+        // Sync subtasks (owned child rows, simplest to delete-then-reinsert given typical
+        // per-task subtask counts are small)
+        db.subtaskDao().deleteForTask(task.id)
+        if (task.subtasks.isNotEmpty()) {
+            db.subtaskDao().upsertAll(task.subtasks.map { it.toEntity(task.id) })
+        }
+
         syncReminder(entity)
+        widgetUpdater.notifyTasksChanged()
     }
 
     override suspend fun toggleTaskDone(id: String) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -58,13 +68,14 @@ class YataRepositoryImpl @Inject constructor(
         val wasDone = taskEntity.done
         val isNowDone = !wasDone
 
-        // Fetch current assignees and tags to maintain them
+        // Fetch current assignees, tags and subtasks to maintain them
         val assigneeIds = db.taskDao().getPeopleForTaskDirect(id).map { it.id }
         val tagIds = db.taskDao().getTagsForTaskDirect(id).map { it.id }
+        val subtaskEntities = db.subtaskDao().getSubtasksForTaskDirect(id)
 
         // Check if task is recurring and we are marking it as done
         val recurrence = deserializeRecurrence(taskEntity.recurrenceJson)
-        
+
         if (isNowDone && recurrence != null && taskEntity.dueDate != null) {
             // Calculate next due date
             val nextDate = RecurrenceEvaluator.calculateNextOccurrence(recurrence, taskEntity.dueDate)
@@ -78,10 +89,16 @@ class YataRepositoryImpl @Inject constructor(
                     recurrenceJson = null // one-off completed instance
                 )
                 db.taskDao().insert(completedHistoryTask)
-                
-                // Copy assignees and tags to completed history instance
+
+                // Copy assignees, tags and subtasks to completed history instance
                 db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
                 db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
+                // Flattened (not nested) on the history copy — parent ids get regenerated per
+                // row, so preserving parent/child links here isn't worth the FK bookkeeping
+                // for what's just a historical snapshot.
+                db.subtaskDao().upsertAll(
+                    subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
+                )
 
                 // 2. Advance the original task to the next occurrence
                 // If it is count-based recurrence, decrement the remaining count
@@ -104,6 +121,7 @@ class YataRepositoryImpl @Inject constructor(
                 )
                 db.taskDao().insert(updatedTask)
                 syncReminder(updatedTask)
+                widgetUpdater.notifyTasksChanged()
                 return@withContext
             }
         }
@@ -112,6 +130,7 @@ class YataRepositoryImpl @Inject constructor(
         val updatedTask = taskEntity.copy(done = isNowDone)
         db.taskDao().insert(updatedTask)
         syncReminder(updatedTask)
+        widgetUpdater.notifyTasksChanged()
     }
 
     /** Advances a recurring task to its next occurrence without marking the skipped one done. */
@@ -124,6 +143,7 @@ class YataRepositoryImpl @Inject constructor(
 
         val assigneeIds = db.taskDao().getPeopleForTaskDirect(id).map { it.id }
         val tagIds = db.taskDao().getTagsForTaskDirect(id).map { it.id }
+        val subtaskEntities = db.subtaskDao().getSubtasksForTaskDirect(id)
 
         // Keep a record of the skipped instance (not done, one-off).
         val historicalTaskId = UUID.randomUUID().toString()
@@ -135,6 +155,9 @@ class YataRepositoryImpl @Inject constructor(
         db.taskDao().insert(skippedHistoryTask)
         db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
         db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
+        db.subtaskDao().upsertAll(
+            subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
+        )
 
         val updatedRecurrence = when (val ends = recurrence.ends) {
             is RecurrenceEnds.After -> {
@@ -151,11 +174,33 @@ class YataRepositoryImpl @Inject constructor(
         )
         db.taskDao().insert(updatedTask)
         syncReminder(updatedTask)
+        widgetUpdater.notifyTasksChanged()
     }
 
     override suspend fun deleteTask(task: Task) {
         reminderScheduler.cancelReminder(task.toEntity())
         db.taskDao().delete(task.toEntity())
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override fun getCommentsForTask(taskId: String): Flow<List<TaskComment>> {
+        return db.taskCommentDao().getCommentsForTask(taskId).map { list -> list.map { it.toDomain() } }
+    }
+
+    override suspend fun addComment(taskId: String, body: String, authorId: String?) {
+        db.taskCommentDao().insert(
+            TaskCommentEntity(
+                id = "cm_" + UUID.randomUUID().toString(),
+                taskId = taskId,
+                body = body,
+                createdAt = System.currentTimeMillis(),
+                authorId = authorId
+            )
+        )
+    }
+
+    override suspend fun deleteComment(comment: TaskComment) {
+        db.taskCommentDao().delete(comment.toEntity())
     }
 
     override fun getProjects(): Flow<List<Project>> {

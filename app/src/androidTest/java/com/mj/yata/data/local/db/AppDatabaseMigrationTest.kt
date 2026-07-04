@@ -218,6 +218,112 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    // Note: this project builds with exportSchema = false, so no schema JSON assets exist for
+    // MigrationTestHelper.runMigrationsAndValidate() to diff against (it throws
+    // FileNotFoundException for <version>.json regardless of which migration is under test —
+    // that's a pre-existing gap, not specific to this migration). Exercise the migration
+    // directly against a raw SQLite callback instead of relying on schema-file validation.
+    @Test
+    fun migrate9To10_addsSortOrder_andBackfillsFromRowid() {
+        context.deleteDatabase(TEST_DB)
+        createVersion9Database().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`notes`,`recurrenceJson`,`subtasksJson`) " +
+                    "VALUES ('t1','First',NULL,NULL,'Morning',NULL,NULL,NULL,'none',0,0,NULL,NULL,NULL)"
+            )
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`notes`,`recurrenceJson`,`subtasksJson`) " +
+                    "VALUES ('t2','Second',NULL,NULL,'Morning',NULL,NULL,NULL,'none',0,0,NULL,NULL,NULL)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(10) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_9_10.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("PRAGMA table_info(`tasks`)").use { cursor ->
+                val columnNames = mutableSetOf<String>()
+                while (cursor.moveToNext()) {
+                    columnNames += cursor.getString(cursor.getColumnIndexOrThrow("name"))
+                }
+                assertTrue(columnNames.contains("sortOrder"))
+            }
+            query("SELECT `id`, `sortOrder` FROM `tasks` ORDER BY `id`").use { cursor ->
+                var count = 0
+                while (cursor.moveToNext()) {
+                    assertTrue(cursor.getInt(1) >= 0)
+                    count++
+                }
+                assertEquals(2, count)
+            }
+            close()
+        }
+    }
+
+    @Test
+    fun migrate10To11_convertsSubtasksJsonToRows_andDropsColumn() {
+        context.deleteDatabase(TEST_DB)
+        createVersion10Database().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`notes`,`recurrenceJson`,`subtasksJson`,`sortOrder`) " +
+                    "VALUES ('t1','Has subtasks',NULL,NULL,'Morning',NULL,NULL,NULL,'none',0,0,NULL,NULL," +
+                    "'[{\"id\":\"s1\",\"title\":\"Step one\",\"done\":false},{\"id\":\"s2\",\"title\":\"Step two\",\"done\":true}]',0)"
+            )
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`notes`,`recurrenceJson`,`subtasksJson`,`sortOrder`) " +
+                    "VALUES ('t2','No subtasks',NULL,NULL,'Morning',NULL,NULL,NULL,'none',0,0,NULL,NULL,NULL,1)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(11) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_10_11.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("PRAGMA table_info(`tasks`)").use { cursor ->
+                val columnNames = mutableSetOf<String>()
+                while (cursor.moveToNext()) {
+                    columnNames += cursor.getString(cursor.getColumnIndexOrThrow("name"))
+                }
+                assertTrue(!columnNames.contains("subtasksJson"))
+                assertTrue(columnNames.contains("sortOrder"))
+            }
+            query("SELECT `id`, `title`, `done`, `sortOrder`, `parentSubtaskId` FROM `subtasks` WHERE `taskId` = 't1' ORDER BY `sortOrder`").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("s1", cursor.getString(0))
+                assertEquals("Step one", cursor.getString(1))
+                assertEquals(0, cursor.getInt(2))
+                assertEquals(0, cursor.getInt(3))
+                assertTrue(cursor.isNull(4))
+                assertTrue(cursor.moveToNext())
+                assertEquals("s2", cursor.getString(0))
+                assertEquals("Step two", cursor.getString(1))
+                assertEquals(1, cursor.getInt(2))
+                assertTrue(!cursor.moveToNext())
+            }
+            query("SELECT COUNT(*) FROM `subtasks` WHERE `taskId` = 't2'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(0))
+            }
+            close()
+        }
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }
@@ -227,6 +333,76 @@ class AppDatabaseMigrationTest {
             .name(TEST_DB)
             .callback(object : SupportSQLiteOpenHelper.Callback(4) {
                 override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
+
+    private fun createVersion9Database(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(9) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `people` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `initials` TEXT NOT NULL, `color` TEXT NOT NULL, `photoUri` TEXT, `isMe` INTEGER NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `projects` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `dueDate` TEXT, `starred` INTEGER NOT NULL, `commonTagIds` TEXT NOT NULL, `defaultReminder` TEXT, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `lists` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `starred` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `tags` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, `hideCompletedByDefault` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `tag_groups` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `person_groups` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tasks` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `listId` TEXT, `projectId` TEXT, `section` TEXT NOT NULL, `dueDate` TEXT, `dueTime` TEXT, `reminder` TEXT, `priority` TEXT NOT NULL, `flag` INTEGER NOT NULL, `done` INTEGER NOT NULL, `notes` TEXT, `recurrenceJson` TEXT, `subtasksJson` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`listId`) REFERENCES `lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_listId` ON `tasks` (`listId`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_projectId` ON `tasks` (`projectId`)")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `task_person_cross_ref` (`taskId` TEXT NOT NULL, `personId` TEXT NOT NULL, PRIMARY KEY(`taskId`, `personId`), FOREIGN KEY(`taskId`) REFERENCES `tasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`personId`) REFERENCES `people`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_person_cross_ref_taskId` ON `task_person_cross_ref` (`taskId`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_person_cross_ref_personId` ON `task_person_cross_ref` (`personId`)")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `task_tag_cross_ref` (`taskId` TEXT NOT NULL, `tagId` TEXT NOT NULL, PRIMARY KEY(`taskId`, `tagId`), FOREIGN KEY(`taskId`) REFERENCES `tasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`tagId`) REFERENCES `tags`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_tag_cross_ref_taskId` ON `task_tag_cross_ref` (`taskId`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_tag_cross_ref_tagId` ON `task_tag_cross_ref` (`tagId`)")
+                }
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
+
+    private fun createVersion10Database(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(10) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `people` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `initials` TEXT NOT NULL, `color` TEXT NOT NULL, `photoUri` TEXT, `isMe` INTEGER NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `projects` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `dueDate` TEXT, `starred` INTEGER NOT NULL, `commonTagIds` TEXT NOT NULL, `defaultReminder` TEXT, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `lists` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `starred` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `tags` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, `hideCompletedByDefault` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `tag_groups` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL("CREATE TABLE IF NOT EXISTS `person_groups` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, PRIMARY KEY(`id`))")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tasks` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `listId` TEXT, `projectId` TEXT, `section` TEXT NOT NULL, `dueDate` TEXT, `dueTime` TEXT, `reminder` TEXT, `priority` TEXT NOT NULL, `flag` INTEGER NOT NULL, `done` INTEGER NOT NULL, `notes` TEXT, `recurrenceJson` TEXT, `subtasksJson` TEXT, `sortOrder` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`), FOREIGN KEY(`listId`) REFERENCES `lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_listId` ON `tasks` (`listId`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_projectId` ON `tasks` (`projectId`)")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `task_person_cross_ref` (`taskId` TEXT NOT NULL, `personId` TEXT NOT NULL, PRIMARY KEY(`taskId`, `personId`), FOREIGN KEY(`taskId`) REFERENCES `tasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`personId`) REFERENCES `people`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_person_cross_ref_taskId` ON `task_person_cross_ref` (`taskId`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_person_cross_ref_personId` ON `task_person_cross_ref` (`personId`)")
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `task_tag_cross_ref` (`taskId` TEXT NOT NULL, `tagId` TEXT NOT NULL, PRIMARY KEY(`taskId`, `tagId`), FOREIGN KEY(`taskId`) REFERENCES `tasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`tagId`) REFERENCES `tags`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_tag_cross_ref_taskId` ON `task_tag_cross_ref` (`taskId`)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_tag_cross_ref_tagId` ON `task_tag_cross_ref` (`tagId`)")
+                }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
             })
             .build()

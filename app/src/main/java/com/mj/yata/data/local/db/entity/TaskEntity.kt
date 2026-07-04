@@ -37,5 +37,5 @@ data class TaskEntity(
     val done: Boolean,
     val notes: String?,
     val recurrenceJson: String?, // JSON representation of Recurrence
-    val subtasksJson: String? // JSON representation of List<Subtask>
+    val sortOrder: Int = 0
 )
