@@ -58,10 +58,16 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
@@ -162,6 +168,7 @@ fun NewTaskSheet(
     var selectedDueDate by remember { mutableStateOf<String?>(initialDueDate) }
     var selectedTime by remember { mutableStateOf<String?>(null) }
     var selectedReminder by remember { mutableStateOf<String?>(null) }
+    var selectedRecurrence by remember { mutableStateOf<Recurrence?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -170,9 +177,11 @@ fun NewTaskSheet(
     // further parsing — see setDueDate/setTime below.
     var dueManuallySet by remember { mutableStateOf(initialDueDateOverride != null) }
     var timeManuallySet by remember { mutableStateOf(false) }
+    var recurrenceManuallySet by remember { mutableStateOf(false) }
     var quickAddDismissed by remember { mutableStateOf(false) }
     val setDueDate: (String?) -> Unit = { selectedDueDate = it; dueManuallySet = true }
     val setTime: (String?) -> Unit = { selectedTime = it; timeManuallySet = true }
+    val setRecurrence: (Recurrence?) -> Unit = { selectedRecurrence = it; recurrenceManuallySet = true }
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
     val selectedAssigneeIds = remember { mutableStateListOf<String>() }
@@ -184,7 +193,6 @@ fun NewTaskSheet(
     }
 
     val selectedTagIds = remember { mutableStateListOf<String>() }
-    var selectedRecurrence by remember { mutableStateOf<Recurrence?>(null) }
     var activePanel by remember { mutableStateOf<String?>(null) }
 
     val accents = LocalYataAccents.current
@@ -203,6 +211,7 @@ fun NewTaskSheet(
         if (!quickAddDismissed) {
             if (!dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
             if (!timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
+            if (!recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
         }
     }
 
@@ -277,6 +286,30 @@ fun NewTaskSheet(
         ) {
             Spacer(modifier = Modifier.size(2.dp))
 
+            // Underlines recognized date/time/recurrence phrases in place (e.g. "tomorrow
+            // 3pm") without altering the actual text or cursor mapping — they're stripped
+            // from the title only once the task is actually created (see `submit` below).
+            val quickAddUnderlineColor = MaterialTheme.colorScheme.primary
+            val quickAddVisualTransformation = remember(quickAdd.highlightRanges, quickAddMatched, quickAddUnderlineColor) {
+                VisualTransformation { text ->
+                    if (!quickAddMatched || quickAdd.highlightRanges.isEmpty()) {
+                        TransformedText(text, OffsetMapping.Identity)
+                    } else {
+                        val annotated = buildAnnotatedString {
+                            append(text.text)
+                            quickAdd.highlightRanges.forEach { range ->
+                                val start = range.first.coerceIn(0, text.text.length)
+                                val end = (range.last + 1).coerceIn(0, text.text.length)
+                                if (start < end) {
+                                    addStyle(SpanStyle(textDecoration = TextDecoration.Underline, color = quickAddUnderlineColor), start, end)
+                                }
+                            }
+                        }
+                        TransformedText(annotated, OffsetMapping.Identity)
+                    }
+                }
+            }
+
             // Big borderless title input with primary underline
             BasicTextField(
                 value = title,
@@ -291,6 +324,7 @@ fun NewTaskSheet(
                     fontSize = 22.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 ),
+                visualTransformation = quickAddVisualTransformation,
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -347,7 +381,8 @@ fun NewTaskSheet(
             if (quickAddMatched) {
                 val detectedLabel = listOfNotNull(
                     quickAdd.due?.let { TaskScheduleUtils.formatDueDate(it) },
-                    quickAdd.time
+                    quickAdd.time,
+                    quickAdd.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) }
                 ).joinToString(" · ")
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -546,7 +581,7 @@ fun NewTaskSheet(
                         )
                         "Repeat" -> RepeatPanel(
                             selectedRecurrence = selectedRecurrence,
-                            onSelect = { selectedRecurrence = it }
+                            onSelect = { setRecurrence(it) }
                         )
                     }
                 }

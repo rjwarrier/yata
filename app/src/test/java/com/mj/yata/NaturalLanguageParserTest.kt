@@ -59,4 +59,195 @@ class NaturalLanguageParserTest {
         assertNull(result.time)
         assertEquals("just a plain task", result.title)
     }
+
+    @Test
+    fun parsesYesterday() {
+        val result = NaturalLanguageParser.parse("yesterday standup notes", ref)
+        assertEquals("2026-07-03", result.due)
+        assertEquals("standup notes", result.title)
+    }
+
+    @Test
+    fun parsesThisWeekend() {
+        // ref is Saturday itself, so "this weekend" should resolve to today.
+        val result = NaturalLanguageParser.parse("this weekend clean garage", ref)
+        assertEquals("2026-07-04", result.due)
+        assertEquals("clean garage", result.title)
+    }
+
+    @Test
+    fun parsesNextMonth() {
+        val result = NaturalLanguageParser.parse("next month renew passport", ref)
+        assertEquals("2026-08-04", result.due)
+        assertEquals("renew passport", result.title)
+    }
+
+    @Test
+    fun parsesInNMonths() {
+        val result = NaturalLanguageParser.parse("in 2 months dentist checkup", ref)
+        assertEquals("2026-09-04", result.due)
+        assertEquals("dentist checkup", result.title)
+    }
+
+    @Test
+    fun parsesEndOfMonth() {
+        val result = NaturalLanguageParser.parse("end of month rent due", ref)
+        assertEquals("2026-07-31", result.due)
+        assertEquals("rent due", result.title)
+    }
+
+    @Test
+    fun parsesEndOfWeek() {
+        val result = NaturalLanguageParser.parse("end of week status report", ref)
+        assertEquals("2026-07-05", result.due) // next Sunday after Saturday 7/4
+        assertEquals("status report", result.title)
+    }
+
+    @Test
+    fun parsesThisWeekdayIncludingToday() {
+        // ref itself is a Saturday, so "this saturday" should mean today, not next week.
+        val result = NaturalLanguageParser.parse("this saturday farmers market", ref)
+        assertEquals("2026-07-04", result.due)
+        assertEquals("farmers market", result.title)
+    }
+
+    @Test
+    fun parsesTonightAsTodayWithEveningTime() {
+        val result = NaturalLanguageParser.parse("tonight watch movie", ref)
+        assertEquals("2026-07-04", result.due)
+        assertEquals("9:00 PM", result.time)
+        assertEquals("watch movie", result.title)
+    }
+
+    @Test
+    fun parsesTimeOfDayWords() {
+        assertEquals("9:00 AM", NaturalLanguageParser.parse("morning workout", ref).time)
+        assertEquals("12:00 PM", NaturalLanguageParser.parse("noon lunch", ref).time)
+        assertEquals("3:00 PM", NaturalLanguageParser.parse("afternoon nap", ref).time)
+        assertEquals("6:00 PM", NaturalLanguageParser.parse("evening walk", ref).time)
+        assertEquals("12:00 AM", NaturalLanguageParser.parse("midnight snack", ref).time)
+    }
+
+    @Test
+    fun explicitTimeWinsOverTimeOfDayWord() {
+        val result = NaturalLanguageParser.parse("evening 8pm dinner", ref)
+        assertEquals("8:00 PM", result.time)
+    }
+
+    @Test
+    fun parses24HourTime() {
+        val result = NaturalLanguageParser.parse("15:30 team call", ref)
+        assertEquals("3:30 PM", result.time)
+        assertEquals("team call", result.title)
+    }
+
+    @Test
+    fun parsesDailyRecurrence() {
+        val result = NaturalLanguageParser.parse("daily meditation", ref)
+        assertNotNull(result.recurrence)
+        assertEquals("daily", result.recurrence?.freq)
+        assertEquals("meditation", result.title)
+    }
+
+    @Test
+    fun parsesEveryWeekdayRecurrence() {
+        val result = NaturalLanguageParser.parse("every monday gym", ref)
+        assertNotNull(result.recurrence)
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(listOf("MO"), result.recurrence?.byday)
+        assertEquals("gym", result.title)
+        // "every monday" must not also trigger the bare-weekday due-date rule.
+        assertNull(result.due)
+    }
+
+    @Test
+    fun parsesWeekdaysAndWeekendsRecurrence() {
+        val weekdays = NaturalLanguageParser.parse("weekdays commute", ref)
+        assertEquals(listOf("MO", "TU", "WE", "TH", "FR"), weekdays.recurrence?.byday)
+
+        val weekends = NaturalLanguageParser.parse("weekends chores", ref)
+        assertEquals(listOf("SA", "SU"), weekends.recurrence?.byday)
+    }
+
+    @Test
+    fun parsesMonthlyAndYearlyRecurrence() {
+        assertEquals("monthly", NaturalLanguageParser.parse("monthly rent", ref).recurrence?.freq)
+        assertEquals("yearly", NaturalLanguageParser.parse("yearly checkup", ref).recurrence?.freq)
+        assertEquals("yearly", NaturalLanguageParser.parse("annually renew license", ref).recurrence?.freq)
+    }
+
+    @Test
+    fun noRecurrenceWhenNotMentioned() {
+        val result = NaturalLanguageParser.parse("buy milk", ref)
+        assertNull(result.recurrence)
+    }
+
+    @Test
+    fun parsesEverySundayRecurrence() {
+        val result = NaturalLanguageParser.parse("every sunday laundry", ref)
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(listOf("SU"), result.recurrence?.byday)
+        assertEquals("laundry", result.title)
+        assertNull(result.due)
+    }
+
+    @Test
+    fun parsesEveryAlternateDay() {
+        val result = NaturalLanguageParser.parse("every alternate day water plants", ref)
+        assertEquals("daily", result.recurrence?.freq)
+        assertEquals(2, result.recurrence?.interval)
+        assertEquals("water plants", result.title)
+    }
+
+    @Test
+    fun parsesEveryOtherWeek() {
+        val result = NaturalLanguageParser.parse("every other week team retro", ref)
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(2, result.recurrence?.interval)
+        assertEquals("team retro", result.title)
+    }
+
+    @Test
+    fun parsesEveryNDays() {
+        val result = NaturalLanguageParser.parse("every 3 days water fish", ref)
+        assertEquals("daily", result.recurrence?.freq)
+        assertEquals(3, result.recurrence?.interval)
+        assertEquals("water fish", result.title)
+    }
+
+    @Test
+    fun parsesEveryNWeeks() {
+        val result = NaturalLanguageParser.parse("every 2 weeks haircut", ref)
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(2, result.recurrence?.interval)
+        assertEquals("haircut", result.title)
+    }
+
+    @Test
+    fun parsesEveryNMonths() {
+        val result = NaturalLanguageParser.parse("every 6 months dentist", ref)
+        assertEquals("monthly", result.recurrence?.freq)
+        assertEquals(6, result.recurrence?.interval)
+        assertEquals("dentist", result.title)
+    }
+
+    @Test
+    fun highlightRangesCoverRecognizedSpansInOriginalText() {
+        val raw = "tomorrow 3pm buy milk"
+        val result = NaturalLanguageParser.parse(raw, ref)
+        assertEquals(2, result.highlightRanges.size)
+        // Each recognized range, sliced from the original raw string, should be the phrase itself.
+        val slices = result.highlightRanges.map { raw.substring(it.first, it.last + 1) }
+        assertTrue(slices.any { it.equals("tomorrow", ignoreCase = true) })
+        assertTrue(slices.any { it.equals("3pm", ignoreCase = true) })
+    }
+
+    @Test
+    fun highlightRangesIncludeRecurrencePhrase() {
+        val raw = "every monday gym"
+        val result = NaturalLanguageParser.parse(raw, ref)
+        assertEquals(1, result.highlightRanges.size)
+        val range = result.highlightRanges.first()
+        assertEquals("every monday", raw.substring(range.first, range.last + 1))
+    }
 }
