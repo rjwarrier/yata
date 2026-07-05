@@ -1,15 +1,18 @@
 package com.mj.yata.ui.widgets
 
-import android.app.TimePickerDialog
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.mj.yata.util.TaskScheduleUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +48,7 @@ fun YataDatePickerDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun YataTimePickerLauncher(
     show: Boolean,
@@ -54,23 +58,29 @@ fun YataTimePickerLauncher(
 ) {
     if (!show) return
 
-    val context = LocalContext.current
-    DisposableEffect(context, initialTime) {
-        val initial = TaskScheduleUtils.parseTime(initialTime)
-        val dialog = TimePickerDialog(
-            context,
-            { _, hourOfDay, minute ->
-                onConfirm(TaskScheduleUtils.formatTime(hourOfDay, minute))
-            },
-            initial?.hour ?: 9,
-            initial?.minute ?: 0,
-            false
-        )
-        dialog.setOnDismissListener { onDismiss() }
-        dialog.show()
-        onDispose {
-            dialog.setOnDismissListener(null)
-            dialog.dismiss()
+    val initial = TaskScheduleUtils.parseTime(initialTime)
+    val timePickerState = rememberTimePickerState(
+        initialHour = initial?.hour ?: 9,
+        initialMinute = initial?.minute ?: 0,
+        is24Hour = false
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(TaskScheduleUtils.formatTime(timePickerState.hour, timePickerState.minute))
+            }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        text = {
+            TimePicker(state = timePickerState, modifier = Modifier.padding(top = 8.dp))
         }
-    }
+    )
 }

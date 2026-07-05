@@ -35,9 +35,17 @@ class ReminderScheduler @Inject constructor(
             userPreferences.defaultReminderMinuteFlow.first()
         )
         val localTime = TaskScheduleUtils.parseTime(task.dueTime) ?: defaultTime
-        val reminderOffset = TaskScheduleUtils.reminderOffsetMillis(task.reminder)
         val dueAtMillis = localDate.atTime(localTime).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val triggerAtMillis = dueAtMillis - reminderOffset
+
+        // A custom reminder is stored as a literal clock time (e.g. "4:45 PM") rather than one
+        // of the relative-offset presets — fire at that exact time on the due date instead of
+        // computing an offset from the due time.
+        val customReminderTime = TaskScheduleUtils.parseTime(task.reminder)
+        val triggerAtMillis = if (customReminderTime != null) {
+            localDate.atTime(customReminderTime).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        } else {
+            dueAtMillis - TaskScheduleUtils.reminderOffsetMillis(task.reminder)
+        }
 
         if (triggerAtMillis <= System.currentTimeMillis()) {
             cancelReminder(task)

@@ -75,6 +75,7 @@ fun TaskDetailScreen(
     var newSubtaskTitle by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) }
 
     if (task == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -476,9 +477,7 @@ fun TaskDetailScreen(
                                         placeholder = { Text("Add a sub-item...") },
                                         singleLine = true,
                                         modifier = Modifier.weight(1f),
-                                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                                        )
+                                        shape = RoundedCornerShape(12.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     IconButton(
@@ -518,9 +517,7 @@ fun TaskDetailScreen(
                                 placeholder = { Text("Add a subtask...") },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
-                                colors = TextFieldDefaults.outlinedTextFieldColors(
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                                )
+                                shape = RoundedCornerShape(12.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
@@ -729,6 +726,11 @@ fun TaskDetailScreen(
                                         activeSheet = DetailSheetType.None
                                     }
                                 }
+                                val customReminderSelected = task.reminder != null &&
+                                    com.mj.yata.util.TaskScheduleUtils.parseTime(task.reminder) != null
+                                LocalScheduleChip("Custom time", customReminderSelected) {
+                                    showReminderTimePicker = true
+                                }
                             }
                         }
                     }
@@ -879,6 +881,28 @@ fun TaskDetailScreen(
         onDismiss = { showTimePicker = false },
         onConfirm = {
             viewModel.upsertTask(task.copy(time = it))
+            showTimePicker = false
+        }
+    )
+
+    YataTimePickerLauncher(
+        show = showReminderTimePicker,
+        initialTime = task.reminder,
+        onDismiss = { showReminderTimePicker = false },
+        onConfirm = {
+            showReminderTimePicker = false
+            when {
+                !com.mj.yata.util.TaskScheduleUtils.isCustomReminderBeforeDue(it, task.time) -> {
+                    scope.launch { snackbarHostState.showSnackbar("Reminder must be before the due time.") }
+                }
+                !com.mj.yata.util.TaskScheduleUtils.isReminderTimeInFuture(task.due, it) -> {
+                    scope.launch { snackbarHostState.showSnackbar("That reminder time has already passed today.") }
+                }
+                else -> {
+                    viewModel.upsertTask(task.copy(reminder = it))
+                    activeSheet = DetailSheetType.None
+                }
+            }
         }
     )
 }

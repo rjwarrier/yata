@@ -13,27 +13,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
+import com.mj.yata.ui.theme.ALL_ACCENT_KEYS
 import com.mj.yata.ui.theme.LocalYataAccents
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ColorPicker(
     selectedColorKey: String,
     onColorSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val swatches = listOf(
-        "accentA", "accentB", "accentC", "accentD",
-        "accentE", "accentF", "accentG", "accentH"
-    )
     val accents = LocalYataAccents.current
 
-    Row(
+    FlowRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        swatches.forEach { key ->
+        ALL_ACCENT_KEYS.forEach { key ->
             val color = accents.getAccent(key)
             val isSelected = key == selectedColorKey
 
@@ -54,7 +53,7 @@ fun ColorPicker(
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "Selected",
-                        tint = if (key == "accentC" || key == "accentG") Color.White else Color.Black, // Ensure icon contrast
+                        tint = if (color.luminance() > 0.5f) Color.Black else Color.White,
                         modifier = Modifier.size(16.dp)
                     )
                 }

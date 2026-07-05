@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mj.yata.domain.model.*
@@ -58,6 +59,9 @@ fun ProjectDetailScreen(
     }
 
     val projectColor = accents.getAccent(project.color)
+    com.mj.yata.ui.theme.StatusBarColor(
+        projectColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
+    )
     val projectTasks = remember(tasks, project.id) { tasks.filter { it.projectId == project.id }.sortedBy { it.sortOrder } }
 
     var localOrder by remember(projectTasks) { mutableStateOf(projectTasks) }
@@ -132,7 +136,7 @@ fun ProjectDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = projectColor.copy(alpha = 0.12f)
+                    containerColor = projectColor.copy(alpha = 0.16f)
                 )
             )
         },
@@ -159,7 +163,7 @@ fun ProjectDetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(projectColor.copy(alpha = 0.12f))
+                    .background(projectColor.copy(alpha = 0.16f))
                     .padding(bottom = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

@@ -148,6 +148,8 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
         }
     }
 
-    private val accents = listOf("accentA", "accentB", "accentC", "accentD", "accentE", "accentF", "accentG", "accentH")
-    private fun accentFor(name: String) = accents[Math.floorMod(name.hashCode(), accents.size)]
+    private fun accentFor(name: String): String {
+        val accents = com.mj.yata.ui.theme.ALL_ACCENT_KEYS
+        return accents[Math.floorMod(name.hashCode(), accents.size)]
+    }
 }

@@ -20,7 +20,10 @@ object ProfilePhotoUtils {
     fun decodeSampledBitmap(context: Context, uri: Uri): Bitmap? {
         val resolver = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
+        // decodeStream always returns null when inJustDecodeBounds is set — it only mutates
+        // `bounds` as a side effect. Check stream availability separately, not its return value.
+        val boundsStream = resolver.openInputStream(uri) ?: return null
+        boundsStream.use { BitmapFactory.decodeStream(it, null, bounds) }
 
         var sampleSize = 1
         while (bounds.outWidth / sampleSize > MAX_DECODE_DIMENSION || bounds.outHeight / sampleSize > MAX_DECODE_DIMENSION) {

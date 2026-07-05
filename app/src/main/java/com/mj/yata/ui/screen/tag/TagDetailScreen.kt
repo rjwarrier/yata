@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,6 +62,9 @@ fun TagDetailScreen(
     } else {
         accents.getAccent(tag.color)
     }
+    com.mj.yata.ui.theme.StatusBarColor(
+        tagColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
+    )
 
     val allTaggedTasks = remember(tasks, lists, projects, tag.id) {
         tasks.filter { it.effectiveTagIds(projects).contains(tag.id) }
@@ -125,7 +129,7 @@ fun TagDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = tagColor.copy(alpha = 0.12f)
+                    containerColor = tagColor.copy(alpha = 0.16f)
                 )
             )
         }
@@ -145,7 +149,7 @@ fun TagDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(tagColor.copy(alpha = 0.12f))
+                        .background(tagColor.copy(alpha = 0.16f))
                         .padding(vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {

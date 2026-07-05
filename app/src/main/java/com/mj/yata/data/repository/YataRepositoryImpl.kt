@@ -88,6 +88,7 @@ class YataRepositoryImpl @Inject constructor(
                 val completedHistoryTask = taskEntity.copy(
                     id = historicalTaskId,
                     done = true,
+                    completedAt = System.currentTimeMillis(),
                     recurrenceJson = null // one-off completed instance
                 )
                 db.taskDao().insert(completedHistoryTask)
@@ -118,6 +119,7 @@ class YataRepositoryImpl @Inject constructor(
                 
                 val updatedTask = taskEntity.copy(
                     done = false, // Reset done for next occurrence
+                    completedAt = null,
                     dueDate = nextDate,
                     recurrenceJson = serializeRecurrence(updatedRecurrence)
                 )
@@ -129,7 +131,10 @@ class YataRepositoryImpl @Inject constructor(
         }
 
         // Standard behavior
-        val updatedTask = taskEntity.copy(done = isNowDone)
+        val updatedTask = taskEntity.copy(
+            done = isNowDone,
+            completedAt = if (isNowDone) System.currentTimeMillis() else null
+        )
         db.taskDao().insert(updatedTask)
         syncReminder(updatedTask)
         widgetUpdater.notifyTasksChanged()

@@ -49,7 +49,12 @@ object NaturalLanguageParser {
     )
 
     // ── Time ──────────────────────────────────────────────────────────────
-    private val time12Regex = Regex("\\b(at\\s+)?(\\d{1,2})(:(\\d{2}))?\\s*(am|pm|AM|PM)\\b")
+    // Accepts "5:30pm" and "5.30pm" alike — "." is a common typing shorthand for the minute
+    // separator that users reach for as often as ":", especially on numeric keyboards.
+    private val time12Regex = Regex("\\b(at\\s+)?(\\d{1,2})([:.](\\d{2}))?\\s*(am|pm|AM|PM)\\b")
+    // Colon only (no ".") — unlike the 12h form this has no am/pm to disambiguate it from a
+    // plain decimal like "2.50" (a price, a quantity), so widening the separator here would
+    // risk misreading those as times.
     private val time24Regex = Regex("\\b(?:at\\s+)?([01]?\\d|2[0-3]):([0-5]\\d)\\b")
     private val timeOfDayWords = mapOf(
         "night" to LocalTime.of(21, 0),

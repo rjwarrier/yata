@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.FlowRow
@@ -67,7 +69,6 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
@@ -88,9 +89,12 @@ import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
 import java.time.LocalDate
 
-private val MENTION_SWATCHES = listOf("accentA", "accentB", "accentC", "accentD", "accentE", "accentF", "accentG", "accentH")
 private fun pickAccentFor(name: String): String =
-    MENTION_SWATCHES[Math.floorMod(name.hashCode(), MENTION_SWATCHES.size)]
+    com.mj.yata.ui.theme.ALL_ACCENT_KEYS[Math.floorMod(name.hashCode(), com.mj.yata.ui.theme.ALL_ACCENT_KEYS.size)]
+
+/** Forced on every chip in the Assigned-to/Tags rows so mixed content (avatars, dots, dashed
+ * "add" pills) never drifts out of alignment — matches the attribute-chip row's YataSelectChip height. */
+private val CHIP_ROW_HEIGHT = 34.dp
 
 private data class MentionToken(val trigger: Char, val query: String, val startIndex: Int)
 
@@ -171,9 +175,11 @@ fun NewTaskSheet(
     var selectedDueDate by remember { mutableStateOf<String?>(initialDueDate) }
     var selectedTime by remember { mutableStateOf<String?>(null) }
     var selectedReminder by remember { mutableStateOf<String?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
     var selectedRecurrence by remember { mutableStateOf<Recurrence?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) }
 
     // Quick-add: typing a date/time phrase in the title (e.g. "tomorrow 3pm") prefills these
     // chips. Once the user picks a due date/time manually, their choice always wins over
@@ -265,6 +271,7 @@ fun NewTaskSheet(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .imePadding()
     ) {
         TopAppBar(
             title = {
@@ -292,11 +299,14 @@ fun NewTaskSheet(
         ) {
             Spacer(modifier = Modifier.size(2.dp))
 
-            // Underlines recognized date/time/recurrence phrases in place (e.g. "tomorrow
+            // Chip-tints recognized date/time/recurrence phrases in place (e.g. "tomorrow
             // 3pm") without altering the actual text or cursor mapping — they're stripped
             // from the title only once the task is actually created (see `submit` below).
-            val quickAddUnderlineColor = MaterialTheme.colorScheme.primary
-            val quickAddVisualTransformation = remember(quickAdd.highlightRanges, quickAddMatched, quickAddUnderlineColor) {
+            // A real rounded pill isn't possible inline in an editable BasicTextField, so this
+            // approximates one with a tinted background + bold colored text (same accent@16%
+            // language TagChip/YataSelectChip use elsewhere) — far more visible than a thin underline.
+            val quickAddChipColor = MaterialTheme.colorScheme.primary
+            val quickAddVisualTransformation = remember(quickAdd.highlightRanges, quickAddMatched, quickAddChipColor) {
                 VisualTransformation { text ->
                     if (!quickAddMatched || quickAdd.highlightRanges.isEmpty()) {
                         TransformedText(text, OffsetMapping.Identity)
@@ -307,7 +317,15 @@ fun NewTaskSheet(
                                 val start = range.first.coerceIn(0, text.text.length)
                                 val end = (range.last + 1).coerceIn(0, text.text.length)
                                 if (start < end) {
-                                    addStyle(SpanStyle(textDecoration = TextDecoration.Underline, color = quickAddUnderlineColor), start, end)
+                                    addStyle(
+                                        SpanStyle(
+                                            color = quickAddChipColor,
+                                            fontWeight = FontWeight.Bold,
+                                            background = quickAddChipColor.copy(alpha = 0.16f)
+                                        ),
+                                        start,
+                                        end
+                                    )
                                 }
                             }
                         }
@@ -500,7 +518,8 @@ fun NewTaskSheet(
                         }
                         YataDashedAddChip(
                             label = if (selectedAssigneeIds.isEmpty()) "Assign" else "Add",
-                            onClick = { activePanel = if (activePanel == "People") null else "People" }
+                            onClick = { activePanel = if (activePanel == "People") null else "People" },
+                            height = CHIP_ROW_HEIGHT
                         )
                     }
                 }
@@ -520,13 +539,15 @@ fun NewTaskSheet(
                                 TagChip(
                                     name = tag.name,
                                     accentKey = tag.color,
-                                    onRemoveClick = { selectedTagIds.remove(tid) }
+                                    onRemoveClick = { selectedTagIds.remove(tid) },
+                                    modifier = Modifier.height(CHIP_ROW_HEIGHT)
                                 )
                             }
                         }
                         YataDashedAddChip(
                             label = if (selectedTagIds.isEmpty()) "Tag" else "Add",
-                            onClick = { activePanel = if (activePanel == "Tags") null else "Tags" }
+                            onClick = { activePanel = if (activePanel == "Tags") null else "Tags" },
+                            height = CHIP_ROW_HEIGHT
                         )
                     }
                 }
@@ -551,7 +572,8 @@ fun NewTaskSheet(
                         "Reminder" -> ReminderPanel(
                             hasDueDate = selectedDueDate != null,
                             selectedReminder = selectedReminder,
-                            onPick = { selectedReminder = it }
+                            onPick = { selectedReminder = it },
+                            onCustom = { showReminderTimePicker = true }
                         )
                         "Project" -> ProjectPanel(
                             projects = projects,
@@ -675,7 +697,30 @@ fun NewTaskSheet(
         show = showTimePicker,
         initialTime = selectedTime,
         onDismiss = { showTimePicker = false },
-        onConfirm = { setTime(it) }
+        onConfirm = {
+            setTime(it)
+            showTimePicker = false
+        }
+    )
+
+    YataTimePickerLauncher(
+        show = showReminderTimePicker,
+        initialTime = selectedReminder,
+        onDismiss = { showReminderTimePicker = false },
+        onConfirm = {
+            when {
+                !TaskScheduleUtils.isCustomReminderBeforeDue(it, selectedTime) -> {
+                    android.widget.Toast.makeText(context, "Reminder must be before the due time.", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                !TaskScheduleUtils.isReminderTimeInFuture(selectedDueDate, it) -> {
+                    android.widget.Toast.makeText(context, "That reminder time has already passed today.", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                else -> {
+                    selectedReminder = it
+                }
+            }
+            showReminderTimePicker = false
+        }
     )
 }
 
@@ -718,9 +763,10 @@ private fun AssignedPersonChip(
 ) {
     Row(
         modifier = Modifier
+            .height(CHIP_ROW_HEIGHT)
             .clip(androidx.compose.foundation.shape.CircleShape)
             .background(MaterialTheme.colorScheme.tertiaryContainer)
-            .padding(start = 4.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+            .padding(start = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -895,7 +941,8 @@ private fun TimePanel(
 private fun ReminderPanel(
     hasDueDate: Boolean,
     selectedReminder: String?,
-    onPick: (String?) -> Unit
+    onPick: (String?) -> Unit,
+    onCustom: () -> Unit
 ) {
     if (!hasDueDate) {
         PanelHint("Pick a due date before setting a reminder.")
@@ -905,6 +952,8 @@ private fun ReminderPanel(
             TaskScheduleUtils.reminderOptions.forEach { option ->
                 YataSelectChip(option, selectedReminder == option, { onPick(option) })
             }
+            val customReminderSelected = selectedReminder != null && TaskScheduleUtils.parseTime(selectedReminder) != null
+            YataSelectChip("Custom time", customReminderSelected, { onCustom() })
         }
     }
 }

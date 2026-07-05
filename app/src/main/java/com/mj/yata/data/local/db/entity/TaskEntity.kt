@@ -35,6 +35,7 @@ data class TaskEntity(
     val priority: String, // "none" | "low" | "med" | "high"
     val flag: Boolean,
     val done: Boolean,
+    val completedAt: Long? = null,
     val notes: String?,
     val recurrenceJson: String?, // JSON representation of Recurrence
     val sortOrder: Int = 0

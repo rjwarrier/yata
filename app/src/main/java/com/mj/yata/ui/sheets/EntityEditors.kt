@@ -46,6 +46,7 @@ fun <G> GroupAssignSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .navigationBarsPadding()
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -135,6 +136,7 @@ fun ProjectEditorSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .navigationBarsPadding()
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -409,6 +411,7 @@ fun PersonEditorSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .navigationBarsPadding()
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -540,6 +543,7 @@ fun TagEditorSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .navigationBarsPadding()
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -655,11 +659,12 @@ fun ListEditorSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .navigationBarsPadding()
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        val titleText = if (initialName.isEmpty()) "New folder" else "Edit folder"
+        val titleText = if (initialName.isEmpty()) "New list" else "Edit list"
         val buttonText = if (initialName.isEmpty()) "Create" else "Save"
 
         Text(
@@ -672,7 +677,7 @@ fun ListEditorSheet(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Folder name") },
+            label = { Text("List name") },
             placeholder = { Text("e.g. Personal") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -680,7 +685,7 @@ fun ListEditorSheet(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "Folder color",
+                text = "List color",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -692,7 +697,7 @@ fun ListEditorSheet(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "Folder icon",
+                text = "List icon",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

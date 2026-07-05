@@ -3,8 +3,11 @@ package com.mj.yata.ui.screen.main
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
@@ -60,6 +63,7 @@ fun MainScreen(
     viewModel: MainViewModel,
     navController: NavController,
     onNavigateToSettings: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToProjectDetail: (String) -> Unit,
@@ -121,179 +125,192 @@ fun MainScreen(
                     .fillMaxHeight()
                     .width(320.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp)
+                val accents = LocalYataAccents.current
+
+                // Starred projects, folders, tags & people (computed once per data change, used below)
+                val starredProjects = remember(projects) { projects.filter { it.starred } }
+                val starredLists = remember(lists) { lists.filter { it.starred } }
+                val starredTags = remember(tags) { tags.filter { it.starred } }
+                val starredPeople = remember(people) { people.filter { it.starred } }
+                val visibleStarredProjects = if (projectsFeatureEnabled) starredProjects else emptyList()
+                val visibleStarredTags = if (tagsFeatureEnabled) starredTags else emptyList()
+                val visibleStarredPeople = if (peopleFeatureEnabled) starredPeople else emptyList()
+
+                // One flat scrollable list — everything (header, nav links, starred, folders,
+                // Analytics/Settings) scrolls together so nothing gets stranded off-screen when
+                // there are more starred items / folders than fit in the drawer's height.
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Profile Header
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    ) {
-                        PersonAvatar(
-                            initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
-                            accentKey = "accentC",
-                            size = 44.dp,
-                            photoUri = userPhotoUri
-                        )
-                        Column {
-                            Text(
-                                text = userName,
-                                style = MaterialTheme.typography.titleMedium
+                    item {
+                        // Profile Header
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        ) {
+                            PersonAvatar(
+                                initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                                accentKey = "accentC",
+                                size = 44.dp,
+                                photoUri = userPhotoUri
                             )
-                            Text(
-                                text = userEmail,
-                                style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            )
+                            Column {
+                                Text(
+                                    text = userName,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = userEmail,
+                                    style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                )
+                            }
                         }
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    Spacer(modifier = Modifier.height(16.dp))
+                    item {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
 
-                    // Starred projects, folders, tags & people (computed once per data change, used below)
-                    val starredProjects = remember(projects) { projects.filter { it.starred } }
-                    val starredLists = remember(lists) { lists.filter { it.starred } }
-                    val starredTags = remember(tags) { tags.filter { it.starred } }
-                    val starredPeople = remember(people) { people.filter { it.starred } }
-
-                    // Navigation Links
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                    item {
+                        DrawerItem("Today", Icons.Default.Today, selectedTab == 0) {
+                            selectedTab = 0
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+                    if (projectsFeatureEnabled) {
                         item {
-                            DrawerItem("Today", Icons.Default.Today, selectedTab == 0) {
-                                selectedTab = 0
+                            DrawerItem("Projects", Icons.Default.Layers, selectedTab == 1) {
+                                selectedTab = 1
                                 scope.launch { drawerState.close() }
                             }
                         }
-                        if (projectsFeatureEnabled) {
-                            item {
-                                DrawerItem("Projects", Icons.Default.Layers, selectedTab == 1) {
-                                    selectedTab = 1
-                                    scope.launch { drawerState.close() }
-                                }
-                            }
-                        }
-                        if (peopleFeatureEnabled) {
-                            item {
-                                DrawerItem("People", Icons.Default.People, selectedTab == 2) {
-                                    selectedTab = 2
-                                    scope.launch { drawerState.close() }
-                                }
-                            }
-                        }
-                        if (tagsFeatureEnabled) {
-                            item {
-                                DrawerItem("Tags", Icons.Default.Label, selectedTab == 3) {
-                                    selectedTab = 3
-                                    scope.launch { drawerState.close() }
-                                }
-                            }
-                        }
+                    }
+                    if (peopleFeatureEnabled) {
                         item {
-                            DrawerItem("Upcoming", Icons.Default.CalendarViewWeek, selectedTab == 4) {
-                                selectedTab = 4
+                            DrawerItem("People", Icons.Default.People, selectedTab == 2) {
+                                selectedTab = 2
                                 scope.launch { drawerState.close() }
                             }
                         }
-
-                        // Starred projects, folders, tags & people section
-                        val visibleStarredProjects = if (projectsFeatureEnabled) starredProjects else emptyList()
-                        val visibleStarredTags = if (tagsFeatureEnabled) starredTags else emptyList()
-                        val visibleStarredPeople = if (peopleFeatureEnabled) starredPeople else emptyList()
-                        if (visibleStarredProjects.isNotEmpty() || starredLists.isNotEmpty() || visibleStarredTags.isNotEmpty() || visibleStarredPeople.isNotEmpty()) {
-                            item {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "STARRED",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    ),
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                )
-                            }
-                            items(visibleStarredProjects, key = { "starred_pr_${it.id}" }) { project ->
-                                DrawerItem(project.name, Icons.Default.Layers, false) {
-                                    onNavigateToProjectDetail(project.id)
-                                    scope.launch { drawerState.close() }
-                                }
-                            }
-                            items(starredLists, key = { "starred_l_${it.id}" }) { list ->
-                                DrawerItem(list.name, Icons.Default.Folder, false) {
-                                    onNavigateToListDetail(list.id)
-                                    scope.launch { drawerState.close() }
-                                }
-                            }
-                            items(visibleStarredTags, key = { "starred_t_${it.id}" }) { tag ->
-                                DrawerItem(tag.name, Icons.Default.Label, false) {
-                                    onNavigateToTagDetail(tag.id)
-                                    scope.launch { drawerState.close() }
-                                }
-                            }
-                            items(visibleStarredPeople, key = { "starred_p_${it.id}" }) { person ->
-                                DrawerItem(person.name, Icons.Default.Person, false) {
-                                    onNavigateToPersonDetail(person.id)
-                                    scope.launch { drawerState.close() }
-                                }
+                    }
+                    if (tagsFeatureEnabled) {
+                        item {
+                            DrawerItem("Tags", Icons.Default.Label, selectedTab == 3) {
+                                selectedTab = 3
+                                scope.launch { drawerState.close() }
                             }
                         }
+                    }
+                    item {
+                        DrawerItem("Upcoming", Icons.Default.CalendarViewWeek, selectedTab == 4) {
+                            selectedTab = 4
+                            scope.launch { drawerState.close() }
+                        }
+                    }
 
-                        // Folder lists section
+                    // Starred projects, folders, tags & people section
+                    if (visibleStarredProjects.isNotEmpty() || starredLists.isNotEmpty() || visibleStarredTags.isNotEmpty() || visibleStarredPeople.isNotEmpty()) {
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "FOLDERS",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                )
-                                IconButton(
-                                    onClick = {
-                                        scope.launch {
-                                            drawerState.close()
-                                            isNewListSheetOpen = true
-                                        }
-                                    },
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = "New folder",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
+                            Text(
+                                text = "STARRED",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                        items(visibleStarredProjects, key = { "starred_pr_${it.id}" }) { project ->
+                            DrawerItem(project.name, Icons.Default.Layers, false, accents.getAccent(project.color)) {
+                                onNavigateToProjectDetail(project.id)
+                                scope.launch { drawerState.close() }
                             }
                         }
-                        items(lists) { list ->
-                            DrawerItem(list.name, Icons.Default.Folder, false) {
+                        items(starredLists, key = { "starred_l_${it.id}" }) { list ->
+                            DrawerItem(list.name, Icons.Default.Folder, false, accents.getAccent(list.color)) {
                                 onNavigateToListDetail(list.id)
                                 scope.launch { drawerState.close() }
                             }
                         }
+                        items(visibleStarredTags, key = { "starred_t_${it.id}" }) { tag ->
+                            val tagColor = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
+                            DrawerItem(tag.name, Icons.Default.Label, false, tagColor) {
+                                onNavigateToTagDetail(tag.id)
+                                scope.launch { drawerState.close() }
+                            }
+                        }
+                        items(visibleStarredPeople, key = { "starred_p_${it.id}" }) { person ->
+                            DrawerItem(person.name, Icons.Default.Person, false) {
+                                onNavigateToPersonDetail(person.id)
+                                scope.launch { drawerState.close() }
+                            }
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    Spacer(modifier = Modifier.height(8.dp))
+                    // Folder lists section
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "LISTS",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                            IconButton(
+                                onClick = {
+                                    scope.launch {
+                                        drawerState.close()
+                                        isNewListSheetOpen = true
+                                    }
+                                },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "New list",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                    items(lists) { list ->
+                        DrawerItem(list.name, Icons.Default.Folder, false, accents.getAccent(list.color)) {
+                            onNavigateToListDetail(list.id)
+                            scope.launch { drawerState.close() }
+                        }
+                    }
 
-                    // Settings link
-                    DrawerItem("Settings", Icons.Default.Settings, false) {
-                        onNavigateToSettings()
-                        scope.launch { drawerState.close() }
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    item {
+                        DrawerItem("Analytics", Icons.Default.Analytics, false) {
+                            onNavigateToAnalytics()
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+                    item {
+                        DrawerItem("Settings", Icons.Default.Settings, false) {
+                            onNavigateToSettings()
+                            scope.launch { drawerState.close() }
+                        }
                     }
                 }
             }
@@ -307,10 +324,9 @@ fun MainScreen(
                     todayBadgeCount = todayRemainingCount,
                     peopleEnabled = peopleFeatureEnabled,
                     tagsEnabled = tagsFeatureEnabled,
-                    projectsEnabled = projectsFeatureEnabled
-                ) {
-                    selectedTab = it
-                }
+                    projectsEnabled = projectsFeatureEnabled,
+                    onTabSelected = { selectedTab = it }
+                )
             },
             floatingActionButton = {
                 // Each tab offers its own primary creation action; others show no FAB.
@@ -490,7 +506,10 @@ fun MainScreen(
         if (activeSheet == MainSheetType.NewTask) {
             androidx.compose.ui.window.Dialog(
                 onDismissRequest = { activeSheet = MainSheetType.None },
-                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+                properties = androidx.compose.ui.window.DialogProperties(
+                    usePlatformDefaultWidth = false,
+                    decorFitsSystemWindows = false
+                )
             ) {
                 NewTaskSheet(
                     lists = lists,
@@ -585,6 +604,7 @@ fun DrawerItem(
     label: String,
     icon: ImageVector,
     selected: Boolean,
+    accentColor: Color? = null,
     onClick: () -> Unit
 ) {
     Surface(
@@ -603,11 +623,13 @@ fun DrawerItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                tint = accentColor
+                    ?: if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = label,
-                color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+                color = accentColor
+                    ?: if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelLarge.copy(
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                 )
@@ -643,6 +665,14 @@ fun CustomBottomNav(
     val navDividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     val navDividerStrokeWidth = with(androidx.compose.ui.platform.LocalDensity.current) { 1.dp.toPx() }
 
+    // Shared sliding pill: rather than each item fading its own background in/out at its own
+    // fixed spot (which reads as "pop here, pop there"), one pill element is positioned using
+    // each icon's real measured coordinates and springs between them on selection change.
+    var containerCoords by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+    val iconPositions = remember { mutableStateMapOf<Int, androidx.compose.ui.geometry.Offset>() }
+    var pillSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -657,74 +687,102 @@ fun CustomBottomNav(
             },
         color = MaterialTheme.colorScheme.surfaceContainer
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 4.dp)
+                .onGloballyPositioned { containerCoords = it }
         ) {
-            items.forEach { navIcon ->
-                val isSelected = navIcon.id == selectedTab
-                val indicatorColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-                    animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
-                    label = "navIndicatorColor"
+            val targetOffset = iconPositions[selectedTab]
+            if (targetOffset != null && pillSize != androidx.compose.ui.unit.IntSize.Zero) {
+                val animatedX by animateDpAsState(
+                    targetValue = with(density) { targetOffset.x.toDp() },
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                    label = "navPillX"
                 )
-                val iconTint by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
-                    label = "navIconTint"
+                val animatedY by animateDpAsState(
+                    targetValue = with(density) { targetOffset.y.toDp() },
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                    label = "navPillY"
                 )
-                val iconScale = remember { Animatable(1f) }
-                LaunchedEffect(isSelected) {
-                    if (isSelected) {
-                        iconScale.snapTo(0.8f)
-                        iconScale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium))
-                    }
-                }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable { onTabSelected(navIcon.id) }
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .height(32.dp)
-                            .width(56.dp)
-                            .clip(CircleShape)
-                            .background(indicatorColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        BadgedBox(
-                            badge = {
-                                if (navIcon.id == 0 && todayBadgeCount > 0) {
-                                    Badge { Text(if (todayBadgeCount > 99) "99+" else todayBadgeCount.toString()) }
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = if (isSelected) navIcon.filled else navIcon.outlined,
-                                contentDescription = navIcon.label,
-                                tint = iconTint,
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .scale(iconScale.value)
-                            )
+                        .offset(x = animatedX, y = animatedY)
+                        .size(with(density) { pillSize.width.toDp() }, with(density) { pillSize.height.toDp() })
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEach { navIcon ->
+                    val isSelected = navIcon.id == selectedTab
+                    val iconTint by animateColorAsState(
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
+                        label = "navIconTint"
+                    )
+                    val iconScale = remember { Animatable(1f) }
+                    LaunchedEffect(isSelected) {
+                        if (isSelected) {
+                            iconScale.snapTo(0.8f)
+                            iconScale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium))
                         }
                     }
-                    Text(
-                        text = navIcon.label,
-                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 11.sp
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null // the sliding pill + icon pop are the only feedback needed
+                            ) { onTabSelected(navIcon.id) }
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .height(32.dp)
+                                .width(56.dp)
+                                .onGloballyPositioned { coords ->
+                                    pillSize = coords.size
+                                    containerCoords?.let { parent ->
+                                        iconPositions[navIcon.id] = parent.localPositionOf(coords, androidx.compose.ui.geometry.Offset.Zero)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            BadgedBox(
+                                badge = {
+                                    if (navIcon.id == 0 && todayBadgeCount > 0) {
+                                        Badge { Text(if (todayBadgeCount > 99) "99+" else todayBadgeCount.toString()) }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (isSelected) navIcon.filled else navIcon.outlined,
+                                    contentDescription = navIcon.label,
+                                    tint = iconTint,
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .scale(iconScale.value)
+                                )
+                            }
+                        }
+                        Text(
+                            text = navIcon.label,
+                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 11.sp
+                            )
                         )
-                    )
+                    }
                 }
             }
         }

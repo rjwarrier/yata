@@ -12,6 +12,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.mj.yata.ui.screen.analytics.AnalyticsScreen
 import com.mj.yata.ui.screen.main.MainScreen
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.screen.taskdetail.TaskDetailScreen
@@ -37,7 +38,6 @@ fun AppNavigation(
             launchSingleTop = true
         }
     }
-
     NavHost(
         navController    = navController,
         startDestination = Screen.Main.route,
@@ -50,7 +50,9 @@ fun AppNavigation(
         // ── Main Shell (5-tab navigation) ───────────────────────────────────
         composable(
             route = Screen.Main.route,
-            arguments = listOf(navArgument("tab") { type = NavType.IntType; defaultValue = 0 })
+            arguments = listOf(
+                navArgument("tab") { type = NavType.IntType; defaultValue = 0 }
+            )
         ) { backStackEntry ->
             val initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
             val viewModel: MainViewModel = hiltViewModel()
@@ -59,6 +61,7 @@ fun AppNavigation(
                 navController = navController,
                 initialTab = initialTab,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToAnalytics = { navController.navigate(Screen.Analytics.route) },
                 onNavigateToSearch = { navController.navigate(Screen.Search.route) },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
@@ -186,6 +189,16 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onExportRequested = onExportRequested,
                 onImportRequested = onImportRequested,
+                onNavigateToTab = onNavigateToTab
+            )
+        }
+
+        // ── Analytics ────────────────────────────────────────────────────────
+        composable(Screen.Analytics.route) {
+            val viewModel: MainViewModel = hiltViewModel()
+            AnalyticsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
                 onNavigateToTab = onNavigateToTab
             )
         }

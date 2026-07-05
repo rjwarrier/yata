@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,6 +64,9 @@ fun PersonDetailScreen(
     }
 
     val personColor = accents.getAccent(person.color)
+    com.mj.yata.ui.theme.StatusBarColor(
+        personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
+    )
     val assignedTasks = remember(tasks, person.id) { tasks.filter { it.assigneeIds.contains(person.id) } }
     val openTasks = assignedTasks.filter { !it.done }
     val completedTasks = assignedTasks.filter { it.done }
@@ -121,7 +125,7 @@ fun PersonDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = personColor.copy(alpha = 0.12f)
+                    containerColor = personColor.copy(alpha = 0.16f)
                 )
             )
         },
@@ -159,7 +163,7 @@ fun PersonDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(personColor.copy(alpha = 0.12f))
+                        .background(personColor.copy(alpha = 0.16f))
                         .padding(vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -339,7 +343,10 @@ fun PersonDetailScreen(
     if (isNewTaskSheetOpen) {
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { isNewTaskSheetOpen = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
         ) {
             NewTaskSheet(
                 lists = lists,

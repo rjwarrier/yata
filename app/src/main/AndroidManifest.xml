@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -51,6 +52,8 @@
             <intent-filter>
                 <action android:name="com.mj.yata.ACTION_COMPLETE_TASK" />
                 <action android:name="com.mj.yata.ACTION_SNOOZE_TASK" />
+                <action android:name="com.mj.yata.ACTION_SNOOZE_15M" />
+                <action android:name="com.mj.yata.ACTION_SNOOZE_TOMORROW" />
             </intent-filter>
         </receiver>
 

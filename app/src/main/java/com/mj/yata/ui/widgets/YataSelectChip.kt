@@ -1,7 +1,6 @@
 package com.mj.yata.ui.widgets
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -50,38 +49,39 @@ fun YataSelectChip(
     val bg = if (selected) tint.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh
     val fg = if (selected) tint else MaterialTheme.colorScheme.onSurface
 
-    Row(
-        modifier = modifier
-            .defaultMinSize(minHeight = height)
-            .clip(UiShape.pill)
-            .background(bg)
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        if (leading != null) {
-            leading()
-        } else if (dotColor != null) {
-            Box(modifier = Modifier.size(8.dp).background(dotColor, CircleShape))
-        }
-        Text(
-            text = label,
-            color = fg,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontSize = 13.sp
-            ),
-            maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 160.dp)
-        )
-        if (selected && showCheck) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = fg,
-                modifier = Modifier.size(14.dp)
+    PressableScaleBox(onClick = onClick, modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .defaultMinSize(minHeight = height)
+                .clip(UiShape.pill)
+                .background(bg)
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (leading != null) {
+                leading()
+            } else if (dotColor != null) {
+                Box(modifier = Modifier.size(8.dp).background(dotColor, CircleShape))
+            }
+            Text(
+                text = label,
+                color = fg,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 13.sp
+                ),
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 160.dp)
             )
+            if (selected && showCheck) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = fg,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
         }
     }
 }
@@ -92,25 +92,32 @@ fun YataDashedAddChip(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    height: Dp = 34.dp
+    height: Dp = 34.dp,
+    iconSize: Dp = 13.dp,
+    fontSize: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified
 ) {
     val color = MaterialTheme.colorScheme.primary
-    Row(
-        modifier = modifier
-            .defaultMinSize(minHeight = height)
-            .clip(UiShape.pill)
-            .dashedBorder(color)
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Icon(Icons.Default.Add, contentDescription = null, tint = color, modifier = Modifier.size(15.dp))
-        Text(
-            text = label,
-            color = color,
-            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp)
-        )
+    PressableScaleBox(onClick = onClick, modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .defaultMinSize(minHeight = height)
+                .clip(UiShape.pill)
+                .dashedBorder(color)
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, tint = color, modifier = Modifier.size(iconSize))
+            Text(
+                text = label,
+                color = color,
+                style = if (fontSize == androidx.compose.ui.unit.TextUnit.Unspecified) {
+                    MaterialTheme.typography.labelMedium
+                } else {
+                    MaterialTheme.typography.labelMedium.copy(fontSize = fontSize)
+                }
+            )
+        }
     }
 }
 

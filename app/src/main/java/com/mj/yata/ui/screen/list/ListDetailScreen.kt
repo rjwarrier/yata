@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,6 +60,9 @@ fun ListDetailScreen(
     }
 
     val listColor = accents.getAccent(list.color)
+    com.mj.yata.ui.theme.StatusBarColor(
+        listColor.copy(alpha = 0.18f).compositeOver(MaterialTheme.colorScheme.background)
+    )
     val listTasks = remember(tasks, list.id) { tasks.filter { it.listId == list.id }.sortedBy { it.sortOrder } }
     val doneTasks = listTasks.count { it.done }
     val openTasks = listTasks.size - doneTasks
@@ -95,7 +99,7 @@ fun ListDetailScreen(
                     IconButton(onClick = { viewModel.toggleListStarred(list.id) }) {
                         Icon(
                             imageVector = if (list.starred) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                            contentDescription = if (list.starred) "Unstar folder" else "Star folder",
+                            contentDescription = if (list.starred) "Unstar list" else "Star list",
                             tint = if (list.starred) accents.accentD else MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -108,7 +112,7 @@ fun ListDetailScreen(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Edit folder") },
+                            text = { Text("Edit list") },
                             onClick = {
                                 showMenu = false
                                 isEditSheetOpen = true
@@ -116,7 +120,7 @@ fun ListDetailScreen(
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete folder") },
+                            text = { Text("Delete list") },
                             onClick = {
                                 showMenu = false
                                 showDeleteDialog = true
@@ -315,8 +319,8 @@ fun ListDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete folder?") },
-            text = { Text("All tasks inside this folder will be permanently deleted.") },
+            title = { Text("Delete list?") },
+            text = { Text("All tasks inside this list will be permanently deleted.") },
             confirmButton = {
                 TextButton(
                     onClick = {

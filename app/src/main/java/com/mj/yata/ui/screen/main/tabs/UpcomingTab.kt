@@ -157,22 +157,23 @@ fun UpcomingTab(
                 modifier = Modifier.statusBarsPadding()
             )
         } else {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                IconButton(onClick = onMenuClick) {
+                IconButton(onClick = onMenuClick, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Open drawer",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.align(Alignment.Center)
+                ) {
                     if (viewMode == ScheduleViewMode.MONTH) {
                         IconButton(onClick = { selectedMonth = selectedMonth.minusMonths(1) }) {
                             Icon(
@@ -203,7 +204,8 @@ fun UpcomingTab(
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
                     IconButton(onClick = onSearchClick) {
                         Icon(

@@ -131,6 +131,7 @@ class JsonExporter @Inject constructor(
                 o.put("priority", t.priority)
                 o.put("flag", t.flag)
                 o.put("done", t.done)
+                o.put("completedAt", t.completedAt ?: JSONObject.NULL)
                 o.put("notes", t.notes)
                 o.put("sortOrder", t.sortOrder)
 
@@ -451,6 +452,7 @@ class JsonExporter @Inject constructor(
                             priority = o.getString("priority"),
                             flag = o.optBoolean("flag", false),
                             done = o.optBoolean("done", false),
+                            completedAt = if (o.isNull("completedAt")) null else o.optLong("completedAt"),
                             assigneeIds = assigneeIds,
                             tagIds = tagIds,
                             recurrence = recurrence,

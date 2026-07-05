@@ -29,7 +29,9 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.notification.NotificationPermissionUtils
 import com.mj.yata.ui.screen.main.MainViewModel
+import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.CircularImageCropper
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
@@ -355,6 +357,58 @@ fun SettingsScreen(
                 }
             }
 
+            // Notifications Section — Android (especially Samsung/One UI) silently downgrades
+            // reminders to a fuzzy ~1hr-late delivery window, or kills them outright in Doze,
+            // unless these two OS-level permissions are granted. Neither is requestable at
+            // runtime like POST_NOTIFICATIONS — the user has to grant them from system settings.
+            Text(
+                text = "NOTIFICATIONS",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    var exactAlarmsAllowed by remember { mutableStateOf(NotificationPermissionUtils.canScheduleExactAlarms(context)) }
+                    var batteryUnrestricted by remember { mutableStateOf(NotificationPermissionUtils.isIgnoringBatteryOptimizations(context)) }
+
+                    // Re-check when coming back from system settings (the app doesn't get a
+                    // callback for these — only a lifecycle resume).
+                    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                                exactAlarmsAllowed = NotificationPermissionUtils.canScheduleExactAlarms(context)
+                                batteryUnrestricted = NotificationPermissionUtils.isIgnoringBatteryOptimizations(context)
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                    }
+
+                    NotificationPermissionRow(
+                        title = "Exact alarm timing",
+                        granted = exactAlarmsAllowed,
+                        grantedSubtitle = "Reminders fire at the exact time.",
+                        deniedSubtitle = "Reminders may arrive up to an hour late — tap to fix.",
+                        onClick = { NotificationPermissionUtils.openExactAlarmSettings(context) }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    NotificationPermissionRow(
+                        title = "Background delivery",
+                        granted = batteryUnrestricted,
+                        grantedSubtitle = "Battery optimization won't block reminders.",
+                        deniedSubtitle = "Battery optimization may delay or drop reminders — tap to fix.",
+                        onClick = { NotificationPermissionUtils.requestIgnoreBatteryOptimizations(context) }
+                    )
+                }
+            }
+
             // Features Section — hides the entire tab/pickers/chips for a feature, but never
             // touches stored data, so re-enabling shows everything exactly as it was.
             Text(
@@ -478,7 +532,8 @@ fun SettingsScreen(
                         value = sliderPosition,
                         onValueChange = { sliderPosition = it },
                         onValueChangeFinished = { viewModel.setUiScale(sliderPosition) },
-                        valueRange = 0.85f..1.3f
+                        valueRange = 0.85f..1.3f,
+                        steps = 8 // 10 stops total (min + 8 + max), 0.05 apart
                     )
 
                     Row(
@@ -533,7 +588,7 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Exports all tasks, folders, and settings to a JSON file.",
+                                text = "Exports all tasks, lists, and settings to a JSON file.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -720,5 +775,50 @@ fun SettingsRow(
             contentDescription = "Edit",
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
+    }
+}
+
+/** A permission status row that's only actionable (clickable, chevron shown) while denied —
+ * once granted there's nothing left to tap, just a checkmark confirming it's on. */
+@Composable
+private fun NotificationPermissionRow(
+    title: String,
+    granted: Boolean,
+    grantedSubtitle: String,
+    deniedSubtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (!granted) Modifier.clickable { onClick() } else Modifier)
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+            )
+            Text(
+                text = if (granted) grantedSubtitle else deniedSubtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (granted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+            )
+        }
+        if (granted) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Granted",
+                tint = LocalYataAccents.current.accentE
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "Fix in system settings",
+                tint = MaterialTheme.colorScheme.error
+            )
+        }
     }
 }

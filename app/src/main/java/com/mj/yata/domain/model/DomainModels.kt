@@ -4,7 +4,7 @@ data class Person(
     val id: String,
     val name: String,
     val initials: String,
-    val color: String, // accentA - accentH
+    val color: String, // accentA - accentP
     val photoUri: String? = null,
     val isMe: Boolean = false,
     val groupId: String? = null,
@@ -14,13 +14,13 @@ data class Person(
 data class PersonGroup(
     val id: String,
     val name: String,
-    val color: String // accentA - accentH
+    val color: String // accentA - accentP
 )
 
 data class Project(
     val id: String,
     val name: String,
-    val color: String, // accentA - accentH
+    val color: String, // accentA - accentP
     val icon: String,
     val due: String? = null,
     val starred: Boolean = false,
@@ -31,7 +31,7 @@ data class Project(
 data class YataList(
     val id: String,
     val name: String,
-    val color: String, // accentA - accentH
+    val color: String, // accentA - accentP
     val icon: String,
     val starred: Boolean = false
 )
@@ -39,7 +39,7 @@ data class YataList(
 data class Tag(
     val id: String,
     val name: String,
-    val color: String, // accentA - accentH or "error"
+    val color: String, // accentA - accentP or "error"
     val groupId: String? = null,
     val starred: Boolean = false,
     val hideCompletedByDefault: Boolean = false
@@ -48,7 +48,7 @@ data class Tag(
 data class TagGroup(
     val id: String,
     val name: String,
-    val color: String // accentA - accentH
+    val color: String // accentA - accentP
 )
 
 data class TaskComment(
@@ -93,6 +93,7 @@ data class Task(
     val priority: String, // "none" | "low" | "med" | "high"
     val flag: Boolean,
     val done: Boolean,
+    val completedAt: Long? = null, // epoch millis — when `done` last flipped to true
     val assigneeIds: List<String>,
     val tagIds: List<String>,
     val recurrence: Recurrence?,

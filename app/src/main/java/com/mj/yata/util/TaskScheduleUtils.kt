@@ -2,6 +2,7 @@ package com.mj.yata.util
 
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -93,5 +94,27 @@ object TaskScheduleUtils {
             "1 day before" -> 24L * 60L * 60_000L
             else -> 0L
         }
+    }
+
+    /**
+     * A custom reminder is a literal clock time on the task's due date (see [ReminderScheduler]) —
+     * it only makes sense strictly before the due time, otherwise the "reminder" would fire after
+     * (or exactly at, if no due time is set — treated as end of day) the task is already due.
+     */
+    fun isCustomReminderBeforeDue(customReminderTime: String, dueTime: String?): Boolean {
+        val reminderClock = parseTime(customReminderTime) ?: return false
+        val dueClock = parseTime(dueTime) ?: LocalTime.of(23, 59)
+        return reminderClock.isBefore(dueClock)
+    }
+
+    /**
+     * ReminderScheduler fires custom reminders at [dueDate] + [customReminderTime]; if that instant
+     * has already passed by the time the alarm gets scheduled, it silently drops the reminder with
+     * no user-visible error. Check this at input time (where we can actually warn the user) instead.
+     */
+    fun isReminderTimeInFuture(dueDate: String?, customReminderTime: String): Boolean {
+        val date = parseDate(dueDate) ?: return true
+        val time = parseTime(customReminderTime) ?: return false
+        return date.atTime(time).isAfter(LocalDateTime.now())
     }
 }

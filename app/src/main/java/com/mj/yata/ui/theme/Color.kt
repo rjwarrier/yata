@@ -76,6 +76,14 @@ data class YataAccents(
     val accentF: Color,
     val accentG: Color,
     val accentH: Color,
+    val accentI: Color,
+    val accentJ: Color,
+    val accentK: Color,
+    val accentL: Color,
+    val accentM: Color,
+    val accentN: Color,
+    val accentO: Color,
+    val accentP: Color,
     val onAccent: Color
 ) {
     fun getAccent(key: String): Color {
@@ -88,10 +96,24 @@ data class YataAccents(
             "accentF" -> accentF
             "accentG" -> accentG
             "accentH" -> accentH
+            "accentI" -> accentI
+            "accentJ" -> accentJ
+            "accentK" -> accentK
+            "accentL" -> accentL
+            "accentM" -> accentM
+            "accentN" -> accentN
+            "accentO" -> accentO
+            "accentP" -> accentP
             else -> accentA
         }
     }
 }
+
+/** All accent keys in picker display order. */
+val ALL_ACCENT_KEYS = listOf(
+    "accentA", "accentB", "accentC", "accentD", "accentE", "accentF", "accentG", "accentH",
+    "accentI", "accentJ", "accentK", "accentL", "accentM", "accentN", "accentO", "accentP"
+)
 
 val LightAccents = YataAccents(
     accentA = Color(0xFFE8886B),
@@ -102,6 +124,14 @@ val LightAccents = YataAccents(
     accentF = Color(0xFFDB6FA0),
     accentG = Color(0xFF4A93C7),
     accentH = Color(0xFFC77B4A),
+    accentI = Color(0xFF3C8F8A),
+    accentJ = Color(0xFFC1454B),
+    accentK = Color(0xFF5A64C4),
+    accentL = Color(0xFFC9A227),
+    accentM = Color(0xFFD97A9C),
+    accentN = Color(0xFF6B7A8F),
+    accentO = Color(0xFFD2632E),
+    accentP = Color(0xFF3FAE8A),
     onAccent = Color(0xFFFFFFFF)
 )
 
@@ -114,6 +144,14 @@ val DarkAccents = YataAccents(
     accentF = Color(0xFFE080AC),
     accentG = Color(0xFF5CA3D4),
     accentH = Color(0xFFD48C5C),
+    accentI = Color(0xFF4FA8A2),
+    accentJ = Color(0xFFDE5E64),
+    accentK = Color(0xFF7B84DE),
+    accentL = Color(0xFFE0BC3E),
+    accentM = Color(0xFFE894B2),
+    accentN = Color(0xFF8394AA),
+    accentO = Color(0xFFE67A44),
+    accentP = Color(0xFF52C29E),
     onAccent = Color(0xFF1A1110)
 )
 
