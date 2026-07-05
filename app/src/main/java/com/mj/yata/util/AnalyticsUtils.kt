@@ -11,13 +11,17 @@ import java.time.ZoneId
 
 enum class AnalyticsPeriod { WEEK, MONTH, ALL }
 
-/** One breakdown row — a project, person, or tag with its task counts for the current period. */
+/** One breakdown row — a project, person, or tag with its task counts for the current period.
+ * [overdue] and [onTimeRate] are only populated for people/tags (see [AnalyticsUtils.byPerson],
+ * [AnalyticsUtils.byTag]) — projects don't compute them and leave the defaults. */
 data class EntityStat(
     val id: String,
     val name: String,
     val colorKey: String,
     val total: Int,
-    val done: Int
+    val done: Int,
+    val overdue: Int = 0,
+    val onTimeRate: Float? = null
 ) {
     val pct: Float get() = if (total > 0) done.toFloat() / total else 0f
 }
@@ -129,19 +133,46 @@ object AnalyticsUtils {
         }.sortedByDescending { it.total }
     }
 
-    fun byPerson(tasks: List<Task>, people: List<Person>): List<EntityStat> {
+    /** Tasks overdue right now (ignores the period filter — a person/tag can have overdue work
+     * even if it falls outside the selected window), and the on-time rate among tasks in the
+     * period that were actually completed (tasks with no due date, or completed on/before it,
+     * count as on-time; tasks completed before `completedAt` existed have no timestamp to judge
+     * and are excluded from the rate rather than assumed either way). */
+    private fun overdueAndOnTimeRate(periodEntityTasks: List<Task>, allEntityTasks: List<Task>, today: LocalDate): Pair<Int, Float?> {
+        val overdue = allEntityTasks.count { task ->
+            if (task.done) return@count false
+            val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+            due.isBefore(today)
+        }
+        val judgeable = periodEntityTasks.filter { it.done && it.completedAt != null }
+        val onTimeRate = if (judgeable.isEmpty()) null else {
+            val onTime = judgeable.count { task ->
+                val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                val completedDate = task.completedAt!!.toLocalDate()
+                due == null || !completedDate.isAfter(due)
+            }
+            onTime.toFloat() / judgeable.size
+        }
+        return overdue to onTimeRate
+    }
+
+    fun byPerson(periodTasks: List<Task>, allTasks: List<Task>, people: List<Person>, today: LocalDate = LocalDate.now()): List<EntityStat> {
         return people.mapNotNull { person ->
-            val personTasks = tasks.filter { person.id in it.assigneeIds }
-            if (personTasks.isEmpty()) return@mapNotNull null
-            EntityStat(person.id, person.name, person.color, personTasks.size, personTasks.count { it.done })
+            val personPeriodTasks = periodTasks.filter { person.id in it.assigneeIds }
+            if (personPeriodTasks.isEmpty()) return@mapNotNull null
+            val personAllTasks = allTasks.filter { person.id in it.assigneeIds }
+            val (overdue, onTimeRate) = overdueAndOnTimeRate(personPeriodTasks, personAllTasks, today)
+            EntityStat(person.id, person.name, person.color, personPeriodTasks.size, personPeriodTasks.count { it.done }, overdue, onTimeRate)
         }.sortedByDescending { it.total }
     }
 
-    fun byTag(tasks: List<Task>, projects: List<Project>, tags: List<Tag>): List<EntityStat> {
+    fun byTag(periodTasks: List<Task>, allTasks: List<Task>, projects: List<Project>, tags: List<Tag>, today: LocalDate = LocalDate.now()): List<EntityStat> {
         return tags.mapNotNull { tag ->
-            val tagTasks = tasks.filter { tag.id in it.effectiveTagIds(projects) }
-            if (tagTasks.isEmpty()) return@mapNotNull null
-            EntityStat(tag.id, tag.name, tag.color, tagTasks.size, tagTasks.count { it.done })
+            val tagPeriodTasks = periodTasks.filter { tag.id in it.effectiveTagIds(projects) }
+            if (tagPeriodTasks.isEmpty()) return@mapNotNull null
+            val tagAllTasks = allTasks.filter { tag.id in it.effectiveTagIds(projects) }
+            val (overdue, onTimeRate) = overdueAndOnTimeRate(tagPeriodTasks, tagAllTasks, today)
+            EntityStat(tag.id, tag.name, tag.color, tagPeriodTasks.size, tagPeriodTasks.count { it.done }, overdue, onTimeRate)
         }.sortedByDescending { it.total }
     }
 }

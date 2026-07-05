@@ -23,7 +23,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -191,6 +191,14 @@ abstract class AppDatabase : RoomDatabase() {
                 // timestamp to backfill — left NULL rather than guessing, so analytics that
                 // depend on this column simply treat them as "completed at an unknown time".
                 db.execSQL("ALTER TABLE tasks ADD COLUMN completedAt INTEGER DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Deleting a task now soft-deletes it (Trash) instead of removing the row —
+                // NULL means "not deleted", a timestamp means "moved to trash at this time".
+                db.execSQL("ALTER TABLE tasks ADD COLUMN deletedAt INTEGER DEFAULT NULL")
             }
         }
     }

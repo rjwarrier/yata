@@ -68,8 +68,8 @@ fun AnalyticsScreen(
     val priorityStats = remember(periodTasks) { AnalyticsUtils.byPriority(periodTasks) }
 
     val projectStats = remember(periodTasks, projects) { AnalyticsUtils.byProject(periodTasks, projects) }
-    val personStats = remember(periodTasks, people) { AnalyticsUtils.byPerson(periodTasks, people) }
-    val tagStats = remember(periodTasks, projects, tags) { AnalyticsUtils.byTag(periodTasks, projects, tags) }
+    val personStats = remember(periodTasks, tasks, people) { AnalyticsUtils.byPerson(periodTasks, tasks, people) }
+    val tagStats = remember(periodTasks, tasks, projects, tags) { AnalyticsUtils.byTag(periodTasks, tasks, projects, tags) }
 
     Scaffold(
         bottomBar = {
@@ -251,6 +251,7 @@ fun AnalyticsScreen(
                     EntityStatRow(
                         stat = stat,
                         color = accents.getAccent(stat.colorKey),
+                        subtitle = insightSubtitle(stat),
                         leading = {
                             PersonAvatar(
                                 initials = stat.name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
@@ -266,7 +267,7 @@ fun AnalyticsScreen(
                 AnalyticsSection(title = "By Tag", stats = tagStats) { stat ->
                     val accents = LocalYataAccents.current
                     val color = if (stat.colorKey == "error") MaterialTheme.colorScheme.error else accents.getAccent(stat.colorKey)
-                    EntityStatRow(stat = stat, color = color)
+                    EntityStatRow(stat = stat, color = color, subtitle = insightSubtitle(stat))
                 }
             }
 
@@ -447,10 +448,21 @@ private fun AnalyticsSection(
     }
 }
 
+/** "N overdue" (if any) plus the on-time completion rate, e.g. "1 overdue · 80% on-time" —
+ * null pieces (no overdue work, or nothing in the period has a completion timestamp to judge)
+ * are dropped rather than shown as zero. */
+private fun insightSubtitle(stat: EntityStat): String? {
+    val parts = mutableListOf<String>()
+    if (stat.overdue > 0) parts += if (stat.overdue == 1) "1 overdue" else "${stat.overdue} overdue"
+    stat.onTimeRate?.let { parts += "${(it * 100).roundToInt()}% on-time" }
+    return parts.joinToString(" · ").ifEmpty { null }
+}
+
 @Composable
 private fun EntityStatRow(
     stat: EntityStat,
     color: Color,
+    subtitle: String? = null,
     leading: (@Composable () -> Unit)? = null
 ) {
     Row(
@@ -466,11 +478,22 @@ private fun EntityStatRow(
             Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stat.name,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                maxLines = 1
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = stat.name,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (stat.overdue > 0) {
+                    Icon(
+                        imageVector = Icons.Default.WarningAmber,
+                        contentDescription = "Has overdue tasks",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(4.dp))
             LinearProgressIndicator(
                 progress = stat.pct,
@@ -481,6 +504,14 @@ private fun EntityStatRow(
                 color = color,
                 trackColor = color.copy(alpha = 0.16f)
             )
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (stat.overdue > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         Text(
             text = "${stat.done}/${stat.total}",

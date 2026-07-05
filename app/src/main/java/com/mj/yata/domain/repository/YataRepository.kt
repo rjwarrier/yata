@@ -10,7 +10,17 @@ interface YataRepository {
     suspend fun upsertTask(task: Task)
     suspend fun toggleTaskDone(id: String)
     suspend fun skipTaskOccurrence(id: String)
+
+    // Deleting a task moves it to Trash (soft delete) rather than removing it outright.
     suspend fun deleteTask(task: Task)
+    fun getDeletedTasks(): Flow<List<Task>>
+    suspend fun restoreTask(id: String)
+    suspend fun permanentlyDeleteTask(task: Task)
+    suspend fun emptyTrash()
+
+    // Hard-deletes trashed tasks older than 30 days — called once at startup so Trash doesn't
+    // grow forever for someone who never visits it.
+    suspend fun purgeOldTrash()
 
     // Comments
     fun getCommentsForTask(taskId: String): Flow<List<TaskComment>>

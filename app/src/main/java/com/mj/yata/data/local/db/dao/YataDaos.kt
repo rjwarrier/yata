@@ -121,8 +121,12 @@ interface PersonGroupDao {
 @Dao
 interface TaskDao {
     @Transaction
-    @Query("SELECT * FROM tasks")
+    @Query("SELECT * FROM tasks WHERE deletedAt IS NULL")
     fun getTasksWithRelations(): Flow<List<TaskWithRelations>>
+
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE deletedAt IS NOT NULL ORDER BY deletedAt DESC")
+    fun getDeletedTasksWithRelations(): Flow<List<TaskWithRelations>>
 
     @Transaction
     @Query("SELECT * FROM tasks WHERE id = :id")
@@ -137,11 +141,23 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     fun getByIdDirect(id: String): TaskEntity?
 
-    @Query("SELECT * FROM tasks WHERE done = 0 AND dueDate IS NOT NULL")
+    @Query("SELECT * FROM tasks WHERE done = 0 AND dueDate IS NOT NULL AND deletedAt IS NULL")
     fun getActiveReminderTasksDirect(): List<TaskEntity>
 
     @Upsert
     suspend fun insert(task: TaskEntity)
+
+    @Query("UPDATE tasks SET deletedAt = :timestamp WHERE id = :id")
+    suspend fun softDelete(id: String, timestamp: Long)
+
+    @Query("UPDATE tasks SET deletedAt = NULL WHERE id = :id")
+    suspend fun restore(id: String)
+
+    @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL")
+    suspend fun emptyTrash()
+
+    @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL AND deletedAt < :threshold")
+    suspend fun purgeTrashOlderThan(threshold: Long)
 
     @Delete
     suspend fun delete(task: TaskEntity)

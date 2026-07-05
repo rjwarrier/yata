@@ -15,4 +15,22 @@
     <string name="tasker_field_section">Section (Morning or Afternoon)</string>
     <string name="tasker_field_repeat">Repeat (e.g. daily, every monday, every 2 weeks)</string>
     <string name="tasker_field_notes">Notes</string>
+
+    <!-- Launcher icon long-press shortcuts -->
+    <string name="shortcut_quick_add_short">Quick Add</string>
+    <string name="shortcut_quick_add_long">Add a new task</string>
+    <string name="shortcut_today_short">Today</string>
+    <string name="shortcut_today_long">Open Today</string>
+
+    <!-- Home-screen widget names/descriptions, shown in the system widget picker -->
+    <string name="widget_today_label">YATA: Today\'s Tasks</string>
+    <string name="widget_today_description">Open tasks due today, with quick check-off and a progress ring.</string>
+    <string name="widget_quick_add_label">YATA: Quick Add</string>
+    <string name="widget_quick_add_description">Add a task without opening the app.</string>
+    <string name="widget_progress_label">YATA: Progress</string>
+    <string name="widget_progress_description">Today\'s completion ring, overall or broken down by list.</string>
+    <string name="widget_single_list_label">YATA: List</string>
+    <string name="widget_single_list_description">Pin one list to your home screen — pick which when you add it.</string>
+    <string name="widget_upcoming_label">YATA: Upcoming</string>
+    <string name="widget_upcoming_description">What\'s due today, tomorrow, and beyond.</string>
 </resources>

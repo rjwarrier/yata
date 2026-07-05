@@ -21,6 +21,25 @@ import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.effectiveTags
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.TaskRow
+import java.time.LocalDate
+
+/** One-tap filters shown before/alongside a text query — each is a self-contained predicate so
+ * toggling several combines them with AND (narrows further, doesn't union). */
+private enum class SmartFilter(val label: String) {
+    OVERDUE("Overdue") ,
+    HIGH_PRIORITY("High priority"),
+    FLAGGED("Flagged"),
+    DUE_TODAY("Due today"),
+    NO_DUE_DATE("No due date");
+
+    fun matches(task: Task, today: LocalDate): Boolean = when (this) {
+        OVERDUE -> !task.done && task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true
+        HIGH_PRIORITY -> task.priority == "high"
+        FLAGGED -> task.flag
+        DUE_TODAY -> task.due == today.toString()
+        NO_DUE_DATE -> task.due == null
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +57,7 @@ fun SearchScreen(
     val tags by viewModel.tags.collectAsState()
 
     var query by remember { mutableStateOf("") }
+    val activeFilters = remember { mutableStateListOf<SmartFilter>() }
 
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
@@ -53,16 +73,19 @@ fun SearchScreen(
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
 
-    val filteredTasks = remember(tasks, query, peopleById, tagsById) {
-        if (query.isBlank()) {
+    val filteredTasks = remember(tasks, query, activeFilters.toList(), peopleById, tagsById) {
+        if (query.isBlank() && activeFilters.isEmpty()) {
             emptyList()
         } else {
+            val today = LocalDate.now()
             tasks.filter { task ->
-                task.title.contains(query, ignoreCase = true) ||
+                val matchesQuery = query.isBlank() ||
+                    task.title.contains(query, ignoreCase = true) ||
                     task.notes?.contains(query, ignoreCase = true) == true ||
                     task.subtasks.any { it.title.contains(query, ignoreCase = true) } ||
                     task.tagIds.any { tagsById[it]?.name?.contains(query, ignoreCase = true) == true } ||
                     task.assigneeIds.any { peopleById[it]?.name?.contains(query, ignoreCase = true) == true }
+                matchesQuery && activeFilters.all { it.matches(task, today) }
             }
         }
     }
@@ -96,6 +119,8 @@ fun SearchScreen(
         ) { innerPadding ->
             SearchResultsList(
                 query = query,
+                activeFilters = activeFilters,
+                onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
                 filteredTasks = filteredTasks,
                 lists = lists,
                 projects = projects,
@@ -143,6 +168,8 @@ fun SearchScreen(
             ) {
                 SearchResultsList(
                     query = query,
+                    activeFilters = activeFilters,
+                    onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
                     filteredTasks = filteredTasks,
                     lists = lists,
                     projects = projects,
@@ -224,9 +251,12 @@ fun SearchScreen(
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun SearchResultsList(
     query: String,
+    activeFilters: List<SmartFilter>,
+    onToggleFilter: (SmartFilter) -> Unit,
     filteredTasks: List<Task>,
     lists: List<YataList>,
     projects: List<Project>,
@@ -245,7 +275,24 @@ private fun SearchResultsList(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 32.dp)
     ) {
-        if (query.isBlank()) {
+        item {
+            androidx.compose.foundation.layout.FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SmartFilter.entries.forEach { filter ->
+                    FilterChip(
+                        selected = activeFilters.contains(filter),
+                        onClick = { onToggleFilter(filter) },
+                        label = { Text(filter.label) }
+                    )
+                }
+            }
+        }
+        if (query.isBlank() && activeFilters.isEmpty()) {
             item {
                 Box(
                     modifier = Modifier
@@ -254,7 +301,7 @@ private fun SearchResultsList(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Type something to search.",
+                        text = "Type something to search, or pick a filter above.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }

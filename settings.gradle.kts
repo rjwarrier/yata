@@ -18,3 +18,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "TodoExpressive"
 include(":app")
+include(":wear")

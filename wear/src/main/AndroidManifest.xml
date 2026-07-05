@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.type.watch" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove"
+        xmlns:tools="http://schemas.android.com/tools" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_complication"
+        android:label="@string/app_name"
+        android:theme="@android:style/Theme.DeviceDefault">
+
+        <!-- Has its own real UI now (task list + quick add), so it shows up as a normal
+             launchable app on the watch — still depends on the phone pushing data, though. -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+
+        <activity
+            android:name=".WatchMainActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".TodayCountComplicationService"
+            android:exported="true"
+            android:icon="@drawable/ic_complication"
+            android:label="@string/complication_label"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT" />
+            <!-- 0 = never poll on a timer; updates are pushed explicitly from
+                 TaskCountListenerService whenever the phone sends new data. -->
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="0" />
+        </service>
+
+        <service
+            android:name=".TaskCountListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:pathPrefix="/today_count" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:pathPrefix="/today_tasks" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

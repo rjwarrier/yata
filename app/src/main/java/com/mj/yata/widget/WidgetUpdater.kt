@@ -1,7 +1,7 @@
 package com.mj.yata.widget
 
 import android.content.Context
-import androidx.glance.appwidget.GlanceAppWidgetManager
+import com.mj.yata.wear.WearSyncUpdater
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,23 +10,22 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface WidgetUpdater {
-    /** Refreshes every placed instance of the home-screen widget. Called after any task write. */
+    /** Refreshes every placed instance of every home-screen widget. Called after any task write. */
     fun notifyTasksChanged()
 }
 
 @Singleton
 class WidgetUpdaterImpl @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val wearSyncUpdater: WearSyncUpdater
 ) : WidgetUpdater {
 
     private val scope = CoroutineScope(Dispatchers.Default)
 
     override fun notifyTasksChanged() {
-        scope.launch {
-            val manager = GlanceAppWidgetManager(context)
-            val ids = manager.getGlanceIds(YataAppWidget::class.java)
-            val widget = YataAppWidget()
-            ids.forEach { id -> widget.update(context, id) }
-        }
+        scope.launch { WidgetRefresher.refreshAll(context) }
+        // Piggybacks on the same "something changed" signal — the paired watch's complication
+        // needs the same refresh the home-screen widgets do.
+        wearSyncUpdater.notifyTasksChanged()
     }
 }

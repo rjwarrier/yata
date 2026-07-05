@@ -91,6 +91,9 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
 
+    // Wear OS companion (today's task count complication)
+    implementation("com.google.android.gms:play-services-wearable:18.2.0")
+
     // Markdown rendering for task notes
     implementation("io.noties.markwon:core:4.6.2")
 

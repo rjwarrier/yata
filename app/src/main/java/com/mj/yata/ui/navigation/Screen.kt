@@ -1,8 +1,9 @@
 package com.mj.yata.ui.navigation
 
 sealed class Screen(val route: String) {
-    object Main : Screen("main?tab={tab}") {
-        fun createRoute(tab: Int) = "main?tab=$tab"
+    object Main : Screen("main?tab={tab}&quickAdd={quickAdd}&quickAddListId={quickAddListId}") {
+        fun createRoute(tab: Int, quickAdd: Boolean = false, quickAddListId: String? = null) =
+            "main?tab=$tab&quickAdd=$quickAdd" + (quickAddListId?.let { "&quickAddListId=$it" } ?: "")
     }
     
     object TaskDetail : Screen("task_detail/{taskId}") {
@@ -28,4 +29,5 @@ sealed class Screen(val route: String) {
     object Search : Screen("search")
     object Settings : Screen("settings")
     object Analytics : Screen("analytics")
+    object Trash : Screen("trash")
 }

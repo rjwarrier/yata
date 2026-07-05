@@ -1,0 +1,183 @@
+package com.mj.yata.widget
+
+import android.content.Context
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.glance.GlanceId
+import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
+import androidx.glance.LocalSize
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.appWidgetBackground
+import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.provideContent
+import androidx.glance.background
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Column
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.padding
+import androidx.glance.layout.size
+import androidx.glance.layout.width
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
+import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.YataList
+import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.flow.first
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+/** "Upcoming / agenda" — medium (Today/Tomorrow counts) / large (day-grouped agenda for the
+ * next few days that actually have tasks, using real `task.due` dates). */
+class UpcomingWidget : GlanceAppWidget() {
+
+    override val sizeMode = SizeMode.Responsive(
+        setOf(DpSize(250.dp, 110.dp), DpSize(250.dp, 250.dp))
+    )
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
+        val allTasks = repository.getTasks().first()
+        val lists = repository.getLists().first()
+        val theme = resolveWidgetTheme(context)
+
+        provideContent {
+            GlanceTheme(colors = theme.glanceColors) {
+                UpcomingWidgetContent(allTasks, lists, theme.colorScheme, theme.accents)
+            }
+        }
+    }
+}
+
+private data class AgendaDay(val label: String, val tasks: List<Task>)
+
+@Composable
+private fun UpcomingWidgetContent(
+    allTasks: List<Task>,
+    lists: List<YataList>,
+    colors: androidx.compose.material3.ColorScheme,
+    accents: com.mj.yata.ui.theme.YataAccents
+) {
+    val isLarge = LocalSize.current.height > 180.dp
+    val listsById = lists.associateBy { it.id }
+    val today = LocalDate.now()
+    val todayStr = today.toString()
+
+    Box(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .background(GlanceTheme.colors.widgetBackground)
+            .appWidgetBackground()
+            .cornerRadius(28.dp)
+            .padding(16.dp)
+            .clickable(openAppAction())
+    ) {
+        Column(modifier = GlanceModifier.fillMaxSize()) {
+            WidgetSectionHeader("Upcoming", GlanceTheme.colors.tertiary)
+            Spacer(modifier = GlanceModifier.height(8.dp))
+
+            if (isLarge) {
+                val days = upcomingAgendaDays(allTasks, today)
+                Column(modifier = GlanceModifier.fillMaxWidth()) {
+                    days.forEachIndexed { index, day ->
+                        if (index > 0) Spacer(modifier = GlanceModifier.height(8.dp))
+                        Text(
+                            text = day.label.uppercase(),
+                            style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.tertiary)
+                        )
+                        day.tasks.take(3).forEach { task ->
+                            val tint = listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary
+                            WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface)
+                        }
+                    }
+                    if (days.isEmpty()) {
+                        Text(
+                            text = "Nothing coming up.",
+                            style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
+                        )
+                    }
+                }
+            } else {
+                val todayTasks = allTasks.filter { !it.done && it.due != null && it.due!! <= todayStr }
+                val tomorrowStr = today.plusDays(1).toString()
+                val tomorrowTasks = allTasks.filter { !it.done && it.due == tomorrowStr }
+
+                Column(
+                    modifier = GlanceModifier.fillMaxSize(),
+                    verticalAlignment = Alignment.Vertical.CenterVertically
+                ) {
+                    AgendaSummaryRow("Today", todayTasks, listsById, accents)
+                    Spacer(modifier = GlanceModifier.height(10.dp))
+                    AgendaSummaryRow("Tomorrow", tomorrowTasks, listsById, accents)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AgendaSummaryRow(
+    label: String,
+    tasks: List<Task>,
+    listsById: Map<String, YataList>,
+    accents: com.mj.yata.ui.theme.YataAccents
+) {
+    val dotColors = tasks.mapNotNull { listsById[it.listId]?.color }.distinct().take(2)
+    Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
+        Row {
+            dotColors.forEachIndexed { index, colorKey ->
+                if (index > 0) Spacer(modifier = GlanceModifier.width(3.dp))
+                Box(modifier = GlanceModifier.size(7.dp).cornerRadius(3.5.dp).background(accents.getAccent(colorKey))) {}
+            }
+        }
+        if (dotColors.isNotEmpty()) Spacer(modifier = GlanceModifier.width(10.dp))
+        Text(
+            text = label,
+            style = TextStyle(fontSize = 14.sp, color = GlanceTheme.colors.onSurface),
+            modifier = GlanceModifier.defaultWeight()
+        )
+        Text(
+            text = if (tasks.size == 1) "1 task" else "${tasks.size} tasks",
+            style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurfaceVariant)
+        )
+    }
+}
+
+/** Up to the next 3 distinct due-dates (today or later) that actually have tasks. */
+private fun upcomingAgendaDays(allTasks: List<Task>, today: LocalDate): List<AgendaDay> {
+    val todayStr = today.toString()
+    val byDate = allTasks
+        .filter { it.due != null && !it.done }
+        .groupBy { it.due!! }
+
+    val todayTasks = allTasks.filter { !it.done && it.due != null && it.due!! <= todayStr }
+    val futureDates = byDate.keys
+        .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }
+        .filter { it.isAfter(today) }
+        .sorted()
+        .take(2)
+
+    val days = mutableListOf<AgendaDay>()
+    if (todayTasks.isNotEmpty()) {
+        days += AgendaDay("Today", todayTasks.sortedBy { it.sortOrder })
+    }
+    futureDates.forEach { date ->
+        val label = when {
+            date == today.plusDays(1) -> "Tomorrow"
+            date.isBefore(today.plusDays(7)) -> date.format(DateTimeFormatter.ofPattern("EEEE"))
+            else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
+        }
+        days += AgendaDay(label, byDate[date.toString()].orEmpty())
+    }
+    return days.take(3)
+}

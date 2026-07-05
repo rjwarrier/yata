@@ -1,120 +1,121 @@
 package com.mj.yata.widget
 
 import android.content.Context
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.action.ActionParameters
-import androidx.glance.action.actionParametersOf
-import androidx.glance.action.actionStartActivity
+import androidx.glance.GlanceTheme
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
-import androidx.glance.appwidget.CheckBox
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
-import androidx.glance.appwidget.action.ActionCallback
-import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
-import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.GlanceTheme
-import androidx.glance.material3.ColorProviders
+import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import com.mj.yata.MainActivity
+import androidx.glance.unit.ColorProvider
 import com.mj.yata.domain.model.Task
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 
-private val widgetColors = ColorProviders(lightColorScheme(), darkColorScheme())
-private val taskIdKey = ActionParameters.Key<String>("task_id")
-
+/** "Today's tasks" — medium (3 rows) / large (6 rows). Mirrors the in-app Today tab's own
+ * definition of "today" (due today or overdue, per TodayTab.kt) rather than a narrower one. */
 class YataAppWidget : GlanceAppWidget() {
 
     override val sizeMode = SizeMode.Responsive(
-        setOf(DpSize(180.dp, 110.dp), DpSize(260.dp, 200.dp))
+        setOf(DpSize(250.dp, 110.dp), DpSize(250.dp, 250.dp))
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val todayStr = LocalDate.now().toString()
         val todayTasks = repository.getTasks().first()
-            .filter { !it.done && it.due != null && it.due <= todayStr }
-            .sortedBy { it.sortOrder }
+            .filter { it.due != null && it.due!! <= todayStr }
+            .sortedWith(compareBy({ it.done }, { it.sortOrder }))
+        val listsById = repository.getLists().first().associateBy { it.id }
+        val theme = resolveWidgetTheme(context)
 
         provideContent {
-            GlanceTheme(colors = widgetColors) {
-                WidgetContent(todayTasks)
+            GlanceTheme(colors = theme.glanceColors) {
+                TodayWidgetContent(context, todayTasks, listsById, theme.colorScheme, theme.accents)
             }
         }
     }
 }
 
 @Composable
-private fun WidgetContent(tasks: List<Task>) {
+private fun TodayWidgetContent(
+    context: Context,
+    tasks: List<Task>,
+    listsById: Map<String, com.mj.yata.domain.model.YataList>,
+    colors: androidx.compose.material3.ColorScheme,
+    accents: com.mj.yata.ui.theme.YataAccents
+) {
+    val isLarge = LocalSize.current.height > 180.dp
+    val remaining = tasks.count { !it.done }
+    val progress = if (tasks.isEmpty()) 0f else tasks.count { it.done }.toFloat() / tasks.size
+    val shown = tasks.take(if (isLarge) 6 else 3)
+
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.surface)
+            .background(GlanceTheme.colors.widgetBackground)
             .appWidgetBackground()
-            .cornerRadius(16.dp)
-            .padding(12.dp)
-            .clickable(actionStartActivity<MainActivity>())
+            .cornerRadius(28.dp)
+            .padding(16.dp)
+            .clickable(openAppAction())
     ) {
-        Text(
-            text = "Today",
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = GlanceTheme.colors.onSurface)
-        )
-        if (tasks.isEmpty()) {
+        Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
+            Column(modifier = GlanceModifier.defaultWeight()) {
+                WidgetSectionHeader("Today", GlanceTheme.colors.primary)
+                Text(
+                    text = "$remaining to go",
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurface)
+                )
+            }
+            WidgetProgressRingImage(
+                context = context,
+                progress = progress,
+                sizeDp = 38.dp,
+                strokeDp = 4.dp,
+                activeColor = colors.primary,
+                trackColor = colors.surfaceContainerHighest,
+                centerText = (progress * 100).toInt().toString(),
+                centerTextSizeSp = 11f
+            )
+        }
+        Spacer(modifier = GlanceModifier.height(9.dp))
+        WidgetDivider()
+        Spacer(modifier = GlanceModifier.height(4.dp))
+        if (shown.isEmpty()) {
             Text(
-                text = "No tasks for today",
-                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant)
+                text = "Nothing due today.",
+                style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
             )
         } else {
-            LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                items(tasks, itemId = { it.id.hashCode().toLong() }) { task ->
-                    Row(
-                        modifier = GlanceModifier.fillMaxWidth().padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.Vertical.CenterVertically
-                    ) {
-                        CheckBox(
-                            checked = false,
-                            onCheckedChange = actionRunCallback<ToggleTaskDoneAction>(
-                                actionParametersOf(taskIdKey to task.id)
-                            )
-                        )
-                        Text(
-                            text = task.title,
-                            maxLines = 1,
-                            style = TextStyle(color = GlanceTheme.colors.onSurface)
-                        )
-                    }
+            Column(modifier = GlanceModifier.fillMaxWidth()) {
+                shown.forEach { task ->
+                    val tint = listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary
+                    WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface)
                 }
             }
         }
-    }
-}
-
-class ToggleTaskDoneAction : ActionCallback {
-    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        val taskId = parameters[taskIdKey] ?: return
-        val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
-        repository.toggleTaskDone(taskId)
-        YataAppWidget().update(context, glanceId)
     }
 }

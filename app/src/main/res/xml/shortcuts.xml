@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_add"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_monochrome"
+        android:shortcutShortLabel="@string/shortcut_quick_add_short"
+        android:shortcutLongLabel="@string/shortcut_quick_add_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.mj.yata"
+            android:targetClass="com.mj.yata.MainActivity">
+            <extra android:name="shortcut_action" android:value="quick_add" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="today"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_monochrome"
+        android:shortcutShortLabel="@string/shortcut_today_short"
+        android:shortcutLongLabel="@string/shortcut_today_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.mj.yata"
+            android:targetClass="com.mj.yata.MainActivity">
+            <extra android:name="shortcut_action" android:value="today" />
+        </intent>
+    </shortcut>
+</shortcuts>

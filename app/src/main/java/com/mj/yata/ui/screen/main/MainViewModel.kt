@@ -23,6 +23,7 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             repository.seedInitialDataIfNeeded()
+            repository.purgeOldTrash()
         }
     }
 
@@ -309,6 +310,28 @@ class MainViewModel @Inject constructor(
     fun deleteTask(task: Task) {
         viewModelScope.launch {
             repository.deleteTask(task)
+        }
+    }
+
+    // Trash
+    val deletedTasks: StateFlow<List<Task>> = repository.getDeletedTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun restoreTask(id: String) {
+        viewModelScope.launch {
+            repository.restoreTask(id)
+        }
+    }
+
+    fun permanentlyDeleteTask(task: Task) {
+        viewModelScope.launch {
+            repository.permanentlyDeleteTask(task)
+        }
+    }
+
+    fun emptyTrash() {
+        viewModelScope.launch {
+            repository.emptyTrash()
         }
     }
 

@@ -1,6 +1,7 @@
 package com.mj.yata
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -26,6 +29,7 @@ import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.navigation.AppNavigation
 import com.mj.yata.ui.theme.YataTheme
+import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -35,6 +39,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var jsonExporter: JsonExporter
+    @Inject lateinit var icsExporter: IcsExporter
     @Inject lateinit var userPreferences: UserPreferences
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -69,8 +74,34 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val icsExportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/calendar")
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        lifecycleScope.launch {
+            val ok = icsExporter.exportIcs(uri)
+            Toast.makeText(
+                this@MainActivity,
+                if (ok) "Calendar file exported" else "Export failed",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    // Tracked as Compose state so a new intent delivered via onNewIntent (app already running,
+    // e.g. tapping a notification or launcher shortcut while YATA is in the foreground/background)
+    // triggers the same routing effect as a cold start — `intent` alone isn't observable state.
+    private var currentIntent by mutableStateOf<Intent?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        currentIntent = intent
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        currentIntent = intent
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -104,19 +135,36 @@ class MainActivity : ComponentActivity() {
                     ) {
                         val navController = rememberNavController()
 
-                        // Route to task details if launched from a notification
-                        LaunchedEffect(intent) {
+                        // Route to task details if launched from a notification, or to the
+                        // relevant screen if launched from a long-press launcher shortcut.
+                        LaunchedEffect(currentIntent) {
+                            val intent = currentIntent ?: return@LaunchedEffect
                             val navigateTo = intent.getStringExtra("navigate_to")
                             val taskId = intent.getStringExtra("task_id")
+                            val shortcutAction = intent.getStringExtra("shortcut_action")
+                            val listId = intent.getStringExtra("list_id")
                             if (navigateTo == "task_detail" && !taskId.isNullOrEmpty()) {
                                 navController.navigate(com.mj.yata.ui.navigation.Screen.TaskDetail.createRoute(taskId))
+                            } else if (shortcutAction == "quick_add") {
+                                navController.navigate(
+                                    com.mj.yata.ui.navigation.Screen.Main.createRoute(tab = 0, quickAdd = true, quickAddListId = listId)
+                                ) {
+                                    popUpTo(com.mj.yata.ui.navigation.Screen.Main.route) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            } else if (shortcutAction == "today") {
+                                navController.navigate(com.mj.yata.ui.navigation.Screen.Main.createRoute(tab = 0)) {
+                                    popUpTo(com.mj.yata.ui.navigation.Screen.Main.route) { inclusive = true }
+                                    launchSingleTop = true
+                                }
                             }
                         }
 
                         AppNavigation(
                             navController      = navController,
                             onExportRequested  = { exportLauncher.launch("yata_backup.json") },
-                            onImportRequested  = { importLauncher.launch(arrayOf("application/json")) }
+                            onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
+                            onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") }
                         )
                     }
                 }

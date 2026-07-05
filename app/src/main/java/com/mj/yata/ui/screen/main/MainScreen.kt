@@ -70,7 +70,9 @@ fun MainScreen(
     onNavigateToPersonDetail: (String) -> Unit,
     onNavigateToTagDetail: (String) -> Unit,
     onNavigateToListDetail: (String) -> Unit,
-    initialTab: Int = 0
+    initialTab: Int = 0,
+    initialShowNewTaskSheet: Boolean = false,
+    initialQuickAddListId: String? = null
 ) {
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -85,6 +87,12 @@ fun MainScreen(
     // Sheet states
     var activeSheet by remember { mutableStateOf<MainSheetType>(MainSheetType.None) }
     var isNewListSheetOpen by remember { mutableStateOf(false) }
+
+    // "Quick Add" launcher shortcut / widget tap lands here with this set — open the sheet once,
+    // pre-selecting a list if the Quick Add widget's list chip was what was tapped.
+    LaunchedEffect(initialShowNewTaskSheet) {
+        if (initialShowNewTaskSheet) activeSheet = MainSheetType.NewTask
+    }
 
     // Database updates flows
     val tasks by viewModel.tasks.collectAsState()
@@ -136,12 +144,16 @@ fun MainScreen(
                 val visibleStarredTags = if (tagsFeatureEnabled) starredTags else emptyList()
                 val visibleStarredPeople = if (peopleFeatureEnabled) starredPeople else emptyList()
 
-                // One flat scrollable list — everything (header, nav links, starred, folders,
-                // Analytics/Settings) scrolls together so nothing gets stranded off-screen when
-                // there are more starred items / folders than fit in the drawer's height.
+                // Main content scrolls in its own weighted region so it never pushes Analytics/
+                // Settings off-screen — that footer is a fixed sibling below, not a LazyColumn
+                // item, so it sits flush at the bottom when content is short (nothing to scroll)
+                // and stays fully visible (never clipped) when content overflows and scrolls.
+                Column(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(24.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     item {
@@ -294,24 +306,21 @@ fun MainScreen(
                         }
                     }
 
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                }
 
-                    item {
-                        DrawerItem("Analytics", Icons.Default.Analytics, false) {
-                            onNavigateToAnalytics()
-                            scope.launch { drawerState.close() }
-                        }
+                // Fixed footer (not a LazyColumn item) — always flush with the bottom of the
+                // drawer, whether or not the content above it needed to scroll.
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                    DrawerItem("Analytics", Icons.Default.Analytics, false) {
+                        onNavigateToAnalytics()
+                        scope.launch { drawerState.close() }
                     }
-                    item {
-                        DrawerItem("Settings", Icons.Default.Settings, false) {
-                            onNavigateToSettings()
-                            scope.launch { drawerState.close() }
-                        }
+                    DrawerItem("Settings", Icons.Default.Settings, false) {
+                        onNavigateToSettings()
+                        scope.launch { drawerState.close() }
                     }
+                }
                 }
             }
         }
@@ -529,6 +538,7 @@ fun MainScreen(
                         )
                     },
                     onDismiss = { activeSheet = MainSheetType.None },
+                    initialListId = initialQuickAddListId,
                     initialDueDateOverride = if (selectedTab == 4) calendarSelectedDay.toString() else null,
                     projectsEnabled = projectsFeatureEnabled,
                     tagsEnabled = tagsFeatureEnabled,

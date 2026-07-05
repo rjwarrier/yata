@@ -34,6 +34,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- Task reminder alarm receiver -->
@@ -71,6 +74,7 @@
         <!-- Home-screen widget showing today's open tasks -->
         <receiver
             android:name=".widget.YataAppWidgetReceiver"
+            android:label="@string/widget_today_label"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -79,6 +83,74 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/todo_widget_info" />
         </receiver>
+
+        <!-- Home-screen widget: quick add -->
+        <receiver
+            android:name=".widget.QuickAddWidgetReceiver"
+            android:label="@string/widget_quick_add_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_add_widget_info" />
+        </receiver>
+
+        <!-- Home-screen widget: progress / stats -->
+        <receiver
+            android:name=".widget.ProgressStatsWidgetReceiver"
+            android:label="@string/widget_progress_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/progress_widget_info" />
+        </receiver>
+
+        <!-- Home-screen widget: single pinned list (user picks which at add-time) -->
+        <receiver
+            android:name=".widget.SingleListWidgetReceiver"
+            android:label="@string/widget_single_list_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/single_list_widget_info" />
+        </receiver>
+        <activity
+            android:name=".widget.SingleListWidgetConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Home-screen widget: upcoming / agenda -->
+        <receiver
+            android:name=".widget.UpcomingWidgetReceiver"
+            android:label="@string/widget_upcoming_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/upcoming_widget_info" />
+        </receiver>
+
+        <!-- Receives commands from the Wear OS companion app (checking a task off, quick-add) -->
+        <service
+            android:name=".wear.WearMessageListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+            </intent-filter>
+        </service>
 
         <!-- Tasker plugin: Create Task action -->
         <activity

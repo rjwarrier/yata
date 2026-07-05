@@ -22,6 +22,7 @@ import com.mj.yata.ui.screen.tag.TagDetailScreen
 import com.mj.yata.ui.screen.list.ListDetailScreen
 import com.mj.yata.ui.screen.search.SearchScreen
 import com.mj.yata.ui.screen.settings.SettingsScreen
+import com.mj.yata.ui.screen.trash.TrashScreen
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import androidx.compose.animation.core.tween
@@ -30,7 +31,8 @@ import androidx.compose.animation.core.tween
 fun AppNavigation(
     navController: NavHostController,
     onExportRequested: () -> Unit,
-    onImportRequested: () -> Unit
+    onImportRequested: () -> Unit,
+    onExportIcsRequested: () -> Unit
 ) {
     val onNavigateToTab: (Int) -> Unit = { index ->
         navController.navigate(Screen.Main.createRoute(index)) {
@@ -51,15 +53,21 @@ fun AppNavigation(
         composable(
             route = Screen.Main.route,
             arguments = listOf(
-                navArgument("tab") { type = NavType.IntType; defaultValue = 0 }
+                navArgument("tab") { type = NavType.IntType; defaultValue = 0 },
+                navArgument("quickAdd") { type = NavType.BoolType; defaultValue = false },
+                navArgument("quickAddListId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
             val initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
+            val initialShowNewTaskSheet = backStackEntry.arguments?.getBoolean("quickAdd") ?: false
+            val initialQuickAddListId = backStackEntry.arguments?.getString("quickAddListId")
             val viewModel: MainViewModel = hiltViewModel()
             MainScreen(
                 viewModel = viewModel,
                 navController = navController,
                 initialTab = initialTab,
+                initialShowNewTaskSheet = initialShowNewTaskSheet,
+                initialQuickAddListId = initialQuickAddListId,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigateToAnalytics = { navController.navigate(Screen.Analytics.route) },
                 onNavigateToSearch = { navController.navigate(Screen.Search.route) },
@@ -189,7 +197,9 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onExportRequested = onExportRequested,
                 onImportRequested = onImportRequested,
-                onNavigateToTab = onNavigateToTab
+                onExportIcsRequested = onExportIcsRequested,
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTrash = { navController.navigate(Screen.Trash.route) }
             )
         }
 
@@ -197,6 +207,16 @@ fun AppNavigation(
         composable(Screen.Analytics.route) {
             val viewModel: MainViewModel = hiltViewModel()
             AnalyticsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTab = onNavigateToTab
+            )
+        }
+
+        // ── Trash ────────────────────────────────────────────────────────────
+        composable(Screen.Trash.route) {
+            val viewModel: MainViewModel = hiltViewModel()
+            TrashScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTab = onNavigateToTab

@@ -186,8 +186,34 @@ class YataRepositoryImpl @Inject constructor(
 
     override suspend fun deleteTask(task: Task) {
         reminderScheduler.cancelReminder(task.toEntity())
+        db.taskDao().softDelete(task.id, System.currentTimeMillis())
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override fun getDeletedTasks(): Flow<List<Task>> {
+        return db.taskDao().getDeletedTasksWithRelations().map { list -> list.map { it.toDomain() } }
+    }
+
+    override suspend fun restoreTask(id: String) {
+        db.taskDao().restore(id)
+        db.taskDao().getByIdDirect(id)?.let { syncReminder(it) }
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun permanentlyDeleteTask(task: Task) {
+        reminderScheduler.cancelReminder(task.toEntity())
         db.taskDao().delete(task.toEntity())
         widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun emptyTrash() {
+        db.taskDao().emptyTrash()
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun purgeOldTrash() {
+        val thirtyDaysAgo = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
+        db.taskDao().purgeTrashOlderThan(thirtyDaysAgo)
     }
 
     override fun getCommentsForTask(taskId: String): Flow<List<TaskComment>> {

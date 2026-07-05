@@ -94,6 +94,7 @@ data class Task(
     val flag: Boolean,
     val done: Boolean,
     val completedAt: Long? = null, // epoch millis — when `done` last flipped to true
+    val deletedAt: Long? = null, // epoch millis — non-null means "in Trash", not hard-deleted
     val assigneeIds: List<String>,
     val tagIds: List<String>,
     val recurrence: Recurrence?,
