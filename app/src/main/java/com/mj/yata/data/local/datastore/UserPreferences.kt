@@ -34,6 +34,9 @@ class UserPreferences @Inject constructor(
         val DEFAULT_REMINDER_MINUTE = intPreferencesKey("default_reminder_minute")
         val UI_SCALE                = floatPreferencesKey("ui_scale")
         val DYNAMIC_COLOR_ENABLED   = booleanPreferencesKey("dynamic_color_enabled")
+        val PEOPLE_FEATURE_ENABLED   = booleanPreferencesKey("people_feature_enabled")
+        val TAGS_FEATURE_ENABLED     = booleanPreferencesKey("tags_feature_enabled")
+        val PROJECTS_FEATURE_ENABLED = booleanPreferencesKey("projects_feature_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -54,6 +57,9 @@ class UserPreferences @Inject constructor(
     val defaultReminderMinuteFlow: Flow<Int> = dataStore.data.map { it[DEFAULT_REMINDER_MINUTE] ?: 0 }
     val uiScaleFlow: Flow<Float> = dataStore.data.map { it[UI_SCALE] ?: 1.0f }
     val dynamicColorEnabledFlow: Flow<Boolean> = dataStore.data.map { it[DYNAMIC_COLOR_ENABLED] ?: true }
+    val peopleFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[PEOPLE_FEATURE_ENABLED] ?: true }
+    val tagsFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TAGS_FEATURE_ENABLED] ?: true }
+    val projectsFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[PROJECTS_FEATURE_ENABLED] ?: true }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME_MODE] = mode.name }
@@ -88,5 +94,17 @@ class UserPreferences @Inject constructor(
 
     suspend fun setDynamicColorEnabled(enabled: Boolean) {
         dataStore.edit { it[DYNAMIC_COLOR_ENABLED] = enabled }
+    }
+
+    suspend fun setPeopleFeatureEnabled(enabled: Boolean) {
+        dataStore.edit { it[PEOPLE_FEATURE_ENABLED] = enabled }
+    }
+
+    suspend fun setTagsFeatureEnabled(enabled: Boolean) {
+        dataStore.edit { it[TAGS_FEATURE_ENABLED] = enabled }
+    }
+
+    suspend fun setProjectsFeatureEnabled(enabled: Boolean) {
+        dataStore.edit { it[PROJECTS_FEATURE_ENABLED] = enabled }
     }
 }

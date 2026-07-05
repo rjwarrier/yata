@@ -94,6 +94,20 @@ fun MainScreen(
     val userName by viewModel.userName.collectAsState()
     val userEmail by viewModel.userEmail.collectAsState()
     val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsState()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+
+    // If the tab currently open gets disabled out from under the user, fall back to Today
+    // rather than leaving them stranded on a tab no longer reachable from the nav bar.
+    LaunchedEffect(peopleFeatureEnabled, tagsFeatureEnabled, projectsFeatureEnabled) {
+        if ((selectedTab == 1 && !projectsFeatureEnabled) ||
+            (selectedTab == 2 && !peopleFeatureEnabled) ||
+            (selectedTab == 3 && !tagsFeatureEnabled)
+        ) {
+            selectedTab = 0
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -153,22 +167,28 @@ fun MainScreen(
                                 scope.launch { drawerState.close() }
                             }
                         }
-                        item {
-                            DrawerItem("Projects", Icons.Default.Layers, selectedTab == 1) {
-                                selectedTab = 1
-                                scope.launch { drawerState.close() }
+                        if (projectsFeatureEnabled) {
+                            item {
+                                DrawerItem("Projects", Icons.Default.Layers, selectedTab == 1) {
+                                    selectedTab = 1
+                                    scope.launch { drawerState.close() }
+                                }
                             }
                         }
-                        item {
-                            DrawerItem("People", Icons.Default.People, selectedTab == 2) {
-                                selectedTab = 2
-                                scope.launch { drawerState.close() }
+                        if (peopleFeatureEnabled) {
+                            item {
+                                DrawerItem("People", Icons.Default.People, selectedTab == 2) {
+                                    selectedTab = 2
+                                    scope.launch { drawerState.close() }
+                                }
                             }
                         }
-                        item {
-                            DrawerItem("Tags", Icons.Default.Label, selectedTab == 3) {
-                                selectedTab = 3
-                                scope.launch { drawerState.close() }
+                        if (tagsFeatureEnabled) {
+                            item {
+                                DrawerItem("Tags", Icons.Default.Label, selectedTab == 3) {
+                                    selectedTab = 3
+                                    scope.launch { drawerState.close() }
+                                }
                             }
                         }
                         item {
@@ -179,7 +199,10 @@ fun MainScreen(
                         }
 
                         // Starred projects, folders, tags & people section
-                        if (starredProjects.isNotEmpty() || starredLists.isNotEmpty() || starredTags.isNotEmpty() || starredPeople.isNotEmpty()) {
+                        val visibleStarredProjects = if (projectsFeatureEnabled) starredProjects else emptyList()
+                        val visibleStarredTags = if (tagsFeatureEnabled) starredTags else emptyList()
+                        val visibleStarredPeople = if (peopleFeatureEnabled) starredPeople else emptyList()
+                        if (visibleStarredProjects.isNotEmpty() || starredLists.isNotEmpty() || visibleStarredTags.isNotEmpty() || visibleStarredPeople.isNotEmpty()) {
                             item {
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
@@ -191,7 +214,7 @@ fun MainScreen(
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 )
                             }
-                            items(starredProjects, key = { "starred_pr_${it.id}" }) { project ->
+                            items(visibleStarredProjects, key = { "starred_pr_${it.id}" }) { project ->
                                 DrawerItem(project.name, Icons.Default.Layers, false) {
                                     onNavigateToProjectDetail(project.id)
                                     scope.launch { drawerState.close() }
@@ -203,13 +226,13 @@ fun MainScreen(
                                     scope.launch { drawerState.close() }
                                 }
                             }
-                            items(starredTags, key = { "starred_t_${it.id}" }) { tag ->
+                            items(visibleStarredTags, key = { "starred_t_${it.id}" }) { tag ->
                                 DrawerItem(tag.name, Icons.Default.Label, false) {
                                     onNavigateToTagDetail(tag.id)
                                     scope.launch { drawerState.close() }
                                 }
                             }
-                            items(starredPeople, key = { "starred_p_${it.id}" }) { person ->
+                            items(visibleStarredPeople, key = { "starred_p_${it.id}" }) { person ->
                                 DrawerItem(person.name, Icons.Default.Person, false) {
                                     onNavigateToPersonDetail(person.id)
                                     scope.launch { drawerState.close() }
@@ -276,7 +299,13 @@ fun MainScreen(
         Scaffold(
             bottomBar = {
                 val todayRemainingCount by viewModel.todayRemainingCount.collectAsState()
-                CustomBottomNav(selectedTab = selectedTab, todayBadgeCount = todayRemainingCount) {
+                CustomBottomNav(
+                    selectedTab = selectedTab,
+                    todayBadgeCount = todayRemainingCount,
+                    peopleEnabled = peopleFeatureEnabled,
+                    tagsEnabled = tagsFeatureEnabled,
+                    projectsEnabled = projectsFeatureEnabled
+                ) {
                     selectedTab = it
                 }
             },
@@ -365,7 +394,10 @@ fun MainScreen(
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
-                            onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) }
+                            onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            peopleEnabled = peopleFeatureEnabled,
+                            tagsEnabled = tagsFeatureEnabled,
+                            projectsEnabled = projectsFeatureEnabled
                         )
                         1 -> ProjectsTab(
                             projects = projects,
@@ -433,7 +465,10 @@ fun MainScreen(
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
-                            onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) }
+                            onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            peopleEnabled = peopleFeatureEnabled,
+                            tagsEnabled = tagsFeatureEnabled,
+                            projectsEnabled = projectsFeatureEnabled
                         )
                     }
                 }
@@ -467,7 +502,10 @@ fun MainScreen(
                         )
                     },
                     onDismiss = { activeSheet = MainSheetType.None },
-                    initialDueDateOverride = if (selectedTab == 4) calendarSelectedDay.toString() else null
+                    initialDueDateOverride = if (selectedTab == 4) calendarSelectedDay.toString() else null,
+                    projectsEnabled = projectsFeatureEnabled,
+                    tagsEnabled = tagsFeatureEnabled,
+                    peopleEnabled = peopleFeatureEnabled
                 )
             }
         } else {
@@ -570,20 +608,26 @@ fun DrawerItem(
     }
 }
 
-private data class NavIcon(val label: String, val outlined: ImageVector, val filled: ImageVector)
+private data class NavIcon(val id: Int, val label: String, val outlined: ImageVector, val filled: ImageVector)
 
 @Composable
 fun CustomBottomNav(
     selectedTab: Int,
     todayBadgeCount: Int = 0,
+    peopleEnabled: Boolean = true,
+    tagsEnabled: Boolean = true,
+    projectsEnabled: Boolean = true,
     onTabSelected: (Int) -> Unit
 ) {
-    val items = listOf(
-        NavIcon("Today", Icons.Outlined.Today, Icons.Filled.Today),
-        NavIcon("Projects", Icons.Outlined.Layers, Icons.Filled.Layers),
-        NavIcon("People", Icons.Outlined.People, Icons.Filled.People),
-        NavIcon("Tags", Icons.Outlined.Label, Icons.Filled.Label),
-        NavIcon("Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek)
+    // Tab ids are fixed (0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming) regardless of which
+    // are hidden — filtering the list must not renumber the survivors, or a disabled tab in the
+    // middle would shift every tab after it onto the wrong id.
+    val items = listOfNotNull(
+        NavIcon(0, "Today", Icons.Outlined.Today, Icons.Filled.Today),
+        if (projectsEnabled) NavIcon(1, "Projects", Icons.Outlined.Layers, Icons.Filled.Layers) else null,
+        if (peopleEnabled) NavIcon(2, "People", Icons.Outlined.People, Icons.Filled.People) else null,
+        if (tagsEnabled) NavIcon(3, "Tags", Icons.Outlined.Label, Icons.Filled.Label) else null,
+        NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek)
     )
 
     Surface(
@@ -601,8 +645,8 @@ fun CustomBottomNav(
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items.forEachIndexed { index, navIcon ->
-                val isSelected = index == selectedTab
+            items.forEach { navIcon ->
+                val isSelected = navIcon.id == selectedTab
                 val indicatorColor by animateColorAsState(
                     targetValue = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
                     animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
@@ -624,7 +668,7 @@ fun CustomBottomNav(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .clickable { onTabSelected(index) }
+                        .clickable { onTabSelected(navIcon.id) }
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -638,7 +682,7 @@ fun CustomBottomNav(
                     ) {
                         BadgedBox(
                             badge = {
-                                if (index == 0 && todayBadgeCount > 0) {
+                                if (navIcon.id == 0 && todayBadgeCount > 0) {
                                     Badge { Text(if (todayBadgeCount > 99) "99+" else todayBadgeCount.toString()) }
                                 }
                             }

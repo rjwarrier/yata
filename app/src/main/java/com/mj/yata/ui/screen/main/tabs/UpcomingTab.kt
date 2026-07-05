@@ -64,6 +64,9 @@ fun UpcomingTab(
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
+    peopleEnabled: Boolean = true,
+    tagsEnabled: Boolean = true,
+    projectsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -123,6 +126,7 @@ fun UpcomingTab(
                 onMove = { showBulkMoveSheet = true },
                 onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
+                tagsEnabled = tagsEnabled,
                 modifier = Modifier.statusBarsPadding()
             )
         } else {
@@ -376,10 +380,12 @@ fun UpcomingTab(
             } else {
                 items(selectedDayTasks, key = { it.id }) { task ->
                     val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                    val taskAssignees = remember(task.assigneeIds, peopleById) {
-                        task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                    val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
+                        if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                     }
-                    val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
+                    val taskTags = remember(task, projects, tags, tagsEnabled) {
+                        if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                    }
 
                     TaskRow(
                         task = task,
@@ -441,7 +447,8 @@ fun UpcomingTab(
                     selectedIds.clear()
                     showBulkMoveSheet = false
                 },
-                onDismiss = { showBulkMoveSheet = false }
+                onDismiss = { showBulkMoveSheet = false },
+                projectsEnabled = projectsEnabled
             )
         }
     }

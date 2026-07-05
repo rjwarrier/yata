@@ -35,6 +35,7 @@ fun TaskSelectionTopBar(
     onMove: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
+    tagsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -57,8 +58,10 @@ fun TaskSelectionTopBar(
             IconButton(onClick = onComplete) {
                 Icon(Icons.Default.Check, contentDescription = "Mark done", tint = MaterialTheme.colorScheme.onSurface)
             }
-            IconButton(onClick = onAddTag) {
-                Icon(Icons.Default.Label, contentDescription = "Add tag", tint = MaterialTheme.colorScheme.onSurface)
+            if (tagsEnabled) {
+                IconButton(onClick = onAddTag) {
+                    Icon(Icons.Default.Label, contentDescription = "Add tag", tint = MaterialTheme.colorScheme.onSurface)
+                }
             }
             IconButton(onClick = onMove) {
                 Icon(Icons.AutoMirrored.Filled.DriveFileMove, contentDescription = "Move to list or project", tint = MaterialTheme.colorScheme.onSurface)
@@ -81,6 +84,7 @@ fun TaskBulkMoveSheet(
     onSelectProject: (String?) -> Unit,
     onSelectList: (String?) -> Unit,
     onDismiss: () -> Unit,
+    projectsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val accents = LocalYataAccents.current
@@ -96,35 +100,37 @@ fun TaskBulkMoveSheet(
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp)
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                text = "PROJECT",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onSelectProject(null) }
-                    .padding(vertical = 12.dp, horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("None (remove from project)", style = MaterialTheme.typography.bodyLarge)
-            }
-            projects.forEach { pr ->
-                val color = accents.getAccent(pr.color)
+        if (projectsEnabled) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "PROJECT",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { onSelectProject(pr.id) }
+                        .clickable { onSelectProject(null) }
                         .padding(vertical = 12.dp, horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
-                    Text(pr.name, style = MaterialTheme.typography.bodyLarge)
+                    Text("None (remove from project)", style = MaterialTheme.typography.bodyLarge)
+                }
+                projects.forEach { pr ->
+                    val color = accents.getAccent(pr.color)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onSelectProject(pr.id) }
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
+                        Text(pr.name, style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
             }
         }

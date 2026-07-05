@@ -74,10 +74,20 @@ fun TagDetailScreen(
     }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
 
     Scaffold(
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = 3, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+            com.mj.yata.ui.screen.main.CustomBottomNav(
+                selectedTab = 3,
+                todayBadgeCount = todayBadgeCount,
+                peopleEnabled = peopleFeatureEnabled,
+                tagsEnabled = tagsFeatureEnabled,
+                projectsEnabled = projectsFeatureEnabled,
+                onTabSelected = onNavigateToTab
+            )
         },
         topBar = {
             TopAppBar(
@@ -198,8 +208,8 @@ fun TagDetailScreen(
             } else {
                 items(taggedTasks, key = { it.id }) { task ->
                     val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                    val taskAssignees = remember(task.assigneeIds, peopleById) {
-                        task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                    val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
+                        if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                     }
                     val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
 

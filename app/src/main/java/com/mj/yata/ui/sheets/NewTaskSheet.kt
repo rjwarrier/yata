@@ -151,7 +151,10 @@ fun NewTaskSheet(
     initialAssigneeId: String? = null,
     initialProjectId: String? = null,
     initialListId: String? = null,
-    initialDueDateOverride: String? = null
+    initialDueDateOverride: String? = null,
+    projectsEnabled: Boolean = true,
+    tagsEnabled: Boolean = true,
+    peopleEnabled: Boolean = true
 ) {
     var title by remember { mutableStateOf(TextFieldValue("")) }
     var selectedListId by remember { mutableStateOf(initialListId) }
@@ -186,8 +189,8 @@ fun NewTaskSheet(
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
     val selectedAssigneeIds = remember { mutableStateListOf<String>() }
 
-    LaunchedEffect(initialAssigneeId, myId) {
-        if (selectedAssigneeIds.isEmpty()) {
+    LaunchedEffect(initialAssigneeId, myId, peopleEnabled) {
+        if (peopleEnabled && selectedAssigneeIds.isEmpty()) {
             selectedAssigneeIds.add(initialAssigneeId ?: myId)
         }
     }
@@ -203,7 +206,10 @@ fun NewTaskSheet(
     val projectColor = project?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val canCreateTask = title.text.isNotBlank()
 
-    val mention = remember(title) { detectMentionToken(title.text, title.selection.end) }
+    val mention = remember(title, tagsEnabled, peopleEnabled) {
+        detectMentionToken(title.text, title.selection.end)
+            ?.takeIf { (it.trigger == '#' && tagsEnabled) || (it.trigger == '@' && peopleEnabled) }
+    }
 
     val quickAdd = remember(title.text) { NaturalLanguageParser.parse(title.text) }
     val quickAddMatched = !quickAddDismissed && quickAdd.title != title.text.trim()
@@ -425,14 +431,16 @@ fun NewTaskSheet(
                     leading = { Icon(Icons.Default.Today, contentDescription = null, tint = if (selectedDueDate != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
                     showCheck = false
                 )
-                YataSelectChip(
-                    label = project?.name ?: "Project",
-                    selected = project != null,
-                    onClick = { activePanel = if (activePanel == "Project") null else "Project" },
-                    tint = projectColor,
-                    dotColor = if (project != null) projectColor else null,
-                    showCheck = false
-                )
+                if (projectsEnabled) {
+                    YataSelectChip(
+                        label = project?.name ?: "Project",
+                        selected = project != null,
+                        onClick = { activePanel = if (activePanel == "Project") null else "Project" },
+                        tint = projectColor,
+                        dotColor = if (project != null) projectColor else null,
+                        showCheck = false
+                    )
+                }
                 YataSelectChip(
                     label = listName,
                     selected = list != null,
@@ -473,50 +481,54 @@ fun NewTaskSheet(
             }
 
             // Assigned to — always shows real avatar+name chips, not a count
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionLabel("Assigned to")
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    selectedAssigneeIds.forEach { pid ->
-                        val person = people.find { it.id == pid }
-                        if (person != null) {
-                            AssignedPersonChip(
-                                person = person,
-                                accents = accents,
-                                onRemove = { selectedAssigneeIds.remove(pid) }
-                            )
+            if (peopleEnabled) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionLabel("Assigned to")
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedAssigneeIds.forEach { pid ->
+                            val person = people.find { it.id == pid }
+                            if (person != null) {
+                                AssignedPersonChip(
+                                    person = person,
+                                    accents = accents,
+                                    onRemove = { selectedAssigneeIds.remove(pid) }
+                                )
+                            }
                         }
+                        YataDashedAddChip(
+                            label = if (selectedAssigneeIds.isEmpty()) "Assign" else "Add",
+                            onClick = { activePanel = if (activePanel == "People") null else "People" }
+                        )
                     }
-                    YataDashedAddChip(
-                        label = if (selectedAssigneeIds.isEmpty()) "Assign" else "Add",
-                        onClick = { activePanel = if (activePanel == "People") null else "People" }
-                    )
                 }
             }
 
             // Tags — always shows real tag chips, not a count
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionLabel("Tags")
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    selectedTagIds.forEach { tid ->
-                        val tag = tags.find { it.id == tid }
-                        if (tag != null) {
-                            TagChip(
-                                name = tag.name,
-                                accentKey = tag.color,
-                                onRemoveClick = { selectedTagIds.remove(tid) }
-                            )
+            if (tagsEnabled) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionLabel("Tags")
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedTagIds.forEach { tid ->
+                            val tag = tags.find { it.id == tid }
+                            if (tag != null) {
+                                TagChip(
+                                    name = tag.name,
+                                    accentKey = tag.color,
+                                    onRemoveClick = { selectedTagIds.remove(tid) }
+                                )
+                            }
                         }
+                        YataDashedAddChip(
+                            label = if (selectedTagIds.isEmpty()) "Tag" else "Add",
+                            onClick = { activePanel = if (activePanel == "Tags") null else "Tags" }
+                        )
                     }
-                    YataDashedAddChip(
-                        label = if (selectedTagIds.isEmpty()) "Tag" else "Add",
-                        onClick = { activePanel = if (activePanel == "Tags") null else "Tags" }
-                    )
                 }
             }
 

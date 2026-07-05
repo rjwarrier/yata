@@ -49,6 +49,10 @@ fun SearchScreen(
     val tagsById = remember(tags) { tags.associateBy { it.id } }
     val listsById = remember(lists) { lists.associateBy { it.id } }
 
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+
     val filteredTasks = remember(tasks, query, peopleById, tagsById) {
         if (query.isBlank()) {
             emptyList()
@@ -67,7 +71,14 @@ fun SearchScreen(
         val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
         Scaffold(
             bottomBar = {
-                com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = -1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+                com.mj.yata.ui.screen.main.CustomBottomNav(
+                    selectedTab = -1,
+                    todayBadgeCount = todayBadgeCount,
+                    peopleEnabled = peopleFeatureEnabled,
+                    tagsEnabled = tagsFeatureEnabled,
+                    projectsEnabled = projectsFeatureEnabled,
+                    onTabSelected = onNavigateToTab
+                )
             },
             topBar = {
                 com.mj.yata.ui.sheets.TaskSelectionTopBar(
@@ -78,6 +89,7 @@ fun SearchScreen(
                     onMove = { showBulkMoveSheet = true },
                     onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
+                    tagsEnabled = tagsFeatureEnabled,
                     modifier = Modifier.statusBarsPadding()
                 )
             }
@@ -94,6 +106,8 @@ fun SearchScreen(
                 selectionMode = selectionMode,
                 selectedIds = selectedIds,
                 onTaskClick = onNavigateToTaskDetail,
+                tagsEnabled = tagsFeatureEnabled,
+                peopleEnabled = peopleFeatureEnabled,
                 modifier = modifier.padding(innerPadding)
             )
         }
@@ -138,7 +152,9 @@ fun SearchScreen(
                     viewModel = viewModel,
                     selectionMode = selectionMode,
                     selectedIds = selectedIds,
-                    onTaskClick = onNavigateToTaskDetail
+                    onTaskClick = onNavigateToTaskDetail,
+                    tagsEnabled = tagsFeatureEnabled,
+                    peopleEnabled = peopleFeatureEnabled
                 )
             }
         }
@@ -181,7 +197,8 @@ fun SearchScreen(
                     selectedIds.clear()
                     showBulkMoveSheet = false
                 },
-                onDismiss = { showBulkMoveSheet = false }
+                onDismiss = { showBulkMoveSheet = false },
+                projectsEnabled = projectsFeatureEnabled
             )
         }
     }
@@ -220,6 +237,8 @@ private fun SearchResultsList(
     selectionMode: Boolean,
     selectedIds: MutableList<String>,
     onTaskClick: (String) -> Unit,
+    tagsEnabled: Boolean = true,
+    peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -257,10 +276,12 @@ private fun SearchResultsList(
         } else {
             items(filteredTasks, key = { it.id }) { task ->
                 val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                val taskAssignees = remember(task.assigneeIds, peopleById) {
-                    task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
+                    if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                 }
-                val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
+                val taskTags = remember(task, projects, tags, tagsEnabled) {
+                    if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                }
 
                 TaskRow(
                     task = task,

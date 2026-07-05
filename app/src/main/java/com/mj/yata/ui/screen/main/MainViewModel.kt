@@ -80,6 +80,15 @@ class MainViewModel @Inject constructor(
     val dynamicColorEnabled: StateFlow<Boolean> = userPreferences.dynamicColorEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val peopleFeatureEnabled: StateFlow<Boolean> = userPreferences.peopleFeatureEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val tagsFeatureEnabled: StateFlow<Boolean> = userPreferences.tagsFeatureEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val projectsFeatureEnabled: StateFlow<Boolean> = userPreferences.projectsFeatureEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
         viewModelScope.launch {
@@ -539,6 +548,24 @@ class MainViewModel @Inject constructor(
     fun setDynamicColorEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setDynamicColorEnabled(enabled)
+        }
+    }
+
+    fun setPeopleFeatureEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setPeopleFeatureEnabled(enabled)
+        }
+    }
+
+    fun setTagsFeatureEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setTagsFeatureEnabled(enabled)
+        }
+    }
+
+    fun setProjectsFeatureEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setProjectsFeatureEnabled(enabled)
         }
     }
 }

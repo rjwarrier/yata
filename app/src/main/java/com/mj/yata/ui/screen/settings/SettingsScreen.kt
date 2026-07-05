@@ -45,6 +45,9 @@ fun SettingsScreen(
     val defaultReminderMinute by viewModel.defaultReminderMinute.collectAsState()
     val uiScale by viewModel.uiScale.collectAsState()
     val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsState()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
     val lists by viewModel.lists.collectAsState()
 
     var showDefaultListMenu by remember { mutableStateOf(false) }
@@ -60,7 +63,14 @@ fun SettingsScreen(
 
     Scaffold(
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = -1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+            com.mj.yata.ui.screen.main.CustomBottomNav(
+                selectedTab = -1,
+                todayBadgeCount = todayBadgeCount,
+                peopleEnabled = peopleFeatureEnabled,
+                tagsEnabled = tagsFeatureEnabled,
+                projectsEnabled = projectsFeatureEnabled,
+                onTabSelected = onNavigateToTab
+            )
         },
         topBar = {
             TopAppBar(
@@ -262,6 +272,39 @@ fun SettingsScreen(
                 }
             }
 
+            // Features Section — hides the entire tab/pickers/chips for a feature, but never
+            // touches stored data, so re-enabling shows everything exactly as it was.
+            Text(
+                text = "FEATURES",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    FeatureToggleRow(
+                        title = "Projects",
+                        checked = projectsFeatureEnabled,
+                        onCheckedChange = { viewModel.setProjectsFeatureEnabled(it) }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    FeatureToggleRow(
+                        title = "People",
+                        checked = peopleFeatureEnabled,
+                        onCheckedChange = { viewModel.setPeopleFeatureEnabled(it) }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    FeatureToggleRow(
+                        title = "Tags",
+                        checked = tagsFeatureEnabled,
+                        onCheckedChange = { viewModel.setTagsFeatureEnabled(it) }
+                    )
+                }
+            }
+
             // 3. Display Section
             Text(
                 text = "DISPLAY",
@@ -413,6 +456,32 @@ fun SettingsScreen(
             showReminderTimePicker = false
         }
     )
+}
+
+@Composable
+private fun FeatureToggleRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+            )
+            Text(
+                text = "Your data is kept even when hidden.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
 
 @Composable

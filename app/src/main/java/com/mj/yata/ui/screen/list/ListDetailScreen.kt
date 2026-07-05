@@ -67,10 +67,20 @@ fun ListDetailScreen(
     var pendingMoveTask by remember { mutableStateOf<Task?>(null) }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
 
     Scaffold(
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = -1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+            com.mj.yata.ui.screen.main.CustomBottomNav(
+                selectedTab = -1,
+                todayBadgeCount = todayBadgeCount,
+                peopleEnabled = peopleFeatureEnabled,
+                tagsEnabled = tagsFeatureEnabled,
+                projectsEnabled = projectsFeatureEnabled,
+                onTabSelected = onNavigateToTab
+            )
         },
         topBar = {
             TopAppBar(
@@ -193,10 +203,12 @@ fun ListDetailScreen(
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) { task ->
-                    val taskAssignees = remember(task.assigneeIds, peopleById) {
-                        task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                    val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
+                        if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                     }
-                    val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
+                    val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
+                        if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                    }
 
                     TaskRow(
                         task = task,
@@ -257,7 +269,10 @@ fun ListDetailScreen(
                         com.mj.yata.domain.model.Person(id = id, name = name, initials = com.mj.yata.ui.sheets.initialsFor(name), color = color, isMe = false)
                     )
                 },
-                onDismiss = { isNewTaskSheetOpen = false }
+                onDismiss = { isNewTaskSheetOpen = false },
+                projectsEnabled = projectsFeatureEnabled,
+                tagsEnabled = tagsFeatureEnabled,
+                peopleEnabled = peopleFeatureEnabled
             )
         }
     }

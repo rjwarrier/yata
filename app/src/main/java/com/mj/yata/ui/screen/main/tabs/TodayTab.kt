@@ -49,6 +49,9 @@ fun TodayTab(
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
+    peopleEnabled: Boolean = true,
+    tagsEnabled: Boolean = true,
+    projectsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -69,6 +72,9 @@ fun TodayTab(
 
     // State for filter chips
     var selectedFilter by remember { mutableStateOf("All") } // "All" | "Assigned to me" | "High Priority"
+    LaunchedEffect(peopleEnabled) {
+        if (!peopleEnabled && selectedFilter == "Assigned to me") selectedFilter = "All"
+    }
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
 
@@ -118,6 +124,7 @@ fun TodayTab(
                 onMove = { showBulkMoveSheet = true },
                 onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
+                tagsEnabled = tagsEnabled,
                 modifier = Modifier.statusBarsPadding()
             )
         } else {
@@ -201,7 +208,7 @@ fun TodayTab(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            listOf("All", "Assigned to me", "High Priority").forEach { filter ->
+            listOfNotNull("All", if (peopleEnabled) "Assigned to me" else null, "High Priority").forEach { filter ->
                 val isSelected = filter == selectedFilter
                 FilterChip(
                     selected = isSelected,
@@ -256,10 +263,12 @@ fun TodayTab(
                         }
                         items(sectionTasks, key = { it.id }) { task ->
                             val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                            val taskAssignees = remember(task.assigneeIds, peopleById) {
-                                task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                            val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
+                                if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                             }
-                            val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
+                            val taskTags = remember(task, projects, tags, tagsEnabled) {
+                                if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                            }
 
                             TaskRow(
                                 task = task,
@@ -323,7 +332,8 @@ fun TodayTab(
                     selectedIds.clear()
                     showBulkMoveSheet = false
                 },
-                onDismiss = { showBulkMoveSheet = false }
+                onDismiss = { showBulkMoveSheet = false },
+                projectsEnabled = projectsEnabled
             )
         }
     }

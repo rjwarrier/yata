@@ -68,10 +68,20 @@ fun PersonDetailScreen(
     val completedTasks = assignedTasks.filter { it.done }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
 
     Scaffold(
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = 2, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+            com.mj.yata.ui.screen.main.CustomBottomNav(
+                selectedTab = 2,
+                todayBadgeCount = todayBadgeCount,
+                peopleEnabled = peopleFeatureEnabled,
+                tagsEnabled = tagsFeatureEnabled,
+                projectsEnabled = projectsFeatureEnabled,
+                onTabSelected = onNavigateToTab
+            )
         },
         topBar = {
             TopAppBar(
@@ -228,7 +238,9 @@ fun PersonDetailScreen(
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
                         }
-                        val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
+                        val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
+                            if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                        }
 
                         TaskRow(
                             task = task,
@@ -306,7 +318,9 @@ fun PersonDetailScreen(
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
                         }
-                        val taskTags = remember(task, projects, tags) { task.effectiveTags(projects, tags) }
+                        val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
+                            if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                        }
 
                         TaskRow(
                             task = task,
@@ -343,7 +357,10 @@ fun PersonDetailScreen(
                 onCreatePerson = { id, name, color ->
                     viewModel.upsertPerson(Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false))
                 },
-                onDismiss = { isNewTaskSheetOpen = false }
+                onDismiss = { isNewTaskSheetOpen = false },
+                projectsEnabled = projectsFeatureEnabled,
+                tagsEnabled = tagsFeatureEnabled,
+                peopleEnabled = peopleFeatureEnabled
             )
         }
     }

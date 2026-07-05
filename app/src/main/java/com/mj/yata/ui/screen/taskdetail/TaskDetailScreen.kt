@@ -99,11 +99,21 @@ fun TaskDetailScreen(
     val scope = rememberCoroutineScope()
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = -1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+            com.mj.yata.ui.screen.main.CustomBottomNav(
+                selectedTab = -1,
+                todayBadgeCount = todayBadgeCount,
+                peopleEnabled = peopleFeatureEnabled,
+                tagsEnabled = tagsFeatureEnabled,
+                projectsEnabled = projectsFeatureEnabled,
+                onTabSelected = onNavigateToTab
+            )
         },
         topBar = {
             TopAppBar(
@@ -228,12 +238,14 @@ fun TaskDetailScreen(
                             onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
                         )
 
-                        MetaRowItem(
-                            icon = Icons.Default.Layers,
-                            label = "Project",
-                            value = project?.name ?: "None",
-                            onClick = { activeSheet = DetailSheetType.ProjectPicker }
-                        )
+                        if (projectsFeatureEnabled) {
+                            MetaRowItem(
+                                icon = Icons.Default.Layers,
+                                label = "Project",
+                                value = project?.name ?: "None",
+                                onClick = { activeSheet = DetailSheetType.ProjectPicker }
+                            )
+                        }
 
                         MetaRowItem(
                             icon = Icons.Default.Folder,
@@ -266,7 +278,7 @@ fun TaskDetailScreen(
             }
 
             // 3. Assignees section
-            item {
+            if (peopleFeatureEnabled) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "Assigned to",
@@ -312,7 +324,7 @@ fun TaskDetailScreen(
             }
 
             // 4. Tags section
-            item {
+            if (tagsFeatureEnabled) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "Tags",
