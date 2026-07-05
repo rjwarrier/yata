@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.ThemeMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +27,7 @@ class UserPreferences @Inject constructor(
 
     companion object {
         val THEME_MODE              = stringPreferencesKey("theme_mode")
+        val APP_FONT                = stringPreferencesKey("app_font")
         val USER_NAME               = stringPreferencesKey("user_name")
         val USER_EMAIL              = stringPreferencesKey("user_email")
         val DEFAULT_LIST_ID         = stringPreferencesKey("default_list_id")
@@ -47,6 +49,13 @@ class UserPreferences @Inject constructor(
         }
     }
 
+    val appFontFlow: Flow<AppFont> = dataStore.data.map { prefs ->
+        when (prefs[APP_FONT]) {
+            AppFont.JETBRAINS_MONO.name -> AppFont.JETBRAINS_MONO
+            else                        -> AppFont.INTER
+        }
+    }
+
     val userNameFlow: Flow<String> = dataStore.data.map { it[USER_NAME] ?: "" }
     val userEmailFlow: Flow<String> = dataStore.data.map { it[USER_EMAIL] ?: "" }
 
@@ -63,6 +72,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME_MODE] = mode.name }
+    }
+
+    suspend fun setAppFont(font: AppFont) {
+        dataStore.edit { it[APP_FONT] = font.name }
     }
 
     suspend fun setUserName(name: String) {

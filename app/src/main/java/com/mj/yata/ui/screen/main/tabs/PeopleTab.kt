@@ -93,7 +93,7 @@ fun PeopleTab(
                     }
                     Text(
                         text = "${selectedIds.size} selected",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
                 TextButton(onClick = { showGroupPicker = true }) {
@@ -351,7 +351,6 @@ fun PersonRow(
                     Text(
                         text = person.name,
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     )

@@ -48,7 +48,6 @@ fun RecurrenceBadge(
                 text = text,
                 color = color,
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
                     fontSize = 10.sp
                 )
             )

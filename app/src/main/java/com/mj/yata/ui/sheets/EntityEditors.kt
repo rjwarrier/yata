@@ -52,7 +52,7 @@ fun <G> GroupAssignSheet(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
             modifier = Modifier.padding(bottom = 12.dp)
         )
         groups.forEach { group ->
@@ -145,7 +145,6 @@ fun ProjectEditorSheet(
         Text(
             text = titleText,
             style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
         )
@@ -178,7 +177,7 @@ fun ProjectEditorSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             com.mj.yata.ui.widgets.IconPicker(
-                options = listOf("layers", "home", "star"),
+                options = com.mj.yata.ui.widgets.FOLDER_ICON_KEYS,
                 selectedIconKey = selectedIcon,
                 accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
                 onIconSelected = { selectedIcon = it }
@@ -420,7 +419,6 @@ fun PersonEditorSheet(
         Text(
             text = titleText,
             style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
         )
@@ -552,7 +550,6 @@ fun TagEditorSheet(
         Text(
             text = titleText,
             style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
         )
@@ -668,7 +665,6 @@ fun ListEditorSheet(
         Text(
             text = titleText,
             style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
         )
@@ -701,7 +697,7 @@ fun ListEditorSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             com.mj.yata.ui.widgets.IconPicker(
-                options = listOf("folder", "star", "label"),
+                options = com.mj.yata.ui.widgets.FOLDER_ICON_KEYS,
                 selectedIconKey = selectedIcon,
                 accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
                 onIconSelected = { selectedIcon = it }

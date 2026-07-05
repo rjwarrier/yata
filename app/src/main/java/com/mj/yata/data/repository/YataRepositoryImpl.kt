@@ -8,9 +8,11 @@ import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.notification.TaskReminderScheduler
 import com.mj.yata.util.RecurrenceEvaluator
 import com.mj.yata.widget.WidgetUpdater
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -331,6 +333,15 @@ class YataRepositoryImpl @Inject constructor(
                 )
             )
         }
+    }
+
+    override suspend fun deleteAllData() {
+        // Cancel every scheduled reminder before the rows disappear under it.
+        db.taskDao().getTasksWithRelations().first().forEach { reminderScheduler.cancelReminder(it.task) }
+        withContext(Dispatchers.IO) { db.clearAllTables() }
+        // A "me" Person is a hard requirement (tasks default-assign to it) — restore it immediately.
+        seedInitialDataIfNeeded()
+        widgetUpdater.notifyTasksChanged()
     }
 
     private suspend fun syncReminder(task: TaskEntity) {

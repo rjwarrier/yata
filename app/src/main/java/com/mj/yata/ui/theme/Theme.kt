@@ -18,6 +18,7 @@ import androidx.core.view.WindowCompat
 fun YataTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     useDynamicColor: Boolean = true,
+    appFont: com.mj.yata.domain.model.AppFont = com.mj.yata.domain.model.AppFont.INTER,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -48,7 +49,7 @@ fun YataTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = createTypography(),
+            typography = createTypography(typographyFamilyFor(appFont)),
             shapes = Shapes,
             content = content
         )

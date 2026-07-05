@@ -94,7 +94,7 @@ fun RecurrenceSheet(
                     Text(
                         text = liveRrule,
                         style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            fontFamily = com.mj.yata.ui.theme.JetBrainsMonoFamily,
                             color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f),
                             fontSize = 11.sp
                         )
@@ -111,7 +111,7 @@ fun RecurrenceSheet(
         ) {
             Text(
                 text = "Repeat task",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.titleMedium
             )
             Switch(checked = enabled, onCheckedChange = { enabled = it })
         }

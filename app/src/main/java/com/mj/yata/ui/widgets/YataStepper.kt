@@ -41,7 +41,7 @@ fun YataStepper(
         StepperButton(symbol = "−", enabled = value > min) { onChange((value - 1).coerceAtLeast(min)) }
         Text(
             text = "$value",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(30.dp)
@@ -61,7 +61,7 @@ private fun StepperButton(symbol: String, enabled: Boolean, onClick: () -> Unit)
     ) {
         Text(
             text = symbol,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 17.sp),
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
             color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
         )
     }

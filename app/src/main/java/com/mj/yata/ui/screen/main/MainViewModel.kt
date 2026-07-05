@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val repository: YataRepository,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val jsonExporter: JsonExporter
 ) : ViewModel() {
 
     init {
@@ -55,6 +57,9 @@ class MainViewModel @Inject constructor(
     // Preferences
     val themeMode: StateFlow<ThemeMode> = userPreferences.themeModeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
+
+    val appFont: StateFlow<AppFont> = userPreferences.appFontFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppFont.INTER)
 
     val userName: StateFlow<String> = userPreferences.userNameFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
@@ -506,6 +511,26 @@ class MainViewModel @Inject constructor(
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             userPreferences.setThemeMode(mode)
+        }
+    }
+
+    fun setAppFont(font: AppFont) {
+        viewModelScope.launch {
+            userPreferences.setAppFont(font)
+        }
+    }
+
+    /**
+     * Backs up everything to Downloads first, and only wipes the database if that backup
+     * actually succeeded — never delete without a safety copy landing on disk.
+     */
+    fun backupThenDeleteAllData(onResult: (backupFilename: String?) -> Unit) {
+        viewModelScope.launch {
+            val filename = jsonExporter.exportToDownloads()
+            if (filename != null) {
+                repository.deleteAllData()
+            }
+            onResult(filename)
         }
     }
 

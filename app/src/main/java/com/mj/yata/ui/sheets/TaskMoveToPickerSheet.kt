@@ -42,7 +42,7 @@ fun TaskMoveToPickerSheet(
     ) {
         Text(
             text = "Move task to...",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)
         )
 
         if (lists.isNotEmpty()) {

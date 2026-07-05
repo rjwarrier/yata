@@ -63,7 +63,6 @@ fun TagChip(
             text = name,
             color = accentColor,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.SemiBold,
                 fontSize = fontSize
             )
         )

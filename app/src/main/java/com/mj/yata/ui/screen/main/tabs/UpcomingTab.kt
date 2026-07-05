@@ -1,14 +1,21 @@
 package com.mj.yata.ui.screen.main.tabs
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,22 +24,27 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.EventAvailable
+import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.*
+import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.TaskRow
+import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -40,6 +52,11 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private enum class ScheduleViewMode { WEEK, MONTH }
+
+/** yataSlideUp equivalent: 260ms emphasized-decelerate slide + fade, per handoff. */
+private const val SLIDE_UP_MS = 260
+private const val CASCADE_STEP_MS = 10
+private const val CASCADE_CAP_MS = 260
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +95,7 @@ fun UpcomingTab(
     var viewMode by remember { mutableStateOf(ScheduleViewMode.WEEK) }
     val today = remember { LocalDate.now() }
 
-    // Week mode: 7 days starting from today
+    // Week mode: 7 days starting from today (not a fixed calendar week)
     val days = remember(today) {
         List(7) { today.plusDays(it.toLong()) }
     }
@@ -95,7 +112,15 @@ fun UpcomingTab(
         val totalCells = ((leadingBlank + daysInMonth + 6) / 7) * 7
         List(totalCells) { gridStart.plusDays(it.toLong()) }
     }
+
+    val listsById = remember(lists) { lists.associateBy { it.id } }
     val tasksByDate = remember(tasks) { tasks.filter { it.due != null }.groupBy { it.due!! } }
+    val accents = LocalYataAccents.current
+    val defaultDotColor = MaterialTheme.colorScheme.primary
+    fun dotColorsForDate(date: LocalDate): List<Color> =
+        tasksByDate[date.toString()].orEmpty().take(3).map { t ->
+            listsById[t.listId]?.let { accents.getAccent(it.color) } ?: defaultDotColor
+        }
 
     val monthLabel = remember(selectedDay, selectedMonth, viewMode) {
         val base = if (viewMode == ScheduleViewMode.MONTH) selectedMonth.atDay(1) else selectedDay
@@ -107,7 +132,8 @@ fun UpcomingTab(
         tasks.filter { it.due == dateStr }
     }
 
-    val selectedDayLabel = remember(selectedDay) {
+    val isSelectedToday = selectedDay == today
+    val agendaLabel = remember(selectedDay) {
         selectedDay.format(DateTimeFormatter.ofPattern("EEEE, MMMM d"))
     }
 
@@ -130,281 +156,263 @@ fun UpcomingTab(
                 modifier = Modifier.statusBarsPadding()
             )
         } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = "Open drawer",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            if (viewMode == ScheduleViewMode.MONTH) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { selectedMonth = selectedMonth.minusMonths(1) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous month")
-                    }
-                    Text(
-                        text = monthLabel,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            letterSpacing = 0.5.sp
-                        )
-                    )
-                    IconButton(onClick = { selectedMonth = selectedMonth.plusMonths(1) }) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next month")
-                    }
-                }
-            } else {
-                Text(
-                    text = monthLabel,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        letterSpacing = 0.5.sp
-                    )
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                IconButton(onClick = onSearchClick) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                Box(modifier = Modifier.clickable { onProfileClick() }) {
-                    PersonAvatar(
-                        initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
-                        accentKey = "accentC",
-                        size = 32.dp
-                    )
-                }
-            }
-        }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Week / Month toggle
-        SegmentedControl(
-            items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
-            selectedItem = viewMode,
-            onItemSelected = { viewMode = it },
-            labelProvider = { if (it == ScheduleViewMode.WEEK) "Upcoming" else "Calendar" },
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (viewMode == ScheduleViewMode.WEEK) {
-            // 2a. 7-Day Agenda Strip
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .statusBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                days.forEach { day ->
-                    val isSelected = day == selectedDay
-                    val hasTasks = tasks.any { it.due == day.toString() }
-
-                    val dayName = day.format(DateTimeFormatter.ofPattern("E")).uppercase()
-                    val dayOfMonth = day.dayOfMonth.toString()
-
-                    val pillColor by animateColorAsState(
-                        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
-                        label = "dayPillColor"
+                IconButton(onClick = onMenuClick) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Open drawer",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
-                    val onPillColor by animateColorAsState(
-                        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
-                        label = "dayPillLabelColor"
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (viewMode == ScheduleViewMode.MONTH) {
+                        IconButton(onClick = { selectedMonth = selectedMonth.minusMonths(1) }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                contentDescription = "Previous month",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Text(
+                        text = monthLabel,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            letterSpacing = 0.9.sp,
+                            fontSize = 13.sp
+                        ),
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(pillColor)
-                            .clickable { onSelectedDayChange(day) }
-                            .padding(vertical = 10.dp, horizontal = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = dayName,
-                            color = onPillColor,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp
+                    if (viewMode == ScheduleViewMode.MONTH) {
+                        IconButton(onClick = { selectedMonth = selectedMonth.plusMonths(1) }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Next month",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        )
-                        Text(
-                            text = dayOfMonth,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
-                            )
-                        )
-
-                        // Dot indicating tasks
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .background(
-                                    color = when {
-                                        isSelected && hasTasks -> MaterialTheme.colorScheme.onPrimary
-                                        hasTasks -> MaterialTheme.colorScheme.primary
-                                        else -> Color.Transparent
-                                    },
-                                    shape = CircleShape
-                                )
-                        )
+                        }
                     }
                 }
-            }
-        } else {
-            // 2b. Month grid
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                weekdayLabels.forEach { day ->
-                    Text(
-                        text = day.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(7),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                userScrollEnabled = false
-            ) {
-                items(gridDays) { day ->
-                    val inMonth = YearMonth.from(day) == selectedMonth
-                    val isSelected = day == selectedDay
-                    val isToday = day == today
-                    val hasTasks = tasksByDate.containsKey(day.toString())
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .padding(2.dp)
-                            .aspectRatio(1f)
-                            .clip(CircleShape)
-                            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                            .clickable { onSelectedDayChange(day) }
-                            .padding(vertical = 6.dp),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = day.dayOfMonth.toString(),
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium
-                            ),
-                            color = when {
-                                isSelected -> MaterialTheme.colorScheme.onPrimary
-                                !inMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
-                                isToday -> MaterialTheme.colorScheme.primary
-                                else -> MaterialTheme.colorScheme.onSurface
-                            }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    IconButton(onClick = onSearchClick) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
-                        Box(
-                            modifier = Modifier
-                                .padding(top = 2.dp)
-                                .size(4.dp)
-                                .background(
-                                    color = when {
-                                        !hasTasks -> Color.Transparent
-                                        isSelected -> MaterialTheme.colorScheme.onPrimary
-                                        else -> MaterialTheme.colorScheme.primary
-                                    },
-                                    shape = CircleShape
-                                )
+                    }
+                    Box(modifier = Modifier.clickable { onProfileClick() }) {
+                        PersonAvatar(
+                            initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                            accentKey = "accentC",
+                            size = 32.dp
                         )
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // 2. Upcoming / Calendar segmented control
+        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
+            SegmentedControl(
+                items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
+                selectedItem = viewMode,
+                onItemSelected = { viewMode = it },
+                labelProvider = { if (it == ScheduleViewMode.WEEK) "Upcoming" else "Calendar" }
+            )
+        }
 
-        // 3. Agenda Header
-        Text(
-            text = selectedDayLabel,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp
-            ),
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-        )
-
-        val listsById = remember(lists) { lists.associateBy { it.id } }
-        val peopleById = remember(people) { people.associateBy { it.id } }
-
-        // 4. Task list
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(bottom = 88.dp)
-        ) {
-            if (selectedDayTasks.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No tasks scheduled.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            style = MaterialTheme.typography.bodyLarge
+        // 3. Day strip (Upcoming) or month grid (Calendar) — both slide up on mode switch
+        AnimatedContent(
+            targetState = viewMode,
+            transitionSpec = {
+                (slideInVertically(animationSpec = tween(SLIDE_UP_MS, easing = YataEase.emphDecel)) { it / 6 } +
+                    fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel)))
+                    .togetherWith(fadeOut(tween(YataDur.fade)))
+            },
+            label = "scheduleMode"
+        ) { mode ->
+            when (mode) {
+                ScheduleViewMode.WEEK -> Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    days.forEach { day ->
+                        DayPill(
+                            day = day,
+                            selected = day == selectedDay,
+                            isToday = day == today,
+                            dotColors = dotColorsForDate(day),
+                            onClick = { onSelectedDayChange(day) },
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
-            } else {
-                items(selectedDayTasks, key = { it.id }) { task ->
-                    val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                    val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
-                        if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
-                    }
-                    val taskTags = remember(task, projects, tags, tagsEnabled) {
-                        if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
-                    }
 
-                    TaskRow(
-                        task = task,
-                        list = taskList,
-                        assignees = taskAssignees,
-                        tags = taskTags,
-                        onToggleDone = { onToggleDone(task.id) },
-                        onTaskClick = {
-                            if (selectionMode) {
-                                if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
-                            } else {
-                                onTaskClick(task.id)
+                ScheduleViewMode.MONTH -> Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 12.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            weekdayLabels.forEach { day ->
+                                val isTodColumn = day == today.dayOfWeek
+                                Text(
+                                    text = day.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()),
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = if (isTodColumn) FontWeight.Bold else FontWeight.Medium
+                                    ),
+                                    color = if (isTodColumn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Center
+                                )
                             }
-                        },
-                        selectionMode = selectionMode,
-                        selected = selectedIds.contains(task.id),
-                        onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
-                        modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
-                    )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(7),
+                            modifier = Modifier.fillMaxWidth(),
+                            userScrollEnabled = false
+                        ) {
+                            itemsIndexed(gridDays, key = { _, d -> d.toString() }) { index, day ->
+                                val inMonth = YearMonth.from(day) == selectedMonth
+                                var visible by remember(selectedMonth) { mutableStateOf(false) }
+                                LaunchedEffect(selectedMonth, day) {
+                                    delay(minOf(index * CASCADE_STEP_MS, CASCADE_CAP_MS).toLong())
+                                    visible = true
+                                }
+                                AnimatedVisibility(
+                                    visible = visible,
+                                    enter = slideInVertically(animationSpec = tween(SLIDE_UP_MS, easing = YataEase.emphDecel)) { it / 3 } +
+                                        fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel))
+                                ) {
+                                    MonthDayCell(
+                                        day = day,
+                                        selected = day == selectedDay,
+                                        isToday = day == today,
+                                        inMonth = inMonth,
+                                        dotColors = dotColorsForDate(day),
+                                        onClick = { onSelectedDayChange(day) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+
+        val peopleById = remember(people) { people.associateBy { it.id } }
+
+        // 4. Agenda — header + task list slide/fade together, keyed on the selected day
+        AnimatedContent(
+            targetState = selectedDay,
+            transitionSpec = {
+                (slideInVertically(animationSpec = tween(220, easing = YataEase.emphDecel)) { it / 8 } +
+                    fadeIn(tween(220, easing = YataEase.emphDecel)))
+                    .togetherWith(fadeOut(tween(YataDur.fade)))
+            },
+            modifier = Modifier.weight(1f),
+            label = "agenda"
+        ) { day ->
+            val dayTasks = if (day == selectedDay) selectedDayTasks else tasks.filter { it.due == day.toString() }
+            val label = if (day == today) "Today" else agendaLabel
+
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 16.sp
+                            )
+                        )
+                        Text(
+                            text = "${dayTasks.size} ${if (dayTasks.size == 1) "task" else "tasks"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (day != today) {
+                        AssistChip(
+                            onClick = { onSelectedDayChange(today) },
+                            label = { Text("Today", style = MaterialTheme.typography.labelMedium) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Today,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 88.dp)
+                ) {
+                    if (dayTasks.isEmpty()) {
+                        item { UpcomingEmptyState() }
+                    } else {
+                        items(dayTasks, key = { it.id }) { task ->
+                            val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                            val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
+                                if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
+                            }
+                            val taskTags = remember(task, projects, tags, tagsEnabled) {
+                                if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                            }
+
+                            TaskRow(
+                                task = task,
+                                list = taskList,
+                                assignees = taskAssignees,
+                                tags = taskTags,
+                                onToggleDone = { onToggleDone(task.id) },
+                                onTaskClick = {
+                                    if (selectionMode) {
+                                        if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                                    } else {
+                                        onTaskClick(task.id)
+                                    }
+                                },
+                                selectionMode = selectionMode,
+                                selected = selectedIds.contains(task.id),
+                                onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
+                                modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -470,6 +478,195 @@ fun UpcomingTab(
             dismissButton = {
                 TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
             }
+        )
+    }
+}
+
+/** 7-day agenda strip pill: selected = filled primary + scale + shadow, today = primaryContainer tint. */
+@Composable
+private fun DayPill(
+    day: LocalDate,
+    selected: Boolean,
+    isToday: Boolean,
+    dotColors: List<Color>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val bg by animateColorAsState(
+        targetValue = when {
+            selected -> MaterialTheme.colorScheme.primary
+            isToday -> MaterialTheme.colorScheme.primaryContainer
+            else -> Color.Transparent
+        },
+        animationSpec = tween(YataDur.fade),
+        label = "dayPillBg"
+    )
+    val fg = when {
+        selected -> MaterialTheme.colorScheme.onPrimary
+        isToday -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    val labelColor = when {
+        selected -> MaterialTheme.colorScheme.onPrimary
+        isToday -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.04f else 1f,
+        animationSpec = tween(YataDur.micro, easing = YataEase.spring),
+        label = "dayPillScale"
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                shadowElevation = if (selected) 3f else 0f
+                shape = RoundedCornerShape(20.dp)
+                clip = false
+            }
+            .clip(RoundedCornerShape(20.dp))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 9.dp)
+    ) {
+        Text(
+            text = day.format(DateTimeFormatter.ofPattern("E")).uppercase(),
+            color = labelColor,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp)
+        )
+        Text(
+            text = day.dayOfMonth.toString(),
+            color = fg,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+        )
+        DayDots(dotColors = dotColors, overrideColor = if (selected) MaterialTheme.colorScheme.onPrimary else null)
+    }
+}
+
+/** Fixed 38dp squircle month-grid cell. */
+@Composable
+private fun MonthDayCell(
+    day: LocalDate,
+    selected: Boolean,
+    isToday: Boolean,
+    inMonth: Boolean,
+    dotColors: List<Color>,
+    onClick: () -> Unit
+) {
+    val bg = when {
+        selected -> MaterialTheme.colorScheme.primary
+        isToday -> MaterialTheme.colorScheme.primaryContainer
+        else -> Color.Transparent
+    }
+    val fg = when {
+        selected -> MaterialTheme.colorScheme.onPrimary
+        !inMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+        isToday -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.06f else 1f,
+        animationSpec = tween(YataDur.micro, easing = YataEase.spring),
+        label = "monthCellScale"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        shadowElevation = if (selected) 3f else 0f
+                        shape = RoundedCornerShape(16.dp)
+                        clip = false
+                    }
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(bg)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = day.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = if (isToday || selected) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 15.sp
+                    ),
+                    color = fg
+                )
+            }
+            DayDots(dotColors = dotColors, overrideColor = if (selected) MaterialTheme.colorScheme.onPrimary else null)
+        }
+    }
+}
+
+/** Up to 3 dots colored by each task's list accent — a quick read of what's on a day. */
+@Composable
+private fun DayDots(dotColors: List<Color>, overrideColor: Color?, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.height(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        if (dotColors.isEmpty()) {
+            Spacer(modifier = Modifier.size(4.dp))
+        } else {
+            dotColors.forEach { color ->
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .background(overrideColor ?: color, CircleShape)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpcomingEmptyState(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 56.dp, horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.EventAvailable,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(30.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Clear day",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = "Nothing scheduled.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
         )
     }
 }

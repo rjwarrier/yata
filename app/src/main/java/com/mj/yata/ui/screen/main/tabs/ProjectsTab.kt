@@ -219,7 +219,6 @@ fun ProjectCard(
                         Text(
                             text = project.name,
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             ),
                             maxLines = 1,

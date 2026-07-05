@@ -216,6 +216,49 @@ class JsonExporter @Inject constructor(
         }
     }
 
+    /**
+     * Auto-backs up to the public Downloads folder without a file picker (used before a
+     * destructive "delete all data" action). Returns the saved filename, or null on failure.
+     */
+    suspend fun exportToDownloads(): String? {
+        val filename = "yata_backup_" +
+            java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date()) +
+            ".json"
+
+        val uri: Uri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, filename)
+                put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/json")
+                put(android.provider.MediaStore.Downloads.IS_PENDING, 1)
+            }
+            context.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                ?: return null
+        } else {
+            // Pre-scoped-storage (API 26-28) needs the legacy write permission at runtime.
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                return null
+            }
+            val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            if (!downloadsDir.exists()) downloadsDir.mkdirs()
+            Uri.fromFile(java.io.File(downloadsDir, filename))
+        }
+
+        val ok = exportData(uri)
+
+        if (ok && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.IS_PENDING, 0)
+            }
+            context.contentResolver.update(uri, values, null, null)
+        }
+
+        return if (ok) filename else null
+    }
+
     suspend fun importData(uri: Uri): Boolean {
         return try {
             val sb = StringBuilder()

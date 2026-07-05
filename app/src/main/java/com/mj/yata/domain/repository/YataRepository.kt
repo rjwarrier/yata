@@ -55,4 +55,7 @@ interface YataRepository {
 
     // Seed initial data if database is empty
     suspend fun seedInitialDataIfNeeded()
+
+    // Wipes every table — irreversible, callers are responsible for backing up first
+    suspend fun deleteAllData()
 }

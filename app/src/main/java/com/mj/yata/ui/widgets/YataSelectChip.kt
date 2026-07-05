@@ -69,7 +69,6 @@ fun YataSelectChip(
             text = label,
             color = fg,
             style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp
             ),
             maxLines = 1,
@@ -110,7 +109,7 @@ fun YataDashedAddChip(
         Text(
             text = label,
             color = color,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp)
         )
     }
 }

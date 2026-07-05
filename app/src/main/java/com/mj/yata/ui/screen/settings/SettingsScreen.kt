@@ -8,9 +8,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,12 +21,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.util.TaskScheduleUtils
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +41,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
+    val appFont by viewModel.appFont.collectAsState()
     val userName by viewModel.userName.collectAsState()
     val userEmail by viewModel.userEmail.collectAsState()
     val defaultListId by viewModel.defaultListId.collectAsState()
@@ -61,7 +66,13 @@ fun SettingsScreen(
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
 
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
+    var isDeletingAll by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = -1,
@@ -100,64 +111,75 @@ fun SettingsScreen(
             )
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    if (editingName) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    com.mj.yata.ui.widgets.PersonAvatar(
+                        initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                        accentKey = "accentC",
+                        size = 48.dp
+                    )
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        if (editingName) {
                             OutlinedTextField(
                                 value = tempName,
                                 onValueChange = { tempName = it },
-                                label = { Text("Name") },
                                 singleLine = true,
-                                modifier = Modifier.weight(1f)
+                                textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                trailingIcon = {
+                                    IconButton(onClick = {
+                                        viewModel.setUserName(tempName)
+                                        editingName = false
+                                    }) {
+                                        Icon(Icons.Default.Check, contentDescription = "Save name")
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(onClick = {
-                                viewModel.setUserName(tempName)
-                                editingName = false
-                            }) {
-                                Text("Save")
-                            }
+                        } else {
+                            Text(
+                                text = userName,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.clickable {
+                                    tempName = userName
+                                    editingName = true
+                                }
+                            )
                         }
-                    } else {
-                        SettingsRow(
-                            label = "Name",
-                            value = userName,
-                            onClick = {
-                                tempName = userName
-                                editingName = true
-                            }
-                        )
-                    }
 
-                    if (editingEmail) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (editingEmail) {
                             OutlinedTextField(
                                 value = tempEmail,
                                 onValueChange = { tempEmail = it },
-                                label = { Text("Email") },
                                 singleLine = true,
-                                modifier = Modifier.weight(1f)
+                                textStyle = MaterialTheme.typography.bodySmall,
+                                trailingIcon = {
+                                    IconButton(onClick = {
+                                        viewModel.setUserEmail(tempEmail)
+                                        editingEmail = false
+                                    }) {
+                                        Icon(Icons.Default.Check, contentDescription = "Save email")
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(onClick = {
-                                viewModel.setUserEmail(tempEmail)
-                                editingEmail = false
-                            }) {
-                                Text("Save")
-                            }
+                        } else {
+                            Text(
+                                text = userEmail,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.clickable {
+                                    tempEmail = userEmail
+                                    editingEmail = true
+                                }
+                            )
                         }
-                    } else {
-                        SettingsRow(
-                            label = "Email",
-                            value = userEmail,
-                            onClick = {
-                                tempEmail = userEmail
-                                editingEmail = true
-                            }
-                        )
                     }
                 }
             }
@@ -185,6 +207,22 @@ fun SettingsScreen(
                             selectedItem = themeMode,
                             onItemSelected = { viewModel.setThemeMode(it) },
                             labelProvider = { it.name }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Font SegmentedControl
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Font",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        SegmentedControl(
+                            items = listOf(AppFont.INTER, AppFont.JETBRAINS_MONO),
+                            selectedItem = appFont,
+                            onItemSelected = { viewModel.setAppFont(it) },
+                            labelProvider = { if (it == AppFont.INTER) "Inter" else "JetBrains Mono" }
                         )
                     }
 
@@ -302,6 +340,51 @@ fun SettingsScreen(
                         checked = tagsFeatureEnabled,
                         onCheckedChange = { viewModel.setTagsFeatureEnabled(it) }
                     )
+                }
+            }
+
+            // Manage Section — tap-through to the People/Tags/Projects tabs, per handoff's Settings "Manage" rows.
+            if (projectsFeatureEnabled || peopleFeatureEnabled || tagsFeatureEnabled) {
+                Text(
+                    text = "MANAGE",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        val manageRows = buildList {
+                            if (projectsFeatureEnabled) add(Triple("Projects", Icons.Default.ChevronRight, 1))
+                            if (peopleFeatureEnabled) add(Triple("People", Icons.Default.ChevronRight, 2))
+                            if (tagsFeatureEnabled) add(Triple("Tags", Icons.Default.ChevronRight, 3))
+                        }
+                        manageRows.forEachIndexed { index, (title, _, tabIndex) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onNavigateToTab(tabIndex) }
+                                    .padding(vertical = 14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                            if (index != manageRows.lastIndex) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            }
+                        }
+                    }
                 }
             }
 
@@ -439,9 +522,74 @@ fun SettingsScreen(
                             )
                         }
                     }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = !isDeletingAll) { showDeleteAllDialog = true }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteForever,
+                            contentDescription = "Delete all data",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Delete All Data",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = "Backs up to Downloads automatically, then erases everything on this device.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (isDeletingAll) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        }
+                    }
                 }
             }
         }
+    }
+
+    if (showDeleteAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllDialog = false },
+            title = { Text("Delete all data?") },
+            text = {
+                Text(
+                    "This backs up everything to your Downloads folder first, then permanently " +
+                        "erases all tasks, projects, people, and tags from this device. This can't be undone."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteAllDialog = false
+                    isDeletingAll = true
+                    viewModel.backupThenDeleteAllData { filename ->
+                        isDeletingAll = false
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                if (filename != null) "Backed up to Downloads/$filename, then deleted all data."
+                                else "Backup failed — nothing was deleted."
+                            )
+                        }
+                    }
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 
     YataTimePickerLauncher(

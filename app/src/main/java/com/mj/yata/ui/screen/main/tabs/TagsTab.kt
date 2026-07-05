@@ -314,7 +314,6 @@ private fun TagPill(tag: Tag, taskCount: Int, onClick: () -> Unit, onToggleStar:
             Text(
                 text = tag.name,
                 style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp
                 )
             )
@@ -370,7 +369,6 @@ private fun NewTagDashedPill(onClick: () -> Unit) {
             Text(
                 text = "New tag",
                 style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )

@@ -270,7 +270,7 @@ fun NewTaskSheet(
             title = {
                 Text(
                     text = "New task",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.titleMedium
                 )
             },
             navigationIcon = {
@@ -732,7 +732,7 @@ private fun AssignedPersonChip(
         }
         Text(
             text = if (person.isMe) "You" else person.name,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Icon(

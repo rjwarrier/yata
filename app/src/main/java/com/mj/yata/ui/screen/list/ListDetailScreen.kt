@@ -83,8 +83,9 @@ fun ListDetailScreen(
             )
         },
         topBar = {
+            // Title-less bar: the list name lives in the hero header below (per handoff's List Detail).
             TopAppBar(
-                title = { Text(list.name, fontWeight = FontWeight.Bold) },
+                title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
@@ -125,7 +126,7 @@ fun ListDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = listColor.copy(alpha = 0.12f)
+                    containerColor = listColor.copy(alpha = 0.18f)
                 )
             )
         },
@@ -140,6 +141,7 @@ fun ListDetailScreen(
         }
     ) { innerPadding ->
         val peopleById = remember(people) { people.associateBy { it.id } }
+        val progress = if (listTasks.isNotEmpty()) doneTasks.toFloat() / listTasks.size else 0f
 
         Column(
             modifier = modifier
@@ -147,33 +149,47 @@ fun ListDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            // 1. Header Area
-            Column(
+            // 1. Hero header — icon tile, list name, progress ring (per handoff's List Detail)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(listColor.copy(alpha = 0.12f))
-                    .padding(vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .background(listColor.copy(alpha = 0.18f))
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(44.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(listColor.copy(alpha = 0.2f)),
+                        .background(listColor.copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = com.mj.yata.ui.widgets.iconVectorFor(list.icon),
                         contentDescription = null,
                         tint = listColor,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "$openTasks open · $doneTasks completed",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                Spacer(modifier = Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = list.name,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "$openTasks open · $doneTasks completed",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                com.mj.yata.ui.widgets.ProgressRing(
+                    progress = progress,
+                    size = 48.dp,
+                    strokeWidth = 5.dp,
+                    activeColor = listColor
                 )
             }
 

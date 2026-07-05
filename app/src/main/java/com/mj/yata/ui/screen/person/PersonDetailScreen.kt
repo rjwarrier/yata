@@ -194,7 +194,7 @@ fun PersonDetailScreen(
                     ) {
                         Text(
                             text = "Open Tasks",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.titleMedium
                         )
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,
@@ -274,7 +274,7 @@ fun PersonDetailScreen(
                     ) {
                         Text(
                             text = "Completed Tasks",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.titleMedium
                         )
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,

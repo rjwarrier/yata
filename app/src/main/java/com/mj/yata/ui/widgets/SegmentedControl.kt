@@ -1,7 +1,6 @@
 package com.mj.yata.ui.widgets
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,12 +10,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/** Handoff's Segmented (m3-widgets.jsx): pill track on surfaceContainerHigh, selected
+ * segment is its own surface-colored pill with an L1 shadow — no borders, no dividers. */
 @Composable
 fun <T> SegmentedControl(
     items: List<T>,
@@ -29,39 +31,34 @@ fun <T> SegmentedControl(
         modifier = modifier
             .fillMaxWidth()
             .height(40.dp)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp)),
-        verticalAlignment = Alignment.CenterVertically
+            .clip(RoundedCornerShape(percent = 50))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        items.forEachIndexed { index, item ->
+        items.forEach { item ->
             val isSelected = item == selectedItem
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                    .shadow(
+                        elevation = if (isSelected) 1.dp else 0.dp,
+                        shape = RoundedCornerShape(percent = 50),
+                        clip = false
                     )
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
                     .clickable { onItemSelected(item) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = labelProvider(item),
-                    color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         fontSize = 13.sp
                     ),
                     textAlign = TextAlign.Center
-                )
-            }
-            if (index < items.size - 1 && !isSelected && items[index + 1] != selectedItem) {
-                Box(
-                    modifier = Modifier
-                        .width(1.dp)
-                        .fillMaxHeight(0.6f)
-                        .background(MaterialTheme.colorScheme.outlineVariant)
                 )
             }
         }

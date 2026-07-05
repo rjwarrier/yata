@@ -193,7 +193,6 @@ fun TaskDetailScreen(
                         text = task.title,
                         color = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
                             fontSize = 22.sp,
                             textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
                         )
@@ -201,79 +200,71 @@ fun TaskDetailScreen(
                 }
             }
 
-            // 2. Meta rows container (surfaceContainerLow, 16dp radius)
+            // 2. Meta rows — each its own surfaceContainerLow card (per handoff's MetaRow)
             item {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        MetaRowItem(
-                            icon = Icons.Default.Today,
-                            label = "Due Date",
-                            value = com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time),
-                            onClick = { activeSheet = DetailSheetType.ScheduleEditor }
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MetaRowItem(
+                        icon = Icons.Default.Today,
+                        label = "Due Date",
+                        value = com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time),
+                        accentColor = MaterialTheme.colorScheme.primary,
+                        onClick = { activeSheet = DetailSheetType.ScheduleEditor }
+                    )
 
-                        MetaRowItem(
-                            icon = Icons.Default.Notifications,
-                            label = "Reminder",
-                            value = com.mj.yata.util.TaskScheduleUtils.formatReminder(task.reminder),
-                            valueColor = if (task.reminder != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = { activeSheet = DetailSheetType.ReminderPicker }
-                        )
+                    MetaRowItem(
+                        icon = Icons.Default.Notifications,
+                        label = "Reminder",
+                        value = com.mj.yata.util.TaskScheduleUtils.formatReminder(task.reminder),
+                        accentColor = if (task.reminder != null) MaterialTheme.colorScheme.secondary else null,
+                        onClick = { activeSheet = DetailSheetType.ReminderPicker }
+                    )
 
-                        val repeatsVal = task.recurrence?.let {
-                            com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)
-                        } ?: "Does not repeat"
-                        MetaRowItem(
-                            icon = Icons.Default.Repeat,
-                            label = "Repeats",
-                            value = repeatsVal,
-                            valueColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
-                        )
+                    val repeatsVal = task.recurrence?.let {
+                        com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)
+                    } ?: "Does not repeat"
+                    MetaRowItem(
+                        icon = Icons.Default.Repeat,
+                        label = "Repeats",
+                        value = repeatsVal,
+                        accentColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else null,
+                        onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
+                    )
 
-                        if (projectsFeatureEnabled) {
-                            MetaRowItem(
-                                icon = Icons.Default.Layers,
-                                label = "Project",
-                                value = project?.name ?: "None",
-                                onClick = { activeSheet = DetailSheetType.ProjectPicker }
-                            )
-                        }
-
+                    if (projectsFeatureEnabled) {
                         MetaRowItem(
-                            icon = Icons.Default.Folder,
-                            label = "List",
-                            value = taskList?.name ?: "None",
-                            swatchColor = listColor,
-                            onClick = { activeSheet = DetailSheetType.ListPicker }
-                        )
-
-                        // Priority
-                        MetaRowItem(
-                            icon = Icons.Default.Flag,
-                            label = "Priority",
-                            value = task.priority.uppercase(),
-                            rightContent = { PriorityBars(priority = task.priority) },
-                            onClick = { viewModel.cycleTaskPriority(task.id) }
-                        )
-
-                        // Section (Morning / Afternoon bucket on the Today tab)
-                        MetaRowItem(
-                            icon = Icons.Default.WbSunny,
-                            label = "Section",
-                            value = task.section,
-                            onClick = {
-                                viewModel.upsertTask(task.copy(section = if (task.section == "Morning") "Afternoon" else "Morning"))
-                            }
+                            icon = Icons.Default.Layers,
+                            label = "Project",
+                            value = project?.name ?: "None",
+                            onClick = { activeSheet = DetailSheetType.ProjectPicker }
                         )
                     }
+
+                    MetaRowItem(
+                        icon = Icons.Default.Folder,
+                        label = "List",
+                        value = taskList?.name ?: "None",
+                        swatchColor = listColor,
+                        onClick = { activeSheet = DetailSheetType.ListPicker }
+                    )
+
+                    // Priority
+                    MetaRowItem(
+                        icon = Icons.Default.Flag,
+                        label = "Priority",
+                        value = task.priority.uppercase(),
+                        rightContent = { PriorityBars(priority = task.priority) },
+                        onClick = { viewModel.cycleTaskPriority(task.id) }
+                    )
+
+                    // Section (Morning / Afternoon bucket on the Today tab)
+                    MetaRowItem(
+                        icon = Icons.Default.WbSunny,
+                        label = "Section",
+                        value = task.section,
+                        onClick = {
+                            viewModel.upsertTask(task.copy(section = if (task.section == "Morning") "Afternoon" else "Morning"))
+                        }
+                    )
                 }
             }
 
@@ -428,7 +419,7 @@ fun TaskDetailScreen(
                                     .clickable { toggleSubtask(sub.id, !sub.done) }
                                     .padding(vertical = 6.dp)
                             ) {
-                                Checkbox(checked = sub.done, onCheckedChange = { toggleSubtask(sub.id, it) })
+                                SpringyCheck(checked = sub.done, onCheckedChange = { toggleSubtask(sub.id, it) }, color = listColor, size = 20.dp)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = sub.title,
@@ -456,7 +447,7 @@ fun TaskDetailScreen(
                                         .clickable { toggleSubtask(child.id, !child.done) }
                                         .padding(vertical = 4.dp)
                                 ) {
-                                    Checkbox(checked = child.done, onCheckedChange = { toggleSubtask(child.id, it) })
+                                    SpringyCheck(checked = child.done, onCheckedChange = { toggleSubtask(child.id, it) }, color = listColor, size = 18.dp)
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = child.title,
@@ -916,68 +907,81 @@ private fun LocalPanelHint(text: String) {
     }
 }
 
+/** Handoff's MetaRow: own surfaceContainerLow card per row, 32dp icon tile, uppercase label over value. */
 @Composable
 fun MetaRowItem(
     icon: ImageVector,
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    valueColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    accentColor: Color? = null,
     swatchColor: Color? = null,
     rightContent: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.fillMaxWidth()
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(100.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        
-        if (swatchColor != null) {
+        Row(
+            modifier = Modifier
+                .clickable { onClick() }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier
-                    .size(8.dp)
-                    .background(swatchColor, CircleShape)
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = accentColor ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.6.sp, fontSize = 11.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (swatchColor != null) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(swatchColor, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp),
+                        color = accentColor ?: MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            if (rightContent != null) {
+                rightContent()
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
             )
-            Spacer(modifier = Modifier.width(6.dp))
         }
-
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = valueColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-
-        if (rightContent != null) {
-            rightContent()
-            Spacer(modifier = Modifier.width(4.dp))
-        }
-
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.size(18.dp)
-        )
     }
 }
 

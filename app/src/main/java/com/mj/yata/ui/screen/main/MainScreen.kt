@@ -26,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -138,7 +139,7 @@ fun MainScreen(
                         Column {
                             Text(
                                 text = userName,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                style = MaterialTheme.typography.titleMedium
                             )
                             Text(
                                 text = userEmail,
@@ -630,12 +631,24 @@ fun CustomBottomNav(
         NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek)
     )
 
+    // Top-only hairline (per handoff's borderTop) — a Surface `border` would ring all 4 sides,
+    // drawing an unwanted line along the bottom edge too.
+    val navDividerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val navDividerStrokeWidth = with(androidx.compose.ui.platform.LocalDensity.current) { 1.dp.toPx() }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            .height(80.dp)
+            .drawBehind {
+                drawLine(
+                    color = navDividerColor,
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                    strokeWidth = navDividerStrokeWidth
+                )
+            },
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Row(
             modifier = Modifier
