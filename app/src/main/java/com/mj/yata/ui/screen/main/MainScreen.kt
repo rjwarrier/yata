@@ -512,21 +512,24 @@ fun MainScreen(
                 }
             }
         }
+    }
 
-        if (isNewListSheetOpen) {
-            ModalBottomSheet(
-                onDismissRequest = { isNewListSheetOpen = false },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-            ) {
-                ListEditorSheet(
-                    onSave = { name, color, icon ->
-                        viewModel.addList(name, color, icon = icon)
-                        isNewListSheetOpen = false
-                    },
-                    onDismiss = { isNewListSheetOpen = false }
-                )
-            }
+    // Independent of activeSheet — the drawer's "New folder" + button only sets this flag,
+    // so this must not be nested inside the `activeSheet != None` gate above (it used to be,
+    // which meant the sheet could never actually open).
+    if (isNewListSheetOpen) {
+        ModalBottomSheet(
+            onDismissRequest = { isNewListSheetOpen = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            ListEditorSheet(
+                onSave = { name, color, icon ->
+                    viewModel.addList(name, color, icon = icon)
+                    isNewListSheetOpen = false
+                },
+                onDismiss = { isNewListSheetOpen = false }
+            )
         }
     }
 }

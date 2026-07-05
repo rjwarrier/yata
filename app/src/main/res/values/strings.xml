@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">yata</string>
+
+    <!-- Tasker "Create Task" plugin field labels -->
+    <string name="tasker_field_title">Title</string>
+    <string name="tasker_field_project">Project (name)</string>
+    <string name="tasker_field_list">List (name)</string>
+    <string name="tasker_field_tags">Tags (comma-separated)</string>
+    <string name="tasker_field_assignees">Assign to (comma-separated names)</string>
+    <string name="tasker_field_due">Due date (e.g. 2026-07-10, tomorrow, next monday)</string>
+    <string name="tasker_field_time">Time (e.g. 3:00 PM, 15:00, evening)</string>
+    <string name="tasker_field_reminder">Reminder (e.g. 15 min before, 1 day before)</string>
+    <string name="tasker_field_priority">Priority (none, low, med, high)</string>
+    <string name="tasker_field_section">Section (Morning or Afternoon)</string>
+    <string name="tasker_field_repeat">Repeat (e.g. daily, every monday, every 2 weeks)</string>
+    <string name="tasker_field_notes">Notes</string>
 </resources>

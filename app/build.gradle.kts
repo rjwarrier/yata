@@ -94,6 +94,9 @@ dependencies {
     // Markdown rendering for task notes
     implementation("io.noties.markwon:core:4.6.2")
 
+    // Tasker plugin (Create Task action)
+    implementation("com.joaomgcd:taskerpluginlibrary:0.4.10")
+
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     androidTestImplementation(libs.room.testing)

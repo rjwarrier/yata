@@ -77,6 +77,17 @@
                 android:resource="@xml/todo_widget_info" />
         </receiver>
 
+        <!-- Tasker plugin: Create Task action -->
+        <activity
+            android:name=".tasker.createtask.CreateTaskConfigActivity"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="Create Task">
+            <intent-filter>
+                <action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING" />
+            </intent-filter>
+        </activity>
+
     </application>
 
 </manifest>
