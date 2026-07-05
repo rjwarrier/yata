@@ -36,6 +36,7 @@ fun PersonDetailScreen(
     personId: String,
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val people by viewModel.people.collectAsState()
@@ -66,7 +67,12 @@ fun PersonDetailScreen(
     val openTasks = assignedTasks.filter { !it.done }
     val completedTasks = assignedTasks.filter { it.done }
 
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+
     Scaffold(
+        bottomBar = {
+            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = 2, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+        },
         topBar = {
             TopAppBar(
                 title = { Text(person.name, fontWeight = FontWeight.Bold) },

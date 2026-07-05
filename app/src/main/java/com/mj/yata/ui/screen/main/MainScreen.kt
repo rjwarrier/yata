@@ -64,13 +64,14 @@ fun MainScreen(
     onNavigateToProjectDetail: (String) -> Unit,
     onNavigateToPersonDetail: (String) -> Unit,
     onNavigateToTagDetail: (String) -> Unit,
-    onNavigateToListDetail: (String) -> Unit
+    onNavigateToListDetail: (String) -> Unit,
+    initialTab: Int = 0
 ) {
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(initialTab) }
     var calendarSelectedDay by remember { mutableStateOf(java.time.LocalDate.now()) }
 
     // Confetti trigger
@@ -274,10 +275,7 @@ fun MainScreen(
     ) {
         Scaffold(
             bottomBar = {
-                val todayStr = remember { java.time.LocalDate.now().toString() }
-                val todayRemainingCount = remember(tasks, todayStr) {
-                    tasks.count { it.due != null && it.due <= todayStr && !it.done }
-                }
+                val todayRemainingCount by viewModel.todayRemainingCount.collectAsState()
                 CustomBottomNav(selectedTab = selectedTab, todayBadgeCount = todayRemainingCount) {
                     selectedTab = it
                 }

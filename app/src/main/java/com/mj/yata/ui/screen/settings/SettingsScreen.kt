@@ -33,6 +33,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onExportRequested: () -> Unit,
     onImportRequested: () -> Unit,
+    onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
@@ -55,7 +56,12 @@ fun SettingsScreen(
     var editingEmail by remember { mutableStateOf(false) }
     var tempEmail by remember { mutableStateOf(userEmail) }
 
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+
     Scaffold(
+        bottomBar = {
+            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = -1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+        },
         topBar = {
             TopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Bold) },

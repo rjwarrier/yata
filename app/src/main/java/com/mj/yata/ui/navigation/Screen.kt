@@ -1,7 +1,9 @@
 package com.mj.yata.ui.navigation
 
 sealed class Screen(val route: String) {
-    object Main : Screen("main")
+    object Main : Screen("main?tab={tab}") {
+        fun createRoute(tab: Int) = "main?tab=$tab"
+    }
     
     object TaskDetail : Screen("task_detail/{taskId}") {
         fun createRoute(taskId: String) = "task_detail/$taskId"

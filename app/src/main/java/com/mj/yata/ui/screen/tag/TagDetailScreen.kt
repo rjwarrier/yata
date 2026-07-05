@@ -33,6 +33,7 @@ fun TagDetailScreen(
     tagId: String,
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tags by viewModel.tags.collectAsState()
@@ -72,7 +73,12 @@ fun TagDetailScreen(
         if (hideCompleted) allTaggedTasks.filter { !it.done } else allTaggedTasks
     }
 
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+
     Scaffold(
+        bottomBar = {
+            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = 3, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+        },
         topBar = {
             TopAppBar(
                 title = { Text("#" + tag.name, fontWeight = FontWeight.Bold) },

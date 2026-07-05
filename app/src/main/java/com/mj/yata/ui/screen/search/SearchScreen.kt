@@ -28,6 +28,7 @@ fun SearchScreen(
     viewModel: MainViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tasks by viewModel.tasks.collectAsState()
@@ -63,7 +64,11 @@ fun SearchScreen(
     }
 
     if (selectionMode) {
+        val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
         Scaffold(
+            bottomBar = {
+                com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = -1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+            },
             topBar = {
                 com.mj.yata.ui.sheets.TaskSelectionTopBar(
                     selectedCount = selectedIds.size,

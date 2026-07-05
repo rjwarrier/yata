@@ -35,6 +35,7 @@ fun ListDetailScreen(
     listId: String,
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val lists by viewModel.lists.collectAsState()
@@ -65,7 +66,12 @@ fun ListDetailScreen(
     var localOrder by remember(listTasks) { mutableStateOf(listTasks) }
     var pendingMoveTask by remember { mutableStateOf<Task?>(null) }
 
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+
     Scaffold(
+        bottomBar = {
+            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = -1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+        },
         topBar = {
             TopAppBar(
                 title = { Text(list.name, fontWeight = FontWeight.Bold) },

@@ -56,6 +56,7 @@ fun TaskDetailScreen(
     viewModel: MainViewModel,
     taskId: String,
     onNavigateBack: () -> Unit,
+    onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tasks by viewModel.tasks.collectAsState()
@@ -97,8 +98,13 @@ fun TaskDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = -1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+        },
         topBar = {
             TopAppBar(
                 title = {},

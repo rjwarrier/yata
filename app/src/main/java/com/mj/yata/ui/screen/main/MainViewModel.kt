@@ -28,6 +28,12 @@ class MainViewModel @Inject constructor(
     val tasks: StateFlow<List<Task>> = repository.getTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar. */
+    val todayRemainingCount: StateFlow<Int> = tasks.map { list ->
+        val todayStr = LocalDate.now().toString()
+        list.count { it.due != null && it.due <= todayStr && !it.done }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     val projects: StateFlow<List<Project>> = repository.getProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

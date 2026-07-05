@@ -33,6 +33,7 @@ fun ProjectDetailScreen(
     projectId: String,
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val projects by viewModel.projects.collectAsState()
@@ -71,7 +72,12 @@ fun ProjectDetailScreen(
         people.filter { pids.contains(it.id) }
     }
 
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+
     Scaffold(
+        bottomBar = {
+            com.mj.yata.ui.screen.main.CustomBottomNav(selectedTab = 1, todayBadgeCount = todayBadgeCount, onTabSelected = onNavigateToTab)
+        },
         topBar = {
             TopAppBar(
                 title = { Text(project.name, fontWeight = FontWeight.Bold) },

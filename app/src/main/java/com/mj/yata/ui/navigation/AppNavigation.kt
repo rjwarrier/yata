@@ -31,6 +31,13 @@ fun AppNavigation(
     onExportRequested: () -> Unit,
     onImportRequested: () -> Unit
 ) {
+    val onNavigateToTab: (Int) -> Unit = { index ->
+        navController.navigate(Screen.Main.createRoute(index)) {
+            popUpTo(Screen.Main.route) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
     NavHost(
         navController    = navController,
         startDestination = Screen.Main.route,
@@ -41,11 +48,16 @@ fun AppNavigation(
         popExitTransition   = { slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade)) }
     ) {
         // ── Main Shell (5-tab navigation) ───────────────────────────────────
-        composable(Screen.Main.route) {
+        composable(
+            route = Screen.Main.route,
+            arguments = listOf(navArgument("tab") { type = NavType.IntType; defaultValue = 0 })
+        ) { backStackEntry ->
+            val initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
             val viewModel: MainViewModel = hiltViewModel()
             MainScreen(
                 viewModel = viewModel,
                 navController = navController,
+                initialTab = initialTab,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigateToSearch = { navController.navigate(Screen.Search.route) },
                 onNavigateToTaskDetail = { taskId ->
@@ -76,7 +88,8 @@ fun AppNavigation(
             TaskDetailScreen(
                 viewModel = viewModel,
                 taskId = taskId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTab = onNavigateToTab
             )
         }
 
@@ -93,7 +106,8 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
-                }
+                },
+                onNavigateToTab = onNavigateToTab
             )
         }
 
@@ -110,7 +124,8 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
-                }
+                },
+                onNavigateToTab = onNavigateToTab
             )
         }
 
@@ -127,7 +142,8 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
-                }
+                },
+                onNavigateToTab = onNavigateToTab
             )
         }
 
@@ -144,7 +160,8 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
-                }
+                },
+                onNavigateToTab = onNavigateToTab
             )
         }
 
@@ -156,7 +173,8 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
-                }
+                },
+                onNavigateToTab = onNavigateToTab
             )
         }
 
@@ -167,7 +185,8 @@ fun AppNavigation(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
                 onExportRequested = onExportRequested,
-                onImportRequested = onImportRequested
+                onImportRequested = onImportRequested,
+                onNavigateToTab = onNavigateToTab
             )
         }
     }
