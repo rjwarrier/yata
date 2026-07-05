@@ -30,6 +30,7 @@ class UserPreferences @Inject constructor(
         val APP_FONT                = stringPreferencesKey("app_font")
         val USER_NAME               = stringPreferencesKey("user_name")
         val USER_EMAIL              = stringPreferencesKey("user_email")
+        val USER_PHOTO_URI          = stringPreferencesKey("user_photo_uri")
         val DEFAULT_LIST_ID         = stringPreferencesKey("default_list_id")
         val START_OF_WEEK_SUNDAY    = booleanPreferencesKey("start_of_week_sunday")
         val DEFAULT_REMINDER_HOUR   = intPreferencesKey("default_reminder_hour")
@@ -58,6 +59,7 @@ class UserPreferences @Inject constructor(
 
     val userNameFlow: Flow<String> = dataStore.data.map { it[USER_NAME] ?: "" }
     val userEmailFlow: Flow<String> = dataStore.data.map { it[USER_EMAIL] ?: "" }
+    val userPhotoUriFlow: Flow<String?> = dataStore.data.map { it[USER_PHOTO_URI] }
 
     override val defaultListIdFlow: Flow<String> = dataStore.data.map { it[DEFAULT_LIST_ID] ?: "" }
 
@@ -84,6 +86,12 @@ class UserPreferences @Inject constructor(
 
     suspend fun setUserEmail(email: String) {
         dataStore.edit { it[USER_EMAIL] = email }
+    }
+
+    suspend fun setUserPhotoUri(uri: String?) {
+        dataStore.edit {
+            if (uri != null) it[USER_PHOTO_URI] = uri else it.remove(USER_PHOTO_URI)
+        }
     }
 
     suspend fun setDefaultListId(id: String) {

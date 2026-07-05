@@ -1,15 +1,18 @@
 package com.mj.yata.ui.screen.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DeleteForever
@@ -18,6 +21,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,8 +30,10 @@ import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.screen.main.MainViewModel
+import com.mj.yata.ui.widgets.CircularImageCropper
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
+import com.mj.yata.util.ProfilePhotoUtils
 import com.mj.yata.util.TaskScheduleUtils
 import kotlinx.coroutines.launch
 
@@ -44,6 +51,7 @@ fun SettingsScreen(
     val appFont by viewModel.appFont.collectAsState()
     val userName by viewModel.userName.collectAsState()
     val userEmail by viewModel.userEmail.collectAsState()
+    val userPhotoUri by viewModel.userPhotoUri.collectAsState()
     val defaultListId by viewModel.defaultListId.collectAsState()
     val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsState()
     val defaultReminderHour by viewModel.defaultReminderHour.collectAsState()
@@ -70,6 +78,16 @@ fun SettingsScreen(
     var isDeletingAll by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    var pickedPhotoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            pickedPhotoBitmap = ProfilePhotoUtils.decodeSampledBitmap(context, uri)
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -119,11 +137,38 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    com.mj.yata.ui.widgets.PersonAvatar(
-                        initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
-                        accentKey = "accentC",
-                        size = 48.dp
-                    )
+                    Box(
+                        modifier = Modifier.clickable {
+                            photoPickerLauncher.launch(
+                                androidx.activity.result.PickVisualMediaRequest(
+                                    androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        }
+                    ) {
+                        com.mj.yata.ui.widgets.PersonAvatar(
+                            initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                            accentKey = "accentC",
+                            size = 48.dp,
+                            photoUri = userPhotoUri
+                        )
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .border(1.5.dp, MaterialTheme.colorScheme.surfaceContainerLow, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Change profile photo",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(11.dp)
+                            )
+                        }
+                    }
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         if (editingName) {
                             OutlinedTextField(
@@ -604,6 +649,18 @@ fun SettingsScreen(
             showReminderTimePicker = false
         }
     )
+
+    pickedPhotoBitmap?.let { bitmap ->
+        CircularImageCropper(
+            source = bitmap,
+            onConfirm = { cropped ->
+                val savedUri = ProfilePhotoUtils.saveCircularProfilePhoto(context, cropped)
+                viewModel.setUserPhotoUri(savedUri.toString())
+                pickedPhotoBitmap = null
+            },
+            onCancel = { pickedPhotoBitmap = null }
+        )
+    }
 }
 
 @Composable

@@ -67,6 +67,7 @@ fun UpcomingTab(
     people: List<Person>,
     tags: List<Tag>,
     userName: String,
+    userPhotoUri: String? = null,
     selectedDay: LocalDate,
     onSelectedDayChange: (LocalDate) -> Unit,
     startOfWeekSunday: Boolean = true,
@@ -215,7 +216,8 @@ fun UpcomingTab(
                         PersonAvatar(
                             initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
                             accentKey = "accentC",
-                            size = 32.dp
+                            size = 32.dp,
+                            photoUri = userPhotoUri
                         )
                     }
                 }

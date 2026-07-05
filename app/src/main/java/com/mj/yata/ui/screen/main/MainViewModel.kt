@@ -67,6 +67,9 @@ class MainViewModel @Inject constructor(
     val userEmail: StateFlow<String> = userPreferences.userEmailFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val userPhotoUri: StateFlow<String?> = userPreferences.userPhotoUriFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val defaultListId: StateFlow<String> = userPreferences.defaultListIdFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
@@ -543,6 +546,12 @@ class MainViewModel @Inject constructor(
     fun setUserEmail(email: String) {
         viewModelScope.launch {
             userPreferences.setUserEmail(email)
+        }
+    }
+
+    fun setUserPhotoUri(uri: String?) {
+        viewModelScope.launch {
+            userPreferences.setUserPhotoUri(uri)
         }
     }
 

@@ -94,6 +94,7 @@ fun MainScreen(
     // Preferences
     val userName by viewModel.userName.collectAsState()
     val userEmail by viewModel.userEmail.collectAsState()
+    val userPhotoUri by viewModel.userPhotoUri.collectAsState()
     val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsState()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
@@ -134,7 +135,8 @@ fun MainScreen(
                         PersonAvatar(
                             initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
                             accentKey = "accentC",
-                            size = 44.dp
+                            size = 44.dp,
+                            photoUri = userPhotoUri
                         )
                         Column {
                             Text(
@@ -385,6 +387,7 @@ fun MainScreen(
                             people = people,
                             tags = tags,
                             userName = userName,
+                            userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
@@ -406,6 +409,7 @@ fun MainScreen(
                             tasks = tasks,
                             people = people,
                             userName = userName,
+                            userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
@@ -418,6 +422,7 @@ fun MainScreen(
                             personGroups = personGroups,
                             tasks = tasks,
                             userName = userName,
+                            userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
@@ -438,6 +443,7 @@ fun MainScreen(
                             lists = lists,
                             projects = projects,
                             userName = userName,
+                            userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
@@ -453,6 +459,7 @@ fun MainScreen(
                             people = people,
                             tags = tags,
                             userName = userName,
+                            userPhotoUri = userPhotoUri,
                             selectedDay = calendarSelectedDay,
                             onSelectedDayChange = { calendarSelectedDay = it },
                             startOfWeekSunday = startOfWeekSunday,

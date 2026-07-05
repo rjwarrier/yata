@@ -56,6 +56,7 @@ fun ProjectsTab(
     tasks: List<Task>,
     people: List<Person>,
     userName: String,
+    userPhotoUri: String? = null,
     onMenuClick: () -> Unit,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -100,7 +101,8 @@ fun ProjectsTab(
                     PersonAvatar(
                         initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
                         accentKey = "accentC",
-                        size = 32.dp
+                        size = 32.dp,
+                        photoUri = userPhotoUri
                     )
                 }
             }
