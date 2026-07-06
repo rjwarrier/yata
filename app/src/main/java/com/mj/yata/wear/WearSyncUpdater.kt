@@ -26,6 +26,8 @@ const val KEY_TASK_TITLE = "title"
 const val KEY_TASK_DONE = "done"
 const val KEY_TASK_TIME = "time"
 
+private const val MAX_TASKS_SENT_TO_WATCH = 50
+
 /** Pushes "tasks due today" to any paired Wear OS watch via the Wearable Data Layer — a count
  * for the complication, and the full list (id/title/done/time) for the watch companion app's
  * task list. Best-effort — silently no-ops if there's no paired watch or Play Services isn't
@@ -46,9 +48,14 @@ class WearSyncUpdaterImpl @Inject constructor(
             try {
                 val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
                 val todayStr = LocalDate.now().toString()
+                // Capped like every widget in this codebase already is — this list is unbounded
+                // by design (any never-completed task due today-or-earlier accumulates forever),
+                // and the Wearable Data Layer has a practical payload size ceiling that a large
+                // DataMap array can silently exceed without the phone side ever seeing an error.
                 val todayTasks = repository.getTasks().first()
                     .filter { it.due != null && it.due!! <= todayStr }
                     .sortedWith(compareBy({ it.done }, { it.sortOrder }))
+                    .take(MAX_TASKS_SENT_TO_WATCH)
                 Log.d("YataWear", "notifyTasksChanged: pushing ${todayTasks.size} today-tasks: ${todayTasks.map { it.title }}")
 
                 val countRequest = PutDataMapRequest.create(TODAY_COUNT_PATH).apply {

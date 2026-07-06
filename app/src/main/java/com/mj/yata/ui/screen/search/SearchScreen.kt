@@ -57,6 +57,14 @@ fun SearchScreen(
     val tags by viewModel.tags.collectAsState()
 
     var query by remember { mutableStateOf("") }
+    // The text field itself always reflects `query` immediately; filtering runs against
+    // `debouncedQuery`, which lags by a beat so a long task list with heavy per-row composables
+    // doesn't re-filter synchronously on every single keystroke.
+    var debouncedQuery by remember { mutableStateOf("") }
+    LaunchedEffect(query) {
+        kotlinx.coroutines.delay(200)
+        debouncedQuery = query
+    }
     val activeFilters = remember { mutableStateListOf<SmartFilter>() }
 
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -73,18 +81,18 @@ fun SearchScreen(
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
 
-    val filteredTasks = remember(tasks, query, activeFilters.toList(), peopleById, tagsById) {
-        if (query.isBlank() && activeFilters.isEmpty()) {
+    val filteredTasks = remember(tasks, debouncedQuery, activeFilters.toList(), peopleById, tagsById) {
+        if (debouncedQuery.isBlank() && activeFilters.isEmpty()) {
             emptyList()
         } else {
             val today = LocalDate.now()
             tasks.filter { task ->
-                val matchesQuery = query.isBlank() ||
-                    task.title.contains(query, ignoreCase = true) ||
-                    task.notes?.contains(query, ignoreCase = true) == true ||
-                    task.subtasks.any { it.title.contains(query, ignoreCase = true) } ||
-                    task.tagIds.any { tagsById[it]?.name?.contains(query, ignoreCase = true) == true } ||
-                    task.assigneeIds.any { peopleById[it]?.name?.contains(query, ignoreCase = true) == true }
+                val matchesQuery = debouncedQuery.isBlank() ||
+                    task.title.contains(debouncedQuery, ignoreCase = true) ||
+                    task.notes?.contains(debouncedQuery, ignoreCase = true) == true ||
+                    task.subtasks.any { it.title.contains(debouncedQuery, ignoreCase = true) } ||
+                    task.tagIds.any { tagsById[it]?.name?.contains(debouncedQuery, ignoreCase = true) == true } ||
+                    task.assigneeIds.any { peopleById[it]?.name?.contains(debouncedQuery, ignoreCase = true) == true }
                 matchesQuery && activeFilters.all { it.matches(task, today) }
             }
         }
@@ -271,6 +279,8 @@ private fun SearchResultsList(
     peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 32.dp)
@@ -345,9 +355,21 @@ private fun SearchResultsList(
                     },
                     selectionMode = selectionMode,
                     selected = selectedIds.contains(task.id),
-                    onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) }
+                    onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
+                    onCommentClick = { pendingCommentTask = task }
                 )
             }
         }
+    }
+
+    pendingCommentTask?.let { task ->
+        com.mj.yata.ui.widgets.QuickCommentDialog(
+            taskTitle = task.title,
+            onSubmit = { body ->
+                viewModel.addComment(task.id, body)
+                pendingCommentTask = null
+            },
+            onDismiss = { pendingCommentTask = null }
+        )
     }
 }

@@ -1,5 +1,9 @@
 package com.mj.yata.ui.screen.project
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,14 +12,18 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mj.yata.domain.model.*
@@ -45,11 +53,13 @@ fun ProjectDetailScreen(
 
     val project = remember(projects, projectId) { projects.find { it.id == projectId } }
     val accents = LocalYataAccents.current
+    val context = LocalContext.current
 
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRolloverDialog by remember { mutableStateOf(false) }
+    var hideCompleted by remember { mutableStateOf(false) }
 
     if (project == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -63,9 +73,21 @@ fun ProjectDetailScreen(
         projectColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
     val projectTasks = remember(tasks, project.id) { tasks.filter { it.projectId == project.id }.sortedBy { it.sortOrder } }
+    val visibleProjectTasks = remember(projectTasks, hideCompleted) {
+        if (hideCompleted) projectTasks.filter { !it.done } else projectTasks
+    }
 
-    var localOrder by remember(projectTasks) { mutableStateOf(projectTasks) }
+    // Not keyed on visibleProjectTasks — any task write anywhere in the app (a reminder firing,
+    // a recurring task rolling over) produces a new `tasks` list instance, which used to reset
+    // this mid-drag and silently discard/corrupt the in-progress reorder. A LaunchedEffect
+    // re-syncs from the source of truth on real changes, but skips doing so while dragging.
+    var localOrder by remember { mutableStateOf(visibleProjectTasks) }
+    var isDraggingTasks by remember { mutableStateOf(false) }
+    LaunchedEffect(visibleProjectTasks) {
+        if (!isDraggingTasks) localOrder = visibleProjectTasks
+    }
     var pendingMoveTask by remember { mutableStateOf<Task?>(null) }
+    var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
     val totalTasks = projectTasks.size
     val doneTasks = projectTasks.count { it.done }
@@ -101,6 +123,12 @@ fun ProjectDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                        Icon(
+                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
+                        )
+                    }
                     var showMenu by remember { mutableStateOf(false) }
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -116,6 +144,21 @@ fun ProjectDetailScreen(
                                 isEditSheetOpen = true
                             },
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Export as Markdown") },
+                            onClick = {
+                                showMenu = false
+                                val markdown = com.mj.yata.util.buildPendingTasksMarkdown(project, projectTasks)
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Pending tasks", markdown))
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, markdown)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Share ${project.name} tasks"))
+                            },
+                            leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
                         )
                         DropdownMenuItem(
                             text = { Text("Roll over open tasks") },
@@ -159,46 +202,57 @@ fun ProjectDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            // 1. Header Ring Area
-            Column(
+            // 1. Header row — a single compact row (ring + stats + assignees) instead of a
+            // tall centered stack, so this doesn't eat a third of the screen before any tasks show.
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(projectColor.copy(alpha = 0.16f))
-                    .padding(bottom = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 ProgressRing(
                     progress = progress,
-                    size = 72.dp,
-                    strokeWidth = 6.dp,
+                    size = 44.dp,
+                    strokeWidth = 4.dp,
                     activeColor = projectColor
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "$doneTasks / $totalTasks completed",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (project.due != null) {
-                    Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Due " + com.mj.yata.util.TaskScheduleUtils.formatDueDate(project.due),
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
+                        text = "$doneTasks / $totalTasks completed",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (!project.description.isNullOrBlank()) {
+                        Text(
+                            text = project.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+                    if (project.due != null) {
+                        Text(
+                            text = "Due " + com.mj.yata.util.TaskScheduleUtils.formatDueDate(project.due),
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
                 if (projectPeople.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     AssigneeStack(
                         people = projectPeople,
-                        avatarSize = 28.dp
+                        avatarSize = 24.dp
                     )
                 }
             }
 
             // 2. Flat task list — long-press to drag-reorder, or drag to the top/bottom
             // edge and hold to move the task into a different list/project.
-            if (projectTasks.isEmpty()) {
+            if (visibleProjectTasks.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -206,7 +260,7 @@ fun ProjectDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No tasks in this project yet.",
+                        text = if (projectTasks.isEmpty()) "No tasks in this project yet." else "All tasks completed.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
@@ -219,6 +273,7 @@ fun ProjectDetailScreen(
                     onDragEnd = { viewModel.commitTaskOrder(localOrder) },
                     onDragToTopEdge = { task -> pendingMoveTask = task },
                     onDragToBottomEdge = { task -> pendingMoveTask = task },
+                    onDragStateChanged = { isDraggingTasks = it },
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) { task ->
@@ -236,7 +291,8 @@ fun ProjectDetailScreen(
                         assignees = taskAssignees,
                         tags = taskTags,
                         onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                        onTaskClick = { onNavigateToTaskDetail(task.id) }
+                        onTaskClick = { onNavigateToTaskDetail(task.id) },
+                        onCommentClick = { pendingCommentTask = task }
                     )
                 }
             }
@@ -264,6 +320,17 @@ fun ProjectDetailScreen(
         }
     }
 
+    pendingCommentTask?.let { task ->
+        com.mj.yata.ui.widgets.QuickCommentDialog(
+            taskTitle = task.title,
+            onSubmit = { body ->
+                viewModel.addComment(task.id, body)
+                pendingCommentTask = null
+            },
+            onDismiss = { pendingCommentTask = null }
+        )
+    }
+
     if (isNewTaskSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
@@ -276,8 +343,8 @@ fun ProjectDetailScreen(
                 people = people,
                 tags = tags,
                 initialProjectId = project.id,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId)
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
                     isNewTaskSheetOpen = false
                 },
                 onCreateTag = { id, name, color ->
@@ -309,9 +376,10 @@ fun ProjectDetailScreen(
                 initialDueDate = project.due,
                 initialCommonTagIds = project.commonTagIds,
                 initialDefaultReminder = project.defaultReminder,
+                initialDescription = project.description,
                 tags = tags,
-                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder ->
-                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder))
+                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription ->
+                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription))
                     isEditSheetOpen = false
                 },
                 onDismiss = { isEditSheetOpen = false }

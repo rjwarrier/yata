@@ -102,11 +102,13 @@ fun PeopleTab(
                 }
             }
         } else {
+            // Title lives in the same row as the icons instead of a separate stacked
+            // header, so this tab doesn't burn an extra ~50dp of vertical space.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -117,6 +119,15 @@ fun PeopleTab(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
+                Text(
+                    text = "People",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.weight(1f).padding(start = 4.dp)
+                )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -139,17 +150,6 @@ fun PeopleTab(
                 }
             }
         }
-
-        // 2. Title Header
-        Text(
-            text = "People",
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            ),
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-        )
 
         // 3. Scrollable, grouped, multi-selectable list of people
         val groupedIds = personGroups.map { it.id }.toSet()

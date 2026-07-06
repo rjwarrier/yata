@@ -1,9 +1,22 @@
 package com.mj.yata.data.local.db.entity
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "tags")
+@Entity(
+    tableName = "tags",
+    foreignKeys = [
+        ForeignKey(
+            entity = TagGroupEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["groupId"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [Index("groupId")]
+)
 data class TagEntity(
     @PrimaryKey val id: String,
     val name: String,

@@ -30,9 +30,8 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
             return TaskerPluginResultError(1, "Title is required")
         }
 
-        val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
-
         return try {
+            val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
             runBlocking {
                 val projectId = resolveOrCreateProject(repository, fields.project)
                 val listId = resolveOrCreateList(repository, fields.list)

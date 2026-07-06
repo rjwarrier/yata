@@ -1,5 +1,11 @@
 package com.mj.yata.ui.screen.taskdetail
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -18,6 +24,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,6 +46,57 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import kotlinx.coroutines.launch
 import java.util.UUID
+
+/** Matches the SnackbarDuration.Short used for the delete-undo snackbar below, so the visible
+ * countdown lands on zero right as the snackbar actually auto-dismisses. */
+private const val DELETE_UNDO_SECONDS = 4
+
+/** Custom rendering for the delete-undo snackbar — ticks a live countdown next to the Undo
+ * action so it's clear the delete is about to become permanent, instead of a static label. */
+@Composable
+private fun DeleteUndoSnackbar(data: SnackbarData) {
+    var remaining by remember(data) { mutableIntStateOf(DELETE_UNDO_SECONDS) }
+    LaunchedEffect(data) {
+        while (remaining > 0) {
+            kotlinx.coroutines.delay(1000)
+            remaining--
+        }
+    }
+    Snackbar(
+        action = {
+            TextButton(onClick = { data.performAction() }) {
+                Text("UNDO (${remaining}s)")
+            }
+        }
+    ) {
+        Text(data.visuals.message)
+    }
+}
+
+/** Equal-width rectangular (not pill-shaped) toggle for the Subtasks/Notes/Comments chip row —
+ * highlighted while its section is visible, plain otherwise. */
+@Composable
+private fun SectionToggleChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .height(36.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
 sealed interface DetailSheetType {
     object None : DetailSheetType
@@ -77,6 +136,11 @@ fun TaskDetailScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
+    // Subtasks/Notes/Comments section visibility — toggled via the chip row above them.
+    var showSubtasks by remember { mutableStateOf(true) }
+    var showNotes by remember { mutableStateOf(true) }
+    var showComments by remember { mutableStateOf(true) }
+
     if (task == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -105,7 +169,15 @@ fun TaskDetailScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                if (data.visuals.actionLabel == "Undo") {
+                    DeleteUndoSnackbar(data)
+                } else {
+                    Snackbar(data)
+                }
+            }
+        },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = -1,
@@ -177,7 +249,7 @@ fun TaskDetailScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // 1. Check + Title Row
+            // 1. Check + Title Row — tap the title to rename it in place.
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -190,14 +262,57 @@ fun TaskDetailScreen(
                         size = 28.dp
                     )
                     Spacer(modifier = Modifier.width(14.dp))
-                    Text(
-                        text = task.title,
-                        color = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 22.sp,
-                            textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
-                        )
+
+                    var isEditingTitle by remember(task.id) { mutableStateOf(false) }
+                    var titleHasFocusedOnce by remember(task.id) { mutableStateOf(false) }
+                    val titleFocusRequester = remember(task.id) { FocusRequester() }
+                    val titleColor = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
+                    val titleStyle = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = 22.sp,
+                        color = titleColor,
+                        textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
                     )
+
+                    if (isEditingTitle) {
+                        // Bound to a local buffer, not task.title directly — task.title only
+                        // updates after a round trip through the DB (write -> Room re-query ->
+                        // Flow emission -> recompose), and fast typing outraces that, dropping
+                        // characters. The buffer reflects every keystroke instantly; the DB write
+                        // still happens on each change, it just isn't what the field displays.
+                        var titleBuffer by remember(task.id) { mutableStateOf(task.title) }
+                        LaunchedEffect(Unit) {
+                            titleHasFocusedOnce = false
+                            titleFocusRequester.requestFocus()
+                        }
+                        androidx.compose.foundation.text.BasicTextField(
+                            value = titleBuffer,
+                            onValueChange = {
+                                titleBuffer = it
+                                if (it.isNotBlank()) viewModel.upsertTask(task.copy(title = it))
+                            },
+                            textStyle = titleStyle,
+                            singleLine = true,
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(titleFocusRequester)
+                                .onFocusChanged {
+                                    if (it.isFocused) {
+                                        titleHasFocusedOnce = true
+                                    } else if (titleHasFocusedOnce) {
+                                        isEditingTitle = false
+                                    }
+                                }
+                        )
+                    } else {
+                        Text(
+                            text = task.title,
+                            style = titleStyle,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { isEditingTitle = true }
+                        )
+                    }
                 }
             }
 
@@ -255,16 +370,6 @@ fun TaskDetailScreen(
                         value = task.priority.uppercase(),
                         rightContent = { PriorityBars(priority = task.priority) },
                         onClick = { viewModel.cycleTaskPriority(task.id) }
-                    )
-
-                    // Section (Morning / Afternoon bucket on the Today tab)
-                    MetaRowItem(
-                        icon = Icons.Default.WbSunny,
-                        label = "Section",
-                        value = task.section,
-                        onClick = {
-                            viewModel.upsertTask(task.copy(section = if (task.section == "Morning") "Afternoon" else "Morning"))
-                        }
                     )
                 }
             }
@@ -360,8 +465,26 @@ fun TaskDetailScreen(
                 }
             }
 
+            // Section toggle chips — show/hide Subtasks/Notes/Comments independently, each
+            // section animating open/closed instead of just popping in and out.
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SectionToggleChip("Subtasks", showSubtasks, { showSubtasks = !showSubtasks }, Modifier.weight(1f))
+                    SectionToggleChip("Notes", showNotes, { showNotes = !showNotes }, Modifier.weight(1f))
+                    SectionToggleChip("Comments", showComments, { showComments = !showComments }, Modifier.weight(1f))
+                }
+            }
+
             // 5. Subtasks section
             item {
+                AnimatedVisibility(
+                    visible = showSubtasks,
+                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
+                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val subtasks = task.subtasks
                     val subTotal = subtasks.size
@@ -540,11 +663,23 @@ fun TaskDetailScreen(
                         }
                     }
                 }
+                }
             }
 
             // 6. Notes card — tap to edit raw text, tap away to render as markdown.
             item {
+                AnimatedVisibility(
+                    visible = showNotes,
+                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
+                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                ) {
                 var isEditingNotes by remember(task.id) { mutableStateOf(false) }
+                // onFocusChanged fires once immediately on mount reporting isFocused=false (before
+                // anything has actually requested focus) — without this guard, that spurious first
+                // callback closed edit mode the instant it opened, so tapping notes appeared to do
+                // nothing. Only a real loss of focus (after having genuinely gained it) should close it.
+                var hasFocusedOnce by remember(task.id) { mutableStateOf(false) }
+                val notesFocusRequester = remember(task.id) { FocusRequester() }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "Notes",
@@ -552,13 +687,42 @@ fun TaskDetailScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (isEditingNotes || task.notes.isNullOrBlank()) {
+                        // Same local-buffer fix as the title field — task.notes only updates after
+                        // a round trip through the DB, and fast typing outraces that otherwise.
+                        var notesBuffer by remember(task.id) { mutableStateOf(task.notes ?: "") }
+                        LaunchedEffect(isEditingNotes) {
+                            if (isEditingNotes) {
+                                hasFocusedOnce = false
+                                notesFocusRequester.requestFocus()
+                            }
+                        }
                         OutlinedTextField(
-                            value = task.notes ?: "",
-                            onValueChange = { viewModel.upsertTask(task.copy(notes = it)) },
+                            value = notesBuffer,
+                            onValueChange = {
+                                notesBuffer = it
+                                viewModel.upsertTask(task.copy(notes = it))
+                            },
                             placeholder = { Text("Tap to add notes... (supports markdown)") },
                             minLines = 3,
                             modifier = Modifier.fillMaxWidth()
-                                .onFocusChanged { if (!it.isFocused) isEditingNotes = false },
+                                .focusRequester(notesFocusRequester)
+                                .onFocusChanged {
+                                    if (it.isFocused) {
+                                        // Also flips isEditingNotes true here, not just on the
+                                        // explicit "tap to edit" path below — this field is also
+                                        // shown by default whenever notes are blank (isEditingNotes
+                                        // still false in that case). Without this, typing the
+                                        // first character flips task.notes from blank to non-blank,
+                                        // the outer `isEditingNotes || task.notes.isNullOrBlank()`
+                                        // check goes false, and the field is yanked out from under
+                                        // the user mid-keystroke and replaced with the read-only
+                                        // markdown view.
+                                        hasFocusedOnce = true
+                                        isEditingNotes = true
+                                    } else if (hasFocusedOnce) {
+                                        isEditingNotes = false
+                                    }
+                                },
                             shape = RoundedCornerShape(12.dp)
                         )
                     } else {
@@ -572,10 +736,16 @@ fun TaskDetailScreen(
                         )
                     }
                 }
+                }
             }
 
             // 7. Comments card
             item {
+                AnimatedVisibility(
+                    visible = showComments,
+                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
+                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                ) {
                 val comments by remember(task.id) { viewModel.getCommentsForTask(task.id) }.collectAsState()
                 var newComment by remember { mutableStateOf("") }
                 val peopleById = remember(people) { people.associateBy { it.id } }
@@ -609,32 +779,41 @@ fun TaskDetailScreen(
                     }
                     comments.forEach { comment ->
                         val author = comment.authorId?.let { peopleById[it] }
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.Top
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = comment.body,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    text = listOfNotNull(
-                                        author?.let { if (it.isMe) "You" else it.name },
-                                        com.mj.yata.util.TaskScheduleUtils.formatDueDate(
-                                            java.time.Instant.ofEpochMilli(comment.createdAt)
-                                                .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
-                                        )
-                                    ).joinToString(" · "),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            IconButton(onClick = { viewModel.deleteComment(comment) }) {
-                                Icon(Icons.Default.Close, contentDescription = "Delete comment", modifier = Modifier.size(16.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = comment.body,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = listOfNotNull(
+                                            author?.let { if (it.isMe) "You" else it.name },
+                                            com.mj.yata.util.TaskScheduleUtils.formatDueDate(
+                                                java.time.Instant.ofEpochMilli(comment.createdAt)
+                                                    .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
+                                            )
+                                        ).joinToString(" · "),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                IconButton(onClick = { viewModel.deleteComment(comment) }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Delete comment", modifier = Modifier.size(16.dp))
+                                }
                             }
                         }
                     }
+                }
                 }
             }
         }
@@ -722,8 +901,12 @@ fun TaskDetailScreen(
                                 }
                                 com.mj.yata.util.TaskScheduleUtils.reminderOptions.forEach { option ->
                                     LocalScheduleChip(option, task.reminder == option) {
-                                        viewModel.upsertTask(task.copy(reminder = option))
-                                        activeSheet = DetailSheetType.None
+                                        if (!com.mj.yata.util.TaskScheduleUtils.isPresetReminderInFuture(task.due, task.time, option)) {
+                                            scope.launch { snackbarHostState.showSnackbar("That reminder time has already passed.") }
+                                        } else {
+                                            viewModel.upsertTask(task.copy(reminder = option))
+                                            activeSheet = DetailSheetType.None
+                                        }
                                     }
                                 }
                                 val customReminderSelected = task.reminder != null &&

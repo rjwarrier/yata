@@ -23,7 +23,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 14,
+    version = 16,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -199,6 +199,36 @@ abstract class AppDatabase : RoomDatabase() {
                 // Deleting a task now soft-deletes it (Trash) instead of removing the row —
                 // NULL means "not deleted", a timestamp means "moved to trash at this time".
                 db.execSQL("ALTER TABLE tasks ADD COLUMN deletedAt INTEGER DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE projects ADD COLUMN description TEXT DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // people.groupId / tags.groupId previously referenced person_groups/tag_groups
+                // by convention only, with no FK constraint — correctness rested entirely on
+                // every group-delete call site remembering to null out that column first. Adding
+                // a real FK (ON DELETE SET NULL) makes that a DB-level guarantee instead.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `people_new` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `initials` TEXT NOT NULL, `color` TEXT NOT NULL, `photoUri` TEXT, `isMe` INTEGER NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`groupId`) REFERENCES `person_groups`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )"
+                )
+                db.execSQL("INSERT INTO `people_new` SELECT `id`, `name`, `initials`, `color`, `photoUri`, `isMe`, `groupId`, `starred` FROM `people`")
+                db.execSQL("DROP TABLE `people`")
+                db.execSQL("ALTER TABLE `people_new` RENAME TO `people`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_people_groupId` ON `people` (`groupId`)")
+
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `tags_new` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, `hideCompletedByDefault` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`groupId`) REFERENCES `tag_groups`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )"
+                )
+                db.execSQL("INSERT INTO `tags_new` SELECT `id`, `name`, `color`, `groupId`, `starred`, `hideCompletedByDefault` FROM `tags`")
+                db.execSQL("DROP TABLE `tags`")
+                db.execSQL("ALTER TABLE `tags_new` RENAME TO `tags`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_tags_groupId` ON `tags` (`groupId`)")
             }
         }
     }

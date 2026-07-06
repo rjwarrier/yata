@@ -115,43 +115,47 @@ val ALL_ACCENT_KEYS = listOf(
     "accentI", "accentJ", "accentK", "accentL", "accentM", "accentN", "accentO", "accentP"
 )
 
+// Hues are spaced evenly around the wheel (22.5deg apart, alternating a richer/softer
+// saturation-lightness band) instead of the old ad hoc picks, which bunched 3-4 accents
+// into the same narrow hue range (e.g. three near-identical oranges) and made them hard
+// to tell apart at a glance in small dots/chips.
 val LightAccents = YataAccents(
-    accentA = Color(0xFFE8886B),
-    accentB = Color(0xFF9DAE55),
-    accentC = Color(0xFF8C7BE0),
-    accentD = Color(0xFFE0A93A),
-    accentE = Color(0xFF4FA97D),
-    accentF = Color(0xFFDB6FA0),
-    accentG = Color(0xFF4A93C7),
-    accentH = Color(0xFFC77B4A),
-    accentI = Color(0xFF3C8F8A),
-    accentJ = Color(0xFFC1454B),
-    accentK = Color(0xFF5A64C4),
-    accentL = Color(0xFFC9A227),
-    accentM = Color(0xFFD97A9C),
-    accentN = Color(0xFF6B7A8F),
-    accentO = Color(0xFFD2632E),
-    accentP = Color(0xFF3FAE8A),
+    accentA = Color(0xFFD54F34),
+    accentB = Color(0xFFCC9D66),
+    accentC = Color(0xFFD5C834),
+    accentD = Color(0xFFAECC66),
+    accentE = Color(0xFF6AD534),
+    accentF = Color(0xFF66CC6A),
+    accentG = Color(0xFF34D577),
+    accentH = Color(0xFF66CCB7),
+    accentI = Color(0xFF34BAD5),
+    accentJ = Color(0xFF6695CC),
+    accentK = Color(0xFF3441D5),
+    accentL = Color(0xFF8466CC),
+    accentM = Color(0xFFA034D5),
+    accentN = Color(0xFFCC66C8),
+    accentO = Color(0xFFD53492),
+    accentP = Color(0xFFCC667B),
     onAccent = Color(0xFFFFFFFF)
 )
 
 val DarkAccents = YataAccents(
-    accentA = Color(0xFFE8886B),
-    accentB = Color(0xFF9DAE55),
-    accentC = Color(0xFFA99BEE),
-    accentD = Color(0xFFE0A93A),
-    accentE = Color(0xFF5CBB8C),
-    accentF = Color(0xFFE080AC),
-    accentG = Color(0xFF5CA3D4),
-    accentH = Color(0xFFD48C5C),
-    accentI = Color(0xFF4FA8A2),
-    accentJ = Color(0xFFDE5E64),
-    accentK = Color(0xFF7B84DE),
-    accentL = Color(0xFFE0BC3E),
-    accentM = Color(0xFFE894B2),
-    accentN = Color(0xFF8394AA),
-    accentO = Color(0xFFE67A44),
-    accentP = Color(0xFF52C29E),
+    accentA = Color(0xFFDC8674),
+    accentB = Color(0xFFD8BA97),
+    accentC = Color(0xFFDCD474),
+    accentD = Color(0xFFC5D897),
+    accentE = Color(0xFF97DC74),
+    accentF = Color(0xFF97D899),
+    accentG = Color(0xFF74DCA0),
+    accentH = Color(0xFF97D8CB),
+    accentI = Color(0xFF74CBDC),
+    accentJ = Color(0xFF97B5D8),
+    accentK = Color(0xFF747DDC),
+    accentL = Color(0xFFAA97D8),
+    accentM = Color(0xFFBA74DC),
+    accentN = Color(0xFFD897D6),
+    accentO = Color(0xFFDC74B1),
+    accentP = Color(0xFFD897A4),
     onAccent = Color(0xFF1A1110)
 )
 

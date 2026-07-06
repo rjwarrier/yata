@@ -38,6 +38,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -75,6 +76,7 @@ import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
+import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -146,7 +148,9 @@ fun NewTaskSheet(
         time: String?,
         reminder: String?,
         section: String,
-        projectId: String?
+        projectId: String?,
+        notes: String?,
+        subtasks: List<Subtask>
     ) -> Unit,
     onCreateTag: (id: String, name: String, color: String) -> Unit,
     onCreatePerson: (id: String, name: String, color: String) -> Unit,
@@ -203,6 +207,10 @@ fun NewTaskSheet(
 
     val selectedTagIds = remember { mutableStateListOf<String>() }
     var activePanel by remember { mutableStateOf<String?>(null) }
+
+    var notes by remember { mutableStateOf("") }
+    val subtasks = remember { mutableStateListOf<Subtask>() }
+    var newSubtaskTitle by remember { mutableStateOf("") }
 
     val accents = LocalYataAccents.current
     val list = lists.find { it.id == selectedListId }
@@ -262,7 +270,9 @@ fun NewTaskSheet(
                 selectedTime,
                 selectedReminder,
                 selectedSection,
-                selectedProjectId
+                selectedProjectId,
+                notes.trim().ifBlank { null },
+                subtasks.toList()
             )
         }
     }
@@ -642,6 +652,66 @@ fun NewTaskSheet(
                     leading = { Icon(Icons.Default.Notifications, contentDescription = null, tint = if (selectedReminder != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
                     showCheck = false
                 )
+            }
+
+            // Notes — kept last, after every attribute chip/reveal panel, so opening a panel
+            // (List, Priority, Repeat, etc.) never pushes these below the fold or reflows them.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionLabel("Notes")
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    placeholder = { Text("Add notes...") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Subtasks — also last, for the same reason.
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionLabel("Subtasks")
+                subtasks.forEach { sub ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = sub.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { subtasks.remove(sub) }) {
+                            Icon(Icons.Default.Close, contentDescription = "Remove subtask", modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = newSubtaskTitle,
+                        onValueChange = { newSubtaskTitle = it },
+                        placeholder = { Text("Add a subtask...") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = {
+                        if (newSubtaskTitle.isNotBlank()) {
+                            subtasks.add(
+                                Subtask(
+                                    id = "sub_" + java.util.UUID.randomUUID().toString(),
+                                    title = newSubtaskTitle.trim(),
+                                    done = false,
+                                    sortOrder = subtasks.size
+                                )
+                            )
+                            newSubtaskTitle = ""
+                        }
+                    }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add subtask")
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.size(12.dp))

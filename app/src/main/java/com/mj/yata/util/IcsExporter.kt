@@ -2,6 +2,7 @@ package com.mj.yata.util
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.mj.yata.domain.repository.YataRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -33,6 +34,7 @@ class IcsExporter @Inject constructor(
             }
             true
         } catch (e: Exception) {
+            Log.e("IcsExporter", "exportIcs failed", e)
             false
         }
     }

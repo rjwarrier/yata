@@ -424,6 +424,7 @@ fun MainScreen(
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
                             projectsEnabled = projectsFeatureEnabled
@@ -440,7 +441,8 @@ fun MainScreen(
                             onProfileClick = onNavigateToSettings,
                             onProjectClick = onNavigateToProjectDetail,
                             onNewProjectClick = { activeSheet = MainSheetType.NewProject },
-                            onToggleProjectStar = { viewModel.toggleProjectStarred(it) }
+                            onToggleProjectStar = { viewModel.toggleProjectStarred(it) },
+                            peopleEnabled = peopleFeatureEnabled
                         )
                         2 -> PeopleTab(
                             people = people,
@@ -475,7 +477,8 @@ fun MainScreen(
                             onTagClick = onNavigateToTagDetail,
                             onNewTagClick = { activeSheet = MainSheetType.NewTag },
                             onToggleStar = { viewModel.toggleTagStarred(it) },
-                            onDeleteGroup = { viewModel.deleteTagGroup(it) }
+                            onDeleteGroup = { viewModel.deleteTagGroup(it) },
+                            tagsEnabled = tagsFeatureEnabled
                         )
                         4 -> UpcomingTab(
                             tasks = tasks,
@@ -499,6 +502,7 @@ fun MainScreen(
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
                             projectsEnabled = projectsFeatureEnabled
@@ -525,8 +529,8 @@ fun MainScreen(
                     projects = projects,
                     people = people,
                     tags = tags,
-                    onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId ->
-                        viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId)
+                    onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
+                        viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
                         activeSheet = MainSheetType.None
                     },
                     onCreateTag = { id, name, color ->
@@ -555,14 +559,15 @@ fun MainScreen(
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
                         tags = tags,
-                        onSave = { name, color, icon, due, commonTagIds, defaultReminder ->
-                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder)
+                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description ->
+                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description)
                             activeSheet = MainSheetType.None
                         },
                         onDismiss = { activeSheet = MainSheetType.None }
                     )
                     MainSheetType.NewPerson -> PersonEditorSheet(
                         groups = personGroups,
+                        existingNames = people.map { it.name },
                         onSave = { name, color, groupId, photoUri ->
                             viewModel.addPerson(name, color, groupId, photoUri)
                             activeSheet = MainSheetType.None
@@ -574,6 +579,7 @@ fun MainScreen(
                     )
                     MainSheetType.NewTag -> TagEditorSheet(
                         groups = tagGroups,
+                        existingNames = tags.map { it.name },
                         onSave = { name, color, groupId, hideCompletedByDefault ->
                             viewModel.addTag(name, color, groupId, hideCompletedByDefault)
                             activeSheet = MainSheetType.None

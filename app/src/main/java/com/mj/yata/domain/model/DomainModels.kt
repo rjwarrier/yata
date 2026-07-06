@@ -25,7 +25,8 @@ data class Project(
     val due: String? = null,
     val starred: Boolean = false,
     val commonTagIds: List<String> = emptyList(), // live-applied to every task in this project
-    val defaultReminder: String? = null // pre-fills NewTaskSheet's reminder for tasks in this project
+    val defaultReminder: String? = null, // pre-fills NewTaskSheet's reminder for tasks in this project
+    val description: String? = null // max 100 chars, enforced in ProjectEditorSheet
 )
 
 data class YataList(

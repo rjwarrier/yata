@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.*
@@ -40,7 +41,8 @@ fun TaskRow(
     showList: Boolean = true,
     selectionMode: Boolean = false,
     selected: Boolean = false,
-    onLongClick: () -> Unit = {}
+    onLongClick: () -> Unit = {},
+    onCommentClick: (() -> Unit)? = null
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
@@ -92,7 +94,7 @@ fun TaskRow(
                         fontSize = 15.sp,
                         textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
                     ),
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
                 )
@@ -155,6 +157,20 @@ fun TaskRow(
                     }
                 }
             }
+        }
+
+        if (onCommentClick != null) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.Comment,
+                contentDescription = "Add comment",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier
+                    .padding(start = 4.dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .clickable { onCommentClick() }
+                    .padding(6.dp)
+            )
         }
 
         Spacer(modifier = Modifier.width(8.dp))

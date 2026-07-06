@@ -50,6 +50,7 @@ fun TodayTab(
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
+    onAddComment: (taskId: String, body: String) -> Unit = { _, _ -> },
     peopleEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     projectsEnabled: Boolean = true,
@@ -60,6 +61,7 @@ fun TodayTab(
     var showBulkTagSheet by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
     val todayStr = remember { LocalDate.now().toString() }
     val todayDateLabel = remember {
@@ -288,6 +290,7 @@ fun TodayTab(
                                 selectionMode = selectionMode,
                                 selected = selectedIds.contains(task.id),
                                 onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
+                                onCommentClick = { pendingCommentTask = task },
                                 modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
                             )
                         }
@@ -357,6 +360,17 @@ fun TodayTab(
             dismissButton = {
                 TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
             }
+        )
+    }
+
+    pendingCommentTask?.let { task ->
+        com.mj.yata.ui.widgets.QuickCommentDialog(
+            taskTitle = task.title,
+            onSubmit = { body ->
+                onAddComment(task.id, body)
+                pendingCommentTask = null
+            },
+            onDismiss = { pendingCommentTask = null }
         )
     }
 }

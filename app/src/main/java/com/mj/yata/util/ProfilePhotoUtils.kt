@@ -17,7 +17,7 @@ object ProfilePhotoUtils {
     private const val MAX_DECODE_DIMENSION = 1600
 
     /** Downsampled decode so a multi-megapixel photo doesn't blow up memory in the cropper. */
-    fun decodeSampledBitmap(context: Context, uri: Uri): Bitmap? {
+    fun decodeSampledBitmap(context: Context, uri: Uri, maxDimension: Int = MAX_DECODE_DIMENSION): Bitmap? {
         val resolver = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         // decodeStream always returns null when inJustDecodeBounds is set — it only mutates
@@ -26,7 +26,7 @@ object ProfilePhotoUtils {
         boundsStream.use { BitmapFactory.decodeStream(it, null, bounds) }
 
         var sampleSize = 1
-        while (bounds.outWidth / sampleSize > MAX_DECODE_DIMENSION || bounds.outHeight / sampleSize > MAX_DECODE_DIMENSION) {
+        while (bounds.outWidth / sampleSize > maxDimension || bounds.outHeight / sampleSize > maxDimension) {
             sampleSize *= 2
         }
 

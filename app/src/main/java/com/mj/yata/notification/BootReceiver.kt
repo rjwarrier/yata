@@ -40,7 +40,7 @@ class BootReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val tasks = db.taskDao().getActiveReminderTasksDirect()
-                tasks.forEach { task -> scheduler.scheduleReminder(task) }
+                scheduler.scheduleReminders(tasks)
             } finally {
                 pendingResult.finish()
             }

@@ -1,6 +1,5 @@
 package com.mj.yata.ui.widgets
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -47,9 +46,13 @@ fun PersonAvatar(
             null
         } else {
             try {
-                context.contentResolver.openInputStream(android.net.Uri.parse(photoUri))?.use {
-                    BitmapFactory.decodeStream(it)
-                }
+                // Downsampled — this renders at 24-56dp, decoding a full-resolution multi-
+                // megapixel photo for that was pure wasted memory/CPU on every photoUri change.
+                com.mj.yata.util.ProfilePhotoUtils.decodeSampledBitmap(
+                    context,
+                    android.net.Uri.parse(photoUri),
+                    maxDimension = 200
+                )
             } catch (e: Exception) {
                 null
             }

@@ -14,6 +14,8 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,6 +57,8 @@ fun PersonDetailScreen(
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var hideCompleted by remember { mutableStateOf(false) }
+    var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
     if (person == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -67,7 +71,7 @@ fun PersonDetailScreen(
     com.mj.yata.ui.theme.StatusBarColor(
         personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
-    val assignedTasks = remember(tasks, person.id) { tasks.filter { it.assigneeIds.contains(person.id) } }
+    val assignedTasks = remember(tasks, person.id) { tasks.filter { it.assigneeIds.contains(person.id) }.sortedBy { it.sortOrder } }
     val openTasks = assignedTasks.filter { !it.done }
     val completedTasks = assignedTasks.filter { it.done }
 
@@ -96,6 +100,12 @@ fun PersonDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                        Icon(
+                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
+                        )
+                    }
                     var showMenu by remember { mutableStateOf(false) }
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -158,22 +168,22 @@ fun PersonDetailScreen(
                 .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // 1. Header Avatar Area
+            // 1. Header row — compact avatar + stats instead of a tall centered stack.
             item {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(personColor.copy(alpha = 0.16f))
-                        .padding(vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     PersonAvatar(
                         initials = person.initials,
                         accentKey = person.color,
                         photoUri = person.photoUri,
-                        size = 72.dp
+                        size = 44.dp
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Text(
                         text = "${openTasks.size} open · ${completedTasks.size} completed",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
@@ -252,12 +262,14 @@ fun PersonDetailScreen(
                             assignees = taskAssignees,
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                            onTaskClick = { onNavigateToTaskDetail(task.id) }
+                            onTaskClick = { onNavigateToTaskDetail(task.id) },
+                            onCommentClick = { pendingCommentTask = task }
                         )
                     }
                 }
             }
 
+            if (!hideCompleted) {
             item {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
             }
@@ -332,11 +344,13 @@ fun PersonDetailScreen(
                             assignees = taskAssignees,
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                            onTaskClick = { onNavigateToTaskDetail(task.id) }
+                            onTaskClick = { onNavigateToTaskDetail(task.id) },
+                            onCommentClick = { pendingCommentTask = task }
                         )
                     }
                 }
             }
+            } // !hideCompleted
         }
     }
 
@@ -354,8 +368,8 @@ fun PersonDetailScreen(
                 people = people,
                 tags = tags,
                 initialAssigneeId = person.id,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId)
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
                     isNewTaskSheetOpen = false
                 },
                 onCreateTag = { id, name, color ->
@@ -423,6 +437,17 @@ fun PersonDetailScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    pendingCommentTask?.let { task ->
+        com.mj.yata.ui.widgets.QuickCommentDialog(
+            taskTitle = task.title,
+            onSubmit = { body ->
+                viewModel.addComment(task.id, body)
+                pendingCommentTask = null
+            },
+            onDismiss = { pendingCommentTask = null }
         )
     }
 }

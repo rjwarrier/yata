@@ -69,6 +69,7 @@ fun TagsTab(
     onNewTagClick: () -> Unit,
     onToggleStar: (String) -> Unit = {},
     onDeleteGroup: (TagGroup) -> Unit = {},
+    tagsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -76,12 +77,13 @@ fun TagsTab(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Top bar
+        // 1. Top bar — title lives in the same row as the icons instead of a separate
+        // stacked header, so this tab doesn't burn an extra ~50dp of vertical space.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -92,6 +94,15 @@ fun TagsTab(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
+            Text(
+                text = "Tags",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier.weight(1f).padding(start = 4.dp)
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -114,17 +125,6 @@ fun TagsTab(
             }
         }
 
-        // 2. Title Header
-        Text(
-            text = "Tags",
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            ),
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-        )
-
         // 3. Scrollable, grouped tag cloud
         Column(
             modifier = Modifier
@@ -136,7 +136,11 @@ fun TagsTab(
         ) {
             val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
             val groupedIds = tagGroups.map { it.id }.toSet()
-            val tagTaskCounts = remember(tasks, projects) {
+            // Defense-in-depth: this tab is never routed to while tags are disabled, but if it
+            // ever were, this keeps it from computing/showing tag-task associations anyway —
+            // matching the pattern TodayTab/UpcomingTab already use for their cross-feature reads.
+            val tagTaskCounts = remember(tasks, projects, tagsEnabled) {
+                if (!tagsEnabled) return@remember emptyMap()
                 val counts = mutableMapOf<String, Int>()
                 tasks.forEach { task ->
                     task.effectiveTagIds(projects).forEach { tagId ->

@@ -67,10 +67,14 @@ class SingleListWidget : GlanceAppWidget() {
         }
 
         val theme = resolveWidgetTheme(context)
+        // Distinguishes "never configured" from "the list this widget was pointed at got
+        // deleted from the main app" — both used to show the identical "Not set up yet" message,
+        // giving no clue that re-adding the widget (to pick a new list) is actually needed.
+        val listWasDeleted = listId != null && list == null
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
-                SingleListWidgetContent(context, list, tasks, theme.colorScheme, theme.accents)
+                SingleListWidgetContent(context, list, listWasDeleted, tasks, theme.colorScheme, theme.accents)
             }
         }
     }
@@ -80,6 +84,7 @@ class SingleListWidget : GlanceAppWidget() {
 private fun SingleListWidgetContent(
     context: Context,
     list: com.mj.yata.domain.model.YataList?,
+    listWasDeleted: Boolean,
     tasks: List<Task>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents
@@ -96,7 +101,7 @@ private fun SingleListWidgetContent(
         if (list == null) {
             Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Not set up yet",
+                    text = if (listWasDeleted) "List was deleted — remove and re-add this widget" else "Not set up yet",
                     style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
                 )
             }

@@ -8,6 +8,7 @@ import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.notification.TaskReminderScheduler
 import com.mj.yata.util.RecurrenceEvaluator
 import com.mj.yata.widget.WidgetUpdater
+import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -37,28 +38,32 @@ class YataRepositoryImpl @Inject constructor(
     override suspend fun upsertTask(task: Task) {
         val entity = task.toEntity()
 
-        // Insert task entity
-        db.taskDao().insert(entity)
+        // All-or-nothing: a crash mid-sync must never leave a task with its cross-refs/subtasks
+        // deleted but not replaced.
+        db.withTransaction {
+            // Insert task entity
+            db.taskDao().insert(entity)
 
-        // Sync many-to-many assignees
-        db.taskDao().deleteTaskPersonCrossRefs(task.id)
-        if (task.assigneeIds.isNotEmpty()) {
-            val refs = task.assigneeIds.map { TaskPersonCrossRef(task.id, it) }
-            db.taskDao().insertTaskPersonCrossRefs(refs)
-        }
+            // Sync many-to-many assignees
+            db.taskDao().deleteTaskPersonCrossRefs(task.id)
+            if (task.assigneeIds.isNotEmpty()) {
+                val refs = task.assigneeIds.map { TaskPersonCrossRef(task.id, it) }
+                db.taskDao().insertTaskPersonCrossRefs(refs)
+            }
 
-        // Sync many-to-many tags
-        db.taskDao().deleteTaskTagCrossRefs(task.id)
-        if (task.tagIds.isNotEmpty()) {
-            val refs = task.tagIds.map { TaskTagCrossRef(task.id, it) }
-            db.taskDao().insertTaskTagCrossRefs(refs)
-        }
+            // Sync many-to-many tags
+            db.taskDao().deleteTaskTagCrossRefs(task.id)
+            if (task.tagIds.isNotEmpty()) {
+                val refs = task.tagIds.map { TaskTagCrossRef(task.id, it) }
+                db.taskDao().insertTaskTagCrossRefs(refs)
+            }
 
-        // Sync subtasks (owned child rows, simplest to delete-then-reinsert given typical
-        // per-task subtask counts are small)
-        db.subtaskDao().deleteForTask(task.id)
-        if (task.subtasks.isNotEmpty()) {
-            db.subtaskDao().upsertAll(task.subtasks.map { it.toEntity(task.id) })
+            // Sync subtasks (owned child rows, simplest to delete-then-reinsert given typical
+            // per-task subtask counts are small)
+            db.subtaskDao().deleteForTask(task.id)
+            if (task.subtasks.isNotEmpty()) {
+                db.subtaskDao().upsertAll(task.subtasks.map { it.toEntity(task.id) })
+            }
         }
 
         syncReminder(entity)
@@ -83,28 +88,9 @@ class YataRepositoryImpl @Inject constructor(
             val nextDate = RecurrenceEvaluator.calculateNextOccurrence(recurrence, taskEntity.dueDate)
             
             if (nextDate != null) {
-                // 1. Keep the current instance completed but as a one-off in history.
-                val historicalTaskId = UUID.randomUUID().toString()
-                val completedHistoryTask = taskEntity.copy(
-                    id = historicalTaskId,
-                    done = true,
-                    completedAt = System.currentTimeMillis(),
-                    recurrenceJson = null // one-off completed instance
-                )
-                db.taskDao().insert(completedHistoryTask)
-
-                // Copy assignees, tags and subtasks to completed history instance
-                db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
-                db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
-                // Flattened (not nested) on the history copy — parent ids get regenerated per
-                // row, so preserving parent/child links here isn't worth the FK bookkeeping
-                // for what's just a historical snapshot.
-                db.subtaskDao().upsertAll(
-                    subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
-                )
-
-                // 2. Advance the original task to the next occurrence
-                // If it is count-based recurrence, decrement the remaining count
+                // Updated task computed outside the transaction; all writes below are
+                // all-or-nothing so a crash mid-sequence can't leave a duplicated historical
+                // task with no cross-refs, or an advanced task with a stale reminder.
                 val updatedRecurrence = when (val ends = recurrence.ends) {
                     is RecurrenceEnds.After -> {
                         val newCount = ends.count - 1
@@ -116,14 +102,37 @@ class YataRepositoryImpl @Inject constructor(
                     }
                     else -> recurrence
                 }
-                
                 val updatedTask = taskEntity.copy(
                     done = false, // Reset done for next occurrence
                     completedAt = null,
                     dueDate = nextDate,
                     recurrenceJson = serializeRecurrence(updatedRecurrence)
                 )
-                db.taskDao().insert(updatedTask)
+                val historicalTaskId = UUID.randomUUID().toString()
+
+                db.withTransaction {
+                    // 1. Keep the current instance completed but as a one-off in history.
+                    val completedHistoryTask = taskEntity.copy(
+                        id = historicalTaskId,
+                        done = true,
+                        completedAt = System.currentTimeMillis(),
+                        recurrenceJson = null // one-off completed instance
+                    )
+                    db.taskDao().insert(completedHistoryTask)
+
+                    // Copy assignees, tags and subtasks to completed history instance
+                    db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
+                    db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
+                    // Flattened (not nested) on the history copy — parent ids get regenerated per
+                    // row, so preserving parent/child links here isn't worth the FK bookkeeping
+                    // for what's just a historical snapshot.
+                    db.subtaskDao().upsertAll(
+                        subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
+                    )
+
+                    // 2. Advance the original task to the next occurrence
+                    db.taskDao().insert(updatedTask)
+                }
                 syncReminder(updatedTask)
                 widgetUpdater.notifyTasksChanged()
                 return@withContext
@@ -152,20 +161,6 @@ class YataRepositoryImpl @Inject constructor(
         val tagIds = db.taskDao().getTagsForTaskDirect(id).map { it.id }
         val subtaskEntities = db.subtaskDao().getSubtasksForTaskDirect(id)
 
-        // Keep a record of the skipped instance (not done, one-off).
-        val historicalTaskId = UUID.randomUUID().toString()
-        val skippedHistoryTask = taskEntity.copy(
-            id = historicalTaskId,
-            done = false,
-            recurrenceJson = null
-        )
-        db.taskDao().insert(skippedHistoryTask)
-        db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
-        db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
-        db.subtaskDao().upsertAll(
-            subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
-        )
-
         val updatedRecurrence = when (val ends = recurrence.ends) {
             is RecurrenceEnds.After -> {
                 val newCount = ends.count - 1
@@ -173,13 +168,28 @@ class YataRepositoryImpl @Inject constructor(
             }
             else -> recurrence
         }
-
         val updatedTask = taskEntity.copy(
             done = false,
             dueDate = nextDate,
             recurrenceJson = serializeRecurrence(updatedRecurrence)
         )
-        db.taskDao().insert(updatedTask)
+        val historicalTaskId = UUID.randomUUID().toString()
+
+        db.withTransaction {
+            // Keep a record of the skipped instance (not done, one-off).
+            val skippedHistoryTask = taskEntity.copy(
+                id = historicalTaskId,
+                done = false,
+                recurrenceJson = null
+            )
+            db.taskDao().insert(skippedHistoryTask)
+            db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
+            db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
+            db.subtaskDao().upsertAll(
+                subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
+            )
+            db.taskDao().insert(updatedTask)
+        }
         syncReminder(updatedTask)
         widgetUpdater.notifyTasksChanged()
     }
@@ -310,8 +320,10 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deletePersonGroup(group: PersonGroup) {
-        db.personDao().clearGroup(group.id)
-        db.personGroupDao().delete(group.toEntity())
+        db.withTransaction {
+            db.personDao().clearGroup(group.id)
+            db.personGroupDao().delete(group.toEntity())
+        }
     }
 
     override fun getTags(): Flow<List<Tag>> {
@@ -343,8 +355,10 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteTagGroup(group: TagGroup) {
-        db.tagDao().clearGroup(group.id)
-        db.tagGroupDao().delete(group.toEntity())
+        db.withTransaction {
+            db.tagDao().clearGroup(group.id)
+            db.tagGroupDao().delete(group.toEntity())
+        }
     }
 
     override suspend fun seedInitialDataIfNeeded() {
@@ -369,9 +383,15 @@ class YataRepositoryImpl @Inject constructor(
     override suspend fun deleteAllData() {
         // Cancel every scheduled reminder before the rows disappear under it.
         db.taskDao().getTasksWithRelations().first().forEach { reminderScheduler.cancelReminder(it.task) }
-        withContext(Dispatchers.IO) { db.clearAllTables() }
-        // A "me" Person is a hard requirement (tasks default-assign to it) — restore it immediately.
-        seedInitialDataIfNeeded()
+        // clearAllTables() + reseeding the required "me" Person happen in one transaction — a
+        // crash between the two used to be able to leave a completely empty DB with no "me"
+        // row, which violates the task_person_cross_ref FK the moment any task is created.
+        withContext(Dispatchers.IO) {
+            db.withTransaction {
+                db.clearAllTables()
+                seedInitialDataIfNeeded()
+            }
+        }
         widgetUpdater.notifyTasksChanged()
     }
 

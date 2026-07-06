@@ -63,6 +63,7 @@ fun ProjectsTab(
     onProjectClick: (String) -> Unit,
     onNewProjectClick: () -> Unit,
     onToggleProjectStar: (String) -> Unit,
+    peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -70,12 +71,13 @@ fun ProjectsTab(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Top bar
+        // 1. Top bar — title lives in the same row as the icons instead of a separate
+        // stacked header, so this tab doesn't burn an extra ~50dp of vertical space.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -86,6 +88,15 @@ fun ProjectsTab(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
+            Text(
+                text = "Projects",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier.weight(1f).padding(start = 4.dp)
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -108,18 +119,7 @@ fun ProjectsTab(
             }
         }
 
-        // 2. Title Header
-        Text(
-            text = "Projects",
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            ),
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-        )
-
-        // 3. Grid of Projects
+        // 2. Grid of Projects
         LazyVerticalGrid(
             columns = GridCells.Fixed(1),
             contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
@@ -135,7 +135,8 @@ fun ProjectsTab(
                 val doneTasks = projectTasks.count { it.done }
                 val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
 
-                val projectPeople = remember(projectTasks, people) {
+                val projectPeople = remember(projectTasks, people, peopleEnabled) {
+                    if (!peopleEnabled) return@remember emptyList()
                     val pids = projectTasks.flatMap { it.assigneeIds }.toSet()
                     people.filter { pids.contains(it.id) }
                 }

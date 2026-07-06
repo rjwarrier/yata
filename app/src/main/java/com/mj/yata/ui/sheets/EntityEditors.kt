@@ -21,10 +21,26 @@ import com.mj.yata.ui.widgets.ColorPicker
 import com.mj.yata.ui.widgets.YataDatePickerDialog
 import com.mj.yata.util.TaskScheduleUtils
 import java.time.LocalDate
+import java.util.Locale
 
-/** Splits a comma-separated input into trimmed, de-duplicated, non-blank names. */
+/** Splits a comma-separated input into trimmed, non-blank names, de-duplicated
+ * case-insensitively — "Alex, alex, ALEX" is one name, not three near-duplicate entities. */
 private fun parseBulkNames(input: String): List<String> =
-    input.split(",").map { it.trim() }.filter { it.isNotBlank() }.distinct()
+    input.split(",").map { it.trim() }.filter { it.isNotBlank() }
+        .distinctBy { it.lowercase(Locale.getDefault()) }
+
+/** Drops any bulk-create candidate that already matches (case-insensitively) an existing
+ * entity name, so re-running a bulk create doesn't silently spawn indistinguishable duplicates. */
+private fun List<String>.excludingExisting(existingNames: List<String>): List<String> =
+    filterNot { candidate -> existingNames.any { it.equals(candidate, ignoreCase = true) } }
+
+/** Cap for a single-entity name field (Project/List) — unbounded before this, unlike the
+ * Project description field which already had a limit. */
+private const val NAME_LIMIT = 100
+
+/** Cap for Person/Tag name fields, which can hold several comma-separated names at once in
+ * create mode — higher than [NAME_LIMIT] so a legitimate multi-name paste isn't truncated. */
+private const val BULK_NAME_FIELD_LIMIT = 300
 
 /** One-shot picker sheet: tap a group row to assign, or create a new one. Used for bulk "Add to group" actions. */
 @Composable
@@ -120,8 +136,9 @@ fun ProjectEditorSheet(
     initialDueDate: String? = null,
     initialCommonTagIds: List<String> = emptyList(),
     initialDefaultReminder: String? = null,
+    initialDescription: String? = null,
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
-    onSave: (String, String, String, String?, List<String>, String?) -> Unit,
+    onSave: (String, String, String, String?, List<String>, String?, String?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -131,7 +148,9 @@ fun ProjectEditorSheet(
     var dueDate by remember { mutableStateOf<String?>(initialDueDate) }
     var showDatePicker by remember { mutableStateOf(false) }
     var defaultReminder by remember { mutableStateOf(initialDefaultReminder) }
+    var description by remember { mutableStateOf(initialDescription ?: "") }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
+    val descriptionLimit = 100
 
     Column(
         modifier = modifier
@@ -153,10 +172,20 @@ fun ProjectEditorSheet(
 
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { if (it.length <= NAME_LIMIT) name = it },
             label = { Text("Project name") },
             placeholder = { Text("e.g. Work list") },
             singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = description,
+            onValueChange = { if (it.length <= descriptionLimit) description = it },
+            label = { Text("Description") },
+            placeholder = { Text("What's this project about?") },
+            supportingText = { Text("${description.length}/$descriptionLimit") },
+            minLines = 2,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -295,7 +324,7 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder) },
+                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }) },
                 enabled = name.isNotBlank()
             ) {
                 Text(buttonText)
@@ -391,6 +420,7 @@ fun PersonEditorSheet(
     initialGroupId: String? = null,
     initialPhotoUri: String? = null,
     groups: List<com.mj.yata.domain.model.PersonGroup> = emptyList(),
+    existingNames: List<String> = emptyList(),
     onSave: (String, String, String?, String?) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
@@ -401,7 +431,9 @@ fun PersonEditorSheet(
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     var photoUri by remember { mutableStateOf(initialPhotoUri) }
     val isCreateMode = initialName.isEmpty()
-    val bulkNames = remember(name, isCreateMode) { if (isCreateMode) parseBulkNames(name) else emptyList() }
+    val bulkNames = remember(name, isCreateMode, existingNames) {
+        if (isCreateMode) parseBulkNames(name).excludingExisting(existingNames) else emptyList()
+    }
     val isBulk = bulkNames.size > 1
 
     val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -428,7 +460,7 @@ fun PersonEditorSheet(
 
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
             label = { Text("Person's name") },
             placeholder = { Text(if (isCreateMode) "e.g. Clara, Alex, Sam" else "e.g. Clara") },
             supportingText = if (isCreateMode) {
@@ -527,6 +559,7 @@ fun TagEditorSheet(
     initialGroupId: String? = null,
     initialHideCompletedByDefault: Boolean = false,
     groups: List<com.mj.yata.domain.model.TagGroup> = emptyList(),
+    existingNames: List<String> = emptyList(),
     onSave: (String, String, String?, Boolean) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
@@ -537,7 +570,9 @@ fun TagEditorSheet(
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     var hideCompletedByDefault by remember { mutableStateOf(initialHideCompletedByDefault) }
     val isCreateMode = initialName.isEmpty()
-    val bulkNames = remember(name, isCreateMode) { if (isCreateMode) parseBulkNames(name) else emptyList() }
+    val bulkNames = remember(name, isCreateMode, existingNames) {
+        if (isCreateMode) parseBulkNames(name).excludingExisting(existingNames) else emptyList()
+    }
     val isBulk = bulkNames.size > 1
 
     Column(
@@ -560,7 +595,7 @@ fun TagEditorSheet(
 
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
             label = { Text("Tag label") },
             placeholder = { Text(if (isCreateMode) "e.g. urgent, work, personal" else "e.g. urgent") },
             supportingText = if (isCreateMode) {
@@ -676,7 +711,7 @@ fun ListEditorSheet(
 
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { if (it.length <= NAME_LIMIT) name = it },
             label = { Text("List name") },
             placeholder = { Text("e.g. Personal") },
             singleLine = true,

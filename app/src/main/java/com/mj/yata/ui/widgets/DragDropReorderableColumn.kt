@@ -50,6 +50,7 @@ fun <T> DragDropReorderableColumn(
     edgeDwellMillis: Long = 800L,
     onDragToTopEdge: ((T) -> Unit)? = null,
     onDragToBottomEdge: ((T) -> Unit)? = null,
+    onDragStateChanged: (Boolean) -> Unit = {},
     itemContent: @Composable (T) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
@@ -103,17 +104,20 @@ fun <T> DragDropReorderableColumn(
                             onDragStart = {
                                 draggingIndex = index
                                 dragOffsetY = 0f
+                                onDragStateChanged(true)
                             },
                             onDragEnd = {
                                 cancelEdgeDwell()
                                 draggingIndex = null
                                 dragOffsetY = 0f
+                                onDragStateChanged(false)
                                 onDragEnd()
                             },
                             onDragCancel = {
                                 cancelEdgeDwell()
                                 draggingIndex = null
                                 dragOffsetY = 0f
+                                onDragStateChanged(false)
                             },
                             onDrag = { change, dragAmount ->
                                 change.consume()
@@ -122,9 +126,15 @@ fun <T> DragDropReorderableColumn(
                                 val itemInfo = listState.layoutInfo.visibleItemsInfo.find { it.index == currentIndex }
                                     ?: return@detectDragGesturesAfterLongPress
                                 val draggedCenter = itemInfo.offset + itemInfo.size / 2 + dragOffsetY
-                                val targetInfo = listState.layoutInfo.visibleItemsInfo
-                                    .filter { it.index != currentIndex }
-                                    .find { draggedCenter.toInt() in it.offset..(it.offset + it.size) }
+                                val others = listState.layoutInfo.visibleItemsInfo.filter { it.index != currentIndex }
+                                // Fast path: the dragged center actually lands inside a neighbor's band.
+                                // Fallback: on a fast/large drag delta, the center can jump clear over a
+                                // neighbor's band in a single pointer event and miss the exact-containment
+                                // check above — fall back to the nearest neighbor by center distance (bounded
+                                // to one item-height away) so the swap isn't silently skipped for that frame.
+                                val targetInfo = others.find { draggedCenter.toInt() in it.offset..(it.offset + it.size) }
+                                    ?: others.minByOrNull { kotlin.math.abs((it.offset + it.size / 2) - draggedCenter) }
+                                        ?.takeIf { kotlin.math.abs((it.offset + it.size / 2) - draggedCenter) < it.size }
                                 if (targetInfo != null) {
                                     onMove(currentIndex, targetInfo.index)
                                     dragOffsetY += (itemInfo.offset - targetInfo.offset).toFloat()

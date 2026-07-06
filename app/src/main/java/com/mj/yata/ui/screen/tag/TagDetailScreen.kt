@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,6 +51,7 @@ fun TagDetailScreen(
 
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
     if (tag == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -67,7 +70,7 @@ fun TagDetailScreen(
     )
 
     val allTaggedTasks = remember(tasks, lists, projects, tag.id) {
-        tasks.filter { it.effectiveTagIds(projects).contains(tag.id) }
+        tasks.filter { it.effectiveTagIds(projects).contains(tag.id) }.sortedBy { it.sortOrder }
     }
     val doneTasks = allTaggedTasks.count { it.done }
     val openTasks = allTaggedTasks.size - doneTasks
@@ -102,6 +105,12 @@ fun TagDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                        Icon(
+                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
+                        )
+                    }
                     var showMenu by remember { mutableStateOf(false) }
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")
@@ -144,19 +153,19 @@ fun TagDetailScreen(
                 .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // 1. Header Area
+            // 1. Header row — compact icon + stats instead of a tall centered stack.
             item {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(tagColor.copy(alpha = 0.16f))
-                        .padding(vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(64.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
                             .background(tagColor.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -164,10 +173,10 @@ fun TagDetailScreen(
                             imageVector = Icons.Default.Label,
                             contentDescription = null,
                             tint = tagColor,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Text(
                         text = "$openTasks open · $doneTasks completed",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
@@ -176,24 +185,7 @@ fun TagDetailScreen(
                 }
             }
 
-            // 2. Hide-completed toggle
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Hide completed",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
-                    )
-                    Switch(checked = hideCompleted, onCheckedChange = { hideCompleted = it })
-                }
-            }
-
-            // 3. Tasks list
+            // 2. Tasks list
             if (taggedTasks.isEmpty()) {
                 item {
                     Box(
@@ -223,7 +215,8 @@ fun TagDetailScreen(
                         assignees = taskAssignees,
                         tags = taskTags,
                         onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                        onTaskClick = { onNavigateToTaskDetail(task.id) }
+                        onTaskClick = { onNavigateToTaskDetail(task.id) },
+                        onCommentClick = { pendingCommentTask = task }
                     )
                 }
             }
@@ -275,6 +268,17 @@ fun TagDetailScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    pendingCommentTask?.let { task ->
+        com.mj.yata.ui.widgets.QuickCommentDialog(
+            taskTitle = task.title,
+            onSubmit = { body ->
+                viewModel.addComment(task.id, body)
+                pendingCommentTask = null
+            },
+            onDismiss = { pendingCommentTask = null }
         )
     }
 }

@@ -117,4 +117,17 @@ object TaskScheduleUtils {
         val time = parseTime(customReminderTime) ?: return false
         return date.atTime(time).isAfter(LocalDateTime.now())
     }
+
+    /**
+     * Same check as [isReminderTimeInFuture], but for a preset relative reminder ("15 min
+     * before", etc.) instead of a literal custom time — the preset picker used to skip this
+     * check entirely, silently accepting a reminder on an already-overdue task that would never
+     * actually fire.
+     */
+    fun isPresetReminderInFuture(dueDate: String?, dueTime: String?, reminder: String): Boolean {
+        val date = parseDate(dueDate) ?: return true
+        val time = parseTime(dueTime) ?: LocalTime.of(23, 59)
+        val fireInstant = date.atTime(time).minusNanos(reminderOffsetMillis(reminder) * 1_000_000L)
+        return fireInstant.isAfter(LocalDateTime.now())
+    }
 }

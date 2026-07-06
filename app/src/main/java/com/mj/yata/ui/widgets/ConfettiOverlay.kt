@@ -10,6 +10,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
+import com.mj.yata.ui.theme.ALL_ACCENT_KEYS
+import com.mj.yata.ui.theme.LocalYataAccents
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.isActive
 import java.util.Random
@@ -47,16 +49,10 @@ fun ConfettiOverlay(
 
     var particles by remember { mutableStateOf<List<Particle>>(emptyList()) }
     val random = remember { Random() }
-    val colors = remember {
-        listOf(
-            Color(0xFFE8886B), // AccentA
-            Color(0xFF9DAE55), // AccentB
-            Color(0xFF8C7BE0), // AccentC
-            Color(0xFFE0A93A), // AccentD
-            Color(0xFF4FA97D), // AccentE
-            Color(0xFFDB6FA0)  // AccentF
-        )
-    }
+    // Reads from the live theme instead of a separate hardcoded list, so confetti always
+    // matches the current accent palette and adapts to light/dark mode like everything else.
+    val accents = LocalYataAccents.current
+    val colors = remember(accents) { ALL_ACCENT_KEYS.map { accents.getAccent(it) } }
 
     LaunchedEffect(trigger) {
         if (trigger > 0) {

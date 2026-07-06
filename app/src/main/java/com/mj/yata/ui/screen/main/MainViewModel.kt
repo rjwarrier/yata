@@ -149,18 +149,25 @@ class MainViewModel @Inject constructor(
 
     fun bulkSetProject(ids: List<String>, projectId: String?) {
         viewModelScope.launch {
+            // Append after the destination's existing tasks, like moveTaskToList does for a
+            // single move — otherwise every bulk-moved task keeps its old sortOrder, which can
+            // collide with whatever's already in the destination project.
+            var nextSortOrder = tasks.value.count { it.projectId == projectId }
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
-                repository.upsertTask(task.copy(projectId = projectId))
+                repository.upsertTask(task.copy(projectId = projectId, sortOrder = nextSortOrder))
+                nextSortOrder++
             }
         }
     }
 
     fun bulkSetList(ids: List<String>, listId: String?) {
         viewModelScope.launch {
+            var nextSortOrder = tasks.value.count { it.listId == listId }
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
-                repository.upsertTask(task.copy(listId = listId))
+                repository.upsertTask(task.copy(listId = listId, sortOrder = nextSortOrder))
+                nextSortOrder++
             }
         }
     }
@@ -170,20 +177,26 @@ class MainViewModel @Inject constructor(
      * subtasks) except id (fresh UUID) and done (reset to false). due is left unchanged
      * unless the caller supplies a dueAdjustment (e.g. rollover shifts +1 month).
      */
-    fun duplicateTask(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
-        viewModelScope.launch {
-            val task = tasks.value.find { it.id == taskId } ?: return@launch
-            val newDue = task.due?.let { due ->
-                try {
-                    dueAdjustment(LocalDate.parse(due)).toString()
-                } catch (e: Exception) {
-                    due
-                }
+    /** Suspend core shared by [duplicateTask], [bulkDuplicateTasks], and [rolloverProjectTasks] —
+     * callers that duplicate many tasks at once await these sequentially in one coroutine
+     * instead of each fanning out its own untracked `launch`, so there's a real completion
+     * point and no unordered race between the writes. */
+    private suspend fun duplicateTaskSuspend(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
+        val task = tasks.value.find { it.id == taskId } ?: return
+        val newDue = task.due?.let { due ->
+            try {
+                dueAdjustment(LocalDate.parse(due)).toString()
+            } catch (e: Exception) {
+                due
             }
-            repository.upsertTask(
-                task.copy(id = "t_" + UUID.randomUUID().toString(), due = newDue, done = false)
-            )
         }
+        repository.upsertTask(
+            task.copy(id = "t_" + UUID.randomUUID().toString(), due = newDue, done = false)
+        )
+    }
+
+    fun duplicateTask(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
+        viewModelScope.launch { duplicateTaskSuspend(taskId, dueAdjustment) }
     }
 
     /**
@@ -197,13 +210,15 @@ class MainViewModel @Inject constructor(
                 it.projectId == projectId && !it.done && it.recurrence == null
             }
             openTasks.forEach { task ->
-                duplicateTask(task.id) { it.plusMonths(1) }
+                duplicateTaskSuspend(task.id) { it.plusMonths(1) }
             }
         }
     }
 
     fun bulkDuplicateTasks(ids: List<String>) {
-        ids.forEach { duplicateTask(it) }
+        viewModelScope.launch {
+            ids.forEach { duplicateTaskSuspend(it) }
+        }
     }
 
     /**
@@ -276,7 +291,8 @@ class MainViewModel @Inject constructor(
         time: String? = null,
         reminder: String? = null,
         section: String = "Afternoon",
-        projectId: String? = null
+        projectId: String? = null,
+        subtasks: List<Subtask> = emptyList()
     ) {
         viewModelScope.launch {
             val newTask = Task(
@@ -294,7 +310,7 @@ class MainViewModel @Inject constructor(
                 assigneeIds = assigneeIds,
                 tagIds = tagIds,
                 recurrence = recurrence,
-                subtasks = emptyList(),
+                subtasks = subtasks,
                 notes = notes
             )
             repository.upsertTask(newTask)
@@ -335,8 +351,15 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    // Cached by taskId — without this, every call created its own independent stateIn()
+    // subscriber tied to viewModelScope, so a caller that invoked this per-recomposition
+    // instead of hoisting the result (e.g. via remember) would leak one hot flow per call.
+    private val commentsFlowCache = mutableMapOf<String, StateFlow<List<TaskComment>>>()
+
     fun getCommentsForTask(taskId: String): StateFlow<List<TaskComment>> =
-        repository.getCommentsForTask(taskId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        commentsFlowCache.getOrPut(taskId) {
+            repository.getCommentsForTask(taskId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        }
 
     fun addComment(taskId: String, body: String) {
         viewModelScope.launch {
@@ -351,7 +374,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null) {
+    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null) {
         viewModelScope.launch {
             val pid = "pr_" + UUID.randomUUID().toString()
             val project = Project(
@@ -361,7 +384,8 @@ class MainViewModel @Inject constructor(
                 icon = icon,
                 due = due,
                 commonTagIds = commonTagIds,
-                defaultReminder = defaultReminder
+                defaultReminder = defaultReminder,
+                description = description
             )
             repository.upsertProject(project)
         }

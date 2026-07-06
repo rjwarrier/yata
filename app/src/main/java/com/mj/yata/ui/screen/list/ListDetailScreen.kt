@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -51,6 +53,7 @@ fun ListDetailScreen(
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var hideCompleted by remember { mutableStateOf(false) }
 
     if (list == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -66,9 +69,19 @@ fun ListDetailScreen(
     val listTasks = remember(tasks, list.id) { tasks.filter { it.listId == list.id }.sortedBy { it.sortOrder } }
     val doneTasks = listTasks.count { it.done }
     val openTasks = listTasks.size - doneTasks
+    val visibleListTasks = remember(listTasks, hideCompleted) {
+        if (hideCompleted) listTasks.filter { !it.done } else listTasks
+    }
 
-    var localOrder by remember(listTasks) { mutableStateOf(listTasks) }
+    // Not keyed on visibleListTasks — see ProjectDetailScreen for why: any task write anywhere
+    // in the app used to reset this mid-drag and discard/corrupt the in-progress reorder.
+    var localOrder by remember { mutableStateOf(visibleListTasks) }
+    var isDraggingTasks by remember { mutableStateOf(false) }
+    LaunchedEffect(visibleListTasks) {
+        if (!isDraggingTasks) localOrder = visibleListTasks
+    }
     var pendingMoveTask by remember { mutableStateOf<Task?>(null) }
+    var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
@@ -101,6 +114,12 @@ fun ListDetailScreen(
                             imageVector = if (list.starred) Icons.Filled.Star else Icons.Outlined.StarOutline,
                             contentDescription = if (list.starred) "Unstar list" else "Star list",
                             tint = if (list.starred) accents.accentD else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                        Icon(
+                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
                         )
                     }
                     var showMenu by remember { mutableStateOf(false) }
@@ -199,7 +218,7 @@ fun ListDetailScreen(
 
             // 2. Tasks list — long-press to drag-reorder within this list, or drag to the
             // top/bottom edge and hold to move the task into a different list/project.
-            if (listTasks.isEmpty()) {
+            if (visibleListTasks.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -207,7 +226,7 @@ fun ListDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No tasks in this list.",
+                        text = if (listTasks.isEmpty()) "No tasks in this list." else "All tasks completed.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
@@ -220,6 +239,7 @@ fun ListDetailScreen(
                     onDragEnd = { viewModel.commitTaskOrder(localOrder) },
                     onDragToTopEdge = { task -> pendingMoveTask = task },
                     onDragToBottomEdge = { task -> pendingMoveTask = task },
+                    onDragStateChanged = { isDraggingTasks = it },
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) { task ->
@@ -237,7 +257,8 @@ fun ListDetailScreen(
                         tags = taskTags,
                         onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                         onTaskClick = { onNavigateToTaskDetail(task.id) },
-                        showList = false
+                        showList = false,
+                        onCommentClick = { pendingCommentTask = task }
                     )
                 }
             }
@@ -265,6 +286,17 @@ fun ListDetailScreen(
         }
     }
 
+    pendingCommentTask?.let { task ->
+        com.mj.yata.ui.widgets.QuickCommentDialog(
+            taskTitle = task.title,
+            onSubmit = { body ->
+                viewModel.addComment(task.id, body)
+                pendingCommentTask = null
+            },
+            onDismiss = { pendingCommentTask = null }
+        )
+    }
+
     if (isNewTaskSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
@@ -277,8 +309,8 @@ fun ListDetailScreen(
                 people = people,
                 tags = tags,
                 initialListId = list.id,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId)
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
                     isNewTaskSheetOpen = false
                 },
                 onCreateTag = { id, name, color ->

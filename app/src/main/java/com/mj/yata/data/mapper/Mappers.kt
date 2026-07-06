@@ -102,7 +102,8 @@ fun ProjectEntity.toDomain() = Project(
     due = dueDate,
     starred = starred,
     commonTagIds = if (commonTagIds.isEmpty()) emptyList() else commonTagIds.split(","),
-    defaultReminder = defaultReminder
+    defaultReminder = defaultReminder,
+    description = description
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
@@ -112,7 +113,8 @@ fun Project.toEntity() = ProjectEntity(
     dueDate = due,
     starred = starred,
     commonTagIds = commonTagIds.joinToString(","),
-    defaultReminder = defaultReminder
+    defaultReminder = defaultReminder,
+    description = description
 )
 
 fun ListEntity.toDomain() = YataList(id, name, color, icon, starred)
