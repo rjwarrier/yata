@@ -499,13 +499,67 @@ fun NewTaskSheet(
                     leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
                     showCheck = false
                 )
-                YataSelectChip(
-                    label = selectedSection,
-                    selected = true,
-                    onClick = { activePanel = if (activePanel == "Section") null else "Section" },
-                    tint = MaterialTheme.colorScheme.secondary,
-                    showCheck = false
-                )
+            }
+
+            // Reveal panel — right under the attribute chips that open it, so it never appears
+            // to open "below" Assigned to/Tags.
+            if (activePanel != null) {
+                YataRevealPanel {
+                    when (activePanel) {
+                        "DueDate" -> DueDatePanel(
+                            selectedDueDate = selectedDueDate,
+                            onPick = { setDueDate(it) },
+                            onClear = { setDueDate(null); setTime(null); selectedReminder = null },
+                            onPickDate = { showDatePicker = true }
+                        )
+                        "Time" -> TimePanel(
+                            hasDueDate = selectedDueDate != null,
+                            selectedTime = selectedTime,
+                            onPick = { setTime(it) },
+                            onCustom = { showTimePicker = true }
+                        )
+                        "Reminder" -> ReminderPanel(
+                            hasDueDate = selectedDueDate != null,
+                            selectedReminder = selectedReminder,
+                            onPick = { selectedReminder = it },
+                            onCustom = { showReminderTimePicker = true }
+                        )
+                        "Project" -> ProjectPanel(
+                            projects = projects,
+                            selectedProjectId = selectedProjectId,
+                            accents = accents,
+                            onSelect = { selectedProjectId = it }
+                        )
+                        "List" -> ListPanel(
+                            lists = lists,
+                            selectedListId = selectedListId,
+                            accents = accents,
+                            onSelect = { selectedListId = it }
+                        )
+                        "Priority" -> Column {
+                            SegmentedControl(
+                                items = listOf("none", "low", "med", "high"),
+                                selectedItem = selectedPriority,
+                                onItemSelected = { selectedPriority = it },
+                                labelProvider = { it.uppercase() }
+                            )
+                        }
+                        "People" -> PeoplePanel(
+                            people = people,
+                            selectedAssigneeIds = selectedAssigneeIds,
+                            accents = accents
+                        )
+                        "Tags" -> TagsPanel(
+                            tags = tags,
+                            selectedTagIds = selectedTagIds,
+                            accents = accents
+                        )
+                        "Repeat" -> RepeatPanel(
+                            selectedRecurrence = selectedRecurrence,
+                            onSelect = { setRecurrence(it) }
+                        )
+                    }
+                }
             }
 
             // Assigned to — always shows real avatar+name chips, not a count
@@ -558,74 +612,6 @@ fun NewTaskSheet(
                             label = if (selectedTagIds.isEmpty()) "Tag" else "Add",
                             onClick = { activePanel = if (activePanel == "Tags") null else "Tags" },
                             height = CHIP_ROW_HEIGHT
-                        )
-                    }
-                }
-            }
-
-            // Reveal panel
-            if (activePanel != null) {
-                YataRevealPanel {
-                    when (activePanel) {
-                        "DueDate" -> DueDatePanel(
-                            selectedDueDate = selectedDueDate,
-                            onPick = { setDueDate(it) },
-                            onClear = { setDueDate(null); setTime(null); selectedReminder = null },
-                            onPickDate = { showDatePicker = true }
-                        )
-                        "Time" -> TimePanel(
-                            hasDueDate = selectedDueDate != null,
-                            selectedTime = selectedTime,
-                            onPick = { setTime(it) },
-                            onCustom = { showTimePicker = true }
-                        )
-                        "Reminder" -> ReminderPanel(
-                            hasDueDate = selectedDueDate != null,
-                            selectedReminder = selectedReminder,
-                            onPick = { selectedReminder = it },
-                            onCustom = { showReminderTimePicker = true }
-                        )
-                        "Project" -> ProjectPanel(
-                            projects = projects,
-                            selectedProjectId = selectedProjectId,
-                            accents = accents,
-                            onSelect = { selectedProjectId = it }
-                        )
-                        "List" -> ListPanel(
-                            lists = lists,
-                            selectedListId = selectedListId,
-                            accents = accents,
-                            onSelect = { selectedListId = it }
-                        )
-                        "Priority" -> Column {
-                            SegmentedControl(
-                                items = listOf("none", "low", "med", "high"),
-                                selectedItem = selectedPriority,
-                                onItemSelected = { selectedPriority = it },
-                                labelProvider = { it.uppercase() }
-                            )
-                        }
-                        "Section" -> Column {
-                            SegmentedControl(
-                                items = listOf("Morning", "Afternoon"),
-                                selectedItem = selectedSection,
-                                onItemSelected = { selectedSection = it },
-                                labelProvider = { it }
-                            )
-                        }
-                        "People" -> PeoplePanel(
-                            people = people,
-                            selectedAssigneeIds = selectedAssigneeIds,
-                            accents = accents
-                        )
-                        "Tags" -> TagsPanel(
-                            tags = tags,
-                            selectedTagIds = selectedTagIds,
-                            accents = accents
-                        )
-                        "Repeat" -> RepeatPanel(
-                            selectedRecurrence = selectedRecurrence,
-                            onSelect = { setRecurrence(it) }
                         )
                     }
                 }

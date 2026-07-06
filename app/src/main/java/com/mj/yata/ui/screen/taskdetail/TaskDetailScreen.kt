@@ -137,16 +137,28 @@ fun TaskDetailScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
-    // Subtasks/Notes/Comments section visibility — toggled via the chip row above them.
-    var showSubtasks by remember { mutableStateOf(true) }
-    var showNotes by remember { mutableStateOf(true) }
-    var showComments by remember { mutableStateOf(true) }
-
     if (task == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
+    }
+
+    // Subtasks/Notes/Comments section visibility — toggled via the chip row above them.
+    // Defaults to whichever sections actually have content, instead of always showing all
+    // three regardless of whether there's anything in them.
+    val comments by remember(task.id) { viewModel.getCommentsForTask(task.id) }.collectAsState()
+    var showSubtasks by remember(task.id) { mutableStateOf(task.subtasks.isNotEmpty()) }
+    var showNotes by remember(task.id) { mutableStateOf(!task.notes.isNullOrBlank()) }
+    var showComments by remember(task.id) { mutableStateOf(comments.isNotEmpty()) }
+    // Comments load asynchronously (unlike subtasks/notes, which are already on `task`), so the
+    // very first composition almost always sees an empty placeholder list before the real query
+    // result arrives — keep syncing the default to the real data until the user manually toggles
+    // the chip themselves, at which point their choice wins even if the comment count changes
+    // later (e.g. adding a comment while the section is manually hidden shouldn't force it open).
+    var userToggledComments by remember(task.id) { mutableStateOf(false) }
+    LaunchedEffect(comments) {
+        if (!userToggledComments) showComments = comments.isNotEmpty()
     }
 
     val taskList = remember(task, lists) { lists.find { it.id == task.listId } }
@@ -475,7 +487,7 @@ fun TaskDetailScreen(
                 ) {
                     SectionToggleChip("Subtasks", showSubtasks, { showSubtasks = !showSubtasks }, Modifier.weight(1f))
                     SectionToggleChip("Notes", showNotes, { showNotes = !showNotes }, Modifier.weight(1f))
-                    SectionToggleChip("Comments", showComments, { showComments = !showComments }, Modifier.weight(1f))
+                    SectionToggleChip("Comments", showComments, { showComments = !showComments; userToggledComments = true }, Modifier.weight(1f))
                 }
             }
 
@@ -748,7 +760,6 @@ fun TaskDetailScreen(
                     enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
                     exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
                 ) {
-                val comments by remember(task.id) { viewModel.getCommentsForTask(task.id) }.collectAsState()
                 var newComment by remember { mutableStateOf("") }
                 val peopleById = remember(people) { people.associateBy { it.id } }
 
