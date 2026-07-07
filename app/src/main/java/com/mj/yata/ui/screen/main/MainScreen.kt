@@ -355,13 +355,12 @@ fun MainScreen(
                         LaunchedEffect(sortedLists) {
                             if (!isDraggingLists) localListOrder = sortedLists
                         }
-                        com.mj.yata.ui.widgets.DragDropReorderableColumn(
+                        com.mj.yata.ui.widgets.DragReorderColumn(
                             items = localListOrder,
                             key = { it.id },
                             onMove = { from, to -> localListOrder = localListOrder.toMutableList().apply { add(to, removeAt(from)) } },
                             onDragEnd = { viewModel.commitListOrder(localListOrder) },
-                            onDragStateChanged = { isDraggingLists = it },
-                            userScrollEnabled = false
+                            onDragStateChanged = { isDraggingLists = it }
                         ) { list ->
                             DrawerItem(
                                 label = list.name,

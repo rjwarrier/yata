@@ -277,13 +277,12 @@ private fun ReorderablePeopleSection(
         if (!isDragging) localOrder = people
     }
 
-    com.mj.yata.ui.widgets.DragDropReorderableColumn(
+    com.mj.yata.ui.widgets.DragReorderColumn(
         items = localOrder,
         key = { it.id },
         onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
         onDragEnd = { onReordered(localOrder) },
-        onDragStateChanged = { isDragging = it },
-        userScrollEnabled = false
+        onDragStateChanged = { isDragging = it }
     ) { person ->
         val personTasks = remember(tasks, person.id) {
             tasks.filter { it.assigneeIds.contains(person.id) }
