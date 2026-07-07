@@ -61,6 +61,32 @@ import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Yard
+import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.DirectionsRun
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.LocalPhone
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Construction
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Brush
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -133,30 +159,58 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "eco" -> Icons.Default.Recycling
     "charity" -> Icons.Default.VolunteerActivism
     "energy" -> Icons.Default.Bolt
+    // New icons
+    "inbox" -> Icons.Default.Inbox
+    "flag" -> Icons.Default.Flag
+    "lock" -> Icons.Default.Lock
+    "hourglass" -> Icons.Default.HourglassEmpty
+    "timeline" -> Icons.Default.Timeline
+    "taskalt" -> Icons.Default.TaskAlt
+    "cloud" -> Icons.Default.Cloud
+    "run" -> Icons.Default.DirectionsRun
+    "event" -> Icons.Default.Event
+    "pin" -> Icons.Default.PushPin
+    "gavel" -> Icons.Default.Gavel
+    "shipping" -> Icons.Default.LocalShipping
+    "phone" -> Icons.Default.LocalPhone
+    "email" -> Icons.Default.Email
+    "alarm" -> Icons.Default.NotificationsActive
+    // Round 2 new icons
+    "settings" -> Icons.Default.Settings
+    "chart" -> Icons.Default.ShowChart
+    "key" -> Icons.Default.Key
+    "construction" -> Icons.Default.Construction
+    "location" -> Icons.Default.LocationOn
+    "brush" -> Icons.Default.Brush
+    "bookmark" -> Icons.Default.Bookmark
+    "forum" -> Icons.Default.Forum
+    "bug" -> Icons.Default.BugReport
+    "storage" -> Icons.Default.Storage
+    "extension" -> Icons.Default.Extension
     else -> Icons.Default.Layers
 }
 
 /** Full curated set offered by the icon picker, in display order. */
 val FOLDER_ICON_KEYS = listOf(
-    "folder", "layers", "home", "star", "label", "work", "school",
-    // Finance
-    "bank", "wallet", "savings", "card", "receipt", "invoice", "money", "trending", "atm",
+    "folder", "layers", "inbox", "flag", "lock", "pin", "taskalt", "hourglass", "bookmark", "settings", "key", "home", "star", "label", "work", "school",
+    // Finance / Work
+    "bank", "wallet", "savings", "card", "receipt", "invoice", "money", "trending", "atm", "timeline", "chart", "shipping", "phone", "email", "forum",
     // Shopping / food
     "shopping", "bag", "restaurant",
     // Home / chores
-    "build", "garden", "cleaning",
+    "build", "construction", "garden", "cleaning",
     // Travel / transport
-    "flight", "car", "bike", "bus", "backpack", "world",
+    "flight", "car", "bike", "bus", "backpack", "world", "location",
     // Health / fitness / wellness
-    "fitness", "health", "spa", "meditation",
+    "fitness", "health", "spa", "meditation", "run",
     // Family / social
     "family", "childcare", "pets", "heart",
-    // Tech / creative
-    "computer", "devices", "camera", "code", "art", "music", "book", "idea",
+    // Tech / creative / organization
+    "computer", "devices", "camera", "code", "art", "music", "book", "idea", "event", "cloud", "brush", "bug", "storage", "extension",
     // Entertainment / misc
     "movie", "theater", "gaming", "cake", "celebration",
     // Eco / charity / utilities
-    "eco", "charity", "energy"
+    "eco", "charity", "energy", "gavel", "alarm"
 )
 
 @OptIn(ExperimentalLayoutApi::class)

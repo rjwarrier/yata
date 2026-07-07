@@ -12,7 +12,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -67,10 +66,12 @@ fun PeopleTab(
     onCreateGroupAndAssign: (id: String, name: String, personIds: List<String>) -> Unit,
     onToggleStar: (String) -> Unit = {},
     onDeleteGroup: (PersonGroup) -> Unit = {},
+    onPeopleReordered: (List<Person>) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
-    val selectionMode = selectedIds.isNotEmpty()
+    var selectModeOn by remember { mutableStateOf(false) }
+    val selectionMode = selectModeOn
     var showGroupPicker by remember { mutableStateOf(false) }
 
     Column(
@@ -89,7 +90,7 @@ fun PeopleTab(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { selectedIds.clear() }) {
+                    IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
                         Icon(Icons.Default.Close, contentDescription = "Cancel selection", tint = MaterialTheme.colorScheme.onSurface)
                     }
                     Text(
@@ -132,6 +133,13 @@ fun PeopleTab(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    IconButton(onClick = { selectModeOn = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Select people",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     IconButton(onClick = onSearchClick) {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -162,7 +170,7 @@ fun PeopleTab(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             personGroups.forEach { group ->
-                val groupPeople = people.filter { it.groupId == group.id }
+                val groupPeople = people.filter { it.groupId == group.id }.sortedBy { it.sortOrder }
                 if (groupPeople.isNotEmpty()) {
                     val expanded = expandedGroups[group.id] ?: true
                     item(key = "header_${group.id}") {
@@ -174,30 +182,17 @@ fun PeopleTab(
                         )
                     }
                     if (expanded) {
-                    items(groupPeople, key = { it.id }) { person ->
-                        val personTasks = remember(tasks, person.id) {
-                            tasks.filter { it.assigneeIds.contains(person.id) }
+                        item(key = "group_dnd_${group.id}") {
+                            ReorderablePeopleSection(
+                                people = groupPeople,
+                                tasks = tasks,
+                                selectionMode = selectionMode,
+                                selectedIds = selectedIds,
+                                onPersonClick = onPersonClick,
+                                onToggleStar = onToggleStar,
+                                onReordered = onPeopleReordered
+                            )
                         }
-                        val doneCount = personTasks.count { it.done }
-                        PersonRow(
-                            person = person,
-                            totalTasks = personTasks.size,
-                            doneTasks = doneCount,
-                            progress = if (personTasks.isNotEmpty()) doneCount.toFloat() / personTasks.size else 0f,
-                            selectionMode = selectionMode,
-                            selected = selectedIds.contains(person.id),
-                            onClick = {
-                                if (selectionMode) {
-                                    if (selectedIds.contains(person.id)) selectedIds.remove(person.id) else selectedIds.add(person.id)
-                                } else {
-                                    onPersonClick(person.id)
-                                }
-                            },
-                            onLongClick = { if (!selectedIds.contains(person.id)) selectedIds.add(person.id) },
-                            onToggleStar = { onToggleStar(person.id) },
-                            modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
-                        )
-                    }
                     }
                 }
             }
@@ -214,33 +209,18 @@ fun PeopleTab(
                     }
                 }
                 if (ungroupedExpanded) {
-                items(ungrouped, key = { it.id }) { person ->
-                    val personTasks = remember(tasks, person.id) {
-                        tasks.filter { it.assigneeIds.contains(person.id) }
+                    item(key = "group_dnd_ungrouped") {
+                        val sortedUngrouped = remember(ungrouped) { ungrouped.sortedBy { it.sortOrder } }
+                        ReorderablePeopleSection(
+                            people = sortedUngrouped,
+                            tasks = tasks,
+                            selectionMode = selectionMode,
+                            selectedIds = selectedIds,
+                            onPersonClick = onPersonClick,
+                            onToggleStar = onToggleStar,
+                            onReordered = onPeopleReordered
+                        )
                     }
-                    val totalCount = personTasks.size
-                    val doneCount = personTasks.count { it.done }
-                    val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
-
-                    PersonRow(
-                        person = person,
-                        totalTasks = totalCount,
-                        doneTasks = doneCount,
-                        progress = progress,
-                        selectionMode = selectionMode,
-                        selected = selectedIds.contains(person.id),
-                        onClick = {
-                            if (selectionMode) {
-                                if (selectedIds.contains(person.id)) selectedIds.remove(person.id) else selectedIds.add(person.id)
-                            } else {
-                                onPersonClick(person.id)
-                            }
-                        },
-                        onLongClick = { if (!selectedIds.contains(person.id)) selectedIds.add(person.id) },
-                        onToggleStar = { onToggleStar(person.id) },
-                        modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
-                    )
-                }
                 }
             }
 
@@ -279,6 +259,56 @@ fun PeopleTab(
     }
 }
 
+/** One group's (or "Ungrouped") people, long-press-draggable to reorder within that group only —
+ * nested inside PeopleTab's outer LazyColumn, so it doesn't scroll on its own. */
+@Composable
+private fun ReorderablePeopleSection(
+    people: List<Person>,
+    tasks: List<Task>,
+    selectionMode: Boolean,
+    selectedIds: MutableList<String>,
+    onPersonClick: (String) -> Unit,
+    onToggleStar: (String) -> Unit,
+    onReordered: (List<Person>) -> Unit
+) {
+    var localOrder by remember { mutableStateOf(people) }
+    var isDragging by remember { mutableStateOf(false) }
+    LaunchedEffect(people) {
+        if (!isDragging) localOrder = people
+    }
+
+    com.mj.yata.ui.widgets.DragDropReorderableColumn(
+        items = localOrder,
+        key = { it.id },
+        onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
+        onDragEnd = { onReordered(localOrder) },
+        onDragStateChanged = { isDragging = it },
+        userScrollEnabled = false
+    ) { person ->
+        val personTasks = remember(tasks, person.id) {
+            tasks.filter { it.assigneeIds.contains(person.id) }
+        }
+        val doneCount = personTasks.count { it.done }
+        PersonRow(
+            person = person,
+            totalTasks = personTasks.size,
+            doneTasks = doneCount,
+            progress = if (personTasks.isNotEmpty()) doneCount.toFloat() / personTasks.size else 0f,
+            selectionMode = selectionMode,
+            selected = selectedIds.contains(person.id),
+            onClick = {
+                if (selectionMode) {
+                    if (selectedIds.contains(person.id)) selectedIds.remove(person.id) else selectedIds.add(person.id)
+                } else {
+                    onPersonClick(person.id)
+                }
+            },
+            onToggleStar = { onToggleStar(person.id) },
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PersonRow(
@@ -289,7 +319,6 @@ fun PersonRow(
     onClick: () -> Unit,
     selectionMode: Boolean = false,
     selected: Boolean = false,
-    onLongClick: () -> Unit = {},
     onToggleStar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -299,7 +328,7 @@ fun PersonRow(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow

@@ -3,13 +3,9 @@ package com.mj.yata.ui.screen.main.tabs
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,7 +20,10 @@ import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,9 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.theme.LocalYataAccents
-import com.mj.yata.ui.theme.YataDur
-import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.AssigneeStack
+import com.mj.yata.ui.widgets.DragDropReorderableColumn
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 
@@ -63,9 +61,16 @@ fun ProjectsTab(
     onProjectClick: (String) -> Unit,
     onNewProjectClick: () -> Unit,
     onToggleProjectStar: (String) -> Unit,
+    onProjectsReordered: (List<Project>) -> Unit = {},
     peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val sortedProjects = remember(projects) { projects.sortedBy { it.sortOrder } }
+    var localOrder by remember { mutableStateOf(sortedProjects) }
+    var isDragging by remember { mutableStateOf(false) }
+    LaunchedEffect(sortedProjects) {
+        if (!isDragging) localOrder = sortedProjects
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -119,43 +124,41 @@ fun ProjectsTab(
             }
         }
 
-        // 2. Grid of Projects
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(1),
+        // 2. List of Projects — long-press drag to reorder.
+        DragDropReorderableColumn(
+            items = localOrder,
+            key = { it.id },
+            onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
+            onDragEnd = { onProjectsReordered(localOrder) },
+            onDragStateChanged = { isDragging = it },
             contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            footer = { item { NewProjectDashedCard(onClick = onNewProjectClick) } },
             modifier = Modifier.weight(1f)
-        ) {
-            items(projects, key = { it.id }) { project ->
-                val projectTasks = remember(tasks, project.id) {
-                    tasks.filter { it.projectId == project.id }
-                }
-
-                val totalTasks = projectTasks.size
-                val doneTasks = projectTasks.count { it.done }
-                val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
-
-                val projectPeople = remember(projectTasks, people, peopleEnabled) {
-                    if (!peopleEnabled) return@remember emptyList()
-                    val pids = projectTasks.flatMap { it.assigneeIds }.toSet()
-                    people.filter { pids.contains(it.id) }
-                }
-
-                ProjectCard(
-                    project = project,
-                    totalTasks = totalTasks,
-                    doneTasks = doneTasks,
-                    progress = progress,
-                    members = projectPeople,
-                    onClick = { onProjectClick(project.id) },
-                    onToggleStar = { onToggleProjectStar(project.id) },
-                    modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
-                )
+        ) { project ->
+            val projectTasks = remember(tasks, project.id) {
+                tasks.filter { it.projectId == project.id }
             }
 
-            item {
-                NewProjectDashedCard(onClick = onNewProjectClick)
+            val totalTasks = projectTasks.size
+            val doneTasks = projectTasks.count { it.done }
+            val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
+
+            val projectPeople = remember(projectTasks, people, peopleEnabled) {
+                if (!peopleEnabled) return@remember emptyList()
+                val pids = projectTasks.flatMap { it.assigneeIds }.toSet()
+                people.filter { pids.contains(it.id) }
             }
+
+            ProjectCard(
+                project = project,
+                totalTasks = totalTasks,
+                doneTasks = doneTasks,
+                progress = progress,
+                members = projectPeople,
+                onClick = { onProjectClick(project.id) },
+                onToggleStar = { onToggleProjectStar(project.id) },
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
         }
     }
 }

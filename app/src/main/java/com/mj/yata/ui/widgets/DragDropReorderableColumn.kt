@@ -63,6 +63,10 @@ fun <T> DragDropReorderableColumn(
     /** Non-draggable content emitted after [items] (e.g. a "COMPLETED" header + static list) —
      * no index bookkeeping needed since it never shifts the draggable region's indices. */
     footer: (LazyListScope.() -> Unit)? = null,
+    /** False when nesting this inside another scrollable container (e.g. a drawer or tab's own
+     * LazyColumn/Column) — the outer container scrolls this one instead, so it just wraps to its
+     * content height. */
+    userScrollEnabled: Boolean = true,
     itemContent: @Composable (T) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
@@ -99,7 +103,8 @@ fun <T> DragDropReorderableColumn(
     LazyColumn(
         state = listState,
         modifier = modifier.onGloballyPositioned { listHeightPx = it.size.height.toFloat() },
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
+        userScrollEnabled = userScrollEnabled
     ) {
         header?.invoke(this)
         itemsIndexed(items, key = { _, item -> key(item) }) { index, item ->

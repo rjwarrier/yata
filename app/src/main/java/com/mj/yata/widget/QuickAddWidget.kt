@@ -59,9 +59,12 @@ class QuickAddWidget : GlanceAppWidget() {
         val targetType = prefs[QUICK_ADD_TARGET_TYPE_KEY]
         val targetId = prefs[QUICK_ADD_TARGET_ID_KEY]
 
+        val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
+        val customLabel = prefs[WIDGET_LABEL_KEY]
+        val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val allLists = repository.getLists().first()
-        val lists = allLists.take(3)
 
         val targetName = when (targetType) {
             "list" -> allLists.find { it.id == targetId }?.name
@@ -73,7 +76,18 @@ class QuickAddWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
-                QuickAddWidgetContent(lists, theme.accents, targetType, targetId, targetName)
+                QuickAddWidgetContent(
+                    context = context,
+                    allLists = allLists,
+                    accents = theme.accents,
+                    colors = theme.colorScheme,
+                    targetType = targetType,
+                    targetId = targetId,
+                    targetName = targetName,
+                    cornerRadius = cornerRadius,
+                    customLabel = customLabel,
+                    useM3Colors = useM3Colors
+                )
             }
         }
     }
@@ -81,20 +95,27 @@ class QuickAddWidget : GlanceAppWidget() {
 
 @Composable
 private fun QuickAddWidgetContent(
-    lists: List<com.mj.yata.domain.model.YataList>,
+    context: Context,
+    allLists: List<com.mj.yata.domain.model.YataList>,
     accents: com.mj.yata.ui.theme.YataAccents,
+    colors: androidx.compose.material3.ColorScheme,
     targetType: String?,
     targetId: String?,
-    targetName: String?
+    targetName: String?,
+    cornerRadius: Int,
+    customLabel: String?,
+    useM3Colors: Boolean
 ) {
     val isSmall = LocalSize.current.width < 180.dp
+    val isTall = LocalSize.current.height > 140.dp
+    val lists = allLists.take(if (isTall) 6 else 3)
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(GlanceTheme.colors.widgetBackground)
             .appWidgetBackground()
-            .cornerRadius(28.dp)
+            .cornerRadius(cornerRadius.dp)
             .clickable(openQuickAddDialogAction(targetType, targetId, targetName))
     ) {
         if (isSmall) {
@@ -123,7 +144,7 @@ private fun QuickAddWidgetContent(
             }
         } else {
             Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
-                WidgetSectionHeader("Quick add", GlanceTheme.colors.primary)
+                WidgetSectionHeader(customLabel ?: "Quick add", GlanceTheme.colors.primary)
                 Spacer(modifier = GlanceModifier.height(8.dp))
                 Box(
                     modifier = GlanceModifier
@@ -131,7 +152,8 @@ private fun QuickAddWidgetContent(
                         .height(40.dp)
                         .cornerRadius(20.dp)
                         .background(GlanceTheme.colors.surfaceVariant)
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = 14.dp)
+                        .clickable(openQuickAddDialogAction(targetType, targetId, targetName)),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Text(
@@ -140,23 +162,75 @@ private fun QuickAddWidgetContent(
                         style = TextStyle(fontSize = 14.sp, color = GlanceTheme.colors.onSurfaceVariant)
                     )
                 }
-                Spacer(modifier = GlanceModifier.height(10.dp))
-                Row(modifier = GlanceModifier.fillMaxWidth()) {
-                    lists.forEachIndexed { index, list ->
-                        if (index > 0) Spacer(modifier = GlanceModifier.width(6.dp))
-                        val color = accents.getAccent(list.color)
+                if (targetName != null) {
+                    Spacer(modifier = GlanceModifier.height(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.Vertical.CenterVertically,
+                        modifier = GlanceModifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Destination: ",
+                            style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant)
+                        )
+                        val badgeColor = if (useM3Colors) colors.primary else GlanceTheme.colors.primary.getColor(context)
                         Box(
                             modifier = GlanceModifier
-                                .cornerRadius(13.dp)
-                                .background(color.copy(alpha = 0.16f))
-                                .padding(horizontal = 10.dp, vertical = 5.dp)
-                                .clickable(openQuickAddDialogAction("list", list.id, list.name)),
+                                .cornerRadius(4.dp)
+                                .background(badgeColor.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = list.name,
-                                maxLines = 1,
-                                style = TextStyle(fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = ColorProvider(color))
+                                text = targetName,
+                                style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ColorProvider(badgeColor))
                             )
+                        }
+                    }
+                }
+                if (lists.isNotEmpty()) {
+                    Spacer(modifier = GlanceModifier.height(10.dp))
+                    if (isTall) {
+                        val chunked = lists.chunked(3)
+                        chunked.forEachIndexed { rowIndex, rowLists ->
+                            if (rowIndex > 0) Spacer(modifier = GlanceModifier.height(8.dp))
+                            Row(modifier = GlanceModifier.fillMaxWidth()) {
+                                rowLists.forEachIndexed { index, list ->
+                                    if (index > 0) Spacer(modifier = GlanceModifier.width(6.dp))
+                                    val color = if (useM3Colors) colors.primary else accents.getAccent(list.color)
+                                    Box(
+                                        modifier = GlanceModifier
+                                            .cornerRadius(13.dp)
+                                            .background(color.copy(alpha = 0.16f))
+                                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                                            .clickable(openQuickAddDialogAction("list", list.id, list.name)),
+                                    ) {
+                                        Text(
+                                            text = list.name,
+                                            maxLines = 1,
+                                            style = TextStyle(fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = ColorProvider(color))
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Row(modifier = GlanceModifier.fillMaxWidth()) {
+                            lists.forEachIndexed { index, list ->
+                                if (index > 0) Spacer(modifier = GlanceModifier.width(6.dp))
+                                val color = if (useM3Colors) colors.primary else accents.getAccent(list.color)
+                                Box(
+                                    modifier = GlanceModifier
+                                        .cornerRadius(13.dp)
+                                        .background(color.copy(alpha = 0.16f))
+                                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                                        .clickable(openQuickAddDialogAction("list", list.id, list.name)),
+                                ) {
+                                    Text(
+                                        text = list.name,
+                                        maxLines = 1,
+                                        style = TextStyle(fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = ColorProvider(color))
+                                    )
+                                }
+                            }
                         }
                     }
                 }

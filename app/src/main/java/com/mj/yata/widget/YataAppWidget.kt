@@ -16,6 +16,10 @@ import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
+import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
@@ -39,11 +43,18 @@ import java.time.LocalDate
  * definition of "today" (due today or overdue, per TodayTab.kt) rather than a narrower one. */
 class YataAppWidget : GlanceAppWidget() {
 
+    override val stateDefinition = PreferencesGlanceStateDefinition
+
     override val sizeMode = SizeMode.Responsive(
         setOf(DpSize(250.dp, 110.dp), DpSize(250.dp, 250.dp))
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
+        val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
+        val customLabel = prefs[WIDGET_LABEL_KEY]
+        val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val todayStr = LocalDate.now().toString()
         val todayTasks = repository.getTasks().first()
@@ -54,7 +65,16 @@ class YataAppWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
-                TodayWidgetContent(context, todayTasks, listsById, theme.colorScheme, theme.accents)
+                TodayWidgetContent(
+                    context = context,
+                    tasks = todayTasks,
+                    listsById = listsById,
+                    colors = theme.colorScheme,
+                    accents = theme.accents,
+                    cornerRadius = cornerRadius,
+                    customLabel = customLabel,
+                    useM3Colors = useM3Colors
+                )
             }
         }
     }
@@ -66,25 +86,26 @@ private fun TodayWidgetContent(
     tasks: List<Task>,
     listsById: Map<String, com.mj.yata.domain.model.YataList>,
     colors: androidx.compose.material3.ColorScheme,
-    accents: com.mj.yata.ui.theme.YataAccents
+    accents: com.mj.yata.ui.theme.YataAccents,
+    cornerRadius: Int,
+    customLabel: String?,
+    useM3Colors: Boolean
 ) {
-    val isLarge = LocalSize.current.height > 180.dp
     val remaining = tasks.count { !it.done }
     val progress = if (tasks.isEmpty()) 0f else tasks.count { it.done }.toFloat() / tasks.size
-    val shown = tasks.take(if (isLarge) 6 else 3)
 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(GlanceTheme.colors.widgetBackground)
             .appWidgetBackground()
-            .cornerRadius(28.dp)
+            .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
             .clickable(openAppAction())
     ) {
         Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
             Column(modifier = GlanceModifier.defaultWeight()) {
-                WidgetSectionHeader("Today", GlanceTheme.colors.primary)
+                WidgetSectionHeader(customLabel ?: "Today", GlanceTheme.colors.primary)
                 Text(
                     text = "$remaining to go",
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurface)
@@ -104,15 +125,15 @@ private fun TodayWidgetContent(
         Spacer(modifier = GlanceModifier.height(9.dp))
         WidgetDivider()
         Spacer(modifier = GlanceModifier.height(4.dp))
-        if (shown.isEmpty()) {
+        if (tasks.isEmpty()) {
             Text(
                 text = "Nothing due today.",
                 style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
             )
         } else {
-            Column(modifier = GlanceModifier.fillMaxWidth()) {
-                shown.forEach { task ->
-                    val tint = listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary
+            LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+                items(tasks) { task ->
+                    val tint = if (useM3Colors) colors.primary else (listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary)
                     WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface)
                 }
             }

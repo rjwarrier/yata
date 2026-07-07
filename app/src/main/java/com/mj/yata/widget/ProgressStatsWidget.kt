@@ -16,6 +16,8 @@ import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -40,11 +42,18 @@ import java.time.LocalDate
  * to today's tasks (due today or overdue), same definition as the Today widget/tab. */
 class ProgressStatsWidget : GlanceAppWidget() {
 
+    override val stateDefinition = PreferencesGlanceStateDefinition
+
     override val sizeMode = SizeMode.Responsive(
         setOf(DpSize(110.dp, 110.dp), DpSize(250.dp, 110.dp))
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
+        val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
+        val customLabel = prefs[WIDGET_LABEL_KEY]
+        val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val todayStr = LocalDate.now().toString()
         val todayTasks = repository.getTasks().first().filter { it.due != null && it.due!! <= todayStr }
@@ -53,7 +62,16 @@ class ProgressStatsWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
-                ProgressStatsContent(context, todayTasks, lists, theme.colorScheme, theme.accents)
+                ProgressStatsContent(
+                    context = context,
+                    tasks = todayTasks,
+                    lists = lists,
+                    colors = theme.colorScheme,
+                    accents = theme.accents,
+                    cornerRadius = cornerRadius,
+                    customLabel = customLabel,
+                    useM3Colors = useM3Colors
+                )
             }
         }
     }
@@ -65,7 +83,10 @@ private fun ProgressStatsContent(
     tasks: List<Task>,
     lists: List<YataList>,
     colors: androidx.compose.material3.ColorScheme,
-    accents: com.mj.yata.ui.theme.YataAccents
+    accents: com.mj.yata.ui.theme.YataAccents,
+    cornerRadius: Int,
+    customLabel: String?,
+    useM3Colors: Boolean
 ) {
     val isSmall = LocalSize.current.width < 180.dp
     val done = tasks.count { it.done }
@@ -77,7 +98,7 @@ private fun ProgressStatsContent(
             .fillMaxSize()
             .background(GlanceTheme.colors.widgetBackground)
             .appWidgetBackground()
-            .cornerRadius(28.dp)
+            .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
             .clickable(openAppAction())
     ) {
@@ -99,7 +120,7 @@ private fun ProgressStatsContent(
                 )
                 Spacer(modifier = GlanceModifier.height(10.dp))
                 Text(
-                    text = "$done/$total done today",
+                    text = if (!customLabel.isNullOrBlank()) customLabel else "$done/$total done today",
                     style = TextStyle(fontSize = 12.5.sp, color = GlanceTheme.colors.onSurfaceVariant)
                 )
             }
@@ -110,35 +131,41 @@ private fun ProgressStatsContent(
                 .sortedByDescending { it.second.size }
                 .take(4)
 
-            Row(modifier = GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.Vertical.CenterVertically) {
-                WidgetProgressRingImage(
-                    context = context,
-                    progress = progress,
-                    sizeDp = 64.dp,
-                    strokeDp = 7.dp,
-                    activeColor = colors.primary,
-                    trackColor = colors.surfaceContainerHighest,
-                    centerText = "${(progress * 100).toInt()}%",
-                    centerTextSizeSp = 15f
-                )
-                Spacer(modifier = GlanceModifier.width(16.dp))
-                Column(modifier = GlanceModifier.defaultWeight()) {
-                    byList.forEachIndexed { index, (list, listTasks) ->
-                        if (index > 0) Spacer(modifier = GlanceModifier.height(7.dp))
-                        val color = accents.getAccent(list.color)
-                        Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
-                            Box(modifier = GlanceModifier.size(7.dp).cornerRadius(3.5.dp).background(color)) {}
-                            Spacer(modifier = GlanceModifier.width(7.dp))
-                            Text(
-                                text = list.name,
-                                maxLines = 1,
-                                style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurface),
-                                modifier = GlanceModifier.defaultWeight()
-                            )
-                            Text(
-                                text = "${listTasks.count { it.done }}/${listTasks.size}",
-                                style = TextStyle(fontSize = 11.5.sp, color = GlanceTheme.colors.onSurfaceVariant)
-                            )
+            Column(modifier = GlanceModifier.fillMaxSize()) {
+                if (!customLabel.isNullOrBlank()) {
+                    WidgetSectionHeader(customLabel, androidx.glance.unit.ColorProvider(colors.primary))
+                    Spacer(modifier = GlanceModifier.height(8.dp))
+                }
+                Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.Vertical.CenterVertically) {
+                    WidgetProgressRingImage(
+                        context = context,
+                        progress = progress,
+                        sizeDp = 64.dp,
+                        strokeDp = 7.dp,
+                        activeColor = colors.primary,
+                        trackColor = colors.surfaceContainerHighest,
+                        centerText = "${(progress * 100).toInt()}%",
+                        centerTextSizeSp = 15f
+                    )
+                    Spacer(modifier = GlanceModifier.width(16.dp))
+                    Column(modifier = GlanceModifier.defaultWeight()) {
+                        byList.forEachIndexed { index, (list, listTasks) ->
+                            if (index > 0) Spacer(modifier = GlanceModifier.height(7.dp))
+                            val color = if (useM3Colors) colors.primary else accents.getAccent(list.color)
+                            Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
+                                Box(modifier = GlanceModifier.size(7.dp).cornerRadius(3.5.dp).background(androidx.glance.unit.ColorProvider(color))) {}
+                                Spacer(modifier = GlanceModifier.width(7.dp))
+                                Text(
+                                    text = list.name,
+                                    maxLines = 1,
+                                    style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurface),
+                                    modifier = GlanceModifier.defaultWeight()
+                                )
+                                Text(
+                                    text = "${listTasks.count { it.done }}/${listTasks.size}",
+                                    style = TextStyle(fontSize = 11.5.sp, color = GlanceTheme.colors.onSurfaceVariant)
+                                )
+                            }
                         }
                     }
                 }

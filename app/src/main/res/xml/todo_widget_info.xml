@@ -8,5 +8,7 @@
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
     android:resizeMode="horizontal|vertical"
+    android:configure="com.mj.yata.widget.WidgetCustomizerConfigActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional"
     android:description="@string/widget_today_description"
     android:widgetCategory="home_screen" />

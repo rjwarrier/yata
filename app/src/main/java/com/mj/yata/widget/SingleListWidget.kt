@@ -22,6 +22,8 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.background
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -78,6 +80,7 @@ class SingleListWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
+        android.util.Log.d("SingleListWidget", "provideGlance: id=$id, prefs=${prefs.asMap()}")
         val sourceId = prefs[SINGLE_LIST_ID_KEY]
         val sourceType = SingleWidgetSourceType.fromPref(prefs[SINGLE_SOURCE_TYPE_KEY])
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
@@ -85,18 +88,21 @@ class SingleListWidget : GlanceAppWidget() {
         var source: SingleWidgetSource? = null
         var tasks: List<Task> = emptyList()
 
+        android.util.Log.d("SingleListWidget", "provideGlance values: sourceId=$sourceId, sourceType=$sourceType")
         if (sourceId != null) {
             val allTasks = repository.getTasks().first()
             when (sourceType) {
                 SingleWidgetSourceType.PROJECT -> {
-                    val project = repository.getProjects().first().find { it.id == sourceId }
+                    val project = repository.getProjectById(sourceId).first()
+                    android.util.Log.d("SingleListWidget", "project lookup: $project")
                     if (project != null) {
                         source = SingleWidgetSource(project.name, project.color, R.drawable.ic_widget_project)
                         tasks = allTasks.filter { it.projectId == project.id }.sortedBy { it.sortOrder }
                     }
                 }
                 SingleWidgetSourceType.TAG -> {
-                    val tag = repository.getTags().first().find { it.id == sourceId }
+                    val tag = repository.getTagById(sourceId).first()
+                    android.util.Log.d("SingleListWidget", "tag lookup: $tag")
                     if (tag != null) {
                         val projects = repository.getProjects().first()
                         source = SingleWidgetSource(tag.name, tag.color, R.drawable.ic_widget_tag)
@@ -104,7 +110,8 @@ class SingleListWidget : GlanceAppWidget() {
                     }
                 }
                 SingleWidgetSourceType.LIST -> {
-                    val list = repository.getLists().first().find { it.id == sourceId }
+                    val list = repository.getListById(sourceId).first()
+                    android.util.Log.d("SingleListWidget", "list lookup: $list")
                     if (list != null) {
                         source = SingleWidgetSource(list.name, list.color, R.drawable.ic_widget_list)
                         tasks = allTasks.filter { it.listId == list.id }.sortedBy { it.sortOrder }
@@ -119,9 +126,23 @@ class SingleListWidget : GlanceAppWidget() {
         // message, giving no clue that re-adding the widget (to pick a new source) is actually needed.
         val sourceWasDeleted = sourceId != null && source == null
 
+        val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
+        val customLabel = prefs[WIDGET_LABEL_KEY]
+        val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
-                SingleListWidgetContent(context, source, sourceWasDeleted, tasks, theme.colorScheme, theme.accents)
+                SingleListWidgetContent(
+                    context = context,
+                    source = source,
+                    sourceWasDeleted = sourceWasDeleted,
+                    tasks = tasks,
+                    colors = theme.colorScheme,
+                    accents = theme.accents,
+                    cornerRadius = cornerRadius,
+                    customLabel = customLabel,
+                    useM3Colors = useM3Colors
+                )
             }
         }
     }
@@ -134,14 +155,17 @@ private fun SingleListWidgetContent(
     sourceWasDeleted: Boolean,
     tasks: List<Task>,
     colors: androidx.compose.material3.ColorScheme,
-    accents: com.mj.yata.ui.theme.YataAccents
+    accents: com.mj.yata.ui.theme.YataAccents,
+    cornerRadius: Int,
+    customLabel: String?,
+    useM3Colors: Boolean
 ) {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(GlanceTheme.colors.widgetBackground)
             .appWidgetBackground()
-            .cornerRadius(28.dp)
+            .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
             .clickable(openAppAction())
     ) {
@@ -153,10 +177,10 @@ private fun SingleListWidgetContent(
                 )
             }
         } else {
-            val color = accents.getAccent(source.colorKey)
+            val color = if (useM3Colors) colors.primary else accents.getAccent(source.colorKey)
+            val headerText = if (!customLabel.isNullOrBlank()) customLabel else source.name
             val isLarge = LocalSize.current.height > 180.dp
             val done = tasks.count { it.done }
-            val shown = tasks.take(if (isLarge) 5 else 2)
 
             Column(modifier = GlanceModifier.fillMaxSize()) {
                 Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
@@ -177,7 +201,7 @@ private fun SingleListWidgetContent(
                     Spacer(modifier = GlanceModifier.width(10.dp))
                     Column(modifier = GlanceModifier.defaultWeight()) {
                         Text(
-                            text = source.name,
+                            text = headerText,
                             maxLines = 1,
                             style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurface)
                         )
@@ -200,14 +224,14 @@ private fun SingleListWidgetContent(
                 Spacer(modifier = GlanceModifier.height(9.dp))
                 WidgetDivider()
                 Spacer(modifier = GlanceModifier.height(4.dp))
-                if (shown.isEmpty()) {
+                if (tasks.isEmpty()) {
                     Text(
                         text = "No tasks here.",
                         style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
                     )
                 } else {
-                    Column(modifier = GlanceModifier.fillMaxWidth()) {
-                        shown.forEach { task -> WidgetTaskRow(task = task, tintColor = color, onSurface = colors.onSurface) }
+                    LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+                        items(tasks) { task -> WidgetTaskRow(task = task, tintColor = color, onSurface = colors.onSurface) }
                     }
                 }
             }

@@ -23,7 +23,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -239,6 +239,19 @@ abstract class AppDatabase : RoomDatabase() {
                 // ends up with a due date that's today or overdue.
                 db.execSQL("ALTER TABLE projects ADD COLUMN excludeFromToday INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE lists ADD COLUMN excludeFromToday INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Manual drag-and-drop reorder for Projects/Lists/People, mirroring tasks.sortOrder —
+                // seed from rowid so existing rows keep their current (insertion-order) display order.
+                db.execSQL("ALTER TABLE projects ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE projects SET sortOrder = rowid")
+                db.execSQL("ALTER TABLE lists ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE lists SET sortOrder = rowid")
+                db.execSQL("ALTER TABLE people ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE people SET sortOrder = rowid")
             }
         }
     }

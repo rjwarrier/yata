@@ -348,18 +348,30 @@ fun MainScreen(
                             }
                         }
                     }
-                    items(lists, key = { "list_${it.id}" }) { list ->
-                        DrawerItem(
-                            label = list.name,
-                            icon = Icons.Default.Folder,
-                            selected = false,
-                            accentColor = accents.getAccent(list.color),
-                            modifier = Modifier.animateItemPlacement(
-                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
-                            )
-                        ) {
-                            onNavigateToListDetail(list.id)
-                            scope.launch { drawerState.close() }
+                    item(key = "lists_dnd") {
+                        val sortedLists = remember(lists) { lists.sortedBy { it.sortOrder } }
+                        var localListOrder by remember { mutableStateOf(sortedLists) }
+                        var isDraggingLists by remember { mutableStateOf(false) }
+                        LaunchedEffect(sortedLists) {
+                            if (!isDraggingLists) localListOrder = sortedLists
+                        }
+                        com.mj.yata.ui.widgets.DragDropReorderableColumn(
+                            items = localListOrder,
+                            key = { it.id },
+                            onMove = { from, to -> localListOrder = localListOrder.toMutableList().apply { add(to, removeAt(from)) } },
+                            onDragEnd = { viewModel.commitListOrder(localListOrder) },
+                            onDragStateChanged = { isDraggingLists = it },
+                            userScrollEnabled = false
+                        ) { list ->
+                            DrawerItem(
+                                label = list.name,
+                                icon = Icons.Default.Folder,
+                                selected = false,
+                                accentColor = accents.getAccent(list.color)
+                            ) {
+                                onNavigateToListDetail(list.id)
+                                scope.launch { drawerState.close() }
+                            }
                         }
                     }
 
@@ -508,6 +520,7 @@ fun MainScreen(
                             onProjectClick = onNavigateToProjectDetail,
                             onNewProjectClick = { activeSheet = MainSheetType.NewProject },
                             onToggleProjectStar = { viewModel.toggleProjectStarred(it) },
+                            onProjectsReordered = { viewModel.commitProjectOrder(it) },
                             peopleEnabled = peopleFeatureEnabled
                         )
                         2 -> PeopleTab(
@@ -527,7 +540,8 @@ fun MainScreen(
                                 viewModel.setPeopleGroup(personIds, id)
                             },
                             onToggleStar = { viewModel.togglePersonStarred(it) },
-                            onDeleteGroup = { viewModel.deletePersonGroup(it) }
+                            onDeleteGroup = { viewModel.deletePersonGroup(it) },
+                            onPeopleReordered = { viewModel.commitPersonOrder(it) }
                         )
                         3 -> TagsTab(
                             tags = tags,

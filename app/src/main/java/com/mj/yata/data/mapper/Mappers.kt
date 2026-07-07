@@ -88,8 +88,8 @@ fun Subtask.toEntity(taskId: String) = SubtaskEntity(
 fun TaskCommentEntity.toDomain() = TaskComment(id, taskId, body, createdAt, authorId)
 fun TaskComment.toEntity() = TaskCommentEntity(id, taskId, body, createdAt, authorId)
 
-fun PersonEntity.toDomain() = Person(id, name, initials, color, photoUri, isMe, groupId, starred)
-fun Person.toEntity() = PersonEntity(id, name, initials, color, photoUri, isMe, groupId, starred)
+fun PersonEntity.toDomain() = Person(id, name, initials, color, photoUri, isMe, groupId, starred, sortOrder)
+fun Person.toEntity() = PersonEntity(id, name, initials, color, photoUri, isMe, groupId, starred, sortOrder)
 
 fun PersonGroupEntity.toDomain() = PersonGroup(id, name, color)
 fun PersonGroup.toEntity() = PersonGroupEntity(id, name, color)
@@ -104,7 +104,8 @@ fun ProjectEntity.toDomain() = Project(
     commonTagIds = if (commonTagIds.isEmpty()) emptyList() else commonTagIds.split(","),
     defaultReminder = defaultReminder,
     description = description,
-    excludeFromToday = excludeFromToday
+    excludeFromToday = excludeFromToday,
+    sortOrder = sortOrder
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
@@ -116,11 +117,12 @@ fun Project.toEntity() = ProjectEntity(
     commonTagIds = commonTagIds.joinToString(","),
     defaultReminder = defaultReminder,
     description = description,
-    excludeFromToday = excludeFromToday
+    excludeFromToday = excludeFromToday,
+    sortOrder = sortOrder
 )
 
-fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday)
-fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday)
+fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder)
+fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday, sortOrder)
 
 fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault)
 fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault)

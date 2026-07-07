@@ -25,5 +25,6 @@ data class PersonEntity(
     val photoUri: String? = null,
     val isMe: Boolean = false,
     val groupId: String? = null,
-    val starred: Boolean = false
+    val starred: Boolean = false,
+    val sortOrder: Int = 0
 )

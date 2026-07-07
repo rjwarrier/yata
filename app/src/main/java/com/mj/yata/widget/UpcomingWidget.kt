@@ -16,6 +16,10 @@ import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
+import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -41,11 +45,18 @@ import java.time.format.DateTimeFormatter
  * next few days that actually have tasks, using real `task.due` dates). */
 class UpcomingWidget : GlanceAppWidget() {
 
+    override val stateDefinition = PreferencesGlanceStateDefinition
+
     override val sizeMode = SizeMode.Responsive(
         setOf(DpSize(250.dp, 110.dp), DpSize(250.dp, 250.dp))
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
+        val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
+        val customLabel = prefs[WIDGET_LABEL_KEY]
+        val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val allTasks = repository.getTasks().first()
         val lists = repository.getLists().first()
@@ -53,7 +64,15 @@ class UpcomingWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
-                UpcomingWidgetContent(allTasks, lists, theme.colorScheme, theme.accents)
+                UpcomingWidgetContent(
+                    allTasks = allTasks,
+                    lists = lists,
+                    colors = theme.colorScheme,
+                    accents = theme.accents,
+                    cornerRadius = cornerRadius,
+                    customLabel = customLabel,
+                    useM3Colors = useM3Colors
+                )
             }
         }
     }
@@ -66,7 +85,10 @@ private fun UpcomingWidgetContent(
     allTasks: List<Task>,
     lists: List<YataList>,
     colors: androidx.compose.material3.ColorScheme,
-    accents: com.mj.yata.ui.theme.YataAccents
+    accents: com.mj.yata.ui.theme.YataAccents,
+    cornerRadius: Int,
+    customLabel: String?,
+    useM3Colors: Boolean
 ) {
     val isLarge = LocalSize.current.height > 180.dp
     val listsById = lists.associateBy { it.id }
@@ -78,33 +100,36 @@ private fun UpcomingWidgetContent(
             .fillMaxSize()
             .background(GlanceTheme.colors.widgetBackground)
             .appWidgetBackground()
-            .cornerRadius(28.dp)
+            .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
             .clickable(openAppAction())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
-            WidgetSectionHeader("Upcoming", GlanceTheme.colors.tertiary)
+            WidgetSectionHeader(customLabel ?: "Upcoming", GlanceTheme.colors.tertiary)
             Spacer(modifier = GlanceModifier.height(8.dp))
 
             if (isLarge) {
                 val days = upcomingAgendaDays(allTasks, today)
-                Column(modifier = GlanceModifier.fillMaxWidth()) {
-                    days.forEachIndexed { index, day ->
-                        if (index > 0) Spacer(modifier = GlanceModifier.height(8.dp))
-                        Text(
-                            text = day.label.uppercase(),
-                            style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.tertiary)
-                        )
-                        day.tasks.take(3).forEach { task ->
-                            val tint = listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary
-                            WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface)
+                if (days.isEmpty()) {
+                    Text(
+                        text = "Nothing coming up.",
+                        style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
+                    )
+                } else {
+                    LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+                        days.forEachIndexed { index, day ->
+                            item {
+                                if (index > 0) Spacer(modifier = GlanceModifier.height(8.dp))
+                                Text(
+                                    text = day.label.uppercase(),
+                                    style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.tertiary)
+                                )
+                            }
+                            items(day.tasks) { task ->
+                                val tint = if (useM3Colors) colors.primary else (listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary)
+                                WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface)
+                            }
                         }
-                    }
-                    if (days.isEmpty()) {
-                        Text(
-                            text = "Nothing coming up.",
-                            style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
-                        )
                     }
                 }
             } else {
@@ -116,9 +141,9 @@ private fun UpcomingWidgetContent(
                     modifier = GlanceModifier.fillMaxSize(),
                     verticalAlignment = Alignment.Vertical.CenterVertically
                 ) {
-                    AgendaSummaryRow("Today", todayTasks, listsById, accents)
+                    AgendaSummaryRow("Today", todayTasks, listsById, accents, useM3Colors, colors.primary)
                     Spacer(modifier = GlanceModifier.height(10.dp))
-                    AgendaSummaryRow("Tomorrow", tomorrowTasks, listsById, accents)
+                    AgendaSummaryRow("Tomorrow", tomorrowTasks, listsById, accents, useM3Colors, colors.primary)
                 }
             }
         }
@@ -130,14 +155,20 @@ private fun AgendaSummaryRow(
     label: String,
     tasks: List<Task>,
     listsById: Map<String, YataList>,
-    accents: com.mj.yata.ui.theme.YataAccents
+    accents: com.mj.yata.ui.theme.YataAccents,
+    useM3Colors: Boolean,
+    m3Color: androidx.compose.ui.graphics.Color
 ) {
-    val dotColors = tasks.mapNotNull { listsById[it.listId]?.color }.distinct().take(2)
+    val dotColors = if (useM3Colors) {
+        if (tasks.isNotEmpty()) listOf(m3Color) else emptyList()
+    } else {
+        tasks.mapNotNull { listsById[it.listId]?.color }.distinct().take(2).map { accents.getAccent(it) }
+    }
     Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
         Row {
-            dotColors.forEachIndexed { index, colorKey ->
+            dotColors.forEachIndexed { index, color ->
                 if (index > 0) Spacer(modifier = GlanceModifier.width(3.dp))
-                Box(modifier = GlanceModifier.size(7.dp).cornerRadius(3.5.dp).background(accents.getAccent(colorKey))) {}
+                Box(modifier = GlanceModifier.size(7.dp).cornerRadius(3.5.dp).background(androidx.glance.unit.ColorProvider(color))) {}
             }
         }
         if (dotColors.isNotEmpty()) Spacer(modifier = GlanceModifier.width(10.dp))

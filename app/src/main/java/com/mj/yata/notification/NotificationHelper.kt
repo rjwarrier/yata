@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.mj.yata.MainActivity
+import com.mj.yata.R
 
 object NotificationHelper {
     const val REMINDER_CHANNEL_ID = "task_reminders_channel"
@@ -63,7 +64,8 @@ object NotificationHelper {
         return NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
             .setContentTitle("Reminder: $taskTitle")
             .setContentText("This task is due")
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setColor(0xFF8E4A3B.toInt())
             .setContentIntent(openIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

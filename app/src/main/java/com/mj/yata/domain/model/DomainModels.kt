@@ -8,7 +8,8 @@ data class Person(
     val photoUri: String? = null,
     val isMe: Boolean = false,
     val groupId: String? = null,
-    val starred: Boolean = false
+    val starred: Boolean = false,
+    val sortOrder: Int = 0 // manual drag-and-drop order within the person's group in the People tab
 )
 
 data class PersonGroup(
@@ -27,7 +28,8 @@ data class Project(
     val commonTagIds: List<String> = emptyList(), // live-applied to every task in this project
     val defaultReminder: String? = null, // pre-fills NewTaskSheet's reminder for tasks in this project
     val description: String? = null, // max 100 chars, enforced in ProjectEditorSheet
-    val excludeFromToday: Boolean = false // tasks here never show in Today, regardless of due date
+    val excludeFromToday: Boolean = false, // tasks here never show in Today, regardless of due date
+    val sortOrder: Int = 0 // manual drag-and-drop order in the Projects tab
 )
 
 data class YataList(
@@ -36,7 +38,8 @@ data class YataList(
     val color: String, // accentA - accentP
     val icon: String,
     val starred: Boolean = false,
-    val excludeFromToday: Boolean = false // tasks here never show in Today, regardless of due date
+    val excludeFromToday: Boolean = false, // tasks here never show in Today, regardless of due date
+    val sortOrder: Int = 0 // manual drag-and-drop order in the nav drawer's Lists section
 )
 
 data class Tag(

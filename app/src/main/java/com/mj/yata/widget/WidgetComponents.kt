@@ -1,5 +1,9 @@
 package com.mj.yata.widget
 
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
+
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -43,6 +47,10 @@ val listIdKey = ActionParameters.Key<String>("list_id")
 val quickAddTargetTypeKey = ActionParameters.Key<String>("target_type")
 val quickAddTargetIdKey = ActionParameters.Key<String>("target_id")
 val quickAddTargetNameKey = ActionParameters.Key<String>("target_name")
+
+val WIDGET_CORNER_RADIUS_KEY = intPreferencesKey("widget_corner_radius")
+val WIDGET_LABEL_KEY = stringPreferencesKey("widget_label")
+val WIDGET_USE_M3_COLORS_KEY = booleanPreferencesKey("widget_use_m3_colors")
 
 /** Plain "open the app" tap target — for widget background/whitespace areas that aren't a more
  * specific row or button (those have their own actions, which win over this one). */

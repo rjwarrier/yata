@@ -236,6 +236,40 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /** Persists a drag-and-drop reorder of the whole Projects tab (a single flat list). */
+    fun commitProjectOrder(orderedProjects: List<Project>) {
+        viewModelScope.launch {
+            orderedProjects.forEachIndexed { index, project ->
+                if (project.sortOrder != index) {
+                    repository.upsertProject(project.copy(sortOrder = index))
+                }
+            }
+        }
+    }
+
+    /** Persists a drag-and-drop reorder of the nav drawer's Lists section (a single flat list). */
+    fun commitListOrder(orderedLists: List<YataList>) {
+        viewModelScope.launch {
+            orderedLists.forEachIndexed { index, list ->
+                if (list.sortOrder != index) {
+                    repository.upsertList(list.copy(sortOrder = index))
+                }
+            }
+        }
+    }
+
+    /** Persists a drag-and-drop reorder of one group's (or "Ungrouped") people in the People tab —
+     * sortOrder is reassigned 0..n within that group only, other groups are never touched. */
+    fun commitPersonOrder(orderedPeople: List<Person>) {
+        viewModelScope.launch {
+            orderedPeople.forEachIndexed { index, person ->
+                if (person.sortOrder != index) {
+                    repository.upsertPerson(person.copy(sortOrder = index))
+                }
+            }
+        }
+    }
+
     /** Moves a task to a different list/project (drag-to-edge cross-container move), appended to the end. */
     fun moveTaskToList(taskId: String, targetListId: String?, targetProjectId: String? = null) {
         viewModelScope.launch {
