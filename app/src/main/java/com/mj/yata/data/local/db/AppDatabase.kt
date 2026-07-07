@@ -23,7 +23,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -229,6 +229,16 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("DROP TABLE `tags`")
                 db.execSQL("ALTER TABLE `tags_new` RENAME TO `tags`")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_tags_groupId` ON `tags` (`groupId`)")
+            }
+        }
+
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // "Exclude from Today" — a project/list of tasks meant for later (a backlog with
+                // no fixed date yet) that should never leak into Today even if a task inside it
+                // ends up with a due date that's today or overdue.
+                db.execSQL("ALTER TABLE projects ADD COLUMN excludeFromToday INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE lists ADD COLUMN excludeFromToday INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

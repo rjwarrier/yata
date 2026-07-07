@@ -27,6 +27,7 @@ import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.TaskRow
+import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,8 +77,9 @@ fun TagDetailScreen(
     val openTasks = allTaggedTasks.size - doneTasks
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
-    val taggedTasks = remember(allTaggedTasks, hideCompleted) {
-        if (hideCompleted) allTaggedTasks.filter { !it.done } else allTaggedTasks
+    val pendingTaggedTasks = remember(allTaggedTasks) { allTaggedTasks.filter { !it.done } }
+    val completedTaggedTasks = remember(allTaggedTasks, hideCompleted) {
+        if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done }
     }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
@@ -185,8 +187,8 @@ fun TagDetailScreen(
                 }
             }
 
-            // 2. Tasks list
-            if (taggedTasks.isEmpty()) {
+            // 2. Tasks list — split into Pending/Completed; headers vanish while hiding completed.
+            if (pendingTaggedTasks.isEmpty() && completedTaggedTasks.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -202,7 +204,8 @@ fun TagDetailScreen(
                     }
                 }
             } else {
-                items(taggedTasks, key = { it.id }) { task ->
+                @Composable
+                fun taskRowFor(task: Task) {
                     val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                     val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                         if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
@@ -218,6 +221,15 @@ fun TagDetailScreen(
                         onTaskClick = { onNavigateToTaskDetail(task.id) },
                         onCommentClick = { pendingCommentTask = task }
                     )
+                }
+
+                if (!hideCompleted && pendingTaggedTasks.isNotEmpty()) {
+                    item(key = "pending_header") { TaskSectionHeader("PENDING", pendingTaggedTasks.size) }
+                }
+                items(pendingTaggedTasks, key = { it.id }) { task -> taskRowFor(task) }
+                if (!hideCompleted && completedTaggedTasks.isNotEmpty()) {
+                    item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedTaggedTasks.size) }
+                    items(completedTaggedTasks, key = { it.id }) { task -> taskRowFor(task) }
                 }
             }
         }

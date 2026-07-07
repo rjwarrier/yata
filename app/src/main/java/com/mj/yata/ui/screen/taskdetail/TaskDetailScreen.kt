@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -339,6 +340,29 @@ fun TaskDetailScreen(
                         accentColor = MaterialTheme.colorScheme.primary,
                         onClick = { activeSheet = DetailSheetType.ScheduleEditor }
                     )
+
+                    // Carry forward — only makes sense for an open task that's already due
+                    // today or overdue, not one that's done or scheduled for the future.
+                    val canCarryForward = !task.done && task.due != null &&
+                        task.due <= java.time.LocalDate.now().toString()
+                    if (canCarryForward) {
+                        YataSelectChip(
+                            label = "Carry forward to next day",
+                            selected = true,
+                            onClick = {
+                                viewModel.upsertTask(task.copy(due = java.time.LocalDate.now().plusDays(1).toString()))
+                            },
+                            tint = MaterialTheme.colorScheme.primary,
+                            leading = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            },
+                            showCheck = false
+                        )
+                    }
 
                     MetaRowItem(
                         icon = Icons.Default.Notifications,

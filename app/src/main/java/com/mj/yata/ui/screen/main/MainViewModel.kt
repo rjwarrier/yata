@@ -374,7 +374,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null) {
+    fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false) {
         viewModelScope.launch {
             val pid = "pr_" + UUID.randomUUID().toString()
             val project = Project(
@@ -385,7 +385,8 @@ class MainViewModel @Inject constructor(
                 due = due,
                 commonTagIds = commonTagIds,
                 defaultReminder = defaultReminder,
-                description = description
+                description = description,
+                excludeFromToday = excludeFromToday
             )
             repository.upsertProject(project)
         }
@@ -527,13 +528,14 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun addList(name: String, color: String, icon: String) {
+    fun addList(name: String, color: String, icon: String, excludeFromToday: Boolean = false) {
         viewModelScope.launch {
             val yataList = YataList(
                 id = "l_" + UUID.randomUUID().toString(),
                 name = name,
                 color = color,
-                icon = icon
+                icon = icon,
+                excludeFromToday = excludeFromToday
             )
             repository.upsertList(yataList)
         }

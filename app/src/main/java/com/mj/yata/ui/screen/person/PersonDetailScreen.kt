@@ -207,7 +207,7 @@ fun PersonDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Open Tasks",
+                            text = "Pending",
                             style = MaterialTheme.typography.titleMedium
                         )
                         Surface(

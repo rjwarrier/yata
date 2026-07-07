@@ -29,8 +29,8 @@
     <string name="widget_quick_add_description">Add a task without opening the app.</string>
     <string name="widget_progress_label">YATA: Progress</string>
     <string name="widget_progress_description">Today\'s completion ring, overall or broken down by list.</string>
-    <string name="widget_single_list_label">YATA: List</string>
-    <string name="widget_single_list_description">Pin one list to your home screen — pick which when you add it.</string>
+    <string name="widget_single_list_label">YATA: List/Project/Tag</string>
+    <string name="widget_single_list_description">Pin one list, project, or tag to your home screen — pick which when you add it.</string>
     <string name="widget_upcoming_label">YATA: Upcoming</string>
     <string name="widget_upcoming_description">What\'s due today, tomorrow, and beyond.</string>
 </resources>

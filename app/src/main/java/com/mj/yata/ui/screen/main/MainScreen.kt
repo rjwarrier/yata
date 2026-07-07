@@ -559,8 +559,8 @@ fun MainScreen(
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
                         tags = tags,
-                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description ->
-                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description)
+                        onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday ->
+                            viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday)
                             activeSheet = MainSheetType.None
                         },
                         onDismiss = { activeSheet = MainSheetType.None }
@@ -605,8 +605,8 @@ fun MainScreen(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             ListEditorSheet(
-                onSave = { name, color, icon ->
-                    viewModel.addList(name, color, icon = icon)
+                onSave = { name, color, icon, excludeFromToday ->
+                    viewModel.addList(name, color, icon = icon, excludeFromToday = excludeFromToday)
                     isNewListSheetOpen = false
                 },
                 onDismiss = { isNewListSheetOpen = false }

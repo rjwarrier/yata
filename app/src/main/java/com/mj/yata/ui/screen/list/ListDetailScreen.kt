@@ -2,6 +2,7 @@ package com.mj.yata.ui.screen.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,6 +30,7 @@ import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
 import com.mj.yata.ui.widgets.TaskRow
+import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,16 +71,19 @@ fun ListDetailScreen(
     val listTasks = remember(tasks, list.id) { tasks.filter { it.listId == list.id }.sortedBy { it.sortOrder } }
     val doneTasks = listTasks.count { it.done }
     val openTasks = listTasks.size - doneTasks
-    val visibleListTasks = remember(listTasks, hideCompleted) {
-        if (hideCompleted) listTasks.filter { !it.done } else listTasks
+    // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
+    // list. Hiding completed drops both the tasks and the section headers entirely.
+    val pendingListTasks = remember(listTasks) { listTasks.filter { !it.done } }
+    val completedListTasks = remember(listTasks, hideCompleted) {
+        if (hideCompleted) emptyList() else listTasks.filter { it.done }
     }
 
-    // Not keyed on visibleListTasks — see ProjectDetailScreen for why: any task write anywhere
+    // Not keyed on pendingListTasks — see ProjectDetailScreen for why: any task write anywhere
     // in the app used to reset this mid-drag and discard/corrupt the in-progress reorder.
-    var localOrder by remember { mutableStateOf(visibleListTasks) }
+    var localOrder by remember { mutableStateOf(pendingListTasks) }
     var isDraggingTasks by remember { mutableStateOf(false) }
-    LaunchedEffect(visibleListTasks) {
-        if (!isDraggingTasks) localOrder = visibleListTasks
+    LaunchedEffect(pendingListTasks) {
+        if (!isDraggingTasks) localOrder = pendingListTasks
     }
     var pendingMoveTask by remember { mutableStateOf<Task?>(null) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
@@ -216,9 +221,9 @@ fun ListDetailScreen(
                 )
             }
 
-            // 2. Tasks list — long-press to drag-reorder within this list, or drag to the
-            // top/bottom edge and hold to move the task into a different list/project.
-            if (visibleListTasks.isEmpty()) {
+            // 2. Tasks list — Pending (drag-to-reorder, or drag to the top/bottom edge to move
+            // to another list/project) above a static Completed section.
+            if (pendingListTasks.isEmpty() && completedListTasks.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -232,17 +237,8 @@ fun ListDetailScreen(
                     )
                 }
             } else {
-                DragDropReorderableColumn(
-                    items = localOrder,
-                    key = { it.id },
-                    onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
-                    onDragEnd = { viewModel.commitTaskOrder(localOrder) },
-                    onDragToTopEdge = { task -> pendingMoveTask = task },
-                    onDragToBottomEdge = { task -> pendingMoveTask = task },
-                    onDragStateChanged = { isDraggingTasks = it },
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(bottom = 88.dp)
-                ) { task ->
+                @Composable
+                fun taskRowFor(task: Task) {
                     val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                         if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                     }
@@ -261,6 +257,31 @@ fun ListDetailScreen(
                         onCommentClick = { pendingCommentTask = task }
                     )
                 }
+
+                val showPendingHeader = !hideCompleted && pendingListTasks.isNotEmpty()
+                DragDropReorderableColumn(
+                    items = localOrder,
+                    key = { it.id },
+                    onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
+                    onDragEnd = { viewModel.commitTaskOrder(localOrder) },
+                    onDragToTopEdge = { task -> pendingMoveTask = task },
+                    onDragToBottomEdge = { task -> pendingMoveTask = task },
+                    onDragStateChanged = { isDraggingTasks = it },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 88.dp),
+                    headerItemCount = if (showPendingHeader) 1 else 0,
+                    header = {
+                        if (showPendingHeader) {
+                            item(key = "pending_header") { TaskSectionHeader("PENDING", pendingListTasks.size) }
+                        }
+                    },
+                    footer = {
+                        if (!hideCompleted && completedListTasks.isNotEmpty()) {
+                            item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedListTasks.size) }
+                            items(completedListTasks, key = { it.id }) { task -> taskRowFor(task) }
+                        }
+                    }
+                ) { task -> taskRowFor(task) }
             }
         }
     }
@@ -339,8 +360,9 @@ fun ListDetailScreen(
                 initialName = list.name,
                 initialColor = list.color,
                 initialIcon = list.icon,
-                onSave = { newName, newColor, newIcon ->
-                    viewModel.upsertList(list.copy(name = newName, color = newColor, icon = newIcon))
+                initialExcludeFromToday = list.excludeFromToday,
+                onSave = { newName, newColor, newIcon, newExcludeFromToday ->
+                    viewModel.upsertList(list.copy(name = newName, color = newColor, icon = newIcon, excludeFromToday = newExcludeFromToday))
                     isEditSheetOpen = false
                 },
                 onDismiss = { isEditSheetOpen = false }

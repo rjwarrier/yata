@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -33,6 +34,7 @@ import com.mj.yata.ui.widgets.AssigneeStack
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.TaskRow
+import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -73,18 +75,22 @@ fun ProjectDetailScreen(
         projectColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
     val projectTasks = remember(tasks, project.id) { tasks.filter { it.projectId == project.id }.sortedBy { it.sortOrder } }
-    val visibleProjectTasks = remember(projectTasks, hideCompleted) {
-        if (hideCompleted) projectTasks.filter { !it.done } else projectTasks
+    // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
+    // list — only Pending supports drag-reorder, Completed just renders below it with its own
+    // header. Hiding completed drops both the tasks and the section headers entirely.
+    val pendingProjectTasks = remember(projectTasks) { projectTasks.filter { !it.done } }
+    val completedProjectTasks = remember(projectTasks, hideCompleted) {
+        if (hideCompleted) emptyList() else projectTasks.filter { it.done }
     }
 
-    // Not keyed on visibleProjectTasks — any task write anywhere in the app (a reminder firing,
+    // Not keyed on pendingProjectTasks — any task write anywhere in the app (a reminder firing,
     // a recurring task rolling over) produces a new `tasks` list instance, which used to reset
     // this mid-drag and silently discard/corrupt the in-progress reorder. A LaunchedEffect
     // re-syncs from the source of truth on real changes, but skips doing so while dragging.
-    var localOrder by remember { mutableStateOf(visibleProjectTasks) }
+    var localOrder by remember { mutableStateOf(pendingProjectTasks) }
     var isDraggingTasks by remember { mutableStateOf(false) }
-    LaunchedEffect(visibleProjectTasks) {
-        if (!isDraggingTasks) localOrder = visibleProjectTasks
+    LaunchedEffect(pendingProjectTasks) {
+        if (!isDraggingTasks) localOrder = pendingProjectTasks
     }
     var pendingMoveTask by remember { mutableStateOf<Task?>(null) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
@@ -250,9 +256,9 @@ fun ProjectDetailScreen(
                 }
             }
 
-            // 2. Flat task list — long-press to drag-reorder, or drag to the top/bottom
-            // edge and hold to move the task into a different list/project.
-            if (visibleProjectTasks.isEmpty()) {
+            // 2. Task list — Pending (drag-to-reorder, or drag to the top/bottom edge to move to
+            // another list/project) above a static Completed section.
+            if (pendingProjectTasks.isEmpty() && completedProjectTasks.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -266,17 +272,8 @@ fun ProjectDetailScreen(
                     )
                 }
             } else {
-                DragDropReorderableColumn(
-                    items = localOrder,
-                    key = { it.id },
-                    onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
-                    onDragEnd = { viewModel.commitTaskOrder(localOrder) },
-                    onDragToTopEdge = { task -> pendingMoveTask = task },
-                    onDragToBottomEdge = { task -> pendingMoveTask = task },
-                    onDragStateChanged = { isDraggingTasks = it },
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(bottom = 88.dp)
-                ) { task ->
+                @Composable
+                fun taskRowFor(task: Task) {
                     val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                     val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                         if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
@@ -295,6 +292,31 @@ fun ProjectDetailScreen(
                         onCommentClick = { pendingCommentTask = task }
                     )
                 }
+
+                val showPendingHeader = !hideCompleted && pendingProjectTasks.isNotEmpty()
+                DragDropReorderableColumn(
+                    items = localOrder,
+                    key = { it.id },
+                    onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
+                    onDragEnd = { viewModel.commitTaskOrder(localOrder) },
+                    onDragToTopEdge = { task -> pendingMoveTask = task },
+                    onDragToBottomEdge = { task -> pendingMoveTask = task },
+                    onDragStateChanged = { isDraggingTasks = it },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 88.dp),
+                    headerItemCount = if (showPendingHeader) 1 else 0,
+                    header = {
+                        if (showPendingHeader) {
+                            item(key = "pending_header") { TaskSectionHeader("PENDING", pendingProjectTasks.size) }
+                        }
+                    },
+                    footer = {
+                        if (!hideCompleted && completedProjectTasks.isNotEmpty()) {
+                            item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedProjectTasks.size) }
+                            items(completedProjectTasks, key = { it.id }) { task -> taskRowFor(task) }
+                        }
+                    }
+                ) { task -> taskRowFor(task) }
             }
         }
     }
@@ -377,9 +399,10 @@ fun ProjectDetailScreen(
                 initialCommonTagIds = project.commonTagIds,
                 initialDefaultReminder = project.defaultReminder,
                 initialDescription = project.description,
+                initialExcludeFromToday = project.excludeFromToday,
                 tags = tags,
-                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription ->
-                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription))
+                onSave = { newName, newColor, newIcon, newDue, newCommonTagIds, newDefaultReminder, newDescription, newExcludeFromToday ->
+                    viewModel.upsertProject(project.copy(name = newName, color = newColor, icon = newIcon, due = newDue, commonTagIds = newCommonTagIds, defaultReminder = newDefaultReminder, description = newDescription, excludeFromToday = newExcludeFromToday))
                     isEditSheetOpen = false
                 },
                 onDismiss = { isEditSheetOpen = false }

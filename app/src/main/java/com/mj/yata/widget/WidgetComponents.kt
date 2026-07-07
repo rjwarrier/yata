@@ -40,6 +40,9 @@ val taskIdKey = ActionParameters.Key<String>("task_id")
 val navigateToKey = ActionParameters.Key<String>("navigate_to")
 val shortcutActionKey = ActionParameters.Key<String>("shortcut_action")
 val listIdKey = ActionParameters.Key<String>("list_id")
+val quickAddTargetTypeKey = ActionParameters.Key<String>("target_type")
+val quickAddTargetIdKey = ActionParameters.Key<String>("target_id")
+val quickAddTargetNameKey = ActionParameters.Key<String>("target_name")
 
 /** Plain "open the app" tap target — for widget background/whitespace areas that aren't a more
  * specific row or button (those have their own actions, which win over this one). */
@@ -61,6 +64,18 @@ fun openQuickAddAction(listId: String? = null): Action = actionStartActivity<Mai
         actionParametersOf(shortcutActionKey to "quick_add")
     }
 )
+
+/** Opens the lightweight overlay dialog (not the full app) to add a task straight into
+ * [targetType]/[targetId] ("list"/"project", or null for no preset) — used by the Quick Add
+ * widget so a one-off task doesn't require launching the whole app window. */
+fun openQuickAddDialogAction(targetType: String?, targetId: String?, targetName: String?): Action =
+    actionStartActivity<QuickAddDialogActivity>(
+        actionParametersOf(
+            quickAddTargetTypeKey to (targetType ?: ""),
+            quickAddTargetIdKey to (targetId ?: ""),
+            quickAddTargetNameKey to (targetName ?: "")
+        )
+    )
 
 /** Compact task row shared by the Today / Single-list / Upcoming widgets: a round checkbox that
  * toggles done in place (no app launch), and a title+time area that deep-links to the task.

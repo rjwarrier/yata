@@ -137,8 +137,9 @@ fun ProjectEditorSheet(
     initialCommonTagIds: List<String> = emptyList(),
     initialDefaultReminder: String? = null,
     initialDescription: String? = null,
+    initialExcludeFromToday: Boolean = false,
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
-    onSave: (String, String, String, String?, List<String>, String?, String?) -> Unit,
+    onSave: (String, String, String, String?, List<String>, String?, String?, Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -149,6 +150,7 @@ fun ProjectEditorSheet(
     var showDatePicker by remember { mutableStateOf(false) }
     var defaultReminder by remember { mutableStateOf(initialDefaultReminder) }
     var description by remember { mutableStateOf(initialDescription ?: "") }
+    var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
     val descriptionLimit = 100
 
@@ -189,30 +191,25 @@ fun ProjectEditorSheet(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "Project color",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            ColorPicker(
-                selectedColorKey = selectedColor,
-                onColorSelected = { selectedColor = it }
-            )
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "Project icon",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            com.mj.yata.ui.widgets.IconPicker(
-                options = com.mj.yata.ui.widgets.FOLDER_ICON_KEYS,
-                selectedIconKey = selectedIcon,
-                accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
-                onIconSelected = { selectedIcon = it }
-            )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { excludeFromToday = !excludeFromToday },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Exclude from Today",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                )
+                Text(
+                    text = "Tasks here never show on the Today screen, even if overdue — for a backlog you'll schedule later.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
         }
 
         // Project Due Date Picker Row
@@ -314,6 +311,32 @@ fun ProjectEditorSheet(
             }
         }
 
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Project color",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            ColorPicker(
+                selectedColorKey = selectedColor,
+                onColorSelected = { selectedColor = it }
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Project icon",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            com.mj.yata.ui.widgets.IconPicker(
+                options = com.mj.yata.ui.widgets.FOLDER_ICON_KEYS,
+                selectedIconKey = selectedIcon,
+                accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
+                onIconSelected = { selectedIcon = it }
+            )
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -324,7 +347,7 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }) },
+                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday) },
                 enabled = name.isNotBlank()
             ) {
                 Text(buttonText)
@@ -683,13 +706,15 @@ fun ListEditorSheet(
     initialName: String = "",
     initialColor: String = "accentA",
     initialIcon: String = "folder",
-    onSave: (String, String, String) -> Unit,
+    initialExcludeFromToday: Boolean = false,
+    onSave: (String, String, String, Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf(initialName) }
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedIcon by remember { mutableStateOf(initialIcon) }
+    var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
 
     Column(
         modifier = modifier
@@ -745,6 +770,27 @@ fun ListEditorSheet(
         }
 
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { excludeFromToday = !excludeFromToday },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Exclude from Today",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                )
+                Text(
+                    text = "Tasks here never show on the Today screen, even if overdue — for a backlog you'll schedule later.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
+        }
+
+        Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
@@ -754,7 +800,7 @@ fun ListEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon) },
+                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, excludeFromToday) },
                 enabled = name.isNotBlank()
             ) {
                 Text(buttonText)

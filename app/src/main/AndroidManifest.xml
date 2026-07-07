@@ -96,6 +96,19 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/quick_add_widget_info" />
         </receiver>
+        <activity
+            android:name=".widget.QuickAddWidgetConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".widget.QuickAddDialogActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Yata.Transparent"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
 
         <!-- Home-screen widget: progress / stats -->
         <receiver

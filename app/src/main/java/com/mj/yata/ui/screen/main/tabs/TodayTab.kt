@@ -5,12 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +29,7 @@ import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.TaskRow
+import com.mj.yata.ui.widgets.TaskSectionHeader
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -62,15 +66,24 @@ fun TodayTab(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+    var hideCompleted by remember { mutableStateOf(false) }
 
     val todayStr = remember { LocalDate.now().toString() }
     val todayDateLabel = remember {
         LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")).uppercase()
     }
 
+    // Projects/lists marked "Exclude from Today" hide their tasks from this screen entirely,
+    // even if a task inside ends up overdue — meant for a backlog with no fixed date yet.
+    val excludedProjectIds = remember(projects) { projects.filter { it.excludeFromToday }.map { it.id }.toSet() }
+    val excludedListIds = remember(lists) { lists.filter { it.excludeFromToday }.map { it.id }.toSet() }
+
     // Filter tasks due today (or overdue)
-    val todayTasks = remember(tasks, todayStr) {
-        tasks.filter { it.due != null && it.due <= todayStr }
+    val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds) {
+        tasks.filter {
+            it.due != null && it.due <= todayStr &&
+                it.projectId !in excludedProjectIds && it.listId !in excludedListIds
+        }
     }
 
     // State for filter chips
@@ -94,22 +107,12 @@ fun TodayTab(
     val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
     val remainingCount = totalCount - doneCount
 
-    val groupedTasks = remember(filteredTasks) {
-        filteredTasks.groupBy { it.section ?: "Afternoon" }
-    }
-    
-    val sortedSections = remember(groupedTasks) {
-        groupedTasks.keys.sortedWith { s1, s2 ->
-            val order = listOf("Morning", "Afternoon")
-            val i1 = order.indexOf(s1)
-            val i2 = order.indexOf(s2)
-            when {
-                i1 != -1 && i2 != -1 -> i1.compareTo(i2)
-                i1 != -1 -> -1
-                i2 != -1 -> 1
-                else -> s1.compareTo(s2)
-            }
-        }
+    // Flat list, no more Morning/Afternoon grouping — split into Pending/Completed instead of
+    // interleaving them in raw sortOrder. Hiding completed drops both the tasks and the section
+    // headers themselves, rather than leaving an empty "Completed" heading around.
+    val pendingTasks = remember(filteredTasks) { filteredTasks.filter { !it.done } }
+    val completedTasks = remember(filteredTasks, hideCompleted) {
+        if (hideCompleted) emptyList() else filteredTasks.filter { it.done }
     }
 
     Column(
@@ -154,6 +157,13 @@ fun TodayTab(
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search tasks",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                    Icon(
+                        imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -231,7 +241,7 @@ fun TodayTab(
         val listsById = remember(lists) { lists.associateBy { it.id } }
         val peopleById = remember(people) { people.associateBy { it.id } }
 
-        // 4. Task sections
+        // 4. Task list — flat, no Morning/Afternoon grouping; completed tasks sort to the end.
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp)
@@ -252,49 +262,50 @@ fun TodayTab(
                     }
                 }
             } else {
-                sortedSections.forEach { sectionName ->
-                    val sectionTasks = groupedTasks[sectionName] ?: emptyList()
-                    if (sectionTasks.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = sectionName.uppercase(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                ),
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                            )
-                        }
-                        items(sectionTasks, key = { it.id }) { task ->
-                            val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                            val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
-                                if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
-                            }
-                            val taskTags = remember(task, projects, tags, tagsEnabled) {
-                                if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
-                            }
-
-                            TaskRow(
-                                task = task,
-                                list = taskList,
-                                assignees = taskAssignees,
-                                tags = taskTags,
-                                onToggleDone = { onToggleDone(task.id) },
-                                onTaskClick = {
-                                    if (selectionMode) {
-                                        if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
-                                    } else {
-                                        onTaskClick(task.id)
-                                    }
-                                },
-                                selectionMode = selectionMode,
-                                selected = selectedIds.contains(task.id),
-                                onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
-                                onCommentClick = { pendingCommentTask = task },
-                                modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
-                            )
-                        }
+                @Composable
+                fun LazyItemScope.taskRowContent(task: Task) {
+                    val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                    val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
+                        if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                     }
+                    val taskTags = remember(task, projects, tags, tagsEnabled) {
+                        if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                    }
+
+                    TaskRow(
+                        task = task,
+                        list = taskList,
+                        assignees = taskAssignees,
+                        tags = taskTags,
+                        onToggleDone = { onToggleDone(task.id) },
+                        onTaskClick = {
+                            if (selectionMode) {
+                                if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                            } else {
+                                onTaskClick(task.id)
+                            }
+                        },
+                        selectionMode = selectionMode,
+                        selected = selectedIds.contains(task.id),
+                        onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
+                        onCommentClick = { pendingCommentTask = task },
+                        modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
+                    )
+                }
+
+                // Headers only appear when completed tasks aren't hidden — hiding them collapses
+                // back to a plain flat list with no "Pending"/"Completed" labels at all.
+                if (!hideCompleted && pendingTasks.isNotEmpty()) {
+                    item(key = "pending_header") {
+                        TaskSectionHeader("PENDING", pendingTasks.size)
+                    }
+                }
+                items(pendingTasks, key = { it.id }) { task -> taskRowContent(task) }
+                if (!hideCompleted && completedTasks.isNotEmpty()) {
+                    item(key = "completed_header") {
+                        TaskSectionHeader("COMPLETED", completedTasks.size)
+                    }
+                    items(completedTasks, key = { it.id }) { task -> taskRowContent(task) }
                 }
             }
         }

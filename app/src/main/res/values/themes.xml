@@ -3,4 +3,15 @@
     <style name="Theme.Yata" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">#6200EE</item>
     </style>
+
+    <!-- Transparent full-size window — the Quick Add dialog activity draws its own centered
+         card + scrim in Compose, so the underlying Android window itself must be invisible. -->
+    <style name="Theme.Yata.Transparent" parent="Theme.Yata">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>

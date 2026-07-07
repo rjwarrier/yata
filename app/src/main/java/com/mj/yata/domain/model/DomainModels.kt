@@ -26,7 +26,8 @@ data class Project(
     val starred: Boolean = false,
     val commonTagIds: List<String> = emptyList(), // live-applied to every task in this project
     val defaultReminder: String? = null, // pre-fills NewTaskSheet's reminder for tasks in this project
-    val description: String? = null // max 100 chars, enforced in ProjectEditorSheet
+    val description: String? = null, // max 100 chars, enforced in ProjectEditorSheet
+    val excludeFromToday: Boolean = false // tasks here never show in Today, regardless of due date
 )
 
 data class YataList(
@@ -34,7 +35,8 @@ data class YataList(
     val name: String,
     val color: String, // accentA - accentP
     val icon: String,
-    val starred: Boolean = false
+    val starred: Boolean = false,
+    val excludeFromToday: Boolean = false // tasks here never show in Today, regardless of due date
 )
 
 data class Tag(

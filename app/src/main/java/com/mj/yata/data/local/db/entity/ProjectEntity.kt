@@ -13,5 +13,6 @@ data class ProjectEntity(
     val starred: Boolean = false,
     val commonTagIds: String = "", // comma-separated tag IDs auto-applied (live) to every task in this project
     val defaultReminder: String? = null,
-    val description: String? = null // max 100 chars, enforced in ProjectEditorSheet
+    val description: String? = null, // max 100 chars, enforced in ProjectEditorSheet
+    val excludeFromToday: Boolean = false
 )

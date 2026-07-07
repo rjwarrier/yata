@@ -40,13 +40,34 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.mj.yata.R
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.effectiveTagIds
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 
-val SINGLE_LIST_ID_KEY = stringPreferencesKey("list_id")
+val SINGLE_LIST_ID_KEY = stringPreferencesKey("list_id") // holds the id regardless of source type below
+val SINGLE_SOURCE_TYPE_KEY = stringPreferencesKey("source_type") // "list" | "project" | "tag"
 
-/** "Single list" (pinned) — medium (2 rows) / large (5 rows + ring). Which list it shows is
- * chosen once via [SingleListWidgetConfigActivity] at add-time, stored per widget instance. */
+/** What a single instance of this widget is pinned to — chosen once via
+ * [SingleListWidgetConfigActivity] at add-time. Missing/unrecognized [SINGLE_SOURCE_TYPE_KEY]
+ * (widgets configured before Project/Tag support existed) falls back to "list". */
+private enum class SingleWidgetSourceType(val prefValue: String) {
+    LIST("list"),
+    PROJECT("project"),
+    TAG("tag");
+
+    companion object {
+        fun fromPref(value: String?): SingleWidgetSourceType = entries.find { it.prefValue == value } ?: LIST
+    }
+}
+
+private data class SingleWidgetSource(
+    val name: String,
+    val colorKey: String,
+    val iconRes: Int
+)
+
+/** "Single list/project/tag" (pinned) — medium (2 rows) / large (5 rows + ring). Which source it
+ * shows is chosen once via [SingleListWidgetConfigActivity] at add-time, stored per widget instance. */
 class SingleListWidget : GlanceAppWidget() {
 
     override val stateDefinition = PreferencesGlanceStateDefinition
@@ -57,24 +78,50 @@ class SingleListWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
-        val listId = prefs[SINGLE_LIST_ID_KEY]
+        val sourceId = prefs[SINGLE_LIST_ID_KEY]
+        val sourceType = SingleWidgetSourceType.fromPref(prefs[SINGLE_SOURCE_TYPE_KEY])
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
-        val list = listId?.let { lid -> repository.getLists().first().find { it.id == lid } }
-        val tasks = if (list != null) {
-            repository.getTasks().first().filter { it.listId == list.id }.sortedBy { it.sortOrder }
-        } else {
-            emptyList()
+
+        var source: SingleWidgetSource? = null
+        var tasks: List<Task> = emptyList()
+
+        if (sourceId != null) {
+            val allTasks = repository.getTasks().first()
+            when (sourceType) {
+                SingleWidgetSourceType.PROJECT -> {
+                    val project = repository.getProjects().first().find { it.id == sourceId }
+                    if (project != null) {
+                        source = SingleWidgetSource(project.name, project.color, R.drawable.ic_widget_project)
+                        tasks = allTasks.filter { it.projectId == project.id }.sortedBy { it.sortOrder }
+                    }
+                }
+                SingleWidgetSourceType.TAG -> {
+                    val tag = repository.getTags().first().find { it.id == sourceId }
+                    if (tag != null) {
+                        val projects = repository.getProjects().first()
+                        source = SingleWidgetSource(tag.name, tag.color, R.drawable.ic_widget_tag)
+                        tasks = allTasks.filter { it.effectiveTagIds(projects).contains(tag.id) }.sortedBy { it.sortOrder }
+                    }
+                }
+                SingleWidgetSourceType.LIST -> {
+                    val list = repository.getLists().first().find { it.id == sourceId }
+                    if (list != null) {
+                        source = SingleWidgetSource(list.name, list.color, R.drawable.ic_widget_list)
+                        tasks = allTasks.filter { it.listId == list.id }.sortedBy { it.sortOrder }
+                    }
+                }
+            }
         }
 
         val theme = resolveWidgetTheme(context)
-        // Distinguishes "never configured" from "the list this widget was pointed at got
-        // deleted from the main app" — both used to show the identical "Not set up yet" message,
-        // giving no clue that re-adding the widget (to pick a new list) is actually needed.
-        val listWasDeleted = listId != null && list == null
+        // Distinguishes "never configured" from "the list/project/tag this widget was pointed at
+        // got deleted from the main app" — both used to show the identical "Not set up yet"
+        // message, giving no clue that re-adding the widget (to pick a new source) is actually needed.
+        val sourceWasDeleted = sourceId != null && source == null
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
-                SingleListWidgetContent(context, list, listWasDeleted, tasks, theme.colorScheme, theme.accents)
+                SingleListWidgetContent(context, source, sourceWasDeleted, tasks, theme.colorScheme, theme.accents)
             }
         }
     }
@@ -83,8 +130,8 @@ class SingleListWidget : GlanceAppWidget() {
 @Composable
 private fun SingleListWidgetContent(
     context: Context,
-    list: com.mj.yata.domain.model.YataList?,
-    listWasDeleted: Boolean,
+    source: SingleWidgetSource?,
+    sourceWasDeleted: Boolean,
     tasks: List<Task>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents
@@ -98,15 +145,15 @@ private fun SingleListWidgetContent(
             .padding(16.dp)
             .clickable(openAppAction())
     ) {
-        if (list == null) {
+        if (source == null) {
             Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = if (listWasDeleted) "List was deleted — remove and re-add this widget" else "Not set up yet",
+                    text = if (sourceWasDeleted) "Deleted — remove and re-add this widget" else "Not set up yet",
                     style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
                 )
             }
         } else {
-            val color = accents.getAccent(list.color)
+            val color = accents.getAccent(source.colorKey)
             val isLarge = LocalSize.current.height > 180.dp
             val done = tasks.count { it.done }
             val shown = tasks.take(if (isLarge) 5 else 2)
@@ -121,7 +168,7 @@ private fun SingleListWidgetContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            provider = ImageProvider(R.drawable.ic_widget_list),
+                            provider = ImageProvider(source.iconRes),
                             contentDescription = null,
                             modifier = GlanceModifier.size(14.dp),
                             colorFilter = ColorFilter.tint(ColorProvider(color))
@@ -130,7 +177,7 @@ private fun SingleListWidgetContent(
                     Spacer(modifier = GlanceModifier.width(10.dp))
                     Column(modifier = GlanceModifier.defaultWeight()) {
                         Text(
-                            text = list.name,
+                            text = source.name,
                             maxLines = 1,
                             style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurface)
                         )
@@ -155,7 +202,7 @@ private fun SingleListWidgetContent(
                 Spacer(modifier = GlanceModifier.height(4.dp))
                 if (shown.isEmpty()) {
                     Text(
-                        text = "No tasks in this list.",
+                        text = "No tasks here.",
                         style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
                     )
                 } else {

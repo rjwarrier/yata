@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,6 +52,13 @@ fun <T> DragDropReorderableColumn(
     onDragToTopEdge: ((T) -> Unit)? = null,
     onDragToBottomEdge: ((T) -> Unit)? = null,
     onDragStateChanged: (Boolean) -> Unit = {},
+    /** Non-draggable content emitted before [items] (e.g. a "PENDING (n)" section header) — must
+     * emit exactly [headerItemCount] `item{}`/`items{}` entries, so index math stays correct. */
+    headerItemCount: Int = 0,
+    header: (LazyListScope.() -> Unit)? = null,
+    /** Non-draggable content emitted after [items] (e.g. a "COMPLETED" header + static list) —
+     * no index bookkeeping needed since it never shifts the draggable region's indices. */
+    footer: (LazyListScope.() -> Unit)? = null,
     itemContent: @Composable (T) -> Unit
 ) {
     val listState: LazyListState = rememberLazyListState()
@@ -89,8 +97,14 @@ fun <T> DragDropReorderableColumn(
         modifier = modifier.onGloballyPositioned { listHeightPx = it.size.height.toFloat() },
         contentPadding = contentPadding
     ) {
+        header?.invoke(this)
         itemsIndexed(items, key = { _, item -> key(item) }) { index, item ->
-            val isDragging = draggingIndex == index
+            // The LazyColumn's own layout index includes any header items above, so drag math
+            // (which compares against listState.layoutInfo, itself indexed globally) has to work
+            // in that same global space — only the onMove callback translates back to an index
+            // relative to `items` alone, which is all the caller knows about.
+            val globalIndex = index + headerItemCount
+            val isDragging = draggingIndex == globalIndex
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -102,7 +116,7 @@ fun <T> DragDropReorderableColumn(
                     .pointerInput(item, items.size) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
-                                draggingIndex = index
+                                draggingIndex = globalIndex
                                 dragOffsetY = 0f
                                 onDragStateChanged(true)
                             },
@@ -126,7 +140,12 @@ fun <T> DragDropReorderableColumn(
                                 val itemInfo = listState.layoutInfo.visibleItemsInfo.find { it.index == currentIndex }
                                     ?: return@detectDragGesturesAfterLongPress
                                 val draggedCenter = itemInfo.offset + itemInfo.size / 2 + dragOffsetY
-                                val others = listState.layoutInfo.visibleItemsInfo.filter { it.index != currentIndex }
+                                // Bounded to the draggable region only — excludes the header and
+                                // any footer content (e.g. the Completed section), so a fast drag
+                                // can't accidentally reorder into either.
+                                val others = listState.layoutInfo.visibleItemsInfo.filter {
+                                    it.index != currentIndex && it.index >= headerItemCount && it.index < headerItemCount + items.size
+                                }
                                 // Fast path: the dragged center actually lands inside a neighbor's band.
                                 // Fallback: on a fast/large drag delta, the center can jump clear over a
                                 // neighbor's band in a single pointer event and miss the exact-containment
@@ -136,7 +155,7 @@ fun <T> DragDropReorderableColumn(
                                     ?: others.minByOrNull { kotlin.math.abs((it.offset + it.size / 2) - draggedCenter) }
                                         ?.takeIf { kotlin.math.abs((it.offset + it.size / 2) - draggedCenter) < it.size }
                                 if (targetInfo != null) {
-                                    onMove(currentIndex, targetInfo.index)
+                                    onMove(currentIndex - headerItemCount, targetInfo.index - headerItemCount)
                                     dragOffsetY += (itemInfo.offset - targetInfo.offset).toFloat()
                                     draggingIndex = targetInfo.index
                                 }
@@ -148,5 +167,6 @@ fun <T> DragDropReorderableColumn(
                 itemContent(item)
             }
         }
+        footer?.invoke(this)
     }
 }

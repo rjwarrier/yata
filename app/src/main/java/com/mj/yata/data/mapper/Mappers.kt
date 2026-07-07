@@ -103,7 +103,8 @@ fun ProjectEntity.toDomain() = Project(
     starred = starred,
     commonTagIds = if (commonTagIds.isEmpty()) emptyList() else commonTagIds.split(","),
     defaultReminder = defaultReminder,
-    description = description
+    description = description,
+    excludeFromToday = excludeFromToday
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
@@ -114,11 +115,12 @@ fun Project.toEntity() = ProjectEntity(
     starred = starred,
     commonTagIds = commonTagIds.joinToString(","),
     defaultReminder = defaultReminder,
-    description = description
+    description = description,
+    excludeFromToday = excludeFromToday
 )
 
-fun ListEntity.toDomain() = YataList(id, name, color, icon, starred)
-fun YataList.toEntity() = ListEntity(id, name, color, icon, starred)
+fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday)
+fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday)
 
 fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault)
 fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault)

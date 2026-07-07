@@ -9,5 +9,6 @@ data class ListEntity(
     val name: String,
     val color: String,
     val icon: String,
-    val starred: Boolean = false
+    val starred: Boolean = false,
+    val excludeFromToday: Boolean = false
 )
