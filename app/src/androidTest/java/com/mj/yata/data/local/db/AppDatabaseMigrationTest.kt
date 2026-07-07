@@ -324,6 +324,41 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate18To19_addsCompositeIndex_onDeletedAtDoneDueDate() {
+        context.deleteDatabase(TEST_DB)
+        createVersion18TasksTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`completedAt`,`deletedAt`,`notes`,`recurrenceJson`,`sortOrder`) " +
+                    "VALUES ('t1','Task',NULL,NULL,'Morning','2026-07-08',NULL,NULL,'none',0,0,NULL,NULL,NULL,NULL,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(19) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_18_19.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='tasks'").use { cursor ->
+                val indexNames = mutableSetOf<String>()
+                while (cursor.moveToNext()) indexNames += cursor.getString(0)
+                assertTrue(indexNames.contains("index_tasks_deletedAt_done_dueDate"))
+            }
+            query("SELECT `id` FROM `tasks` WHERE `deletedAt` IS NULL").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("t1", cursor.getString(0))
+            }
+            close()
+        }
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }
@@ -402,6 +437,26 @@ class AppDatabaseMigrationTest {
                     )
                     db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_tag_cross_ref_taskId` ON `task_tag_cross_ref` (`taskId`)")
                     db.execSQL("CREATE INDEX IF NOT EXISTS `index_task_tag_cross_ref_tagId` ON `task_tag_cross_ref` (`tagId`)")
+                }
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
+
+    /** Minimal — only the `tasks` table, since MIGRATION_18_19 only touches that one. No FK
+     * constraints declared (nothing here exercises cascade behavior, and SQLite doesn't enforce
+     * them unless `PRAGMA foreign_keys=ON` anyway), so `lists`/`projects` don't need to exist. */
+    private fun createVersion18TasksTableDatabase(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(18) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tasks` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `listId` TEXT, `projectId` TEXT, `section` TEXT NOT NULL, `dueDate` TEXT, `dueTime` TEXT, `reminder` TEXT, `priority` TEXT NOT NULL, `flag` INTEGER NOT NULL, `done` INTEGER NOT NULL, `completedAt` INTEGER, `deletedAt` INTEGER, `notes` TEXT, `recurrenceJson` TEXT, `sortOrder` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))"
+                    )
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
             })

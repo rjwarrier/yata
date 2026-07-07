@@ -95,6 +95,15 @@ dependencies {
     // Wear OS companion (today's task count complication)
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
 
+    // Cloud backup: Google Sign-In (Drive appDataFolder scope) + Drive REST v3 over OkHttp
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Cloud backup: periodic + debounced background upload
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
+
     // Markdown rendering for task notes
     implementation("io.noties.markwon:core:4.6.2")
 

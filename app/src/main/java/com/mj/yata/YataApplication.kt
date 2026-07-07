@@ -2,13 +2,23 @@ package com.mj.yata
 
 import android.app.Application
 import android.util.Log
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
+import com.mj.yata.data.cloud.CloudBackupWorker
 import dagger.hilt.android.HiltAndroidApp
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
+import javax.inject.Inject
 
 @HiltAndroidApp
-class YataApplication : Application() {
+class YataApplication : Application(), Configuration.Provider {
+
+    @Inject lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
+
     override fun onCreate() {
         super.onCreate()
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
@@ -23,5 +33,10 @@ class YataApplication : Application() {
             }
             defaultHandler?.uncaughtException(thread, throwable)
         }
+
+        // Cheap to enqueue unconditionally — enqueueUniquePeriodicWork(KEEP) is a no-op if
+        // already scheduled, and the worker itself checks cloudBackupEnabledFlow before doing
+        // anything.
+        CloudBackupWorker.schedule(this)
     }
 }

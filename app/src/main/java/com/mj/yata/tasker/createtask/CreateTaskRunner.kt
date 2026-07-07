@@ -14,6 +14,7 @@ import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
+import com.mj.yata.util.findSimilarTask
 import com.mj.yata.widget.WidgetEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
@@ -32,7 +33,15 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
 
         return try {
             val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
-            runBlocking {
+            runBlocking<TaskerPluginResult<Unit>> {
+                // Checked before resolving/creating any project·list·tag·person side effects,
+                // so a rejected duplicate never leaves behind newly-created entities for a task
+                // that was never actually added.
+                val duplicate = findSimilarTask(title, repository.getTasks().first())
+                if (duplicate != null) {
+                    return@runBlocking TaskerPluginResultError(2, "Similar task already exists: \"${duplicate.title}\". Task not created.")
+                }
+
                 val projectId = resolveOrCreateProject(repository, fields.project)
                 val listId = resolveOrCreateList(repository, fields.list)
                 val tagIds = resolveOrCreateTags(repository, fields.tags)
@@ -65,8 +74,8 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
                         notes = fields.notes?.takeIf { it.isNotBlank() }
                     )
                 )
+                TaskerPluginResultSucess()
             }
-            TaskerPluginResultSucess()
         } catch (t: Throwable) {
             TaskerPluginResultError(t)
         }

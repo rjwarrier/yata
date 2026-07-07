@@ -23,7 +23,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -252,6 +252,15 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("UPDATE lists SET sortOrder = rowid")
                 db.execSQL("ALTER TABLE people ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("UPDATE people SET sortOrder = rowid")
+            }
+        }
+
+        // Composite index for the three hottest task queries (active-tasks, trash, Today) —
+        // all of them filter on deletedAt, and the Today query adds done + dueDate. Previously
+        // only listId/projectId (the FK columns) were indexed, so these did full table scans.
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_tasks_deletedAt_done_dueDate ON tasks(deletedAt, done, dueDate)")
             }
         }
     }

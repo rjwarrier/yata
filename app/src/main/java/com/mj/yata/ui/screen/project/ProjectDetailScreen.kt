@@ -11,10 +11,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -22,11 +24,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mj.yata.util.taskMatchesQuery
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -65,6 +70,8 @@ fun ProjectDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRolloverDialog by remember { mutableStateOf(false) }
     var hideCompleted by remember { mutableStateOf(false) }
+    var searchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     if (project == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -84,6 +91,9 @@ fun ProjectDetailScreen(
     val pendingProjectTasks = remember(projectTasks) { projectTasks.filter { !it.done } }
     val completedProjectTasks = remember(projectTasks, hideCompleted) {
         if (hideCompleted) emptyList() else projectTasks.filter { it.done }
+    }
+    val searchFilteredTasks = remember(projectTasks, searchQuery) {
+        if (searchQuery.isBlank()) emptyList() else projectTasks.filter { taskMatchesQuery(it, searchQuery) }
     }
 
     // Not keyed on pendingProjectTasks — any task write anywhere in the app (a reminder firing,
@@ -125,66 +135,104 @@ fun ProjectDetailScreen(
         },
         topBar = {
             TopAppBar(
-                title = { Text(project.name, fontWeight = FontWeight.Bold) },
+                title = {
+                    if (searchActive) {
+                        val focusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                            singleLine = true,
+                            placeholder = { Text("Search in ${project.name}") },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
+                        )
+                    } else {
+                        Text(project.name, fontWeight = FontWeight.Bold)
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = {
+                        if (searchActive) {
+                            searchActive = false
+                            searchQuery = ""
+                        } else {
+                            onNavigateBack()
+                        }
+                    }) {
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = if (searchActive) "Close search" else "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { hideCompleted = !hideCompleted }) {
-                        Icon(
-                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
-                        )
-                    }
-                    var showMenu by remember { mutableStateOf(false) }
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Edit project") },
-                            onClick = {
-                                showMenu = false
-                                isEditSheetOpen = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Export as Markdown") },
-                            onClick = {
-                                showMenu = false
-                                val markdown = com.mj.yata.util.buildPendingTasksMarkdown(project, projectTasks)
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                clipboard.setPrimaryClip(ClipData.newPlainText("Pending tasks", markdown))
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, markdown)
-                                }
-                                context.startActivity(Intent.createChooser(shareIntent, "Share ${project.name} tasks"))
-                            },
-                            leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Roll over open tasks") },
-                            onClick = {
-                                showMenu = false
-                                showRolloverDialog = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Delete project") },
-                            onClick = {
-                                showMenu = false
-                                showDeleteDialog = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                        )
+                    if (searchActive) {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            }
+                        }
+                    } else {
+                        IconButton(onClick = { searchActive = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search in project")
+                        }
+                        IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                            Icon(
+                                imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
+                            )
+                        }
+                        var showMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit project") },
+                                onClick = {
+                                    showMenu = false
+                                    isEditSheetOpen = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export as Markdown") },
+                                onClick = {
+                                    showMenu = false
+                                    val markdown = com.mj.yata.util.buildPendingTasksMarkdown(project, projectTasks)
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("Pending tasks", markdown))
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, markdown)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Share ${project.name} tasks"))
+                                },
+                                leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Roll over open tasks") },
+                                onClick = {
+                                    showMenu = false
+                                    showRolloverDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete project") },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -260,8 +308,63 @@ fun ProjectDetailScreen(
             }
 
             // 2. Task list — Pending (drag-to-reorder, or drag to the top/bottom edge to move to
-            // another list/project) above a static Completed section.
-            if (pendingProjectTasks.isEmpty() && completedProjectTasks.isEmpty()) {
+            // another list/project) above a static Completed section. While searching, drag
+            // reorder is disabled (committing a filtered subset's order would corrupt sortOrder
+            // for the tasks hidden by the search), so it falls back to a flat matched list.
+            @Composable
+            fun taskRowFor(task: Task, modifier: Modifier = Modifier) {
+                val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
+                    if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
+                }
+                val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
+                    if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                }
+
+                TaskRow(
+                    task = task,
+                    list = taskList,
+                    assignees = taskAssignees,
+                    tags = taskTags,
+                    onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
+                    onTaskClick = { onNavigateToTaskDetail(task.id) },
+                    modifier = modifier,
+                    onCommentClick = { pendingCommentTask = task }
+                )
+            }
+
+            if (searchActive) {
+                if (searchQuery.isBlank()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Type to search tasks in this project.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                } else if (searchFilteredTasks.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No matching tasks.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                } else {
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(bottom = 88.dp)
+                    ) {
+                        items(searchFilteredTasks, key = { it.id }) { task -> taskRowFor(task) }
+                    }
+                }
+            } else if (pendingProjectTasks.isEmpty() && completedProjectTasks.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -275,28 +378,6 @@ fun ProjectDetailScreen(
                     )
                 }
             } else {
-                @Composable
-                fun taskRowFor(task: Task, modifier: Modifier = Modifier) {
-                    val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                    val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
-                        if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
-                    }
-                    val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
-                        if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
-                    }
-
-                    TaskRow(
-                        task = task,
-                        list = taskList,
-                        assignees = taskAssignees,
-                        tags = taskTags,
-                        onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                        onTaskClick = { onNavigateToTaskDetail(task.id) },
-                        modifier = modifier,
-                        onCommentClick = { pendingCommentTask = task }
-                    )
-                }
-
                 val showPendingHeader = !hideCompleted && pendingProjectTasks.isNotEmpty()
                 DragDropReorderableColumn(
                     items = localOrder,
@@ -375,10 +456,15 @@ fun ProjectDetailScreen(
                 projects = projects,
                 people = people,
                 tags = tags,
+                tasks = tasks,
                 initialProjectId = project.id,
                 onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
                     viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
                     isNewTaskSheetOpen = false
+                },
+                onGoToExistingTask = { id ->
+                    isNewTaskSheetOpen = false
+                    onNavigateToTaskDetail(id)
                 },
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(com.mj.yata.domain.model.Tag(id = id, name = name, color = color))

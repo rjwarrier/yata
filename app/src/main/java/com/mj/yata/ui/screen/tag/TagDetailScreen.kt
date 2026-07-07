@@ -8,9 +8,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -18,6 +20,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +33,7 @@ import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
+import com.mj.yata.util.taskMatchesQuery
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
@@ -58,6 +63,8 @@ fun TagDetailScreen(
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+    var searchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     if (tag == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -82,9 +89,11 @@ fun TagDetailScreen(
     val openTasks = allTaggedTasks.size - doneTasks
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
-    val pendingTaggedTasks = remember(allTaggedTasks) { allTaggedTasks.filter { !it.done } }
-    val completedTaggedTasks = remember(allTaggedTasks, hideCompleted) {
-        if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done }
+    val pendingTaggedTasks = remember(allTaggedTasks, searchQuery) {
+        allTaggedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }
+    }
+    val completedTaggedTasks = remember(allTaggedTasks, hideCompleted, searchQuery) {
+        if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) }
     }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
@@ -105,43 +114,81 @@ fun TagDetailScreen(
         },
         topBar = {
             TopAppBar(
-                title = { Text("#" + tag.name, fontWeight = FontWeight.Bold) },
+                title = {
+                    if (searchActive) {
+                        val focusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                            singleLine = true,
+                            placeholder = { Text("Search in #${tag.name}") },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
+                        )
+                    } else {
+                        Text("#" + tag.name, fontWeight = FontWeight.Bold)
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = {
+                        if (searchActive) {
+                            searchActive = false
+                            searchQuery = ""
+                        } else {
+                            onNavigateBack()
+                        }
+                    }) {
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = if (searchActive) "Close search" else "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { hideCompleted = !hideCompleted }) {
-                        Icon(
-                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
-                        )
-                    }
-                    var showMenu by remember { mutableStateOf(false) }
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Edit tag") },
-                            onClick = {
-                                showMenu = false
-                                isEditSheetOpen = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Delete tag") },
-                            onClick = {
-                                showMenu = false
-                                showDeleteDialog = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                        )
+                    if (searchActive) {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            }
+                        }
+                    } else {
+                        IconButton(onClick = { searchActive = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search in tag")
+                        }
+                        IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                            Icon(
+                                imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
+                            )
+                        }
+                        var showMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit tag") },
+                                onClick = {
+                                    showMenu = false
+                                    isEditSheetOpen = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete tag") },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -202,7 +249,7 @@ fun TagDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No tasks carrying this tag.",
+                            text = if (searchQuery.isNotBlank()) "No matching tasks." else "No tasks carrying this tag.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )

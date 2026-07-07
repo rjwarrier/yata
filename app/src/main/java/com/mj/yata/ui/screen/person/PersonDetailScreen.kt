@@ -10,16 +10,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +35,7 @@ import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.sheets.*
+import com.mj.yata.util.taskMatchesQuery
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
@@ -66,6 +71,8 @@ fun PersonDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var hideCompleted by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+    var searchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     val openChevronRotation by animateFloatAsState(
         targetValue = if (openExpanded) 0f else -90f,
@@ -90,8 +97,8 @@ fun PersonDetailScreen(
         personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
     val assignedTasks = remember(tasks, person.id) { tasks.filter { it.assigneeIds.contains(person.id) }.sortedBy { it.sortOrder } }
-    val openTasks = assignedTasks.filter { !it.done }
-    val completedTasks = assignedTasks.filter { it.done }
+    val openTasks = remember(assignedTasks, searchQuery) { assignedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) } }
+    val completedTasks = remember(assignedTasks, searchQuery) { assignedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) } }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
@@ -111,44 +118,82 @@ fun PersonDetailScreen(
         },
         topBar = {
             TopAppBar(
-                title = { Text(person.name, fontWeight = FontWeight.Bold) },
+                title = {
+                    if (searchActive) {
+                        val focusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                            singleLine = true,
+                            placeholder = { Text("Search ${person.name}'s tasks") },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
+                        )
+                    } else {
+                        Text(person.name, fontWeight = FontWeight.Bold)
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = {
+                        if (searchActive) {
+                            searchActive = false
+                            searchQuery = ""
+                        } else {
+                            onNavigateBack()
+                        }
+                    }) {
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = if (searchActive) "Close search" else "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { hideCompleted = !hideCompleted }) {
-                        Icon(
-                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
-                        )
-                    }
-                    var showMenu by remember { mutableStateOf(false) }
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Edit person") },
-                            onClick = {
-                                showMenu = false
-                                isEditSheetOpen = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
-                        )
-                        if (!person.isMe) {
+                    if (searchActive) {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            }
+                        }
+                    } else {
+                        IconButton(onClick = { searchActive = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search this person's tasks")
+                        }
+                        IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                            Icon(
+                                imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
+                            )
+                        }
+                        var showMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
                             DropdownMenuItem(
-                                text = { Text("Delete person") },
+                                text = { Text("Edit person") },
                                 onClick = {
                                     showMenu = false
-                                    showDeleteDialog = true
+                                    isEditSheetOpen = true
                                 },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
+                            if (!person.isMe) {
+                                DropdownMenuItem(
+                                    text = { Text("Delete person") },
+                                    onClick = {
+                                        showMenu = false
+                                        showDeleteDialog = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                )
+                            }
                         }
                     }
                 },
@@ -393,10 +438,15 @@ fun PersonDetailScreen(
                 projects = projects,
                 people = people,
                 tags = tags,
+                tasks = tasks,
                 initialAssigneeId = person.id,
                 onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
                     viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
                     isNewTaskSheetOpen = false
+                },
+                onGoToExistingTask = { id ->
+                    isNewTaskSheetOpen = false
+                    onNavigateToTaskDetail(id)
                 },
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(Tag(id = id, name = name, color = color))

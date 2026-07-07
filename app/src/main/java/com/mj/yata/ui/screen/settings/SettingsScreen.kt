@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
@@ -17,8 +19,10 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material3.*
@@ -31,6 +35,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.data.cloud.CloudBackupError
+import com.mj.yata.data.cloud.isCloudBackupStale
 import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
@@ -52,6 +58,7 @@ fun SettingsScreen(
     onExportRequested: () -> Unit,
     onImportRequested: () -> Unit,
     onExportIcsRequested: () -> Unit,
+    onCloudSignInRequested: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
     onNavigateToTrash: () -> Unit,
     modifier: Modifier = Modifier
@@ -71,6 +78,11 @@ fun SettingsScreen(
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
     val lists by viewModel.lists.collectAsState()
+    val cloudBackupEnabled by viewModel.cloudBackupEnabled.collectAsState()
+    val cloudBackupAccountEmail by viewModel.cloudBackupAccountEmail.collectAsState()
+    val cloudBackupLastAt by viewModel.cloudBackupLastAt.collectAsState()
+    val cloudBackupWifiOnly by viewModel.cloudBackupWifiOnly.collectAsState()
+    val cloudBackupIntervalMinutes by viewModel.cloudBackupIntervalMinutes.collectAsState()
 
     var showDefaultListMenu by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
@@ -87,6 +99,22 @@ fun SettingsScreen(
     var isDeletingAll by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    var isCloudBackingUp by remember { mutableStateOf(false) }
+    var showCloudRestoreSheet by remember { mutableStateOf(false) }
+    var isLoadingCloudBackups by remember { mutableStateOf(false) }
+    var cloudBackupList by remember { mutableStateOf<List<com.mj.yata.data.cloud.CloudBackupEntry>>(emptyList()) }
+    var isRestoringCloudBackup by remember { mutableStateOf(false) }
+    var showFrequencyDialog by remember { mutableStateOf(false) }
+    var freqNumberText by remember { mutableStateOf("1") }
+    var freqUnit by remember { mutableStateOf("Days") }
+    var showBackupDiffDialog by remember { mutableStateOf(false) }
+    var isLoadingBackupDiff by remember { mutableStateOf(false) }
+    var backupDiffResult by remember { mutableStateOf<com.mj.yata.data.cloud.CloudBackupDiff?>(null) }
+    var backupDiffError by remember { mutableStateOf<String?>(null) }
+    var backupDiffIsReauth by remember { mutableStateOf(false) }
+    var staleBannerDismissed by remember { mutableStateOf(false) }
+    var pendingRestoreEntry by remember { mutableStateOf<com.mj.yata.data.cloud.CloudBackupEntry?>(null) }
 
     val context = LocalContext.current
     var pickedPhotoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
@@ -564,7 +592,283 @@ fun SettingsScreen(
                 }
             }
 
-            // 4. Backup/Data Section
+            // 4. Cloud Backup Section
+            Text(
+                text = "CLOUD BACKUP",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudUpload,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Cloud Backup",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = if (cloudBackupAccountEmail != null) {
+                                    "Signed in as $cloudBackupAccountEmail"
+                                } else {
+                                    "Automatically backs up to your Google Drive."
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (cloudBackupAccountEmail != null) {
+                            Switch(
+                                checked = cloudBackupEnabled,
+                                onCheckedChange = { viewModel.setCloudBackupEnabled(it) }
+                            )
+                        } else {
+                            TextButton(onClick = onCloudSignInRequested) {
+                                Text("Sign in")
+                            }
+                        }
+                    }
+
+                    if (cloudBackupEnabled && !staleBannerDismissed && isCloudBackupStale(cloudBackupLastAt)) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (cloudBackupLastAt == null) {
+                                        "Cloud backup hasn't run yet."
+                                    } else {
+                                        "Cloud backup hasn't run in over 7 days."
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Dismiss",
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .clip(CircleShape)
+                                        .clickable { staleBannerDismissed = true }
+                                )
+                            }
+                        }
+                    }
+
+                    if (cloudBackupAccountEmail != null) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = cloudBackupEnabled && !isCloudBackingUp) {
+                                    isCloudBackingUp = true
+                                    viewModel.cloudBackupNow { result ->
+                                        isCloudBackingUp = false
+                                        scope.launch {
+                                            val reauth = isReauthRecoverable(result.exceptionOrNull())
+                                            val outcome = snackbarHostState.showSnackbar(
+                                                message = if (result.isSuccess) "Backed up to Google Drive" else "Backup failed — ${result.exceptionOrNull()?.message ?: "try again later"}",
+                                                actionLabel = if (reauth) "Reauthorize" else null
+                                            )
+                                            if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
+                                        }
+                                    }
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Back up now",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                    color = if (cloudBackupEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                )
+                                Text(
+                                    text = "Last backed up: " + formatRelativeBackupTime(cloudBackupLastAt) +
+                                        (formatAbsoluteBackupTime(cloudBackupLastAt)?.let { " · $it" } ?: ""),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (isCloudBackingUp) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = !isLoadingBackupDiff) {
+                                    showBackupDiffDialog = true
+                                    isLoadingBackupDiff = true
+                                    backupDiffResult = null
+                                    backupDiffError = null
+                                    backupDiffIsReauth = false
+                                    viewModel.compareWithLastBackup { result ->
+                                        isLoadingBackupDiff = false
+                                        result.fold(
+                                            onSuccess = { backupDiffResult = it },
+                                            onFailure = {
+                                                backupDiffError = it.message ?: "Couldn't compare with backup"
+                                                backupDiffIsReauth = isReauthRecoverable(it)
+                                            }
+                                        )
+                                    }
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CompareArrows,
+                                contentDescription = "Compare with backup",
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "Compare with Backup",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Wi-Fi only",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = "Skip backups on mobile data.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = cloudBackupWifiOnly,
+                                onCheckedChange = { viewModel.setCloudBackupWifiOnly(it) }
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val (value, unit) = minutesToIntervalDisplay(cloudBackupIntervalMinutes)
+                                    freqNumberText = value.toString()
+                                    freqUnit = unit
+                                    showFrequencyDialog = true
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Backup frequency",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = formatBackupInterval(cloudBackupIntervalMinutes),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showCloudRestoreSheet = true
+                                    isLoadingCloudBackups = true
+                                    viewModel.listCloudBackups { result ->
+                                        isLoadingCloudBackups = false
+                                        cloudBackupList = result.getOrDefault(emptyList())
+                                        val exc = result.exceptionOrNull()
+                                        if (exc != null) {
+                                            scope.launch {
+                                                val outcome = snackbarHostState.showSnackbar(
+                                                    message = "Couldn't reach Google Drive",
+                                                    actionLabel = if (isReauthRecoverable(exc)) "Reauthorize" else null
+                                                )
+                                                if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CloudDownload,
+                                contentDescription = "Restore from cloud",
+                                tint = MaterialTheme.colorScheme.tertiary
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
+                                text = "Restore from Cloud Backup",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.cloudSignOut()
+                                    scope.launch { snackbarHostState.showSnackbar("Signed out of cloud backup") }
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Sign out",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 5. Backup/Data Section
             Text(
                 text = "BACKUP & DATA",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
@@ -818,6 +1122,220 @@ fun SettingsScreen(
         )
     }
 
+    if (showBackupDiffDialog) {
+        AlertDialog(
+            onDismissRequest = { showBackupDiffDialog = false },
+            title = { Text("Compare with Backup") },
+            text = {
+                when {
+                    isLoadingBackupDiff -> {
+                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    backupDiffError != null -> {
+                        Text(backupDiffError!!, color = MaterialTheme.colorScheme.error)
+                    }
+                    backupDiffResult != null -> {
+                        val diff = backupDiffResult!!
+                        Column(
+                            modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (diff.pendingDiff == 0 && diff.doneDiff == 0) {
+                                Text(
+                                    "Up to date — no changes since last backup.",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                )
+                            } else {
+                                Text(
+                                    "${signedCount(diff.pendingDiff)} Pending Tasks, ${signedCount(diff.doneDiff)} Done Tasks",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            Text(
+                                "Last backup: " + formatBackupTimestamp(diff.backupCreatedTime),
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "Now: ${diff.currentPending} pending, ${diff.currentDone} done",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "Backup: ${diff.backupPending} pending, ${diff.backupDone} done",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            BackupDiffTaskSection("New since backup", diff.addedTitles, diff.addedCount)
+                            BackupDiffTaskSection("Missing from current data", diff.removedTitles, diff.removedCount)
+                            BackupDiffTaskSection("Changed since backup", diff.changedTitles, diff.changedCount)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showBackupDiffDialog = false }) { Text("Close") }
+            },
+            dismissButton = if (backupDiffIsReauth) {
+                {
+                    TextButton(onClick = {
+                        showBackupDiffDialog = false
+                        onCloudSignInRequested()
+                    }) {
+                        Text("Reauthorize")
+                    }
+                }
+            } else null
+        )
+    }
+
+    if (showFrequencyDialog) {
+        AlertDialog(
+            onDismissRequest = { showFrequencyDialog = false },
+            title = { Text("Backup frequency") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = freqNumberText,
+                        onValueChange = { new -> if (new.length <= 4 && new.all { it.isDigit() }) freqNumberText = new },
+                        label = { Text("Every") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    SegmentedControl(
+                        items = listOf("Minutes", "Hours", "Days"),
+                        selectedItem = freqUnit,
+                        onItemSelected = { freqUnit = it }
+                    )
+                    Text(
+                        text = "Minimum 15 minutes — Android won't run background backups more often than that.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val value = (freqNumberText.toLongOrNull() ?: 1L).coerceAtLeast(1L)
+                    viewModel.setCloudBackupIntervalMinutes(intervalDisplayToMinutes(value, freqUnit))
+                    showFrequencyDialog = false
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFrequencyDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showCloudRestoreSheet) {
+        AlertDialog(
+            onDismissRequest = { if (!isRestoringCloudBackup) showCloudRestoreSheet = false },
+            title = { Text("Restore from Cloud Backup") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    when {
+                        isLoadingCloudBackups -> {
+                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                        cloudBackupList.isEmpty() -> {
+                            Text(
+                                "No cloud backups found yet.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        else -> {
+                            cloudBackupList.forEach { entry ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = !isRestoringCloudBackup) { pendingRestoreEntry = entry }
+                                        .padding(vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CloudDownload,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.tertiary
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = formatBackupTimestamp(entry.createdTime),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        formatBackupSize(entry.sizeBytes)?.let { sizeLabel ->
+                                            Text(
+                                                text = sizeLabel,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            if (isRestoringCloudBackup) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCloudRestoreSheet = false }, enabled = !isRestoringCloudBackup) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    pendingRestoreEntry?.let { entry ->
+        AlertDialog(
+            onDismissRequest = { pendingRestoreEntry = null },
+            title = { Text("Restore this backup?") },
+            text = {
+                Text(
+                    "This merges the backup from ${formatBackupTimestamp(entry.createdTime)} into your " +
+                        "current data — tasks, lists, tags, and people from it are added or updated. " +
+                        "Nothing currently on this device is deleted."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val target = entry
+                    pendingRestoreEntry = null
+                    isRestoringCloudBackup = true
+                    viewModel.restoreCloudBackup(target.id) { result ->
+                        isRestoringCloudBackup = false
+                        showCloudRestoreSheet = false
+                        scope.launch {
+                            val reauth = isReauthRecoverable(result.exceptionOrNull())
+                            val outcome = snackbarHostState.showSnackbar(
+                                message = if (result.isSuccess) "Restored from cloud backup" else "Restore failed — ${result.exceptionOrNull()?.message ?: "try again later"}",
+                                actionLabel = if (reauth) "Reauthorize" else null
+                            )
+                            if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
+                        }
+                    }
+                }) {
+                    Text("Restore", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRestoreEntry = null }) { Text("Cancel") }
+            }
+        )
+    }
+
     YataTimePickerLauncher(
         show = showReminderTimePicker,
         initialTime = TaskScheduleUtils.formatTime(defaultReminderHour, defaultReminderMinute),
@@ -842,6 +1360,99 @@ fun SettingsScreen(
             onCancel = { pickedPhotoBitmap = null }
         )
     }
+}
+
+private fun formatRelativeBackupTime(epochMillis: Long?): String {
+    if (epochMillis == null) return "never"
+    val diffMs = System.currentTimeMillis() - epochMillis
+    val minutes = diffMs / 60_000
+    return when {
+        minutes < 1 -> "just now"
+        minutes < 60 -> "${minutes}m ago"
+        minutes < 24 * 60 -> "${minutes / 60}h ago"
+        else -> "${minutes / (24 * 60)}d ago"
+    }
+}
+
+private fun formatBackupSize(bytes: Long?): String? {
+    if (bytes == null) return null
+    return if (bytes < 1024) "$bytes B" else "${"%.1f".format(bytes / 1024.0)} KB"
+}
+
+private fun formatAbsoluteBackupTime(epochMillis: Long?): String? {
+    if (epochMillis == null) return null
+    return java.time.format.DateTimeFormatter.ofPattern("MMM d, h:mm a")
+        .withZone(java.time.ZoneId.systemDefault())
+        .format(java.time.Instant.ofEpochMilli(epochMillis))
+}
+
+private fun formatBackupTimestamp(isoCreatedTime: String): String {
+    return try {
+        val instant = java.time.Instant.parse(isoCreatedTime)
+        java.time.format.DateTimeFormatter.ofPattern("MMM d, h:mm a")
+            .withZone(java.time.ZoneId.systemDefault())
+            .format(instant)
+    } catch (e: Exception) {
+        isoCreatedTime
+    }
+}
+
+/** Picks the largest whole unit the stored minutes divide evenly into, so e.g. 1440 shows back
+ * as "1 / Days" instead of "1440 / Minutes" when the frequency dialog is reopened. */
+private fun minutesToIntervalDisplay(minutes: Long): Pair<Long, String> = when {
+    minutes >= 24 * 60 && minutes % (24 * 60) == 0L -> (minutes / (24 * 60)) to "Days"
+    minutes >= 60 && minutes % 60 == 0L -> (minutes / 60) to "Hours"
+    else -> minutes to "Minutes"
+}
+
+private fun intervalDisplayToMinutes(value: Long, unit: String): Long = when (unit) {
+    "Days" -> value * 24 * 60
+    "Hours" -> value * 60
+    else -> value
+}
+
+private fun signedCount(n: Int): String = if (n > 0) "+$n" else "$n"
+
+/** Both cases are fixed the same way (re-run the sign-in flow), so every "Reauthorize" action
+ * button in this screen checks this instead of just NeedsReauth — NotSignedIn shows up when
+ * Play Services' cached account silently disappears out from under a still-"enabled" local flag. */
+private fun isReauthRecoverable(t: Throwable?): Boolean =
+    t is CloudBackupError.NeedsReauth || t is CloudBackupError.NotSignedIn
+
+/** Renders nothing when [totalCount] is 0 — most comparisons won't have all three categories,
+ * and an empty "Changed since backup" header with no rows under it reads as broken, not "none." */
+@Composable
+private fun BackupDiffTaskSection(label: String, titles: List<String>, totalCount: Int) {
+    if (totalCount == 0) return
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = "$label ($totalCount)",
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        titles.forEach { title ->
+            Text(
+                text = "• $title",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+        if (totalCount > titles.size) {
+            Text(
+                text = "+${totalCount - titles.size} more",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
+
+private fun formatBackupInterval(minutes: Long): String {
+    val (value, unit) = minutesToIntervalDisplay(minutes)
+    val label = if (value == 1L) unit.dropLast(1).lowercase() else unit.lowercase()
+    return "Every $value $label"
 }
 
 @Composable

@@ -40,6 +40,11 @@ class UserPreferences @Inject constructor(
         val PEOPLE_FEATURE_ENABLED   = booleanPreferencesKey("people_feature_enabled")
         val TAGS_FEATURE_ENABLED     = booleanPreferencesKey("tags_feature_enabled")
         val PROJECTS_FEATURE_ENABLED = booleanPreferencesKey("projects_feature_enabled")
+        val CLOUD_BACKUP_ENABLED     = booleanPreferencesKey("cloud_backup_enabled")
+        val CLOUD_BACKUP_ACCOUNT     = stringPreferencesKey("cloud_backup_account_email")
+        val CLOUD_BACKUP_LAST_AT     = longPreferencesKey("cloud_backup_last_at")
+        val CLOUD_BACKUP_WIFI_ONLY   = booleanPreferencesKey("cloud_backup_wifi_only")
+        val CLOUD_BACKUP_INTERVAL_MINUTES = longPreferencesKey("cloud_backup_interval_minutes")
     }
 
     val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -71,6 +76,13 @@ class UserPreferences @Inject constructor(
     val peopleFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[PEOPLE_FEATURE_ENABLED] ?: true }
     val tagsFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TAGS_FEATURE_ENABLED] ?: true }
     val projectsFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[PROJECTS_FEATURE_ENABLED] ?: true }
+    val cloudBackupEnabledFlow: Flow<Boolean> = dataStore.data.map { it[CLOUD_BACKUP_ENABLED] ?: false }
+    val cloudBackupAccountEmailFlow: Flow<String?> = dataStore.data.map { it[CLOUD_BACKUP_ACCOUNT] }
+    val cloudBackupLastAtFlow: Flow<Long?> = dataStore.data.map { it[CLOUD_BACKUP_LAST_AT] }
+    val cloudBackupWifiOnlyFlow: Flow<Boolean> = dataStore.data.map { it[CLOUD_BACKUP_WIFI_ONLY] ?: true }
+    // Default matches CloudBackupWorker's default schedule (1 day) — WorkManager enforces a
+    // 15-minute floor on periodic work, so this is clamped the same way on write.
+    val cloudBackupIntervalMinutesFlow: Flow<Long> = dataStore.data.map { it[CLOUD_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME_MODE] = mode.name }
@@ -127,5 +139,27 @@ class UserPreferences @Inject constructor(
 
     suspend fun setProjectsFeatureEnabled(enabled: Boolean) {
         dataStore.edit { it[PROJECTS_FEATURE_ENABLED] = enabled }
+    }
+
+    suspend fun setCloudBackupEnabled(enabled: Boolean) {
+        dataStore.edit { it[CLOUD_BACKUP_ENABLED] = enabled }
+    }
+
+    suspend fun setCloudBackupAccountEmail(email: String?) {
+        dataStore.edit {
+            if (email != null) it[CLOUD_BACKUP_ACCOUNT] = email else it.remove(CLOUD_BACKUP_ACCOUNT)
+        }
+    }
+
+    suspend fun setCloudBackupLastAt(epochMillis: Long) {
+        dataStore.edit { it[CLOUD_BACKUP_LAST_AT] = epochMillis }
+    }
+
+    suspend fun setCloudBackupWifiOnly(wifiOnly: Boolean) {
+        dataStore.edit { it[CLOUD_BACKUP_WIFI_ONLY] = wifiOnly }
+    }
+
+    suspend fun setCloudBackupIntervalMinutes(minutes: Long) {
+        dataStore.edit { it[CLOUD_BACKUP_INTERVAL_MINUTES] = minutes.coerceAtLeast(15L) }
     }
 }

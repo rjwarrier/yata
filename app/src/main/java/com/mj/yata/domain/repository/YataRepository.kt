@@ -7,12 +7,26 @@ interface YataRepository {
     // Tasks
     fun getTasks(): Flow<List<Task>>
     fun getTaskById(id: String): Flow<Task?>
-    suspend fun upsertTask(task: Task)
-    suspend fun toggleTaskDone(id: String)
+
+    // [notify] defaults to true (fires the widget-refresh/Wear-sync/cloud-backup-debounce
+    // signal immediately, as every existing call site expects). Bulk callers that loop this N
+    // times pass false and call [notifyTasksChanged] once after the loop instead — a 20-task
+    // bulk action used to fire that whole pipeline 20 times.
+    //
+    // [resyncReminder] independently defaults to true (reschedules the task's AlarmManager
+    // reminder — 2 DataStore reads + an AlarmManager call). Callers that only change fields with
+    // no bearing on reminders (tags, project/list, sort order, flag) pass false — rescheduling
+    // an alarm that can't have changed was pure waste, and multiplied per item in a bulk loop.
+    suspend fun upsertTask(task: Task, notify: Boolean = true, resyncReminder: Boolean = true)
+    suspend fun toggleTaskDone(id: String, notify: Boolean = true)
     suspend fun skipTaskOccurrence(id: String)
 
+    /** Manually fires the same "something changed" signal [upsertTask]/etc. fire automatically —
+     * for bulk callers that suppressed it per-item via `notify = false`. */
+    fun notifyTasksChanged()
+
     // Deleting a task moves it to Trash (soft delete) rather than removing it outright.
-    suspend fun deleteTask(task: Task)
+    suspend fun deleteTask(task: Task, notify: Boolean = true)
     fun getDeletedTasks(): Flow<List<Task>>
     suspend fun restoreTask(id: String)
     suspend fun permanentlyDeleteTask(task: Task)

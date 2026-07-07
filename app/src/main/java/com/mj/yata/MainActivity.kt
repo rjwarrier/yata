@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.mj.yata.data.cloud.CloudBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.navigation.AppNavigation
@@ -41,6 +42,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var jsonExporter: JsonExporter
     @Inject lateinit var icsExporter: IcsExporter
     @Inject lateinit var userPreferences: UserPreferences
+    @Inject lateinit var cloudBackupManager: CloudBackupManager
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -83,6 +85,22 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(
                 this@MainActivity,
                 if (ok) "Calendar file exported" else "Export failed",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private val cloudSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        lifecycleScope.launch {
+            val outcome = cloudBackupManager.handleSignInResult(result.data)
+            Toast.makeText(
+                this@MainActivity,
+                outcome.fold(
+                    onSuccess = { email -> "Signed in as $email" },
+                    onFailure = { "Google sign-in failed or was cancelled" }
+                ),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -164,7 +182,8 @@ class MainActivity : ComponentActivity() {
                             navController      = navController,
                             onExportRequested  = { exportLauncher.launch("yata_backup.json") },
                             onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
-                            onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") }
+                            onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
+                            onCloudSignInRequested = { cloudSignInLauncher.launch(cloudBackupManager.signInIntent()) }
                         )
                     }
                 }

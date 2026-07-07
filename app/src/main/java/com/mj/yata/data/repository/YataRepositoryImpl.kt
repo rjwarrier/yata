@@ -35,7 +35,11 @@ class YataRepositoryImpl @Inject constructor(
         return db.taskDao().getTaskWithRelationsById(id).map { it?.toDomain() }
     }
 
-    override suspend fun upsertTask(task: Task) {
+    override fun notifyTasksChanged() {
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) {
         val entity = task.toEntity()
 
         // All-or-nothing: a crash mid-sync must never leave a task with its cross-refs/subtasks
@@ -66,11 +70,11 @@ class YataRepositoryImpl @Inject constructor(
             }
         }
 
-        syncReminder(entity)
-        widgetUpdater.notifyTasksChanged()
+        if (resyncReminder) syncReminder(entity)
+        if (notify) widgetUpdater.notifyTasksChanged()
     }
 
-    override suspend fun toggleTaskDone(id: String) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun toggleTaskDone(id: String, notify: Boolean) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val taskEntity = db.taskDao().getByIdDirect(id) ?: return@withContext
         val wasDone = taskEntity.done
         val isNowDone = !wasDone
@@ -134,7 +138,7 @@ class YataRepositoryImpl @Inject constructor(
                     db.taskDao().insert(updatedTask)
                 }
                 syncReminder(updatedTask)
-                widgetUpdater.notifyTasksChanged()
+                if (notify) widgetUpdater.notifyTasksChanged()
                 return@withContext
             }
         }
@@ -146,7 +150,7 @@ class YataRepositoryImpl @Inject constructor(
         )
         db.taskDao().insert(updatedTask)
         syncReminder(updatedTask)
-        widgetUpdater.notifyTasksChanged()
+        if (notify) widgetUpdater.notifyTasksChanged()
     }
 
     /** Advances a recurring task to its next occurrence without marking the skipped one done. */
@@ -194,10 +198,10 @@ class YataRepositoryImpl @Inject constructor(
         widgetUpdater.notifyTasksChanged()
     }
 
-    override suspend fun deleteTask(task: Task) {
+    override suspend fun deleteTask(task: Task, notify: Boolean) {
         reminderScheduler.cancelReminder(task.toEntity())
         db.taskDao().softDelete(task.id, System.currentTimeMillis())
-        widgetUpdater.notifyTasksChanged()
+        if (notify) widgetUpdater.notifyTasksChanged()
     }
 
     override fun getDeletedTasks(): Flow<List<Task>> {

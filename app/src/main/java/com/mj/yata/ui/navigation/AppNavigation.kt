@@ -32,7 +32,8 @@ fun AppNavigation(
     navController: NavHostController,
     onExportRequested: () -> Unit,
     onImportRequested: () -> Unit,
-    onExportIcsRequested: () -> Unit
+    onExportIcsRequested: () -> Unit,
+    onCloudSignInRequested: () -> Unit
 ) {
     val onNavigateToTab: (Int) -> Unit = { index ->
         navController.navigate(Screen.Main.createRoute(index)) {
@@ -198,6 +199,7 @@ fun AppNavigation(
                 onExportRequested = onExportRequested,
                 onImportRequested = onImportRequested,
                 onExportIcsRequested = onExportIcsRequested,
+                onCloudSignInRequested = onCloudSignInRequested,
                 onNavigateToTab = onNavigateToTab,
                 onNavigateToTrash = { navController.navigate(Screen.Trash.route) }
             )

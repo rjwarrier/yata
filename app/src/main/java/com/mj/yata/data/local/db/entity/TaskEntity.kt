@@ -21,7 +21,11 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("listId"), Index("projectId")]
+    // deletedAt leads the composite index since it's the common predicate across the three
+    // hottest task queries (getTasks/getDeletedTasks filter on it alone; the Today query adds
+    // done + dueDate on top) — SQLite can use a leading prefix of a composite index, so this one
+    // index serves all three instead of needing three separate ones.
+    indices = [Index("listId"), Index("projectId"), Index(value = ["deletedAt", "done", "dueDate"])]
 )
 data class TaskEntity(
     @PrimaryKey val id: String,

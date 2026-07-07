@@ -608,9 +608,14 @@ fun MainScreen(
                     projects = projects,
                     people = people,
                     tags = tags,
+                    tasks = tasks,
                     onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
                         viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
                         activeSheet = MainSheetType.None
+                    },
+                    onGoToExistingTask = { id ->
+                        activeSheet = MainSheetType.None
+                        onNavigateToTaskDetail(id)
                     },
                     onCreateTag = { id, name, color ->
                         viewModel.upsertTag(Tag(id = id, name = name, color = color))

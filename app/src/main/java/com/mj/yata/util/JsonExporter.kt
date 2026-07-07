@@ -22,6 +22,24 @@ class JsonExporter @Inject constructor(
 ) {
     suspend fun exportData(uri: Uri): Boolean {
         return try {
+            val root = buildBackupJson()
+            context.contentResolver.openOutputStream(uri)?.use { os ->
+                OutputStreamWriter(os).use { writer ->
+                    writer.write(root.toString(2))
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("JsonExporter", "exportData failed", e)
+            false
+        }
+    }
+
+    /** Raw JSON bytes of a full backup — used for cloud upload, where there's no [Uri] to write
+     * through a [android.content.ContentResolver]. */
+    suspend fun exportToBytes(): ByteArray = buildBackupJson().toString(2).toByteArray(Charsets.UTF_8)
+
+    private suspend fun buildBackupJson(): JSONObject {
             val people = repository.getPeople().first()
             val projects = repository.getProjects().first()
             val lists = repository.getLists().first()
@@ -209,16 +227,7 @@ class JsonExporter @Inject constructor(
             }
             root.put("comments", commentsArr)
 
-            context.contentResolver.openOutputStream(uri)?.use { os ->
-                OutputStreamWriter(os).use { writer ->
-                    writer.write(root.toString(2))
-                }
-            }
-            true
-        } catch (e: Exception) {
-            Log.e("JsonExporter", "exportData failed", e)
-            false
-        }
+            return root
     }
 
     /**
@@ -275,8 +284,25 @@ class JsonExporter @Inject constructor(
                     }
                 }
             }
+            importJson(JSONObject(sb.toString()))
+        } catch (e: Exception) {
+            Log.e("JsonExporter", "importData failed", e)
+            false
+        }
+    }
 
-            val root = JSONObject(sb.toString())
+    /** Restores from raw JSON bytes — used for cloud restore, where there's no [Uri] to read
+     * through a [android.content.ContentResolver]. */
+    suspend fun importBytes(bytes: ByteArray): Boolean {
+        return try {
+            importJson(JSONObject(String(bytes, Charsets.UTF_8)))
+        } catch (e: Exception) {
+            Log.e("JsonExporter", "importBytes failed", e)
+            false
+        }
+    }
+
+    private suspend fun importJson(root: JSONObject): Boolean {
             var skippedRows = 0
 
             /** Runs [block] for row [i] of [label], logging and skipping just that row (instead
@@ -527,12 +553,8 @@ class JsonExporter @Inject constructor(
                 }
             }
             if (skippedRows > 0) {
-                Log.w("JsonExporter", "importData: completed with $skippedRows malformed row(s) skipped")
+                Log.w("JsonExporter", "importJson: completed with $skippedRows malformed row(s) skipped")
             }
-            true
-        } catch (e: Exception) {
-            Log.e("JsonExporter", "importData failed", e)
-            false
-        }
+            return true
     }
 }

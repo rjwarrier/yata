@@ -2,6 +2,8 @@ package com.mj.yata.ui.screen.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mj.yata.data.cloud.CloudBackupEntry
+import com.mj.yata.data.cloud.CloudBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
@@ -17,7 +19,8 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val repository: YataRepository,
     private val userPreferences: UserPreferences,
-    private val jsonExporter: JsonExporter
+    private val jsonExporter: JsonExporter,
+    private val cloudBackupManager: CloudBackupManager
 ) : ViewModel() {
 
     init {
@@ -98,6 +101,21 @@ class MainViewModel @Inject constructor(
     val projectsFeatureEnabled: StateFlow<Boolean> = userPreferences.projectsFeatureEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val cloudBackupEnabled: StateFlow<Boolean> = userPreferences.cloudBackupEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val cloudBackupAccountEmail: StateFlow<String?> = userPreferences.cloudBackupAccountEmailFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val cloudBackupLastAt: StateFlow<Long?> = userPreferences.cloudBackupLastAtFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val cloudBackupWifiOnly: StateFlow<Boolean> = userPreferences.cloudBackupWifiOnlyFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val cloudBackupIntervalMinutes: StateFlow<Long> = userPreferences.cloudBackupIntervalMinutesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 24 * 60L)
+
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
         viewModelScope.launch {
@@ -118,32 +136,41 @@ class MainViewModel @Inject constructor(
 
     fun bulkCompleteTasks(ids: List<String>) {
         viewModelScope.launch {
+            var changed = false
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id }
                 if (task != null && !task.done) {
-                    repository.toggleTaskDone(id)
+                    repository.toggleTaskDone(id, notify = false)
+                    changed = true
                 }
             }
+            if (changed) repository.notifyTasksChanged()
         }
     }
 
     fun bulkDeleteTasks(ids: List<String>) {
         viewModelScope.launch {
+            var changed = false
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
-                repository.deleteTask(task)
+                repository.deleteTask(task, notify = false)
+                changed = true
             }
+            if (changed) repository.notifyTasksChanged()
         }
     }
 
     fun bulkAddTag(ids: List<String>, tagId: String) {
         viewModelScope.launch {
+            var changed = false
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
                 if (!task.tagIds.contains(tagId)) {
-                    repository.upsertTask(task.copy(tagIds = task.tagIds + tagId))
+                    repository.upsertTask(task.copy(tagIds = task.tagIds + tagId), notify = false, resyncReminder = false)
+                    changed = true
                 }
             }
+            if (changed) repository.notifyTasksChanged()
         }
     }
 
@@ -153,22 +180,28 @@ class MainViewModel @Inject constructor(
             // single move — otherwise every bulk-moved task keeps its old sortOrder, which can
             // collide with whatever's already in the destination project.
             var nextSortOrder = tasks.value.count { it.projectId == projectId }
+            var changed = false
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
-                repository.upsertTask(task.copy(projectId = projectId, sortOrder = nextSortOrder))
+                repository.upsertTask(task.copy(projectId = projectId, sortOrder = nextSortOrder), notify = false, resyncReminder = false)
                 nextSortOrder++
+                changed = true
             }
+            if (changed) repository.notifyTasksChanged()
         }
     }
 
     fun bulkSetList(ids: List<String>, listId: String?) {
         viewModelScope.launch {
             var nextSortOrder = tasks.value.count { it.listId == listId }
+            var changed = false
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
-                repository.upsertTask(task.copy(listId = listId, sortOrder = nextSortOrder))
+                repository.upsertTask(task.copy(listId = listId, sortOrder = nextSortOrder), notify = false, resyncReminder = false)
                 nextSortOrder++
+                changed = true
             }
+            if (changed) repository.notifyTasksChanged()
         }
     }
 
@@ -181,7 +214,7 @@ class MainViewModel @Inject constructor(
      * callers that duplicate many tasks at once await these sequentially in one coroutine
      * instead of each fanning out its own untracked `launch`, so there's a real completion
      * point and no unordered race between the writes. */
-    private suspend fun duplicateTaskSuspend(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
+    private suspend fun duplicateTaskSuspend(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }, notify: Boolean = true) {
         val task = tasks.value.find { it.id == taskId } ?: return
         val newDue = task.due?.let { due ->
             try {
@@ -191,7 +224,8 @@ class MainViewModel @Inject constructor(
             }
         }
         repository.upsertTask(
-            task.copy(id = "t_" + UUID.randomUUID().toString(), due = newDue, done = false)
+            task.copy(id = "t_" + UUID.randomUUID().toString(), due = newDue, done = false),
+            notify = notify
         )
     }
 
@@ -210,14 +244,16 @@ class MainViewModel @Inject constructor(
                 it.projectId == projectId && !it.done && it.recurrence == null
             }
             openTasks.forEach { task ->
-                duplicateTaskSuspend(task.id) { it.plusMonths(1) }
+                duplicateTaskSuspend(task.id, dueAdjustment = { it.plusMonths(1) }, notify = false)
             }
+            if (openTasks.isNotEmpty()) repository.notifyTasksChanged()
         }
     }
 
     fun bulkDuplicateTasks(ids: List<String>) {
         viewModelScope.launch {
-            ids.forEach { duplicateTaskSuspend(it) }
+            ids.forEach { duplicateTaskSuspend(it, notify = false) }
+            if (ids.isNotEmpty()) repository.notifyTasksChanged()
         }
     }
 
@@ -228,11 +264,14 @@ class MainViewModel @Inject constructor(
      */
     fun commitTaskOrder(orderedTasks: List<Task>) {
         viewModelScope.launch {
+            var changed = false
             orderedTasks.forEachIndexed { index, task ->
                 if (task.sortOrder != index) {
-                    repository.upsertTask(task.copy(sortOrder = index))
+                    repository.upsertTask(task.copy(sortOrder = index), notify = false, resyncReminder = false)
+                    changed = true
                 }
             }
+            if (changed) repository.notifyTasksChanged()
         }
     }
 
@@ -276,26 +315,30 @@ class MainViewModel @Inject constructor(
             val task = tasks.value.find { it.id == taskId } ?: return@launch
             val targetSiblings = tasks.value.filter { it.listId == targetListId && it.projectId == targetProjectId }
             repository.upsertTask(
-                task.copy(listId = targetListId, projectId = targetProjectId, sortOrder = targetSiblings.size)
+                task.copy(listId = targetListId, projectId = targetProjectId, sortOrder = targetSiblings.size),
+                resyncReminder = false
             )
         }
     }
 
     fun bulkAssignPerson(ids: List<String>, personId: String) {
         viewModelScope.launch {
+            var changed = false
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
                 if (!task.assigneeIds.contains(personId)) {
-                    repository.upsertTask(task.copy(assigneeIds = task.assigneeIds + personId))
+                    repository.upsertTask(task.copy(assigneeIds = task.assigneeIds + personId), notify = false, resyncReminder = false)
+                    changed = true
                 }
             }
+            if (changed) repository.notifyTasksChanged()
         }
     }
 
     fun toggleTaskFlag(id: String) {
         viewModelScope.launch {
             val task = tasks.value.find { it.id == id } ?: return@launch
-            repository.upsertTask(task.copy(flag = !task.flag))
+            repository.upsertTask(task.copy(flag = !task.flag), resyncReminder = false)
         }
     }
 
@@ -309,7 +352,7 @@ class MainViewModel @Inject constructor(
                 "high" -> "none"
                 else -> "none"
             }
-            repository.upsertTask(task.copy(priority = nextPriority))
+            repository.upsertTask(task.copy(priority = nextPriority), resyncReminder = false)
         }
     }
 
@@ -683,6 +726,55 @@ class MainViewModel @Inject constructor(
     fun setProjectsFeatureEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setProjectsFeatureEnabled(enabled)
+        }
+    }
+
+    fun cloudSignOut() {
+        viewModelScope.launch {
+            cloudBackupManager.signOut()
+        }
+    }
+
+    fun setCloudBackupEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setCloudBackupEnabled(enabled)
+        }
+    }
+
+    fun setCloudBackupWifiOnly(wifiOnly: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setCloudBackupWifiOnly(wifiOnly)
+        }
+    }
+
+    fun setCloudBackupIntervalMinutes(minutes: Long) {
+        viewModelScope.launch {
+            userPreferences.setCloudBackupIntervalMinutes(minutes)
+        }
+        cloudBackupManager.updateBackupInterval(minutes)
+    }
+
+    fun cloudBackupNow(onResult: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            onResult(cloudBackupManager.backupNow())
+        }
+    }
+
+    fun listCloudBackups(onResult: (Result<List<CloudBackupEntry>>) -> Unit) {
+        viewModelScope.launch {
+            onResult(cloudBackupManager.listBackups())
+        }
+    }
+
+    fun restoreCloudBackup(fileId: String, onResult: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            onResult(cloudBackupManager.restoreBackup(fileId))
+        }
+    }
+
+    fun compareWithLastBackup(onResult: (Result<com.mj.yata.data.cloud.CloudBackupDiff>) -> Unit) {
+        viewModelScope.launch {
+            onResult(cloudBackupManager.compareWithLatestBackup(tasks.value))
         }
     }
 }

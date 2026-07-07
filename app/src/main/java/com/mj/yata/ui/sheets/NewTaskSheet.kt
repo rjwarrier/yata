@@ -1,5 +1,9 @@
 package com.mj.yata.ui.sheets
 
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,10 +34,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +47,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,6 +85,7 @@ import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.Tag
+import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.PriorityBars
@@ -89,6 +97,7 @@ import com.mj.yata.ui.widgets.YataSelectChip
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
+import com.mj.yata.util.findSimilarTask
 import java.time.LocalDate
 
 private fun pickAccentFor(name: String): String =
@@ -137,6 +146,8 @@ fun NewTaskSheet(
     projects: List<Project>,
     people: List<Person>,
     tags: List<Tag>,
+    tasks: List<Task> = emptyList(),
+    onGoToExistingTask: (String) -> Unit = {},
     onAddTask: (
         title: String,
         listId: String?,
@@ -248,6 +259,30 @@ fun NewTaskSheet(
         }
     }
 
+    val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim()
+            if (!spoken.isNullOrBlank()) {
+                // Appended rather than replacing, so a second voice tap adds on to what's
+                // already typed instead of clobbering it.
+                val merged = if (title.text.isBlank()) spoken else title.text.trimEnd() + " " + spoken
+                title = TextFieldValue(merged, TextRange(merged.length))
+                quickAddDismissed = false
+            }
+        }
+    }
+    val startVoiceInput = {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your task")
+        }
+        if (intent.resolveActivity(context.packageManager) != null) {
+            speechLauncher.launch(intent)
+        } else {
+            android.widget.Toast.makeText(context, "Voice input isn't available on this device.", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         try {
@@ -257,23 +292,35 @@ fun NewTaskSheet(
         }
     }
 
+    var pendingDuplicateTask by remember { mutableStateOf<Task?>(null) }
+
+    val createTask = {
+        onAddTask(
+            if (quickAddMatched) quickAdd.title else title.text.trim(),
+            selectedListId,
+            selectedPriority,
+            selectedAssigneeIds.toList(),
+            selectedTagIds.toList(),
+            selectedRecurrence,
+            selectedDueDate,
+            selectedTime,
+            selectedReminder,
+            selectedSection,
+            selectedProjectId,
+            notes.trim().ifBlank { null },
+            subtasks.toList()
+        )
+    }
+
     val submit = {
         if (canCreateTask) {
-            onAddTask(
-                if (quickAddMatched) quickAdd.title else title.text.trim(),
-                selectedListId,
-                selectedPriority,
-                selectedAssigneeIds.toList(),
-                selectedTagIds.toList(),
-                selectedRecurrence,
-                selectedDueDate,
-                selectedTime,
-                selectedReminder,
-                selectedSection,
-                selectedProjectId,
-                notes.trim().ifBlank { null },
-                subtasks.toList()
-            )
+            val finalTitle = if (quickAddMatched) quickAdd.title else title.text.trim()
+            val duplicate = findSimilarTask(finalTitle, tasks)
+            if (duplicate != null) {
+                pendingDuplicateTask = duplicate
+            } else {
+                createTask()
+            }
         }
     }
 
@@ -344,45 +391,55 @@ fun NewTaskSheet(
                 }
             }
 
-            // Big borderless title input with primary underline
-            BasicTextField(
-                value = title,
-                onValueChange = { newValue ->
-                    if (newValue.text != title.text) quickAddDismissed = false
-                    title = newValue
-                },
-                singleLine = true,
-                textStyle = TextStyle(
-                    fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 22.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                visualTransformation = quickAddVisualTransformation,
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester)
-                    .border(
-                        androidx.compose.foundation.BorderStroke(0.dp, Color.Transparent)
-                    )
-                    .padding(vertical = 10.dp)
-                    .drawBottomBorder(MaterialTheme.colorScheme.primary),
-                decorationBox = { inner ->
-                    if (title.text.isEmpty()) {
-                        Text(
-                            text = "What needs doing? Try # for tags, @ for people",
-                            style = TextStyle(
-                                fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 22.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
+            // Big borderless title input with primary underline, plus a mic button that
+            // dictates straight into it (same field the NL quick-add parser already reads).
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BasicTextField(
+                    value = title,
+                    onValueChange = { newValue ->
+                        if (newValue.text != title.text) quickAddDismissed = false
+                        title = newValue
+                    },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 22.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    visualTransformation = quickAddVisualTransformation,
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester)
+                        .border(
+                            androidx.compose.foundation.BorderStroke(0.dp, Color.Transparent)
                         )
+                        .padding(vertical = 10.dp)
+                        .drawBottomBorder(MaterialTheme.colorScheme.primary),
+                    decorationBox = { inner ->
+                        if (title.text.isEmpty()) {
+                            Text(
+                                text = "What needs doing? Try # for tags, @ for people",
+                                style = TextStyle(
+                                    fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 22.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            )
+                        }
+                        inner()
                     }
-                    inner()
+                )
+                IconButton(onClick = startVoiceInput) {
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Add task by voice",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
-            )
+            }
 
             if (mention != null) {
                 MentionSuggestions(
@@ -736,6 +793,31 @@ fun NewTaskSheet(
                 )
             }
         }
+    }
+
+    pendingDuplicateTask?.let { existing ->
+        AlertDialog(
+            onDismissRequest = { pendingDuplicateTask = null },
+            title = { Text("Similar task already exists") },
+            text = { Text("\"${existing.title}\" looks like a match for what you're creating.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDuplicateTask = null
+                    createTask()
+                }) {
+                    Text("Ignore and create")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    val existingId = existing.id
+                    pendingDuplicateTask = null
+                    onGoToExistingTask(existingId)
+                }) {
+                    Text("Go to existing task")
+                }
+            }
+        )
     }
 
     if (showDatePicker) {

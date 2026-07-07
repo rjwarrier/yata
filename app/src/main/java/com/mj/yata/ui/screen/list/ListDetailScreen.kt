@@ -7,10 +7,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -20,6 +22,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +36,7 @@ import com.mj.yata.ui.widgets.DragDropReorderableColumn
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
+import com.mj.yata.util.taskMatchesQuery
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
@@ -61,6 +66,8 @@ fun ListDetailScreen(
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var hideCompleted by remember { mutableStateOf(false) }
+    var searchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     if (list == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -81,6 +88,9 @@ fun ListDetailScreen(
     val pendingListTasks = remember(listTasks) { listTasks.filter { !it.done } }
     val completedListTasks = remember(listTasks, hideCompleted) {
         if (hideCompleted) emptyList() else listTasks.filter { it.done }
+    }
+    val searchFilteredTasks = remember(listTasks, searchQuery) {
+        if (searchQuery.isBlank()) emptyList() else listTasks.filter { taskMatchesQuery(it, searchQuery) }
     }
 
     // Not keyed on pendingListTasks — see ProjectDetailScreen for why: any task write anywhere
@@ -111,51 +121,88 @@ fun ListDetailScreen(
         },
         topBar = {
             // Title-less bar: the list name lives in the hero header below (per handoff's List Detail).
+            // Except while searching, where the title slot hosts the inline search field.
             TopAppBar(
-                title = {},
+                title = {
+                    if (searchActive) {
+                        val focusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                            singleLine = true,
+                            placeholder = { Text("Search in ${list.name}") },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
+                        )
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = {
+                        if (searchActive) {
+                            searchActive = false
+                            searchQuery = ""
+                        } else {
+                            onNavigateBack()
+                        }
+                    }) {
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = if (searchActive) "Close search" else "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.toggleListStarred(list.id) }) {
-                        Icon(
-                            imageVector = if (list.starred) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                            contentDescription = if (list.starred) "Unstar list" else "Star list",
-                            tint = if (list.starred) accents.accentD else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { hideCompleted = !hideCompleted }) {
-                        Icon(
-                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
-                        )
-                    }
-                    var showMenu by remember { mutableStateOf(false) }
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Edit list") },
-                            onClick = {
-                                showMenu = false
-                                isEditSheetOpen = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Delete list") },
-                            onClick = {
-                                showMenu = false
-                                showDeleteDialog = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                        )
+                    if (searchActive) {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            }
+                        }
+                    } else {
+                        IconButton(onClick = { searchActive = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search in list")
+                        }
+                        IconButton(onClick = { viewModel.toggleListStarred(list.id) }) {
+                            Icon(
+                                imageVector = if (list.starred) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                                contentDescription = if (list.starred) "Unstar list" else "Star list",
+                                tint = if (list.starred) accents.accentD else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                            Icon(
+                                imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
+                            )
+                        }
+                        var showMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit list") },
+                                onClick = {
+                                    showMenu = false
+                                    isEditSheetOpen = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete list") },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -227,8 +274,63 @@ fun ListDetailScreen(
             }
 
             // 2. Tasks list — Pending (drag-to-reorder, or drag to the top/bottom edge to move
-            // to another list/project) above a static Completed section.
-            if (pendingListTasks.isEmpty() && completedListTasks.isEmpty()) {
+            // to another list/project) above a static Completed section. While searching, drag
+            // reorder is disabled (see ProjectDetailScreen for why) and it falls back to a flat
+            // matched list.
+            @Composable
+            fun taskRowFor(task: Task, modifier: Modifier = Modifier) {
+                val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
+                    if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
+                }
+                val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
+                    if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                }
+
+                TaskRow(
+                    task = task,
+                    list = list,
+                    assignees = taskAssignees,
+                    tags = taskTags,
+                    onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
+                    onTaskClick = { onNavigateToTaskDetail(task.id) },
+                    modifier = modifier,
+                    showList = false,
+                    onCommentClick = { pendingCommentTask = task }
+                )
+            }
+
+            if (searchActive) {
+                if (searchQuery.isBlank()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Type to search tasks in this list.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                } else if (searchFilteredTasks.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No matching tasks.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                } else {
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(bottom = 88.dp)
+                    ) {
+                        items(searchFilteredTasks, key = { it.id }) { task -> taskRowFor(task) }
+                    }
+                }
+            } else if (pendingListTasks.isEmpty() && completedListTasks.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -242,28 +344,6 @@ fun ListDetailScreen(
                     )
                 }
             } else {
-                @Composable
-                fun taskRowFor(task: Task, modifier: Modifier = Modifier) {
-                    val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
-                        if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
-                    }
-                    val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
-                        if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
-                    }
-
-                    TaskRow(
-                        task = task,
-                        list = list,
-                        assignees = taskAssignees,
-                        tags = taskTags,
-                        onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                        onTaskClick = { onNavigateToTaskDetail(task.id) },
-                        modifier = modifier,
-                        showList = false,
-                        onCommentClick = { pendingCommentTask = task }
-                    )
-                }
-
                 val showPendingHeader = !hideCompleted && pendingListTasks.isNotEmpty()
                 DragDropReorderableColumn(
                     items = localOrder,
@@ -342,10 +422,15 @@ fun ListDetailScreen(
                 projects = projects,
                 people = people,
                 tags = tags,
+                tasks = tasks,
                 initialListId = list.id,
                 onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
                     viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
                     isNewTaskSheetOpen = false
+                },
+                onGoToExistingTask = { id ->
+                    isNewTaskSheetOpen = false
+                    onNavigateToTaskDetail(id)
                 },
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(com.mj.yata.domain.model.Tag(id = id, name = name, color = color))
