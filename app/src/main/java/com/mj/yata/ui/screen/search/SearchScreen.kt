@@ -21,6 +21,7 @@ import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.effectiveTags
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.TaskRow
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 /** One-tap filters shown before/alongside a text query — each is a self-contained predicate so
@@ -72,6 +73,8 @@ fun SearchScreen(
     var showBulkTagSheet by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val peopleById = remember(people) { people.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
@@ -101,6 +104,15 @@ fun SearchScreen(
     if (selectionMode) {
         val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
         Scaffold(
+            snackbarHost = {
+                SnackbarHost(snackbarHostState) { data ->
+                    if (data.visuals.actionLabel == "Undo") {
+                        com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
+                    } else {
+                        Snackbar(data)
+                    }
+                }
+            },
             bottomBar = {
                 com.mj.yata.ui.screen.main.CustomBottomNav(
                     selectedTab = -1,
@@ -245,9 +257,19 @@ fun SearchScreen(
             text = { Text("This can't be undone.") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.bulkDeleteTasks(selectedIds.toList())
+                    val ids = selectedIds.toList()
                     selectedIds.clear()
                     showBulkDeleteDialog = false
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.Dismissed) {
+                            viewModel.bulkDeleteTasks(ids)
+                        }
+                    }
                 }) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
                 }

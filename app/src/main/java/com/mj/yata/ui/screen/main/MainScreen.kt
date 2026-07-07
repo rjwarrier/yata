@@ -76,6 +76,23 @@ fun MainScreen(
 ) {
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Bulk delete is deferred until the Undo snackbar times out, mirroring the single-task
+    // delete flow on TaskDetailScreen — the coroutine outlives the confirm dialog that triggered it.
+    fun bulkDeleteWithUndo(ids: List<String>) {
+        if (ids.isEmpty()) return
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.Dismissed) {
+                viewModel.bulkDeleteTasks(ids)
+            }
+        }
+    }
 
     // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
     var selectedTab by remember { mutableIntStateOf(initialTab) }
@@ -326,6 +343,15 @@ fun MainScreen(
         }
     ) {
         Scaffold(
+            snackbarHost = {
+                SnackbarHost(snackbarHostState) { data ->
+                    if (data.visuals.actionLabel == "Undo") {
+                        com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
+                    } else {
+                        Snackbar(data)
+                    }
+                }
+            },
             bottomBar = {
                 val todayRemainingCount by viewModel.todayRemainingCount.collectAsState()
                 CustomBottomNav(
@@ -419,7 +445,7 @@ fun MainScreen(
                             onTaskClick = onNavigateToTaskDetail,
                             onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
                             onBulkComplete = { viewModel.bulkCompleteTasks(it) },
-                            onBulkDelete = { viewModel.bulkDeleteTasks(it) },
+                            onBulkDelete = { bulkDeleteWithUndo(it) },
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
@@ -497,7 +523,7 @@ fun MainScreen(
                             onTaskClick = onNavigateToTaskDetail,
                             onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
                             onBulkComplete = { viewModel.bulkCompleteTasks(it) },
-                            onBulkDelete = { viewModel.bulkDeleteTasks(it) },
+                            onBulkDelete = { bulkDeleteWithUndo(it) },
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },

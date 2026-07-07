@@ -49,32 +49,6 @@ import androidx.compose.foundation.layout.FlowRow
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-/** Matches the SnackbarDuration.Short used for the delete-undo snackbar below, so the visible
- * countdown lands on zero right as the snackbar actually auto-dismisses. */
-private const val DELETE_UNDO_SECONDS = 4
-
-/** Custom rendering for the delete-undo snackbar — ticks a live countdown next to the Undo
- * action so it's clear the delete is about to become permanent, instead of a static label. */
-@Composable
-private fun DeleteUndoSnackbar(data: SnackbarData) {
-    var remaining by remember(data) { mutableIntStateOf(DELETE_UNDO_SECONDS) }
-    LaunchedEffect(data) {
-        while (remaining > 0) {
-            kotlinx.coroutines.delay(1000)
-            remaining--
-        }
-    }
-    Snackbar(
-        action = {
-            TextButton(onClick = { data.performAction() }) {
-                Text("UNDO (${remaining}s)")
-            }
-        }
-    ) {
-        Text(data.visuals.message)
-    }
-}
-
 /** Equal-width rectangular (not pill-shaped) toggle for the Subtasks/Notes/Comments chip row —
  * highlighted while its section is visible, plain otherwise. */
 @Composable
