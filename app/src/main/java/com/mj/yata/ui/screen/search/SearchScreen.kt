@@ -23,6 +23,10 @@ import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.TaskRow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 
 /** One-tap filters shown before/alongside a text query — each is a self-contained predicate so
  * toggling several combines them with AND (narrows further, doesn't union). */
@@ -42,7 +46,7 @@ private enum class SmartFilter(val label: String) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen(
     viewModel: MainViewModel,
@@ -281,7 +285,7 @@ fun SearchScreen(
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun SearchResultsList(
     query: String,
@@ -378,6 +382,9 @@ private fun SearchResultsList(
                     selectionMode = selectionMode,
                     selected = selectedIds.contains(task.id),
                     onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
+                    modifier = Modifier.animateItemPlacement(
+                        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                    ),
                     onCommentClick = { pendingCommentTask = task }
                 )
             }

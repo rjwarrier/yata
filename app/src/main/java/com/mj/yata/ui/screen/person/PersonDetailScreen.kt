@@ -32,7 +32,14 @@ import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.sheets.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
+import androidx.compose.ui.draw.rotate
+import androidx.compose.animation.core.animateFloatAsState
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PersonDetailScreen(
     viewModel: MainViewModel,
@@ -59,6 +66,17 @@ fun PersonDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var hideCompleted by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+
+    val openChevronRotation by animateFloatAsState(
+        targetValue = if (openExpanded) 0f else -90f,
+        animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
+        label = "openChevronRotation"
+    )
+    val completedChevronRotation by animateFloatAsState(
+        targetValue = if (completedExpanded) 0f else -90f,
+        animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
+        label = "completedChevronRotation"
+    )
 
     if (person == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -223,9 +241,10 @@ fun PersonDetailScreen(
                     }
 
                     Icon(
-                        imageVector = if (openExpanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                        imageVector = Icons.Default.ExpandMore,
                         contentDescription = "Expand",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(openChevronRotation)
                     )
                 }
             }
@@ -263,6 +282,9 @@ fun PersonDetailScreen(
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
+                            modifier = Modifier.animateItemPlacement(
+                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            ),
                             onCommentClick = { pendingCommentTask = task }
                         )
                     }
@@ -305,9 +327,10 @@ fun PersonDetailScreen(
                     }
 
                     Icon(
-                        imageVector = if (completedExpanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                        imageVector = Icons.Default.ExpandMore,
                         contentDescription = "Expand",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(completedChevronRotation)
                     )
                 }
             }
@@ -345,6 +368,9 @@ fun PersonDetailScreen(
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
+                            modifier = Modifier.animateItemPlacement(
+                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            ),
                             onCommentClick = { pendingCommentTask = task }
                         )
                     }

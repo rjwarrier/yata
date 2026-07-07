@@ -30,7 +30,12 @@ import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TagDetailScreen(
     viewModel: MainViewModel,
@@ -205,7 +210,7 @@ fun TagDetailScreen(
                 }
             } else {
                 @Composable
-                fun taskRowFor(task: Task) {
+                fun taskRowFor(task: Task, modifier: Modifier = Modifier) {
                     val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                     val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                         if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
@@ -219,6 +224,7 @@ fun TagDetailScreen(
                         tags = taskTags,
                         onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                         onTaskClick = { onNavigateToTaskDetail(task.id) },
+                        modifier = modifier,
                         onCommentClick = { pendingCommentTask = task }
                     )
                 }
@@ -226,10 +232,24 @@ fun TagDetailScreen(
                 if (!hideCompleted && pendingTaggedTasks.isNotEmpty()) {
                     item(key = "pending_header") { TaskSectionHeader("PENDING", pendingTaggedTasks.size) }
                 }
-                items(pendingTaggedTasks, key = { it.id }) { task -> taskRowFor(task) }
+                items(pendingTaggedTasks, key = { it.id }) { task ->
+                    taskRowFor(
+                        task = task,
+                        modifier = Modifier.animateItemPlacement(
+                            animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                        )
+                    )
+                }
                 if (!hideCompleted && completedTaggedTasks.isNotEmpty()) {
                     item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedTaggedTasks.size) }
-                    items(completedTaggedTasks, key = { it.id }) { task -> taskRowFor(task) }
+                    items(completedTaggedTasks, key = { it.id }) { task ->
+                        taskRowFor(
+                            task = task,
+                            modifier = Modifier.animateItemPlacement(
+                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            )
+                        )
+                    }
                 }
             }
         }

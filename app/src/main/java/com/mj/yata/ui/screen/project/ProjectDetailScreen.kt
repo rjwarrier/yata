@@ -36,6 +36,9 @@ import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -273,7 +276,7 @@ fun ProjectDetailScreen(
                 }
             } else {
                 @Composable
-                fun taskRowFor(task: Task) {
+                fun taskRowFor(task: Task, modifier: Modifier = Modifier) {
                     val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                     val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                         if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
@@ -289,6 +292,7 @@ fun ProjectDetailScreen(
                         tags = taskTags,
                         onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                         onTaskClick = { onNavigateToTaskDetail(task.id) },
+                        modifier = modifier,
                         onCommentClick = { pendingCommentTask = task }
                     )
                 }
@@ -313,7 +317,14 @@ fun ProjectDetailScreen(
                     footer = {
                         if (!hideCompleted && completedProjectTasks.isNotEmpty()) {
                             item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedProjectTasks.size) }
-                            items(completedProjectTasks, key = { it.id }) { task -> taskRowFor(task) }
+                            items(completedProjectTasks, key = { it.id }) { task ->
+                                taskRowFor(
+                                    task = task,
+                                    modifier = Modifier.animateItemPlacement(
+                                        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                    )
+                                )
+                            }
                         }
                     }
                 ) { task -> taskRowFor(task) }

@@ -38,6 +38,10 @@ import kotlinx.coroutines.launch
  * neighbor, so the caller should reorder its own list to keep [items] in sync during the
  * drag. [onDragEnd] fires once the drag finishes so the caller can persist the final order.
  */
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <T> DragDropReorderableColumn(
@@ -105,8 +109,19 @@ fun <T> DragDropReorderableColumn(
             // relative to `items` alone, which is all the caller knows about.
             val globalIndex = index + headerItemCount
             val isDragging = draggingIndex == globalIndex
+            val animModifier = if (isDragging) {
+                Modifier
+            } else {
+                Modifier.animateItemPlacement(
+                    animationSpec = tween(
+                        durationMillis = YataDur.sheet,
+                        easing = YataEase.emphasized
+                    )
+                )
+            }
             Box(
                 modifier = Modifier
+                    .then(animModifier)
                     .fillMaxWidth()
                     .zIndex(if (isDragging) 1f else 0f)
                     .graphicsLayer {

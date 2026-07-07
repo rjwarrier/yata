@@ -1,5 +1,12 @@
 package com.mj.yata.ui.widgets
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +37,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.theme.UiShape
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 
 /**
  * Tinted pill selector: accent@18% bg + accent text + check when selected.
@@ -46,15 +56,23 @@ fun YataSelectChip(
     showCheck: Boolean = true,
     height: Dp = 34.dp
 ) {
-    val bg = if (selected) tint.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh
-    val fg = if (selected) tint else MaterialTheme.colorScheme.onSurface
+    val bgAnimated by animateColorAsState(
+        targetValue = if (selected) tint.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+        animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
+        label = "selectChipBg"
+    )
+    val fgAnimated by animateColorAsState(
+        targetValue = if (selected) tint else MaterialTheme.colorScheme.onSurface,
+        animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
+        label = "selectChipFg"
+    )
 
     PressableScaleBox(onClick = onClick, modifier = modifier) {
         Row(
             modifier = Modifier
                 .defaultMinSize(minHeight = height)
                 .clip(UiShape.pill)
-                .background(bg)
+                .background(bgAnimated)
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -66,7 +84,7 @@ fun YataSelectChip(
             }
             Text(
                 text = label,
-                color = fg,
+                color = fgAnimated,
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontSize = 13.sp
                 ),
@@ -74,11 +92,15 @@ fun YataSelectChip(
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.widthIn(max = 160.dp)
             )
-            if (selected && showCheck) {
+            AnimatedVisibility(
+                visible = selected && showCheck,
+                enter = expandHorizontally() + fadeIn(),
+                exit = shrinkHorizontally() + fadeOut()
+            ) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = fg,
+                    tint = fgAnimated,
                     modifier = Modifier.size(14.dp)
                 )
             }

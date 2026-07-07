@@ -23,7 +23,12 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-@OptIn(ExperimentalMaterial3Api::class)
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TrashScreen(
     viewModel: MainViewModel,
@@ -108,7 +113,10 @@ fun TrashScreen(
                     TrashTaskRow(
                         task = task,
                         onRestore = { viewModel.restoreTask(task.id) },
-                        onDeleteForever = { pendingPermanentDelete = task }
+                        onDeleteForever = { pendingPermanentDelete = task },
+                        modifier = Modifier.animateItemPlacement(
+                            animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                        )
                     )
                 }
             }
@@ -162,12 +170,13 @@ fun TrashScreen(
 private fun TrashTaskRow(
     task: Task,
     onRestore: () -> Unit,
-    onDeleteForever: () -> Unit
+    onDeleteForever: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier

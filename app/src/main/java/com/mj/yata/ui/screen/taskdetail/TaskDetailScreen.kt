@@ -2,6 +2,7 @@ package com.mj.yata.ui.screen.taskdetail
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -47,6 +48,9 @@ import com.mj.yata.ui.sheets.RecurrenceSheet
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import kotlinx.coroutines.launch
+import androidx.compose.animation.animateColorAsState
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 import java.util.UUID
 
 /** Equal-width rectangular (not pill-shaped) toggle for the Subtasks/Notes/Comments chip row —
@@ -58,18 +62,29 @@ private fun SectionToggleChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val bgColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+        animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
+        label = "sectionToggleBg"
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
+        label = "sectionToggleText"
+    )
+
     Box(
         modifier = modifier
             .height(36.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh)
+            .background(bgColor)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            color = textColor
         )
     }
 }
@@ -501,6 +516,11 @@ fun TaskDetailScreen(
                     val subTotal = subtasks.size
                     val subDone = subtasks.count { it.done }
                     val subProgress = if (subTotal > 0) subDone.toFloat() / subTotal else 0f
+                    val animatedSubProgress by animateFloatAsState(
+                        targetValue = subProgress,
+                        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
+                        label = "subtaskProgressAnimation"
+                    )
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -520,7 +540,7 @@ fun TaskDetailScreen(
 
                     if (subTotal > 0) {
                         LinearProgressIndicator(
-                            progress = subProgress,
+                            progress = { animatedSubProgress },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(6.dp)

@@ -36,6 +36,10 @@ import com.mj.yata.util.EntityStat
 import com.mj.yata.util.PriorityStat
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -323,6 +327,12 @@ private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean) {
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         days.forEach { day ->
+            val targetPct = day.completedCount.toFloat() / maxCount
+            val animatedPct by animateFloatAsState(
+                targetValue = targetPct,
+                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
+                label = "chartBarHeight"
+            )
             Canvas(
                 modifier = Modifier
                     .weight(1f)
@@ -330,7 +340,7 @@ private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean) {
             ) {
                 val barWidth = size.width * 0.55f
                 val x = (size.width - barWidth) / 2f
-                val barHeight = size.height * (day.completedCount.toFloat() / maxCount)
+                val barHeight = size.height * animatedPct
 
                 // Faint full-height track so a zero-completion day still reads as a bar slot.
                 drawRoundRect(
@@ -375,6 +385,11 @@ private fun PriorityStatRow(stat: PriorityStat) {
         "low" -> "Low" to accents.accentE
         else -> "No priority" to MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val animatedPct by animateFloatAsState(
+        targetValue = stat.pct,
+        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
+        label = "priorityStatProgress"
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -390,7 +405,7 @@ private fun PriorityStatRow(stat: PriorityStat) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             LinearProgressIndicator(
-                progress = stat.pct,
+                progress = { animatedPct },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp)
@@ -465,6 +480,11 @@ private fun EntityStatRow(
     subtitle: String? = null,
     leading: (@Composable () -> Unit)? = null
 ) {
+    val animatedPct by animateFloatAsState(
+        targetValue = stat.pct,
+        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
+        label = "entityStatProgress"
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -496,7 +516,7 @@ private fun EntityStatRow(
             }
             Spacer(modifier = Modifier.height(4.dp))
             LinearProgressIndicator(
-                progress = stat.pct,
+                progress = { animatedPct },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp)

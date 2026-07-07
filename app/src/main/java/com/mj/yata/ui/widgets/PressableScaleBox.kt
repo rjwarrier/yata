@@ -16,14 +16,15 @@ fun PressableScaleBox(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     scaleAmount: Float = 0.96f,
+    enabled: Boolean = true,
     content: @Composable BoxScope.() -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale = remember { Animatable(1f) }
 
-    LaunchedEffect(isPressed) {
-        if (isPressed) {
+    LaunchedEffect(isPressed, enabled) {
+        if (isPressed && enabled) {
             scale.animateTo(scaleAmount, spring(stiffness = 900f))
         } else {
             scale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 900f))
@@ -36,6 +37,7 @@ fun PressableScaleBox(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null, // Disable default ripple
+                enabled = enabled,
                 onClick = onClick
             ),
         content = content

@@ -1,6 +1,7 @@
 package com.mj.yata.ui.screen.main
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -57,7 +58,7 @@ sealed interface MainSheetType {
     object NewTag : MainSheetType
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
@@ -255,26 +256,57 @@ fun MainScreen(
                             )
                         }
                         items(visibleStarredProjects, key = { "starred_pr_${it.id}" }) { project ->
-                            DrawerItem(project.name, Icons.Default.Layers, false, accents.getAccent(project.color)) {
+                            DrawerItem(
+                                label = project.name,
+                                icon = Icons.Default.Layers,
+                                selected = false,
+                                accentColor = accents.getAccent(project.color),
+                                modifier = Modifier.animateItemPlacement(
+                                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                )
+                            ) {
                                 onNavigateToProjectDetail(project.id)
                                 scope.launch { drawerState.close() }
                             }
                         }
                         items(starredLists, key = { "starred_l_${it.id}" }) { list ->
-                            DrawerItem(list.name, Icons.Default.Folder, false, accents.getAccent(list.color)) {
+                            DrawerItem(
+                                label = list.name,
+                                icon = Icons.Default.Folder,
+                                selected = false,
+                                accentColor = accents.getAccent(list.color),
+                                modifier = Modifier.animateItemPlacement(
+                                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                )
+                            ) {
                                 onNavigateToListDetail(list.id)
                                 scope.launch { drawerState.close() }
                             }
                         }
                         items(visibleStarredTags, key = { "starred_t_${it.id}" }) { tag ->
                             val tagColor = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
-                            DrawerItem(tag.name, Icons.Default.Label, false, tagColor) {
+                            DrawerItem(
+                                label = tag.name,
+                                icon = Icons.Default.Label,
+                                selected = false,
+                                accentColor = tagColor,
+                                modifier = Modifier.animateItemPlacement(
+                                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                )
+                            ) {
                                 onNavigateToTagDetail(tag.id)
                                 scope.launch { drawerState.close() }
                             }
                         }
                         items(visibleStarredPeople, key = { "starred_p_${it.id}" }) { person ->
-                            DrawerItem(person.name, Icons.Default.Person, false) {
+                            DrawerItem(
+                                label = person.name,
+                                icon = Icons.Default.Person,
+                                selected = false,
+                                modifier = Modifier.animateItemPlacement(
+                                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                )
+                            ) {
                                 onNavigateToPersonDetail(person.id)
                                 scope.launch { drawerState.close() }
                             }
@@ -316,8 +348,16 @@ fun MainScreen(
                             }
                         }
                     }
-                    items(lists) { list ->
-                        DrawerItem(list.name, Icons.Default.Folder, false, accents.getAccent(list.color)) {
+                    items(lists, key = { "list_${it.id}" }) { list ->
+                        DrawerItem(
+                            label = list.name,
+                            icon = Icons.Default.Folder,
+                            selected = false,
+                            accentColor = accents.getAccent(list.color),
+                            modifier = Modifier.animateItemPlacement(
+                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            )
+                        ) {
                             onNavigateToListDetail(list.id)
                             scope.launch { drawerState.close() }
                         }
@@ -647,10 +687,11 @@ fun DrawerItem(
     icon: ImageVector,
     selected: Boolean,
     accentColor: Color? = null,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable { onClick() },

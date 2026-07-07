@@ -1,5 +1,10 @@
 package com.mj.yata.ui.widgets
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -13,9 +18,11 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -27,6 +34,8 @@ import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -47,6 +56,12 @@ fun TaskRow(
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
 
+    val titleTextColor by animateColorAsState(
+        targetValue = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+        animationSpec = tween(durationMillis = YataDur.fade, easing = YataEase.emphasized),
+        label = "taskRowTitleColor"
+    )
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -55,16 +70,31 @@ fun TaskRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (selectionMode) {
+            val selectionCheckboxBg by animateColorAsState(
+                targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
+                label = "taskSelectionCheckboxBg"
+            )
+            val selectionCheckScale by animateFloatAsState(
+                targetValue = if (selected) 1f else 0f,
+                animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium),
+                label = "taskSelectionCheckScale"
+            )
             Box(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
+                    .background(selectionCheckboxBg),
                 contentAlignment = Alignment.Center
             ) {
-                if (selected) {
-                    Icon(Icons.Default.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
-                }
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Selected",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(16.dp)
+                        .scale(selectionCheckScale)
+                )
             }
         } else {
             // Left round checkbox
@@ -88,7 +118,7 @@ fun TaskRow(
             ) {
                 Text(
                     text = task.title,
-                    color = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                    color = titleTextColor,
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Medium,
                         fontSize = 15.sp,
