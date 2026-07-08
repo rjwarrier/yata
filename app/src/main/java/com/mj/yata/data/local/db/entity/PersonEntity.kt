@@ -26,5 +26,6 @@ data class PersonEntity(
     val isMe: Boolean = false,
     val groupId: String? = null,
     val starred: Boolean = false,
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    val archived: Boolean = false
 )

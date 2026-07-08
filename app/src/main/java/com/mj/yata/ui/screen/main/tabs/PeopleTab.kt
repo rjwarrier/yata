@@ -1,10 +1,7 @@
 package com.mj.yata.ui.screen.main.tabs
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -24,8 +21,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -160,8 +154,10 @@ fun PeopleTab(
         }
 
         // 3. Scrollable, grouped, multi-selectable list of people
+        val activePeople = remember(people) { people.filter { !it.archived } }
+        val archivedPeople = remember(people) { people.filter { it.archived } }
         val groupedIds = personGroups.map { it.id }.toSet()
-        val ungrouped = people.filter { it.groupId == null || it.groupId !in groupedIds }
+        val ungrouped = activePeople.filter { it.groupId == null || it.groupId !in groupedIds }
         val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
 
         LazyColumn(
@@ -170,7 +166,7 @@ fun PeopleTab(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             personGroups.forEach { group ->
-                val groupPeople = people.filter { it.groupId == group.id }.sortedBy { it.sortOrder }
+                val groupPeople = activePeople.filter { it.groupId == group.id }.sortedBy { it.sortOrder }
                 if (groupPeople.isNotEmpty()) {
                     val expanded = expandedGroups[group.id] ?: true
                     item(key = "header_${group.id}") {
@@ -219,6 +215,29 @@ fun PeopleTab(
                             onPersonClick = onPersonClick,
                             onToggleStar = onToggleStar,
                             onReordered = onPeopleReordered
+                        )
+                    }
+                }
+            }
+
+            if (archivedPeople.isNotEmpty()) {
+                val archivedExpanded = expandedGroups["archived"] ?: false
+                item(key = "header_archived") {
+                    GroupHeader(
+                        title = "Archived",
+                        expanded = archivedExpanded,
+                        onToggle = { expandedGroups["archived"] = !archivedExpanded }
+                    )
+                }
+                if (archivedExpanded) {
+                    items(archivedPeople, key = { "archived_${it.id}" }) { person ->
+                        PersonRow(
+                            person = person,
+                            totalTasks = 0,
+                            doneTasks = 0,
+                            progress = 0f,
+                            onClick = { onPersonClick(person.id) },
+                            modifier = Modifier.padding(bottom = 12.dp)
                         )
                     }
                 }
@@ -288,10 +307,12 @@ private fun ReorderablePeopleSection(
             tasks.filter { it.assigneeIds.contains(person.id) }
         }
         val doneCount = personTasks.count { it.done }
+        val overdueCount = remember(personTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(personTasks) }
         PersonRow(
             person = person,
             totalTasks = personTasks.size,
             doneTasks = doneCount,
+            overdueTasks = overdueCount,
             progress = if (personTasks.isNotEmpty()) doneCount.toFloat() / personTasks.size else 0f,
             selectionMode = selectionMode,
             selected = selectedIds.contains(person.id),
@@ -316,6 +337,7 @@ fun PersonRow(
     doneTasks: Int,
     progress: Float,
     onClick: () -> Unit,
+    overdueTasks: Int = 0,
     selectionMode: Boolean = false,
     selected: Boolean = false,
     onToggleStar: () -> Unit = {},
@@ -410,28 +432,28 @@ fun PersonRow(
                         fontSize = 13.sp
                     )
                 )
+                if (overdueTasks > 0) {
+                    Text(
+                        text = "$overdueTasks overdue",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
             if (!selectionMode) {
-                val starScale = remember { Animatable(1f) }
-                LaunchedEffect(person.starred) {
-                    if (person.starred) {
-                        starScale.snapTo(0.4f)
-                        starScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium))
-                    }
-                }
-                IconButton(onClick = onToggleStar, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = if (person.starred) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                        contentDescription = if (person.starred) "Unstar person" else "Star person",
-                        tint = if (person.starred) accents.accentD else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .scale(starScale.value)
-                    )
-                }
+                com.mj.yata.ui.widgets.StarToggleButton(
+                    starred = person.starred,
+                    onToggle = onToggleStar,
+                    starredColor = accents.accentD,
+                    starredContentDescription = "Unstar person",
+                    unstarredContentDescription = "Star person"
+                )
 
                 Spacer(modifier = Modifier.width(4.dp))
 
@@ -508,18 +530,11 @@ private fun GroupHeader(
     }
 
     if (showDeleteDialog && onDelete != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete \"$title\" group?") },
-            text = { Text("Members stay, they're just ungrouped.") },
-            confirmButton = {
-                TextButton(onClick = { showDeleteDialog = false; onDelete() }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
-            }
+        com.mj.yata.ui.widgets.GroupDeleteConfirmDialog(
+            groupTitle = title,
+            entityLabel = "Members",
+            onConfirm = { showDeleteDialog = false; onDelete() },
+            onDismiss = { showDeleteDialog = false }
         )
     }
 }

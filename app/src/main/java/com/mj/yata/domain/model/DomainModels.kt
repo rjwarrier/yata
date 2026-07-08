@@ -9,7 +9,8 @@ data class Person(
     val isMe: Boolean = false,
     val groupId: String? = null,
     val starred: Boolean = false,
-    val sortOrder: Int = 0 // manual drag-and-drop order within the person's group in the People tab
+    val sortOrder: Int = 0, // manual drag-and-drop order within the person's group in the People tab
+    val archived: Boolean = false // true = former team member; kept for historical stats, hidden from active pickers
 )
 
 data class PersonGroup(

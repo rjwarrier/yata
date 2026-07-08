@@ -36,6 +36,7 @@ import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.sheets.*
 import com.mj.yata.util.taskMatchesQuery
+import com.mj.yata.util.sortedByMode
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
@@ -71,7 +72,7 @@ fun PersonDetailScreen(
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var hideCompleted by remember { mutableStateOf(false) }
+    val hideCompleted by viewModel.hideCompletedPerson.collectAsState()
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -114,7 +115,10 @@ fun PersonDetailScreen(
         personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
     val assignedTasks = remember(tasks, person.id) { tasks.filter { it.assigneeIds.contains(person.id) }.sortedBy { it.sortOrder } }
-    val openTasks = remember(assignedTasks, searchQuery) { assignedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) } }
+    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val openTasks = remember(assignedTasks, searchQuery, sortMode) {
+        assignedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
+    }
     val completedTasks = remember(assignedTasks, searchQuery) { assignedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) } }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
@@ -192,7 +196,11 @@ fun PersonDetailScreen(
                         IconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = "Search this person's tasks")
                         }
-                        IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                        com.mj.yata.ui.widgets.TaskSortMenuButton(
+                            current = sortMode,
+                            onSelect = { sortMode = it }
+                        )
+                        IconButton(onClick = { viewModel.setHideCompletedPerson(!hideCompleted) }) {
                             Icon(
                                 imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
@@ -216,10 +224,14 @@ fun PersonDetailScreen(
                             )
                             if (!person.isMe) {
                                 DropdownMenuItem(
-                                    text = { Text("Delete person") },
+                                    text = { Text(if (person.archived) "Unarchive person" else "Archive person") },
                                     onClick = {
                                         showMenu = false
-                                        showDeleteDialog = true
+                                        if (person.archived) {
+                                            viewModel.setPersonArchived(person, false)
+                                        } else {
+                                            showDeleteDialog = true
+                                        }
                                     },
                                     leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                                 )
@@ -282,6 +294,58 @@ fun PersonDetailScreen(
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+
+            // 1.5 Workload trend — overdue count as it stood at the end of each of the last 7
+            // days, so a manager can see whether this person's backlog is growing or shrinking,
+            // not just the live snapshot above.
+            item {
+                val trend = remember(assignedTasks) {
+                    val today = java.time.LocalDate.now()
+                    (6 downTo 0).map { offset ->
+                        val day = today.minusDays(offset.toLong())
+                        val overdueCount = assignedTasks.count { task ->
+                            val due = task.due?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return@count false
+                            val completedDay = task.completedAt?.let {
+                                java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                            }
+                            due.isBefore(day) && (completedDay == null || completedDay.isAfter(day))
+                        }
+                        day to overdueCount
+                    }
+                }
+                val maxOverdue = (trend.maxOfOrNull { it.second } ?: 0).coerceAtLeast(1)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                ) {
+                    Text(
+                        text = "OVERDUE TREND (7 DAYS)",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        trend.forEach { (day, count) ->
+                            val heightFraction = count.toFloat() / maxOverdue
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight(if (count == 0) 0.06f else heightFraction.coerceAtLeast(0.06f))
+                                    .background(
+                                        if (count > 0) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                        else MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(3.dp)
+                                    )
+                            )
+                        }
+                    }
                 }
             }
 
@@ -529,17 +593,17 @@ fun PersonDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete person?") },
-            text = { Text("This person will be unassigned from all tasks.") },
+            title = { Text("Archive person?") },
+            text = { Text("Their past assigned tasks and stats stay. They're hidden from the People tab — you can unarchive them anytime from this same menu.") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
-                        viewModel.deletePerson(person)
+                        viewModel.setPersonArchived(person, true)
                         onNavigateBack()
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text("Archive", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {

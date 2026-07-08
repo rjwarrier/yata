@@ -23,15 +23,18 @@ import androidx.glance.appwidget.CheckBox
 import androidx.glance.appwidget.CheckboxDefaults
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextDecoration
@@ -94,7 +97,7 @@ fun openQuickAddDialogAction(targetType: String?, targetId: String?, targetName:
  * Matches the main app's own done-task treatment (onSurface @ 60% + strikethrough) rather than a
  * flat gray, so it's the same M3 palette, not a widget-only lookalike. */
 @Composable
-fun WidgetTaskRow(task: Task, tintColor: Color, onSurface: Color) {
+fun WidgetTaskRow(task: Task, tintColor: Color, onSurface: Color, assignees: List<com.mj.yata.domain.model.Person> = emptyList()) {
     Row(
         modifier = GlanceModifier.fillMaxWidth().padding(vertical = 3.dp),
         verticalAlignment = Alignment.Vertical.CenterVertically
@@ -121,6 +124,28 @@ fun WidgetTaskRow(task: Task, tintColor: Color, onSurface: Color) {
                 ),
                 modifier = GlanceModifier.defaultWeight()
             )
+            if (assignees.isNotEmpty()) {
+                Row {
+                    assignees.take(2).forEach { person ->
+                        Box(
+                            modifier = GlanceModifier
+                                .size(16.dp)
+                                .cornerRadius(8.dp)
+                                .background(ColorProvider(tintColor.copy(alpha = 0.22f)))
+                                .padding(horizontal = 1.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = person.initials.take(1).uppercase(),
+                                maxLines = 1,
+                                style = TextStyle(fontSize = 8.sp, fontWeight = FontWeight.Bold, color = ColorProvider(tintColor))
+                            )
+                        }
+                        Spacer(modifier = GlanceModifier.width(2.dp))
+                    }
+                }
+                Spacer(modifier = GlanceModifier.width(4.dp))
+            }
             val time = task.time
             if (!time.isNullOrBlank()) {
                 Text(

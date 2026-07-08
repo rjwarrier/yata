@@ -160,6 +160,19 @@
                 android:resource="@xml/progress_widget_info" />
         </receiver>
 
+        <!-- Home-screen widget: per-person overdue counts -->
+        <receiver
+            android:name=".widget.TeamOverdueWidgetReceiver"
+            android:label="@string/widget_team_overdue_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/team_overdue_widget_info" />
+        </receiver>
+
         <!-- Home-screen widget: single pinned list (user picks which at add-time) -->
         <receiver
             android:name=".widget.SingleListWidgetReceiver"

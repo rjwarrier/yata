@@ -1,14 +1,14 @@
 package com.mj.yata.ui.screen.main.tabs
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Layers
@@ -16,11 +16,11 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -41,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.theme.LocalYataAccents
-import com.mj.yata.ui.widgets.AssigneeStack
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
@@ -62,6 +60,7 @@ fun ProjectsTab(
     onNewProjectClick: () -> Unit,
     onToggleProjectStar: (String) -> Unit,
     onProjectsReordered: (List<Project>) -> Unit = {},
+    onBulkDeleteProjects: (List<String>) -> Unit = {},
     peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -71,12 +70,42 @@ fun ProjectsTab(
     LaunchedEffect(sortedProjects) {
         if (!isDragging) localOrder = sortedProjects
     }
+
+    val selectedIds = remember { mutableStateListOf<String>() }
+    var selectModeOn by remember { mutableStateOf(false) }
+    val selectionMode = selectModeOn
+    var showBulkDeleteDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Top bar — title lives in the same row as the icons instead of a separate
+        // 1. Top bar — swaps to a selection bar once projects are selected.
+        if (selectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel selection", tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Text(
+                        text = "${selectedIds.size} selected",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+                IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = MaterialTheme.colorScheme.error)
+                }
+            }
+        } else {
+        // Title lives in the same row as the icons instead of a separate
         // stacked header, so this tab doesn't burn an extra ~50dp of vertical space.
         Row(
             modifier = Modifier
@@ -106,6 +135,13 @@ fun ProjectsTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                IconButton(onClick = { selectModeOn = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Select projects",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
                 IconButton(onClick = onSearchClick) {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -123,6 +159,7 @@ fun ProjectsTab(
                 }
             }
         }
+        }
 
         // 2. List of Projects — long-press drag to reorder.
         DragDropReorderableColumn(
@@ -132,6 +169,18 @@ fun ProjectsTab(
             onDragEnd = { onProjectsReordered(localOrder) },
             onDragStateChanged = { isDragging = it },
             contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
+            headerItemCount = if (projects.isEmpty()) 1 else 0,
+            header = if (projects.isEmpty()) {
+                {
+                    item {
+                        com.mj.yata.ui.widgets.TabEmptyState(
+                            icon = Icons.Default.Layers,
+                            title = "No projects yet",
+                            subtitle = "Group related tasks into a project to track progress together."
+                        )
+                    }
+                }
+            } else null,
             footer = { item { NewProjectDashedCard(onClick = onNewProjectClick) } },
             modifier = Modifier.weight(1f)
         ) { project ->
@@ -143,23 +192,45 @@ fun ProjectsTab(
             val doneTasks = projectTasks.count { it.done }
             val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
 
-            val projectPeople = remember(projectTasks, people, peopleEnabled) {
-                if (!peopleEnabled) return@remember emptyList()
-                val pids = projectTasks.flatMap { it.assigneeIds }.toSet()
-                people.filter { pids.contains(it.id) }
-            }
-
             ProjectCard(
                 project = project,
                 totalTasks = totalTasks,
                 doneTasks = doneTasks,
                 progress = progress,
-                members = projectPeople,
-                onClick = { onProjectClick(project.id) },
+                selectionMode = selectionMode,
+                selected = selectedIds.contains(project.id),
+                onClick = {
+                    if (selectionMode) {
+                        if (selectedIds.contains(project.id)) selectedIds.remove(project.id) else selectedIds.add(project.id)
+                    } else {
+                        onProjectClick(project.id)
+                    }
+                },
                 onToggleStar = { onToggleProjectStar(project.id) },
                 modifier = Modifier.padding(bottom = 16.dp)
             )
         }
+    }
+
+    if (showBulkDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showBulkDeleteDialog = false },
+            title = { Text("Delete ${selectedIds.size} project(s)?") },
+            text = { Text("Tasks inside stay, but are removed from these projects. This can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onBulkDeleteProjects(selectedIds.toList())
+                    selectedIds.clear()
+                    selectModeOn = false
+                    showBulkDeleteDialog = false
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 }
 
@@ -169,9 +240,10 @@ fun ProjectCard(
     totalTasks: Int,
     doneTasks: Int,
     progress: Float,
-    members: List<Person>,
     onClick: () -> Unit,
     onToggleStar: () -> Unit,
+    selectionMode: Boolean = false,
+    selected: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val accents = LocalYataAccents.current
@@ -189,7 +261,7 @@ fun ProjectCard(
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp), // xl corners
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -205,6 +277,19 @@ fun ProjectCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    if (selectionMode) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (selected) {
+                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
                     // Accent tile icon
                     Box(
                         modifier = Modifier
@@ -241,45 +326,19 @@ fun ProjectCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val starScale = remember { Animatable(1f) }
-                    LaunchedEffect(project.starred) {
-                        if (project.starred) {
-                            starScale.snapTo(0.4f)
-                            starScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium))
-                        }
-                    }
-                    IconButton(onClick = onToggleStar, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = if (project.starred) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                            contentDescription = if (project.starred) "Unstar project" else "Star project",
-                            tint = if (project.starred) accents.accentD else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .size(20.dp)
-                                .scale(starScale.value)
-                        )
-                    }
+                    com.mj.yata.ui.widgets.StarToggleButton(
+                        starred = project.starred,
+                        onToggle = onToggleStar,
+                        starredColor = accents.accentD,
+                        starredContentDescription = "Unstar project",
+                        unstarredContentDescription = "Star project"
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     ProgressRing(
                         progress = progress,
                         size = 46.dp,
                         strokeWidth = 4.dp,
                         activeColor = projectColor
-                    )
-                }
-            }
-
-            if (members.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Footer: assignee stack
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    AssigneeStack(
-                        people = members,
-                        avatarSize = 24.dp
                     )
                 }
             }

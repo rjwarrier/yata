@@ -13,7 +13,8 @@ object WidgetRefresher {
         QuickAddWidget(),
         ProgressStatsWidget(),
         SingleListWidget(),
-        UpcomingWidget()
+        UpcomingWidget(),
+        TeamOverdueWidget()
     )
 
     suspend fun refreshAll(context: Context) {

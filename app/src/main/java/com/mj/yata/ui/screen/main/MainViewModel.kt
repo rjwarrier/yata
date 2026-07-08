@@ -116,6 +116,18 @@ class MainViewModel @Inject constructor(
     val reduceMotionEnabled: StateFlow<Boolean> = userPreferences.reduceMotionEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val hideCompletedToday: StateFlow<Boolean> = userPreferences.hideCompletedTodayFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val hideCompletedProject: StateFlow<Boolean> = userPreferences.hideCompletedProjectFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val hideCompletedList: StateFlow<Boolean> = userPreferences.hideCompletedListFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val hideCompletedPerson: StateFlow<Boolean> = userPreferences.hideCompletedPersonFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val textScale: StateFlow<Float> = userPreferences.textScaleFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
 
@@ -521,6 +533,13 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun bulkDeleteProjects(ids: List<String>) {
+        viewModelScope.launch {
+            val byId = projects.value.associateBy { it.id }
+            ids.forEach { id -> byId[id]?.let { repository.deleteProject(it) } }
+        }
+    }
+
     fun addPerson(name: String, color: String, groupId: String? = null, photoUri: String? = null) {
         viewModelScope.launch {
             val initials = name.split(" ")
@@ -551,6 +570,14 @@ class MainViewModel @Inject constructor(
     fun deletePerson(person: Person) {
         viewModelScope.launch {
             repository.deletePerson(person)
+        }
+    }
+
+    /** Archiving (rather than deleting) a person keeps their historical assigned-task stats
+     * intact in Analytics/PersonDetail — used when a team member leaves. */
+    fun setPersonArchived(person: Person, archived: Boolean) {
+        viewModelScope.launch {
+            repository.upsertPerson(person.copy(archived = archived))
         }
     }
 
@@ -610,6 +637,13 @@ class MainViewModel @Inject constructor(
     fun deleteTag(tag: Tag) {
         viewModelScope.launch {
             repository.deleteTag(tag)
+        }
+    }
+
+    fun bulkDeleteTags(ids: List<String>) {
+        viewModelScope.launch {
+            val byId = tags.value.associateBy { it.id }
+            ids.forEach { id -> byId[id]?.let { repository.deleteTag(it) } }
         }
     }
 
@@ -789,6 +823,30 @@ class MainViewModel @Inject constructor(
     fun setDynamicColorEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setDynamicColorEnabled(enabled)
+        }
+    }
+
+    fun setHideCompletedToday(hide: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setHideCompletedToday(hide)
+        }
+    }
+
+    fun setHideCompletedProject(hide: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setHideCompletedProject(hide)
+        }
+    }
+
+    fun setHideCompletedList(hide: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setHideCompletedList(hide)
+        }
+    }
+
+    fun setHideCompletedPerson(hide: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setHideCompletedPerson(hide)
         }
     }
 

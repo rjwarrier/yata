@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,10 +21,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.ui.widgets.PersonAvatar
 
 /** Top bar shown in place of the normal header once one or more tasks are selected. */
 @Composable
@@ -35,7 +38,9 @@ fun TaskSelectionTopBar(
     onMove: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
+    onAssign: () -> Unit = {},
     tagsEnabled: Boolean = true,
+    peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -61,6 +66,11 @@ fun TaskSelectionTopBar(
             if (tagsEnabled) {
                 IconButton(onClick = onAddTag) {
                     Icon(Icons.Default.Label, contentDescription = "Add tag", tint = MaterialTheme.colorScheme.onSurface)
+                }
+            }
+            if (peopleEnabled) {
+                IconButton(onClick = onAssign) {
+                    Icon(Icons.Default.PersonAdd, contentDescription = "Assign to person", tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
             IconButton(onClick = onMove) {
@@ -211,6 +221,50 @@ fun TaskBulkTagPickerSheet(
             ) {
                 Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
                 Text(tag.name, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+}
+
+/** Bottom sheet: assign every currently-selected task to a person (delegation). */
+@Composable
+fun TaskBulkAssignPersonSheet(
+    people: List<Person>,
+    onSelectPerson: (String) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = "Assign selected tasks to",
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        if (people.isEmpty()) {
+            Text(
+                text = "No people yet — add one from the People tab first.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        people.forEach { person ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onSelectPerson(person.id) }
+                    .padding(vertical = 10.dp, horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                PersonAvatar(initials = person.initials, accentKey = person.color, photoUri = person.photoUri, size = 32.dp)
+                Text(person.name, style = MaterialTheme.typography.bodyLarge)
             }
         }
     }

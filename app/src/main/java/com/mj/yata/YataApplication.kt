@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.mj.yata.data.cloud.CloudBackupWorker
+import com.mj.yata.notification.DailyAgendaWorker
+import com.mj.yata.notification.OverdueEscalationWorker
 import dagger.hilt.android.HiltAndroidApp
 import java.io.File
 import java.io.PrintWriter
@@ -38,5 +40,7 @@ class YataApplication : Application(), Configuration.Provider {
         // already scheduled, and the worker itself checks cloudBackupEnabledFlow before doing
         // anything.
         CloudBackupWorker.schedule(this)
+        OverdueEscalationWorker.schedule(this)
+        DailyAgendaWorker.schedule(this)
     }
 }

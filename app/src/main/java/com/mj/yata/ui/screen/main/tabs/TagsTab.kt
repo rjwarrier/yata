@@ -20,7 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -31,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,15 +73,45 @@ fun TagsTab(
     onNewTagClick: () -> Unit,
     onToggleStar: (String) -> Unit = {},
     onDeleteGroup: (TagGroup) -> Unit = {},
+    onBulkDeleteTags: (List<String>) -> Unit = {},
     tagsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val selectedIds = remember { mutableStateListOf<String>() }
+    var selectModeOn by remember { mutableStateOf(false) }
+    val selectionMode = selectModeOn
+    var showBulkDeleteDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // 1. Top bar — title lives in the same row as the icons instead of a separate
+        // 1. Top bar — swaps to a selection bar once tags are selected.
+        if (selectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel selection", tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Text(
+                        text = "${selectedIds.size} selected",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+                IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = MaterialTheme.colorScheme.error)
+                }
+            }
+        } else {
+        // Title lives in the same row as the icons instead of a separate
         // stacked header, so this tab doesn't burn an extra ~50dp of vertical space.
         Row(
             modifier = Modifier
@@ -107,6 +141,13 @@ fun TagsTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                IconButton(onClick = { selectModeOn = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Select tags",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
                 IconButton(onClick = onSearchClick) {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -123,6 +164,7 @@ fun TagsTab(
                     )
                 }
             }
+        }
         }
 
         // 3. Scrollable, grouped tag cloud
@@ -149,6 +191,20 @@ fun TagsTab(
                 }
                 counts
             }
+            fun onTagTap(id: String) {
+                if (selectionMode) {
+                    if (selectedIds.contains(id)) selectedIds.remove(id) else selectedIds.add(id)
+                } else {
+                    onTagClick(id)
+                }
+            }
+            if (tags.isEmpty()) {
+                com.mj.yata.ui.widgets.TabEmptyState(
+                    icon = Icons.Default.Label,
+                    title = "No tags yet",
+                    subtitle = "Tag tasks to group them by topic, client, or anything you like."
+                )
+            }
             tagGroups.forEach { group ->
                 val groupTags = tags.filter { it.groupId == group.id }
                 if (groupTags.isNotEmpty()) {
@@ -156,8 +212,10 @@ fun TagsTab(
                         title = group.name,
                         tags = groupTags,
                         taskCounts = tagTaskCounts,
-                        onTagClick = onTagClick,
+                        onTagClick = ::onTagTap,
                         onToggleStar = onToggleStar,
+                        selectionMode = selectionMode,
+                        selectedIds = selectedIds,
                         expanded = expandedGroups[group.id] ?: true,
                         onToggle = { expandedGroups[group.id] = !(expandedGroups[group.id] ?: true) },
                         onDelete = { onDeleteGroup(group) }
@@ -169,13 +227,36 @@ fun TagsTab(
                 title = if (tagGroups.isEmpty()) null else "Ungrouped",
                 tags = ungrouped,
                 taskCounts = tagTaskCounts,
-                onTagClick = onTagClick,
+                onTagClick = ::onTagTap,
                 onToggleStar = onToggleStar,
+                selectionMode = selectionMode,
+                selectedIds = selectedIds,
                 trailing = { NewTagDashedPill(onNewTagClick) },
                 expanded = expandedGroups["ungrouped"] ?: true,
                 onToggle = { expandedGroups["ungrouped"] = !(expandedGroups["ungrouped"] ?: true) }
             )
         }
+    }
+
+    if (showBulkDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showBulkDeleteDialog = false },
+            title = { Text("Delete ${selectedIds.size} tag(s)?") },
+            text = { Text("Tasks keep their other tags. This can't be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onBulkDeleteTags(selectedIds.toList())
+                    selectedIds.clear()
+                    selectModeOn = false
+                    showBulkDeleteDialog = false
+                }) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 }
 
@@ -190,7 +271,9 @@ private fun TagGroupSection(
     trailing: (@Composable () -> Unit)? = null,
     expanded: Boolean = true,
     onToggle: () -> Unit = {},
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
+    selectionMode: Boolean = false,
+    selectedIds: List<String> = emptyList()
 ) {
     if (tags.isEmpty() && trailing == null) return
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -252,7 +335,9 @@ private fun TagGroupSection(
                         tag = tag,
                         taskCount = taskCounts[tag.id] ?: 0,
                         onClick = { onTagClick(tag.id) },
-                        onToggleStar = { onToggleStar(tag.id) }
+                        onToggleStar = { onToggleStar(tag.id) },
+                        selectionMode = selectionMode,
+                        selected = selectedIds.contains(tag.id)
                     )
                 }
                 trailing?.invoke()
@@ -261,33 +346,33 @@ private fun TagGroupSection(
     }
 
     if (showDeleteDialog && onDelete != null && title != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete \"$title\" group?") },
-            text = { Text("Tags stay, they're just ungrouped.") },
-            confirmButton = {
-                TextButton(onClick = { showDeleteDialog = false; onDelete() }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
-            }
+        com.mj.yata.ui.widgets.GroupDeleteConfirmDialog(
+            groupTitle = title,
+            entityLabel = "Tags",
+            onConfirm = { showDeleteDialog = false; onDelete() },
+            onDismiss = { showDeleteDialog = false }
         )
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TagPill(tag: Tag, taskCount: Int, onClick: () -> Unit, onToggleStar: () -> Unit = {}) {
+private fun TagPill(
+    tag: Tag,
+    taskCount: Int,
+    onClick: () -> Unit,
+    onToggleStar: () -> Unit = {},
+    selectionMode: Boolean = false,
+    selected: Boolean = false
+) {
     val accents = LocalYataAccents.current
     val tagColor = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
 
     Surface(
         modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onToggleStar),
         shape = RoundedCornerShape(9999.dp),
-        color = tagColor.copy(alpha = 0.16f),
-        contentColor = tagColor
+        color = if (selectionMode && selected) MaterialTheme.colorScheme.secondaryContainer else tagColor.copy(alpha = 0.16f),
+        contentColor = if (selectionMode && selected) MaterialTheme.colorScheme.onSecondaryContainer else tagColor
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),

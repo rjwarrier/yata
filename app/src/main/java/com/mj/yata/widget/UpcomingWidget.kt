@@ -63,6 +63,7 @@ class UpcomingWidget : GlanceAppWidget() {
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val allTasks = repository.getTasks().first()
         val lists = repository.getLists().first()
+        val peopleById = repository.getPeople().first().associateBy { it.id }
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
@@ -71,6 +72,7 @@ class UpcomingWidget : GlanceAppWidget() {
                 UpcomingWidgetContent(
                     allTasks = allTasks,
                     lists = lists,
+                    peopleById = peopleById,
                     colors = theme.colorScheme,
                     accents = theme.accents,
                     cornerRadius = cornerRadius,
@@ -90,6 +92,7 @@ private data class AgendaDay(val label: String, val tasks: List<Task>)
 private fun UpcomingWidgetContent(
     allTasks: List<Task>,
     lists: List<YataList>,
+    peopleById: Map<String, com.mj.yata.domain.model.Person>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
     cornerRadius: Int,
@@ -137,7 +140,8 @@ private fun UpcomingWidgetContent(
                             }
                             items(day.tasks) { task ->
                                 val tint = if (useM3Colors) colors.primary else (listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary)
-                                WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface)
+                                val assignees = task.assigneeIds.mapNotNull { peopleById[it] }
+                                WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface, assignees = assignees)
                             }
                         }
                     }

@@ -17,6 +17,10 @@ import com.mj.yata.R
 
 object NotificationHelper {
     const val REMINDER_CHANNEL_ID = "task_reminders_channel"
+    const val ESCALATION_CHANNEL_ID = "overdue_escalation_channel"
+    const val ESCALATION_NOTIFICATION_ID = 900001
+    const val AGENDA_CHANNEL_ID = "daily_agenda_channel"
+    const val DAILY_AGENDA_NOTIFICATION_ID = 900002
 
     fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -31,8 +35,57 @@ object NotificationHelper {
                 enableVibration(true)
             }
 
-            nm.createNotificationChannels(listOf(reminderChannel))
+            val escalationChannel = NotificationChannel(
+                ESCALATION_CHANNEL_ID,
+                "Team Overdue Alerts",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Daily check for teammates' overdue tasks"
+            }
+
+            val agendaChannel = NotificationChannel(
+                AGENDA_CHANNEL_ID,
+                "Daily Agenda",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "A once-a-morning summary of what's due today"
+            }
+
+            nm.createNotificationChannels(listOf(reminderChannel, escalationChannel, agendaChannel))
         }
+    }
+
+    /** One grouped notification summarizing which people have tasks overdue past the escalation
+     * threshold — tapping it opens the People tab rather than any single task, since this is a
+     * cross-person summary, not a per-task reminder. */
+    fun buildEscalationNotification(
+        context: Context,
+        accentColor: Int,
+        lines: List<String>
+    ): Notification {
+        val openIntent = PendingIntent.getActivity(
+            context, ESCALATION_NOTIFICATION_ID,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("navigate_to", "people")
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val style = NotificationCompat.InboxStyle()
+        lines.forEach { style.addLine(it) }
+
+        return NotificationCompat.Builder(context, ESCALATION_CHANNEL_ID)
+            .setContentTitle("Overdue tasks in your team")
+            .setContentText(lines.joinToString(", "))
+            .setStyle(style)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setColor(accentColor)
+            .setLargeIcon(buildLargeIcon(context, accentColor))
+            .setContentIntent(openIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
     }
 
     /** Build a high-priority reminder notification with Complete and Snooze actions.
@@ -98,6 +151,39 @@ object NotificationHelper {
                 "Snooze tomorrow",
                 actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_TOMORROW, notifId + 4000)
             )
+            .build()
+    }
+
+    /** Once-a-morning "what's due today" summary — total count plus a per-person breakdown line,
+     * tapping opens Today rather than any single task. */
+    fun buildDailyAgendaNotification(
+        context: Context,
+        accentColor: Int,
+        totalDueToday: Int,
+        lines: List<String>
+    ): Notification {
+        val openIntent = PendingIntent.getActivity(
+            context, DAILY_AGENDA_NOTIFICATION_ID,
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("shortcut_action", "today")
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val style = NotificationCompat.InboxStyle()
+        lines.forEach { style.addLine(it) }
+
+        return NotificationCompat.Builder(context, AGENDA_CHANNEL_ID)
+            .setContentTitle("$totalDueToday task${if (totalDueToday == 1) "" else "s"} due today")
+            .setContentText(lines.joinToString(", "))
+            .setStyle(style)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setColor(accentColor)
+            .setLargeIcon(buildLargeIcon(context, accentColor))
+            .setContentIntent(openIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
     }
 

@@ -1,0 +1,50 @@
+package com.mj.yata.ui.widgets
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.mj.yata.util.TaskSortMode
+
+private fun TaskSortMode.label() = when (this) {
+    TaskSortMode.MANUAL -> "Manual order"
+    TaskSortMode.DUE_DATE -> "Due date"
+    TaskSortMode.PRIORITY -> "Priority"
+    TaskSortMode.ALPHABETICAL -> "Alphabetical"
+}
+
+/** Sort-mode picker for a task list — a tap target that opens a dropdown of [TaskSortMode]s.
+ * Shared across Today and the detail screens so "sort by" behaves identically everywhere. */
+@Composable
+fun TaskSortMenuButton(
+    current: TaskSortMode,
+    onSelect: (TaskSortMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    IconButton(onClick = { expanded = true }, modifier = modifier) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Sort,
+            contentDescription = "Sort tasks",
+            tint = if (current != TaskSortMode.MANUAL) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+        )
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        TaskSortMode.entries.forEach { mode ->
+            DropdownMenuItem(
+                text = { Text(mode.label()) },
+                onClick = { onSelect(mode); expanded = false }
+            )
+        }
+    }
+}

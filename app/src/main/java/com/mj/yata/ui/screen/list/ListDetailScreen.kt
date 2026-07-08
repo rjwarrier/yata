@@ -37,6 +37,7 @@ import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
 import com.mj.yata.util.taskMatchesQuery
+import com.mj.yata.util.sortedByMode
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
@@ -66,7 +67,7 @@ fun ListDetailScreen(
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var hideCompleted by remember { mutableStateOf(false) }
+    val hideCompleted by viewModel.hideCompletedList.collectAsState()
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
@@ -86,7 +87,10 @@ fun ListDetailScreen(
     val openTasks = listTasks.size - doneTasks
     // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
     // list. Hiding completed drops both the tasks and the section headers entirely.
-    val pendingListTasks = remember(listTasks) { listTasks.filter { !it.done } }
+    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val pendingListTasks = remember(listTasks, sortMode) {
+        listTasks.filter { !it.done }.sortedByMode(sortMode)
+    }
     val completedListTasks = remember(listTasks, hideCompleted) {
         if (hideCompleted) emptyList() else listTasks.filter { it.done }
     }
@@ -177,7 +181,11 @@ fun ListDetailScreen(
                                 tint = if (list.starred) accents.accentD else MaterialTheme.colorScheme.onSurface
                             )
                         }
-                        IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                        com.mj.yata.ui.widgets.TaskSortMenuButton(
+                            current = sortMode,
+                            onSelect = { sortMode = it }
+                        )
+                        IconButton(onClick = { viewModel.setHideCompletedList(!hideCompleted) }) {
                             Icon(
                                 imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"

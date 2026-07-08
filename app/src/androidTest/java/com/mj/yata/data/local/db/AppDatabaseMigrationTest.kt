@@ -359,6 +359,54 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate19To20_addsArchivedColumn_defaultingFalse() {
+        context.deleteDatabase(TEST_DB)
+        createVersion19PeopleTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `people` (`id`,`name`,`initials`,`color`,`photoUri`,`isMe`,`groupId`,`starred`,`sortOrder`) " +
+                    "VALUES ('p1','Priya','P','accentA',NULL,0,NULL,0,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(20) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_19_20.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `archived` FROM `people` WHERE `id` = 'p1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("archived")))
+            }
+            close()
+        }
+    }
+
+    /** Minimal — only the `people` table, since MIGRATION_19_20 only touches that one. */
+    private fun createVersion19PeopleTableDatabase(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(19) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `people` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `initials` TEXT NOT NULL, `color` TEXT NOT NULL, `photoUri` TEXT, `isMe` INTEGER NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+                    )
+                }
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

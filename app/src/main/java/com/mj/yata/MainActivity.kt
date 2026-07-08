@@ -200,6 +200,11 @@ class MainActivity : ComponentActivity() {
                             val listId = intent.getStringExtra("list_id")
                             if (navigateTo == "task_detail" && !taskId.isNullOrEmpty()) {
                                 navController.navigate(com.mj.yata.ui.navigation.Screen.TaskDetail.createRoute(taskId))
+                            } else if (navigateTo == "people") {
+                                navController.navigate(com.mj.yata.ui.navigation.Screen.Main.createRoute(tab = 2)) {
+                                    popUpTo(com.mj.yata.ui.navigation.Screen.Main.route) { inclusive = true }
+                                    launchSingleTop = true
+                                }
                             } else if (shortcutAction == "quick_add") {
                                 navController.navigate(
                                     com.mj.yata.ui.navigation.Screen.Main.createRoute(tab = 0, quickAdd = true, quickAddListId = listId)

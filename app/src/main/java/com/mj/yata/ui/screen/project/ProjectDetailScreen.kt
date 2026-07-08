@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mj.yata.util.taskMatchesQuery
+import com.mj.yata.util.sortedByMode
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -70,7 +71,7 @@ fun ProjectDetailScreen(
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRolloverDialog by remember { mutableStateOf(false) }
-    var hideCompleted by remember { mutableStateOf(false) }
+    val hideCompleted by viewModel.hideCompletedProject.collectAsState()
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
@@ -89,7 +90,10 @@ fun ProjectDetailScreen(
     // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
     // list — only Pending supports drag-reorder, Completed just renders below it with its own
     // header. Hiding completed drops both the tasks and the section headers entirely.
-    val pendingProjectTasks = remember(projectTasks) { projectTasks.filter { !it.done } }
+    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val pendingProjectTasks = remember(projectTasks, sortMode) {
+        projectTasks.filter { !it.done }.sortedByMode(sortMode)
+    }
     val completedProjectTasks = remember(projectTasks, hideCompleted) {
         if (hideCompleted) emptyList() else projectTasks.filter { it.done }
     }
@@ -184,7 +188,11 @@ fun ProjectDetailScreen(
                         IconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = "Search in project")
                         }
-                        IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                        com.mj.yata.ui.widgets.TaskSortMenuButton(
+                            current = sortMode,
+                            onSelect = { sortMode = it }
+                        )
+                        IconButton(onClick = { viewModel.setHideCompletedProject(!hideCompleted) }) {
                             Icon(
                                 imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"

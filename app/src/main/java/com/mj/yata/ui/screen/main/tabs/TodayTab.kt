@@ -3,6 +3,8 @@ package com.mj.yata.ui.screen.main.tabs
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -12,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -30,6 +33,7 @@ import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
+import com.mj.yata.util.sortedByMode
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -55,20 +59,23 @@ fun TodayTab(
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
+    onBulkAssignPerson: (List<String>, String) -> Unit = { _, _ -> },
     onAddComment: (taskId: String, body: String) -> Unit = { _, _ -> },
     peopleEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     projectsEnabled: Boolean = true,
     taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    hideCompleted: Boolean = false,
+    onHideCompletedChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
+    var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
-    var hideCompleted by remember { mutableStateOf(false) }
 
     val todayStr = remember { LocalDate.now().toString() }
     val todayDateLabel = remember {
@@ -89,9 +96,9 @@ fun TodayTab(
     }
 
     // State for filter chips
-    var selectedFilter by remember { mutableStateOf("All") } // "All" | "Assigned to me" | "High Priority"
+    var selectedFilter by remember { mutableStateOf("All") } // "All" | "Assigned to me" | "Delegated" | "High Priority"
     LaunchedEffect(peopleEnabled) {
-        if (!peopleEnabled && selectedFilter == "Assigned to me") selectedFilter = "All"
+        if (!peopleEnabled && selectedFilter != "All" && selectedFilter != "High Priority") selectedFilter = "All"
     }
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
@@ -99,6 +106,7 @@ fun TodayTab(
     val filteredTasks = remember(todayTasks, selectedFilter, myId) {
         when (selectedFilter) {
             "Assigned to me" -> todayTasks.filter { it.assigneeIds.contains(myId) }
+            "Delegated" -> todayTasks.filter { it.assigneeIds.isNotEmpty() && !it.assigneeIds.contains(myId) }
             "High Priority" -> todayTasks.filter { it.priority == "high" }
             else -> todayTasks
         }
@@ -112,7 +120,10 @@ fun TodayTab(
     // Flat list, no more Morning/Afternoon grouping — split into Pending/Completed instead of
     // interleaving them in raw sortOrder. Hiding completed drops both the tasks and the section
     // headers themselves, rather than leaving an empty "Completed" heading around.
-    val pendingTasks = remember(filteredTasks) { filteredTasks.filter { !it.done } }
+    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val pendingTasks = remember(filteredTasks, sortMode) {
+        filteredTasks.filter { !it.done }.sortedByMode(sortMode)
+    }
     val completedTasks = remember(filteredTasks, hideCompleted) {
         if (hideCompleted) emptyList() else filteredTasks.filter { it.done }
     }
@@ -132,7 +143,9 @@ fun TodayTab(
                 onMove = { showBulkMoveSheet = true },
                 onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
+                onAssign = { showBulkAssignSheet = true },
                 tagsEnabled = tagsEnabled,
+                peopleEnabled = peopleEnabled,
                 modifier = Modifier.statusBarsPadding()
             )
         } else {
@@ -162,7 +175,11 @@ fun TodayTab(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                com.mj.yata.ui.widgets.TaskSortMenuButton(
+                    current = sortMode,
+                    onSelect = { sortMode = it }
+                )
+                IconButton(onClick = { onHideCompletedChange(!hideCompleted) }) {
                     Icon(
                         imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                         contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks",
@@ -220,11 +237,12 @@ fun TodayTab(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            listOfNotNull("All", if (peopleEnabled) "Assigned to me" else null, "High Priority").forEach { filter ->
+            listOfNotNull("All", if (peopleEnabled) "Assigned to me" else null, if (peopleEnabled) "Delegated" else null, "High Priority").forEach { filter ->
                 val isSelected = filter == selectedFilter
                 FilterChip(
                     selected = isSelected,
@@ -250,18 +268,11 @@ fun TodayTab(
         ) {
             if (filteredTasks.isEmpty()) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 64.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No tasks for today.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
+                    com.mj.yata.ui.widgets.TabEmptyState(
+                        icon = Icons.Default.TaskAlt,
+                        title = "All caught up",
+                        subtitle = if (selectedFilter == "All") "No tasks for today." else "No tasks match this filter."
+                    )
                 }
             } else {
                 @Composable
@@ -330,6 +341,24 @@ fun TodayTab(
                     showBulkTagSheet = false
                 },
                 onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkAssignSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkAssignSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
+                people = people,
+                onSelectPerson = { personId ->
+                    onBulkAssignPerson(selectedIds.toList(), personId)
+                    selectedIds.clear()
+                    showBulkAssignSheet = false
+                },
+                onDismiss = { showBulkAssignSheet = false }
             )
         }
     }

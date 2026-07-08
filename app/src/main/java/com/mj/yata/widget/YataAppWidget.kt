@@ -63,6 +63,7 @@ class YataAppWidget : GlanceAppWidget() {
             .filter { it.due != null && it.due!! <= todayStr }
             .sortedWith(compareBy({ it.done }, { it.sortOrder }))
         val listsById = repository.getLists().first().associateBy { it.id }
+        val peopleById = repository.getPeople().first().associateBy { it.id }
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
@@ -72,6 +73,7 @@ class YataAppWidget : GlanceAppWidget() {
                     context = context,
                     tasks = todayTasks,
                     listsById = listsById,
+                    peopleById = peopleById,
                     colors = theme.colorScheme,
                     accents = theme.accents,
                     cornerRadius = cornerRadius,
@@ -90,6 +92,7 @@ private fun TodayWidgetContent(
     context: Context,
     tasks: List<Task>,
     listsById: Map<String, com.mj.yata.domain.model.YataList>,
+    peopleById: Map<String, com.mj.yata.domain.model.Person>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
     cornerRadius: Int,
@@ -142,7 +145,8 @@ private fun TodayWidgetContent(
             LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                 items(tasks) { task ->
                     val tint = if (useM3Colors) colors.primary else (listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary)
-                    WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface)
+                    val assignees = task.assigneeIds.mapNotNull { peopleById[it] }
+                    WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface, assignees = assignees)
                 }
             }
         }

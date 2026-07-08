@@ -35,6 +35,7 @@ import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
 import com.mj.yata.util.taskMatchesQuery
+import com.mj.yata.util.sortedByMode
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
@@ -108,8 +109,9 @@ fun TagDetailScreen(
     val openTasks = allTaggedTasks.size - doneTasks
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
-    val pendingTaggedTasks = remember(allTaggedTasks, searchQuery) {
-        allTaggedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }
+    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val pendingTaggedTasks = remember(allTaggedTasks, searchQuery, sortMode) {
+        allTaggedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
     }
     val completedTaggedTasks = remember(allTaggedTasks, hideCompleted, searchQuery) {
         if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) }
@@ -199,7 +201,14 @@ fun TagDetailScreen(
                         IconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = "Search in tag")
                         }
-                        IconButton(onClick = { hideCompleted = !hideCompleted }) {
+                        com.mj.yata.ui.widgets.TaskSortMenuButton(
+                            current = sortMode,
+                            onSelect = { sortMode = it }
+                        )
+                        IconButton(onClick = {
+                            hideCompleted = !hideCompleted
+                            viewModel.upsertTag(tag.copy(hideCompletedByDefault = hideCompleted))
+                        }) {
                             Icon(
                                 imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"

@@ -31,6 +31,10 @@ val InterBodyFamily = FontFamily(
     Font(R.font.inter_variable, FontWeight.Bold),
 )
 
+val BodoniModaFamily = FontFamily(
+    Font(R.font.bodoni_moda_variable, FontWeight.Bold),
+)
+
 val JetBrainsMonoFamily = FontFamily(
     Font(R.font.jetbrains_mono_variable, FontWeight.Normal),
     Font(R.font.jetbrains_mono_variable, FontWeight.Medium),

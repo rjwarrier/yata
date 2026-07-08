@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
@@ -70,6 +71,7 @@ fun AnalyticsScreen(
 
     val streak = remember(tasks) { AnalyticsUtils.currentStreak(tasks) }
     val overdue = remember(tasks) { AnalyticsUtils.overdueCount(tasks) }
+    val zeroOverdueStreak = remember(tasks) { AnalyticsUtils.zeroOverdueStreak(tasks) }
     val dailyActivity = remember(tasks, period) { AnalyticsUtils.dailyActivity(tasks, period) }
     val priorityStats = remember(periodTasks) { AnalyticsUtils.byPriority(periodTasks) }
 
@@ -91,11 +93,38 @@ fun AnalyticsScreen(
             )
         },
         topBar = {
+            val context = androidx.compose.ui.platform.LocalContext.current
             TopAppBar(
                 title = { Text("Analytics", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        val periodLabel = when (period) {
+                            AnalyticsPeriod.WEEK -> "7 Days"
+                            AnalyticsPeriod.MONTH -> "30 Days"
+                            AnalyticsPeriod.ALL -> "All Time"
+                        }
+                        val markdown = com.mj.yata.util.buildAnalyticsMarkdown(
+                            periodLabel = periodLabel,
+                            totalCount = totalCount,
+                            doneCount = doneCount,
+                            overdueCount = overdue,
+                            priorityStats = priorityStats,
+                            projectStats = projectStats,
+                            personStats = personStats,
+                            tagStats = tagStats
+                        )
+                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, markdown)
+                        }
+                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share analytics"))
+                    }) {
+                        Icon(Icons.Default.IosShare, contentDescription = "Share analytics")
                     }
                 }
             )
@@ -141,6 +170,13 @@ fun AnalyticsScreen(
                     iconTint = if (overdue > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     value = "$overdue",
                     label = if (overdue == 1) "overdue task" else "overdue tasks"
+                )
+                InsightChip(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Default.LocalFireDepartment,
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    value = "$zeroOverdueStreak",
+                    label = "days clean"
                 )
             }
 

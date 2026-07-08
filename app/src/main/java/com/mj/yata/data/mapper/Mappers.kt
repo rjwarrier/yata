@@ -88,8 +88,8 @@ fun Subtask.toEntity(taskId: String) = SubtaskEntity(
 fun TaskCommentEntity.toDomain() = TaskComment(id, taskId, body, createdAt, authorId)
 fun TaskComment.toEntity() = TaskCommentEntity(id, taskId, body, createdAt, authorId)
 
-fun PersonEntity.toDomain() = Person(id, name, initials, color, photoUri, isMe, groupId, starred, sortOrder)
-fun Person.toEntity() = PersonEntity(id, name, initials, color, photoUri, isMe, groupId, starred, sortOrder)
+fun PersonEntity.toDomain() = Person(id, name, initials, color, photoUri, isMe, groupId, starred, sortOrder, archived)
+fun Person.toEntity() = PersonEntity(id, name, initials, color, photoUri, isMe, groupId, starred, sortOrder, archived)
 
 fun PersonGroupEntity.toDomain() = PersonGroup(id, name, color)
 fun PersonGroup.toEntity() = PersonGroupEntity(id, name, color)

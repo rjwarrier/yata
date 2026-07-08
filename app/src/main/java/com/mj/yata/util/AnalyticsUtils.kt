@@ -114,6 +114,26 @@ object AnalyticsUtils {
         return streak
     }
 
+    /** Consecutive days (ending today) with zero tasks overdue at day's end — a team-management
+     * metric (did the owner keep the team's backlog clean) rather than [currentStreak]'s personal
+     * completion-activity metric. Looks back at most 60 days to bound the work. */
+    fun zeroOverdueStreak(tasks: List<Task>, today: LocalDate = LocalDate.now()): Int {
+        val withDue = tasks.filter { it.due != null }
+        var day = today
+        var streak = 0
+        while (streak < 60) {
+            val overdueAtDayEnd = withDue.any { task ->
+                val due = runCatching { LocalDate.parse(task.due) }.getOrNull() ?: return@any false
+                val completedDay = task.completedAt?.toLocalDate()
+                due.isBefore(day) && (completedDay == null || completedDay.isAfter(day))
+            }
+            if (overdueAtDayEnd) break
+            streak++
+            day = day.minusDays(1)
+        }
+        return streak
+    }
+
     fun byPriority(tasks: List<Task>): List<PriorityStat> {
         val order = listOf("high", "med", "low", "none")
         val grouped = tasks.groupBy { it.priority }

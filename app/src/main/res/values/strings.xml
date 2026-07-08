@@ -41,4 +41,6 @@
     <string name="widget_single_list_description">Pin one list, project, or tag to your home screen — pick which when you add it.</string>
     <string name="widget_upcoming_label">YATA: Upcoming</string>
     <string name="widget_upcoming_description">What\'s due today, tomorrow, and beyond.</string>
+    <string name="widget_team_overdue_label">YATA: Team Overdue</string>
+    <string name="widget_team_overdue_description">Per-person overdue task counts, at a glance.</string>
 </resources>

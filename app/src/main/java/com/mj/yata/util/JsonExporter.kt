@@ -64,6 +64,7 @@ class JsonExporter @Inject constructor(
                 o.put("isMe", p.isMe)
                 o.put("groupId", p.groupId ?: JSONObject.NULL)
                 o.put("starred", p.starred)
+                o.put("archived", p.archived)
                 peopleArr.put(o)
             }
             root.put("people", peopleArr)
@@ -346,7 +347,8 @@ class JsonExporter @Inject constructor(
                                 photoUri = if (o.isNull("photoUri")) null else o.optString("photoUri"),
                                 isMe = o.optBoolean("isMe", false),
                                 groupId = if (o.isNull("groupId")) null else o.optString("groupId", null),
-                                starred = o.optBoolean("starred", false)
+                                starred = o.optBoolean("starred", false),
+                                archived = o.optBoolean("archived", false)
                             )
                         )
                     }

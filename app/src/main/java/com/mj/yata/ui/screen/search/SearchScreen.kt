@@ -77,6 +77,7 @@ fun SearchScreen(
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
+    var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -156,7 +157,9 @@ fun SearchScreen(
                     onMove = { showBulkMoveSheet = true },
                     onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
+                    onAssign = { showBulkAssignSheet = true },
                     tagsEnabled = tagsFeatureEnabled,
+                    peopleEnabled = peopleFeatureEnabled,
                     modifier = Modifier.statusBarsPadding()
                 )
             }
@@ -247,6 +250,24 @@ fun SearchScreen(
                     showBulkTagSheet = false
                 },
                 onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkAssignSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkAssignSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
+                people = people,
+                onSelectPerson = { personId ->
+                    viewModel.bulkAssignPerson(selectedIds.toList(), personId)
+                    selectedIds.clear()
+                    showBulkAssignSheet = false
+                },
+                onDismiss = { showBulkAssignSheet = false }
             )
         }
     }

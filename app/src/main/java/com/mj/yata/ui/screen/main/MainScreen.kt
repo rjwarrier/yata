@@ -133,6 +133,7 @@ fun MainScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
     val fabPosition by viewModel.fabPosition.collectAsState()
+    val hideCompletedToday by viewModel.hideCompletedToday.collectAsState()
 
     // If the tab currently open gets disabled out from under the user, fall back to Today
     // rather than leaving them stranded on a tab no longer reachable from the nav bar.
@@ -513,11 +514,14 @@ fun MainScreen(
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
                             onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
                             projectsEnabled = projectsFeatureEnabled,
-                            taskRowDensity = taskRowDensity
+                            taskRowDensity = taskRowDensity,
+                            hideCompleted = hideCompletedToday,
+                            onHideCompletedChange = { viewModel.setHideCompletedToday(it) }
                         )
                         1 -> ProjectsTab(
                             projects = projects,
@@ -533,6 +537,7 @@ fun MainScreen(
                             onNewProjectClick = { activeSheet = MainSheetType.NewProject },
                             onToggleProjectStar = { viewModel.toggleProjectStarred(it) },
                             onProjectsReordered = { viewModel.commitProjectOrder(it) },
+                            onBulkDeleteProjects = { viewModel.bulkDeleteProjects(it) },
                             peopleEnabled = peopleFeatureEnabled
                         )
                         2 -> PeopleTab(
@@ -570,6 +575,7 @@ fun MainScreen(
                             onNewTagClick = { activeSheet = MainSheetType.NewTag },
                             onToggleStar = { viewModel.toggleTagStarred(it) },
                             onDeleteGroup = { viewModel.deleteTagGroup(it) },
+                            onBulkDeleteTags = { viewModel.bulkDeleteTags(it) },
                             tagsEnabled = tagsFeatureEnabled
                         )
                         4 -> UpcomingTab(
@@ -595,6 +601,7 @@ fun MainScreen(
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
                             onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,

@@ -80,6 +80,7 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
             in appWidgetManager.getAppWidgetIds(android.content.ComponentName(this, YataAppWidgetReceiver::class.java)) -> "YataAppWidgetReceiver"
             in appWidgetManager.getAppWidgetIds(android.content.ComponentName(this, UpcomingWidgetReceiver::class.java)) -> "UpcomingWidgetReceiver"
             in appWidgetManager.getAppWidgetIds(android.content.ComponentName(this, ProgressStatsWidgetReceiver::class.java)) -> "ProgressStatsWidgetReceiver"
+            in appWidgetManager.getAppWidgetIds(android.content.ComponentName(this, TeamOverdueWidgetReceiver::class.java)) -> "TeamOverdueWidgetReceiver"
             else -> {
                 val appWidgetInfo = appWidgetManager.getAppWidgetInfo(appWidgetId)
                 appWidgetInfo?.provider?.className
@@ -181,6 +182,7 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                 providerClass?.endsWith("YataAppWidgetReceiver") == true -> YataAppWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
                 providerClass?.endsWith("UpcomingWidgetReceiver") == true -> UpcomingWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
                 providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> ProgressStatsWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
+                providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> TeamOverdueWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
             }
 
             val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)

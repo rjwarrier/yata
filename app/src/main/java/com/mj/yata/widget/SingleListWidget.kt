@@ -120,6 +120,7 @@ class SingleListWidget : GlanceAppWidget() {
             }
         }
 
+        val peopleById = repository.getPeople().first().associateBy { it.id }
         val theme = resolveWidgetTheme(context)
         // Distinguishes "never configured" from "the list/project/tag this widget was pointed at
         // got deleted from the main app" — both used to show the identical "Not set up yet"
@@ -140,6 +141,7 @@ class SingleListWidget : GlanceAppWidget() {
                     source = source,
                     sourceWasDeleted = sourceWasDeleted,
                     tasks = tasks,
+                    peopleById = peopleById,
                     colors = theme.colorScheme,
                     accents = theme.accents,
                     cornerRadius = cornerRadius,
@@ -159,6 +161,7 @@ private fun SingleListWidgetContent(
     source: SingleWidgetSource?,
     sourceWasDeleted: Boolean,
     tasks: List<Task>,
+    peopleById: Map<String, com.mj.yata.domain.model.Person>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
     cornerRadius: Int,
@@ -238,7 +241,9 @@ private fun SingleListWidgetContent(
                     )
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                        items(tasks) { task -> WidgetTaskRow(task = task, tintColor = color, onSurface = colors.onSurface) }
+                        items(tasks) { task ->
+                            WidgetTaskRow(task = task, tintColor = color, onSurface = colors.onSurface, assignees = task.assigneeIds.mapNotNull { peopleById[it] })
+                        }
                     }
                 }
             }

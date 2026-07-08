@@ -56,6 +56,10 @@ class UserPreferences @Inject constructor(
         val TODAY_TAB_ENABLED       = booleanPreferencesKey("today_tab_enabled")
         val UPCOMING_TAB_ENABLED    = booleanPreferencesKey("upcoming_tab_enabled")
         val FAB_POSITION            = stringPreferencesKey("fab_position")
+        val HIDE_COMPLETED_TODAY    = booleanPreferencesKey("hide_completed_today")
+        val HIDE_COMPLETED_PROJECT  = booleanPreferencesKey("hide_completed_project")
+        val HIDE_COMPLETED_LIST     = booleanPreferencesKey("hide_completed_list")
+        val HIDE_COMPLETED_PERSON   = booleanPreferencesKey("hide_completed_person")
     }
 
     val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -121,6 +125,10 @@ class UserPreferences @Inject constructor(
     // Default matches CloudBackupWorker's default schedule (1 day) — WorkManager enforces a
     // 15-minute floor on periodic work, so this is clamped the same way on write.
     val cloudBackupIntervalMinutesFlow: Flow<Long> = dataStore.data.map { it[CLOUD_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
+    val hideCompletedTodayFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_TODAY] ?: false }
+    val hideCompletedProjectFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PROJECT] ?: false }
+    val hideCompletedListFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_LIST] ?: false }
+    val hideCompletedPersonFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PERSON] ?: false }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME_MODE] = mode.name }
@@ -181,6 +189,22 @@ class UserPreferences @Inject constructor(
 
     suspend fun setCloudBackupEnabled(enabled: Boolean) {
         dataStore.edit { it[CLOUD_BACKUP_ENABLED] = enabled }
+    }
+
+    suspend fun setHideCompletedToday(hide: Boolean) {
+        dataStore.edit { it[HIDE_COMPLETED_TODAY] = hide }
+    }
+
+    suspend fun setHideCompletedProject(hide: Boolean) {
+        dataStore.edit { it[HIDE_COMPLETED_PROJECT] = hide }
+    }
+
+    suspend fun setHideCompletedList(hide: Boolean) {
+        dataStore.edit { it[HIDE_COMPLETED_LIST] = hide }
+    }
+
+    suspend fun setHideCompletedPerson(hide: Boolean) {
+        dataStore.edit { it[HIDE_COMPLETED_PERSON] = hide }
     }
 
     suspend fun setCloudBackupAccountEmail(email: String?) {

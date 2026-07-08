@@ -11,6 +11,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -83,6 +85,7 @@ fun UpcomingTab(
     onBulkSetProject: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
+    onBulkAssignPerson: (List<String>, String) -> Unit = { _, _ -> },
     onAddComment: (taskId: String, body: String) -> Unit = { _, _ -> },
     peopleEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
@@ -94,6 +97,7 @@ fun UpcomingTab(
     val selectionMode = selectedIds.isNotEmpty()
     var showBulkTagSheet by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
+    var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
@@ -120,6 +124,19 @@ fun UpcomingTab(
 
     val listsById = remember(lists) { lists.associateBy { it.id } }
     val tasksByDate = remember(tasks) { tasks.filter { it.due != null }.groupBy { it.due!! } }
+
+    // State for filter chips
+    var selectedFilter by remember { mutableStateOf("All") } // "All" | "Assigned to me" | "Delegated" | "High Priority"
+    LaunchedEffect(peopleEnabled) {
+        if (!peopleEnabled && selectedFilter != "All" && selectedFilter != "High Priority") selectedFilter = "All"
+    }
+    val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
+    fun applyFilter(list: List<Task>): List<Task> = when (selectedFilter) {
+        "Assigned to me" -> list.filter { it.assigneeIds.contains(myId) }
+        "Delegated" -> list.filter { it.assigneeIds.isNotEmpty() && !it.assigneeIds.contains(myId) }
+        "High Priority" -> list.filter { it.priority == "high" }
+        else -> list
+    }
     val accents = LocalYataAccents.current
     val defaultDotColor = MaterialTheme.colorScheme.primary
     fun dotColorsForDate(date: LocalDate): List<Color> =
@@ -132,9 +149,9 @@ fun UpcomingTab(
         base.format(DateTimeFormatter.ofPattern("MMMM yyyy")).uppercase(Locale.getDefault())
     }
 
-    val selectedDayTasks = remember(tasks, selectedDay) {
+    val selectedDayTasks = remember(tasks, selectedDay, selectedFilter, myId) {
         val dateStr = selectedDay.toString()
-        tasks.filter { it.due == dateStr }
+        applyFilter(tasks.filter { it.due == dateStr })
     }
 
     val isSelectedToday = selectedDay == today
@@ -157,7 +174,9 @@ fun UpcomingTab(
                 onMove = { showBulkMoveSheet = true },
                 onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
+                onAssign = { showBulkAssignSheet = true },
                 tagsEnabled = tagsEnabled,
+                peopleEnabled = peopleEnabled,
                 modifier = Modifier.statusBarsPadding()
             )
         } else {
@@ -332,6 +351,29 @@ fun UpcomingTab(
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
 
+        // 3.5 Filter chips — same set as Today, scoped to the agenda for the selected day
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            listOfNotNull("All", if (peopleEnabled) "Assigned to me" else null, if (peopleEnabled) "Delegated" else null, "High Priority").forEach { filter ->
+                val isSelected = filter == selectedFilter
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { selectedFilter = filter },
+                    label = { Text(text = filter) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                )
+            }
+        }
+
         val peopleById = remember(people) { people.associateBy { it.id } }
 
         // 4. Agenda — header + task list slide/fade together, keyed on the selected day
@@ -345,7 +387,7 @@ fun UpcomingTab(
             modifier = Modifier.weight(1f),
             label = "agenda"
         ) { day ->
-            val dayTasks = if (day == selectedDay) selectedDayTasks else tasks.filter { it.due == day.toString() }
+            val dayTasks = if (day == selectedDay) selectedDayTasks else applyFilter(tasks.filter { it.due == day.toString() })
             val label = if (day == today) "Today" else agendaLabel
 
             Column(modifier = Modifier.fillMaxSize()) {
@@ -444,6 +486,24 @@ fun UpcomingTab(
                     showBulkTagSheet = false
                 },
                 onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkAssignSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkAssignSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
+                people = people,
+                onSelectPerson = { personId ->
+                    onBulkAssignPerson(selectedIds.toList(), personId)
+                    selectedIds.clear()
+                    showBulkAssignSheet = false
+                },
+                onDismiss = { showBulkAssignSheet = false }
             )
         }
     }
@@ -659,37 +719,10 @@ private fun DayDots(dotColors: List<Color>, overrideColor: Color?, modifier: Mod
 
 @Composable
 private fun UpcomingEmptyState(modifier: Modifier = Modifier) {
-    Column(
+    com.mj.yata.ui.widgets.TabEmptyState(
+        icon = Icons.Outlined.EventAvailable,
+        title = "Clear day",
+        subtitle = "Nothing scheduled.",
         modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 56.dp, horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.EventAvailable,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(30.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Clear day",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            text = "Nothing scheduled.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
+    )
 }
