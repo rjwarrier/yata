@@ -250,4 +250,88 @@ class NaturalLanguageParserTest {
         val range = result.highlightRanges.first()
         assertEquals("every monday", raw.substring(range.first, range.last + 1))
     }
+
+    @Test
+    fun escapedKeywordIsKeptAsLiteralText() {
+        val result = NaturalLanguageParser.parse("call mom \\today", ref)
+        assertNull(result.due)
+        assertEquals("call mom today", result.title)
+    }
+
+    @Test
+    fun escapedKeywordHasNoHighlightRange() {
+        val result = NaturalLanguageParser.parse("call mom \\today", ref)
+        assertTrue(result.highlightRanges.isEmpty())
+    }
+
+    @Test
+    fun escapeProtectsWholeMultiWordPhrase() {
+        // Escaping "monday" alone should also stop "every monday" from matching as a whole.
+        val result = NaturalLanguageParser.parse("every \\monday gym", ref)
+        assertNull(result.recurrence)
+        assertEquals("every monday gym", result.title)
+    }
+
+    @Test
+    fun unescapedKeywordsElsewhereStillParse() {
+        val result = NaturalLanguageParser.parse("tomorrow review \\today notes", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("review today notes", result.title)
+    }
+
+    @Test
+    fun parsesRemindAtTimeKeyword() {
+        val result = NaturalLanguageParser.parse("tomorrow remind at time pay rent", ref)
+        assertEquals("At time", result.reminder)
+        assertEquals("pay rent", result.title)
+    }
+
+    @Test
+    fun parsesRemindMinutesBefore() {
+        val result = NaturalLanguageParser.parse("tomorrow remind me 15 min before standup", ref)
+        assertEquals("15 min before", result.reminder)
+        assertEquals("standup", result.title)
+    }
+
+    @Test
+    fun parsesRemindHourAndDayBefore() {
+        assertEquals("1 hour before", NaturalLanguageParser.parse("remind an hour before flight", ref).reminder)
+        assertEquals("1 day before", NaturalLanguageParser.parse("remind a day before anniversary", ref).reminder)
+    }
+
+    @Test
+    fun parsesRemindAtCustomClockTime() {
+        val result = NaturalLanguageParser.parse("tomorrow remind me at 5:30pm submit report", ref)
+        assertEquals("5:30 PM", result.reminder)
+        assertEquals("submit report", result.title)
+        // The reminder's own clock time must not also get picked up as the task's due time.
+        assertNull(result.time)
+    }
+
+    @Test
+    fun remindDoesNotMatchWithoutKeyword() {
+        val result = NaturalLanguageParser.parse("tomorrow 5:30pm submit report", ref)
+        assertNull(result.reminder)
+        assertEquals("5:30 PM", result.time)
+    }
+
+    @Test
+    fun parsesPriorityShorthand() {
+        assertEquals("high", NaturalLanguageParser.parse("!1 pay taxes", ref).priority)
+        assertEquals("med", NaturalLanguageParser.parse("!2 pay taxes", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("!3 pay taxes", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("!!1 pay taxes", ref).priority)
+    }
+
+    @Test
+    fun priorityShorthandStrippedFromTitle() {
+        val result = NaturalLanguageParser.parse("pay taxes !1", ref)
+        assertEquals("high", result.priority)
+        assertEquals("pay taxes", result.title)
+    }
+
+    @Test
+    fun noPriorityWhenNotMentioned() {
+        assertNull(NaturalLanguageParser.parse("buy milk", ref).priority)
+    }
 }

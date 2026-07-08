@@ -14,6 +14,8 @@ data class ParsedQuickAdd(
     val due: String?, // "YYYY-MM-DD", null if nothing matched
     val time: String?, // "h:mm a", null if nothing matched
     val recurrence: Recurrence?, // null if nothing matched
+    val reminder: String? = null, // one of TaskScheduleUtils.reminderOptions, or a literal "h:mm a" clock time
+    val priority: String? = null, // "low" | "med" | "high", null if nothing matched
     val highlightRanges: List<IntRange> // recognized spans in the *original* raw string, for underlining
 )
 
@@ -103,13 +105,43 @@ object NaturalLanguageParser {
         "yesterday" to { ref: LocalDate -> ref.minusDays(1) }
     )
 
+    private val escapeRegex = Regex("\\\\(\\w+)")
+
+    // ── Reminder ──────────────────────────────────────────────────────────
+    // "remind"/"remind me" phrases set the *reminder*, distinct from the due time — checked
+    // before due-time parsing so "remind at 5pm" doesn't leave a stray "5pm" behind for the
+    // due-time rule to also claim as the task's own due time.
+    private val remindAtTimeKeywordRegex = Regex("\\bremind(?:\\s+me)?\\s+(?:at|on)\\s+time\\b", RegexOption.IGNORE_CASE)
+    private val remindMinutesBeforeRegex = Regex("\\bremind(?:\\s+me)?\\s+(\\d+)\\s*(?:min|mins|minute|minutes)\\s+before\\b", RegexOption.IGNORE_CASE)
+    private val remindHourBeforeRegex = Regex("\\bremind(?:\\s+me)?\\s+(?:1\\s+hour|an?\\s+hour)\\s+before\\b", RegexOption.IGNORE_CASE)
+    private val remindDayBeforeRegex = Regex("\\bremind(?:\\s+me)?\\s+(?:1\\s+day|a\\s+day)\\s+before\\b", RegexOption.IGNORE_CASE)
+    private val remindAtClockTimeRegex = Regex("\\bremind(?:\\s+me)?\\s+(?:at\\s+)?(\\d{1,2})([:.](\\d{2}))?\\s*(am|pm|AM|PM)\\b", RegexOption.IGNORE_CASE)
+
+    // ── Priority ──────────────────────────────────────────────────────────
+    // "!1"/"!!1" (etc.) — 1 is the most urgent, matching the common "p1 is highest" convention.
+    private val priorityShorthandRegex = Regex("!{1,2}([1-3])\\b")
+
     fun parse(raw: String, referenceDate: LocalDate = LocalDate.now()): ParsedQuickAdd {
         val claimed = mutableListOf<IntRange>()
         var due: LocalDate? = null
         var time: String? = null
         var recurrence: Recurrence? = null
 
-        fun isFree(range: IntRange) = claimed.none { it.first <= range.last && range.first <= it.last }
+        // Escape: a backslash directly before a word protects that word from being read as a
+        // date/time/recurrence keyword — e.g. "call mom \today" keeps "today" as literal text
+        // instead of setting the due date, same idea as an escape character in code. The
+        // backslash itself is stripped (via `stripOnly`) but never counted as a "recognized"
+        // span, so it doesn't get underlined like a real match would.
+        val escapedRanges = mutableListOf<IntRange>()
+        val stripOnly = mutableListOf<IntRange>()
+        escapeRegex.findAll(raw).forEach { m ->
+            val backslashIndex = m.range.first
+            stripOnly.add(backslashIndex..backslashIndex)
+            escapedRanges.add(m.groups[1]!!.range)
+        }
+
+        fun isFree(range: IntRange) = claimed.none { it.first <= range.last && range.first <= it.last } &&
+            escapedRanges.none { it.first <= range.last && range.first <= it.last }
         fun claim(range: IntRange) = claimed.add(range)
         fun firstFreeMatch(regex: Regex) = regex.findAll(raw).firstOrNull { isFree(it.range) }
         fun firstFreeWord(word: String) = firstFreeMatch(Regex("\\b${Regex.escape(word)}\\b", RegexOption.IGNORE_CASE))
@@ -145,6 +177,39 @@ object NaturalLanguageParser {
                     claim(m.range)
                 }
                 if (recurrence != null) break
+            }
+        }
+
+        // 1.5 Reminder — see the regexes' own comment for why this runs before due-time parsing.
+        var reminder: String? = null
+        firstFreeMatch(remindAtTimeKeywordRegex)?.let { m -> reminder = "At time"; claim(m.range) }
+        if (reminder == null) {
+            firstFreeMatch(remindMinutesBeforeRegex)?.let { m ->
+                val label = when (m.groupValues[1].toIntOrNull()) {
+                    5 -> "5 min before"
+                    15 -> "15 min before"
+                    30 -> "30 min before"
+                    else -> null
+                }
+                if (label != null) { reminder = label; claim(m.range) }
+            }
+        }
+        if (reminder == null) firstFreeMatch(remindHourBeforeRegex)?.let { m -> reminder = "1 hour before"; claim(m.range) }
+        if (reminder == null) firstFreeMatch(remindDayBeforeRegex)?.let { m -> reminder = "1 day before"; claim(m.range) }
+        if (reminder == null) {
+            firstFreeMatch(remindAtClockTimeRegex)?.let { m ->
+                val hour = m.groupValues[1].toIntOrNull()
+                val minute = m.groupValues[3].toIntOrNull() ?: 0
+                val meridiem = m.groupValues[4]
+                if (hour != null && hour in 1..12 && minute in 0..59) {
+                    val hour24 = when {
+                        meridiem.equals("am", ignoreCase = true) && hour == 12 -> 0
+                        meridiem.equals("pm", ignoreCase = true) && hour != 12 -> hour + 12
+                        else -> hour
+                    }
+                    reminder = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
+                    claim(m.range)
+                }
             }
         }
 
@@ -236,17 +301,33 @@ object NaturalLanguageParser {
             }
         }
 
+        // 5. Priority shorthand — requires a non-alphanumeric char (or start of string) right
+        // before the "!" run so a mid-word "!" (unlikely, but e.g. "wow!1") doesn't spuriously match.
+        var priority: String? = null
+        priorityShorthandRegex.findAll(raw)
+            .firstOrNull { m -> isFree(m.range) && (m.range.first == 0 || !raw[m.range.first - 1].isLetterOrDigit()) }
+            ?.let { m ->
+                priority = when (m.groupValues[1]) {
+                    "1" -> "high"
+                    "2" -> "med"
+                    "3" -> "low"
+                    else -> null
+                }
+                claim(m.range)
+            }
+
         val sortedClaims = claimed.sortedBy { it.first }
+        val sortedStrip = (claimed + stripOnly).sortedBy { it.first }
         val title = buildString {
             var cursor = 0
-            for (range in sortedClaims) {
+            for (range in sortedStrip) {
                 if (range.first > cursor) append(raw, cursor, range.first)
                 cursor = (range.last + 1).coerceAtLeast(cursor)
             }
             if (cursor < raw.length) append(raw, cursor, raw.length)
         }.replace(Regex("\\s{2,}"), " ").trim()
 
-        return ParsedQuickAdd(title = title, due = due?.toString(), time = time, recurrence = recurrence, highlightRanges = sortedClaims)
+        return ParsedQuickAdd(title = title, due = due?.toString(), time = time, recurrence = recurrence, reminder = reminder, priority = priority, highlightRanges = sortedClaims)
     }
 
     private fun nextAfter(from: LocalDate, day: DayOfWeek): LocalDate {

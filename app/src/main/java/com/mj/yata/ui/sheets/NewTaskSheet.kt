@@ -203,10 +203,14 @@ fun NewTaskSheet(
     var dueManuallySet by remember { mutableStateOf(initialDueDateOverride != null) }
     var timeManuallySet by remember { mutableStateOf(false) }
     var recurrenceManuallySet by remember { mutableStateOf(false) }
+    var reminderManuallySet by remember { mutableStateOf(false) }
+    var priorityManuallySet by remember { mutableStateOf(false) }
     var quickAddDismissed by remember { mutableStateOf(false) }
     val setDueDate: (String?) -> Unit = { selectedDueDate = it; dueManuallySet = true }
     val setTime: (String?) -> Unit = { selectedTime = it; timeManuallySet = true }
     val setRecurrence: (Recurrence?) -> Unit = { selectedRecurrence = it; recurrenceManuallySet = true }
+    val setReminder: (String?) -> Unit = { selectedReminder = it; reminderManuallySet = true }
+    val setPriority: (String) -> Unit = { selectedPriority = it; priorityManuallySet = true }
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
     val selectedAssigneeIds = remember { mutableStateListOf<String>() }
@@ -249,6 +253,8 @@ fun NewTaskSheet(
             if (!dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
             if (!timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
             if (!recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
+            if (!reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
+            if (!priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
         }
     }
 
@@ -479,7 +485,9 @@ fun NewTaskSheet(
                 val detectedLabel = listOfNotNull(
                     quickAdd.due?.let { TaskScheduleUtils.formatDueDate(it) },
                     quickAdd.time,
-                    quickAdd.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) }
+                    quickAdd.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) },
+                    quickAdd.reminder?.let { "remind $it" },
+                    quickAdd.priority?.let { "${it.uppercase()} priority" }
                 ).joinToString(" · ")
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -590,7 +598,7 @@ fun NewTaskSheet(
                         "DueDate" -> DueDatePanel(
                             selectedDueDate = selectedDueDate,
                             onPick = { setDueDate(it) },
-                            onClear = { setDueDate(null); setTime(null); selectedReminder = null },
+                            onClear = { setDueDate(null); setTime(null); setReminder(null) },
                             onPickDate = { showDatePicker = true }
                         )
                         "Time" -> TimePanel(
@@ -602,7 +610,7 @@ fun NewTaskSheet(
                         "Reminder" -> ReminderPanel(
                             hasDueDate = selectedDueDate != null,
                             selectedReminder = selectedReminder,
-                            onPick = { selectedReminder = it },
+                            onPick = { setReminder(it) },
                             onCustom = { showReminderTimePicker = true }
                         )
                         "Project" -> ProjectPanel(
@@ -621,7 +629,7 @@ fun NewTaskSheet(
                             SegmentedControl(
                                 items = listOf("none", "low", "med", "high"),
                                 selectedItem = selectedPriority,
-                                onItemSelected = { selectedPriority = it },
+                                onItemSelected = { setPriority(it) },
                                 labelProvider = { it.uppercase() }
                             )
                         }
@@ -855,7 +863,7 @@ fun NewTaskSheet(
                     android.widget.Toast.makeText(context, "That reminder time has already passed today.", android.widget.Toast.LENGTH_SHORT).show()
                 }
                 else -> {
-                    selectedReminder = it
+                    setReminder(it)
                 }
             }
             showReminderTimePicker = false

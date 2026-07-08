@@ -6,8 +6,12 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.mj.yata.MainActivity
 import com.mj.yata.R
 
@@ -31,11 +35,15 @@ object NotificationHelper {
         }
     }
 
-    /** Build a high-priority reminder notification with Complete and Snooze actions. */
+    /** Build a high-priority reminder notification with Complete and Snooze actions.
+     * [accentColor] should be the app's current effective M3 primary color (resolves
+     * light/dark/dynamic the same way the app itself does — see [com.mj.yata.widget.resolveWidgetTheme]),
+     * not a hardcoded value, so the notification icon matches whatever theme the user is on. */
     fun buildReminderNotification(
         context: Context,
         taskId: String,
-        taskTitle: String
+        taskTitle: String,
+        accentColor: Int
     ): Notification {
         val notifId = taskId.hashCode()
 
@@ -65,7 +73,8 @@ object NotificationHelper {
             .setContentTitle("Reminder: $taskTitle")
             .setContentText("This task is due")
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
-            .setColor(0xFF8E4A3B.toInt())
+            .setColor(accentColor)
+            .setLargeIcon(buildLargeIcon(context, accentColor))
             .setContentIntent(openIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -90,5 +99,26 @@ object NotificationHelper {
                 actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_TOMORROW, notifId + 4000)
             )
             .build()
+    }
+
+    /** The small icon (`setSmallIcon`) is forced monochrome/white by the OS in the status bar —
+     * that's an Android design rule, not something `.setColor()` can override. The large icon
+     * has no such restriction, so this draws an actual M3-colored circular badge (the same glyph
+     * as the small icon, in white, over an [accentColor] disc) — that's what actually shows up
+     * colored next to the notification in the shade/lock screen. */
+    private fun buildLargeIcon(context: Context, accentColor: Int, sizePx: Int = 256): Bitmap {
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val circlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = accentColor }
+        canvas.drawCircle(sizePx / 2f, sizePx / 2f, sizePx / 2f, circlePaint)
+
+        ContextCompat.getDrawable(context, R.drawable.ic_launcher_monochrome)?.mutate()?.let { glyph ->
+            glyph.setTint(android.graphics.Color.WHITE)
+            val inset = (sizePx * 0.22f).toInt()
+            glyph.setBounds(inset, inset, sizePx - inset, sizePx - inset)
+            glyph.draw(canvas)
+        }
+
+        return bitmap
     }
 }
