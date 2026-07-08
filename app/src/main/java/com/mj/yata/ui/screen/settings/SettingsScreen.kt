@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.data.cloud.CloudBackupError
 import com.mj.yata.data.cloud.isCloudBackupStale
 import com.mj.yata.domain.model.AppFont
+import com.mj.yata.domain.model.FabPosition
+import com.mj.yata.domain.model.TaskRowDensity
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.notification.NotificationPermissionUtils
@@ -72,6 +74,17 @@ fun SettingsScreen(
     val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsState()
     val defaultReminderHour by viewModel.defaultReminderHour.collectAsState()
     val defaultReminderMinute by viewModel.defaultReminderMinute.collectAsState()
+    val themeScheduleStartHour by viewModel.themeScheduleStartHour.collectAsState()
+    val themeScheduleStartMinute by viewModel.themeScheduleStartMinute.collectAsState()
+    val themeScheduleEndHour by viewModel.themeScheduleEndHour.collectAsState()
+    val themeScheduleEndMinute by viewModel.themeScheduleEndMinute.collectAsState()
+    val reduceMotionEnabled by viewModel.reduceMotionEnabled.collectAsState()
+    val textScale by viewModel.textScale.collectAsState()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
+    val hapticsEnabled by viewModel.hapticsEnabled.collectAsState()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val fabPosition by viewModel.fabPosition.collectAsState()
     val uiScale by viewModel.uiScale.collectAsState()
     val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsState()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
@@ -86,6 +99,8 @@ fun SettingsScreen(
 
     var showDefaultListMenu by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
+    var showThemeScheduleStartPicker by remember { mutableStateOf(false) }
+    var showThemeScheduleEndPicker by remember { mutableStateOf(false) }
 
     var editingName by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf(userName) }
@@ -135,6 +150,8 @@ fun SettingsScreen(
                 peopleEnabled = peopleFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 projectsEnabled = projectsFeatureEnabled,
+                todayEnabled = todayTabEnabled,
+                upcomingEnabled = upcomingTabEnabled,
                 onTabSelected = onNavigateToTab
             )
         },
@@ -285,11 +302,23 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         SegmentedControl(
-                            items = listOf(ThemeMode.SYSTEM, ThemeMode.LIGHT, ThemeMode.DARK),
+                            items = listOf(ThemeMode.SYSTEM, ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.SCHEDULED),
                             selectedItem = themeMode,
                             onItemSelected = { viewModel.setThemeMode(it) },
-                            labelProvider = { it.name }
+                            labelProvider = { if (it == ThemeMode.SCHEDULED) "Scheduled" else it.name }
                         )
+                        if (themeMode == ThemeMode.SCHEDULED) {
+                            SettingsRow(
+                                label = "Dark from",
+                                value = TaskScheduleUtils.formatTime(themeScheduleStartHour, themeScheduleStartMinute),
+                                onClick = { showThemeScheduleStartPicker = true }
+                            )
+                            SettingsRow(
+                                label = "Light from",
+                                value = TaskScheduleUtils.formatTime(themeScheduleEndHour, themeScheduleEndMinute),
+                                onClick = { showThemeScheduleEndPicker = true }
+                            )
+                        }
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -457,22 +486,46 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Guard against hiding every tab and stranding the user with an empty
+                    // bottom nav — the last remaining visible tab can't be switched off.
+                    val visibleTabCount = listOf(
+                        todayTabEnabled, upcomingTabEnabled,
+                        projectsFeatureEnabled, peopleFeatureEnabled, tagsFeatureEnabled
+                    ).count { it }
+
+                    FeatureToggleRow(
+                        title = "Today tab",
+                        checked = todayTabEnabled,
+                        onCheckedChange = { viewModel.setTodayTabEnabled(it) },
+                        enabled = !todayTabEnabled || visibleTabCount > 1
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    FeatureToggleRow(
+                        title = "Upcoming tab",
+                        checked = upcomingTabEnabled,
+                        onCheckedChange = { viewModel.setUpcomingTabEnabled(it) },
+                        enabled = !upcomingTabEnabled || visibleTabCount > 1
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     FeatureToggleRow(
                         title = "Projects",
                         checked = projectsFeatureEnabled,
-                        onCheckedChange = { viewModel.setProjectsFeatureEnabled(it) }
+                        onCheckedChange = { viewModel.setProjectsFeatureEnabled(it) },
+                        enabled = !projectsFeatureEnabled || visibleTabCount > 1
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     FeatureToggleRow(
                         title = "People",
                         checked = peopleFeatureEnabled,
-                        onCheckedChange = { viewModel.setPeopleFeatureEnabled(it) }
+                        onCheckedChange = { viewModel.setPeopleFeatureEnabled(it) },
+                        enabled = !peopleFeatureEnabled || visibleTabCount > 1
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     FeatureToggleRow(
                         title = "Tags",
                         checked = tagsFeatureEnabled,
-                        onCheckedChange = { viewModel.setTagsFeatureEnabled(it) }
+                        onCheckedChange = { viewModel.setTagsFeatureEnabled(it) },
+                        enabled = !tagsFeatureEnabled || visibleTabCount > 1
                     )
                 }
             }
@@ -588,6 +641,152 @@ fun SettingsScreen(
                                 )
                             }
                         }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Text(
+                        text = "Text size",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = "Scales text only, independent of overall UI size.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    var textSliderPosition by remember(textScale) { mutableFloatStateOf(textScale) }
+                    val textPresets = listOf("Small" to 0.85f, "Normal" to 1.0f, "Large" to 1.3f)
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Aa",
+                            fontSize = (28 * textSliderPosition).sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Slider(
+                        value = textSliderPosition,
+                        onValueChange = { textSliderPosition = it },
+                        onValueChangeFinished = { viewModel.setTextScale(textSliderPosition) },
+                        valueRange = 0.85f..1.3f,
+                        steps = 8
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        textPresets.forEach { (label, value) ->
+                            TextButton(onClick = {
+                                textSliderPosition = value
+                                viewModel.setTextScale(value)
+                            }) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Reduce motion",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Shortens navigation, sheet, and fade animations.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = reduceMotionEnabled,
+                            onCheckedChange = { viewModel.setReduceMotionEnabled(it) }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Task row density",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        SegmentedControl(
+                            items = listOf(TaskRowDensity.COMPACT, TaskRowDensity.COMFORTABLE, TaskRowDensity.SPACIOUS),
+                            selectedItem = taskRowDensity,
+                            onItemSelected = { viewModel.setTaskRowDensity(it) },
+                            labelProvider = {
+                                when (it) {
+                                    TaskRowDensity.COMPACT -> "Compact"
+                                    TaskRowDensity.COMFORTABLE -> "Comfortable"
+                                    TaskRowDensity.SPACIOUS -> "Spacious"
+                                }
+                            }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Quick-add button position",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        SegmentedControl(
+                            items = listOf(FabPosition.LEFT, FabPosition.RIGHT, FabPosition.HIDDEN),
+                            selectedItem = fabPosition,
+                            onItemSelected = { viewModel.setFabPosition(it) },
+                            labelProvider = {
+                                when (it) {
+                                    FabPosition.LEFT -> "Left"
+                                    FabPosition.RIGHT -> "Right"
+                                    FabPosition.HIDDEN -> "Hidden"
+                                }
+                            }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Haptic feedback",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Vibrate on checkbox, swipe, and drag actions.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = hapticsEnabled,
+                            onCheckedChange = { viewModel.setHapticsEnabled(it) }
+                        )
                     }
                 }
             }
@@ -1349,6 +1548,32 @@ fun SettingsScreen(
         }
     )
 
+    YataTimePickerLauncher(
+        show = showThemeScheduleStartPicker,
+        initialTime = TaskScheduleUtils.formatTime(themeScheduleStartHour, themeScheduleStartMinute),
+        onDismiss = { showThemeScheduleStartPicker = false },
+        onConfirm = { formatted ->
+            val parsed = TaskScheduleUtils.parseTime(formatted)
+            if (parsed != null) {
+                viewModel.setThemeSchedule(parsed.hour, parsed.minute, themeScheduleEndHour, themeScheduleEndMinute)
+            }
+            showThemeScheduleStartPicker = false
+        }
+    )
+
+    YataTimePickerLauncher(
+        show = showThemeScheduleEndPicker,
+        initialTime = TaskScheduleUtils.formatTime(themeScheduleEndHour, themeScheduleEndMinute),
+        onDismiss = { showThemeScheduleEndPicker = false },
+        onConfirm = { formatted ->
+            val parsed = TaskScheduleUtils.parseTime(formatted)
+            if (parsed != null) {
+                viewModel.setThemeSchedule(themeScheduleStartHour, themeScheduleStartMinute, parsed.hour, parsed.minute)
+            }
+            showThemeScheduleEndPicker = false
+        }
+    )
+
     pickedPhotoBitmap?.let { bitmap ->
         CircularImageCropper(
             source = bitmap,
@@ -1459,7 +1684,8 @@ private fun formatBackupInterval(minutes: Long): String {
 private fun FeatureToggleRow(
     title: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1477,7 +1703,7 @@ private fun FeatureToggleRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }
 

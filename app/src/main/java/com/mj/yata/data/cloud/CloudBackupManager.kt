@@ -116,14 +116,27 @@ class CloudBackupManager @Inject constructor(
      * (revoked, cleared, expired test-user grant — anything that drops it independently of this
      * app), the DataStore "signed in as X" flag would otherwise sit there forever showing a
      * state that can never actually back up. Clearing it here means Settings falls back to a
-     * "Sign in" button instead of a stuck, misleading "Signed in as X." */
+     * "Sign in" button instead of a stuck, misleading "Signed in as X."
+     *
+     * [GoogleSignIn.getLastSignedInAccount] alone is NOT trustworthy enough to gate that clear —
+     * it's a synchronous cached read that can spuriously return null in a freshly-spawned
+     * headless process (e.g. this is called from [CloudBackupWorker] on a background WorkManager
+     * run with no warm Activity/GoogleApiClient), even though the account is still genuinely
+     * signed in system-wide. That previously caused the account to look "logged out" mid
+     * automatic-backup. [silentSignIn] does an authoritative, awaited recheck against Play
+     * Services before this concludes the sign-in is actually gone. */
     private suspend fun requireAccount(): GoogleSignInAccount? {
-        val account = currentAccount()
-        if (account == null && userPreferences.cloudBackupAccountEmailFlow.first() != null) {
-            Log.w(TAG, "requireAccount: cached account gone, clearing stale sign-in state")
+        val cached = currentAccount()
+        if (cached != null) return cached
+        if (userPreferences.cloudBackupAccountEmailFlow.first() == null) return null
+
+        return try {
+            Tasks.await(signInClient().silentSignIn())
+        } catch (e: Exception) {
+            Log.w(TAG, "requireAccount: silent re-auth failed, clearing stale sign-in state", e)
             userPreferences.setCloudBackupAccountEmail(null)
+            null
         }
-        return account
     }
 
     /** Call from the sign-in [ActivityResultLauncher] callback with the returned [Intent]. */

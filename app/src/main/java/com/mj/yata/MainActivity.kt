@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -32,8 +33,11 @@ import com.mj.yata.ui.navigation.AppNavigation
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
+import com.mj.yata.util.isDarkNow
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.LocalTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -130,22 +134,55 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeMode by userPreferences.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
             val systemDark = isSystemInDarkTheme()
+
+            val scheduleStartHour by userPreferences.themeScheduleStartHourFlow.collectAsState(initial = 21)
+            val scheduleStartMinute by userPreferences.themeScheduleStartMinuteFlow.collectAsState(initial = 0)
+            val scheduleEndHour by userPreferences.themeScheduleEndHourFlow.collectAsState(initial = 7)
+            val scheduleEndMinute by userPreferences.themeScheduleEndMinuteFlow.collectAsState(initial = 0)
+
+            // Only ticks while SCHEDULED is active, so the theme keeps up with the clock without
+            // needing an AlarmManager/BroadcastReceiver round-trip for a live-in-app switch.
+            var currentTime by remember { mutableStateOf(LocalTime.now()) }
+            LaunchedEffect(themeMode) {
+                if (themeMode == ThemeMode.SCHEDULED) {
+                    while (true) {
+                        currentTime = LocalTime.now()
+                        delay(60_000)
+                    }
+                }
+            }
+
             val useDarkTheme = when (themeMode) {
-                ThemeMode.LIGHT  -> false
-                ThemeMode.DARK   -> true
-                ThemeMode.SYSTEM -> systemDark
+                ThemeMode.LIGHT     -> false
+                ThemeMode.DARK      -> true
+                ThemeMode.SYSTEM    -> systemDark
+                ThemeMode.SCHEDULED -> isDarkNow(
+                    LocalTime.of(scheduleStartHour, scheduleStartMinute),
+                    LocalTime.of(scheduleEndHour, scheduleEndMinute),
+                    currentTime
+                )
+            }
+
+            val reduceMotionEnabled by userPreferences.reduceMotionEnabledFlow.collectAsState(initial = false)
+            LaunchedEffect(reduceMotionEnabled) {
+                com.mj.yata.ui.theme.YataDur.applyReduceMotion(reduceMotionEnabled)
             }
 
             val uiScale by userPreferences.uiScaleFlow.collectAsState(initial = 1.0f)
+            val textScale by userPreferences.textScaleFlow.collectAsState(initial = 1.0f)
             val dynamicColorEnabled by userPreferences.dynamicColorEnabledFlow.collectAsState(initial = true)
             val appFont by userPreferences.appFontFlow.collectAsState(initial = com.mj.yata.domain.model.AppFont.INTER)
+            val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
             val baseDensity = LocalDensity.current
             val scaledDensity = Density(
                 density = baseDensity.density * uiScale,
-                fontScale = baseDensity.fontScale * uiScale
+                fontScale = baseDensity.fontScale * uiScale * textScale
             )
 
-            CompositionLocalProvider(LocalDensity provides scaledDensity) {
+            CompositionLocalProvider(
+                LocalDensity provides scaledDensity,
+                com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled
+            ) {
                 YataTheme(darkTheme = useDarkTheme, useDynamicColor = dynamicColorEnabled, appFont = appFont) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),

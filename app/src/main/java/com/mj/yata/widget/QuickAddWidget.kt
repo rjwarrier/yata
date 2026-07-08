@@ -62,6 +62,8 @@ class QuickAddWidget : GlanceAppWidget() {
         val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
         val customLabel = prefs[WIDGET_LABEL_KEY]
         val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+        val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
+        val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val allLists = repository.getLists().first()
@@ -73,6 +75,7 @@ class QuickAddWidget : GlanceAppWidget() {
         }
 
         val theme = resolveWidgetTheme(context)
+        val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -86,7 +89,9 @@ class QuickAddWidget : GlanceAppWidget() {
                     targetName = targetName,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
-                    useM3Colors = useM3Colors
+                    useM3Colors = useM3Colors,
+                    opacity = opacity,
+                    accentOverride = accentOverride
                 )
             }
         }
@@ -104,7 +109,9 @@ private fun QuickAddWidgetContent(
     targetName: String?,
     cornerRadius: Int,
     customLabel: String?,
-    useM3Colors: Boolean
+    useM3Colors: Boolean,
+    opacity: Float,
+    accentOverride: Color?
 ) {
     val isSmall = LocalSize.current.width < 180.dp
     val isTall = LocalSize.current.height > 140.dp
@@ -113,7 +120,7 @@ private fun QuickAddWidgetContent(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(colors.surface.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .clickable(openQuickAddDialogAction(targetType, targetId, targetName))
@@ -144,7 +151,7 @@ private fun QuickAddWidgetContent(
             }
         } else {
             Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
-                WidgetSectionHeader(customLabel ?: "Quick add", GlanceTheme.colors.primary)
+                WidgetSectionHeader(customLabel ?: "Quick add", ColorProvider(accentOverride ?: colors.primary))
                 Spacer(modifier = GlanceModifier.height(8.dp))
                 Box(
                     modifier = GlanceModifier

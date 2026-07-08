@@ -129,6 +129,9 @@ class SingleListWidget : GlanceAppWidget() {
         val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
         val customLabel = prefs[WIDGET_LABEL_KEY]
         val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+        val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
+        val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
+        val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -141,7 +144,9 @@ class SingleListWidget : GlanceAppWidget() {
                     accents = theme.accents,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
-                    useM3Colors = useM3Colors
+                    useM3Colors = useM3Colors,
+                    opacity = opacity,
+                    accentOverride = accentOverride
                 )
             }
         }
@@ -158,12 +163,14 @@ private fun SingleListWidgetContent(
     accents: com.mj.yata.ui.theme.YataAccents,
     cornerRadius: Int,
     customLabel: String?,
-    useM3Colors: Boolean
+    useM3Colors: Boolean,
+    opacity: Float,
+    accentOverride: androidx.compose.ui.graphics.Color?
 ) {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(colors.surface.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
@@ -177,7 +184,7 @@ private fun SingleListWidgetContent(
                 )
             }
         } else {
-            val color = if (useM3Colors) colors.primary else accents.getAccent(source.colorKey)
+            val color = accentOverride ?: if (useM3Colors) colors.primary else accents.getAccent(source.colorKey)
             val headerText = if (!customLabel.isNullOrBlank()) customLabel else source.name
             val isLarge = LocalSize.current.height > 180.dp
             val done = tasks.count { it.done }

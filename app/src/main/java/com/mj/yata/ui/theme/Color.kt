@@ -87,6 +87,13 @@ data class YataAccents(
     val onAccent: Color
 ) {
     fun getAccent(key: String): Color {
+        if (key.startsWith("#")) {
+            return try {
+                Color(android.graphics.Color.parseColor(key))
+            } catch (e: IllegalArgumentException) {
+                accentA
+            }
+        }
         return when (key) {
             "accentA" -> accentA
             "accentB" -> accentB

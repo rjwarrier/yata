@@ -129,6 +129,10 @@ fun MainScreen(
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val fabPosition by viewModel.fabPosition.collectAsState()
 
     // If the tab currently open gets disabled out from under the user, fall back to Today
     // rather than leaving them stranded on a tab no longer reachable from the nav bar.
@@ -403,6 +407,11 @@ fun MainScreen(
                     }
                 }
             },
+            floatingActionButtonPosition = if (fabPosition == com.mj.yata.domain.model.FabPosition.LEFT) {
+                androidx.compose.material3.FabPosition.Start
+            } else {
+                androidx.compose.material3.FabPosition.End
+            },
             bottomBar = {
                 val todayRemainingCount by viewModel.todayRemainingCount.collectAsState()
                 CustomBottomNav(
@@ -411,6 +420,8 @@ fun MainScreen(
                     peopleEnabled = peopleFeatureEnabled,
                     tagsEnabled = tagsFeatureEnabled,
                     projectsEnabled = projectsFeatureEnabled,
+                    todayEnabled = todayTabEnabled,
+                    upcomingEnabled = upcomingTabEnabled,
                     onTabSelected = { selectedTab = it }
                 )
             },
@@ -426,7 +437,7 @@ fun MainScreen(
                 }
 
                 AnimatedVisibility(
-                    visible = fabTarget != null,
+                    visible = fabTarget != null && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
                     enter = scaleIn(),
                     exit = scaleOut()
                 ) {
@@ -495,6 +506,7 @@ fun MainScreen(
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
                             onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
+                            onSwipeToDelete = { bulkDeleteWithUndo(listOf(it)) },
                             onBulkComplete = { viewModel.bulkCompleteTasks(it) },
                             onBulkDelete = { bulkDeleteWithUndo(it) },
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
@@ -504,7 +516,8 @@ fun MainScreen(
                             onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
-                            projectsEnabled = projectsFeatureEnabled
+                            projectsEnabled = projectsFeatureEnabled,
+                            taskRowDensity = taskRowDensity
                         )
                         1 -> ProjectsTab(
                             projects = projects,
@@ -575,6 +588,7 @@ fun MainScreen(
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
                             onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
+                            onSwipeToDelete = { bulkDeleteWithUndo(listOf(it)) },
                             onBulkComplete = { viewModel.bulkCompleteTasks(it) },
                             onBulkDelete = { bulkDeleteWithUndo(it) },
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
@@ -584,7 +598,8 @@ fun MainScreen(
                             onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
-                            projectsEnabled = projectsFeatureEnabled
+                            projectsEnabled = projectsFeatureEnabled,
+                            taskRowDensity = taskRowDensity
                         )
                     }
                 }
@@ -748,17 +763,19 @@ fun CustomBottomNav(
     peopleEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     projectsEnabled: Boolean = true,
+    todayEnabled: Boolean = true,
+    upcomingEnabled: Boolean = true,
     onTabSelected: (Int) -> Unit
 ) {
     // Tab ids are fixed (0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming) regardless of which
     // are hidden — filtering the list must not renumber the survivors, or a disabled tab in the
     // middle would shift every tab after it onto the wrong id.
     val items = listOfNotNull(
-        NavIcon(0, "Today", Icons.Outlined.Today, Icons.Filled.Today),
+        if (todayEnabled) NavIcon(0, "Today", Icons.Outlined.Today, Icons.Filled.Today) else null,
         if (projectsEnabled) NavIcon(1, "Projects", Icons.Outlined.Layers, Icons.Filled.Layers) else null,
         if (peopleEnabled) NavIcon(2, "People", Icons.Outlined.People, Icons.Filled.People) else null,
         if (tagsEnabled) NavIcon(3, "Tags", Icons.Outlined.Label, Icons.Filled.Label) else null,
-        NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek)
+        if (upcomingEnabled) NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
     )
 
     // Top-only hairline (per handoff's borderTop) — a Surface `border` would ring all 4 sides,

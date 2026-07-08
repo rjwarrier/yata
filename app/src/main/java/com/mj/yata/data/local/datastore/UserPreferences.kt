@@ -45,13 +45,51 @@ class UserPreferences @Inject constructor(
         val CLOUD_BACKUP_LAST_AT     = longPreferencesKey("cloud_backup_last_at")
         val CLOUD_BACKUP_WIFI_ONLY   = booleanPreferencesKey("cloud_backup_wifi_only")
         val CLOUD_BACKUP_INTERVAL_MINUTES = longPreferencesKey("cloud_backup_interval_minutes")
+        val THEME_SCHEDULE_START_HOUR   = intPreferencesKey("theme_schedule_start_hour")
+        val THEME_SCHEDULE_START_MINUTE = intPreferencesKey("theme_schedule_start_minute")
+        val THEME_SCHEDULE_END_HOUR     = intPreferencesKey("theme_schedule_end_hour")
+        val THEME_SCHEDULE_END_MINUTE   = intPreferencesKey("theme_schedule_end_minute")
+        val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
+        val TEXT_SCALE              = floatPreferencesKey("text_scale")
+        val TASK_ROW_DENSITY        = stringPreferencesKey("task_row_density")
+        val HAPTICS_ENABLED         = booleanPreferencesKey("haptics_enabled")
+        val TODAY_TAB_ENABLED       = booleanPreferencesKey("today_tab_enabled")
+        val UPCOMING_TAB_ENABLED    = booleanPreferencesKey("upcoming_tab_enabled")
+        val FAB_POSITION            = stringPreferencesKey("fab_position")
     }
 
     val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
         when (prefs[THEME_MODE]) {
-            ThemeMode.LIGHT.name -> ThemeMode.LIGHT
-            ThemeMode.DARK.name  -> ThemeMode.DARK
-            else                 -> ThemeMode.SYSTEM
+            ThemeMode.LIGHT.name     -> ThemeMode.LIGHT
+            ThemeMode.DARK.name      -> ThemeMode.DARK
+            ThemeMode.SCHEDULED.name -> ThemeMode.SCHEDULED
+            else                     -> ThemeMode.SYSTEM
+        }
+    }
+
+    // Dark from 9pm to 7am by default.
+    val themeScheduleStartHourFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_START_HOUR] ?: 21 }
+    val themeScheduleStartMinuteFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_START_MINUTE] ?: 0 }
+    val themeScheduleEndHourFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_END_HOUR] ?: 7 }
+    val themeScheduleEndMinuteFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_END_MINUTE] ?: 0 }
+
+    val reduceMotionEnabledFlow: Flow<Boolean> = dataStore.data.map { it[REDUCE_MOTION_ENABLED] ?: false }
+    val textScaleFlow: Flow<Float> = dataStore.data.map { it[TEXT_SCALE] ?: 1.0f }
+    val taskRowDensityFlow: Flow<com.mj.yata.domain.model.TaskRowDensity> = dataStore.data.map { prefs ->
+        when (prefs[TASK_ROW_DENSITY]) {
+            com.mj.yata.domain.model.TaskRowDensity.COMPACT.name -> com.mj.yata.domain.model.TaskRowDensity.COMPACT
+            com.mj.yata.domain.model.TaskRowDensity.SPACIOUS.name -> com.mj.yata.domain.model.TaskRowDensity.SPACIOUS
+            else -> com.mj.yata.domain.model.TaskRowDensity.COMFORTABLE
+        }
+    }
+    val hapticsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[HAPTICS_ENABLED] ?: true }
+    val todayTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TODAY_TAB_ENABLED] ?: true }
+    val upcomingTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[UPCOMING_TAB_ENABLED] ?: true }
+    val fabPositionFlow: Flow<com.mj.yata.domain.model.FabPosition> = dataStore.data.map { prefs ->
+        when (prefs[FAB_POSITION]) {
+            com.mj.yata.domain.model.FabPosition.LEFT.name -> com.mj.yata.domain.model.FabPosition.LEFT
+            com.mj.yata.domain.model.FabPosition.HIDDEN.name -> com.mj.yata.domain.model.FabPosition.HIDDEN
+            else -> com.mj.yata.domain.model.FabPosition.RIGHT
         }
     }
 
@@ -161,5 +199,42 @@ class UserPreferences @Inject constructor(
 
     suspend fun setCloudBackupIntervalMinutes(minutes: Long) {
         dataStore.edit { it[CLOUD_BACKUP_INTERVAL_MINUTES] = minutes.coerceAtLeast(15L) }
+    }
+
+    suspend fun setReduceMotionEnabled(enabled: Boolean) {
+        dataStore.edit { it[REDUCE_MOTION_ENABLED] = enabled }
+    }
+
+    suspend fun setTextScale(scale: Float) {
+        dataStore.edit { it[TEXT_SCALE] = scale }
+    }
+
+    suspend fun setTaskRowDensity(density: com.mj.yata.domain.model.TaskRowDensity) {
+        dataStore.edit { it[TASK_ROW_DENSITY] = density.name }
+    }
+
+    suspend fun setHapticsEnabled(enabled: Boolean) {
+        dataStore.edit { it[HAPTICS_ENABLED] = enabled }
+    }
+
+    suspend fun setTodayTabEnabled(enabled: Boolean) {
+        dataStore.edit { it[TODAY_TAB_ENABLED] = enabled }
+    }
+
+    suspend fun setUpcomingTabEnabled(enabled: Boolean) {
+        dataStore.edit { it[UPCOMING_TAB_ENABLED] = enabled }
+    }
+
+    suspend fun setFabPosition(position: com.mj.yata.domain.model.FabPosition) {
+        dataStore.edit { it[FAB_POSITION] = position.name }
+    }
+
+    suspend fun setThemeSchedule(startHour: Int, startMinute: Int, endHour: Int, endMinute: Int) {
+        dataStore.edit {
+            it[THEME_SCHEDULE_START_HOUR] = startHour
+            it[THEME_SCHEDULE_START_MINUTE] = startMinute
+            it[THEME_SCHEDULE_END_HOUR] = endHour
+            it[THEME_SCHEDULE_END_MINUTE] = endMinute
+        }
     }
 }

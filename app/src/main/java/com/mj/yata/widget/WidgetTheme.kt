@@ -13,8 +13,10 @@ import com.mj.yata.ui.theme.DarkColors
 import com.mj.yata.ui.theme.LightAccents
 import com.mj.yata.ui.theme.LightColors
 import com.mj.yata.ui.theme.YataAccents
+import com.mj.yata.util.isDarkNow
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
+import java.time.LocalTime
 
 data class WidgetTheme(val colorScheme: ColorScheme, val accents: YataAccents) {
     /** Glance wants a light+dark pair, but we've already resolved which one actually applies
@@ -37,6 +39,10 @@ suspend fun resolveWidgetTheme(context: Context): WidgetTheme {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> systemDark
+        ThemeMode.SCHEDULED -> isDarkNow(
+            LocalTime.of(userPreferences.themeScheduleStartHourFlow.first(), userPreferences.themeScheduleStartMinuteFlow.first()),
+            LocalTime.of(userPreferences.themeScheduleEndHourFlow.first(), userPreferences.themeScheduleEndMinuteFlow.first())
+        )
     }
     val supportsDynamic = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val colorScheme = when {

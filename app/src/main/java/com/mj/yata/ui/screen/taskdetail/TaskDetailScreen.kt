@@ -170,6 +170,8 @@ fun TaskDetailScreen(
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
     Scaffold(
         snackbarHost = {
@@ -188,6 +190,8 @@ fun TaskDetailScreen(
                 peopleEnabled = peopleFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 projectsEnabled = projectsFeatureEnabled,
+                todayEnabled = todayTabEnabled,
+                upcomingEnabled = upcomingTabEnabled,
                 onTabSelected = onNavigateToTab
             )
         },
@@ -200,9 +204,21 @@ fun TaskDetailScreen(
                     }
                 },
                 actions = {
-                    // Skip this occurrence (recurring tasks only) — advances the due date without completing it
+                    // Skip this occurrence (recurring tasks only) — advances the due date without
+                    // completing it. Deferred until the Undo snackbar times out, same pattern as delete.
                     if (task.recurrence != null && !task.done) {
-                        IconButton(onClick = { viewModel.skipTaskOccurrence(task.id) }) {
+                        IconButton(onClick = {
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Occurrence skipped",
+                                    actionLabel = "Undo",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.Dismissed) {
+                                    viewModel.skipTaskOccurrence(task.id)
+                                }
+                            }
+                        }) {
                             Icon(Icons.Default.SkipNext, contentDescription = "Skip this occurrence")
                         }
                     }
@@ -1009,7 +1025,11 @@ fun TaskDetailScreen(
                                     label = pr.name,
                                     selected = pr.id == task.projectId,
                                     onClick = {
-                                        viewModel.upsertTask(task.copy(projectId = pr.id))
+                                        // Matches NewTaskSheet's project-selection behavior — a
+                                        // project with its own due date carries it onto the task,
+                                        // same as when the project is picked at creation time.
+                                        val updated = if (pr.due != null) task.copy(projectId = pr.id, due = pr.due) else task.copy(projectId = pr.id)
+                                        viewModel.upsertTask(updated)
                                         activeSheet = DetailSheetType.None
                                     },
                                     tint = color,

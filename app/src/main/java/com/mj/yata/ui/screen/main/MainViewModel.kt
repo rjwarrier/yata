@@ -86,6 +86,18 @@ class MainViewModel @Inject constructor(
     val defaultReminderMinute: StateFlow<Int> = userPreferences.defaultReminderMinuteFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    val themeScheduleStartHour: StateFlow<Int> = userPreferences.themeScheduleStartHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 21)
+
+    val themeScheduleStartMinute: StateFlow<Int> = userPreferences.themeScheduleStartMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val themeScheduleEndHour: StateFlow<Int> = userPreferences.themeScheduleEndHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 7)
+
+    val themeScheduleEndMinute: StateFlow<Int> = userPreferences.themeScheduleEndMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     val uiScale: StateFlow<Float> = userPreferences.uiScaleFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
 
@@ -100,6 +112,27 @@ class MainViewModel @Inject constructor(
 
     val projectsFeatureEnabled: StateFlow<Boolean> = userPreferences.projectsFeatureEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val reduceMotionEnabled: StateFlow<Boolean> = userPreferences.reduceMotionEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val textScale: StateFlow<Float> = userPreferences.textScaleFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
+
+    val taskRowDensity: StateFlow<com.mj.yata.domain.model.TaskRowDensity> = userPreferences.taskRowDensityFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.TaskRowDensity.COMFORTABLE)
+
+    val hapticsEnabled: StateFlow<Boolean> = userPreferences.hapticsEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val todayTabEnabled: StateFlow<Boolean> = userPreferences.todayTabEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val upcomingTabEnabled: StateFlow<Boolean> = userPreferences.upcomingTabEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val fabPosition: StateFlow<com.mj.yata.domain.model.FabPosition> = userPreferences.fabPositionFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.FabPosition.RIGHT)
 
     val cloudBackupEnabled: StateFlow<Boolean> = userPreferences.cloudBackupEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -643,9 +676,57 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun setThemeSchedule(startHour: Int, startMinute: Int, endHour: Int, endMinute: Int) {
+        viewModelScope.launch {
+            userPreferences.setThemeSchedule(startHour, startMinute, endHour, endMinute)
+        }
+    }
+
     fun setAppFont(font: AppFont) {
         viewModelScope.launch {
             userPreferences.setAppFont(font)
+        }
+    }
+
+    fun setReduceMotionEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setReduceMotionEnabled(enabled)
+        }
+    }
+
+    fun setTextScale(scale: Float) {
+        viewModelScope.launch {
+            userPreferences.setTextScale(scale)
+        }
+    }
+
+    fun setTaskRowDensity(density: com.mj.yata.domain.model.TaskRowDensity) {
+        viewModelScope.launch {
+            userPreferences.setTaskRowDensity(density)
+        }
+    }
+
+    fun setHapticsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setHapticsEnabled(enabled)
+        }
+    }
+
+    fun setTodayTabEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setTodayTabEnabled(enabled)
+        }
+    }
+
+    fun setUpcomingTabEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setUpcomingTabEnabled(enabled)
+        }
+    }
+
+    fun setFabPosition(position: com.mj.yata.domain.model.FabPosition) {
+        viewModelScope.launch {
+            userPreferences.setFabPosition(position)
         }
     }
 

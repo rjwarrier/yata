@@ -53,12 +53,15 @@ class ProgressStatsWidget : GlanceAppWidget() {
         val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
         val customLabel = prefs[WIDGET_LABEL_KEY]
         val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+        val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
+        val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val todayStr = LocalDate.now().toString()
         val todayTasks = repository.getTasks().first().filter { it.due != null && it.due!! <= todayStr }
         val lists = repository.getLists().first()
         val theme = resolveWidgetTheme(context)
+        val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -70,7 +73,9 @@ class ProgressStatsWidget : GlanceAppWidget() {
                     accents = theme.accents,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
-                    useM3Colors = useM3Colors
+                    useM3Colors = useM3Colors,
+                    opacity = opacity,
+                    accentOverride = accentOverride
                 )
             }
         }
@@ -86,17 +91,20 @@ private fun ProgressStatsContent(
     accents: com.mj.yata.ui.theme.YataAccents,
     cornerRadius: Int,
     customLabel: String?,
-    useM3Colors: Boolean
+    useM3Colors: Boolean,
+    opacity: Float,
+    accentOverride: androidx.compose.ui.graphics.Color?
 ) {
     val isSmall = LocalSize.current.width < 180.dp
     val done = tasks.count { it.done }
     val total = tasks.size
     val progress = if (total == 0) 0f else done.toFloat() / total
+    val chromeColor = accentOverride ?: colors.primary
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(colors.surface.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
@@ -113,7 +121,7 @@ private fun ProgressStatsContent(
                     progress = progress,
                     sizeDp = 78.dp,
                     strokeDp = 8.dp,
-                    activeColor = colors.primary,
+                    activeColor = chromeColor,
                     trackColor = colors.surfaceContainerHighest,
                     centerText = "${(progress * 100).toInt()}%",
                     centerTextSizeSp = 18f
@@ -133,7 +141,7 @@ private fun ProgressStatsContent(
 
             Column(modifier = GlanceModifier.fillMaxSize()) {
                 if (!customLabel.isNullOrBlank()) {
-                    WidgetSectionHeader(customLabel, androidx.glance.unit.ColorProvider(colors.primary))
+                    WidgetSectionHeader(customLabel, androidx.glance.unit.ColorProvider(chromeColor))
                     Spacer(modifier = GlanceModifier.height(8.dp))
                 }
                 Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight(), verticalAlignment = Alignment.Vertical.CenterVertically) {
@@ -142,7 +150,7 @@ private fun ProgressStatsContent(
                         progress = progress,
                         sizeDp = 64.dp,
                         strokeDp = 7.dp,
-                        activeColor = colors.primary,
+                        activeColor = chromeColor,
                         trackColor = colors.surfaceContainerHighest,
                         centerText = "${(progress * 100).toInt()}%",
                         centerTextSizeSp = 15f

@@ -57,6 +57,8 @@ fun AnalyticsScreen(
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
     var period by remember { mutableStateOf(AnalyticsPeriod.WEEK) }
 
@@ -83,6 +85,8 @@ fun AnalyticsScreen(
                 peopleEnabled = peopleFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 projectsEnabled = projectsFeatureEnabled,
+                todayEnabled = todayTabEnabled,
+                upcomingEnabled = upcomingTabEnabled,
                 onTabSelected = onNavigateToTab
             )
         },

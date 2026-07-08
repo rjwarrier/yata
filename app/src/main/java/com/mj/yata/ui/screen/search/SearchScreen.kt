@@ -60,6 +60,7 @@ fun SearchScreen(
     val projects by viewModel.projects.collectAsState()
     val people by viewModel.people.collectAsState()
     val tags by viewModel.tags.collectAsState()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
 
     var query by remember { mutableStateOf("") }
     // The text field itself always reflects `query` immediately; filtering runs against
@@ -80,6 +81,21 @@ fun SearchScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Swipe-to-delete on a single task reuses the same deferred-Undo-snackbar pattern as the
+    // bulk-delete dialog below, just for one id at a time.
+    fun deleteTaskWithUndo(task: Task) {
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "Task deleted",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.Dismissed) {
+                viewModel.deleteTask(task)
+            }
+        }
+    }
+
     val peopleById = remember(people) { people.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
     val listsById = remember(lists) { lists.associateBy { it.id } }
@@ -87,6 +103,8 @@ fun SearchScreen(
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
     val filteredTasks = remember(tasks, debouncedQuery, activeFilters.toList(), peopleById, tagsById) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty()) {
@@ -124,6 +142,8 @@ fun SearchScreen(
                     peopleEnabled = peopleFeatureEnabled,
                     tagsEnabled = tagsFeatureEnabled,
                     projectsEnabled = projectsFeatureEnabled,
+                    todayEnabled = todayTabEnabled,
+                    upcomingEnabled = upcomingTabEnabled,
                     onTabSelected = onNavigateToTab
                 )
             },
@@ -155,6 +175,7 @@ fun SearchScreen(
                 selectionMode = selectionMode,
                 selectedIds = selectedIds,
                 onTaskClick = onNavigateToTaskDetail,
+                onSwipeToDelete = ::deleteTaskWithUndo,
                 tagsEnabled = tagsFeatureEnabled,
                 peopleEnabled = peopleFeatureEnabled,
                 modifier = modifier.padding(innerPadding)
@@ -204,6 +225,7 @@ fun SearchScreen(
                     selectionMode = selectionMode,
                     selectedIds = selectedIds,
                     onTaskClick = onNavigateToTaskDetail,
+                    onSwipeToDelete = ::deleteTaskWithUndo,
                     tagsEnabled = tagsFeatureEnabled,
                     peopleEnabled = peopleFeatureEnabled
                 )
@@ -301,11 +323,13 @@ private fun SearchResultsList(
     selectionMode: Boolean,
     selectedIds: MutableList<String>,
     onTaskClick: (String) -> Unit,
+    onSwipeToDelete: (Task) -> Unit = {},
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -385,7 +409,10 @@ private fun SearchResultsList(
                     modifier = Modifier.animateItemPlacement(
                         animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                     ),
-                    onCommentClick = { pendingCommentTask = task }
+                    onCommentClick = { pendingCommentTask = task },
+                    density = taskRowDensity,
+                    onSwipeToDelete = { onSwipeToDelete(task) },
+                    swipeEnabled = !selectionMode
                 )
             }
         }

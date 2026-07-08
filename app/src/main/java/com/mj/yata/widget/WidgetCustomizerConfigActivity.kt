@@ -8,13 +8,16 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
@@ -23,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -32,6 +36,7 @@ import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.ui.theme.ALL_ACCENT_KEYS
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.ui.widgets.SegmentedControl
@@ -99,6 +104,8 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
             val initialUseM3 = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
             val initialSourceId = prefs[SINGLE_LIST_ID_KEY] ?: ""
             val initialSourceType = prefs[SINGLE_SOURCE_TYPE_KEY] ?: "list"
+            val initialOpacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
+            val initialAccentOverride = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
             setContent {
                 YataTheme {
@@ -112,8 +119,10 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                         initialUseM3 = initialUseM3,
                         initialSourceId = initialSourceId,
                         initialSourceType = initialSourceType,
-                        onSave = { radius, label, useM3, sourceId, sourceType ->
-                            onConfigSaved(radius, label, useM3, sourceId, sourceType)
+                        initialOpacity = initialOpacity,
+                        initialAccentOverride = initialAccentOverride,
+                        onSave = { radius, label, useM3, sourceId, sourceType, opacity, accentOverride ->
+                            onConfigSaved(radius, label, useM3, sourceId, sourceType, opacity, accentOverride)
                         }
                     )
                 }
@@ -126,9 +135,11 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
         label: String,
         useM3Colors: Boolean,
         sourceId: String?,
-        sourceType: String?
+        sourceType: String?,
+        opacity: Float,
+        accentOverride: String?
     ) {
-        Log.d("WidgetConfig", "onConfigSaved: radius=$radius, label=$label, useM3=$useM3Colors, sourceId=$sourceId, sourceType=$sourceType, providerClass=$providerClass")
+        Log.d("WidgetConfig", "onConfigSaved: radius=$radius, label=$label, useM3=$useM3Colors, sourceId=$sourceId, sourceType=$sourceType, opacity=$opacity, accentOverride=$accentOverride, providerClass=$providerClass")
         lifecycleScope.launch {
             val glanceId = GlanceAppWidgetManager(this@WidgetCustomizerConfigActivity).getGlanceIdBy(appWidgetId)
             Log.d("WidgetConfig", "glanceId: $glanceId")
@@ -140,6 +151,12 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                     prefs.remove(WIDGET_LABEL_KEY)
                 }
                 prefs[WIDGET_USE_M3_COLORS_KEY] = useM3Colors
+                prefs[WIDGET_OPACITY_KEY] = opacity
+                if (accentOverride != null) {
+                    prefs[WIDGET_ACCENT_OVERRIDE_KEY] = accentOverride
+                } else {
+                    prefs.remove(WIDGET_ACCENT_OVERRIDE_KEY)
+                }
 
                 if (providerClass?.endsWith("SingleListWidgetReceiver") == true) {
                     if (sourceId != null && sourceType != null) {
@@ -185,11 +202,15 @@ private fun WidgetCustomizerScreen(
     initialUseM3: Boolean,
     initialSourceId: String,
     initialSourceType: String,
-    onSave: (Int, String, Boolean, String?, String?) -> Unit
+    initialOpacity: Float,
+    initialAccentOverride: String?,
+    onSave: (Int, String, Boolean, String?, String?, Float, String?) -> Unit
 ) {
     var radius by remember { mutableStateOf(initialRadius.coerceIn(2, 30)) }
     var label by remember { mutableStateOf(initialLabel) }
     var useM3 by remember { mutableStateOf(initialUseM3) }
+    var opacity by remember { mutableStateOf(initialOpacity.coerceIn(0.3f, 1.0f)) }
+    var accentOverride by remember { mutableStateOf(initialAccentOverride) }
 
     var selectedSourceId by remember { mutableStateOf(initialSourceId.takeIf { it.isNotBlank() }) }
     var selectedSourceType by remember { mutableStateOf(initialSourceType) }
@@ -288,6 +309,80 @@ private fun WidgetCustomizerScreen(
                         Text("Themes widget using standard system/M3 colors", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = useM3, onCheckedChange = { useM3 = it })
+                }
+            }
+
+            // Opacity Customizer
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Opacity", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "${(opacity * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Slider(
+                        value = opacity,
+                        onValueChange = { opacity = it },
+                        valueRange = 0.3f..1.0f
+                    )
+                }
+            }
+
+            // Accent Color Override
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Widget Accent Color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Overrides the app's default accent for this widget only.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable { accentOverride = null },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (accentOverride == null) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "App default",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                        items(ALL_ACCENT_KEYS) { key ->
+                            val color = LocalYataAccents.current.getAccent(key)
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                                    .border(
+                                        width = if (accentOverride == key) 3.dp else 0.dp,
+                                        color = if (accentOverride == key) Color.White else Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { accentOverride = key },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (accentOverride == key) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Selected",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -426,7 +521,7 @@ private fun WidgetCustomizerScreen(
                         // Source is required for SingleListWidget
                         return@Button
                     }
-                    onSave(radius, label, useM3, selectedSourceId, selectedSourceType)
+                    onSave(radius, label, useM3, selectedSourceId, selectedSourceType, opacity, accentOverride)
                 },
                 enabled = !isSingleList || selectedSourceId != null,
                 modifier = Modifier.fillMaxWidth().height(50.dp)

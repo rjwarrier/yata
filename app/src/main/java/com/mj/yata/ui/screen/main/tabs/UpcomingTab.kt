@@ -76,6 +76,7 @@ fun UpcomingTab(
     onProfileClick: () -> Unit,
     onTaskClick: (String) -> Unit,
     onToggleDone: (String) -> Unit,
+    onSwipeToDelete: (String) -> Unit = {},
     onBulkComplete: (List<String>) -> Unit = {},
     onBulkDelete: (List<String>) -> Unit = {},
     onBulkAddTag: (List<String>, String) -> Unit = { _, _ -> },
@@ -86,6 +87,7 @@ fun UpcomingTab(
     peopleEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     projectsEnabled: Boolean = true,
+    taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -416,6 +418,9 @@ fun UpcomingTab(
                                 selected = selectedIds.contains(task.id),
                                 onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
                                 onCommentClick = { pendingCommentTask = task },
+                                density = taskRowDensity,
+                                onSwipeToDelete = { onSwipeToDelete(task.id) },
+                                swipeEnabled = !selectionMode,
                                 modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
                             )
                         }

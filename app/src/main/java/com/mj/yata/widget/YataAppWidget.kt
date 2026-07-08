@@ -54,6 +54,8 @@ class YataAppWidget : GlanceAppWidget() {
         val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
         val customLabel = prefs[WIDGET_LABEL_KEY]
         val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+        val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
+        val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val todayStr = LocalDate.now().toString()
@@ -62,6 +64,7 @@ class YataAppWidget : GlanceAppWidget() {
             .sortedWith(compareBy({ it.done }, { it.sortOrder }))
         val listsById = repository.getLists().first().associateBy { it.id }
         val theme = resolveWidgetTheme(context)
+        val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -73,7 +76,9 @@ class YataAppWidget : GlanceAppWidget() {
                     accents = theme.accents,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
-                    useM3Colors = useM3Colors
+                    useM3Colors = useM3Colors,
+                    opacity = opacity,
+                    accentOverride = accentOverride
                 )
             }
         }
@@ -89,15 +94,18 @@ private fun TodayWidgetContent(
     accents: com.mj.yata.ui.theme.YataAccents,
     cornerRadius: Int,
     customLabel: String?,
-    useM3Colors: Boolean
+    useM3Colors: Boolean,
+    opacity: Float,
+    accentOverride: androidx.compose.ui.graphics.Color?
 ) {
     val remaining = tasks.count { !it.done }
     val progress = if (tasks.isEmpty()) 0f else tasks.count { it.done }.toFloat() / tasks.size
+    val chromeColor = accentOverride ?: colors.primary
 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(colors.surface.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
@@ -105,7 +113,7 @@ private fun TodayWidgetContent(
     ) {
         Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
             Column(modifier = GlanceModifier.defaultWeight()) {
-                WidgetSectionHeader(customLabel ?: "Today", GlanceTheme.colors.primary)
+                WidgetSectionHeader(customLabel ?: "Today", ColorProvider(chromeColor))
                 Text(
                     text = "$remaining to go",
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurface)
@@ -116,7 +124,7 @@ private fun TodayWidgetContent(
                 progress = progress,
                 sizeDp = 38.dp,
                 strokeDp = 4.dp,
-                activeColor = colors.primary,
+                activeColor = chromeColor,
                 trackColor = colors.surfaceContainerHighest,
                 centerText = (progress * 100).toInt().toString(),
                 centerTextSizeSp = 11f

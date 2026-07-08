@@ -60,6 +60,7 @@ fun ProjectDetailScreen(
     val tasks by viewModel.tasks.collectAsState()
     val people by viewModel.people.collectAsState()
     val tags by viewModel.tags.collectAsState()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
 
     val project = remember(projects, projectId) { projects.find { it.id == projectId } }
     val accents = LocalYataAccents.current
@@ -121,6 +122,8 @@ fun ProjectDetailScreen(
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
     Scaffold(
         bottomBar = {
@@ -130,6 +133,8 @@ fun ProjectDetailScreen(
                 peopleEnabled = peopleFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 projectsEnabled = projectsFeatureEnabled,
+                todayEnabled = todayTabEnabled,
+                upcomingEnabled = upcomingTabEnabled,
                 onTabSelected = onNavigateToTab
             )
         },
@@ -329,7 +334,8 @@ fun ProjectDetailScreen(
                     onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                     onTaskClick = { onNavigateToTaskDetail(task.id) },
                     modifier = modifier,
-                    onCommentClick = { pendingCommentTask = task }
+                    onCommentClick = { pendingCommentTask = task },
+                    density = taskRowDensity
                 )
             }
 

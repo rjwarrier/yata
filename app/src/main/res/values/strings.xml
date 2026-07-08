@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">yata</string>
+    <string name="share_to_task_label">Add to Yata</string>
 
     <!-- Tasker "Create Task" plugin field labels -->
     <string name="tasker_field_title">Title</string>
@@ -21,6 +22,13 @@
     <string name="shortcut_quick_add_long">Add a new task</string>
     <string name="shortcut_today_short">Today</string>
     <string name="shortcut_today_long">Open Today</string>
+
+    <!-- Phrases Assistant matches to the quick_add shortcut's App Actions capability -->
+    <string-array name="quick_add_synonyms">
+        <item>quick add</item>
+        <item>add a task</item>
+        <item>new task</item>
+    </string-array>
 
     <!-- Home-screen widget names/descriptions, shown in the system widget picker -->
     <string name="widget_today_label">YATA: Today\'s Tasks</string>

@@ -12,6 +12,11 @@
             android:targetClass="com.mj.yata.MainActivity">
             <extra android:name="shortcut_action" android:value="quick_add" />
         </intent>
+        <capability-binding android:key="actions.intent.OPEN_APP_FEATURE">
+            <parameter-mapping
+                android:key="feature"
+                android:value="@array/quick_add_synonyms" />
+        </capability-binding>
     </shortcut>
     <shortcut
         android:shortcutId="today"
@@ -26,4 +31,16 @@
             <extra android:name="shortcut_action" android:value="today" />
         </intent>
     </shortcut>
+
+    <!-- Lets Assistant open the quick_add shortcut by voice, e.g. "Hey Google, quick add in Yata". -->
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.mj.yata"
+            android:targetClass="com.mj.yata.MainActivity">
+            <parameter
+                android:name="feature"
+                android:key="feature" />
+        </intent>
+    </capability>
 </shortcuts>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -32,12 +33,19 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.TaskRowDensity
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 
-@OptIn(ExperimentalFoundationApi::class)
+private fun TaskRowDensity.verticalPadding() = when (this) {
+    TaskRowDensity.COMPACT -> 6.dp
+    TaskRowDensity.COMFORTABLE -> 11.dp
+    TaskRowDensity.SPACIOUS -> 16.dp
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TaskRow(
     task: Task,
@@ -51,10 +59,18 @@ fun TaskRow(
     selectionMode: Boolean = false,
     selected: Boolean = false,
     onLongClick: () -> Unit = {},
-    onCommentClick: (() -> Unit)? = null
+    onCommentClick: (() -> Unit)? = null,
+    density: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    // Set by screens with no competing gesture (Today/Upcoming/Person/Tag/Search). Left null on
+    // Project/List detail, which use DragDropReorderableColumn's long-press-drag on the same row —
+    // mixing that with a horizontal swipe risks starving one gesture or the other.
+    onSwipeToDelete: (() -> Unit)? = null,
+    swipeEnabled: Boolean = true
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
+    val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     val titleTextColor by animateColorAsState(
         targetValue = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
@@ -62,13 +78,14 @@ fun TaskRow(
         label = "taskRowTitleColor"
     )
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .combinedClickable(onClick = onTaskClick, onLongClick = onLongClick)
-            .padding(horizontal = 20.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    val rowContent: @Composable (Modifier) -> Unit = { rowModifier ->
+        Row(
+            modifier = rowModifier
+                .fillMaxWidth()
+                .combinedClickable(onClick = onTaskClick, onLongClick = onLongClick)
+                .padding(horizontal = 20.dp, vertical = density.verticalPadding()),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
         if (selectionMode) {
             val selectionCheckboxBg by animateColorAsState(
                 targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
@@ -100,7 +117,10 @@ fun TaskRow(
             // Left round checkbox
             SpringyCheck(
                 checked = task.done,
-                onCheckedChange = { onToggleDone() },
+                onCheckedChange = {
+                    if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    onToggleDone()
+                },
                 color = listColor,
                 size = 24.dp
             )
@@ -212,5 +232,64 @@ fun TaskRow(
                 avatarSize = 24.dp
             )
         }
+        }
+    }
+
+    if (onSwipeToDelete != null && swipeEnabled) {
+        // Both directions snap back immediately (confirmValueChange always returns false) —
+        // the row never gets removed by the swipe box itself. Delete goes through the same
+        // deferred-Undo-snackbar flow as everywhere else in the app (task data isn't touched
+        // until the caller's snackbar times out, so Undo still works and the row disappears
+        // naturally once the Flow re-emits without it, not via a dismiss animation here).
+        val dismissState = rememberSwipeToDismissBoxState(
+            confirmValueChange = { value ->
+                when (value) {
+                    SwipeToDismissBoxValue.EndToStart -> {
+                        if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        onSwipeToDelete()
+                    }
+                    SwipeToDismissBoxValue.StartToEnd -> {
+                        if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        onToggleDone()
+                    }
+                    SwipeToDismissBoxValue.Settled -> {}
+                }
+                false
+            }
+        )
+        SwipeToDismissBox(
+            state = dismissState,
+            modifier = modifier,
+            backgroundContent = {
+                val direction = dismissState.dismissDirection
+                val (color, icon, alignment) = when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> Triple(MaterialTheme.colorScheme.primaryContainer, Icons.Default.Check, Alignment.CenterStart)
+                    SwipeToDismissBoxValue.EndToStart -> Triple(MaterialTheme.colorScheme.errorContainer, Icons.Default.Delete, Alignment.CenterEnd)
+                    SwipeToDismissBoxValue.Settled -> Triple(Color.Transparent, null, Alignment.Center)
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color)
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = alignment
+                ) {
+                    icon?.let {
+                        Icon(
+                            imageVector = it,
+                            contentDescription = null,
+                            tint = if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onErrorContainer
+                            }
+                        )
+                    }
+                }
+            },
+            content = { rowContent(Modifier) }
+        )
+    } else {
+        rowContent(modifier)
     }
 }

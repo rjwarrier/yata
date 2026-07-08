@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -39,6 +40,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -56,15 +58,32 @@ fun TagDetailScreen(
     val projects by viewModel.projects.collectAsState()
     val people by viewModel.people.collectAsState()
     val tagGroups by viewModel.tagGroups.collectAsState()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
 
     val tag = remember(tags, tagId) { tags.find { it.id == tagId } }
     val accents = LocalYataAccents.current
 
     var isEditSheetOpen by remember { mutableStateOf(false) }
+    var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    fun deleteTaskWithUndo(task: Task) {
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "Task deleted",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.Dismissed) {
+                viewModel.deleteTask(task)
+            }
+        }
+    }
 
     if (tag == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -100,8 +119,19 @@ fun TagDetailScreen(
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                if (data.visuals.actionLabel == "Undo") {
+                    com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
+                } else {
+                    Snackbar(data)
+                }
+            }
+        },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = 3,
@@ -109,8 +139,19 @@ fun TagDetailScreen(
                 peopleEnabled = peopleFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 projectsEnabled = projectsFeatureEnabled,
+                todayEnabled = todayTabEnabled,
+                upcomingEnabled = upcomingTabEnabled,
                 onTabSelected = onNavigateToTab
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { isNewTaskSheetOpen = true },
+                containerColor = tagColor,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add task tagged #${tag.name}")
+            }
         },
         topBar = {
             TopAppBar(
@@ -272,7 +313,9 @@ fun TagDetailScreen(
                         onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                         onTaskClick = { onNavigateToTaskDetail(task.id) },
                         modifier = modifier,
-                        onCommentClick = { pendingCommentTask = task }
+                        onCommentClick = { pendingCommentTask = task },
+                        density = taskRowDensity,
+                        onSwipeToDelete = { deleteTaskWithUndo(task) }
                     )
                 }
 
@@ -299,6 +342,43 @@ fun TagDetailScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (isNewTaskSheetOpen) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { isNewTaskSheetOpen = false },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
+        ) {
+            NewTaskSheet(
+                lists = lists,
+                projects = projects,
+                people = people,
+                tags = tags,
+                tasks = tasks,
+                initialTagId = tag.id,
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
+                    isNewTaskSheetOpen = false
+                },
+                onGoToExistingTask = { id ->
+                    isNewTaskSheetOpen = false
+                    onNavigateToTaskDetail(id)
+                },
+                onCreateTag = { id, name, color ->
+                    viewModel.upsertTag(Tag(id = id, name = name, color = color))
+                },
+                onCreatePerson = { id, name, color ->
+                    viewModel.upsertPerson(Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false))
+                },
+                onDismiss = { isNewTaskSheetOpen = false },
+                projectsEnabled = projectsFeatureEnabled,
+                tagsEnabled = tagsFeatureEnabled,
+                peopleEnabled = peopleFeatureEnabled
+            )
         }
     }
 

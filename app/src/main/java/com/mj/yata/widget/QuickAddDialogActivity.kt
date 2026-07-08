@@ -45,6 +45,7 @@ import com.mj.yata.MainActivity
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.ui.theme.YataTheme
+import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.findSimilarTask
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -70,6 +71,19 @@ class QuickAddDialogActivity : ComponentActivity() {
         val targetId = intent?.getStringExtra("target_id")?.takeIf { it.isNotBlank() }
         val targetName = intent?.getStringExtra("target_name")?.takeIf { it.isNotBlank() }
 
+        // Shared text (share sheet, or a long-pressed text selection) seeds the title — first
+        // line goes through the same NaturalLanguageParser used for in-app typing and Tasker's
+        // external input (CreateTaskRunner), remaining lines become the task's notes.
+        val sharedText = when (intent?.action) {
+            Intent.ACTION_SEND -> intent?.getStringExtra(Intent.EXTRA_TEXT)
+            Intent.ACTION_PROCESS_TEXT -> intent?.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString()
+            else -> null
+        }?.trim()?.takeIf { it.isNotBlank() }
+        val sharedLines = sharedText?.lines()?.filter { it.isNotBlank() }
+        val sharedFirstLine = sharedLines?.firstOrNull()
+        val sharedNotes = sharedLines?.drop(1)?.joinToString("\n")?.takeIf { it.isNotBlank() }
+        val parsedShared = sharedFirstLine?.let { NaturalLanguageParser.parse(it) }
+
         setContent {
             YataTheme {
                 var pendingDuplicate by remember { mutableStateOf<Task?>(null) }
@@ -84,17 +98,17 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 listId = if (targetType == "list") targetId else null,
                                 projectId = if (targetType == "project") targetId else null,
                                 section = "Afternoon",
-                                due = LocalDate.now().toString(),
-                                time = null,
+                                due = parsedShared?.due ?: LocalDate.now().toString(),
+                                time = parsedShared?.time,
                                 reminder = null,
                                 priority = "none",
                                 flag = false,
                                 done = false,
                                 assigneeIds = emptyList(),
                                 tagIds = emptyList(),
-                                recurrence = null,
+                                recurrence = parsedShared?.recurrence,
                                 subtasks = emptyList(),
-                                notes = null
+                                notes = sharedNotes
                             )
                         )
                         WidgetRefresher.refreshAll(this@QuickAddDialogActivity)
@@ -104,6 +118,7 @@ class QuickAddDialogActivity : ComponentActivity() {
 
                 QuickAddDialogContent(
                     targetName = targetName,
+                    initialTitle = parsedShared?.title?.takeIf { it.isNotBlank() } ?: sharedFirstLine.orEmpty(),
                     onSubmit = { title ->
                         lifecycleScope.launch {
                             val duplicate = findSimilarTask(title, repository.getTasks().first())
@@ -158,10 +173,11 @@ class QuickAddDialogActivity : ComponentActivity() {
 @Composable
 private fun QuickAddDialogContent(
     targetName: String?,
+    initialTitle: String = "",
     onSubmit: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf(initialTitle) }
     val focusRequester = remember { FocusRequester() }
     val noRipple = remember { MutableInteractionSource() }
     val context = LocalContext.current

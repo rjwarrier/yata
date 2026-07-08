@@ -34,6 +34,7 @@ import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import dagger.hilt.android.EntryPointAccessors
@@ -56,11 +57,14 @@ class UpcomingWidget : GlanceAppWidget() {
         val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
         val customLabel = prefs[WIDGET_LABEL_KEY]
         val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
+        val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
+        val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val allTasks = repository.getTasks().first()
         val lists = repository.getLists().first()
         val theme = resolveWidgetTheme(context)
+        val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -71,7 +75,9 @@ class UpcomingWidget : GlanceAppWidget() {
                     accents = theme.accents,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
-                    useM3Colors = useM3Colors
+                    useM3Colors = useM3Colors,
+                    opacity = opacity,
+                    accentOverride = accentOverride
                 )
             }
         }
@@ -88,24 +94,28 @@ private fun UpcomingWidgetContent(
     accents: com.mj.yata.ui.theme.YataAccents,
     cornerRadius: Int,
     customLabel: String?,
-    useM3Colors: Boolean
+    useM3Colors: Boolean,
+    opacity: Float,
+    accentOverride: androidx.compose.ui.graphics.Color?
 ) {
     val isLarge = LocalSize.current.height > 180.dp
     val listsById = lists.associateBy { it.id }
     val today = LocalDate.now()
     val todayStr = today.toString()
+    val chromeColor = accentOverride ?: colors.tertiary
+    val chromeColorProvider = ColorProvider(chromeColor)
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(colors.surface.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
             .clickable(openAppAction())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
-            WidgetSectionHeader(customLabel ?: "Upcoming", GlanceTheme.colors.tertiary)
+            WidgetSectionHeader(customLabel ?: "Upcoming", chromeColorProvider)
             Spacer(modifier = GlanceModifier.height(8.dp))
 
             if (isLarge) {
@@ -122,7 +132,7 @@ private fun UpcomingWidgetContent(
                                 if (index > 0) Spacer(modifier = GlanceModifier.height(8.dp))
                                 Text(
                                     text = day.label.uppercase(),
-                                    style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.tertiary)
+                                    style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = chromeColorProvider)
                                 )
                             }
                             items(day.tasks) { task ->

@@ -43,6 +43,7 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import androidx.compose.ui.draw.rotate
 import androidx.compose.animation.core.animateFloatAsState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -60,6 +61,7 @@ fun PersonDetailScreen(
     val projects by viewModel.projects.collectAsState()
     val tags by viewModel.tags.collectAsState()
     val personGroups by viewModel.personGroups.collectAsState()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
 
     val person = remember(people, personId) { people.find { it.id == personId } }
     val accents = LocalYataAccents.current
@@ -73,6 +75,21 @@ fun PersonDetailScreen(
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    fun deleteTaskWithUndo(task: Task) {
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "Task deleted",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.Dismissed) {
+                viewModel.deleteTask(task)
+            }
+        }
+    }
 
     val openChevronRotation by animateFloatAsState(
         targetValue = if (openExpanded) 0f else -90f,
@@ -104,8 +121,19 @@ fun PersonDetailScreen(
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                if (data.visuals.actionLabel == "Undo") {
+                    com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
+                } else {
+                    Snackbar(data)
+                }
+            }
+        },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = 2,
@@ -113,6 +141,8 @@ fun PersonDetailScreen(
                 peopleEnabled = peopleFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 projectsEnabled = projectsFeatureEnabled,
+                todayEnabled = todayTabEnabled,
+                upcomingEnabled = upcomingTabEnabled,
                 onTabSelected = onNavigateToTab
             )
         },
@@ -330,7 +360,9 @@ fun PersonDetailScreen(
                             modifier = Modifier.animateItemPlacement(
                                 animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                             ),
-                            onCommentClick = { pendingCommentTask = task }
+                            onCommentClick = { pendingCommentTask = task },
+                            density = taskRowDensity,
+                            onSwipeToDelete = { deleteTaskWithUndo(task) }
                         )
                     }
                 }
@@ -416,7 +448,9 @@ fun PersonDetailScreen(
                             modifier = Modifier.animateItemPlacement(
                                 animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                             ),
-                            onCommentClick = { pendingCommentTask = task }
+                            onCommentClick = { pendingCommentTask = task },
+                            density = taskRowDensity,
+                            onSwipeToDelete = { deleteTaskWithUndo(task) }
                         )
                     }
                 }

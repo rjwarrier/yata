@@ -68,6 +68,8 @@ fun <T> DragDropReorderableColumn(
     val listState: LazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffsetY by remember { mutableStateOf(0f) }
@@ -131,11 +133,13 @@ fun <T> DragDropReorderableColumn(
                     .pointerInput(item, items.size) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
+                                if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                 draggingIndex = globalIndex
                                 dragOffsetY = 0f
                                 onDragStateChanged(true)
                             },
                             onDragEnd = {
+                                if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                 cancelEdgeDwell()
                                 draggingIndex = null
                                 dragOffsetY = 0f

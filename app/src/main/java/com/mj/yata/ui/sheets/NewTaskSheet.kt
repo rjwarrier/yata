@@ -170,6 +170,7 @@ fun NewTaskSheet(
     initialAssigneeId: String? = null,
     initialProjectId: String? = null,
     initialListId: String? = null,
+    initialTagId: String? = null,
     initialDueDateOverride: String? = null,
     projectsEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
@@ -217,6 +218,11 @@ fun NewTaskSheet(
     }
 
     val selectedTagIds = remember { mutableStateListOf<String>() }
+    LaunchedEffect(initialTagId, tagsEnabled) {
+        if (tagsEnabled && initialTagId != null && !selectedTagIds.contains(initialTagId)) {
+            selectedTagIds.add(initialTagId)
+        }
+    }
     var activePanel by remember { mutableStateOf<String?>(null) }
 
     var notes by remember { mutableStateOf("") }
@@ -556,6 +562,24 @@ fun NewTaskSheet(
                     leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
                     showCheck = false
                 )
+                // Time/Reminder live in this same row (not a separate one further down) so the
+                // reveal panel below always opens right under whichever chip triggered it.
+                YataSelectChip(
+                    label = selectedTime ?: "Time",
+                    selected = selectedTime != null,
+                    onClick = { activePanel = if (activePanel == "Time") null else "Time" },
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    leading = { Icon(Icons.Default.AccessTime, contentDescription = null, tint = if (selectedTime != null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
+                    showCheck = false
+                )
+                YataSelectChip(
+                    label = TaskScheduleUtils.formatReminder(selectedReminder),
+                    selected = selectedReminder != null,
+                    onClick = { activePanel = if (activePanel == "Reminder") null else "Reminder" },
+                    tint = MaterialTheme.colorScheme.secondary,
+                    leading = { Icon(Icons.Default.Notifications, contentDescription = null, tint = if (selectedReminder != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
+                    showCheck = false
+                )
             }
 
             // Reveal panel — right under the attribute chips that open it, so it never appears
@@ -672,29 +696,6 @@ fun NewTaskSheet(
                         )
                     }
                 }
-            }
-
-            // Secondary chip row: Time + Reminder (only meaningful once a due date exists)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                YataSelectChip(
-                    label = selectedTime ?: "Time",
-                    selected = selectedTime != null,
-                    onClick = { activePanel = if (activePanel == "Time") null else "Time" },
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    leading = { Icon(Icons.Default.AccessTime, contentDescription = null, tint = if (selectedTime != null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
-                    showCheck = false
-                )
-                YataSelectChip(
-                    label = TaskScheduleUtils.formatReminder(selectedReminder),
-                    selected = selectedReminder != null,
-                    onClick = { activePanel = if (activePanel == "Reminder") null else "Reminder" },
-                    tint = MaterialTheme.colorScheme.secondary,
-                    leading = { Icon(Icons.Default.Notifications, contentDescription = null, tint = if (selectedReminder != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
-                    showCheck = false
-                )
             }
 
             // Notes — kept last, after every attribute chip/reveal panel, so opening a panel

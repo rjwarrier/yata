@@ -3,6 +3,7 @@ package com.mj.yata.widget
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 
 import android.content.Context
 import androidx.compose.runtime.Composable
@@ -51,6 +52,9 @@ val quickAddTargetNameKey = ActionParameters.Key<String>("target_name")
 val WIDGET_CORNER_RADIUS_KEY = intPreferencesKey("widget_corner_radius")
 val WIDGET_LABEL_KEY = stringPreferencesKey("widget_label")
 val WIDGET_USE_M3_COLORS_KEY = booleanPreferencesKey("widget_use_m3_colors")
+val WIDGET_OPACITY_KEY = floatPreferencesKey("widget_opacity")
+// Null/absent = follow the app-wide accent (unchanged default behavior).
+val WIDGET_ACCENT_OVERRIDE_KEY = stringPreferencesKey("widget_accent_override")
 
 /** Plain "open the app" tap target — for widget background/whitespace areas that aren't a more
  * specific row or button (those have their own actions, which win over this one). */
