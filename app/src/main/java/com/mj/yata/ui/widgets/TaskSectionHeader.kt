@@ -6,19 +6,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /** "PENDING (3)" / "COMPLETED (2)" header shared by every task-list screen that splits tasks
  * into the two sections — callers only render this at all when the section is non-empty, and
- * skip both sections entirely while completed tasks are hidden. No horizontal padding of its
- * own since it's meant to sit inside a LazyColumn that already applies horizontal contentPadding. */
+ * skip both sections entirely while completed tasks are hidden. Carries its own horizontal=20dp
+ * margin matching TaskRow's hardcoded internal padding, so the header lines up with the rows
+ * below it regardless of whether the enclosing LazyColumn's contentPadding has horizontal insets. */
 @Composable
-fun TaskSectionHeader(title: String, count: Int, modifier: Modifier = Modifier) {
+fun TaskSectionHeader(title: String, count: Int, modifier: Modifier = Modifier, horizontalPadding: Dp = 20.dp) {
     Text(
         text = "$title ($count)",
         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(vertical = 8.dp)
+        modifier = modifier.padding(horizontal = horizontalPadding, vertical = 8.dp)
     )
 }

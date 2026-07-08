@@ -65,7 +65,8 @@ fun TaskRow(
     // Project/List detail, which use DragDropReorderableColumn's long-press-drag on the same row —
     // mixing that with a horizontal swipe risks starving one gesture or the other.
     onSwipeToDelete: (() -> Unit)? = null,
-    swipeEnabled: Boolean = true
+    swipeEnabled: Boolean = true,
+    horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
@@ -83,7 +84,7 @@ fun TaskRow(
             modifier = rowModifier
                 .fillMaxWidth()
                 .combinedClickable(onClick = onTaskClick, onLongClick = onLongClick)
-                .padding(horizontal = 20.dp, vertical = density.verticalPadding()),
+                .padding(horizontal = horizontalPadding, vertical = density.verticalPadding()),
             verticalAlignment = Alignment.CenterVertically
         ) {
         if (selectionMode) {

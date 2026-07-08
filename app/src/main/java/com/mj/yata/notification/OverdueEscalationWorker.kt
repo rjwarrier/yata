@@ -2,7 +2,6 @@ package com.mj.yata.notification
 
 import android.app.NotificationManager
 import android.content.Context
-import androidx.compose.ui.graphics.toArgb
 import androidx.hilt.work.HiltWorker
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -11,7 +10,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.domain.repository.YataRepository
-import com.mj.yata.widget.resolveWidgetTheme
+import com.mj.yata.widget.resolveNotificationAccentColor
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -48,7 +47,7 @@ class OverdueEscalationWorker @AssistedInject constructor(
         if (lines.isEmpty()) return Result.success()
 
         NotificationHelper.createChannels(applicationContext)
-        val accentColor = resolveWidgetTheme(applicationContext).colorScheme.primary.toArgb()
+        val accentColor = resolveNotificationAccentColor(applicationContext)
         val notification = NotificationHelper.buildEscalationNotification(applicationContext, accentColor, lines)
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(NotificationHelper.ESCALATION_NOTIFICATION_ID, notification)

@@ -268,7 +268,7 @@ fun ListDetailScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = list.name,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold, fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(

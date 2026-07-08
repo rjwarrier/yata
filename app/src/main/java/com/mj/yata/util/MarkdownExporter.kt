@@ -14,12 +14,29 @@ fun buildAnalyticsMarkdown(
     priorityStats: List<PriorityStat>,
     projectStats: List<EntityStat>,
     personStats: List<EntityStat>,
-    tagStats: List<EntityStat>
+    tagStats: List<EntityStat>,
+    overallOnTimeRate: Float? = null,
+    agingBuckets: List<AgingBucket> = emptyList(),
+    workloadShares: List<WorkloadShare> = emptyList(),
+    dueNext7: Int = 0,
+    dueNext30: Int = 0
 ): String {
     val sb = StringBuilder()
     sb.append("# YATA Analytics — $periodLabel\n\n")
     sb.append("$doneCount of $totalCount tasks completed. $overdueCount overdue.\n\n")
+    overallOnTimeRate?.let { sb.append("Overall on-time rate: ${(it * 100).toInt()}%. ") }
+    sb.append("Due in next 7 days: $dueNext7. Due in next 30 days: $dueNext30.\n\n")
 
+    if (agingBuckets.isNotEmpty()) {
+        sb.append("## Overdue Aging\n")
+        agingBuckets.forEach { sb.append("- ${it.label}: ${it.count}\n") }
+        sb.append("\n")
+    }
+    if (workloadShares.isNotEmpty()) {
+        sb.append("## Workload Share\n")
+        workloadShares.forEach { sb.append("- ${it.person.name}: ${it.openCount} open (${(it.share * 100).toInt()}%)\n") }
+        sb.append("\n")
+    }
     if (priorityStats.isNotEmpty()) {
         sb.append("## By Priority\n")
         priorityStats.forEach { sb.append("- ${it.priority}: ${it.done}/${it.total}\n") }

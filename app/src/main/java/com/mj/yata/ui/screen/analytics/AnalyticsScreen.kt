@@ -72,6 +72,11 @@ fun AnalyticsScreen(
     val streak = remember(tasks) { AnalyticsUtils.currentStreak(tasks) }
     val overdue = remember(tasks) { AnalyticsUtils.overdueCount(tasks) }
     val zeroOverdueStreak = remember(tasks) { AnalyticsUtils.zeroOverdueStreak(tasks) }
+    val overallOnTimeRate = remember(tasks) { AnalyticsUtils.overallOnTimeRate(tasks) }
+    val dueNext7 = remember(tasks) { AnalyticsUtils.upcomingDueCount(tasks, 7) }
+    val dueNext30 = remember(tasks) { AnalyticsUtils.upcomingDueCount(tasks, 30) }
+    val agingBuckets = remember(tasks) { AnalyticsUtils.agingBuckets(tasks) }
+    val workloadShares = remember(tasks, people) { AnalyticsUtils.workloadShare(tasks, people) }
     val dailyActivity = remember(tasks, period) { AnalyticsUtils.dailyActivity(tasks, period) }
     val priorityStats = remember(periodTasks) { AnalyticsUtils.byPriority(periodTasks) }
 
@@ -95,7 +100,15 @@ fun AnalyticsScreen(
         topBar = {
             val context = androidx.compose.ui.platform.LocalContext.current
             TopAppBar(
-                title = { Text("Analytics", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Analytics",
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
@@ -116,7 +129,12 @@ fun AnalyticsScreen(
                             priorityStats = priorityStats,
                             projectStats = projectStats,
                             personStats = personStats,
-                            tagStats = tagStats
+                            tagStats = tagStats,
+                            overallOnTimeRate = overallOnTimeRate,
+                            agingBuckets = agingBuckets,
+                            workloadShares = workloadShares,
+                            dueNext7 = dueNext7,
+                            dueNext30 = dueNext30
                         )
                         val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                             type = "text/plain"
@@ -177,6 +195,34 @@ fun AnalyticsScreen(
                     iconTint = MaterialTheme.colorScheme.primary,
                     value = "$zeroOverdueStreak",
                     label = "days clean"
+                )
+            }
+
+            // MIS forecast/quality row — also always "right now", independent of the period filter.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                InsightChip(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Default.WarningAmber,
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    value = overallOnTimeRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
+                    label = "on-time rate"
+                )
+                InsightChip(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Default.ArrowUpward,
+                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    value = "$dueNext7",
+                    label = "due in 7 days"
+                )
+                InsightChip(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Default.ArrowUpward,
+                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    value = "$dueNext30",
+                    label = "due in 30 days"
                 )
             }
 
@@ -271,6 +317,62 @@ fun AnalyticsScreen(
                             priorityStats.forEachIndexed { index, stat ->
                                 PriorityStatRow(stat)
                                 if (index != priorityStats.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                        modifier = Modifier.padding(horizontal = 16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (agingBuckets.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "OVERDUE AGING",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                            val maxAging = agingBuckets.maxOf { it.count }
+                            agingBuckets.forEachIndexed { index, bucket ->
+                                AgingBucketRow(bucket, maxAging)
+                                if (index != agingBuckets.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                        modifier = Modifier.padding(horizontal = 16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (peopleFeatureEnabled && workloadShares.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "WORKLOAD SHARE",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                            workloadShares.forEachIndexed { index, share ->
+                                val accents = LocalYataAccents.current
+                                WorkloadShareRow(share, accents.getAccent(share.person.color))
+                                if (index != workloadShares.lastIndex) {
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
                                         modifier = Modifier.padding(horizontal = 16.dp)
@@ -456,6 +558,93 @@ private fun PriorityStatRow(stat: PriorityStat) {
         }
         Text(
             text = "${stat.done}/${stat.total}",
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun AgingBucketRow(bucket: com.mj.yata.util.AgingBucket, maxCount: Int) {
+    val color = when (bucket.label) {
+        "0-3 days" -> LocalYataAccents.current.accentD
+        "4-7 days" -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.error
+    }
+    val animatedPct by animateFloatAsState(
+        targetValue = bucket.count.toFloat() / maxCount,
+        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
+        label = "agingBucketProgress"
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = bucket.label,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            LinearProgressIndicator(
+                progress = { animatedPct },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp)),
+                color = color,
+                trackColor = color.copy(alpha = 0.16f)
+            )
+        }
+        Text(
+            text = "${bucket.count}",
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun WorkloadShareRow(share: com.mj.yata.util.WorkloadShare, color: Color) {
+    val animatedPct by animateFloatAsState(
+        targetValue = share.share,
+        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
+        label = "workloadShareProgress"
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        PersonAvatar(
+            initials = share.person.name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+            accentKey = share.person.color,
+            size = 28.dp
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = share.person.name,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            LinearProgressIndicator(
+                progress = { animatedPct },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp)),
+                color = color,
+                trackColor = color.copy(alpha = 0.16f)
+            )
+        }
+        Text(
+            text = "${share.openCount} (${(share.share * 100).roundToInt()}%)",
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

@@ -170,7 +170,13 @@ fun PersonDetailScreen(
                             )
                         )
                     } else {
-                        Text(person.name, fontWeight = FontWeight.Bold)
+                        Text(
+                            person.name,
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
+                            )
+                        )
                     }
                 },
                 navigationIcon = {

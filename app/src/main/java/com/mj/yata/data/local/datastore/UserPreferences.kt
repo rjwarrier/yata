@@ -60,6 +60,8 @@ class UserPreferences @Inject constructor(
         val HIDE_COMPLETED_PROJECT  = booleanPreferencesKey("hide_completed_project")
         val HIDE_COMPLETED_LIST     = booleanPreferencesKey("hide_completed_list")
         val HIDE_COMPLETED_PERSON   = booleanPreferencesKey("hide_completed_person")
+        val HAS_SEEN_WELCOME       = booleanPreferencesKey("has_seen_welcome")
+        val LAST_PRIMARY_ARGB      = intPreferencesKey("last_primary_argb")
     }
 
     val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -129,6 +131,12 @@ class UserPreferences @Inject constructor(
     val hideCompletedProjectFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PROJECT] ?: false }
     val hideCompletedListFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_LIST] ?: false }
     val hideCompletedPersonFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PERSON] ?: false }
+    val hasSeenWelcomeFlow: Flow<Boolean> = dataStore.data.map { it[HAS_SEEN_WELCOME] ?: false }
+    /** Last `MaterialTheme.colorScheme.primary` actually rendered by the foreground Activity —
+     * background notification/widget code reads this instead of re-deriving dynamic color in a
+     * receiver/worker context, where it can resolve differently than in the live Activity. Null
+     * (no cached value yet) until the app has been opened at least once. */
+    val lastPrimaryArgbFlow: Flow<Int?> = dataStore.data.map { it[LAST_PRIMARY_ARGB] }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME_MODE] = mode.name }
@@ -205,6 +213,14 @@ class UserPreferences @Inject constructor(
 
     suspend fun setHideCompletedPerson(hide: Boolean) {
         dataStore.edit { it[HIDE_COMPLETED_PERSON] = hide }
+    }
+
+    suspend fun setHasSeenWelcome(seen: Boolean) {
+        dataStore.edit { it[HAS_SEEN_WELCOME] = seen }
+    }
+
+    suspend fun setLastPrimaryArgb(argb: Int) {
+        dataStore.edit { it[LAST_PRIMARY_ARGB] = argb }
     }
 
     suspend fun setCloudBackupAccountEmail(email: String?) {

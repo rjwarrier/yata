@@ -125,7 +125,8 @@ fun ProjectsTab(
             Text(
                 text = "Projects",
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
                     fontSize = 20.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 ),

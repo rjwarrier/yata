@@ -203,7 +203,7 @@ fun TodayTab(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -220,7 +220,8 @@ fun TodayTab(
                 Text(
                     text = if (remainingCount == 0 && totalCount > 0) "All caught up!" else "$remainingCount to go",
                     style = MaterialTheme.typography.displaySmall.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
                         fontSize = 26.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -238,7 +239,7 @@ fun TodayTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -264,7 +265,7 @@ fun TodayTab(
         // 4. Task list — flat, no Morning/Afternoon grouping; completed tasks sort to the end.
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp)
+            contentPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 88.dp)
         ) {
             if (filteredTasks.isEmpty()) {
                 item {
@@ -305,6 +306,7 @@ fun TodayTab(
                         density = taskRowDensity,
                         onSwipeToDelete = { onSwipeToDelete(task.id) },
                         swipeEnabled = !selectionMode,
+                        horizontalPadding = 12.dp,
                         modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
                     )
                 }
@@ -313,13 +315,13 @@ fun TodayTab(
                 // back to a plain flat list with no "Pending"/"Completed" labels at all.
                 if (!hideCompleted && pendingTasks.isNotEmpty()) {
                     item(key = "pending_header") {
-                        TaskSectionHeader("PENDING", pendingTasks.size)
+                        TaskSectionHeader("PENDING", pendingTasks.size, horizontalPadding = 12.dp)
                     }
                 }
                 items(pendingTasks, key = { it.id }) { task -> taskRowContent(task) }
                 if (!hideCompleted && completedTasks.isNotEmpty()) {
                     item(key = "completed_header") {
-                        TaskSectionHeader("COMPLETED", completedTasks.size)
+                        TaskSectionHeader("COMPLETED", completedTasks.size, horizontalPadding = 12.dp)
                     }
                     items(completedTasks, key = { it.id }) { task -> taskRowContent(task) }
                 }

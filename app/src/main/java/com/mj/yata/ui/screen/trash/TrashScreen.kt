@@ -62,7 +62,15 @@ fun TrashScreen(
         },
         topBar = {
             TopAppBar(
-                title = { Text("Trash", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "Trash",
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")

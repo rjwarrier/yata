@@ -4,8 +4,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.BroadcastReceiver
-import androidx.compose.ui.graphics.toArgb
-import com.mj.yata.widget.resolveWidgetTheme
+import com.mj.yata.widget.resolveNotificationAccentColor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,7 +23,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val accentColor = resolveWidgetTheme(context).colorScheme.primary.toArgb()
+                val accentColor = resolveNotificationAccentColor(context)
                 val notification = NotificationHelper.buildReminderNotification(
                     context = context,
                     taskId = taskId,

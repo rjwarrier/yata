@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.ui.graphics.toArgb
 import androidx.glance.color.ColorProviders
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.theme.DarkAccents
@@ -54,4 +55,16 @@ suspend fun resolveWidgetTheme(context: Context): WidgetTheme {
     // Entity accent swatches stay fixed regardless of dynamic color, same as the main app.
     val accents = if (isDark) DarkAccents else LightAccents
     return WidgetTheme(colorScheme, accents)
+}
+
+/** Notification-only accent color: prefers the primary color actually last rendered by the
+ * foreground Activity (cached via `UserPreferences.setLastPrimaryArgb`), falling back to
+ * [resolveWidgetTheme]'s own resolution only if the app has never been opened. Background
+ * receiver/worker contexts have been observed to resolve `dynamicDarkColorScheme`/
+ * `dynamicLightColorScheme` differently than the live Activity does, so re-deriving it fresh
+ * here isn't reliable — reading back what was actually shown on screen is. */
+suspend fun resolveNotificationAccentColor(context: Context): Int {
+    val userPreferences = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).userPreferences()
+    return userPreferences.lastPrimaryArgbFlow.first()
+        ?: resolveWidgetTheme(context).colorScheme.primary.toArgb()
 }

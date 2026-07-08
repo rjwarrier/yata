@@ -1,19 +1,14 @@
 package com.mj.yata.ui.screen.main.tabs
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,7 +21,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -56,7 +49,6 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PersonAvatar
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TagsTab(
     tags: List<Tag>,
@@ -131,7 +123,8 @@ fun TagsTab(
             Text(
                 text = "Tags",
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
                     fontSize = 20.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 ),
@@ -231,7 +224,7 @@ fun TagsTab(
                 onToggleStar = onToggleStar,
                 selectionMode = selectionMode,
                 selectedIds = selectedIds,
-                trailing = { NewTagDashedPill(onNewTagClick) },
+                trailing = { NewTagDashedRow(onNewTagClick) },
                 expanded = expandedGroups["ungrouped"] ?: true,
                 onToggle = { expandedGroups["ungrouped"] = !(expandedGroups["ungrouped"] ?: true) }
             )
@@ -260,7 +253,6 @@ fun TagsTab(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TagGroupSection(
     title: String?,
@@ -325,13 +317,12 @@ private fun TagGroupSection(
             enter = expandVertically(tween(YataDur.sheet, easing = YataEase.emphDecel)) + fadeIn(tween(YataDur.fade)),
             exit = shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphAccel)) + fadeOut(tween(YataDur.fade))
         ) {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 tags.forEach { tag ->
-                    TagPill(
+                    TagRow(
                         tag = tag,
                         taskCount = taskCounts[tag.id] ?: 0,
                         onClick = { onTagClick(tag.id) },
@@ -355,9 +346,8 @@ private fun TagGroupSection(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TagPill(
+private fun TagRow(
     tag: Tag,
     taskCount: Int,
     onClick: () -> Unit,
@@ -368,57 +358,77 @@ private fun TagPill(
     val accents = LocalYataAccents.current
     val tagColor = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
 
-    Surface(
-        modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onToggleStar),
-        shape = RoundedCornerShape(9999.dp),
-        color = if (selectionMode && selected) MaterialTheme.colorScheme.secondaryContainer else tagColor.copy(alpha = 0.16f),
-        contentColor = if (selectionMode && selected) MaterialTheme.colorScheme.onSecondaryContainer else tagColor
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selectionMode && selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            val starScale = remember { Animatable(1f) }
-            LaunchedEffect(tag.starred) {
-                if (tag.starred) {
-                    starScale.snapTo(0.4f)
-                    starScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium))
-                }
-            }
-            if (tag.starred) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = "Starred",
-                    tint = tagColor,
-                    modifier = Modifier
-                        .size(12.dp)
-                        .scale(starScale.value)
-                )
-            } else {
+            if (selectionMode) {
                 Box(
                     modifier = Modifier
-                        .size(6.dp)
-                        .background(tagColor, RoundedCornerShape(9999.dp))
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selected) {
+                        Icon(Icons.Default.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(tagColor.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Label,
+                    contentDescription = "Tag",
+                    tint = tagColor,
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            Text(
-                text = tag.name,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontSize = 13.sp
-                )
-            )
-            Surface(
-                color = tagColor.copy(alpha = 0.24f),
-                shape = RoundedCornerShape(9999.dp)
-            ) {
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = taskCount.toString(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp
-                    ),
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    text = tag.name,
+                    style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onSurface)
+                )
+                Text(
+                    text = if (taskCount == 1) "1 task" else "$taskCount tasks",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            if (!selectionMode) {
+                com.mj.yata.ui.widgets.StarToggleButton(
+                    starred = tag.starred,
+                    onToggle = onToggleStar,
+                    starredColor = accents.accentD,
+                    starredContentDescription = "Unstar tag",
+                    unstarredContentDescription = "Star tag"
                 )
             }
         }
@@ -426,42 +436,42 @@ private fun TagPill(
 }
 
 @Composable
-private fun NewTagDashedPill(onClick: () -> Unit) {
+private fun NewTagDashedRow(onClick: () -> Unit) {
     val outlineColor = MaterialTheme.colorScheme.outlineVariant
+
     Box(
         modifier = Modifier
-            .height(34.dp)
-            .clip(RoundedCornerShape(9999.dp))
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
             .drawBehind {
                 val stroke = Stroke(
                     width = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
                 )
                 drawRoundRect(
                     color = outlineColor,
                     style = stroke,
-                    cornerRadius = CornerRadius(9999.dp.toPx())
+                    cornerRadius = CornerRadius(16.dp.toPx())
                 )
-            }
-            .padding(horizontal = 14.dp),
+            },
         contentAlignment = Alignment.Center
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "New tag",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(14.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = "New tag",
-                style = MaterialTheme.typography.labelMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }

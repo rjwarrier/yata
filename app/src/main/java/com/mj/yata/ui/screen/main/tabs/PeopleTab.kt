@@ -117,7 +117,8 @@ fun PeopleTab(
                 Text(
                     text = "People",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
                         fontSize = 20.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     ),

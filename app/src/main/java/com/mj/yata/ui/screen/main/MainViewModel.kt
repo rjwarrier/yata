@@ -850,6 +850,12 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun setHasSeenWelcome() {
+        viewModelScope.launch {
+            userPreferences.setHasSeenWelcome(true)
+        }
+    }
+
     fun setPeopleFeatureEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setPeopleFeatureEnabled(enabled)

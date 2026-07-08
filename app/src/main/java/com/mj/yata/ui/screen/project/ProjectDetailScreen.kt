@@ -162,7 +162,13 @@ fun ProjectDetailScreen(
                             )
                         )
                     } else {
-                        Text(project.name, fontWeight = FontWeight.Bold)
+                        Text(
+                            project.name,
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
+                            )
+                        )
                     }
                 },
                 navigationIcon = {

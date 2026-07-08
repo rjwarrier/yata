@@ -34,6 +34,13 @@ data class PriorityStat(val priority: String, val total: Int, val done: Int) {
     val pct: Float get() = if (total > 0) done.toFloat() / total else 0f
 }
 
+/** One overdue-age bucket, e.g. "0-3 days" -> 5 tasks currently sitting overdue that long. */
+data class AgingBucket(val label: String, val count: Int)
+
+/** One person's share of all currently-open (not done) assigned work — a workload-equity view,
+ * independent of the period filter (it's a live snapshot, like [AnalyticsUtils.overdueCount]). */
+data class WorkloadShare(val person: Person, val openCount: Int, val share: Float)
+
 object AnalyticsUtils {
     private fun periodStart(period: AnalyticsPeriod, today: LocalDate): LocalDate = when (period) {
         AnalyticsPeriod.WEEK -> today.minusDays(6)
@@ -132,6 +139,66 @@ object AnalyticsUtils {
             day = day.minusDays(1)
         }
         return streak
+    }
+
+    /** Overdue-now tasks bucketed by how many days overdue they are — a classic MIS "aging"
+     * view (like a debtor-aging report, but for slipped deadlines) so a manager can tell "a bit
+     * late" apart from "seriously stuck." Buckets with zero tasks are omitted. */
+    fun agingBuckets(tasks: List<Task>, today: LocalDate = LocalDate.now()): List<AgingBucket> {
+        val overdueDays = tasks.mapNotNull { task ->
+            if (task.done) return@mapNotNull null
+            val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@mapNotNull null
+            if (!due.isBefore(today)) return@mapNotNull null
+            java.time.temporal.ChronoUnit.DAYS.between(due, today).toInt()
+        }
+        val buckets = listOf(
+            "0-3 days" to (0..3),
+            "4-7 days" to (4..7),
+            "8-14 days" to (8..14),
+            "15+ days" to (15..Int.MAX_VALUE)
+        )
+        return buckets.mapNotNull { (label, range) ->
+            val count = overdueDays.count { it in range }
+            if (count == 0) null else AgingBucket(label, count)
+        }
+    }
+
+    /** Live snapshot of who's carrying how much open (not done) assigned work right now, as a
+     * share of the total — surfaces workload imbalance across the team. People with zero open
+     * tasks are omitted. */
+    fun workloadShare(tasks: List<Task>, people: List<Person>): List<WorkloadShare> {
+        val openTasks = tasks.filter { !it.done }
+        val totalAssignedOpen = openTasks.count { it.assigneeIds.isNotEmpty() }
+        if (totalAssignedOpen == 0) return emptyList()
+        return people.mapNotNull { person ->
+            val count = openTasks.count { person.id in it.assigneeIds }
+            if (count == 0) return@mapNotNull null
+            WorkloadShare(person, count, count.toFloat() / totalAssignedOpen)
+        }.sortedByDescending { it.openCount }
+    }
+
+    /** Overall on-time completion rate across every task ever completed with a due date and a
+     * `completedAt` timestamp — the headline number behind the per-person/per-tag breakdowns.
+     * Null if nothing judgeable yet. */
+    fun overallOnTimeRate(tasks: List<Task>): Float? {
+        val judgeable = tasks.filter { it.done && it.completedAt != null && it.due != null }
+        if (judgeable.isEmpty()) return null
+        val onTime = judgeable.count { task ->
+            val due = runCatching { LocalDate.parse(task.due) }.getOrNull() ?: return@count true
+            !task.completedAt!!.toLocalDate().isAfter(due)
+        }
+        return onTime.toFloat() / judgeable.size
+    }
+
+    /** Not-yet-done tasks due within the next [days] days (inclusive of today) — a capacity
+     * forecast so a manager can see a crunch coming before it arrives, not just today's overdue. */
+    fun upcomingDueCount(tasks: List<Task>, days: Int, today: LocalDate = LocalDate.now()): Int {
+        val end = today.plusDays((days - 1).toLong())
+        return tasks.count { task ->
+            if (task.done) return@count false
+            val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+            !due.isBefore(today) && !due.isAfter(end)
+        }
     }
 
     fun byPriority(tasks: List<Task>): List<PriorityStat> {

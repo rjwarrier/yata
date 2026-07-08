@@ -23,6 +23,7 @@ import com.mj.yata.ui.screen.list.ListDetailScreen
 import com.mj.yata.ui.screen.search.SearchScreen
 import com.mj.yata.ui.screen.settings.SettingsScreen
 import com.mj.yata.ui.screen.trash.TrashScreen
+import com.mj.yata.ui.screen.welcome.WelcomeScreen
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import androidx.compose.animation.core.tween
@@ -177,6 +178,17 @@ fun AppNavigation(
             )
         }
 
+        // ── Welcome / onboarding ─────────────────────────────────────────────
+        composable(Screen.Welcome.route) {
+            val viewModel: MainViewModel = hiltViewModel()
+            WelcomeScreen(
+                onFinish = {
+                    viewModel.setHasSeenWelcome()
+                    navController.popBackStack()
+                }
+            )
+        }
+
         // ── Search ────────────────────────────────────────────────────────────
         composable(Screen.Search.route) {
             val viewModel: MainViewModel = hiltViewModel()
@@ -201,7 +213,8 @@ fun AppNavigation(
                 onExportIcsRequested = onExportIcsRequested,
                 onCloudSignInRequested = onCloudSignInRequested,
                 onNavigateToTab = onNavigateToTab,
-                onNavigateToTrash = { navController.navigate(Screen.Trash.route) }
+                onNavigateToTrash = { navController.navigate(Screen.Trash.route) },
+                onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) }
             )
         }
 

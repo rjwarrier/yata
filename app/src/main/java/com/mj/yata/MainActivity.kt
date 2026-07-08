@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
@@ -36,6 +37,7 @@ import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.isDarkNow
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import javax.inject.Inject
@@ -184,6 +186,14 @@ class MainActivity : ComponentActivity() {
                 com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled
             ) {
                 YataTheme(darkTheme = useDarkTheme, useDynamicColor = dynamicColorEnabled, appFont = appFont) {
+                    // Cache the actually-rendered primary color so background notifications/widgets
+                    // can match it exactly, instead of re-resolving dynamic color in a receiver/worker
+                    // context where it's been observed to diverge from what's shown here live.
+                    val livePrimary = MaterialTheme.colorScheme.primary
+                    LaunchedEffect(livePrimary) {
+                        userPreferences.setLastPrimaryArgb(livePrimary.toArgb())
+                    }
+
                     Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
@@ -217,6 +227,15 @@ class MainActivity : ComponentActivity() {
                                     popUpTo(com.mj.yata.ui.navigation.Screen.Main.route) { inclusive = true }
                                     launchSingleTop = true
                                 }
+                            }
+                        }
+
+                        // First launch after install (or after a fresh restore): show the
+                        // one-time welcome tour on top of Main. Replaying it later from
+                        // Settings navigates to the same route directly, bypassing this check.
+                        LaunchedEffect(Unit) {
+                            if (!userPreferences.hasSeenWelcomeFlow.first()) {
+                                navController.navigate(com.mj.yata.ui.navigation.Screen.Welcome.route)
                             }
                         }
 
