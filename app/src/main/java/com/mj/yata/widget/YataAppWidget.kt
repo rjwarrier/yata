@@ -35,6 +35,7 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.wasPendingAsOf
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
@@ -58,10 +59,16 @@ class YataAppWidget : GlanceAppWidget() {
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
-        val todayStr = LocalDate.now().toString()
+        val today = LocalDate.now()
+        val todayStr = today.toString()
         val todayTasks = repository.getTasks().first()
             .filter { it.due != null && it.due!! <= todayStr }
             .sortedWith(compareBy({ it.done }, { it.sortOrder }))
+        // wasPendingAsOf drops tasks done on an earlier day from the ring/"X to go" count only —
+        // the row list above still shows every today-or-overdue task, done or not.
+        val progressTasks = todayTasks.filter { it.wasPendingAsOf(today) }
+        val remaining = progressTasks.count { !it.done }
+        val progress = if (progressTasks.isEmpty()) 0f else progressTasks.count { it.done }.toFloat() / progressTasks.size
         val listsById = repository.getLists().first().associateBy { it.id }
         val peopleById = repository.getPeople().first().associateBy { it.id }
         val theme = resolveWidgetTheme(context)
@@ -72,6 +79,8 @@ class YataAppWidget : GlanceAppWidget() {
                 TodayWidgetContent(
                     context = context,
                     tasks = todayTasks,
+                    remaining = remaining,
+                    progress = progress,
                     listsById = listsById,
                     peopleById = peopleById,
                     colors = theme.colorScheme,
@@ -91,6 +100,8 @@ class YataAppWidget : GlanceAppWidget() {
 private fun TodayWidgetContent(
     context: Context,
     tasks: List<Task>,
+    remaining: Int,
+    progress: Float,
     listsById: Map<String, com.mj.yata.domain.model.YataList>,
     peopleById: Map<String, com.mj.yata.domain.model.Person>,
     colors: androidx.compose.material3.ColorScheme,
@@ -101,8 +112,6 @@ private fun TodayWidgetContent(
     opacity: Float,
     accentOverride: androidx.compose.ui.graphics.Color?
 ) {
-    val remaining = tasks.count { !it.done }
-    val progress = if (tasks.isEmpty()) 0f else tasks.count { it.done }.toFloat() / tasks.size
     val chromeColor = accentOverride ?: colors.primary
 
     Column(

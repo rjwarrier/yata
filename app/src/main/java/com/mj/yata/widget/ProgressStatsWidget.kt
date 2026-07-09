@@ -34,6 +34,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.wasPendingAsOf
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
@@ -57,8 +58,13 @@ class ProgressStatsWidget : GlanceAppWidget() {
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
-        val todayStr = LocalDate.now().toString()
-        val todayTasks = repository.getTasks().first().filter { it.due != null && it.due!! <= todayStr }
+        val today = LocalDate.now()
+        val todayStr = today.toString()
+        // wasPendingAsOf drops tasks done on an earlier day — otherwise they'd match
+        // due<=today forever and permanently inflate the ring/per-list "done" counts.
+        val todayTasks = repository.getTasks().first()
+            .filter { it.due != null && it.due!! <= todayStr }
+            .filter { it.wasPendingAsOf(today) }
         val lists = repository.getLists().first()
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }

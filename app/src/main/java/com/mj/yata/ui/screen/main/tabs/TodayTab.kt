@@ -116,21 +116,11 @@ fun TodayTab(
     }
 
     // Always reflect all of today's tasks here, not the chip-filtered subset below —
-    // otherwise picking "High Priority" etc. would skew the ring/"X to go" text.
-    //
-    // The total is a "pending/overdue as of the start of today" snapshot, not a live
-    // due<=today count: a task done on a *previous* day (e.g. completed the day it was due,
-    // days ago) still matches due<=today forever and would otherwise inflate doneCount/totalCount
-    // indefinitely. A task only counts as "done" here if it was completed today — i.e. it was
-    // still part of today's pending set when the day started.
+    // otherwise picking "High Priority" etc. would skew the ring/"X to go" text. Also scoped to
+    // Task.wasPendingAsOf(today) rather than raw todayTasks, so a task done on a previous day
+    // doesn't keep inflating the total forever (see that function's doc for why).
     val progressBaseTasks = remember(todayTasks, today) {
-        todayTasks.filter { task ->
-            if (!task.done) return@filter true
-            val completedDay = task.completedAt?.let {
-                java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
-            }
-            completedDay == today
-        }
+        todayTasks.filter { it.wasPendingAsOf(today) }
     }
     val doneCount = progressBaseTasks.count { it.done }
     val totalCount = progressBaseTasks.size

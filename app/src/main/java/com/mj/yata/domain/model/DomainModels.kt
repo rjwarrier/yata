@@ -1,5 +1,9 @@
 package com.mj.yata.domain.model
 
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+
 data class Person(
     val id: String,
     val name: String,
@@ -130,4 +134,19 @@ fun Task.effectiveTags(projects: List<Project>, tags: List<Tag>): List<Tag> {
 fun Task.inheritedTagIds(projects: List<Project>): List<String> {
     val project = projects.find { it.id == projectId }
     return project?.commonTagIds ?: emptyList()
+}
+
+/**
+ * True if this task was still open, or was completed on [day], as of the end of [day] — i.e. it
+ * belongs in that day's pending/done total. A task done on an *earlier* day no longer counts:
+ * without this, a "due <= today" style query keeps matching a task forever after its due date,
+ * so an old completion would permanently inflate a "today" progress metric. Shared by the Today
+ * tab and the home-screen widgets, which all define "today" the same way.
+ */
+fun Task.wasPendingAsOf(day: LocalDate): Boolean {
+    if (!done) return true
+    val completedDay = completedAt?.let {
+        Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+    }
+    return completedDay == day
 }
