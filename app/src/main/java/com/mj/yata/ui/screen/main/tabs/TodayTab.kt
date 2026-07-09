@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TaskAlt
@@ -49,6 +50,7 @@ fun TodayTab(
     userPhotoUri: String? = null,
     onMenuClick: () -> Unit,
     onSearchClick: () -> Unit,
+    onNextDaysClick: () -> Unit = {},
     onProfileClick: () -> Unit,
     onTaskClick: (String) -> Unit,
     onToggleDone: (String) -> Unit,
@@ -77,7 +79,8 @@ fun TodayTab(
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
-    val todayStr = remember { LocalDate.now().toString() }
+    val today = remember { LocalDate.now() }
+    val todayStr = remember { today.toString() }
     val todayDateLabel = remember {
         LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")).uppercase()
     }
@@ -114,8 +117,23 @@ fun TodayTab(
 
     // Always reflect all of today's tasks here, not the chip-filtered subset below —
     // otherwise picking "High Priority" etc. would skew the ring/"X to go" text.
-    val doneCount = todayTasks.count { it.done }
-    val totalCount = todayTasks.size
+    //
+    // The total is a "pending/overdue as of the start of today" snapshot, not a live
+    // due<=today count: a task done on a *previous* day (e.g. completed the day it was due,
+    // days ago) still matches due<=today forever and would otherwise inflate doneCount/totalCount
+    // indefinitely. A task only counts as "done" here if it was completed today — i.e. it was
+    // still part of today's pending set when the day started.
+    val progressBaseTasks = remember(todayTasks, today) {
+        todayTasks.filter { task ->
+            if (!task.done) return@filter true
+            val completedDay = task.completedAt?.let {
+                java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+            }
+            completedDay == today
+        }
+    }
+    val doneCount = progressBaseTasks.count { it.done }
+    val totalCount = progressBaseTasks.size
     val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
     val remainingCount = totalCount - doneCount
 
@@ -185,6 +203,13 @@ fun TodayTab(
                     Icon(
                         imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                         contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                IconButton(onClick = onNextDaysClick) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Next 10 days",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }

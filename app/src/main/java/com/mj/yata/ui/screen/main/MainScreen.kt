@@ -511,6 +511,7 @@ fun MainScreen(
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onSearchClick = onNavigateToSearch,
+                            onNextDaysClick = onNavigateToNextDays,
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
                             onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
