@@ -43,32 +43,32 @@ private val pages = listOf(
     WelcomePage(
         icon = Icons.Default.TaskAlt,
         title = "Welcome to YATA",
-        description = "Yet Another Task App — organize your day, delegate to your team, and see everything at a glance. A quick tour of the basics."
+        description = "Yet Another Task App — organize your day, delegate to your team, and see everything at a glance. Natural-language quick add (\"call Priya tomorrow 3pm high priority\"), home-screen widgets, a Wear OS complication, and Google Drive backup all come built in. A quick tour of the basics — replay it anytime from Settings → About."
     ),
     WelcomePage(
         icon = Icons.Default.Layers,
         title = "Projects & Lists",
-        description = "Projects group related tasks and track their combined progress (e.g. a client engagement). Lists are simpler flat groupings for anything that doesn't need project-level tracking."
+        description = "Projects group related tasks and track their combined progress — good for something like a client engagement with a deadline. Lists are simpler flat groupings for anything that doesn't need project-level tracking. Star either one for quick access from the drawer, give it an accent color, and mark it \"Exclude from Today\" if it's backlog you don't want cluttering your daily view."
     ),
     WelcomePage(
         icon = Icons.Default.People,
         title = "People & Delegation",
-        description = "Assign tasks to yourself or teammates. The People tab shows who's carrying how much work, including overdue counts — so you can see at a glance who needs help."
+        description = "Assign tasks to yourself or teammates, and reassign as work shifts. The People tab shows who's carrying how much, including a 7-day overdue trend per person — so you can see who's falling behind before it becomes a problem. Add the Team Overdue widget to your home screen to keep an eye on it without opening the app."
     ),
     WelcomePage(
         icon = Icons.Default.Label,
         title = "Tags",
-        description = "Flexible labels that cut across projects and lists — group by category, client type, or anything else that doesn't map to a single project."
+        description = "Flexible labels that cut across projects and lists — group by category, client type, or anything else that doesn't map to a single project. A task on a tagged project or list picks up that tag automatically, so you don't have to tag everything by hand. Star your most-used tags to pin them in the drawer."
     ),
     WelcomePage(
         icon = Icons.Default.CalendarMonth,
         title = "Today & Upcoming",
-        description = "Today shows what's due now or overdue. Upcoming gives you a week/month view of what's coming, so nothing sneaks up on you."
+        description = "Today shows what's due now or overdue, with a progress ring based on what was actually pending when the day started — clearing old backlog doesn't inflate it. Upcoming gives you a week strip or full month view, and Next 10 Days lays out everything ahead in one scrollable, date-sorted list. Delete anything with a swipe — you get an Undo snackbar before it's gone for good."
     ),
     WelcomePage(
         icon = Icons.Default.Analytics,
         title = "Analytics",
-        description = "Completion streaks, overdue aging, on-time rate, and per-person workload share — the numbers behind how your team's actually doing."
+        description = "Completion streaks, overdue aging buckets, on-time delivery rate, and per-project/person/tag breakdowns — the numbers behind how you and your team are actually doing, not just what's on today's list. Switch between week and month views to spot trends early."
     )
 )
 
