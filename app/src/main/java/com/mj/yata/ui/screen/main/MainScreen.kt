@@ -65,6 +65,7 @@ fun MainScreen(
     navController: NavController,
     onNavigateToSettings: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
+    onNavigateToNextDays: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToProjectDetail: (String) -> Unit,
@@ -243,6 +244,12 @@ fun MainScreen(
                     item {
                         DrawerItem("Upcoming", Icons.Default.CalendarViewWeek, selectedTab == 4) {
                             selectedTab = 4
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+                    item {
+                        DrawerItem("Next 10 Days", Icons.Default.DateRange, false) {
+                            onNavigateToNextDays()
                             scope.launch { drawerState.close() }
                         }
                     }

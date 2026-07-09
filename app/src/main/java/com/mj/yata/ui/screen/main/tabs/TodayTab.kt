@@ -112,8 +112,10 @@ fun TodayTab(
         }
     }
 
-    val doneCount = filteredTasks.count { it.done }
-    val totalCount = filteredTasks.size
+    // Always reflect all of today's tasks here, not the chip-filtered subset below —
+    // otherwise picking "High Priority" etc. would skew the ring/"X to go" text.
+    val doneCount = todayTasks.count { it.done }
+    val totalCount = todayTasks.size
     val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
     val remainingCount = totalCount - doneCount
 

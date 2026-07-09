@@ -31,4 +31,5 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object Analytics : Screen("analytics")
     object Trash : Screen("trash")
+    object NextDays : Screen("next_days")
 }

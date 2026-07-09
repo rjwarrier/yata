@@ -15,6 +15,7 @@ import androidx.navigation.navArgument
 import com.mj.yata.ui.screen.analytics.AnalyticsScreen
 import com.mj.yata.ui.screen.main.MainScreen
 import com.mj.yata.ui.screen.main.MainViewModel
+import com.mj.yata.ui.screen.nextdays.NextDaysScreen
 import com.mj.yata.ui.screen.taskdetail.TaskDetailScreen
 import com.mj.yata.ui.screen.project.ProjectDetailScreen
 import com.mj.yata.ui.screen.person.PersonDetailScreen
@@ -72,6 +73,7 @@ fun AppNavigation(
                 initialQuickAddListId = initialQuickAddListId,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigateToAnalytics = { navController.navigate(Screen.Analytics.route) },
+                onNavigateToNextDays = { navController.navigate(Screen.NextDays.route) },
                 onNavigateToSearch = { navController.navigate(Screen.Search.route) },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
@@ -234,6 +236,19 @@ fun AppNavigation(
             TrashScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
+                onNavigateToTab = onNavigateToTab
+            )
+        }
+
+        // ── Next 10 Days ─────────────────────────────────────────────────────
+        composable(Screen.NextDays.route) {
+            val viewModel: MainViewModel = hiltViewModel()
+            NextDaysScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                },
                 onNavigateToTab = onNavigateToTab
             )
         }
