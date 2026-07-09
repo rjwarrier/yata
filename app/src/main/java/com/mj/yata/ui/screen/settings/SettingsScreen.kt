@@ -1,5 +1,11 @@
 package com.mj.yata.ui.screen.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,7 +16,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
@@ -43,6 +52,8 @@ import com.mj.yata.domain.model.FabPosition
 import com.mj.yata.domain.model.TaskRowDensity
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.notification.NotificationPermissionUtils
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -52,6 +63,21 @@ import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.util.ProfilePhotoUtils
 import com.mj.yata.util.TaskScheduleUtils
 import kotlinx.coroutines.launch
+
+/** One-line-each feature reference shown in the Help & About card — kept short on purpose;
+ * the full walkthrough with more detail lives in the "Show Welcome Tour" replay above. */
+private val helpFeatures = listOf(
+    "Today & Upcoming" to "What's due now, a week/month calendar, and a Next 10 Days list.",
+    "Quick Add" to "Type naturally — \"call Priya tomorrow 3pm high priority\".",
+    "Projects & Lists" to "Group related tasks and star favorites for quick drawer access.",
+    "People" to "Assign work and see who's overdue, at a glance.",
+    "Tags" to "Flexible labels that cut across projects and lists.",
+    "Analytics" to "Completion streaks, on-time rate, and workload breakdowns.",
+    "Home Widgets & Wear OS" to "Agenda, quick add, and progress widgets; today's count on your watch.",
+    "Reminders" to "Per-task alerts that still fire after a reboot.",
+    "Backup & Export" to "Automatic Google Drive backup, plus JSON/.ics/Markdown export.",
+    "Trash" to "Deleted tasks are recoverable for 30 days before they're gone for good."
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -541,45 +567,44 @@ fun SettingsScreen(
             }
 
             // Manage Section — tap-through to the People/Tags/Projects tabs, per handoff's Settings "Manage" rows.
-            if (projectsFeatureEnabled || peopleFeatureEnabled || tagsFeatureEnabled) {
-                Text(
-                    text = "MANAGE",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        val manageRows = buildList {
-                            if (projectsFeatureEnabled) add(Triple("Projects", Icons.Default.ChevronRight, 1))
-                            if (peopleFeatureEnabled) add(Triple("People", Icons.Default.ChevronRight, 2))
-                            if (tagsFeatureEnabled) add(Triple("Tags", Icons.Default.ChevronRight, 3))
-                        }
-                        manageRows.forEachIndexed { index, (title, _, tabIndex) ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onNavigateToTab(tabIndex) }
-                                    .padding(vertical = 14.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = title,
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ChevronRight,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                )
-                            }
-                            if (index != manageRows.lastIndex) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                            }
+            // Purely a visibility toggle (see Features section above), so each row/divider fades
+            // and collapses in and out in step with its feature flag rather than popping instantly.
+            AnimatedVisibility(
+                visible = projectsFeatureEnabled || peopleFeatureEnabled || tagsFeatureEnabled,
+                enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) +
+                    expandVertically(tween(YataDur.sheet, easing = YataEase.emphasized)),
+                exit = fadeOut(tween(YataDur.fade)) +
+                    shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
+            ) {
+                Column {
+                    Text(
+                        text = "MANAGE",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            AnimatedManageRow(
+                                visible = projectsFeatureEnabled,
+                                title = "Projects",
+                                onClick = { onNavigateToTab(1) }
+                            )
+                            AnimatedDivider(visible = projectsFeatureEnabled && (peopleFeatureEnabled || tagsFeatureEnabled))
+                            AnimatedManageRow(
+                                visible = peopleFeatureEnabled,
+                                title = "People",
+                                onClick = { onNavigateToTab(2) }
+                            )
+                            AnimatedDivider(visible = peopleFeatureEnabled && tagsFeatureEnabled)
+                            AnimatedManageRow(
+                                visible = tagsFeatureEnabled,
+                                title = "Tags",
+                                onClick = { onNavigateToTab(3) }
+                            )
                         }
                     }
                 }
@@ -1261,12 +1286,30 @@ fun SettingsScreen(
                 }
             }
 
-            // 5. About Section
+            // 6. Help & About Section — a concise feature reference, with the app-identity
+            // "about" card (previously its own top-level section) now living at the bottom of it.
             Text(
-                text = "ABOUT",
+                text = "HELP & ABOUT",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    helpFeatures.forEach { (title, description) ->
+                        HelpFeatureRow(title = title, description = description)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -1749,6 +1792,60 @@ private fun FeatureToggleRow(
 }
 
 @Composable
+private fun AnimatedManageRow(visible: Boolean, title: String, onClick: () -> Unit) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) +
+            expandVertically(tween(YataDur.sheet, easing = YataEase.emphasized)),
+        exit = fadeOut(tween(YataDur.fade)) +
+            shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+            )
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun HelpFeatureRow(title: String, description: String) {
+    Text(
+        text = buildAnnotatedString {
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(title) }
+            append("  —  ")
+            append(description)
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+@Composable
+private fun AnimatedDivider(visible: Boolean) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(YataDur.fade)),
+        exit = fadeOut(tween(YataDur.fade))
+    ) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    }
+}
+
+@Composable
 fun SettingsRow(
     label: String,
     value: String,
@@ -1782,8 +1879,9 @@ fun SettingsRow(
     }
 }
 
-/** A permission status row that's only actionable (clickable, chevron shown) while denied —
- * once granted there's nothing left to tap, just a checkmark confirming it's on. */
+/** A permission status row — the trailing chip is always tappable (both directions go through
+ * [onClick], which just opens the relevant system settings screen) and its label/color flips
+ * between "Granted" and "Grant" to match current state. */
 @Composable
 private fun NotificationPermissionRow(
     title: String,
@@ -1795,7 +1893,6 @@ private fun NotificationPermissionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (!granted) Modifier.clickable { onClick() } else Modifier)
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -1811,18 +1908,23 @@ private fun NotificationPermissionRow(
                 color = if (granted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
             )
         }
-        if (granted) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = "Granted",
-                tint = LocalYataAccents.current.accentE
+        Spacer(modifier = Modifier.width(12.dp))
+        val chipColor = if (granted) LocalYataAccents.current.accentE else MaterialTheme.colorScheme.error
+        AssistChip(
+            onClick = onClick,
+            label = { Text(if (granted) "Granted" else "Grant") },
+            leadingIcon = {
+                Icon(
+                    imageVector = if (granted) Icons.Default.Check else Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = chipColor,
+                    modifier = Modifier.size(16.dp)
+                )
+            },
+            colors = AssistChipDefaults.assistChipColors(
+                labelColor = chipColor,
+                leadingIconContentColor = chipColor
             )
-        } else {
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Fix in system settings",
-                tint = MaterialTheme.colorScheme.error
-            )
-        }
+        )
     }
 }
