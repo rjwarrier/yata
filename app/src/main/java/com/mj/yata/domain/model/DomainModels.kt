@@ -34,7 +34,8 @@ data class Project(
     val defaultReminder: String? = null, // pre-fills NewTaskSheet's reminder for tasks in this project
     val description: String? = null, // max 100 chars, enforced in ProjectEditorSheet
     val excludeFromToday: Boolean = false, // tasks here never show in Today, regardless of due date
-    val sortOrder: Int = 0 // manual drag-and-drop order in the Projects tab
+    val sortOrder: Int = 0, // manual drag-and-drop order in the Projects tab
+    val archived: Boolean = false // true = kept for history, hidden from active project surfaces
 )
 
 data class YataList(

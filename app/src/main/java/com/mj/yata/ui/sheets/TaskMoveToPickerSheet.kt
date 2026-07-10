@@ -33,6 +33,7 @@ fun TaskMoveToPickerSheet(
     modifier: Modifier = Modifier
 ) {
     val accents = LocalYataAccents.current
+    val activeProjects = projects.filter { !it.archived }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -68,7 +69,7 @@ fun TaskMoveToPickerSheet(
             }
         }
 
-        if (projects.isNotEmpty()) {
+        if (activeProjects.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "PROJECTS",
@@ -76,7 +77,7 @@ fun TaskMoveToPickerSheet(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    projects.forEach { pr ->
+                    activeProjects.forEach { pr ->
                         val color = accents.getAccent(pr.color)
                         YataSelectChip(
                             label = pr.name,

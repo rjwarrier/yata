@@ -15,5 +15,6 @@ data class ProjectEntity(
     val defaultReminder: String? = null,
     val description: String? = null, // max 100 chars, enforced in ProjectEditorSheet
     val excludeFromToday: Boolean = false,
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    val archived: Boolean = false
 )

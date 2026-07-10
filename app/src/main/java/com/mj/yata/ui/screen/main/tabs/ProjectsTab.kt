@@ -3,6 +3,7 @@ package com.mj.yata.ui.screen.main.tabs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -60,11 +61,13 @@ fun ProjectsTab(
     onNewProjectClick: () -> Unit,
     onToggleProjectStar: (String) -> Unit,
     onProjectsReordered: (List<Project>) -> Unit = {},
-    onBulkDeleteProjects: (List<String>) -> Unit = {},
+    onBulkArchiveProjects: (List<String>) -> Unit = {},
     peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    val sortedProjects = remember(projects) { projects.sortedBy { it.sortOrder } }
+    val activeProjects = remember(projects) { projects.filter { !it.archived } }
+    val archivedProjects = remember(projects) { projects.filter { it.archived }.sortedBy { it.sortOrder } }
+    val sortedProjects = remember(activeProjects) { activeProjects.sortedBy { it.sortOrder } }
     var localOrder by remember { mutableStateOf(sortedProjects) }
     var isDragging by remember { mutableStateOf(false) }
     LaunchedEffect(sortedProjects) {
@@ -101,7 +104,7 @@ fun ProjectsTab(
                     )
                 }
                 IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Default.Delete, contentDescription = "Archive selected", tint = MaterialTheme.colorScheme.error)
                 }
             }
         } else {
@@ -170,8 +173,8 @@ fun ProjectsTab(
             onDragEnd = { onProjectsReordered(localOrder) },
             onDragStateChanged = { isDragging = it },
             contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
-            headerItemCount = if (projects.isEmpty()) 1 else 0,
-            header = if (projects.isEmpty()) {
+            headerItemCount = if (activeProjects.isEmpty()) 1 else 0,
+            header = if (activeProjects.isEmpty()) {
                 {
                     item {
                         com.mj.yata.ui.widgets.TabEmptyState(
@@ -182,7 +185,32 @@ fun ProjectsTab(
                     }
                 }
             } else null,
-            footer = { item { NewProjectDashedCard(onClick = onNewProjectClick) } },
+            footer = {
+                item { NewProjectDashedCard(onClick = onNewProjectClick) }
+                if (archivedProjects.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "ARCHIVED",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
+                        )
+                    }
+                    items(archivedProjects, key = { "archived_${it.id}" }) { archivedProject ->
+                        val archivedProjectTasks = tasks.filter { it.projectId == archivedProject.id }
+                        val archivedDoneTasks = archivedProjectTasks.count { it.done }
+                        ProjectCard(
+                            project = archivedProject,
+                            totalTasks = archivedProjectTasks.size,
+                            doneTasks = archivedDoneTasks,
+                            progress = if (archivedProjectTasks.isNotEmpty()) archivedDoneTasks.toFloat() / archivedProjectTasks.size else 0f,
+                            onClick = { onProjectClick(archivedProject.id) },
+                            onToggleStar = { onToggleProjectStar(archivedProject.id) },
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
+                }
+            },
             modifier = Modifier.weight(1f)
         ) { project ->
             val projectTasks = remember(tasks, project.id) {
@@ -216,16 +244,16 @@ fun ProjectsTab(
     if (showBulkDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showBulkDeleteDialog = false },
-            title = { Text("Delete ${selectedIds.size} project(s)?") },
-            text = { Text("Tasks inside stay, but are removed from these projects. This can't be undone.") },
+            title = { Text("Archive ${selectedIds.size} project(s)?") },
+            text = { Text("Tasks inside stay linked, and the projects are hidden from active project surfaces until you restore them.") },
             confirmButton = {
                 TextButton(onClick = {
-                    onBulkDeleteProjects(selectedIds.toList())
+                    onBulkArchiveProjects(selectedIds.toList())
                     selectedIds.clear()
                     selectModeOn = false
                     showBulkDeleteDialog = false
                 }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text("Archive", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {

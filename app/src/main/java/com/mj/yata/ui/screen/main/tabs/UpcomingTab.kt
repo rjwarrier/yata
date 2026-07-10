@@ -123,7 +123,11 @@ fun UpcomingTab(
     }
 
     val listsById = remember(lists) { lists.associateBy { it.id } }
-    val tasksByDate = remember(tasks) { tasks.filter { it.due != null }.groupBy { it.due!! } }
+    val archivedProjectIds = remember(projects) { projects.filter { it.archived }.map { it.id }.toSet() }
+    val activeTasks = remember(tasks, archivedProjectIds) {
+        tasks.filter { it.projectId !in archivedProjectIds }
+    }
+    val tasksByDate = remember(activeTasks) { activeTasks.filter { it.due != null }.groupBy { it.due!! } }
 
     // State for filter chips
     var selectedFilter by remember { mutableStateOf("All") } // "All" | "Assigned to me" | "Delegated" | "High Priority"
@@ -149,9 +153,9 @@ fun UpcomingTab(
         base.format(DateTimeFormatter.ofPattern("MMMM yyyy")).uppercase(Locale.getDefault())
     }
 
-    val selectedDayTasks = remember(tasks, selectedDay, selectedFilter, myId) {
+    val selectedDayTasks = remember(activeTasks, selectedDay, selectedFilter, myId) {
         val dateStr = selectedDay.toString()
-        applyFilter(tasks.filter { it.due == dateStr })
+        applyFilter(activeTasks.filter { it.due == dateStr })
     }
 
     val isSelectedToday = selectedDay == today
@@ -387,7 +391,7 @@ fun UpcomingTab(
             modifier = Modifier.weight(1f),
             label = "agenda"
         ) { day ->
-            val dayTasks = if (day == selectedDay) selectedDayTasks else applyFilter(tasks.filter { it.due == day.toString() })
+            val dayTasks = if (day == selectedDay) selectedDayTasks else applyFilter(activeTasks.filter { it.due == day.toString() })
             val label = if (day == today) "Today" else agendaLabel
 
             Column(modifier = Modifier.fillMaxSize()) {

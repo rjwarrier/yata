@@ -34,14 +34,15 @@ class MainViewModel @Inject constructor(
     val tasks: StateFlow<List<Task>> = repository.getTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar. */
-    val todayRemainingCount: StateFlow<Int> = tasks.map { list ->
-        val todayStr = LocalDate.now().toString()
-        list.count { it.due != null && it.due <= todayStr && !it.done }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
-
     val projects: StateFlow<List<Project>> = repository.getProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar. */
+    val todayRemainingCount: StateFlow<Int> = combine(tasks, projects) { list, projectList ->
+        val todayStr = LocalDate.now().toString()
+        val hiddenProjectIds = projectList.filter { it.archived || it.excludeFromToday }.map { it.id }.toSet()
+        list.count { it.due != null && it.due <= todayStr && !it.done && it.projectId !in hiddenProjectIds }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val lists: StateFlow<List<YataList>> = repository.getLists()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -537,6 +538,22 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             val byId = projects.value.associateBy { it.id }
             ids.forEach { id -> byId[id]?.let { repository.deleteProject(it) } }
+        }
+    }
+
+    /** Archiving hides a project from active project surfaces while keeping its tasks linked. */
+    fun setProjectArchived(project: Project, archived: Boolean) {
+        viewModelScope.launch {
+            repository.upsertProject(project.copy(archived = archived))
+        }
+    }
+
+    fun bulkArchiveProjects(ids: List<String>) {
+        viewModelScope.launch {
+            val byId = projects.value.associateBy { it.id }
+            ids.forEach { id ->
+                byId[id]?.let { repository.upsertProject(it.copy(archived = true)) }
+            }
         }
     }
 

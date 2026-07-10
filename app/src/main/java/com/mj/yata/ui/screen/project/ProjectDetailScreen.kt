@@ -69,7 +69,7 @@ fun ProjectDetailScreen(
 
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showArchiveDialog by remember { mutableStateOf(false) }
     var showRolloverDialog by remember { mutableStateOf(false) }
     val hideCompleted by viewModel.hideCompletedProject.collectAsState()
     var searchActive by remember { mutableStateOf(false) }
@@ -244,10 +244,14 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete project") },
+                                text = { Text(if (project.archived) "Restore project" else "Archive project") },
                                 onClick = {
                                     showMenu = false
-                                    showDeleteDialog = true
+                                    if (project.archived) {
+                                        viewModel.setProjectArchived(project, false)
+                                    } else {
+                                        showArchiveDialog = true
+                                    }
                                 },
                                 leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                             )
@@ -441,7 +445,7 @@ fun ProjectDetailScreen(
         ) {
             TaskMoveToPickerSheet(
                 lists = lists,
-                projects = projects.filter { it.id != project.id },
+                projects = projects.filter { it.id != project.id && !it.archived },
                 onSelectList = { targetListId ->
                     viewModel.moveTaskToList(task.id, targetListId, null)
                     pendingMoveTask = null
@@ -473,8 +477,8 @@ fun ProjectDetailScreen(
         ) {
             NewTaskSheet(
                 lists = lists,
-                projects = projects,
-                people = people,
+                projects = projects.filter { !it.archived || it.id == project.id },
+                people = people.filter { !it.archived },
                 tags = tags,
                 tasks = tasks,
                 initialProjectId = project.id,
@@ -527,24 +531,24 @@ fun ProjectDetailScreen(
         }
     }
 
-    if (showDeleteDialog) {
+    if (showArchiveDialog) {
         AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete project?") },
-            text = { Text("All tasks inside this project will be permanently deleted.") },
+            onDismissRequest = { showArchiveDialog = false },
+            title = { Text("Archive project?") },
+            text = { Text("Tasks inside stay linked. The project is hidden from active project surfaces until you restore it.") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showDeleteDialog = false
-                        viewModel.deleteProject(project)
+                        showArchiveDialog = false
+                        viewModel.setProjectArchived(project, true)
                         onNavigateBack()
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text("Archive", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
+                TextButton(onClick = { showArchiveDialog = false }) {
                     Text("Cancel")
                 }
             }

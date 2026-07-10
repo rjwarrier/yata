@@ -98,6 +98,7 @@ fun TaskBulkMoveSheet(
     modifier: Modifier = Modifier
 ) {
     val accents = LocalYataAccents.current
+    val activeProjects = projects.filter { !it.archived }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -127,7 +128,7 @@ fun TaskBulkMoveSheet(
                 ) {
                     Text("None (remove from project)", style = MaterialTheme.typography.bodyLarge)
                 }
-                projects.forEach { pr ->
+                activeProjects.forEach { pr ->
                     val color = accents.getAccent(pr.color)
                     Row(
                         modifier = Modifier
@@ -234,6 +235,7 @@ fun TaskBulkAssignPersonSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val activePeople = people.filter { !it.archived }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -246,14 +248,14 @@ fun TaskBulkAssignPersonSheet(
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
             modifier = Modifier.padding(bottom = 12.dp)
         )
-        if (people.isEmpty()) {
+        if (activePeople.isEmpty()) {
             Text(
                 text = "No people yet — add one from the People tab first.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        people.forEach { person ->
+        activePeople.forEach { person ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

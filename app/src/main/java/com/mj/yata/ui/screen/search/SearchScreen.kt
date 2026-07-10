@@ -107,12 +107,14 @@ fun SearchScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
-    val filteredTasks = remember(tasks, debouncedQuery, activeFilters.toList(), peopleById, tagsById) {
+    val archivedProjectIds = remember(projects) { projects.filter { it.archived }.map { it.id }.toSet() }
+    val filteredTasks = remember(tasks, debouncedQuery, activeFilters.toList(), peopleById, tagsById, archivedProjectIds) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty()) {
             emptyList()
         } else {
             val today = LocalDate.now()
             tasks.filter { task ->
+                if (task.projectId in archivedProjectIds) return@filter false
                 val matchesQuery = debouncedQuery.isBlank() ||
                     task.title.contains(debouncedQuery, ignoreCase = true) ||
                     task.notes?.contains(debouncedQuery, ignoreCase = true) == true ||

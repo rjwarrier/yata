@@ -93,6 +93,7 @@ class JsonExporter @Inject constructor(
                 o.put("defaultReminder", pr.defaultReminder ?: JSONObject.NULL)
                 o.put("description", pr.description ?: JSONObject.NULL)
                 o.put("excludeFromToday", pr.excludeFromToday)
+                o.put("archived", pr.archived)
                 val commonTagIdsArr = JSONArray()
                 pr.commonTagIds.forEach { commonTagIdsArr.put(it) }
                 o.put("commonTagIds", commonTagIdsArr)
@@ -379,7 +380,8 @@ class JsonExporter @Inject constructor(
                                 commonTagIds = commonTagIds,
                                 defaultReminder = if (o.isNull("defaultReminder")) null else o.optString("defaultReminder", null),
                                 description = if (o.isNull("description")) null else o.optString("description", null),
-                                excludeFromToday = o.optBoolean("excludeFromToday", false)
+                                excludeFromToday = o.optBoolean("excludeFromToday", false),
+                                archived = o.optBoolean("archived", false)
                             )
                         )
                     }

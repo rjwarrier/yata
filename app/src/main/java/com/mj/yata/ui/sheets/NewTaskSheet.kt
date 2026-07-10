@@ -239,6 +239,12 @@ fun NewTaskSheet(
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val project = projects.find { it.id == selectedProjectId }
     val projectColor = project?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
+    val activeProjects = remember(projects, selectedProjectId) {
+        projects.filter { !it.archived || it.id == selectedProjectId }
+    }
+    val activePeople = remember(people, selectedAssigneeIds.toList()) {
+        people.filter { !it.archived || selectedAssigneeIds.contains(it.id) }
+    }
     val canCreateTask = title.text.isNotBlank()
 
     val mention = remember(title, tagsEnabled, peopleEnabled) {
@@ -457,7 +463,7 @@ fun NewTaskSheet(
                 MentionSuggestions(
                     mention = mention,
                     tags = tags,
-                    people = people,
+                    people = activePeople,
                     onSelectTag = { tag ->
                         selectedTagIds.add(tag.id)
                         title = consumeMentionToken(title, mention)
@@ -614,7 +620,7 @@ fun NewTaskSheet(
                             onCustom = { showReminderTimePicker = true }
                         )
                         "Project" -> ProjectPanel(
-                            projects = projects,
+                            projects = activeProjects,
                             selectedProjectId = selectedProjectId,
                             accents = accents,
                             onSelect = { selectedProjectId = it }
@@ -634,7 +640,7 @@ fun NewTaskSheet(
                             )
                         }
                         "People" -> PeoplePanel(
-                            people = people,
+                            people = activePeople,
                             selectedAssigneeIds = selectedAssigneeIds,
                             accents = accents
                         )

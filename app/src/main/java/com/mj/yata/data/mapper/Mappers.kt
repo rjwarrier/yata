@@ -105,7 +105,8 @@ fun ProjectEntity.toDomain() = Project(
     defaultReminder = defaultReminder,
     description = description,
     excludeFromToday = excludeFromToday,
-    sortOrder = sortOrder
+    sortOrder = sortOrder,
+    archived = archived
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
@@ -118,7 +119,8 @@ fun Project.toEntity() = ProjectEntity(
     defaultReminder = defaultReminder,
     description = description,
     excludeFromToday = excludeFromToday,
-    sortOrder = sortOrder
+    sortOrder = sortOrder,
+    archived = archived
 )
 
 fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder)

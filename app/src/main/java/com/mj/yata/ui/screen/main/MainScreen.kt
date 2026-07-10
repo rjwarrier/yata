@@ -160,10 +160,10 @@ fun MainScreen(
                 val accents = LocalYataAccents.current
 
                 // Starred projects, folders, tags & people (computed once per data change, used below)
-                val starredProjects = remember(projects) { projects.filter { it.starred } }
+                val starredProjects = remember(projects) { projects.filter { it.starred && !it.archived } }
                 val starredLists = remember(lists) { lists.filter { it.starred } }
                 val starredTags = remember(tags) { tags.filter { it.starred } }
-                val starredPeople = remember(people) { people.filter { it.starred } }
+                val starredPeople = remember(people) { people.filter { it.starred && !it.archived } }
                 val visibleStarredProjects = if (projectsFeatureEnabled) starredProjects else emptyList()
                 val visibleStarredTags = if (tagsFeatureEnabled) starredTags else emptyList()
                 val visibleStarredPeople = if (peopleFeatureEnabled) starredPeople else emptyList()
@@ -545,7 +545,7 @@ fun MainScreen(
                             onNewProjectClick = { activeSheet = MainSheetType.NewProject },
                             onToggleProjectStar = { viewModel.toggleProjectStarred(it) },
                             onProjectsReordered = { viewModel.commitProjectOrder(it) },
-                            onBulkDeleteProjects = { viewModel.bulkDeleteProjects(it) },
+                            onBulkArchiveProjects = { viewModel.bulkArchiveProjects(it) },
                             peopleEnabled = peopleFeatureEnabled
                         )
                         2 -> PeopleTab(
@@ -635,8 +635,8 @@ fun MainScreen(
             ) {
                 NewTaskSheet(
                     lists = lists,
-                    projects = projects,
-                    people = people,
+                    projects = projects.filter { !it.archived },
+                    people = people.filter { !it.archived },
                     tags = tags,
                     tasks = tasks,
                     onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
