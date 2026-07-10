@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.YataSelectChip
 
@@ -33,7 +34,7 @@ fun TaskMoveToPickerSheet(
     modifier: Modifier = Modifier
 ) {
     val accents = LocalYataAccents.current
-    val activeProjects = projects.filter { !it.archived }
+    val activeProjects = projects.activeProjects()
     Column(
         modifier = modifier
             .fillMaxWidth()

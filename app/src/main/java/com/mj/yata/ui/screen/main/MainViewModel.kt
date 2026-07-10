@@ -37,10 +37,16 @@ class MainViewModel @Inject constructor(
     val projects: StateFlow<List<Project>> = repository.getProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val activeProjects: StateFlow<List<Project>> = projects.map { it.activeProjects() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val archivedProjects: StateFlow<List<Project>> = projects.map { it.archivedProjects() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar. */
     val todayRemainingCount: StateFlow<Int> = combine(tasks, projects) { list, projectList ->
         val todayStr = LocalDate.now().toString()
-        val hiddenProjectIds = projectList.filter { it.archived || it.excludeFromToday }.map { it.id }.toSet()
+        val hiddenProjectIds = projectList.hiddenFromMainTaskProjectIds()
         list.count { it.due != null && it.due <= todayStr && !it.done && it.projectId !in hiddenProjectIds }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
@@ -48,6 +54,12 @@ class MainViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val people: StateFlow<List<Person>> = repository.getPeople()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activePeople: StateFlow<List<Person>> = people.map { it.activePeople() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val archivedPeople: StateFlow<List<Person>> = people.map { it.archivedPeople() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val tags: StateFlow<List<Tag>> = repository.getTags()
@@ -531,6 +543,12 @@ class MainViewModel @Inject constructor(
     fun deleteProject(project: Project) {
         viewModelScope.launch {
             repository.deleteProject(project)
+        }
+    }
+
+    fun deleteProjectOnly(project: Project) {
+        viewModelScope.launch {
+            repository.deleteProjectOnly(project)
         }
     }
 

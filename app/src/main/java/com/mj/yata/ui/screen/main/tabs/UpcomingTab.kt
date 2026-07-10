@@ -123,7 +123,7 @@ fun UpcomingTab(
     }
 
     val listsById = remember(lists) { lists.associateBy { it.id } }
-    val archivedProjectIds = remember(projects) { projects.filter { it.archived }.map { it.id }.toSet() }
+    val archivedProjectIds = remember(projects) { projects.archivedProjects().map { it.id }.toSet() }
     val activeTasks = remember(tasks, archivedProjectIds) {
         tasks.filter { it.projectId !in archivedProjectIds }
     }

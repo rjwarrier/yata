@@ -153,6 +153,9 @@ interface TaskDao {
     @Query("UPDATE tasks SET deletedAt = NULL WHERE id = :id")
     suspend fun restore(id: String)
 
+    @Query("UPDATE tasks SET projectId = NULL WHERE projectId = :projectId")
+    suspend fun clearProject(projectId: String)
+
     @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL")
     suspend fun emptyTrash()
 

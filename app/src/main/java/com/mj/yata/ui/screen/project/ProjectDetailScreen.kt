@@ -70,15 +70,14 @@ fun ProjectDetailScreen(
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var showArchiveDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     var showRolloverDialog by remember { mutableStateOf(false) }
     val hideCompleted by viewModel.hideCompletedProject.collectAsState()
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
     if (project == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
+        com.mj.yata.ui.widgets.ListDetailShimmer()
         return
     }
 
@@ -243,18 +242,33 @@ fun ProjectDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
                             )
-                            DropdownMenuItem(
-                                text = { Text(if (project.archived) "Restore project" else "Archive project") },
-                                onClick = {
-                                    showMenu = false
-                                    if (project.archived) {
+                            if (project.archived) {
+                                DropdownMenuItem(
+                                    text = { Text("Restore project") },
+                                    onClick = {
+                                        showMenu = false
                                         viewModel.setProjectArchived(project, false)
-                                    } else {
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Visibility, contentDescription = null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Delete project") },
+                                    onClick = {
+                                        showMenu = false
+                                        showDeleteDialog = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                )
+                            } else {
+                                DropdownMenuItem(
+                                    text = { Text("Archive project") },
+                                    onClick = {
+                                        showMenu = false
                                         showArchiveDialog = true
-                                    }
-                                },
-                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
-                            )
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
+                                )
+                            }
                         }
                     }
                 },
@@ -264,12 +278,25 @@ fun ProjectDetailScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { isNewTaskSheetOpen = true },
-                containerColor = projectColor,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add task")
+            if (!project.archived) {
+                com.mj.yata.ui.widgets.PressableScaleBox(
+                    onClick = { isNewTaskSheetOpen = true }
+                ) {
+                    Surface(
+                        color = projectColor,
+                        contentColor = Color.White,
+                        shape = RoundedCornerShape(16.dp),
+                        tonalElevation = 6.dp,
+                        shadowElevation = 6.dp
+                    ) {
+                        Box(
+                            modifier = Modifier.size(56.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Add task")
+                        }
+                    }
+                }
             }
         }
     ) { innerPadding ->
@@ -445,7 +472,7 @@ fun ProjectDetailScreen(
         ) {
             TaskMoveToPickerSheet(
                 lists = lists,
-                projects = projects.filter { it.id != project.id && !it.archived },
+                projects = projects.activeProjects().filter { it.id != project.id },
                 onSelectList = { targetListId ->
                     viewModel.moveTaskToList(task.id, targetListId, null)
                     pendingMoveTask = null
@@ -477,8 +504,8 @@ fun ProjectDetailScreen(
         ) {
             NewTaskSheet(
                 lists = lists,
-                projects = projects.filter { !it.archived || it.id == project.id },
-                people = people.filter { !it.archived },
+                projects = projects.activeProjects(includeId = project.id),
+                people = people.activePeople(),
                 tags = tags,
                 tasks = tasks,
                 initialProjectId = project.id,
@@ -549,6 +576,41 @@ fun ProjectDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete archived project?") },
+            text = { Text("Delete only the project to keep its tasks without a project, or delete the project and all tasks inside it.") },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            viewModel.deleteProjectOnly(project)
+                            onNavigateBack()
+                        }
+                    ) {
+                        Text("Project only")
+                    }
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            viewModel.deleteProject(project)
+                            onNavigateBack()
+                        }
+                    ) {
+                        Text("Project + tasks", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
                     Text("Cancel")
                 }
             }

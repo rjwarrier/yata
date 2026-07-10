@@ -276,6 +276,14 @@ class YataRepositoryImpl @Inject constructor(
         db.projectDao().delete(project.toEntity())
     }
 
+    override suspend fun deleteProjectOnly(project: Project) {
+        db.withTransaction {
+            db.taskDao().clearProject(project.id)
+            db.projectDao().delete(project.toEntity())
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
     override fun getLists(): Flow<List<YataList>> {
         return db.listDao().getAll().map { list ->
             list.map { it.toDomain() }

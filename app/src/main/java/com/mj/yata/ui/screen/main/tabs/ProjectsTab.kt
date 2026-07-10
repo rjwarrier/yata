@@ -65,8 +65,8 @@ fun ProjectsTab(
     peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    val activeProjects = remember(projects) { projects.filter { !it.archived } }
-    val archivedProjects = remember(projects) { projects.filter { it.archived }.sortedBy { it.sortOrder } }
+    val activeProjects = remember(projects) { projects.activeProjects() }
+    val archivedProjects = remember(projects) { projects.archivedProjects().sortedBy { it.sortOrder } }
     val sortedProjects = remember(activeProjects) { activeProjects.sortedBy { it.sortOrder } }
     var localOrder by remember { mutableStateOf(sortedProjects) }
     var isDragging by remember { mutableStateOf(false) }

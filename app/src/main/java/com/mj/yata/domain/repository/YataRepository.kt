@@ -48,6 +48,7 @@ interface YataRepository {
     fun getProjectById(id: String): Flow<Project?>
     suspend fun upsertProject(project: Project)
     suspend fun deleteProject(project: Project)
+    suspend fun deleteProjectOnly(project: Project)
 
     // Lists
     fun getLists(): Flow<List<YataList>>

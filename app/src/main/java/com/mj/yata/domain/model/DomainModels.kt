@@ -38,6 +38,15 @@ data class Project(
     val archived: Boolean = false // true = kept for history, hidden from active project surfaces
 )
 
+fun List<Project>.activeProjects(includeId: String? = null): List<Project> =
+    filter { !it.archived || it.id == includeId }
+
+fun List<Project>.archivedProjects(): List<Project> =
+    filter { it.archived }
+
+fun List<Project>.hiddenFromMainTaskProjectIds(): Set<String> =
+    filter { it.archived || it.excludeFromToday }.map { it.id }.toSet()
+
 data class YataList(
     val id: String,
     val name: String,
@@ -47,6 +56,12 @@ data class YataList(
     val excludeFromToday: Boolean = false, // tasks here never show in Today, regardless of due date
     val sortOrder: Int = 0 // manual drag-and-drop order in the nav drawer's Lists section
 )
+
+fun List<Person>.activePeople(includeIds: Set<String> = emptySet()): List<Person> =
+    filter { !it.archived || it.id in includeIds }
+
+fun List<Person>.archivedPeople(): List<Person> =
+    filter { it.archived }
 
 data class Tag(
     val id: String,

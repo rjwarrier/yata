@@ -155,8 +155,8 @@ fun PeopleTab(
         }
 
         // 3. Scrollable, grouped, multi-selectable list of people
-        val activePeople = remember(people) { people.filter { !it.archived } }
-        val archivedPeople = remember(people) { people.filter { it.archived } }
+        val activePeople = remember(people) { people.activePeople() }
+        val archivedPeople = remember(people) { people.archivedPeople() }
         val groupedIds = personGroups.map { it.id }.toSet()
         val ungrouped = activePeople.filter { it.groupId == null || it.groupId !in groupedIds }
         val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }

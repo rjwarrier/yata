@@ -19,6 +19,7 @@ import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.effectiveTags
+import com.mj.yata.domain.model.archivedProjects
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.TaskRow
 import kotlinx.coroutines.launch
@@ -107,7 +108,7 @@ fun SearchScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
-    val archivedProjectIds = remember(projects) { projects.filter { it.archived }.map { it.id }.toSet() }
+    val archivedProjectIds = remember(projects) { projects.archivedProjects().map { it.id }.toSet() }
     val filteredTasks = remember(tasks, debouncedQuery, activeFilters.toList(), peopleById, tagsById, archivedProjectIds) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty()) {
             emptyList()

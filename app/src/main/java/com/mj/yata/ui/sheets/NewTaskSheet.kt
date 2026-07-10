@@ -88,6 +88,8 @@ import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.domain.model.activePeople
+import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.widgets.PriorityBars
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.TagChip
@@ -240,10 +242,10 @@ fun NewTaskSheet(
     val project = projects.find { it.id == selectedProjectId }
     val projectColor = project?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val activeProjects = remember(projects, selectedProjectId) {
-        projects.filter { !it.archived || it.id == selectedProjectId }
+        projects.activeProjects(includeId = selectedProjectId)
     }
     val activePeople = remember(people, selectedAssigneeIds.toList()) {
-        people.filter { !it.archived || selectedAssigneeIds.contains(it.id) }
+        people.activePeople(includeIds = selectedAssigneeIds.toSet())
     }
     val canCreateTask = title.text.isNotBlank()
 

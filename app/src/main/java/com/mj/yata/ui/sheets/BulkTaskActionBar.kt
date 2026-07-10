@@ -25,6 +25,8 @@ import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activePeople
+import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.PersonAvatar
 
@@ -98,7 +100,7 @@ fun TaskBulkMoveSheet(
     modifier: Modifier = Modifier
 ) {
     val accents = LocalYataAccents.current
-    val activeProjects = projects.filter { !it.archived }
+    val activeProjects = projects.activeProjects()
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -235,7 +237,7 @@ fun TaskBulkAssignPersonSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val activePeople = people.filter { !it.archived }
+    val activePeople = people.activePeople()
     Column(
         modifier = modifier
             .fillMaxWidth()
