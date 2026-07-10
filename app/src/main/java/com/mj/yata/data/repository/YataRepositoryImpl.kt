@@ -264,6 +264,18 @@ class YataRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getActiveProjects(): Flow<List<Project>> {
+        return db.projectDao().getActive().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override fun getArchivedProjects(): Flow<List<Project>> {
+        return db.projectDao().getArchived().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
     override fun getProjectById(id: String): Flow<Project?> {
         return db.projectDao().getById(id).map { it?.toDomain() }
     }
@@ -282,6 +294,11 @@ class YataRepositoryImpl @Inject constructor(
             db.projectDao().delete(project.toEntity())
         }
         widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean) {
+        if (ids.isEmpty()) return
+        db.projectDao().setArchived(ids, archived)
     }
 
     override fun getLists(): Flow<List<YataList>> {
@@ -304,6 +321,18 @@ class YataRepositoryImpl @Inject constructor(
 
     override fun getPeople(): Flow<List<Person>> {
         return db.personDao().getAll().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override fun getActivePeople(): Flow<List<Person>> {
+        return db.personDao().getActive().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override fun getArchivedPeople(): Flow<List<Person>> {
+        return db.personDao().getArchived().map { list ->
             list.map { it.toDomain() }
         }
     }

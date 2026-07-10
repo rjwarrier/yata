@@ -45,10 +45,13 @@ interface YataRepository {
 
     // Projects
     fun getProjects(): Flow<List<Project>>
+    fun getActiveProjects(): Flow<List<Project>>
+    fun getArchivedProjects(): Flow<List<Project>>
     fun getProjectById(id: String): Flow<Project?>
     suspend fun upsertProject(project: Project)
     suspend fun deleteProject(project: Project)
     suspend fun deleteProjectOnly(project: Project)
+    suspend fun setProjectsArchived(ids: List<String>, archived: Boolean)
 
     // Lists
     fun getLists(): Flow<List<YataList>>
@@ -58,6 +61,8 @@ interface YataRepository {
 
     // People
     fun getPeople(): Flow<List<Person>>
+    fun getActivePeople(): Flow<List<Person>>
+    fun getArchivedPeople(): Flow<List<Person>>
     fun getPersonById(id: String): Flow<Person?>
     suspend fun upsertPerson(person: Person)
     suspend fun deletePerson(person: Person)

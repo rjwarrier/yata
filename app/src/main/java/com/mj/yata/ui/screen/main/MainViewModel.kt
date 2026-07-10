@@ -37,10 +37,10 @@ class MainViewModel @Inject constructor(
     val projects: StateFlow<List<Project>> = repository.getProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val activeProjects: StateFlow<List<Project>> = projects.map { it.activeProjects() }
+    val activeProjects: StateFlow<List<Project>> = repository.getActiveProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val archivedProjects: StateFlow<List<Project>> = projects.map { it.archivedProjects() }
+    val archivedProjects: StateFlow<List<Project>> = repository.getArchivedProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar. */
@@ -56,10 +56,10 @@ class MainViewModel @Inject constructor(
     val people: StateFlow<List<Person>> = repository.getPeople()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val activePeople: StateFlow<List<Person>> = people.map { it.activePeople() }
+    val activePeople: StateFlow<List<Person>> = repository.getActivePeople()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val archivedPeople: StateFlow<List<Person>> = people.map { it.archivedPeople() }
+    val archivedPeople: StateFlow<List<Person>> = repository.getArchivedPeople()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val tags: StateFlow<List<Tag>> = repository.getTags()
@@ -568,10 +568,13 @@ class MainViewModel @Inject constructor(
 
     fun bulkArchiveProjects(ids: List<String>) {
         viewModelScope.launch {
-            val byId = projects.value.associateBy { it.id }
-            ids.forEach { id ->
-                byId[id]?.let { repository.upsertProject(it.copy(archived = true)) }
-            }
+            repository.setProjectsArchived(ids, true)
+        }
+    }
+
+    fun bulkRestoreProjects(ids: List<String>) {
+        viewModelScope.launch {
+            repository.setProjectsArchived(ids, false)
         }
     }
 

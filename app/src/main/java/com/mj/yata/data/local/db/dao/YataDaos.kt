@@ -9,6 +9,12 @@ interface PersonDao {
     @Query("SELECT * FROM people")
     fun getAll(): Flow<List<PersonEntity>>
 
+    @Query("SELECT * FROM people WHERE archived = 0")
+    fun getActive(): Flow<List<PersonEntity>>
+
+    @Query("SELECT * FROM people WHERE archived = 1")
+    fun getArchived(): Flow<List<PersonEntity>>
+
     @Query("SELECT * FROM people WHERE id = :id")
     fun getById(id: String): Flow<PersonEntity?>
 
@@ -33,6 +39,12 @@ interface ProjectDao {
     @Query("SELECT * FROM projects")
     fun getAll(): Flow<List<ProjectEntity>>
 
+    @Query("SELECT * FROM projects WHERE archived = 0")
+    fun getActive(): Flow<List<ProjectEntity>>
+
+    @Query("SELECT * FROM projects WHERE archived = 1")
+    fun getArchived(): Flow<List<ProjectEntity>>
+
     @Query("SELECT * FROM projects WHERE id = :id")
     fun getById(id: String): Flow<ProjectEntity?>
 
@@ -47,6 +59,9 @@ interface ProjectDao {
 
     @Delete
     suspend fun delete(project: ProjectEntity)
+
+    @Query("UPDATE projects SET archived = :archived WHERE id IN (:ids)")
+    suspend fun setArchived(ids: List<String>, archived: Boolean)
 }
 
 @Dao
