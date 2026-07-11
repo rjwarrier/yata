@@ -61,6 +61,144 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun parsesMonthDayFuture() {
+        val result = NaturalLanguageParser.parse("book flight jul 20", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("book flight", result.title)
+    }
+
+    @Test
+    fun parsesFullMonthNameDayWithOrdinal() {
+        val result = NaturalLanguageParser.parse("pay rent July 20th", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("pay rent", result.title)
+    }
+
+    @Test
+    fun parsesDayThenMonth() {
+        val result = NaturalLanguageParser.parse("submit report 20th july", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("submit report", result.title)
+    }
+
+    @Test
+    fun parsesMonthDayRollsToNextYearWhenPast() {
+        // ref is Jul 4 2026; "jan 5" has already passed this year, so it should roll to 2027.
+        val result = NaturalLanguageParser.parse("renew passport jan 5", ref)
+        assertEquals("2027-01-05", result.due)
+        assertEquals("renew passport", result.title)
+    }
+
+    @Test
+    fun parsesMonthDayWithExplicitYear() {
+        val result = NaturalLanguageParser.parse("anniversary jan 5 2026", ref)
+        assertEquals("2026-01-05", result.due)
+        assertEquals("anniversary", result.title)
+    }
+
+    @Test
+    fun remindPrefixedDateSetsAtTimeReminder() {
+        val result = NaturalLanguageParser.parse("call dentist remind jul 20", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("At time", result.reminder)
+        assertEquals("call dentist", result.title)
+    }
+
+    @Test
+    fun remindPrefixedWeekdaySetsAtTimeReminder() {
+        val result = NaturalLanguageParser.parse("remind me next wednesday team sync", ref)
+        assertEquals("2026-07-08", result.due)
+        assertEquals("At time", result.reminder)
+        assertEquals("team sync", result.title)
+    }
+
+    @Test
+    fun parsesIsoDate() {
+        val result = NaturalLanguageParser.parse("flight booking 2026-07-20", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("flight booking", result.title)
+    }
+
+    @Test
+    fun parsesSlashDateUsOrder() {
+        val result = NaturalLanguageParser.parse("pay taxes 7/20", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("pay taxes", result.title)
+    }
+
+    @Test
+    fun parsesSlashDateSwapsWhenFirstNumberInvalidMonth() {
+        // 20/7 can't be month 20, so day/month is inferred instead of US month/day.
+        val result = NaturalLanguageParser.parse("pay taxes 20/7", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("pay taxes", result.title)
+    }
+
+    @Test
+    fun parsesSlashDateWithFourDigitYear() {
+        val result = NaturalLanguageParser.parse("renewal 1/5/2027", ref)
+        assertEquals("2027-01-05", result.due)
+        assertEquals("renewal", result.title)
+    }
+
+    @Test
+    fun parsesTheNthOfMonth() {
+        val result = NaturalLanguageParser.parse("submit report the 20th of july", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("submit report", result.title)
+    }
+
+    @Test
+    fun parsesBareOrdinalDayOfMonth() {
+        // ref is Jul 4; "the 20th" with no month named should resolve within the current month.
+        val result = NaturalLanguageParser.parse("rent due the 20th", ref)
+        assertEquals("2026-07-20", result.due)
+        assertEquals("rent due", result.title)
+    }
+
+    @Test
+    fun parsesBareOrdinalDayRollsToNextMonthWhenPast() {
+        val result = NaturalLanguageParser.parse("rent due the 1st", ref)
+        assertEquals("2026-08-01", result.due)
+        assertEquals("rent due", result.title)
+    }
+
+    @Test
+    fun parsesDayAfterTomorrow() {
+        val result = NaturalLanguageParser.parse("day after tomorrow dentist", ref)
+        assertEquals("2026-07-06", result.due)
+        assertEquals("dentist", result.title)
+    }
+
+    @Test
+    fun parsesFortnight() {
+        val result = NaturalLanguageParser.parse("in a fortnight review contract", ref)
+        assertEquals("2026-07-18", result.due)
+        assertEquals("review contract", result.title)
+    }
+
+    @Test
+    fun parsesAWeekFromNow() {
+        val result = NaturalLanguageParser.parse("a week from now follow up", ref)
+        assertEquals("2026-07-11", result.due)
+        assertEquals("follow up", result.title)
+    }
+
+    @Test
+    fun parsesInAWeekWithoutDigit() {
+        val result = NaturalLanguageParser.parse("in a week check status", ref)
+        assertEquals("2026-07-11", result.due)
+        assertEquals("check status", result.title)
+    }
+
+    @Test
+    fun parsesEodAbbreviation() {
+        val result = NaturalLanguageParser.parse("finish slides eod", ref)
+        assertEquals("2026-07-04", result.due)
+        assertEquals("finish slides", result.title)
+    }
+
+    @Test
     fun parsesYesterday() {
         val result = NaturalLanguageParser.parse("yesterday standup notes", ref)
         assertEquals("2026-07-03", result.due)

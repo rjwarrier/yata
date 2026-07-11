@@ -86,17 +86,28 @@ object NaturalLanguageParser {
     )
 
     // ── Relative dates ────────────────────────────────────────────────────
-    private val inDaysRegex = Regex("\\bin\\s+(\\d+)\\s+day(s)?\\b", RegexOption.IGNORE_CASE)
-    private val inWeeksRegex = Regex("\\bin\\s+(\\d+)\\s+week(s)?\\b", RegexOption.IGNORE_CASE)
-    private val inMonthsRegex = Regex("\\bin\\s+(\\d+)\\s+month(s)?\\b", RegexOption.IGNORE_CASE)
+    // "a"/"an" alongside digits so "in a week" reads the same as "in 1 week".
+    private val inDaysRegex = Regex("\\bin\\s+(a|an|\\d+)\\s+day(s)?\\b", RegexOption.IGNORE_CASE)
+    private val inWeeksRegex = Regex("\\bin\\s+(a|an|\\d+)\\s+week(s)?\\b", RegexOption.IGNORE_CASE)
+    private val inMonthsRegex = Regex("\\bin\\s+(a|an|\\d+)\\s+month(s)?\\b", RegexOption.IGNORE_CASE)
     private val nextWeekdayRegex = Regex("\\bnext\\s+(\\w+)\\b", RegexOption.IGNORE_CASE)
     private val thisWeekdayRegex = Regex("\\bthis\\s+(\\w+)\\b", RegexOption.IGNORE_CASE)
+    private fun countOrOne(token: String): Long = token.toLongOrNull() ?: 1L
+    private val dayAfterTomorrowRegex = Regex("\\bday\\s+after\\s+tomorrow\\b", RegexOption.IGNORE_CASE)
+    private val fortnightRegex = Regex("\\b(?:in\\s+)?(?:a\\s+)?fortnight\\b", RegexOption.IGNORE_CASE)
+    private val fromNowRegex = Regex("\\b(a|an|\\d+)\\s+(day|week|month)s?\\s+from\\s+(?:now|today)\\b", RegexOption.IGNORE_CASE)
+    // "the 20th" / "on the 20th" with no month named — nearest upcoming month that has that day.
+    private val ordinalDayOfMonthRegex = Regex("\\b(?:on\\s+)?the\\s+(\\d{1,2})(?:st|nd|rd|th)\\b", RegexOption.IGNORE_CASE)
     private val phraseDates = listOf(
         "next week" to { ref: LocalDate -> ref.plusWeeks(1) },
         "next month" to { ref: LocalDate -> ref.plusMonths(1) },
         "end of month" to { ref: LocalDate -> YearMonth.from(ref).atEndOfMonth() },
         "end of week" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SUNDAY) },
-        "this weekend" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SATURDAY) }
+        "this weekend" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SATURDAY) },
+        "eom" to { ref: LocalDate -> YearMonth.from(ref).atEndOfMonth() },
+        "eow" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SUNDAY) },
+        "eod" to { ref: LocalDate -> ref },
+        "eob" to { ref: LocalDate -> ref }
     )
     private val bareDateWords = listOf(
         "today" to { ref: LocalDate -> ref },
@@ -104,6 +115,89 @@ object NaturalLanguageParser {
         "tmrw" to { ref: LocalDate -> ref.plusDays(1) },
         "yesterday" to { ref: LocalDate -> ref.minusDays(1) }
     )
+
+    private fun resolveOrdinalDayOfMonth(day: Int, ref: LocalDate): LocalDate? {
+        var year = ref.year
+        var month = ref.monthValue
+        repeat(24) {
+            val length = YearMonth.of(year, month).lengthOfMonth()
+            if (day in 1..length) {
+                val candidate = LocalDate.of(year, month, day)
+                if (!candidate.isBefore(ref)) return candidate
+            }
+            if (month == 12) { month = 1; year++ } else month++
+        }
+        return null
+    }
+
+    // ── Absolute month/day dates ─────────────────────────────────────────
+    // "Jul 20", "July 20", "20 July", "20th July", optionally with a trailing year
+    // ("July 20 2026" / "July 20, 2026"). No year given → nearest occurrence on/after
+    // referenceDate, rolling into next year if the month/day already passed this year.
+    private val monthNames = mapOf(
+        "jan" to 1, "january" to 1,
+        "feb" to 2, "february" to 2,
+        "mar" to 3, "march" to 3,
+        "apr" to 4, "april" to 4,
+        "may" to 5,
+        "jun" to 6, "june" to 6,
+        "jul" to 7, "july" to 7,
+        "aug" to 8, "august" to 8,
+        "sep" to 9, "sept" to 9, "september" to 9,
+        "oct" to 10, "october" to 10,
+        "nov" to 11, "november" to 11,
+        "dec" to 12, "december" to 12
+    )
+    private val monthAlt = monthNames.keys.joinToString("|") { Regex.escape(it) }
+    private val monthDayRegex = Regex("\\b($monthAlt)\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b", RegexOption.IGNORE_CASE)
+    // Optional leading "the" / mid "of" so "the 20th of july" also resolves as a full date
+    // instead of falling through to the bare ordinalDayOfMonthRegex below and losing the month.
+    private val dayMonthRegex = Regex("\\b(?:the\\s+)?(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?($monthAlt)\\.?(?:,?\\s+(\\d{4}))?\\b", RegexOption.IGNORE_CASE)
+
+    // ── Numeric dates ─────────────────────────────────────────────────────
+    // ISO "2026-07-20" is unambiguous, checked first. "7/20" / "7/20/2026" / "7/20/26" default
+    // to US month/day order (matching the month-name rules above), but swap automatically when
+    // the first number can't be a month (e.g. "20/7" -> day/month) so both conventions parse.
+    private val isoDateRegex = Regex("\\b(\\d{4})-(\\d{1,2})-(\\d{1,2})\\b")
+    private val slashDateRegex = Regex("\\b(\\d{1,2})/(\\d{1,2})(?:/(\\d{2,4}))?\\b")
+
+    private fun resolveIsoDate(year: Int, month: Int, day: Int): LocalDate? = try {
+        LocalDate.of(year, month, day)
+    } catch (e: java.time.DateTimeException) {
+        null
+    }
+
+    private fun resolveSlashDate(n1: Int, n2: Int, yearRaw: String?, ref: LocalDate): LocalDate? {
+        val (month, day) = when {
+            n1 in 1..12 && n2 in 1..12 -> n1 to n2
+            n1 in 1..12 && n2 in 13..31 -> n1 to n2
+            n1 in 13..31 && n2 in 1..12 -> n2 to n1
+            else -> return null
+        }
+        return try {
+            val y = when {
+                yearRaw == null -> {
+                    val candidate = LocalDate.of(ref.year, month, day)
+                    if (candidate.isBefore(ref)) ref.year + 1 else ref.year
+                }
+                yearRaw.length <= 2 -> 2000 + yearRaw.toInt()
+                else -> yearRaw.toInt()
+            }
+            LocalDate.of(y, month, day)
+        } catch (e: java.time.DateTimeException) {
+            null
+        }
+    }
+
+    private fun resolveMonthDay(month: Int, day: Int, year: Int?, ref: LocalDate): LocalDate? = try {
+        val y = year ?: run {
+            val candidate = LocalDate.of(ref.year, month, day)
+            if (candidate.isBefore(ref)) ref.year + 1 else ref.year
+        }
+        LocalDate.of(y, month, day)
+    } catch (e: java.time.DateTimeException) {
+        null
+    }
 
     private val escapeRegex = Regex("\\\\(\\w+)")
 
@@ -241,14 +335,64 @@ object NaturalLanguageParser {
         }
 
         // 3. Relative dates
+        var dueRange: IntRange? = null
         firstFreeWord("tonight")?.let { m ->
             due = referenceDate
             if (time == null) time = timeOfDayWords.getValue("night").format(timeFormatter).uppercase(Locale.getDefault())
             claim(m.range)
+            dueRange = m.range
+        }
+        // Numeric dates — most explicit, checked before everything else in this section.
+        if (due == null) {
+            firstFreeMatch(isoDateRegex)?.let { m ->
+                val year = m.groupValues[1].toIntOrNull()
+                val month = m.groupValues[2].toIntOrNull()
+                val day = m.groupValues[3].toIntOrNull()
+                if (year != null && month != null && day != null) {
+                    resolveIsoDate(year, month, day)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                }
+            }
+        }
+        if (due == null) {
+            firstFreeMatch(slashDateRegex)?.let { m ->
+                val n1 = m.groupValues[1].toIntOrNull()
+                val n2 = m.groupValues[2].toIntOrNull()
+                val yearRaw = m.groupValues[3].ifEmpty { null }
+                if (n1 != null && n2 != null) {
+                    resolveSlashDate(n1, n2, yearRaw, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                }
+            }
+        }
+        // Absolute "Jul 20" / "20 July" style dates — checked early since they're explicit
+        // and shouldn't be shadowed by the vaguer relative-date rules below.
+        if (due == null) {
+            firstFreeMatch(monthDayRegex)?.let { m ->
+                val month = monthNames[m.groupValues[1].lowercase()]
+                val day = m.groupValues[2].toIntOrNull()
+                val year = m.groupValues[3].toIntOrNull()
+                if (month != null && day != null) {
+                    resolveMonthDay(month, day, year, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                }
+            }
+        }
+        if (due == null) {
+            firstFreeMatch(dayMonthRegex)?.let { m ->
+                val day = m.groupValues[1].toIntOrNull()
+                val month = monthNames[m.groupValues[2].lowercase()]
+                val year = m.groupValues[3].toIntOrNull()
+                if (month != null && day != null) {
+                    resolveMonthDay(month, day, year, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                }
+            }
+        }
+        // "day after tomorrow" — checked before the bare "tomorrow" word below so the whole
+        // phrase is claimed at once instead of "tomorrow" alone matching first.
+        if (due == null) {
+            firstFreeMatch(dayAfterTomorrowRegex)?.let { m -> due = referenceDate.plusDays(2); claim(m.range); dueRange = m.range }
         }
         if (due == null) {
             for ((word, resolve) in bareDateWords) {
-                firstFreeWord(word)?.let { m -> due = resolve(referenceDate); claim(m.range) }
+                firstFreeWord(word)?.let { m -> due = resolve(referenceDate); claim(m.range); dueRange = m.range }
                 if (due != null) break
             }
         }
@@ -257,36 +401,74 @@ object NaturalLanguageParser {
                 firstFreeMatch(Regex("\\b${Regex.escape(phrase)}\\b", RegexOption.IGNORE_CASE))?.let { m ->
                     due = resolve(referenceDate)
                     claim(m.range)
+                    dueRange = m.range
                 }
                 if (due != null) break
             }
         }
         if (due == null) {
-            firstFreeMatch(inDaysRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> due = referenceDate.plusDays(n.toLong()); claim(m.range) } }
+            firstFreeMatch(fortnightRegex)?.let { m -> due = referenceDate.plusWeeks(2); claim(m.range); dueRange = m.range }
         }
         if (due == null) {
-            firstFreeMatch(inWeeksRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> due = referenceDate.plusWeeks(n.toLong()); claim(m.range) } }
+            firstFreeMatch(fromNowRegex)?.let { m ->
+                val n = countOrOne(m.groupValues[1])
+                due = when (m.groupValues[2].lowercase()) {
+                    "day" -> referenceDate.plusDays(n)
+                    "week" -> referenceDate.plusWeeks(n)
+                    "month" -> referenceDate.plusMonths(n)
+                    else -> null
+                }
+                if (due != null) { claim(m.range); dueRange = m.range }
+            }
+        }
+        // "the 20th" (no month named) — nearest upcoming month with that day.
+        if (due == null) {
+            firstFreeMatch(ordinalDayOfMonthRegex)?.let { m ->
+                m.groupValues[1].toIntOrNull()?.let { day ->
+                    resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                }
+            }
         }
         if (due == null) {
-            firstFreeMatch(inMonthsRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> due = referenceDate.plusMonths(n.toLong()); claim(m.range) } }
+            firstFreeMatch(inDaysRegex)?.let { m -> due = referenceDate.plusDays(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
+        }
+        if (due == null) {
+            firstFreeMatch(inWeeksRegex)?.let { m -> due = referenceDate.plusWeeks(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
+        }
+        if (due == null) {
+            firstFreeMatch(inMonthsRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
         }
         // "next <weekday>" — nearest occurrence strictly after today.
         if (due == null) {
             firstFreeMatch(nextWeekdayRegex)?.let { m ->
-                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextAfter(referenceDate, day); claim(m.range) }
+                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextAfter(referenceDate, day); claim(m.range); dueRange = m.range }
             }
         }
         // "this <weekday>" — nearest occurrence including today.
         if (due == null) {
             firstFreeMatch(thisWeekdayRegex)?.let { m ->
-                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextOrSame(referenceDate, day); claim(m.range) }
+                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextOrSame(referenceDate, day); claim(m.range); dueRange = m.range }
             }
         }
         // Bare weekday name (no this/next prefix) — nearest occurrence including today.
         if (due == null) {
             for ((name, day) in weekdayNames) {
-                firstFreeWord(name)?.let { m -> due = nextOrSame(referenceDate, day); claim(m.range) }
+                firstFreeWord(name)?.let { m -> due = nextOrSame(referenceDate, day); claim(m.range); dueRange = m.range }
                 if (due != null) break
+            }
+        }
+
+        // 3.5 "remind <date>" — a bare "remind"/"remind me" immediately before a date phrase
+        // (no offset/clock-time suffix, since those are already claimed in section 1.5) implies
+        // the reminder should fire at the task's due time.
+        if (reminder == null && dueRange != null) {
+            val range = dueRange!!
+            val prefix = raw.substring(0, range.first)
+            Regex("\\bremind(?:\\s+me)?\\s*$", RegexOption.IGNORE_CASE).find(prefix)?.let { m ->
+                if (isFree(m.range)) {
+                    reminder = "At time"
+                    claim(m.range)
+                }
             }
         }
 
