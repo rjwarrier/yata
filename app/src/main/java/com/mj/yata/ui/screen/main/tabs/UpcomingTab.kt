@@ -438,7 +438,7 @@ fun UpcomingTab(
                     if (dayTasks.isEmpty()) {
                         item { UpcomingEmptyState() }
                     } else {
-                        items(dayTasks, key = { it.id }) { task ->
+                        items(dayTasks, key = { it.id }, contentType = { "task" }) { task ->
                             val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                             val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
                                 if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()

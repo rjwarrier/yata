@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 fun PressableScaleBox(
@@ -31,14 +31,25 @@ fun PressableScaleBox(
         }
     }
 
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
+
     Box(
         modifier = modifier
-            .scale(scale.value)
+            .graphicsLayer {
+                scaleX = scale.value
+                scaleY = scale.value
+            }
             .clickable(
                 interactionSource = interactionSource,
                 indication = null, // Disable default ripple
                 enabled = enabled,
-                onClick = onClick
+                onClick = {
+                    if (hapticsEnabled) {
+                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    }
+                    onClick()
+                }
             ),
         content = content
     )

@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -128,9 +129,7 @@ fun TaskDetailScreen(
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
     if (task == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
+        TaskDetailShimmer()
         return
     }
 
@@ -147,6 +146,12 @@ fun TaskDetailScreen(
     // the chip themselves, at which point their choice wins even if the comment count changes
     // later (e.g. adding a comment while the section is manually hidden shouldn't force it open).
     var userToggledComments by remember(task.id) { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val showToolbarTitle by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 || (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset > 80)
+        }
+    }
     LaunchedEffect(comments) {
         if (!userToggledComments) showComments = comments.isNotEmpty()
     }
@@ -197,7 +202,20 @@ fun TaskDetailScreen(
         },
         topBar = {
             TopAppBar(
-                title = {},
+                title = {
+                    AnimatedVisibility(
+                        visible = showToolbarTitle,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Text(
+                            text = task.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
@@ -260,6 +278,7 @@ fun TaskDetailScreen(
         }
     ) { innerPadding ->
         LazyColumn(
+            state = listState,
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)

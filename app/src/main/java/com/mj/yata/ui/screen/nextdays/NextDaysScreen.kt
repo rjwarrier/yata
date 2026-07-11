@@ -173,7 +173,7 @@ fun NextDaysScreen(
                             )
                         }
                     }
-                    items(dateTasks, key = { it.id }) { task ->
+                    items(dateTasks, key = { it.id }, contentType = { "task" }) { task ->
                         val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                         val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                             if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()

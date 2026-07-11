@@ -72,9 +72,7 @@ fun ListDetailScreen(
     var searchQuery by remember { mutableStateOf("") }
 
     if (list == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
+        com.mj.yata.ui.widgets.ListDetailShimmer()
         return
     }
 
@@ -224,12 +222,23 @@ fun ListDetailScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { isNewTaskSheetOpen = true },
-                containerColor = listColor,
-                contentColor = Color.White
+            com.mj.yata.ui.widgets.PressableScaleBox(
+                onClick = { isNewTaskSheetOpen = true }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add task")
+                Surface(
+                    color = listColor,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    tonalElevation = 6.dp,
+                    shadowElevation = 6.dp
+                ) {
+                    Box(
+                        modifier = Modifier.size(56.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add task")
+                    }
+                }
             }
         }
     ) { innerPadding ->

@@ -2,6 +2,7 @@ package com.mj.yata.ui.widgets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -50,7 +51,7 @@ fun PriorityBars(
                 modifier = Modifier
                     .width(3.dp)
                     .height(barHeight)
-                    .background(if (isFilled) barColor else inactiveColor)
+                    .background(if (isFilled) barColor else inactiveColor, RoundedCornerShape(1.5.dp))
             )
         }
     }

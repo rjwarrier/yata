@@ -15,8 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import com.mj.yata.ui.widgets.ColorPicker
 import com.mj.yata.ui.widgets.YataDatePickerDialog
 import com.mj.yata.util.TaskScheduleUtils
@@ -154,9 +156,43 @@ fun ProjectEditorSheet(
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
     val descriptionLimit = 100
 
+    val entranceScale = remember { androidx.compose.animation.core.Animatable(0.92f) }
+    val entranceAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
+    val entranceSlide = remember { androidx.compose.animation.core.Animatable(30f) }
+
+    LaunchedEffect(Unit) {
+        launch {
+            entranceScale.animateTo(
+                targetValue = 1f,
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = 0.6f,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
+            )
+        }
+        launch {
+            entranceSlide.animateTo(
+                targetValue = 0f,
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = 0.6f,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                )
+            )
+        }
+        launch {
+            entranceAlpha.animateTo(1f, androidx.compose.animation.core.tween(durationMillis = 150))
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = entranceScale.value
+                scaleY = entranceScale.value
+                translationY = entranceSlide.value
+                alpha = entranceAlpha.value
+            }
             .imePadding()
             .navigationBarsPadding()
             .padding(24.dp),

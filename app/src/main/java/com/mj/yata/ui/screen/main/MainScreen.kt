@@ -25,6 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -119,8 +121,8 @@ fun MainScreen(
     val activeProjects by viewModel.activeProjects.collectAsState()
     val lists by viewModel.lists.collectAsState()
     val people by viewModel.people.collectAsState()
-    val tags by viewModel.tags.collectAsState()
     val activePeople by viewModel.activePeople.collectAsState()
+    val tags by viewModel.tags.collectAsState()
     val tagGroups by viewModel.tagGroups.collectAsState()
     val personGroups by viewModel.personGroups.collectAsState()
 
@@ -237,7 +239,7 @@ fun MainScreen(
                     }
                     if (tagsFeatureEnabled) {
                         item {
-                            DrawerItem("Tags", Icons.Default.Label, selectedTab == 3) {
+                            DrawerItem("Tags", Icons.AutoMirrored.Filled.Label, selectedTab == 3) {
                                 selectedTab = 3
                                 scope.launch { drawerState.close() }
                             }
@@ -301,7 +303,7 @@ fun MainScreen(
                             val tagColor = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
                             DrawerItem(
                                 label = tag.name,
-                                icon = Icons.Default.Label,
+                                icon = Icons.AutoMirrored.Filled.Label,
                                 selected = false,
                                 accentColor = tagColor,
                                 modifier = Modifier.animateItemPlacement(
@@ -620,7 +622,6 @@ fun MainScreen(
                         )
                     }
                 }
-
             }
         }
     }
@@ -670,7 +671,7 @@ fun MainScreen(
                 onDismissRequest = { activeSheet = MainSheetType.None },
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
             ) {
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
@@ -791,7 +792,7 @@ fun CustomBottomNav(
         if (todayEnabled) NavIcon(0, "Today", Icons.Outlined.Today, Icons.Filled.Today) else null,
         if (projectsEnabled) NavIcon(1, "Projects", Icons.Outlined.Layers, Icons.Filled.Layers) else null,
         if (peopleEnabled) NavIcon(2, "People", Icons.Outlined.People, Icons.Filled.People) else null,
-        if (tagsEnabled) NavIcon(3, "Tags", Icons.Outlined.Label, Icons.Filled.Label) else null,
+        if (tagsEnabled) NavIcon(3, "Tags", Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
         if (upcomingEnabled) NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
     )
 
@@ -923,4 +924,3 @@ fun CustomBottomNav(
         }
     }
 }
-

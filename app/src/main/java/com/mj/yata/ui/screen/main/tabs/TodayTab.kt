@@ -335,12 +335,12 @@ fun TodayTab(
                         TaskSectionHeader("PENDING", pendingTasks.size, horizontalPadding = 12.dp)
                     }
                 }
-                items(pendingTasks, key = { it.id }) { task -> taskRowContent(task) }
+                items(pendingTasks, key = { it.id }, contentType = { "task" }) { task -> taskRowContent(task) }
                 if (!hideCompleted && completedTasks.isNotEmpty()) {
                     item(key = "completed_header") {
                         TaskSectionHeader("COMPLETED", completedTasks.size, horizontalPadding = 12.dp)
                     }
-                    items(completedTasks, key = { it.id }) { task -> taskRowContent(task) }
+                    items(completedTasks, key = { it.id }, contentType = { "task" }) { task -> taskRowContent(task) }
                 }
             }
         }

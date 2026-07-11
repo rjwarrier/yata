@@ -1,5 +1,9 @@
 package com.mj.yata.ui.screen.welcome
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -21,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -144,18 +149,27 @@ fun WelcomeScreen(onFinish: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 pages.indices.forEach { index ->
+                    val isSelected = index == pagerState.currentPage
+                    val dotWidth by animateDpAsState(
+                        targetValue = if (isSelected) 18.dp else 8.dp,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+                        label = "dotWidth"
+                    )
+                    val dotColor by animateColorAsState(
+                        targetValue = if (isSelected) accents.accentA else MaterialTheme.colorScheme.surfaceVariant,
+                        animationSpec = tween(durationMillis = 200),
+                        label = "dotColor"
+                    )
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
-                            .size(if (index == pagerState.currentPage) 10.dp else 8.dp)
+                            .size(width = dotWidth, height = 8.dp)
                             .clip(CircleShape)
-                            .background(
-                                if (index == pagerState.currentPage) accents.accentA
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            )
+                            .background(dotColor)
                     )
                 }
             }

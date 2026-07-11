@@ -33,7 +33,12 @@ val LightColors = lightColorScheme(
     outlineVariant = Color(0xFFD8C2BC),
     inversePrimary = Color(0xFFFFB4A2),
     inverseSurface = Color(0xFF231916),
-    inverseOnSurface = Color(0xFFFFF8F6)
+    inverseOnSurface = Color(0xFFFFF8F6),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFFF1EE),
+    surfaceContainer = Color(0xFFFCEAE6),
+    surfaceContainerHigh = Color(0xFFF6E4E0),
+    surfaceContainerHighest = Color(0xFFF0DED8)
 )
 
 val DarkColors = darkColorScheme(
@@ -63,7 +68,12 @@ val DarkColors = darkColorScheme(
     outlineVariant = Color(0xFF53433F),
     inversePrimary = Color(0xFF8E4A3B),
     inverseSurface = Color(0xFFF0DED8),
-    inverseOnSurface = Color(0xFF191110)
+    inverseOnSurface = Color(0xFF191110),
+    surfaceContainerLowest = Color(0xFF140D0C),
+    surfaceContainerLow = Color(0xFF1F1716),
+    surfaceContainer = Color(0xFF231B1A),
+    surfaceContainerHigh = Color(0xFF2E2524),
+    surfaceContainerHighest = Color(0xFF392F2E)
 )
 
 @Immutable

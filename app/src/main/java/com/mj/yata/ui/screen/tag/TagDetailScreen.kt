@@ -7,8 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -87,9 +87,7 @@ fun TagDetailScreen(
     }
 
     if (tag == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
+        com.mj.yata.ui.widgets.ListDetailShimmer()
         return
     }
 
@@ -147,12 +145,23 @@ fun TagDetailScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { isNewTaskSheetOpen = true },
-                containerColor = tagColor,
-                contentColor = Color.White
+            com.mj.yata.ui.widgets.PressableScaleBox(
+                onClick = { isNewTaskSheetOpen = true }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add task tagged #${tag.name}")
+                Surface(
+                    color = tagColor,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    tonalElevation = 6.dp,
+                    shadowElevation = 6.dp
+                ) {
+                    Box(
+                        modifier = Modifier.size(56.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add task tagged #${tag.name}")
+                    }
+                }
             }
         },
         topBar = {
@@ -280,7 +289,7 @@ fun TagDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Label,
+                            imageVector = Icons.AutoMirrored.Filled.Label,
                             contentDescription = null,
                             tint = tagColor,
                             modifier = Modifier.size(22.dp)
@@ -337,7 +346,7 @@ fun TagDetailScreen(
                 if (!hideCompleted && pendingTaggedTasks.isNotEmpty()) {
                     item(key = "pending_header") { TaskSectionHeader("PENDING", pendingTaggedTasks.size) }
                 }
-                items(pendingTaggedTasks, key = { it.id }) { task ->
+                items(pendingTaggedTasks, key = { it.id }, contentType = { "task" }) { task ->
                     taskRowFor(
                         task = task,
                         modifier = Modifier.animateItemPlacement(
@@ -347,7 +356,7 @@ fun TagDetailScreen(
                 }
                 if (!hideCompleted && completedTaggedTasks.isNotEmpty()) {
                     item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedTaggedTasks.size) }
-                    items(completedTaggedTasks, key = { it.id }) { task ->
+                    items(completedTaggedTasks, key = { it.id }, contentType = { "task" }) { task ->
                         taskRowFor(
                             task = task,
                             modifier = Modifier.animateItemPlacement(

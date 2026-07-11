@@ -18,8 +18,8 @@ import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
-import com.mj.yata.domain.model.effectiveTags
 import com.mj.yata.domain.model.archivedProjects
+import com.mj.yata.domain.model.effectiveTags
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.TaskRow
 import kotlinx.coroutines.launch
@@ -405,7 +405,7 @@ private fun SearchResultsList(
                 }
             }
         } else {
-            items(filteredTasks, key = { it.id }) { task ->
+            items(filteredTasks, key = { it.id }, contentType = { "task" }) { task ->
                 val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                 val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
                     if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()

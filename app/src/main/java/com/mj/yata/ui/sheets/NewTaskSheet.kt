@@ -59,6 +59,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.tween
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +73,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -87,9 +93,9 @@ import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
-import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
+import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.PriorityBars
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.TagChip
@@ -367,10 +373,44 @@ fun NewTaskSheet(
             )
         )
 
+        val entranceScale = remember { Animatable(0.92f) }
+        val entranceAlpha = remember { Animatable(0f) }
+        val entranceSlide = remember { Animatable(30f) }
+
+        LaunchedEffect(Unit) {
+            launch {
+                entranceScale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(
+                        dampingRatio = 0.6f,
+                        stiffness = Spring.StiffnessLow
+                    )
+                )
+            }
+            launch {
+                entranceSlide.animateTo(
+                    targetValue = 0f,
+                    animationSpec = spring(
+                        dampingRatio = 0.6f,
+                        stiffness = Spring.StiffnessLow
+                    )
+                )
+            }
+            launch {
+                entranceAlpha.animateTo(1f, tween(durationMillis = 150))
+            }
+        }
+
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = entranceScale.value
+                    scaleY = entranceScale.value
+                    translationY = entranceSlide.value
+                    alpha = entranceAlpha.value
+                }
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {

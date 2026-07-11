@@ -104,9 +104,7 @@ fun PersonDetailScreen(
     )
 
     if (person == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
+        com.mj.yata.ui.widgets.ListDetailShimmer()
         return
     }
 
@@ -411,7 +409,7 @@ fun PersonDetailScreen(
                         }
                     }
                 } else {
-                    items(openTasks, key = { it.id }) { task ->
+                    items(openTasks, key = { it.id }, contentType = { "task" }) { task ->
                         val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
@@ -499,7 +497,7 @@ fun PersonDetailScreen(
                         }
                     }
                 } else {
-                    items(completedTasks, key = { it.id }) { task ->
+                    items(completedTasks, key = { it.id }, contentType = { "task" }) { task ->
                         val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }

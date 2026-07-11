@@ -20,8 +20,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -49,18 +49,29 @@ fun SpringyCheck(
         }
     }
 
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
+
     // Outer container expands the touch target to at least 48x48dp
     Box(
         modifier = modifier
             .minimumInteractiveComponentSize()
-            .clickable { onCheckedChange(!checked) },
+            .clickable {
+                if (hapticsEnabled) {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                }
+                onCheckedChange(!checked)
+            },
         contentAlignment = Alignment.Center
     ) {
         // Inner checkbox maintains visual size
         Box(
             modifier = Modifier
                 .size(size)
-                .scale(scale.value)
+                .graphicsLayer {
+                    scaleX = scale.value
+                    scaleY = scale.value
+                }
                 .border(
                     width = if (checked) 0.dp else 2.dp,
                     color = if (checked) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.8f),

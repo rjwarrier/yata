@@ -104,7 +104,7 @@ fun <T> DragDropReorderableColumn(
         contentPadding = contentPadding
     ) {
         header?.invoke(this)
-        itemsIndexed(items, key = { _, item -> key(item) }) { index, item ->
+        itemsIndexed(items, key = { _, item -> key(item) }, contentType = { _, _ -> "task" }) { index, item ->
             // The LazyColumn's own layout index includes any header items above, so drag math
             // (which compares against listState.layoutInfo, itself indexed globally) has to work
             // in that same global space — only the onMove callback translates back to an index
@@ -177,6 +177,9 @@ fun <T> DragDropReorderableColumn(
                                     onMove(currentIndex - headerItemCount, targetInfo.index - headerItemCount)
                                     dragOffsetY += (itemInfo.offset - targetInfo.offset).toFloat()
                                     draggingIndex = targetInfo.index
+                                    if (hapticsEnabled) {
+                                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                    }
                                 }
                                 checkEdgeDwell(draggedCenter, item)
                             }
