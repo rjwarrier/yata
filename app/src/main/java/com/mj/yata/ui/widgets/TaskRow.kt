@@ -38,6 +38,8 @@ import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.util.TaskScheduleUtils
+import java.time.LocalDate
 
 private fun TaskRowDensity.verticalPadding() = when (this) {
     TaskRowDensity.COMPACT -> 6.dp
@@ -66,7 +68,11 @@ fun TaskRow(
     // mixing that with a horizontal swipe risks starving one gesture or the other.
     onSwipeToDelete: (() -> Unit)? = null,
     swipeEnabled: Boolean = true,
-    horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp
+    horizontalPadding: androidx.compose.ui.unit.Dp = 20.dp,
+    // Project/List detail show this since tasks there carry arbitrary due dates with no
+    // grouping context to imply one (unlike Today/Upcoming/NextDays, which already group by
+    // date, or Tag/Person/Search, which mix tasks from many places at once).
+    showDueDate: Boolean = false
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
@@ -165,14 +171,45 @@ fun TaskRow(
                 PriorityBars(priority = task.priority)
             }
 
+            // Overdue is independent of showDueDate — it's a warning, not a date display
+            // preference, so it surfaces on every screen (Today, Upcoming, Tag, Person, Search)
+            // rather than only the manual-order List/Project detail screens.
+            val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(LocalDate.now()) == true
+
             // Meta row below
-            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty()) {
+            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || (showDueDate && task.due != null)) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    if (overdue) {
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "Overdue",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                        }
+                    } else if (showDueDate) {
+                        task.due?.let { due ->
+                            Text(
+                                text = TaskScheduleUtils.formatDueDate(due),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
+                            )
+                        }
+                    }
+
                     task.time?.let { time ->
                         Text(
                             text = time,

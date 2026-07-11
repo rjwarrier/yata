@@ -339,7 +339,8 @@ fun TagDetailScreen(
                         modifier = modifier,
                         onCommentClick = { pendingCommentTask = task },
                         density = taskRowDensity,
-                        onSwipeToDelete = { deleteTaskWithUndo(task) }
+                        onSwipeToDelete = { deleteTaskWithUndo(task) },
+                        showDueDate = true
                     )
                 }
 

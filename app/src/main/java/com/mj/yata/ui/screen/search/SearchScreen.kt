@@ -436,7 +436,8 @@ private fun SearchResultsList(
                     onCommentClick = { pendingCommentTask = task },
                     density = taskRowDensity,
                     onSwipeToDelete = { onSwipeToDelete(task) },
-                    swipeEnabled = !selectionMode
+                    swipeEnabled = !selectionMode,
+                    showDueDate = true
                 )
             }
         }

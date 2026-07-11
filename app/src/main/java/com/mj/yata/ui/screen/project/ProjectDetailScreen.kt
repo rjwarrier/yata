@@ -380,7 +380,8 @@ fun ProjectDetailScreen(
                     onTaskClick = { onNavigateToTaskDetail(task.id) },
                     modifier = modifier,
                     onCommentClick = { pendingCommentTask = task },
-                    density = taskRowDensity
+                    density = taskRowDensity,
+                    showDueDate = true
                 )
             }
 

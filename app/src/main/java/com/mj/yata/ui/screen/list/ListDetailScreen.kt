@@ -318,7 +318,8 @@ fun ListDetailScreen(
                     modifier = modifier,
                     showList = false,
                     onCommentClick = { pendingCommentTask = task },
-                    density = taskRowDensity
+                    density = taskRowDensity,
+                    showDueDate = true
                 )
             }
 
