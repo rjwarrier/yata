@@ -20,9 +20,34 @@ class JsonExporter @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: YataRepository
 ) {
+    /** Everything a backup payload is built from — loaded once so both the full export and the
+     * primary/archive split can slice [tasks]/[comments] differently without hitting the
+     * repository twice. */
+    private data class BackupData(
+        val people: List<Person>,
+        val personGroups: List<PersonGroup>,
+        val projects: List<Project>,
+        val lists: List<YataList>,
+        val tags: List<Tag>,
+        val tagGroups: List<TagGroup>,
+        val tasks: List<Task>,
+        val comments: List<TaskComment>
+    )
+
+    private suspend fun loadBackupData(): BackupData = BackupData(
+        people = repository.getPeople().first(),
+        personGroups = repository.getPersonGroups().first(),
+        projects = repository.getProjects().first(),
+        lists = repository.getLists().first(),
+        tags = repository.getTags().first(),
+        tagGroups = repository.getTagGroups().first(),
+        tasks = repository.getTasks().first(),
+        comments = repository.getAllComments().first()
+    )
+
     suspend fun exportData(uri: Uri): Boolean {
         return try {
-            val root = buildBackupJson()
+            val root = buildBackupJson(loadBackupData())
             context.contentResolver.openOutputStream(uri)?.use { os ->
                 OutputStreamWriter(os).use { writer ->
                     writer.write(root.toString(2))
@@ -37,17 +62,53 @@ class JsonExporter @Inject constructor(
 
     /** Raw JSON bytes of a full backup — used for cloud upload, where there's no [Uri] to write
      * through a [android.content.ContentResolver]. */
-    suspend fun exportToBytes(): ByteArray = buildBackupJson().toString(2).toByteArray(Charsets.UTF_8)
+    suspend fun exportToBytes(): ByteArray = buildBackupJson(loadBackupData()).toString(2).toByteArray(Charsets.UTF_8)
 
-    private suspend fun buildBackupJson(): JSONObject {
-            val people = repository.getPeople().first()
-            val projects = repository.getProjects().first()
-            val lists = repository.getLists().first()
-            val tags = repository.getTags().first()
-            val tasks = repository.getTasks().first()
-            val tagGroups = repository.getTagGroups().first()
-            val personGroups = repository.getPersonGroups().first()
-            val comments = repository.getAllComments().first()
+    /**
+     * Splits completed tasks older than [archiveMonths] (and their comments) out of the payload
+     * cloud backup uploads — that payload gets rebuilt and re-uploaded on every debounce/interval
+     * trigger, so letting years of completed tasks pile up in it makes every single backup bigger
+     * forever. The split-off tasks go in the returned archive payload instead, uploaded to its own
+     * file that's only replaced when its contents actually change. [archiveMonths] <= 0 disables
+     * the split (archive is always null, primary is the full unsplit payload) — same shape
+     * [buildBackupJson] alone produces, so callers don't need a separate code path for "off".
+     *
+     * Manual export/[exportToDownloads] deliberately don't use this — those are one-off,
+     * user-triggered actions where a single complete file is more useful than a split one.
+     */
+    suspend fun buildSplitBackupJson(archiveMonths: Int): Pair<JSONObject, JSONObject?> {
+        val data = loadBackupData()
+        if (archiveMonths <= 0) return buildBackupJson(data) to null
+
+        val cutoffMillis = java.time.ZonedDateTime.now()
+            .minusMonths(archiveMonths.toLong())
+            .toInstant()
+            .toEpochMilli()
+        val (oldTasks, recentTasks) = data.tasks.partition { it.done && (it.completedAt ?: Long.MAX_VALUE) < cutoffMillis }
+        if (oldTasks.isEmpty()) return buildBackupJson(data) to null
+
+        val oldTaskIds = oldTasks.map { it.id }.toSet()
+        val (oldComments, recentComments) = data.comments.partition { it.taskId in oldTaskIds }
+
+        val primary = buildBackupJson(data.copy(tasks = recentTasks, comments = recentComments))
+        val archive = JSONObject().apply {
+            put("version", 4)
+            put("archive", true)
+            put("tasks", taskListToJson(oldTasks))
+            put("comments", commentListToJson(oldComments))
+        }
+        return primary to archive
+    }
+
+    private fun buildBackupJson(data: BackupData): JSONObject {
+            val people = data.people
+            val projects = data.projects
+            val lists = data.lists
+            val tags = data.tags
+            val tasks = data.tasks
+            val tagGroups = data.tagGroups
+            val personGroups = data.personGroups
+            val comments = data.comments
 
             val root = JSONObject()
             root.put("version", 4)
@@ -111,6 +172,7 @@ class JsonExporter @Inject constructor(
                 o.put("icon", l.icon)
                 o.put("starred", l.starred)
                 o.put("excludeFromToday", l.excludeFromToday)
+                o.put("archived", l.archived)
                 listsArr.put(o)
             }
             root.put("lists", listsArr)
@@ -141,95 +203,103 @@ class JsonExporter @Inject constructor(
             root.put("tagGroups", tagGroupsArr)
 
             // Tasks
-            val tasksArr = JSONArray()
-            tasks.forEach { t ->
-                val o = JSONObject()
-                o.put("id", t.id)
-                o.put("title", t.title)
-                o.put("listId", t.listId ?: JSONObject.NULL)
-                o.put("projectId", t.projectId ?: JSONObject.NULL)
-                o.put("section", t.section)
-                o.put("due", t.due)
-                o.put("time", t.time)
-                o.put("reminder", t.reminder)
-                o.put("priority", t.priority)
-                o.put("flag", t.flag)
-                o.put("done", t.done)
-                o.put("completedAt", t.completedAt ?: JSONObject.NULL)
-                o.put("notes", t.notes)
-                o.put("sortOrder", t.sortOrder)
-
-                // Assignees
-                val assArr = JSONArray()
-                t.assigneeIds.forEach { assArr.put(it) }
-                o.put("assigneeIds", assArr)
-
-                // Tags
-                val tagIdsArr = JSONArray()
-                t.tagIds.forEach { tagIdsArr.put(it) }
-                o.put("tagIds", tagIdsArr)
-
-                // Recurrence
-                val r = t.recurrence
-                if (r != null) {
-                    val ro = JSONObject()
-                    ro.put("freq", r.freq)
-                    ro.put("interval", r.interval)
-                    if (r.byday != null) {
-                        val bydayArr = JSONArray()
-                        r.byday.forEach { bydayArr.put(it) }
-                        ro.put("byday", bydayArr)
-                    }
-                    if (r.bymonthday != null) {
-                        ro.put("bymonthday", r.bymonthday)
-                    }
-                    val endsObj = JSONObject()
-                    when (val ends = r.ends) {
-                        is RecurrenceEnds.Never -> endsObj.put("type", "never")
-                        is RecurrenceEnds.After -> {
-                            endsObj.put("type", "after")
-                            endsObj.put("count", ends.count)
-                        }
-                        is RecurrenceEnds.On -> {
-                            endsObj.put("type", "on")
-                            endsObj.put("date", ends.date)
-                        }
-                    }
-                    ro.put("ends", endsObj)
-                    o.put("recurrence", ro)
-                }
-
-                // Subtasks
-                val stArr = JSONArray()
-                t.subtasks.forEach { st ->
-                    val sto = JSONObject()
-                    sto.put("id", st.id)
-                    sto.put("title", st.title)
-                    sto.put("done", st.done)
-                    sto.put("parentSubtaskId", st.parentSubtaskId ?: JSONObject.NULL)
-                    sto.put("sortOrder", st.sortOrder)
-                    stArr.put(sto)
-                }
-                o.put("subtasks", stArr)
-
-                tasksArr.put(o)
-            }
-            root.put("tasks", tasksArr)
+            root.put("tasks", taskListToJson(tasks))
 
             // Comments
-            val commentsArr = JSONArray()
-            comments.forEach { c ->
-                val o = JSONObject()
-                o.put("id", c.id)
-                o.put("taskId", c.taskId)
-                o.put("body", c.body)
-                o.put("createdAt", c.createdAt)
-                o.put("authorId", c.authorId ?: JSONObject.NULL)
-                commentsArr.put(o)
-            }
-            root.put("comments", commentsArr)
+            root.put("comments", commentListToJson(comments))
 
             return root
+    }
+
+    private fun taskListToJson(tasks: List<Task>): JSONArray {
+        val tasksArr = JSONArray()
+        tasks.forEach { t ->
+            val o = JSONObject()
+            o.put("id", t.id)
+            o.put("title", t.title)
+            o.put("listId", t.listId ?: JSONObject.NULL)
+            o.put("projectId", t.projectId ?: JSONObject.NULL)
+            o.put("section", t.section)
+            o.put("due", t.due)
+            o.put("time", t.time)
+            o.put("reminder", t.reminder)
+            o.put("priority", t.priority)
+            o.put("flag", t.flag)
+            o.put("done", t.done)
+            o.put("completedAt", t.completedAt ?: JSONObject.NULL)
+            o.put("notes", t.notes)
+            o.put("sortOrder", t.sortOrder)
+
+            // Assignees
+            val assArr = JSONArray()
+            t.assigneeIds.forEach { assArr.put(it) }
+            o.put("assigneeIds", assArr)
+
+            // Tags
+            val tagIdsArr = JSONArray()
+            t.tagIds.forEach { tagIdsArr.put(it) }
+            o.put("tagIds", tagIdsArr)
+
+            // Recurrence
+            val r = t.recurrence
+            if (r != null) {
+                val ro = JSONObject()
+                ro.put("freq", r.freq)
+                ro.put("interval", r.interval)
+                if (r.byday != null) {
+                    val bydayArr = JSONArray()
+                    r.byday.forEach { bydayArr.put(it) }
+                    ro.put("byday", bydayArr)
+                }
+                if (r.bymonthday != null) {
+                    ro.put("bymonthday", r.bymonthday)
+                }
+                val endsObj = JSONObject()
+                when (val ends = r.ends) {
+                    is RecurrenceEnds.Never -> endsObj.put("type", "never")
+                    is RecurrenceEnds.After -> {
+                        endsObj.put("type", "after")
+                        endsObj.put("count", ends.count)
+                    }
+                    is RecurrenceEnds.On -> {
+                        endsObj.put("type", "on")
+                        endsObj.put("date", ends.date)
+                    }
+                }
+                ro.put("ends", endsObj)
+                o.put("recurrence", ro)
+            }
+
+            // Subtasks
+            val stArr = JSONArray()
+            t.subtasks.forEach { st ->
+                val sto = JSONObject()
+                sto.put("id", st.id)
+                sto.put("title", st.title)
+                sto.put("done", st.done)
+                sto.put("parentSubtaskId", st.parentSubtaskId ?: JSONObject.NULL)
+                sto.put("sortOrder", st.sortOrder)
+                stArr.put(sto)
+            }
+            o.put("subtasks", stArr)
+
+            tasksArr.put(o)
+        }
+        return tasksArr
+    }
+
+    private fun commentListToJson(comments: List<TaskComment>): JSONArray {
+        val commentsArr = JSONArray()
+        comments.forEach { c ->
+            val o = JSONObject()
+            o.put("id", c.id)
+            o.put("taskId", c.taskId)
+            o.put("body", c.body)
+            o.put("createdAt", c.createdAt)
+            o.put("authorId", c.authorId ?: JSONObject.NULL)
+            commentsArr.put(o)
+        }
+        return commentsArr
     }
 
     /**
@@ -401,7 +471,8 @@ class JsonExporter @Inject constructor(
                                 color = o.getString("color"),
                                 icon = o.getString("icon"),
                                 starred = o.optBoolean("starred", false),
-                                excludeFromToday = o.optBoolean("excludeFromToday", false)
+                                excludeFromToday = o.optBoolean("excludeFromToday", false),
+                                archived = o.optBoolean("archived", false)
                             )
                         )
                     }

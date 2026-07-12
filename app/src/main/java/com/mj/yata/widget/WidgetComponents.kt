@@ -48,6 +48,7 @@ val taskIdKey = ActionParameters.Key<String>("task_id")
 val navigateToKey = ActionParameters.Key<String>("navigate_to")
 val shortcutActionKey = ActionParameters.Key<String>("shortcut_action")
 val listIdKey = ActionParameters.Key<String>("list_id")
+val entityIdKey = ActionParameters.Key<String>("entity_id")
 val quickAddTargetTypeKey = ActionParameters.Key<String>("target_type")
 val quickAddTargetIdKey = ActionParameters.Key<String>("target_id")
 val quickAddTargetNameKey = ActionParameters.Key<String>("target_name")
@@ -67,6 +68,30 @@ fun openAppAction(): Action = actionStartActivity<MainActivity>()
  * `navigate_to=task_detail` + `task_id` (same path a reminder notification tap uses). */
 fun openTaskAction(taskId: String): Action = actionStartActivity<MainActivity>(
     actionParametersOf(navigateToKey to "task_detail", taskIdKey to taskId)
+)
+
+/** Opens the app at a specific list's detail screen — for tap-through on a widget row that's
+ * already grouped/scoped to one list (e.g. Progress Stats' per-list breakdown). */
+fun openListAction(listId: String): Action = actionStartActivity<MainActivity>(
+    actionParametersOf(navigateToKey to "list_detail", entityIdKey to listId)
+)
+
+/** Opens the app at a specific person's detail screen — for tap-through on a per-person row
+ * (e.g. Team Overdue). */
+fun openPersonAction(personId: String): Action = actionStartActivity<MainActivity>(
+    actionParametersOf(navigateToKey to "person_detail", entityIdKey to personId)
+)
+
+/** Opens the app's Upcoming tab — for tap-through on the Upcoming widget's compact "Today" /
+ * "Tomorrow" summary rows. */
+fun openUpcomingAction(): Action = actionStartActivity<MainActivity>(
+    actionParametersOf(navigateToKey to "upcoming")
+)
+
+/** Opens the app's Today tab — reuses the same `shortcut_action=today` path the launcher
+ * shortcut uses (see MainActivity), for tap-through on the Upcoming widget's "Today" row. */
+fun openTodayShortcutAction(): Action = actionStartActivity<MainActivity>(
+    actionParametersOf(shortcutActionKey to "today")
 )
 
 /** Opens the app straight into the quick-add sheet — reuses the same `shortcut_action=quick_add`

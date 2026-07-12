@@ -45,8 +45,10 @@ class ProgressStatsWidget : GlanceAppWidget() {
 
     override val stateDefinition = PreferencesGlanceStateDefinition
 
+    // 250x250 lets a resized-taller instance show more per-list rows (see isTall/take() below),
+    // matching the XML's maxResizeHeight of 250dp.
     override val sizeMode = SizeMode.Responsive(
-        setOf(DpSize(110.dp, 110.dp), DpSize(250.dp, 110.dp))
+        setOf(DpSize(110.dp, 110.dp), DpSize(250.dp, 110.dp), DpSize(250.dp, 250.dp))
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -102,6 +104,7 @@ private fun ProgressStatsContent(
     accentOverride: androidx.compose.ui.graphics.Color?
 ) {
     val isSmall = LocalSize.current.width < 180.dp
+    val isTall = LocalSize.current.height > 180.dp
     val done = tasks.count { it.done }
     val total = tasks.size
     val progress = if (total == 0) 0f else done.toFloat() / total
@@ -143,7 +146,7 @@ private fun ProgressStatsContent(
                 .map { list -> list to tasks.filter { it.listId == list.id } }
                 .filter { it.second.isNotEmpty() }
                 .sortedByDescending { it.second.size }
-                .take(4)
+                .take(if (isTall) 8 else 4)
 
             Column(modifier = GlanceModifier.fillMaxSize()) {
                 if (!customLabel.isNullOrBlank()) {
@@ -166,7 +169,10 @@ private fun ProgressStatsContent(
                         byList.forEachIndexed { index, (list, listTasks) ->
                             if (index > 0) Spacer(modifier = GlanceModifier.height(7.dp))
                             val color = if (useM3Colors) colors.primary else accents.getAccent(list.color)
-                            Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
+                            Row(
+                                verticalAlignment = Alignment.Vertical.CenterVertically,
+                                modifier = GlanceModifier.fillMaxWidth().clickable(openListAction(list.id))
+                            ) {
                                 Box(modifier = GlanceModifier.size(7.dp).cornerRadius(3.5.dp).background(androidx.glance.unit.ColorProvider(color))) {}
                                 Spacer(modifier = GlanceModifier.width(7.dp))
                                 Text(

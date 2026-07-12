@@ -11,5 +11,6 @@ data class ListEntity(
     val icon: String,
     val starred: Boolean = false,
     val excludeFromToday: Boolean = false,
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    val archived: Boolean = false
 )

@@ -31,6 +31,7 @@ fun serializeRecurrence(r: Recurrence?): String? {
         }
     }
     obj.put("ends", endsObj)
+    obj.put("basedOnCompletion", r.basedOnCompletion)
     return obj.toString()
 }
 
@@ -62,7 +63,9 @@ fun deserializeRecurrence(json: String?): Recurrence? {
             else -> RecurrenceEnds.Never
         }
 
-        Recurrence(freq, interval, byday, bymonthday, ends)
+        val basedOnCompletion = obj.optBoolean("basedOnCompletion", false)
+
+        Recurrence(freq, interval, byday, bymonthday, ends, basedOnCompletion)
     } catch (e: Exception) {
         null
     }
@@ -123,8 +126,8 @@ fun Project.toEntity() = ProjectEntity(
     archived = archived
 )
 
-fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder)
-fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday, sortOrder)
+fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)
+fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)
 
 fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault)
 fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault)

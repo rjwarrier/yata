@@ -91,12 +91,21 @@ class QuickAddDialogActivity : ComponentActivity() {
 
                 fun createTask(title: String) {
                     lifecycleScope.launch {
+                        // Belt-and-suspenders re-check: the widget already drops a target once its
+                        // list/project is gone, but a target can also be deleted in the gap between
+                        // the widget rendering and this dialog's "Add" tap. listId/projectId are
+                        // FK-enforced, so inserting against a since-deleted id would otherwise
+                        // crash instead of just dropping the stale preset.
+                        val listStillExists = targetType == "list" && targetId != null &&
+                            repository.getListById(targetId).first() != null
+                        val projectStillExists = targetType == "project" && targetId != null &&
+                            repository.getProjectById(targetId).first() != null
                         repository.upsertTask(
                             Task(
                                 id = "t_" + UUID.randomUUID().toString(),
                                 title = title,
-                                listId = if (targetType == "list") targetId else null,
-                                projectId = if (targetType == "project") targetId else null,
+                                listId = if (listStillExists) targetId else null,
+                                projectId = if (projectStillExists) targetId else null,
                                 section = "Afternoon",
                                 due = parsedShared?.due ?: LocalDate.now().toString(),
                                 time = parsedShared?.time,

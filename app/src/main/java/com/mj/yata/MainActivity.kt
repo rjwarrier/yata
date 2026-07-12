@@ -208,10 +208,22 @@ class MainActivity : ComponentActivity() {
                             val taskId = intent.getStringExtra("task_id")
                             val shortcutAction = intent.getStringExtra("shortcut_action")
                             val listId = intent.getStringExtra("list_id")
+                            val entityId = intent.getStringExtra("entity_id")
                             if (navigateTo == "task_detail" && !taskId.isNullOrEmpty()) {
                                 navController.navigate(com.mj.yata.ui.navigation.Screen.TaskDetail.createRoute(taskId))
+                            } else if (navigateTo == "list_detail" && !entityId.isNullOrEmpty()) {
+                                navController.navigate(com.mj.yata.ui.navigation.Screen.ListDetail.createRoute(entityId))
+                            } else if (navigateTo == "project_detail" && !entityId.isNullOrEmpty()) {
+                                navController.navigate(com.mj.yata.ui.navigation.Screen.ProjectDetail.createRoute(entityId))
+                            } else if (navigateTo == "person_detail" && !entityId.isNullOrEmpty()) {
+                                navController.navigate(com.mj.yata.ui.navigation.Screen.PersonDetail.createRoute(entityId))
                             } else if (navigateTo == "people") {
                                 navController.navigate(com.mj.yata.ui.navigation.Screen.Main.createRoute(tab = 2)) {
+                                    popUpTo(com.mj.yata.ui.navigation.Screen.Main.route) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            } else if (navigateTo == "upcoming") {
+                                navController.navigate(com.mj.yata.ui.navigation.Screen.Main.createRoute(tab = 4)) {
                                     popUpTo(com.mj.yata.ui.navigation.Screen.Main.route) { inclusive = true }
                                     launchSingleTop = true
                                 }

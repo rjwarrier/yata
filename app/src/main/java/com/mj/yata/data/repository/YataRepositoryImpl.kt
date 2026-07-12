@@ -88,8 +88,14 @@ class YataRepositoryImpl @Inject constructor(
         val recurrence = deserializeRecurrence(taskEntity.recurrenceJson)
 
         if (isNowDone && recurrence != null && taskEntity.dueDate != null) {
-            // Calculate next due date
-            val nextDate = RecurrenceEvaluator.calculateNextOccurrence(recurrence, taskEntity.dueDate)
+            // Calculate next due date. Completion-based recurrence counts the interval from
+            // today (when it was actually finished) rather than from the original due date.
+            val baseDate = if (recurrence.basedOnCompletion) {
+                java.time.LocalDate.now().toString()
+            } else {
+                taskEntity.dueDate
+            }
+            val nextDate = RecurrenceEvaluator.calculateNextOccurrence(recurrence, baseDate)
             
             if (nextDate != null) {
                 // Updated task computed outside the transaction; all writes below are
@@ -307,6 +313,18 @@ class YataRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getActiveLists(): Flow<List<YataList>> {
+        return db.listDao().getActive().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override fun getArchivedLists(): Flow<List<YataList>> {
+        return db.listDao().getArchived().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
     override fun getListById(id: String): Flow<YataList?> {
         return db.listDao().getById(id).map { it?.toDomain() }
     }
@@ -317,6 +335,11 @@ class YataRepositoryImpl @Inject constructor(
 
     override suspend fun deleteList(list: YataList) {
         db.listDao().delete(list.toEntity())
+    }
+
+    override suspend fun setListsArchived(ids: List<String>, archived: Boolean) {
+        if (ids.isEmpty()) return
+        db.listDao().setArchived(ids, archived)
     }
 
     override fun getPeople(): Flow<List<Person>> {

@@ -45,6 +45,10 @@ class UserPreferences @Inject constructor(
         val CLOUD_BACKUP_LAST_AT     = longPreferencesKey("cloud_backup_last_at")
         val CLOUD_BACKUP_WIFI_ONLY   = booleanPreferencesKey("cloud_backup_wifi_only")
         val CLOUD_BACKUP_INTERVAL_MINUTES = longPreferencesKey("cloud_backup_interval_minutes")
+        // Completed tasks older than this move out of the small, frequently-uploaded primary
+        // cloud backup into a separate archive file so the primary doesn't grow forever. 0 means
+        // "never archive" (always back up everything in one file).
+        val CLOUD_BACKUP_ARCHIVE_MONTHS = intPreferencesKey("cloud_backup_archive_months")
         val THEME_SCHEDULE_START_HOUR   = intPreferencesKey("theme_schedule_start_hour")
         val THEME_SCHEDULE_START_MINUTE = intPreferencesKey("theme_schedule_start_minute")
         val THEME_SCHEDULE_END_HOUR     = intPreferencesKey("theme_schedule_end_hour")
@@ -127,6 +131,7 @@ class UserPreferences @Inject constructor(
     // Default matches CloudBackupWorker's default schedule (1 day) — WorkManager enforces a
     // 15-minute floor on periodic work, so this is clamped the same way on write.
     val cloudBackupIntervalMinutesFlow: Flow<Long> = dataStore.data.map { it[CLOUD_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
+    val cloudBackupArchiveMonthsFlow: Flow<Int> = dataStore.data.map { it[CLOUD_BACKUP_ARCHIVE_MONTHS] ?: 6 }
     val hideCompletedTodayFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_TODAY] ?: false }
     val hideCompletedProjectFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PROJECT] ?: false }
     val hideCompletedListFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_LIST] ?: false }
@@ -239,6 +244,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setCloudBackupIntervalMinutes(minutes: Long) {
         dataStore.edit { it[CLOUD_BACKUP_INTERVAL_MINUTES] = minutes.coerceAtLeast(15L) }
+    }
+
+    suspend fun setCloudBackupArchiveMonths(months: Int) {
+        dataStore.edit { it[CLOUD_BACKUP_ARCHIVE_MONTHS] = months.coerceAtLeast(0) }
     }
 
     suspend fun setReduceMotionEnabled(enabled: Boolean) {

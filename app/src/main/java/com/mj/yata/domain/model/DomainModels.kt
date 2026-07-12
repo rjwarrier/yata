@@ -54,8 +54,15 @@ data class YataList(
     val icon: String,
     val starred: Boolean = false,
     val excludeFromToday: Boolean = false, // tasks here never show in Today, regardless of due date
-    val sortOrder: Int = 0 // manual drag-and-drop order in the nav drawer's Lists section
+    val sortOrder: Int = 0, // manual drag-and-drop order in the nav drawer's Lists section
+    val archived: Boolean = false // true = kept for history, hidden from active list surfaces
 )
+
+fun List<YataList>.activeLists(includeId: String? = null): List<YataList> =
+    filter { !it.archived || it.id == includeId }
+
+fun List<YataList>.archivedLists(): List<YataList> =
+    filter { it.archived }
 
 fun List<Person>.activePeople(includeIds: Set<String> = emptySet()): List<Person> =
     filter { !it.archived || it.id in includeIds }
@@ -99,7 +106,8 @@ data class Recurrence(
     val interval: Int,
     val byday: List<String>? = null, // e.g. ["MO", "TU", ...]
     val bymonthday: Int? = null, // 1..31, or -1 to mean "last day of month"
-    val ends: RecurrenceEnds = RecurrenceEnds.Never
+    val ends: RecurrenceEnds = RecurrenceEnds.Never,
+    val basedOnCompletion: Boolean = false // true: next occurrence counts from completion date, not due date
 )
 
 sealed interface RecurrenceEnds {

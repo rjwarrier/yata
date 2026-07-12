@@ -389,6 +389,54 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate21To22_addsArchivedColumn_toLists_defaultingFalse() {
+        context.deleteDatabase(TEST_DB)
+        createVersion21ListsTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `lists` (`id`,`name`,`color`,`icon`,`starred`,`excludeFromToday`,`sortOrder`) " +
+                    "VALUES ('l1','Groceries','accentB','list',0,0,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(22) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_21_22.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `archived` FROM `lists` WHERE `id` = 'l1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("archived")))
+            }
+            close()
+        }
+    }
+
+    /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
+    private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(21) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `lists` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `icon` TEXT NOT NULL, `starred` INTEGER NOT NULL, `excludeFromToday` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+                    )
+                }
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
+
     /** Minimal — only the `people` table, since MIGRATION_19_20 only touches that one. */
     private fun createVersion19PeopleTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)

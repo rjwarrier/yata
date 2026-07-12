@@ -124,6 +124,7 @@ fun SettingsScreen(
     val cloudBackupLastAt by viewModel.cloudBackupLastAt.collectAsState()
     val cloudBackupWifiOnly by viewModel.cloudBackupWifiOnly.collectAsState()
     val cloudBackupIntervalMinutes by viewModel.cloudBackupIntervalMinutes.collectAsState()
+    val cloudBackupArchiveMonths by viewModel.cloudBackupArchiveMonths.collectAsState()
 
     var showDefaultListMenu by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
@@ -151,6 +152,7 @@ fun SettingsScreen(
     var showFrequencyDialog by remember { mutableStateOf(false) }
     var freqNumberText by remember { mutableStateOf("1") }
     var freqUnit by remember { mutableStateOf("Days") }
+    var showArchiveMonthsDialog by remember { mutableStateOf(false) }
     var showBackupDiffDialog by remember { mutableStateOf(false) }
     var isLoadingBackupDiff by remember { mutableStateOf(false) }
     var backupDiffResult by remember { mutableStateOf<com.mj.yata.data.cloud.CloudBackupDiff?>(null) }
@@ -1047,6 +1049,33 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clickable { showArchiveMonthsDialog = true }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Archive old completed tasks",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = formatArchiveMonths(cloudBackupArchiveMonths),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .clickable {
                                     showCloudRestoreSheet = true
                                     isLoadingCloudBackups = true
@@ -1516,6 +1545,48 @@ fun SettingsScreen(
         )
     }
 
+    if (showArchiveMonthsDialog) {
+        AlertDialog(
+            onDismissRequest = { showArchiveMonthsDialog = false },
+            title = { Text("Archive old completed tasks") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Completed tasks older than this move out of the main cloud backup into a separate archive file, so the backup that uploads every time doesn't keep growing. Nothing is deleted from the app.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    listOf(0 to "Never", 3 to "3 months", 6 to "6 months", 12 to "12 months").forEach { (months, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.setCloudBackupArchiveMonths(months)
+                                    showArchiveMonthsDialog = false
+                                }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = cloudBackupArchiveMonths == months,
+                                onClick = {
+                                    viewModel.setCloudBackupArchiveMonths(months)
+                                    showArchiveMonthsDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showArchiveMonthsDialog = false }) { Text("Done") }
+            }
+        )
+    }
+
     if (showCloudRestoreSheet) {
         AlertDialog(
             onDismissRequest = { if (!isRestoringCloudBackup) showCloudRestoreSheet = false },
@@ -1763,6 +1834,9 @@ private fun formatBackupInterval(minutes: Long): String {
     val label = if (value == 1L) unit.dropLast(1).lowercase() else unit.lowercase()
     return "Every $value $label"
 }
+
+private fun formatArchiveMonths(months: Int): String =
+    if (months <= 0) "Never — backups always include everything" else "Older than $months months"
 
 @Composable
 private fun FeatureToggleRow(

@@ -174,6 +174,9 @@ class MainViewModel @Inject constructor(
     val cloudBackupIntervalMinutes: StateFlow<Long> = userPreferences.cloudBackupIntervalMinutesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 24 * 60L)
 
+    val cloudBackupArchiveMonths: StateFlow<Int> = userPreferences.cloudBackupArchiveMonthsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 6)
+
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
         viewModelScope.launch {
@@ -935,6 +938,12 @@ class MainViewModel @Inject constructor(
             userPreferences.setCloudBackupIntervalMinutes(minutes)
         }
         cloudBackupManager.updateBackupInterval(minutes)
+    }
+
+    fun setCloudBackupArchiveMonths(months: Int) {
+        viewModelScope.launch {
+            userPreferences.setCloudBackupArchiveMonths(months)
+        }
     }
 
     fun cloudBackupNow(onResult: (Result<Unit>) -> Unit) {

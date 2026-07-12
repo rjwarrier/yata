@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
@@ -44,7 +45,7 @@ class TeamOverdueWidget : GlanceAppWidget() {
     override val stateDefinition = PreferencesGlanceStateDefinition
 
     override val sizeMode = SizeMode.Responsive(
-        setOf(DpSize(180.dp, 110.dp), DpSize(250.dp, 180.dp))
+        setOf(DpSize(180.dp, 110.dp), DpSize(250.dp, 180.dp), DpSize(250.dp, 250.dp))
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -88,6 +89,7 @@ private fun TeamOverdueContent(
     cornerRadius: Int,
     opacity: Float
 ) {
+    val maxRows = if (LocalSize.current.height > 180.dp) 8 else 5
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -109,9 +111,12 @@ private fun TeamOverdueContent(
                 }
             } else {
                 Column(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                    overdueByPerson.take(5).forEachIndexed { index, (person, count) ->
+                    overdueByPerson.take(maxRows).forEachIndexed { index, (person, count) ->
                         if (index > 0) Spacer(modifier = GlanceModifier.height(7.dp))
-                        Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
+                        Row(
+                            verticalAlignment = Alignment.Vertical.CenterVertically,
+                            modifier = GlanceModifier.fillMaxWidth().clickable(openPersonAction(person.id))
+                        ) {
                             Text(
                                 text = person.name,
                                 maxLines = 1,

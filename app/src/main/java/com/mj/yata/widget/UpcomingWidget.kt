@@ -155,9 +155,9 @@ private fun UpcomingWidgetContent(
                     modifier = GlanceModifier.fillMaxSize(),
                     verticalAlignment = Alignment.Vertical.CenterVertically
                 ) {
-                    AgendaSummaryRow("Today", todayTasks, listsById, accents, useM3Colors, colors.primary)
+                    AgendaSummaryRow("Today", todayTasks, listsById, accents, useM3Colors, colors.primary, openTodayShortcutAction())
                     Spacer(modifier = GlanceModifier.height(10.dp))
-                    AgendaSummaryRow("Tomorrow", tomorrowTasks, listsById, accents, useM3Colors, colors.primary)
+                    AgendaSummaryRow("Tomorrow", tomorrowTasks, listsById, accents, useM3Colors, colors.primary, openUpcomingAction())
                 }
             }
         }
@@ -171,14 +171,18 @@ private fun AgendaSummaryRow(
     listsById: Map<String, YataList>,
     accents: com.mj.yata.ui.theme.YataAccents,
     useM3Colors: Boolean,
-    m3Color: androidx.compose.ui.graphics.Color
+    m3Color: androidx.compose.ui.graphics.Color,
+    onClick: androidx.glance.action.Action
 ) {
     val dotColors = if (useM3Colors) {
         if (tasks.isNotEmpty()) listOf(m3Color) else emptyList()
     } else {
         tasks.mapNotNull { listsById[it.listId]?.color }.distinct().take(2).map { accents.getAccent(it) }
     }
-    Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {
+    Row(
+        verticalAlignment = Alignment.Vertical.CenterVertically,
+        modifier = GlanceModifier.fillMaxWidth().clickable(onClick)
+    ) {
         Row {
             dotColors.forEachIndexed { index, color ->
                 if (index > 0) Spacer(modifier = GlanceModifier.width(3.dp))

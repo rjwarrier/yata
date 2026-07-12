@@ -50,8 +50,11 @@ class QuickAddWidget : GlanceAppWidget() {
 
     override val stateDefinition = PreferencesGlanceStateDefinition
 
+    // 250x180 is a real bucket (not just 250x110 twice) so the "isTall" 2-row list-chip layout
+    // in QuickAddWidgetContent is actually reachable by resizing taller, matching the XML's
+    // maxResizeHeight of 180dp.
     override val sizeMode = SizeMode.Responsive(
-        setOf(DpSize(110.dp, 110.dp), DpSize(250.dp, 110.dp))
+        setOf(DpSize(110.dp, 110.dp), DpSize(250.dp, 110.dp), DpSize(250.dp, 180.dp))
     )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -73,6 +76,13 @@ class QuickAddWidget : GlanceAppWidget() {
             "project" -> repository.getProjects().first().find { it.id == targetId }?.name
             else -> null
         }
+        // Preset was set (targetId non-null) but no longer resolves — its list/project got
+        // deleted from the main app. Drop it entirely rather than handing the stale id to the
+        // quick-add dialog, which would otherwise try to create a task pointing at a row that no
+        // longer exists (Room enforces the FK, so that insert fails outright).
+        val presetWasDeleted = targetId != null && targetName == null
+        val effectiveTargetType = if (presetWasDeleted) null else targetType
+        val effectiveTargetId = if (presetWasDeleted) null else targetId
 
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
@@ -84,9 +94,10 @@ class QuickAddWidget : GlanceAppWidget() {
                     allLists = allLists,
                     accents = theme.accents,
                     colors = theme.colorScheme,
-                    targetType = targetType,
-                    targetId = targetId,
+                    targetType = effectiveTargetType,
+                    targetId = effectiveTargetId,
                     targetName = targetName,
+                    presetWasDeleted = presetWasDeleted,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
@@ -107,6 +118,7 @@ private fun QuickAddWidgetContent(
     targetType: String?,
     targetId: String?,
     targetName: String?,
+    presetWasDeleted: Boolean,
     cornerRadius: Int,
     customLabel: String?,
     useM3Colors: Boolean,
@@ -167,6 +179,14 @@ private fun QuickAddWidgetContent(
                         text = targetName?.let { "Add to $it…" } ?: "Add a task…",
                         maxLines = 1,
                         style = TextStyle(fontSize = 14.sp, color = GlanceTheme.colors.onSurfaceVariant)
+                    )
+                }
+                if (presetWasDeleted) {
+                    Spacer(modifier = GlanceModifier.height(6.dp))
+                    Text(
+                        text = "Preset deleted — long-press to reconfigure",
+                        maxLines = 1,
+                        style = TextStyle(fontSize = 11.sp, color = ColorProvider(colors.error))
                     )
                 }
                 if (targetName != null) {

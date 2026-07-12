@@ -95,6 +95,10 @@ class CloudBackupManager @Inject constructor(
         private const val KEEP_BACKUPS = 5
         private const val DEBOUNCE_MILLIS = 2 * 60 * 1000L
         private const val MAX_DIFF_TITLES = 8
+
+        // Single cumulative file, not a rotated series like the primary backups — replaced in
+        // place whenever archived-completed-task content changes rather than pruned/kept-N.
+        private const val ARCHIVE_FILENAME = "yata_archive.json"
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -194,33 +198,25 @@ class CloudBackupManager @Inject constructor(
         val token = getAccessToken(account) ?: return@withContext Result.failure(CloudBackupError.NeedsReauth)
 
         try {
-            val bytes = jsonExporter.exportToBytes()
+            val archiveMonths = userPreferences.cloudBackupArchiveMonthsFlow.first()
+            val (primaryJson, archiveJson) = jsonExporter.buildSplitBackupJson(archiveMonths)
+            val primaryBytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
             val filename = "yata_backup_" +
                 java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date()) +
                 ".json"
 
-            val metadata = JSONObject().apply {
-                put("name", filename)
-                put("parents", JSONArray().put("appDataFolder"))
-            }.toString()
+            uploadFile(token, filename, primaryBytes).getOrElse { e ->
+                Log.w(TAG, "backupNow: primary upload failed", e)
+                return@withContext Result.failure(e)
+            }
 
-            val body = MultipartBody.Builder()
-                .setType("multipart/related".toMediaType())
-                .addPart(metadata.toRequestBody("application/json; charset=UTF-8".toMediaType()))
-                .addPart(bytes.toRequestBody("application/json".toMediaType()))
-                .build()
-
-            val request = Request.Builder()
-                .url("$DRIVE_UPLOAD_URL?uploadType=multipart&fields=id")
-                .addHeader("Authorization", "Bearer $token")
-                .post(body)
-                .build()
-
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val reason = driveErrorMessage(response)
-                    Log.w(TAG, "backupNow: upload failed HTTP ${response.code} — $reason")
-                    return@withContext Result.failure(CloudBackupError.Api("Upload failed: HTTP ${response.code} — $reason"))
+            // Best-effort — the archive is a convenience split, not the source of truth (nothing
+            // was removed from the live DB), so a failure here shouldn't fail the whole backup.
+            if (archiveJson != null) {
+                try {
+                    replaceArchiveFile(token, archiveJson.toString(2).toByteArray(Charsets.UTF_8))
+                } catch (e: Exception) {
+                    Log.w(TAG, "backupNow: archive upload failed, primary backup still succeeded", e)
                 }
             }
 
@@ -230,6 +226,63 @@ class CloudBackupManager @Inject constructor(
         } catch (e: IOException) {
             Log.w(TAG, "backupNow failed", e)
             Result.failure(e)
+        }
+    }
+
+    private fun uploadFile(token: String, filename: String, bytes: ByteArray): Result<Unit> {
+        val metadata = JSONObject().apply {
+            put("name", filename)
+            put("parents", JSONArray().put("appDataFolder"))
+        }.toString()
+
+        val body = MultipartBody.Builder()
+            .setType("multipart/related".toMediaType())
+            .addPart(metadata.toRequestBody("application/json; charset=UTF-8".toMediaType()))
+            .addPart(bytes.toRequestBody("application/json".toMediaType()))
+            .build()
+
+        val request = Request.Builder()
+            .url("$DRIVE_UPLOAD_URL?uploadType=multipart&fields=id")
+            .addHeader("Authorization", "Bearer $token")
+            .post(body)
+            .build()
+
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val reason = driveErrorMessage(response)
+                Log.w(TAG, "uploadFile($filename): HTTP ${response.code} — $reason")
+                return Result.failure(CloudBackupError.Api("Upload failed: HTTP ${response.code} — $reason"))
+            }
+        }
+        return Result.success(Unit)
+    }
+
+    /** [ARCHIVE_FILENAME] is a single logical file, not a rotated series — delete whatever's
+     * there under that name (if anything) before uploading the replacement, since Drive's simple
+     * multipart-create endpoint doesn't do in-place content updates. */
+    private fun replaceArchiveFile(token: String, bytes: ByteArray) {
+        findFileIdByName(ARCHIVE_FILENAME, token)?.let { existingId ->
+            val request = Request.Builder()
+                .url("$DRIVE_FILES_URL/$existingId")
+                .addHeader("Authorization", "Bearer $token")
+                .delete()
+                .build()
+            httpClient.newCall(request).execute().close()
+        }
+        uploadFile(token, ARCHIVE_FILENAME, bytes).getOrThrow()
+    }
+
+    private fun findFileIdByName(name: String, token: String): String? {
+        val request = Request.Builder()
+            .url("$DRIVE_FILES_URL?spaces=appDataFolder&q=" + java.net.URLEncoder.encode("name='$name'", "UTF-8") + "&fields=files(id)")
+            .addHeader("Authorization", "Bearer $token")
+            .get()
+            .build()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return null
+            val json = JSONObject(response.body?.string() ?: "{}")
+            val files = json.optJSONArray("files") ?: JSONArray()
+            return if (files.length() > 0) files.getJSONObject(0).getString("id") else null
         }
     }
 
@@ -248,8 +301,22 @@ class CloudBackupManager @Inject constructor(
         val token = getAccessToken(account) ?: return@withContext Result.failure(CloudBackupError.NeedsReauth)
         try {
             val bytes = downloadBackupBytes(fileId, token)
-            if (jsonExporter.importBytes(bytes)) Result.success(Unit)
-            else Result.failure(CloudBackupError.Api("Restore parsing failed"))
+            if (!jsonExporter.importBytes(bytes)) {
+                return@withContext Result.failure(CloudBackupError.Api("Restore parsing failed"))
+            }
+
+            // The primary backup may have had old completed tasks split out of it — pull the
+            // archive back in too (best-effort: a missing/corrupt archive shouldn't fail a
+            // restore that already succeeded for everything else).
+            try {
+                findFileIdByName(ARCHIVE_FILENAME, token)?.let { archiveId ->
+                    jsonExporter.importBytes(downloadBackupBytes(archiveId, token))
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "restoreBackup: archive merge failed, primary restore still succeeded", e)
+            }
+
+            Result.success(Unit)
         } catch (e: IOException) {
             Log.w(TAG, "restoreBackup failed", e)
             Result.failure(e)
@@ -267,6 +334,20 @@ class CloudBackupManager @Inject constructor(
                 ?: return@withContext Result.failure(CloudBackupError.Api("No cloud backups found yet"))
             val bytes = downloadBackupBytes(latest.id, token)
             val tasksArr = JSONObject(String(bytes, Charsets.UTF_8)).optJSONArray("tasks") ?: JSONArray()
+
+            // The primary backup may have split old completed tasks out into the archive file —
+            // without folding those back in, every archived task would misleadingly show up as
+            // "removed since backup" just because it's no longer in the primary payload.
+            val archiveTasksArr = try {
+                findFileIdByName(ARCHIVE_FILENAME, token)
+                    ?.let { archiveId -> JSONObject(String(downloadBackupBytes(archiveId, token), Charsets.UTF_8)).optJSONArray("tasks") }
+            } catch (e: Exception) {
+                Log.w(TAG, "compareWithLatestBackup: couldn't read archive, comparing against primary only", e)
+                null
+            } ?: JSONArray()
+            for (i in 0 until archiveTasksArr.length()) {
+                tasksArr.put(archiveTasksArr.getJSONObject(i))
+            }
 
             var backupDone = 0
             var backupPending = 0

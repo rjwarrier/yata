@@ -103,8 +103,18 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
             val initialRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
             val initialLabel = prefs[WIDGET_LABEL_KEY] ?: ""
             val initialUseM3 = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
-            val initialSourceId = prefs[SINGLE_LIST_ID_KEY] ?: ""
-            val initialSourceType = prefs[SINGLE_SOURCE_TYPE_KEY] ?: "list"
+            // Single-List and Quick Add widgets persist their preset destination under different
+            // keys (see onConfigSaved below) — reading the wrong one here silently shows "no
+            // destination selected" on reconfigure and wipes the saved preset on save.
+            val initialSourceId: String
+            val initialSourceType: String
+            if (providerClass?.endsWith("QuickAddWidgetReceiver") == true) {
+                initialSourceId = prefs[QUICK_ADD_TARGET_ID_KEY] ?: ""
+                initialSourceType = prefs[QUICK_ADD_TARGET_TYPE_KEY] ?: "list"
+            } else {
+                initialSourceId = prefs[SINGLE_LIST_ID_KEY] ?: ""
+                initialSourceType = prefs[SINGLE_SOURCE_TYPE_KEY] ?: "list"
+            }
             val initialOpacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
             val initialAccentOverride = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
@@ -142,51 +152,73 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
     ) {
         Log.d("WidgetConfig", "onConfigSaved: radius=$radius, label=$label, useM3=$useM3Colors, sourceId=$sourceId, sourceType=$sourceType, opacity=$opacity, accentOverride=$accentOverride, providerClass=$providerClass")
         lifecycleScope.launch {
-            val glanceId = GlanceAppWidgetManager(this@WidgetCustomizerConfigActivity).getGlanceIdBy(appWidgetId)
-            Log.d("WidgetConfig", "glanceId: $glanceId")
-            updateAppWidgetState(this@WidgetCustomizerConfigActivity, glanceId) { prefs ->
-                prefs[WIDGET_CORNER_RADIUS_KEY] = radius
-                if (label.isNotBlank()) {
-                    prefs[WIDGET_LABEL_KEY] = label
-                } else {
-                    prefs.remove(WIDGET_LABEL_KEY)
-                }
-                prefs[WIDGET_USE_M3_COLORS_KEY] = useM3Colors
-                prefs[WIDGET_OPACITY_KEY] = opacity
-                if (accentOverride != null) {
-                    prefs[WIDGET_ACCENT_OVERRIDE_KEY] = accentOverride
-                } else {
-                    prefs.remove(WIDGET_ACCENT_OVERRIDE_KEY)
-                }
-
-                if (providerClass?.endsWith("SingleListWidgetReceiver") == true) {
-                    if (sourceId != null && sourceType != null) {
-                        prefs[SINGLE_LIST_ID_KEY] = sourceId
-                        prefs[SINGLE_SOURCE_TYPE_KEY] = sourceType
-                    }
-                } else if (providerClass?.endsWith("QuickAddWidgetReceiver") == true) {
-                    if (sourceId != null && sourceType != null) {
-                        prefs[QUICK_ADD_TARGET_TYPE_KEY] = sourceType
-                        prefs[QUICK_ADD_TARGET_ID_KEY] = sourceId
+            try {
+                val glanceId = GlanceAppWidgetManager(this@WidgetCustomizerConfigActivity).getGlanceIdBy(appWidgetId)
+                Log.d("WidgetConfig", "glanceId: $glanceId")
+                updateAppWidgetState(this@WidgetCustomizerConfigActivity, glanceId) { prefs ->
+                    prefs[WIDGET_CORNER_RADIUS_KEY] = radius
+                    if (label.isNotBlank()) {
+                        prefs[WIDGET_LABEL_KEY] = label
                     } else {
-                        prefs.remove(QUICK_ADD_TARGET_TYPE_KEY)
-                        prefs.remove(QUICK_ADD_TARGET_ID_KEY)
+                        prefs.remove(WIDGET_LABEL_KEY)
+                    }
+                    prefs[WIDGET_USE_M3_COLORS_KEY] = useM3Colors
+                    prefs[WIDGET_OPACITY_KEY] = opacity
+                    if (accentOverride != null) {
+                        prefs[WIDGET_ACCENT_OVERRIDE_KEY] = accentOverride
+                    } else {
+                        prefs.remove(WIDGET_ACCENT_OVERRIDE_KEY)
+                    }
+
+                    if (providerClass?.endsWith("SingleListWidgetReceiver") == true) {
+                        if (sourceId != null && sourceType != null) {
+                            prefs[SINGLE_LIST_ID_KEY] = sourceId
+                            prefs[SINGLE_SOURCE_TYPE_KEY] = sourceType
+                        }
+                    } else if (providerClass?.endsWith("QuickAddWidgetReceiver") == true) {
+                        if (sourceId != null && sourceType != null) {
+                            prefs[QUICK_ADD_TARGET_TYPE_KEY] = sourceType
+                            prefs[QUICK_ADD_TARGET_ID_KEY] = sourceId
+                        } else {
+                            prefs.remove(QUICK_ADD_TARGET_TYPE_KEY)
+                            prefs.remove(QUICK_ADD_TARGET_ID_KEY)
+                        }
                     }
                 }
-            }
+                Log.d("WidgetConfig", "prefs written, forcing update for providerClass=$providerClass")
 
-            // Force widget update
-            when {
-                providerClass?.endsWith("SingleListWidgetReceiver") == true -> SingleListWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
-                providerClass?.endsWith("QuickAddWidgetReceiver") == true -> QuickAddWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
-                providerClass?.endsWith("YataAppWidgetReceiver") == true -> YataAppWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
-                providerClass?.endsWith("UpcomingWidgetReceiver") == true -> UpcomingWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
-                providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> ProgressStatsWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
-                providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> TeamOverdueWidget().update(this@WidgetCustomizerConfigActivity, glanceId)
-            }
+                // Force widget update — matched by exact type, not providerClass, so a
+                // detection miss (unrecognized/null providerClass) can't silently skip every
+                // widget's render: the prefs would still be saved, but nothing would push the
+                // change to the home screen until the next unrelated refresh, which looks
+                // identical to "the setting didn't save" from the user's side.
+                val updated = when {
+                    providerClass?.endsWith("SingleListWidgetReceiver") == true -> { SingleListWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
+                    providerClass?.endsWith("QuickAddWidgetReceiver") == true -> { QuickAddWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
+                    providerClass?.endsWith("YataAppWidgetReceiver") == true -> { YataAppWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
+                    providerClass?.endsWith("UpcomingWidgetReceiver") == true -> { UpcomingWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
+                    providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> { ProgressStatsWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
+                    providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> { TeamOverdueWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
+                    else -> false
+                }
+                if (!updated) {
+                    Log.w("WidgetConfig", "onConfigSaved: unrecognized providerClass='$providerClass' for widget $appWidgetId — settings saved but no .update() call matched, refreshing every widget type as a fallback")
+                    WidgetRefresher.refreshAll(this@WidgetCustomizerConfigActivity)
+                }
 
-            val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            setResult(Activity.RESULT_OK, resultValue)
+                val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                setResult(Activity.RESULT_OK, resultValue)
+            } catch (e: Exception) {
+                // Previously uncaught: a DataStore/GlanceId failure here left prefs (maybe)
+                // half-written, skipped the widget refresh, and never reached finish() or
+                // setResult — from the user's side that reads as "tapped Save, nothing happened."
+                Log.e("WidgetConfig", "onConfigSaved failed for widget $appWidgetId", e)
+                android.widget.Toast.makeText(
+                    this@WidgetCustomizerConfigActivity,
+                    "Couldn't save widget settings — please try again",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
             finish()
         }
     }

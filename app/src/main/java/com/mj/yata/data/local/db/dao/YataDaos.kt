@@ -69,6 +69,12 @@ interface ListDao {
     @Query("SELECT * FROM lists")
     fun getAll(): Flow<List<ListEntity>>
 
+    @Query("SELECT * FROM lists WHERE archived = 0")
+    fun getActive(): Flow<List<ListEntity>>
+
+    @Query("SELECT * FROM lists WHERE archived = 1")
+    fun getArchived(): Flow<List<ListEntity>>
+
     @Query("SELECT * FROM lists WHERE id = :id")
     fun getById(id: String): Flow<ListEntity?>
 
@@ -83,6 +89,9 @@ interface ListDao {
 
     @Delete
     suspend fun delete(list: ListEntity)
+
+    @Query("UPDATE lists SET archived = :archived WHERE id IN (:ids)")
+    suspend fun setArchived(ids: List<String>, archived: Boolean)
 }
 
 @Dao

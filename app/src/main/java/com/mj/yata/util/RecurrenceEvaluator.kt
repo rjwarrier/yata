@@ -72,6 +72,10 @@ object RecurrenceEvaluator {
             else -> { /* Never ends, do nothing */ }
         }
 
+        if (r.basedOnCompletion) {
+            base += " after completion"
+        }
+
         return base
     }
 

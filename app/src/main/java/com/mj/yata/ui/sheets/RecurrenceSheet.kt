@@ -244,6 +244,42 @@ fun RecurrenceSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+            // Schedule basis: fixed calendar schedule vs. counted from completion date
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Repeat from",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (r.basedOnCompletion) "When you finish it" else "Fixed schedule",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = if (r.basedOnCompletion) {
+                                "Next due date starts counting the day you mark it done"
+                            } else {
+                                "Next due date is always on the same schedule, done or not"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = r.basedOnCompletion,
+                        onCheckedChange = { r = r.copy(basedOnCompletion = it) }
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
             // Ends Criteria
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(

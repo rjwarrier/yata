@@ -42,4 +42,19 @@ class RecurrenceEvaluatorTest {
         val summary2 = RecurrenceEvaluator.recurrenceSummary(r2)
         assertEquals("Every 2 weeks on Mon, Wed", summary2)
     }
+
+    @Test
+    fun testCompletionBasedRecurrenceSummary() {
+        val r = Recurrence("daily", 3, null, null, RecurrenceEnds.Never, basedOnCompletion = true)
+        assertEquals("Every 3 days after completion", RecurrenceEvaluator.recurrenceSummary(r))
+    }
+
+    @Test
+    fun testCompletionBasedRecurrenceCountsFromLateCompletionDate() {
+        // Due 2026-07-02, but finished late on 2026-07-10 — completion-based recurrence
+        // counts the interval from the completion date, not the original due date.
+        val r = Recurrence("daily", 3, null, null, RecurrenceEnds.Never, basedOnCompletion = true)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-10")
+        assertEquals("2026-07-13", next)
+    }
 }
