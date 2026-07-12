@@ -74,6 +74,7 @@ class TeamOverdueWidget : GlanceAppWidget() {
                 TeamOverdueContent(
                     overdueByPerson = overdueByPerson,
                     colors = theme.colorScheme,
+                    widgetBackground = theme.widgetBackground,
                     cornerRadius = cornerRadius,
                     opacity = opacity
                 )
@@ -86,6 +87,7 @@ class TeamOverdueWidget : GlanceAppWidget() {
 private fun TeamOverdueContent(
     overdueByPerson: List<Pair<Person, Int>>,
     colors: androidx.compose.material3.ColorScheme,
+    widgetBackground: androidx.compose.ui.graphics.Color,
     cornerRadius: Int,
     opacity: Float
 ) {
@@ -93,7 +95,7 @@ private fun TeamOverdueContent(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(colors.surface.copy(alpha = opacity))
+            .background(widgetBackground.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)

@@ -40,6 +40,9 @@ import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 
+// See SingleListWidget's MAX_VISIBLE_TASKS for why this cap exists.
+private const val MAX_VISIBLE_TASKS = 40
+
 /** "Today's tasks" — medium (3 rows) / large (6 rows). Mirrors the in-app Today tab's own
  * definition of "today" (due today or overdue, per TodayTab.kt) rather than a narrower one. */
 class YataAppWidget : GlanceAppWidget() {
@@ -85,6 +88,7 @@ class YataAppWidget : GlanceAppWidget() {
                     peopleById = peopleById,
                     colors = theme.colorScheme,
                     accents = theme.accents,
+                    widgetBackground = theme.widgetBackground,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
@@ -106,6 +110,7 @@ private fun TodayWidgetContent(
     peopleById: Map<String, com.mj.yata.domain.model.Person>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
+    widgetBackground: androidx.compose.ui.graphics.Color,
     cornerRadius: Int,
     customLabel: String?,
     useM3Colors: Boolean,
@@ -117,7 +122,7 @@ private fun TodayWidgetContent(
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(colors.surface.copy(alpha = opacity))
+            .background(widgetBackground.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
@@ -151,11 +156,24 @@ private fun TodayWidgetContent(
                 style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
             )
         } else {
+            // Cap what's actually drawn — a heavy overdue backlog can otherwise push the
+            // RemoteViews payload past Android's ~1MB Binder IPC limit and silently fail to
+            // render at all (see SingleListWidget's MAX_VISIBLE_TASKS for the full story).
+            val visibleTasks = tasks.take(MAX_VISIBLE_TASKS)
             LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                items(tasks) { task ->
+                items(visibleTasks) { task ->
                     val tint = if (useM3Colors) colors.primary else (listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary)
                     val assignees = task.assigneeIds.mapNotNull { peopleById[it] }
                     WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface, assignees = assignees)
+                }
+                if (tasks.size > visibleTasks.size) {
+                    item {
+                        Text(
+                            text = "+${tasks.size - visibleTasks.size} more in the app",
+                            style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant),
+                            modifier = GlanceModifier.padding(top = 4.dp)
+                        )
+                    }
                 }
             }
         }

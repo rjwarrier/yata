@@ -62,6 +62,11 @@ private enum class SingleWidgetSourceType(val prefValue: String) {
     }
 }
 
+// Way beyond what's ever visible on a home-screen widget — just a hard ceiling so a large
+// pinned list/project/tag can't blow the RemoteViews payload past Android's Binder transaction
+// limit (see SingleListWidgetContent).
+private const val MAX_VISIBLE_TASKS = 40
+
 private data class SingleWidgetSource(
     val name: String,
     val colorKey: String,
@@ -144,6 +149,7 @@ class SingleListWidget : GlanceAppWidget() {
                     peopleById = peopleById,
                     colors = theme.colorScheme,
                     accents = theme.accents,
+                    widgetBackground = theme.widgetBackground,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
@@ -164,6 +170,7 @@ private fun SingleListWidgetContent(
     peopleById: Map<String, com.mj.yata.domain.model.Person>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
+    widgetBackground: androidx.compose.ui.graphics.Color,
     cornerRadius: Int,
     customLabel: String?,
     useM3Colors: Boolean,
@@ -173,7 +180,7 @@ private fun SingleListWidgetContent(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(colors.surface.copy(alpha = opacity))
+            .background(widgetBackground.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
@@ -240,9 +247,26 @@ private fun SingleListWidgetContent(
                         style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
                     )
                 } else {
+                    // A pinned list/project/tag has no natural bound the way "today" or "next 3
+                    // agenda days" does — rendering every row inflates the RemoteViews payload
+                    // (each row is real embedded views, not a lazily-paged reference), and a
+                    // large enough source pushes the whole update past Android's ~1MB Binder IPC
+                    // limit, which fails the push silently and leaves the widget stuck showing
+                    // stale/blank content. Cap what's actually drawn; the header counts above
+                    // still reflect the true total.
+                    val visibleTasks = tasks.take(MAX_VISIBLE_TASKS)
                     LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                        items(tasks) { task ->
+                        items(visibleTasks) { task ->
                             WidgetTaskRow(task = task, tintColor = color, onSurface = colors.onSurface, assignees = task.assigneeIds.mapNotNull { peopleById[it] })
+                        }
+                        if (tasks.size > visibleTasks.size) {
+                            item {
+                                Text(
+                                    text = "+${tasks.size - visibleTasks.size} more in the app",
+                                    style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant),
+                                    modifier = GlanceModifier.padding(top = 4.dp)
+                                )
+                            }
                         }
                     }
                 }

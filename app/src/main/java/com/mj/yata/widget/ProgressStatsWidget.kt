@@ -79,6 +79,7 @@ class ProgressStatsWidget : GlanceAppWidget() {
                     lists = lists,
                     colors = theme.colorScheme,
                     accents = theme.accents,
+                    widgetBackground = theme.widgetBackground,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
@@ -97,6 +98,7 @@ private fun ProgressStatsContent(
     lists: List<YataList>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
+    widgetBackground: androidx.compose.ui.graphics.Color,
     cornerRadius: Int,
     customLabel: String?,
     useM3Colors: Boolean,
@@ -113,7 +115,7 @@ private fun ProgressStatsContent(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(colors.surface.copy(alpha = opacity))
+            .background(widgetBackground.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)

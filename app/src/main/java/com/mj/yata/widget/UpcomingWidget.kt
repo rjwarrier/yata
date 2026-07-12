@@ -42,6 +42,10 @@ import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+// See SingleListWidget's MAX_VISIBLE_TASKS for why this cap exists — kept lower than that one
+// since this applies per-day across up to 3 days in the same payload.
+private const val MAX_VISIBLE_TASKS_PER_DAY = 20
+
 /** "Upcoming / agenda" — medium (Today/Tomorrow counts) / large (day-grouped agenda for the
  * next few days that actually have tasks, using real `task.due` dates). */
 class UpcomingWidget : GlanceAppWidget() {
@@ -75,6 +79,7 @@ class UpcomingWidget : GlanceAppWidget() {
                     peopleById = peopleById,
                     colors = theme.colorScheme,
                     accents = theme.accents,
+                    widgetBackground = theme.widgetBackground,
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
@@ -95,6 +100,7 @@ private fun UpcomingWidgetContent(
     peopleById: Map<String, com.mj.yata.domain.model.Person>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
+    widgetBackground: androidx.compose.ui.graphics.Color,
     cornerRadius: Int,
     customLabel: String?,
     useM3Colors: Boolean,
@@ -111,7 +117,7 @@ private fun UpcomingWidgetContent(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(colors.surface.copy(alpha = opacity))
+            .background(widgetBackground.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .padding(16.dp)
@@ -138,7 +144,9 @@ private fun UpcomingWidgetContent(
                                     style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = chromeColorProvider)
                                 )
                             }
-                            items(day.tasks) { task ->
+                            // See SingleListWidget's MAX_VISIBLE_TASKS for why this cap exists —
+                            // an overdue-heavy "Today" bucket is the realistic risk here.
+                            items(day.tasks.take(MAX_VISIBLE_TASKS_PER_DAY)) { task ->
                                 val tint = if (useM3Colors) colors.primary else (listsById[task.listId]?.let { accents.getAccent(it.color) } ?: colors.primary)
                                 val assignees = task.assigneeIds.mapNotNull { peopleById[it] }
                                 WidgetTaskRow(task = task, tintColor = tint, onSurface = colors.onSurface, assignees = assignees)

@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.glance.color.ColorProviders
 import com.mj.yata.domain.model.ThemeMode
@@ -19,7 +20,7 @@ import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.time.LocalTime
 
-data class WidgetTheme(val colorScheme: ColorScheme, val accents: YataAccents) {
+data class WidgetTheme(val colorScheme: ColorScheme, val accents: YataAccents, val widgetBackground: Color) {
     /** Glance wants a light+dark pair, but we've already resolved which one actually applies
      * (respecting the user's theme-mode setting, not just raw system config) — so both sides of
      * the pair are the same resolved scheme, and Glance's own light/dark switch is a no-op. */
@@ -54,7 +55,22 @@ suspend fun resolveWidgetTheme(context: Context): WidgetTheme {
     }
     // Entity accent swatches stay fixed regardless of dynamic color, same as the main app.
     val accents = if (isDark) DarkAccents else LightAccents
-    return WidgetTheme(colorScheme, accents)
+
+    // Widget card fill: the system's *accent* tonal palette (system_accent1_800/100), not
+    // Material3's neutral surface/surfaceContainer tones. Home-screen widgets from other apps
+    // (e.g. Yaja) resolve their card background this same way, which is why a plain M3
+    // colorScheme.surface reads as flat near-black next to them — surface/surfaceContainer are
+    // deliberately desaturated, while system_accent1_* carries the wallpaper's actual hue.
+    val widgetBackground = if (dynamicEnabled && supportsDynamic) {
+        val res = if (isDark) android.R.color.system_accent1_800 else android.R.color.system_accent1_100
+        Color(context.getColor(res))
+    } else if (isDark) {
+        DarkColors.surfaceContainer
+    } else {
+        LightColors.surfaceContainer
+    }
+
+    return WidgetTheme(colorScheme, accents, widgetBackground)
 }
 
 /** Notification-only accent color: prefers the primary color actually last rendered by the

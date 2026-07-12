@@ -94,6 +94,7 @@ class QuickAddWidget : GlanceAppWidget() {
                     allLists = allLists,
                     accents = theme.accents,
                     colors = theme.colorScheme,
+                    widgetBackground = theme.widgetBackground,
                     targetType = effectiveTargetType,
                     targetId = effectiveTargetId,
                     targetName = targetName,
@@ -115,6 +116,7 @@ private fun QuickAddWidgetContent(
     allLists: List<com.mj.yata.domain.model.YataList>,
     accents: com.mj.yata.ui.theme.YataAccents,
     colors: androidx.compose.material3.ColorScheme,
+    widgetBackground: Color,
     targetType: String?,
     targetId: String?,
     targetName: String?,
@@ -132,32 +134,26 @@ private fun QuickAddWidgetContent(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(colors.surface.copy(alpha = opacity))
+            .background(widgetBackground.copy(alpha = opacity))
             .appWidgetBackground()
             .cornerRadius(cornerRadius.dp)
             .clickable(openQuickAddDialogAction(targetType, targetId, targetName))
     ) {
         if (isSmall) {
+            val plusColor = accentOverride ?: colors.primary
             Column(
                 modifier = GlanceModifier.fillMaxSize(),
                 horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
                 verticalAlignment = Alignment.Vertical.CenterVertically
             ) {
-                Box(
-                    modifier = GlanceModifier
-                        .size(52.dp)
-                        .cornerRadius(20.dp)
-                        .background(GlanceTheme.colors.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "+",
-                        style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onPrimaryContainer)
-                    )
-                }
-                Spacer(modifier = GlanceModifier.height(10.dp))
                 Text(
-                    text = "Add task",
+                    text = "+",
+                    style = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Medium, color = ColorProvider(plusColor))
+                )
+                Spacer(modifier = GlanceModifier.height(6.dp))
+                Text(
+                    text = if (!customLabel.isNullOrBlank()) customLabel else "Add task",
+                    maxLines = 1,
                     style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurfaceVariant)
                 )
             }

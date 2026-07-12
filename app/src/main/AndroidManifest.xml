@@ -98,7 +98,7 @@
         <receiver
             android:name=".widget.YataAppWidgetReceiver"
             android:label="@string/widget_today_label"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -111,7 +111,7 @@
         <receiver
             android:name=".widget.QuickAddWidgetReceiver"
             android:label="@string/widget_quick_add_label"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -151,7 +151,7 @@
         <receiver
             android:name=".widget.ProgressStatsWidgetReceiver"
             android:label="@string/widget_progress_label"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -164,7 +164,7 @@
         <receiver
             android:name=".widget.TeamOverdueWidgetReceiver"
             android:label="@string/widget_team_overdue_label"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -177,7 +177,7 @@
         <receiver
             android:name=".widget.SingleListWidgetReceiver"
             android:label="@string/widget_single_list_label"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -191,7 +191,7 @@
         <receiver
             android:name=".widget.UpcomingWidgetReceiver"
             android:label="@string/widget_upcoming_label"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

@@ -14,13 +14,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 private enum class ConfigCategory { LIST, PROJECT, TAG }
 
@@ -284,6 +285,11 @@ private fun WidgetCustomizerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+        ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -291,26 +297,21 @@ private fun WidgetCustomizerScreen(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Corner Radius", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        IconButton(
-                            onClick = { if (radius > 2) radius -= 2 },
-                            enabled = radius > 2
-                        ) {
-                            Icon(Icons.Default.ChevronLeft, contentDescription = "Decrease")
-                        }
-                        Text("${radius} dp (px)", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                        IconButton(
-                            onClick = { if (radius < 30) radius += 2 },
-                            enabled = radius < 30
-                        ) {
-                            Icon(Icons.Default.ChevronRight, contentDescription = "Increase")
-                        }
-                    }
+                    Text(
+                        "${radius} dp",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Slider(
+                        value = radius.toFloat(),
+                        onValueChange = { radius = it.roundToInt() },
+                        valueRange = 2f..30f,
+                        // Even steps only (2, 4, 6, ... 30) — matches the old +/- 2 stepper's
+                        // granularity, just as an M3 slider with visible tick marks instead.
+                        steps = 13,
+                        thumb = { ExpressiveSliderThumb() },
+                        track = { state -> ExpressiveSliderTrack(state) }
+                    )
                 }
             }
 
@@ -422,29 +423,42 @@ private fun WidgetCustomizerScreen(
 
             // Source Picker for Single List or Quick Add
             if (isSingleList || isQuickAdd) {
-                Card(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = if (isSingleList) "Choose Source to Pin" else "Choose Preset Destination (Optional)",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         if (selectedSourceId != null) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "Selected: $selectedSourceName (${selectedSourceType.uppercase()})",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onPrimaryContainer))
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = selectedSourceName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                        Text(
+                                            text = selectedSourceType.uppercase(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
                                 if (isQuickAdd) {
                                     TextButton(onClick = {
                                         selectedSourceId = null
@@ -505,12 +519,21 @@ private fun WidgetCustomizerScreen(
                             }
                         }
 
-                        if (targetItems.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        if (targetItems.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().height(120.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Text("No items available in this category.")
                             }
                         } else {
-                            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                            // Fixed (not weight()-based) height — this Card sits inside the
+                            // outer screen's own scroll, so the list gets its own bounded,
+                            // independently-scrollable region instead of competing for
+                            // leftover space with every other card on the screen. That
+                            // competition used to squeeze this down to near-zero height,
+                            // making it look like most items were simply missing.
+                            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp)) {
                                 items(targetItems) { item ->
                                     val itemColor = LocalYataAccents.current.getAccent(colorExtractor(item))
                                     Surface(
@@ -545,10 +568,10 @@ private fun WidgetCustomizerScreen(
                     }
                 }
             }
+        } // end scrollable content Column
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Save button
+            // Save button — pinned outside the scrollable region so it's always reachable
+            // without hunting for it at the bottom of a long scroll.
             Button(
                 onClick = {
                     if (isSingleList && selectedSourceId == null) {
@@ -558,9 +581,75 @@ private fun WidgetCustomizerScreen(
                     onSave(radius, label, useM3, selectedSourceId, selectedSourceType, opacity, accentOverride)
                 },
                 enabled = !isSingleList || selectedSourceId != null,
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp)
             ) {
                 Text("Save Changes", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+/** M3 Expressive-style slider thumb — a tall rounded bar instead of the classic round knob. */
+@Composable
+private fun ExpressiveSliderThumb() {
+    Box(
+        modifier = Modifier
+            .width(6.dp)
+            .height(32.dp)
+            .clip(RoundedCornerShape(3.dp))
+            .background(MaterialTheme.colorScheme.primary)
+    )
+}
+
+/** M3 Expressive-style slider track — a capsule track split into active/inactive segments with
+ * a small gap at the thumb, plus step-tick dots, instead of the classic single continuous bar. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExpressiveSliderTrack(state: SliderState) {
+    val activeColor = MaterialTheme.colorScheme.primary
+    val inactiveColor = MaterialTheme.colorScheme.primaryContainer
+    val range = state.valueRange.endInclusive - state.valueRange.start
+    val fraction = if (range > 0f) ((state.value - state.valueRange.start) / range).coerceIn(0f, 1f) else 0f
+    val tickCount = state.steps + 2 // stops including both endpoints
+
+    Box(modifier = Modifier.fillMaxWidth().height(16.dp)) {
+        Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .weight(fraction.coerceAtLeast(0.0001f))
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 2.dp, bottomEnd = 2.dp))
+                    .background(activeColor)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(
+                modifier = Modifier
+                    .weight((1f - fraction).coerceAtLeast(0.0001f))
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(topStart = 2.dp, bottomStart = 2.dp, topEnd = 8.dp, bottomEnd = 8.dp))
+                    .background(inactiveColor)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().align(Alignment.Center).padding(horizontal = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val onActiveTick = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+            val onInactiveTick = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+            repeat(tickCount) { i ->
+                val tickFraction = if (tickCount > 1) i / (tickCount - 1).toFloat() else 0f
+                // First/last ticks sit under the rounded track ends — skip them so they don't
+                // look like they're floating just outside the capsule.
+                if (i == 0 || i == tickCount - 1) {
+                    Spacer(modifier = Modifier.size(4.dp))
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(4.dp)
+                            .clip(CircleShape)
+                            .background(if (tickFraction <= fraction) onActiveTick else onInactiveTick)
+                    )
+                }
             }
         }
     }
