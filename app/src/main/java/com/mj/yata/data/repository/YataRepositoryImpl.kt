@@ -13,6 +13,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
@@ -25,11 +28,51 @@ class YataRepositoryImpl @Inject constructor(
     private val widgetUpdater: WidgetUpdater
 ) : YataRepository {
 
-    override fun getTasks(): Flow<List<Task>> {
-        return db.taskDao().getTasksWithRelations().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    private val repositoryScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO
+    )
+
+    private val tasksStateFlow = db.taskDao().getTasksWithRelations()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val projectsStateFlow = db.projectDao().getAll()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val activeProjectsStateFlow = db.projectDao().getActive()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val listsStateFlow = db.listDao().getAll()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val activeListsStateFlow = db.listDao().getActive()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val peopleStateFlow = db.personDao().getAll()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val activePeopleStateFlow = db.personDao().getActive()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val tagsStateFlow = db.tagDao().getAll()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val tagGroupsStateFlow = db.tagGroupDao().getAll()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val personGroupsStateFlow = db.personGroupDao().getAll()
+        .map { list -> list.map { it.toDomain() } }
+        .stateIn(repositoryScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    override fun getTasks(): Flow<List<Task>> = tasksStateFlow
 
     override fun getTaskById(id: String): Flow<Task?> {
         return db.taskDao().getTaskWithRelationsById(id).map { it?.toDomain() }
@@ -40,37 +83,91 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) {
-        val entity = task.toEntity()
+        upsertTasks(listOf(task), notify, resyncReminder)
+    }
 
-        // All-or-nothing: a crash mid-sync must never leave a task with its cross-refs/subtasks
-        // deleted but not replaced.
+    override suspend fun upsertTasks(tasks: List<Task>, notify: Boolean, resyncReminder: Boolean) {
+        if (tasks.isEmpty()) return
+
         db.withTransaction {
-            // Insert task entity
-            db.taskDao().insert(entity)
+            tasks.forEach { task ->
+                val entity = task.toEntity()
+                db.taskDao().insert(entity)
 
-            // Sync many-to-many assignees
-            db.taskDao().deleteTaskPersonCrossRefs(task.id)
-            if (task.assigneeIds.isNotEmpty()) {
-                val refs = task.assigneeIds.map { TaskPersonCrossRef(task.id, it) }
-                db.taskDao().insertTaskPersonCrossRefs(refs)
-            }
+                // Sync many-to-many assignees (only if changed!)
+                val existingPeople = db.taskDao().getPeopleForTaskDirect(task.id).map { it.id }
+                if (existingPeople.toSet() != task.assigneeIds.toSet()) {
+                    db.taskDao().deleteTaskPersonCrossRefs(task.id)
+                    if (task.assigneeIds.isNotEmpty()) {
+                        val refs = task.assigneeIds.map { TaskPersonCrossRef(task.id, it) }
+                        db.taskDao().insertTaskPersonCrossRefs(refs)
+                    }
+                }
 
-            // Sync many-to-many tags
-            db.taskDao().deleteTaskTagCrossRefs(task.id)
-            if (task.tagIds.isNotEmpty()) {
-                val refs = task.tagIds.map { TaskTagCrossRef(task.id, it) }
-                db.taskDao().insertTaskTagCrossRefs(refs)
-            }
+                // Sync many-to-many tags (only if changed!)
+                val existingTags = db.taskDao().getTagsForTaskDirect(task.id).map { it.id }
+                if (existingTags.toSet() != task.tagIds.toSet()) {
+                    db.taskDao().deleteTaskTagCrossRefs(task.id)
+                    if (task.tagIds.isNotEmpty()) {
+                        val refs = task.tagIds.map { TaskTagCrossRef(task.id, it) }
+                        db.taskDao().insertTaskTagCrossRefs(refs)
+                    }
+                }
 
-            // Sync subtasks (owned child rows, simplest to delete-then-reinsert given typical
-            // per-task subtask counts are small)
-            db.subtaskDao().deleteForTask(task.id)
-            if (task.subtasks.isNotEmpty()) {
-                db.subtaskDao().upsertAll(task.subtasks.map { it.toEntity(task.id) })
+                // Sync subtasks (only if changed!)
+                val existingSubtasks = db.subtaskDao().getSubtasksForTaskDirect(task.id)
+                val existingDomainSubtasks = existingSubtasks.map { it.toDomain() }
+                if (existingDomainSubtasks != task.subtasks) {
+                    db.subtaskDao().deleteForTask(task.id)
+                    if (task.subtasks.isNotEmpty()) {
+                        db.subtaskDao().upsertAll(task.subtasks.map { it.toEntity(task.id) })
+                    }
+                }
             }
         }
 
-        if (resyncReminder) syncReminder(entity)
+        if (resyncReminder) {
+            tasks.forEach { task ->
+                syncReminder(task.toEntity())
+            }
+        }
+        if (notify) widgetUpdater.notifyTasksChanged()
+    }
+
+    override fun searchTasks(query: String): Flow<List<Task>> {
+        if (query.isBlank()) return kotlinx.coroutines.flow.flowOf(emptyList())
+        val ftsQuery = query.split(Regex("[^\\p{L}\\p{N}_]+"))
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { "${it.replace("\"", "")}*" }
+            .ifBlank { "__yata_no_match__*" }
+        return db.taskDao().searchTasksWithRelations(ftsQuery, query).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean) = withContext(Dispatchers.IO) {
+        db.taskDao().updateFlag(id, flag)
+        if (notify) widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun setTaskPriority(id: String, priority: String, notify: Boolean) = withContext(Dispatchers.IO) {
+        db.taskDao().updatePriority(id, priority)
+        if (notify) widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun setTaskContainer(
+        id: String,
+        listId: String?,
+        projectId: String?,
+        sortOrder: Int,
+        notify: Boolean
+    ) = withContext(Dispatchers.IO) {
+        db.taskDao().updateContainer(id, listId, projectId, sortOrder)
+        if (notify) widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun setTaskSortOrder(id: String, sortOrder: Int, notify: Boolean) = withContext(Dispatchers.IO) {
+        db.taskDao().updateSortOrder(id, sortOrder)
         if (notify) widgetUpdater.notifyTasksChanged()
     }
 
@@ -79,17 +176,10 @@ class YataRepositoryImpl @Inject constructor(
         val wasDone = taskEntity.done
         val isNowDone = !wasDone
 
-        // Fetch current assignees, tags and subtasks to maintain them
-        val assigneeIds = db.taskDao().getPeopleForTaskDirect(id).map { it.id }
-        val tagIds = db.taskDao().getTagsForTaskDirect(id).map { it.id }
-        val subtaskEntities = db.subtaskDao().getSubtasksForTaskDirect(id)
-
         // Check if task is recurring and we are marking it as done
         val recurrence = deserializeRecurrence(taskEntity.recurrenceJson)
 
         if (isNowDone && recurrence != null && taskEntity.dueDate != null) {
-            // Calculate next due date. Completion-based recurrence counts the interval from
-            // today (when it was actually finished) rather than from the original due date.
             val baseDate = if (recurrence.basedOnCompletion) {
                 java.time.LocalDate.now().toString()
             } else {
@@ -98,9 +188,11 @@ class YataRepositoryImpl @Inject constructor(
             val nextDate = RecurrenceEvaluator.calculateNextOccurrence(recurrence, baseDate)
             
             if (nextDate != null) {
-                // Updated task computed outside the transaction; all writes below are
-                // all-or-nothing so a crash mid-sequence can't leave a duplicated historical
-                // task with no cross-refs, or an advanced task with a stale reminder.
+                // Fetch current assignees, tags and subtasks to maintain them ONLY when we need to advance the recurrence!
+                val assigneeIds = db.taskDao().getPeopleForTaskDirect(id).map { it.id }
+                val tagIds = db.taskDao().getTagsForTaskDirect(id).map { it.id }
+                val subtaskEntities = db.subtaskDao().getSubtasksForTaskDirect(id)
+
                 val updatedRecurrence = when (val ends = recurrence.ends) {
                     is RecurrenceEnds.After -> {
                         val newCount = ends.count - 1
@@ -133,9 +225,6 @@ class YataRepositoryImpl @Inject constructor(
                     // Copy assignees, tags and subtasks to completed history instance
                     db.taskDao().insertTaskPersonCrossRefs(assigneeIds.map { TaskPersonCrossRef(historicalTaskId, it) })
                     db.taskDao().insertTaskTagCrossRefs(tagIds.map { TaskTagCrossRef(historicalTaskId, it) })
-                    // Flattened (not nested) on the history copy — parent ids get regenerated per
-                    // row, so preserving parent/child links here isn't worth the FK bookkeeping
-                    // for what's just a historical snapshot.
                     db.subtaskDao().upsertAll(
                         subtaskEntities.map { it.copy(id = UUID.randomUUID().toString(), taskId = historicalTaskId, parentSubtaskId = null) }
                     )
@@ -154,7 +243,7 @@ class YataRepositoryImpl @Inject constructor(
             done = isNowDone,
             completedAt = if (isNowDone) System.currentTimeMillis() else null
         )
-        db.taskDao().insert(updatedTask)
+        db.taskDao().updateDone(id, isNowDone, updatedTask.completedAt)
         syncReminder(updatedTask)
         if (notify) widgetUpdater.notifyTasksChanged()
     }
@@ -264,17 +353,9 @@ class YataRepositoryImpl @Inject constructor(
         db.taskCommentDao().delete(comment.toEntity())
     }
 
-    override fun getProjects(): Flow<List<Project>> {
-        return db.projectDao().getAll().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    override fun getProjects(): Flow<List<Project>> = projectsStateFlow
 
-    override fun getActiveProjects(): Flow<List<Project>> {
-        return db.projectDao().getActive().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    override fun getActiveProjects(): Flow<List<Project>> = activeProjectsStateFlow
 
     override fun getArchivedProjects(): Flow<List<Project>> {
         return db.projectDao().getArchived().map { list ->
@@ -307,17 +388,9 @@ class YataRepositoryImpl @Inject constructor(
         db.projectDao().setArchived(ids, archived)
     }
 
-    override fun getLists(): Flow<List<YataList>> {
-        return db.listDao().getAll().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    override fun getLists(): Flow<List<YataList>> = listsStateFlow
 
-    override fun getActiveLists(): Flow<List<YataList>> {
-        return db.listDao().getActive().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    override fun getActiveLists(): Flow<List<YataList>> = activeListsStateFlow
 
     override fun getArchivedLists(): Flow<List<YataList>> {
         return db.listDao().getArchived().map { list ->
@@ -342,17 +415,9 @@ class YataRepositoryImpl @Inject constructor(
         db.listDao().setArchived(ids, archived)
     }
 
-    override fun getPeople(): Flow<List<Person>> {
-        return db.personDao().getAll().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    override fun getPeople(): Flow<List<Person>> = peopleStateFlow
 
-    override fun getActivePeople(): Flow<List<Person>> {
-        return db.personDao().getActive().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    override fun getActivePeople(): Flow<List<Person>> = activePeopleStateFlow
 
     override fun getArchivedPeople(): Flow<List<Person>> {
         return db.personDao().getArchived().map { list ->
@@ -375,9 +440,7 @@ class YataRepositoryImpl @Inject constructor(
         // Note: Task relations are deleted automatically by cascade in task_person_cross_ref
     }
 
-    override fun getPersonGroups(): Flow<List<PersonGroup>> {
-        return db.personGroupDao().getAll().map { list -> list.map { it.toDomain() } }
-    }
+    override fun getPersonGroups(): Flow<List<PersonGroup>> = personGroupsStateFlow
 
     override suspend fun upsertPersonGroup(group: PersonGroup) {
         db.personGroupDao().insert(group.toEntity())
@@ -390,11 +453,7 @@ class YataRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getTags(): Flow<List<Tag>> {
-        return db.tagDao().getAll().map { list ->
-            list.map { it.toDomain() }
-        }
-    }
+    override fun getTags(): Flow<List<Tag>> = tagsStateFlow
 
     override fun getTagById(id: String): Flow<Tag?> {
         return db.tagDao().getById(id).map { it?.toDomain() }
@@ -406,13 +465,9 @@ class YataRepositoryImpl @Inject constructor(
 
     override suspend fun deleteTag(tag: Tag) {
         db.tagDao().delete(tag.toEntity())
-
-        // Note: Task relations are deleted automatically by cascade in task_tag_cross_ref
     }
 
-    override fun getTagGroups(): Flow<List<TagGroup>> {
-        return db.tagGroupDao().getAll().map { list -> list.map { it.toDomain() } }
-    }
+    override fun getTagGroups(): Flow<List<TagGroup>> = tagGroupsStateFlow
 
     override suspend fun upsertTagGroup(group: TagGroup) {
         db.tagGroupDao().insert(group.toEntity())

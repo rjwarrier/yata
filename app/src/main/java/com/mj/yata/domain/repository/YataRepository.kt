@@ -18,8 +18,14 @@ interface YataRepository {
     // no bearing on reminders (tags, project/list, sort order, flag) pass false — rescheduling
     // an alarm that can't have changed was pure waste, and multiplied per item in a bulk loop.
     suspend fun upsertTask(task: Task, notify: Boolean = true, resyncReminder: Boolean = true)
+    suspend fun upsertTasks(tasks: List<Task>, notify: Boolean = true, resyncReminder: Boolean = true)
     suspend fun toggleTaskDone(id: String, notify: Boolean = true)
     suspend fun skipTaskOccurrence(id: String)
+    fun searchTasks(query: String): Flow<List<Task>>
+    suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean = true)
+    suspend fun setTaskPriority(id: String, priority: String, notify: Boolean = true)
+    suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean = true)
+    suspend fun setTaskSortOrder(id: String, sortOrder: Int, notify: Boolean = true)
 
     /** Manually fires the same "something changed" signal [upsertTask]/etc. fire automatically —
      * for bulk callers that suppressed it per-item via `notify = false`. */

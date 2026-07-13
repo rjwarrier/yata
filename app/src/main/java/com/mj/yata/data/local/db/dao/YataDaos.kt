@@ -154,7 +154,24 @@ interface TaskDao {
 
     @Transaction
     @Query("SELECT * FROM tasks WHERE id = :id")
-    fun getTaskWithRelationsById(id: String): Flow<TaskWithRelations?>
+    fun getTaskWithRelationsById(id: String): Flow<TaskDetailWithRelations?>
+
+    @Transaction
+    @Query("""
+        SELECT DISTINCT t.* FROM tasks t
+        LEFT JOIN task_person_cross_ref pRef ON t.id = pRef.taskId
+        LEFT JOIN people p ON pRef.personId = p.id
+        LEFT JOIN task_tag_cross_ref tRef ON t.id = tRef.taskId
+        LEFT JOIN tags tag ON tRef.tagId = tag.id
+        LEFT JOIN subtasks s ON t.id = s.taskId
+        WHERE (
+            t.rowid IN (SELECT rowid FROM tasks_fts WHERE tasks_fts MATCH :searchQuery)
+            OR p.name LIKE '%' || :rawQuery || '%'
+            OR tag.name LIKE '%' || :rawQuery || '%'
+            OR s.title LIKE '%' || :rawQuery || '%'
+        ) AND t.deletedAt IS NULL
+    """)
+    fun searchTasksWithRelations(searchQuery: String, rawQuery: String): Flow<List<TaskWithRelations>>
 
     @Query("SELECT * FROM tasks")
     fun getAll(): Flow<List<TaskEntity>>
@@ -179,6 +196,21 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET projectId = NULL WHERE projectId = :projectId")
     suspend fun clearProject(projectId: String)
+
+    @Query("UPDATE tasks SET done = :done, completedAt = :completedAt WHERE id = :id")
+    suspend fun updateDone(id: String, done: Boolean, completedAt: Long?)
+
+    @Query("UPDATE tasks SET flag = :flag WHERE id = :id")
+    suspend fun updateFlag(id: String, flag: Boolean)
+
+    @Query("UPDATE tasks SET priority = :priority WHERE id = :id")
+    suspend fun updatePriority(id: String, priority: String)
+
+    @Query("UPDATE tasks SET listId = :listId, projectId = :projectId, sortOrder = :sortOrder WHERE id = :id")
+    suspend fun updateContainer(id: String, listId: String?, projectId: String?, sortOrder: Int)
+
+    @Query("UPDATE tasks SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun updateSortOrder(id: String, sortOrder: Int)
 
     @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL")
     suspend fun emptyTrash()

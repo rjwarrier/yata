@@ -179,5 +179,11 @@ fun Task.toEntity() = TaskEntity(
 fun TaskWithRelations.toDomain() = task.toDomain(
     assigneeIds = assignees.map { it.id },
     tagIds = tags.map { it.id },
+    subtasks = emptyList()
+)
+
+fun TaskDetailWithRelations.toDomain() = task.toDomain(
+    assigneeIds = assignees.map { it.id },
+    tagIds = tags.map { it.id },
     subtasks = subtaskEntities.sortedBy { it.sortOrder }.map { it.toDomain() }
 )

@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.navigation.NavBackStackEntry
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -99,7 +101,7 @@ fun AppNavigation(
             arguments = listOf(navArgument("taskId") { type = NavType.StringType })
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
-            val viewModel: MainViewModel = hiltViewModel()
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             TaskDetailScreen(
                 viewModel = viewModel,
                 taskId = taskId,
@@ -114,7 +116,7 @@ fun AppNavigation(
             arguments = listOf(navArgument("projectId") { type = NavType.StringType })
         ) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
-            val viewModel: MainViewModel = hiltViewModel()
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             ProjectDetailScreen(
                 viewModel = viewModel,
                 projectId = projectId,
@@ -132,7 +134,7 @@ fun AppNavigation(
             arguments = listOf(navArgument("personId") { type = NavType.StringType })
         ) { backStackEntry ->
             val personId = backStackEntry.arguments?.getString("personId") ?: ""
-            val viewModel: MainViewModel = hiltViewModel()
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             PersonDetailScreen(
                 viewModel = viewModel,
                 personId = personId,
@@ -150,7 +152,7 @@ fun AppNavigation(
             arguments = listOf(navArgument("tagId") { type = NavType.StringType })
         ) { backStackEntry ->
             val tagId = backStackEntry.arguments?.getString("tagId") ?: ""
-            val viewModel: MainViewModel = hiltViewModel()
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             TagDetailScreen(
                 viewModel = viewModel,
                 tagId = tagId,
@@ -168,7 +170,7 @@ fun AppNavigation(
             arguments = listOf(navArgument("listId") { type = NavType.StringType })
         ) { backStackEntry ->
             val listId = backStackEntry.arguments?.getString("listId") ?: ""
-            val viewModel: MainViewModel = hiltViewModel()
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             ListDetailScreen(
                 viewModel = viewModel,
                 listId = listId,
@@ -181,8 +183,8 @@ fun AppNavigation(
         }
 
         // ── Welcome / onboarding ─────────────────────────────────────────────
-        composable(Screen.Welcome.route) {
-            val viewModel: MainViewModel = hiltViewModel()
+        composable(Screen.Welcome.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             WelcomeScreen(
                 onFinish = {
                     viewModel.setHasSeenWelcome()
@@ -192,8 +194,8 @@ fun AppNavigation(
         }
 
         // ── Search ────────────────────────────────────────────────────────────
-        composable(Screen.Search.route) {
-            val viewModel: MainViewModel = hiltViewModel()
+        composable(Screen.Search.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             SearchScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
@@ -205,8 +207,8 @@ fun AppNavigation(
         }
 
         // ── Settings ─────────────────────────────────────────────────────────
-        composable(Screen.Settings.route) {
-            val viewModel: MainViewModel = hiltViewModel()
+        composable(Screen.Settings.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             SettingsScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
@@ -221,8 +223,8 @@ fun AppNavigation(
         }
 
         // ── Analytics ────────────────────────────────────────────────────────
-        composable(Screen.Analytics.route) {
-            val viewModel: MainViewModel = hiltViewModel()
+        composable(Screen.Analytics.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             AnalyticsScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
@@ -231,8 +233,8 @@ fun AppNavigation(
         }
 
         // ── Trash ────────────────────────────────────────────────────────────
-        composable(Screen.Trash.route) {
-            val viewModel: MainViewModel = hiltViewModel()
+        composable(Screen.Trash.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             TrashScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
@@ -241,8 +243,8 @@ fun AppNavigation(
         }
 
         // ── Next 10 Days ─────────────────────────────────────────────────────
-        composable(Screen.NextDays.route) {
-            val viewModel: MainViewModel = hiltViewModel()
+        composable(Screen.NextDays.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             NextDaysScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
@@ -252,5 +254,21 @@ fun AppNavigation(
                 onNavigateToTab = onNavigateToTab
             )
         }
+    }
+}
+
+@Composable
+private fun NavBackStackEntry.sharedViewModel(navController: NavHostController): MainViewModel {
+    val mainEntry = remember(this) {
+        try {
+            navController.getBackStackEntry(Screen.Main.route)
+        } catch (e: Exception) {
+            null
+        }
+    }
+    return if (mainEntry != null) {
+        hiltViewModel(mainEntry)
+    } else {
+        hiltViewModel()
     }
 }

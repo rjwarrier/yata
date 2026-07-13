@@ -34,16 +34,17 @@ data class WidgetTheme(val colorScheme: ColorScheme, val accents: YataAccents, v
  * dynamic color enabled. */
 suspend fun resolveWidgetTheme(context: Context): WidgetTheme {
     val userPreferences = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).userPreferences()
-    val themeMode = userPreferences.themeModeFlow.first()
-    val dynamicEnabled = userPreferences.dynamicColorEnabledFlow.first()
+    val snapshot = userPreferences.snapshotFlow.first()
+    val themeMode = snapshot.themeMode
+    val dynamicEnabled = snapshot.dynamicColorEnabled
     val systemDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
     val isDark = when (themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> systemDark
         ThemeMode.SCHEDULED -> isDarkNow(
-            LocalTime.of(userPreferences.themeScheduleStartHourFlow.first(), userPreferences.themeScheduleStartMinuteFlow.first()),
-            LocalTime.of(userPreferences.themeScheduleEndHourFlow.first(), userPreferences.themeScheduleEndMinuteFlow.first())
+            LocalTime.of(snapshot.themeScheduleStartHour, snapshot.themeScheduleStartMinute),
+            LocalTime.of(snapshot.themeScheduleEndHour, snapshot.themeScheduleEndMinute)
         )
     }
     val supportsDynamic = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S

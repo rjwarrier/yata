@@ -44,7 +44,11 @@ fun MarkdownText(markdown: String, modifier: Modifier = Modifier) {
             textView.setTextColor(textColor)
             textView.textSize = textSizeSp
             textView.typeface = typeface
-            markwon.setMarkdown(textView, markdown)
+            val lastMarkdown = textView.tag as? String
+            if (lastMarkdown != markdown) {
+                markwon.setMarkdown(textView, markdown)
+                textView.tag = markdown
+            }
         }
     )
 }

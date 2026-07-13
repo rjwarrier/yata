@@ -68,6 +68,7 @@ fun ProjectsTab(
     val activeProjects = remember(projects) { projects.activeProjects() }
     val archivedProjects = remember(projects) { projects.archivedProjects().sortedBy { it.sortOrder } }
     val sortedProjects = remember(activeProjects) { activeProjects.sortedBy { it.sortOrder } }
+    val tasksByProject = remember(tasks) { tasks.groupBy { it.projectId } }
     var localOrder by remember { mutableStateOf(sortedProjects) }
     var isDragging by remember { mutableStateOf(false) }
     LaunchedEffect(sortedProjects) {
@@ -197,7 +198,7 @@ fun ProjectsTab(
                         )
                     }
                     items(archivedProjects, key = { "archived_${it.id}" }) { archivedProject ->
-                        val archivedProjectTasks = tasks.filter { it.projectId == archivedProject.id }
+                        val archivedProjectTasks = tasksByProject[archivedProject.id] ?: emptyList()
                         val archivedDoneTasks = archivedProjectTasks.count { it.done }
                         ProjectCard(
                             project = archivedProject,
@@ -213,8 +214,8 @@ fun ProjectsTab(
             },
             modifier = Modifier.weight(1f)
         ) { project ->
-            val projectTasks = remember(tasks, project.id) {
-                tasks.filter { it.projectId == project.id }
+            val projectTasks = remember(tasksByProject, project.id) {
+                tasksByProject[project.id] ?: emptyList()
             }
 
             val totalTasks = projectTasks.size

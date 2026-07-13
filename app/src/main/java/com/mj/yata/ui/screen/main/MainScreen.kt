@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mj.yata.domain.model.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.ui.navigation.Screen
 import com.mj.yata.ui.screen.main.tabs.*
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -116,29 +117,31 @@ fun MainScreen(
     }
 
     // Database updates flows
-    val tasks by viewModel.tasks.collectAsState()
-    val projects by viewModel.projects.collectAsState()
-    val activeProjects by viewModel.activeProjects.collectAsState()
-    val lists by viewModel.lists.collectAsState()
-    val people by viewModel.people.collectAsState()
-    val activePeople by viewModel.activePeople.collectAsState()
-    val tags by viewModel.tags.collectAsState()
-    val tagGroups by viewModel.tagGroups.collectAsState()
-    val personGroups by viewModel.personGroups.collectAsState()
+    val uiState by viewModel.mainScreenUiState.collectAsStateWithLifecycle()
+    val tasks = uiState.tasks
+    val projects = uiState.projects
+    val activeProjects = uiState.activeProjects
+    val lists = uiState.lists
+    val people = uiState.people
+    val activePeople = uiState.activePeople
+    val tags = uiState.tags
+    val tagGroups = uiState.tagGroups
+    val personGroups = uiState.personGroups
 
     // Preferences
-    val userName by viewModel.userName.collectAsState()
-    val userEmail by viewModel.userEmail.collectAsState()
-    val userPhotoUri by viewModel.userPhotoUri.collectAsState()
-    val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
-    val fabPosition by viewModel.fabPosition.collectAsState()
-    val hideCompletedToday by viewModel.hideCompletedToday.collectAsState()
+    val userName = uiState.userName
+    val userEmail = uiState.userEmail
+    val userPhotoUri = uiState.userPhotoUri
+    val startOfWeekSunday = uiState.startOfWeekSunday
+    val peopleFeatureEnabled = uiState.peopleFeatureEnabled
+    val tagsFeatureEnabled = uiState.tagsFeatureEnabled
+    val projectsFeatureEnabled = uiState.projectsFeatureEnabled
+    val taskRowDensity = uiState.taskRowDensity
+    val todayTabEnabled = uiState.todayTabEnabled
+    val upcomingTabEnabled = uiState.upcomingTabEnabled
+    val fabPosition = uiState.fabPosition
+    val hideCompletedToday = uiState.hideCompletedToday
+    val todayBadgeCount = uiState.todayRemainingCount
 
     // If the tab currently open gets disabled out from under the user, fall back to Today
     // rather than leaving them stranded on a tab no longer reachable from the nav bar.
@@ -425,10 +428,9 @@ fun MainScreen(
                 androidx.compose.material3.FabPosition.End
             },
             bottomBar = {
-                val todayRemainingCount by viewModel.todayRemainingCount.collectAsState()
                 CustomBottomNav(
                     selectedTab = selectedTab,
-                    todayBadgeCount = todayRemainingCount,
+                    todayBadgeCount = todayBadgeCount,
                     peopleEnabled = peopleFeatureEnabled,
                     tagsEnabled = tagsFeatureEnabled,
                     projectsEnabled = projectsFeatureEnabled,

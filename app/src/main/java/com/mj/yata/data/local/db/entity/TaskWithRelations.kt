@@ -25,6 +25,30 @@ data class TaskWithRelations(
             entityColumn = "tagId"
         )
     )
+    val tags: List<TagEntity>
+)
+
+data class TaskDetailWithRelations(
+    @Embedded val task: TaskEntity,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "id",
+        associateBy = Junction(
+            value = TaskPersonCrossRef::class,
+            parentColumn = "taskId",
+            entityColumn = "personId"
+        )
+    )
+    val assignees: List<PersonEntity>,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "id",
+        associateBy = Junction(
+            value = TaskTagCrossRef::class,
+            parentColumn = "taskId",
+            entityColumn = "tagId"
+        )
+    )
     val tags: List<TagEntity>,
     @Relation(
         parentColumn = "id",

@@ -16,6 +16,7 @@ import org.json.JSONArray
         ListEntity::class,
         TagEntity::class,
         TaskEntity::class,
+        TaskFtsEntity::class,
         TaskPersonCrossRef::class,
         TaskTagCrossRef::class,
         TagGroupEntity::class,
@@ -23,7 +24,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 22,
+    version = 23,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -279,6 +280,17 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_21_22 = object : Migration(21, 22) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE lists ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS `tasks_fts` USING FTS4(`title` TEXT NOT NULL, `notes` TEXT, content=`tasks`)")
+                db.execSQL("CREATE TRIGGER IF NOT EXISTS `room_fts_content_sync_tasks_fts_BEFORE_UPDATE` BEFORE UPDATE ON `tasks` BEGIN DELETE FROM `tasks_fts` WHERE `docid`=OLD.`rowid`; END")
+                db.execSQL("CREATE TRIGGER IF NOT EXISTS `room_fts_content_sync_tasks_fts_BEFORE_DELETE` BEFORE DELETE ON `tasks` BEGIN DELETE FROM `tasks_fts` WHERE `docid`=OLD.`rowid`; END")
+                db.execSQL("CREATE TRIGGER IF NOT EXISTS `room_fts_content_sync_tasks_fts_AFTER_UPDATE` AFTER UPDATE ON `tasks` BEGIN INSERT INTO `tasks_fts`(`docid`, `title`, `notes`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`notes`); END")
+                db.execSQL("CREATE TRIGGER IF NOT EXISTS `room_fts_content_sync_tasks_fts_AFTER_INSERT` AFTER INSERT ON `tasks` BEGIN INSERT INTO `tasks_fts`(`docid`, `title`, `notes`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`notes`); END")
+                db.execSQL("INSERT INTO `tasks_fts` (docid, `title`, `notes`) SELECT rowid, `title`, `notes` FROM `tasks`")
             }
         }
     }

@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
 import com.mj.yata.ui.theme.LocalYataAccents
 
+private val avatarCache = android.util.LruCache<String, android.graphics.Bitmap>(30)
+
 @Composable
 fun PersonAvatar(
     initials: String,
@@ -42,19 +44,26 @@ fun PersonAvatar(
 
     val context = LocalContext.current
     val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photoUri) {
-        value = if (photoUri == null) {
-            null
+        if (photoUri == null) {
+            value = null
         } else {
-            try {
-                // Downsampled — this renders at 24-56dp, decoding a full-resolution multi-
-                // megapixel photo for that was pure wasted memory/CPU on every photoUri change.
-                com.mj.yata.util.ProfilePhotoUtils.decodeSampledBitmap(
-                    context,
-                    android.net.Uri.parse(photoUri),
-                    maxDimension = 200
-                )
-            } catch (e: Exception) {
-                null
+            val cached = avatarCache.get(photoUri)
+            if (cached != null) {
+                value = cached
+            } else {
+                value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        com.mj.yata.util.ProfilePhotoUtils.decodeSampledBitmap(
+                            context,
+                            android.net.Uri.parse(photoUri),
+                            maxDimension = 200
+                        )?.also {
+                            avatarCache.put(photoUri, it)
+                        }
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
             }
         }
     }

@@ -13,10 +13,14 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import javax.inject.Inject
 
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+
 @HiltAndroidApp
 class YataApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
+    @Inject lateinit var userPreferences: com.mj.yata.data.local.datastore.UserPreferences
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -36,10 +40,11 @@ class YataApplication : Application(), Configuration.Provider {
             defaultHandler?.uncaughtException(thread, throwable)
         }
 
-        // Cheap to enqueue unconditionally — enqueueUniquePeriodicWork(KEEP) is a no-op if
-        // already scheduled, and the worker itself checks cloudBackupEnabledFlow before doing
-        // anything.
-        CloudBackupWorker.schedule(this)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            val wifiOnly = userPreferences.cloudBackupWifiOnlyFlow.first()
+            val interval = userPreferences.cloudBackupIntervalMinutesFlow.first()
+            CloudBackupWorker.schedule(this@YataApplication, interval, androidx.work.ExistingPeriodicWorkPolicy.KEEP, wifiOnly)
+        }
         OverdueEscalationWorker.schedule(this)
         DailyAgendaWorker.schedule(this)
     }

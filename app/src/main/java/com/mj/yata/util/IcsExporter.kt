@@ -5,6 +5,8 @@ import android.net.Uri
 import android.util.Log
 import com.mj.yata.domain.repository.YataRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import java.io.OutputStreamWriter
 import java.time.LocalDate
@@ -25,8 +27,8 @@ class IcsExporter @Inject constructor(
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
     private val stampFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
 
-    suspend fun exportIcs(uri: Uri): Boolean {
-        return try {
+    suspend fun exportIcs(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
             val tasks = repository.getTasks().first().filter { it.due != null }
             val ics = buildIcs(tasks)
             context.contentResolver.openOutputStream(uri)?.use { stream ->

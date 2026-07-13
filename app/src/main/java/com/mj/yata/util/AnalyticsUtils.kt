@@ -243,21 +243,45 @@ object AnalyticsUtils {
         return overdue to onTimeRate
     }
 
+    private fun List<Task>.groupByAssignee(): Map<String, List<Task>> {
+        val map = mutableMapOf<String, MutableList<Task>>()
+        this.forEach { task ->
+            task.assigneeIds.forEach { pid ->
+                map.getOrPut(pid) { mutableListOf() }.add(task)
+            }
+        }
+        return map
+    }
+
+    private fun List<Task>.groupByTag(projects: List<Project>): Map<String, List<Task>> {
+        val map = mutableMapOf<String, MutableList<Task>>()
+        this.forEach { task ->
+            task.effectiveTagIds(projects).forEach { tid ->
+                map.getOrPut(tid) { mutableListOf() }.add(task)
+            }
+        }
+        return map
+    }
+
     fun byPerson(periodTasks: List<Task>, allTasks: List<Task>, people: List<Person>, today: LocalDate = LocalDate.now()): List<EntityStat> {
+        val periodTasksByPerson = periodTasks.groupByAssignee()
+        val allTasksByPerson = allTasks.groupByAssignee()
         return people.mapNotNull { person ->
-            val personPeriodTasks = periodTasks.filter { person.id in it.assigneeIds }
+            val personPeriodTasks = periodTasksByPerson[person.id] ?: emptyList()
             if (personPeriodTasks.isEmpty()) return@mapNotNull null
-            val personAllTasks = allTasks.filter { person.id in it.assigneeIds }
+            val personAllTasks = allTasksByPerson[person.id] ?: emptyList()
             val (overdue, onTimeRate) = overdueAndOnTimeRate(personPeriodTasks, personAllTasks, today)
             EntityStat(person.id, person.name, person.color, personPeriodTasks.size, personPeriodTasks.count { it.done }, overdue, onTimeRate)
         }.sortedByDescending { it.total }
     }
 
     fun byTag(periodTasks: List<Task>, allTasks: List<Task>, projects: List<Project>, tags: List<Tag>, today: LocalDate = LocalDate.now()): List<EntityStat> {
+        val periodTasksByTag = periodTasks.groupByTag(projects)
+        val allTasksByTag = allTasks.groupByTag(projects)
         return tags.mapNotNull { tag ->
-            val tagPeriodTasks = periodTasks.filter { tag.id in it.effectiveTagIds(projects) }
+            val tagPeriodTasks = periodTasksByTag[tag.id] ?: emptyList()
             if (tagPeriodTasks.isEmpty()) return@mapNotNull null
-            val tagAllTasks = allTasks.filter { tag.id in it.effectiveTagIds(projects) }
+            val tagAllTasks = allTasksByTag[tag.id] ?: emptyList()
             val (overdue, onTimeRate) = overdueAndOnTimeRate(tagPeriodTasks, tagAllTasks, today)
             EntityStat(tag.id, tag.name, tag.color, tagPeriodTasks.size, tagPeriodTasks.count { it.done }, overdue, onTimeRate)
         }.sortedByDescending { it.total }

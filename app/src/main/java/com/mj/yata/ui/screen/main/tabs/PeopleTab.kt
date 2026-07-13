@@ -63,6 +63,15 @@ fun PeopleTab(
     onPeopleReordered: (List<Person>) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val tasksByPerson = remember(tasks) {
+        val map = mutableMapOf<String, MutableList<Task>>()
+        tasks.forEach { task ->
+            task.assigneeIds.forEach { pid ->
+                map.getOrPut(pid) { mutableListOf() }.add(task)
+            }
+        }
+        map
+    }
     val selectedIds = remember { mutableStateListOf<String>() }
     var selectModeOn by remember { mutableStateOf(false) }
     val selectionMode = selectModeOn
@@ -182,7 +191,7 @@ fun PeopleTab(
                         item(key = "group_dnd_${group.id}") {
                             ReorderablePeopleSection(
                                 people = groupPeople,
-                                tasks = tasks,
+                                tasksByPerson = tasksByPerson,
                                 selectionMode = selectionMode,
                                 selectedIds = selectedIds,
                                 onPersonClick = onPersonClick,
@@ -210,7 +219,7 @@ fun PeopleTab(
                         val sortedUngrouped = remember(ungrouped) { ungrouped.sortedBy { it.sortOrder } }
                         ReorderablePeopleSection(
                             people = sortedUngrouped,
-                            tasks = tasks,
+                            tasksByPerson = tasksByPerson,
                             selectionMode = selectionMode,
                             selectedIds = selectedIds,
                             onPersonClick = onPersonClick,
@@ -284,7 +293,7 @@ fun PeopleTab(
 @Composable
 private fun ReorderablePeopleSection(
     people: List<Person>,
-    tasks: List<Task>,
+    tasksByPerson: Map<String, List<Task>>,
     selectionMode: Boolean,
     selectedIds: MutableList<String>,
     onPersonClick: (String) -> Unit,
@@ -304,8 +313,8 @@ private fun ReorderablePeopleSection(
         onDragEnd = { onReordered(localOrder) },
         onDragStateChanged = { isDragging = it }
     ) { person ->
-        val personTasks = remember(tasks, person.id) {
-            tasks.filter { it.assigneeIds.contains(person.id) }
+        val personTasks = remember(tasksByPerson, person.id) {
+            tasksByPerson[person.id] ?: emptyList()
         }
         val doneCount = personTasks.count { it.done }
         val overdueCount = remember(personTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(personTasks) }

@@ -24,4 +24,11 @@ object WidgetRefresher {
             ids.forEach { id -> widget.update(context, id) }
         }
     }
+
+    suspend fun refreshWidget(context: Context, widgetClass: Class<out androidx.glance.appwidget.GlanceAppWidget>) {
+        val manager = GlanceAppWidgetManager(context)
+        val ids = manager.getGlanceIds(widgetClass)
+        val widgetInstance = widgetTypes.find { it::class.java == widgetClass } ?: return
+        ids.forEach { id -> widgetInstance.update(context, id) }
+    }
 }

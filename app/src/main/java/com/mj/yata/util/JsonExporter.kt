@@ -12,6 +12,8 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,8 +47,8 @@ class JsonExporter @Inject constructor(
         comments = repository.getAllComments().first()
     )
 
-    suspend fun exportData(uri: Uri): Boolean {
-        return try {
+    suspend fun exportData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
             val root = buildBackupJson(loadBackupData())
             context.contentResolver.openOutputStream(uri)?.use { os ->
                 OutputStreamWriter(os).use { writer ->
@@ -62,7 +64,9 @@ class JsonExporter @Inject constructor(
 
     /** Raw JSON bytes of a full backup — used for cloud upload, where there's no [Uri] to write
      * through a [android.content.ContentResolver]. */
-    suspend fun exportToBytes(): ByteArray = buildBackupJson(loadBackupData()).toString(2).toByteArray(Charsets.UTF_8)
+    suspend fun exportToBytes(): ByteArray = withContext(Dispatchers.IO) {
+        buildBackupJson(loadBackupData()).toString(2).toByteArray(Charsets.UTF_8)
+    }
 
     /**
      * Splits completed tasks older than [archiveMonths] (and their comments) out of the payload
@@ -345,8 +349,8 @@ class JsonExporter @Inject constructor(
         return if (ok) filename else null
     }
 
-    suspend fun importData(uri: Uri): Boolean {
-        return try {
+    suspend fun importData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
             val sb = StringBuilder()
             context.contentResolver.openInputStream(uri)?.use { ins ->
                 BufferedReader(InputStreamReader(ins)).use { reader ->
@@ -365,8 +369,8 @@ class JsonExporter @Inject constructor(
 
     /** Restores from raw JSON bytes — used for cloud restore, where there's no [Uri] to read
      * through a [android.content.ContentResolver]. */
-    suspend fun importBytes(bytes: ByteArray): Boolean {
-        return try {
+    suspend fun importBytes(bytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
+        try {
             importJson(JSONObject(String(bytes, Charsets.UTF_8)))
         } catch (e: Exception) {
             Log.e("JsonExporter", "importBytes failed", e)

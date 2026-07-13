@@ -171,7 +171,10 @@ class CloudBackupManager @Inject constructor(
      * reschedules the already-enqueued periodic work rather than a no-op (KEEP would leave the
      * old interval running until the app's next cold start). */
     fun updateBackupInterval(intervalMinutes: Long) {
-        CloudBackupWorker.schedule(context, intervalMinutes, androidx.work.ExistingPeriodicWorkPolicy.UPDATE)
+        scope.launch {
+            val wifiOnly = userPreferences.cloudBackupWifiOnlyFlow.first()
+            CloudBackupWorker.schedule(context, intervalMinutes, androidx.work.ExistingPeriodicWorkPolicy.UPDATE, wifiOnly)
+        }
     }
 
     /** Debounced trigger for the "something changed" hook — cancels any pending backup and

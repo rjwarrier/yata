@@ -63,6 +63,8 @@ import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.util.ProfilePhotoUtils
 import com.mj.yata.util.TaskScheduleUtils
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** One-line-each feature reference shown in the Help & About card — kept short on purpose;
  * the full walkthrough with more detail lives in the "Show Welcome Tour" replay above. */
@@ -93,38 +95,39 @@ fun SettingsScreen(
     onNavigateToWelcome: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val themeMode by viewModel.themeMode.collectAsState()
-    val appFont by viewModel.appFont.collectAsState()
-    val userName by viewModel.userName.collectAsState()
-    val userEmail by viewModel.userEmail.collectAsState()
-    val userPhotoUri by viewModel.userPhotoUri.collectAsState()
-    val defaultListId by viewModel.defaultListId.collectAsState()
-    val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsState()
-    val defaultReminderHour by viewModel.defaultReminderHour.collectAsState()
-    val defaultReminderMinute by viewModel.defaultReminderMinute.collectAsState()
-    val themeScheduleStartHour by viewModel.themeScheduleStartHour.collectAsState()
-    val themeScheduleStartMinute by viewModel.themeScheduleStartMinute.collectAsState()
-    val themeScheduleEndHour by viewModel.themeScheduleEndHour.collectAsState()
-    val themeScheduleEndMinute by viewModel.themeScheduleEndMinute.collectAsState()
-    val reduceMotionEnabled by viewModel.reduceMotionEnabled.collectAsState()
-    val textScale by viewModel.textScale.collectAsState()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
-    val hapticsEnabled by viewModel.hapticsEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
-    val fabPosition by viewModel.fabPosition.collectAsState()
-    val uiScale by viewModel.uiScale.collectAsState()
-    val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val lists by viewModel.lists.collectAsState()
-    val cloudBackupEnabled by viewModel.cloudBackupEnabled.collectAsState()
-    val cloudBackupAccountEmail by viewModel.cloudBackupAccountEmail.collectAsState()
-    val cloudBackupLastAt by viewModel.cloudBackupLastAt.collectAsState()
-    val cloudBackupWifiOnly by viewModel.cloudBackupWifiOnly.collectAsState()
-    val cloudBackupIntervalMinutes by viewModel.cloudBackupIntervalMinutes.collectAsState()
-    val cloudBackupArchiveMonths by viewModel.cloudBackupArchiveMonths.collectAsState()
+    val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
+    val themeMode = uiState.themeMode
+    val appFont = uiState.appFont
+    val userName = uiState.userName
+    val userEmail = uiState.userEmail
+    val userPhotoUri = uiState.userPhotoUri
+    val defaultListId = uiState.defaultListId
+    val startOfWeekSunday = uiState.startOfWeekSunday
+    val defaultReminderHour = uiState.defaultReminderHour
+    val defaultReminderMinute = uiState.defaultReminderMinute
+    val themeScheduleStartHour = uiState.themeScheduleStartHour
+    val themeScheduleStartMinute = uiState.themeScheduleStartMinute
+    val themeScheduleEndHour = uiState.themeScheduleEndHour
+    val themeScheduleEndMinute = uiState.themeScheduleEndMinute
+    val reduceMotionEnabled = uiState.reduceMotionEnabled
+    val textScale = uiState.textScale
+    val taskRowDensity = uiState.taskRowDensity
+    val hapticsEnabled = uiState.hapticsEnabled
+    val todayTabEnabled = uiState.todayTabEnabled
+    val upcomingTabEnabled = uiState.upcomingTabEnabled
+    val fabPosition = uiState.fabPosition
+    val uiScale = uiState.uiScale
+    val dynamicColorEnabled = uiState.dynamicColorEnabled
+    val peopleFeatureEnabled = uiState.peopleFeatureEnabled
+    val tagsFeatureEnabled = uiState.tagsFeatureEnabled
+    val projectsFeatureEnabled = uiState.projectsFeatureEnabled
+    val lists = uiState.lists
+    val cloudBackupEnabled = uiState.cloudBackupEnabled
+    val cloudBackupAccountEmail = uiState.cloudBackupAccountEmail
+    val cloudBackupLastAt = uiState.cloudBackupLastAt
+    val cloudBackupWifiOnly = uiState.cloudBackupWifiOnly
+    val cloudBackupIntervalMinutes = uiState.cloudBackupIntervalMinutes
+    val cloudBackupArchiveMonths = uiState.cloudBackupArchiveMonths
 
     var showDefaultListMenu by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
@@ -137,7 +140,7 @@ fun SettingsScreen(
     var editingEmail by remember { mutableStateOf(false) }
     var tempEmail by remember { mutableStateOf(userEmail) }
 
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+    val todayBadgeCount = uiState.todayRemainingCount
 
     var showDeleteAllDialog by remember { mutableStateOf(false) }
     var isDeletingAll by remember { mutableStateOf(false) }
@@ -167,7 +170,16 @@ fun SettingsScreen(
         contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            pickedPhotoBitmap = ProfilePhotoUtils.decodeSampledBitmap(context, uri)
+            scope.launch {
+                val bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        ProfilePhotoUtils.decodeSampledBitmap(context, uri)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                pickedPhotoBitmap = bitmap
+            }
         }
     }
 
@@ -204,15 +216,16 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            item {
             // 1. Profile Section
             Text(
                 text = "PROFILE",
@@ -320,7 +333,8 @@ fun SettingsScreen(
                     }
                 }
             }
-
+        }
+        item {
             // 2. Preferences Section
             Text(
                 text = "PREFERENCES",
@@ -458,7 +472,8 @@ fun SettingsScreen(
                     )
                 }
             }
-
+        }
+        item {
             // Notifications Section — Android (especially Samsung/One UI) silently downgrades
             // reminders to a fuzzy ~1hr-late delivery window, or kills them outright in Doze,
             // unless these two OS-level permissions are granted. Neither is requestable at
@@ -510,7 +525,8 @@ fun SettingsScreen(
                     )
                 }
             }
-
+        }
+        item {
             // Features Section — hides the entire tab/pickers/chips for a feature, but never
             // touches stored data, so re-enabling shows everything exactly as it was.
             Text(
@@ -567,7 +583,8 @@ fun SettingsScreen(
                     )
                 }
             }
-
+        }
+        item {
             // Manage Section — tap-through to the People/Tags/Projects tabs, per handoff's Settings "Manage" rows.
             // Purely a visibility toggle (see Features section above), so each row/divider fades
             // and collapses in and out in step with its feature flag rather than popping instantly.
@@ -611,7 +628,8 @@ fun SettingsScreen(
                     }
                 }
             }
-
+        }
+        item {
             // 3. Display Section
             Text(
                 text = "DISPLAY",
@@ -827,7 +845,8 @@ fun SettingsScreen(
                     }
                 }
             }
-
+        }
+        item {
             // 4. Cloud Backup Section
             Text(
                 text = "CLOUD BACKUP",
@@ -1130,7 +1149,8 @@ fun SettingsScreen(
                     }
                 }
             }
-
+        }
+        item {
             // 5. Backup/Data Section
             Text(
                 text = "BACKUP & DATA",
@@ -1314,7 +1334,8 @@ fun SettingsScreen(
                     }
                 }
             }
-
+        }
+        item {
             // 6. Help & About Section — a concise feature reference, with the app-identity
             // "about" card (previously its own top-level section) now living at the bottom of it.
             Text(
@@ -1400,6 +1421,7 @@ fun SettingsScreen(
             }
         }
     }
+}
 
     if (showDeleteAllDialog) {
         AlertDialog(
@@ -1733,9 +1755,13 @@ fun SettingsScreen(
         CircularImageCropper(
             source = bitmap,
             onConfirm = { cropped ->
-                val savedUri = ProfilePhotoUtils.saveCircularProfilePhoto(context, cropped)
-                viewModel.setUserPhotoUri(savedUri.toString())
-                pickedPhotoBitmap = null
+                scope.launch {
+                    val savedUri = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        ProfilePhotoUtils.saveCircularProfilePhoto(context, cropped)
+                    }
+                    viewModel.setUserPhotoUri(savedUri.toString())
+                    pickedPhotoBitmap = null
+                }
             },
             onCancel = { pickedPhotoBitmap = null }
         )

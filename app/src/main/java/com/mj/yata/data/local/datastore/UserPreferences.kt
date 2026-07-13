@@ -18,12 +18,37 @@ interface TaskListPreferences {
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_settings")
 
+data class UserPreferencesSnapshot(
+    val themeMode: ThemeMode,
+    val dynamicColorEnabled: Boolean,
+    val themeScheduleStartHour: Int,
+    val themeScheduleStartMinute: Int,
+    val themeScheduleEndHour: Int,
+    val themeScheduleEndMinute: Int
+)
+
 @Singleton
 class UserPreferences @Inject constructor(
     @ApplicationContext context: Context
 ) : TaskListPreferences {
 
     private val dataStore = context.dataStore
+
+    val snapshotFlow: Flow<UserPreferencesSnapshot> = dataStore.data.map { prefs ->
+        UserPreferencesSnapshot(
+            themeMode = when (prefs[THEME_MODE]) {
+                ThemeMode.LIGHT.name     -> ThemeMode.LIGHT
+                ThemeMode.DARK.name      -> ThemeMode.DARK
+                ThemeMode.SCHEDULED.name -> ThemeMode.SCHEDULED
+                else                     -> ThemeMode.SYSTEM
+            },
+            dynamicColorEnabled = prefs[DYNAMIC_COLOR_ENABLED] ?: true,
+            themeScheduleStartHour = prefs[THEME_SCHEDULE_START_HOUR] ?: 21,
+            themeScheduleStartMinute = prefs[THEME_SCHEDULE_START_MINUTE] ?: 0,
+            themeScheduleEndHour = prefs[THEME_SCHEDULE_END_HOUR] ?: 7,
+            themeScheduleEndMinute = prefs[THEME_SCHEDULE_END_MINUTE] ?: 0
+        )
+    }
 
     companion object {
         val THEME_MODE              = stringPreferencesKey("theme_mode")

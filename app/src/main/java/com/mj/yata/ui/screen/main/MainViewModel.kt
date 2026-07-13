@@ -30,9 +30,350 @@ class MainViewModel @Inject constructor(
         }
     }
 
+data class SettingsUiState(
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val appFont: AppFont = AppFont.INTER,
+    val userName: String = "",
+    val userEmail: String = "",
+    val userPhotoUri: String? = null,
+    val defaultListId: String = "",
+    val startOfWeekSunday: Boolean = true,
+    val defaultReminderHour: Int = 9,
+    val defaultReminderMinute: Int = 0,
+    val themeScheduleStartHour: Int = 21,
+    val themeScheduleStartMinute: Int = 0,
+    val themeScheduleEndHour: Int = 7,
+    val themeScheduleEndMinute: Int = 0,
+    val reduceMotionEnabled: Boolean = false,
+    val textScale: Float = 1.0f,
+    val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    val hapticsEnabled: Boolean = true,
+    val todayTabEnabled: Boolean = true,
+    val upcomingTabEnabled: Boolean = true,
+    val fabPosition: FabPosition = FabPosition.RIGHT,
+    val uiScale: Float = 1.0f,
+    val dynamicColorEnabled: Boolean = true,
+    val peopleFeatureEnabled: Boolean = true,
+    val tagsFeatureEnabled: Boolean = true,
+    val projectsFeatureEnabled: Boolean = true,
+    val lists: List<YataList> = emptyList(),
+    val cloudBackupEnabled: Boolean = false,
+    val cloudBackupAccountEmail: String? = null,
+    val cloudBackupLastAt: Long? = null,
+    val cloudBackupWifiOnly: Boolean = true,
+    val cloudBackupIntervalMinutes: Long = 1440L,
+    val cloudBackupArchiveMonths: Int = 6,
+    val todayRemainingCount: Int = 0
+)
+
+data class MainScreenUiState(
+    val tasks: List<Task> = emptyList(),
+    val projects: List<Project> = emptyList(),
+    val activeProjects: List<Project> = emptyList(),
+    val lists: List<YataList> = emptyList(),
+    val people: List<Person> = emptyList(),
+    val activePeople: List<Person> = emptyList(),
+    val tags: List<Tag> = emptyList(),
+    val tagGroups: List<TagGroup> = emptyList(),
+    val personGroups: List<PersonGroup> = emptyList(),
+    val userName: String = "",
+    val userEmail: String = "",
+    val userPhotoUri: String? = null,
+    val startOfWeekSunday: Boolean = true,
+    val peopleFeatureEnabled: Boolean = true,
+    val tagsFeatureEnabled: Boolean = true,
+    val projectsFeatureEnabled: Boolean = true,
+    val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    val todayTabEnabled: Boolean = true,
+    val upcomingTabEnabled: Boolean = true,
+    val fabPosition: FabPosition = FabPosition.RIGHT,
+    val hideCompletedToday: Boolean = false,
+    val todayRemainingCount: Int = 0
+)
+
+private data class SettingsProfileState(
+    val themeMode: ThemeMode,
+    val appFont: AppFont,
+    val userName: String,
+    val userEmail: String,
+    val userPhotoUri: String?
+)
+
+private data class SettingsReminderState(
+    val defaultListId: String,
+    val startOfWeekSunday: Boolean,
+    val defaultReminderHour: Int,
+    val defaultReminderMinute: Int,
+    val themeScheduleStartHour: Int
+)
+
+private data class SettingsDisplayState(
+    val themeScheduleStartMinute: Int,
+    val themeScheduleEndHour: Int,
+    val themeScheduleEndMinute: Int,
+    val reduceMotionEnabled: Boolean,
+    val textScale: Float
+)
+
+private data class SettingsFeatureState(
+    val taskRowDensity: TaskRowDensity,
+    val hapticsEnabled: Boolean,
+    val todayTabEnabled: Boolean,
+    val upcomingTabEnabled: Boolean,
+    val fabPosition: FabPosition
+)
+
+private data class SettingsVisualFeatureState(
+    val uiScale: Float,
+    val dynamicColorEnabled: Boolean,
+    val peopleFeatureEnabled: Boolean,
+    val tagsFeatureEnabled: Boolean,
+    val projectsFeatureEnabled: Boolean
+)
+
+private data class SettingsCloudState(
+    val lists: List<YataList>,
+    val cloudBackupEnabled: Boolean,
+    val cloudBackupAccountEmail: String?,
+    val cloudBackupLastAt: Long?,
+    val cloudBackupWifiOnly: Boolean
+)
+
+private data class SettingsCloudScheduleState(
+    val cloudBackupIntervalMinutes: Long,
+    val cloudBackupArchiveMonths: Int,
+    val tasks: List<Task>
+)
+
+private data class SettingsCoreState(
+    val profile: SettingsProfileState,
+    val reminder: SettingsReminderState,
+    val display: SettingsDisplayState,
+    val feature: SettingsFeatureState,
+    val visualFeature: SettingsVisualFeatureState
+)
+
+private data class MainDataState(
+    val tasks: List<Task>,
+    val projects: List<Project>,
+    val activeProjects: List<Project>,
+    val lists: List<YataList>,
+    val people: List<Person>
+)
+
+private data class MainExtraDataState(
+    val activePeople: List<Person>,
+    val tags: List<Tag>,
+    val tagGroups: List<TagGroup>,
+    val personGroups: List<PersonGroup>
+)
+
+private data class MainProfileState(
+    val userName: String,
+    val userEmail: String,
+    val userPhotoUri: String?,
+    val startOfWeekSunday: Boolean
+)
+
+private data class MainFeatureState(
+    val peopleFeatureEnabled: Boolean,
+    val tagsFeatureEnabled: Boolean,
+    val projectsFeatureEnabled: Boolean,
+    val taskRowDensity: TaskRowDensity,
+    val todayTabEnabled: Boolean
+)
+
+private data class MainNavigationState(
+    val upcomingTabEnabled: Boolean,
+    val fabPosition: FabPosition,
+    val hideCompletedToday: Boolean
+)
+
     // Data streams
     val tasks: StateFlow<List<Task>> = repository.getTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun searchTasks(query: String): Flow<List<Task>> = repository.searchTasks(query)
+
+    private val settingsCoreFlow = combine(
+        combine(
+            userPreferences.themeModeFlow,
+            userPreferences.appFontFlow,
+            userPreferences.userNameFlow,
+            userPreferences.userEmailFlow,
+            userPreferences.userPhotoUriFlow
+        ) { themeMode, appFont, userName, userEmail, userPhotoUri ->
+            SettingsProfileState(themeMode, appFont, userName, userEmail, userPhotoUri)
+        },
+        combine(
+            userPreferences.defaultListIdFlow,
+            userPreferences.startOfWeekSundayFlow,
+            userPreferences.defaultReminderHourFlow,
+            userPreferences.defaultReminderMinuteFlow,
+            userPreferences.themeScheduleStartHourFlow
+        ) { defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute, themeScheduleStartHour ->
+            SettingsReminderState(defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute, themeScheduleStartHour)
+        },
+        combine(
+            userPreferences.themeScheduleStartMinuteFlow,
+            userPreferences.themeScheduleEndHourFlow,
+            userPreferences.themeScheduleEndMinuteFlow,
+            userPreferences.reduceMotionEnabledFlow,
+            userPreferences.textScaleFlow
+        ) { themeScheduleStartMinute, themeScheduleEndHour, themeScheduleEndMinute, reduceMotionEnabled, textScale ->
+            SettingsDisplayState(themeScheduleStartMinute, themeScheduleEndHour, themeScheduleEndMinute, reduceMotionEnabled, textScale)
+        },
+        combine(
+            userPreferences.taskRowDensityFlow,
+            userPreferences.hapticsEnabledFlow,
+            userPreferences.todayTabEnabledFlow,
+            userPreferences.upcomingTabEnabledFlow,
+            userPreferences.fabPositionFlow
+        ) { taskRowDensity, hapticsEnabled, todayTabEnabled, upcomingTabEnabled, fabPosition ->
+            SettingsFeatureState(taskRowDensity, hapticsEnabled, todayTabEnabled, upcomingTabEnabled, fabPosition)
+        },
+        combine(
+            userPreferences.uiScaleFlow,
+            userPreferences.dynamicColorEnabledFlow,
+            userPreferences.peopleFeatureEnabledFlow,
+            userPreferences.tagsFeatureEnabledFlow,
+            userPreferences.projectsFeatureEnabledFlow
+        ) { uiScale, dynamicColorEnabled, peopleFeatureEnabled, tagsFeatureEnabled, projectsFeatureEnabled ->
+            SettingsVisualFeatureState(uiScale, dynamicColorEnabled, peopleFeatureEnabled, tagsFeatureEnabled, projectsFeatureEnabled)
+        }
+    ) { profile, reminder, display, feature, visualFeature ->
+        SettingsCoreState(profile, reminder, display, feature, visualFeature)
+    }
+
+    val settingsUiState: StateFlow<SettingsUiState> = combine(
+        settingsCoreFlow,
+        combine(
+            repository.getLists(),
+            userPreferences.cloudBackupEnabledFlow,
+            userPreferences.cloudBackupAccountEmailFlow,
+            userPreferences.cloudBackupLastAtFlow,
+            userPreferences.cloudBackupWifiOnlyFlow
+        ) { lists, cloudBackupEnabled, cloudBackupAccountEmail, cloudBackupLastAt, cloudBackupWifiOnly ->
+            SettingsCloudState(lists, cloudBackupEnabled, cloudBackupAccountEmail, cloudBackupLastAt, cloudBackupWifiOnly)
+        },
+        combine(
+            userPreferences.cloudBackupIntervalMinutesFlow,
+            userPreferences.cloudBackupArchiveMonthsFlow,
+            repository.getTasks() // raw Flow tasks instead of StateFlow tasks to avoid initialization order cycle
+        ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, tasks ->
+            SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, tasks)
+        }
+    ) { core, cloud, cloudSchedule ->
+        val todayStr = LocalDate.now().toString()
+        val count = cloudSchedule.tasks.count { it.due != null && it.due <= todayStr && !it.done }
+        SettingsUiState(
+            themeMode = core.profile.themeMode,
+            appFont = core.profile.appFont,
+            userName = core.profile.userName,
+            userEmail = core.profile.userEmail,
+            userPhotoUri = core.profile.userPhotoUri,
+            defaultListId = core.reminder.defaultListId,
+            startOfWeekSunday = core.reminder.startOfWeekSunday,
+            defaultReminderHour = core.reminder.defaultReminderHour,
+            defaultReminderMinute = core.reminder.defaultReminderMinute,
+            themeScheduleStartHour = core.reminder.themeScheduleStartHour,
+            themeScheduleStartMinute = core.display.themeScheduleStartMinute,
+            themeScheduleEndHour = core.display.themeScheduleEndHour,
+            themeScheduleEndMinute = core.display.themeScheduleEndMinute,
+            reduceMotionEnabled = core.display.reduceMotionEnabled,
+            textScale = core.display.textScale,
+            taskRowDensity = core.feature.taskRowDensity,
+            hapticsEnabled = core.feature.hapticsEnabled,
+            todayTabEnabled = core.feature.todayTabEnabled,
+            upcomingTabEnabled = core.feature.upcomingTabEnabled,
+            fabPosition = core.feature.fabPosition,
+            uiScale = core.visualFeature.uiScale,
+            dynamicColorEnabled = core.visualFeature.dynamicColorEnabled,
+            peopleFeatureEnabled = core.visualFeature.peopleFeatureEnabled,
+            tagsFeatureEnabled = core.visualFeature.tagsFeatureEnabled,
+            projectsFeatureEnabled = core.visualFeature.projectsFeatureEnabled,
+            lists = cloud.lists,
+            cloudBackupEnabled = cloud.cloudBackupEnabled,
+            cloudBackupAccountEmail = cloud.cloudBackupAccountEmail,
+            cloudBackupLastAt = cloud.cloudBackupLastAt,
+            cloudBackupWifiOnly = cloud.cloudBackupWifiOnly,
+            cloudBackupIntervalMinutes = cloudSchedule.cloudBackupIntervalMinutes,
+            cloudBackupArchiveMonths = cloudSchedule.cloudBackupArchiveMonths,
+            todayRemainingCount = count
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
+
+    val mainScreenUiState: StateFlow<MainScreenUiState> = combine(
+        combine(
+            repository.getTasks(),
+            repository.getProjects(),
+            repository.getActiveProjects(),
+            repository.getLists(),
+            repository.getPeople()
+        ) { tasks, projects, activeProjects, lists, people ->
+            MainDataState(tasks, projects, activeProjects, lists, people)
+        },
+        combine(
+            repository.getActivePeople(),
+            repository.getTags(),
+            repository.getTagGroups(),
+            repository.getPersonGroups()
+        ) { activePeople, tags, tagGroups, personGroups ->
+            MainExtraDataState(activePeople, tags, tagGroups, personGroups)
+        },
+        combine(
+            userPreferences.userNameFlow,
+            userPreferences.userEmailFlow,
+            userPreferences.userPhotoUriFlow,
+            userPreferences.startOfWeekSundayFlow
+        ) { userName, userEmail, userPhotoUri, startOfWeekSunday ->
+            MainProfileState(userName, userEmail, userPhotoUri, startOfWeekSunday)
+        },
+        combine(
+            userPreferences.peopleFeatureEnabledFlow,
+            userPreferences.tagsFeatureEnabledFlow,
+            userPreferences.projectsFeatureEnabledFlow,
+            userPreferences.taskRowDensityFlow,
+            userPreferences.todayTabEnabledFlow
+        ) { peopleFeatureEnabled, tagsFeatureEnabled, projectsFeatureEnabled, taskRowDensity, todayTabEnabled ->
+            MainFeatureState(peopleFeatureEnabled, tagsFeatureEnabled, projectsFeatureEnabled, taskRowDensity, todayTabEnabled)
+        },
+        combine(
+            userPreferences.upcomingTabEnabledFlow,
+            userPreferences.fabPositionFlow,
+            userPreferences.hideCompletedTodayFlow
+        ) { upcomingTabEnabled, fabPosition, hideCompletedToday ->
+            MainNavigationState(upcomingTabEnabled, fabPosition, hideCompletedToday)
+        }
+    ) { data, extraData, profile, feature, navigation ->
+        val todayStr = LocalDate.now().toString()
+        val hiddenProjectIds = data.projects.hiddenFromMainTaskProjectIds()
+        val count = data.tasks.count { it.due != null && it.due <= todayStr && !it.done && it.projectId !in hiddenProjectIds }
+        MainScreenUiState(
+            tasks = data.tasks,
+            projects = data.projects,
+            activeProjects = data.activeProjects,
+            lists = data.lists,
+            people = data.people,
+            activePeople = extraData.activePeople,
+            tags = extraData.tags,
+            tagGroups = extraData.tagGroups,
+            personGroups = extraData.personGroups,
+            userName = profile.userName,
+            userEmail = profile.userEmail,
+            userPhotoUri = profile.userPhotoUri,
+            startOfWeekSunday = profile.startOfWeekSunday,
+            peopleFeatureEnabled = feature.peopleFeatureEnabled,
+            tagsFeatureEnabled = feature.tagsFeatureEnabled,
+            projectsFeatureEnabled = feature.projectsFeatureEnabled,
+            taskRowDensity = feature.taskRowDensity,
+            todayTabEnabled = feature.todayTabEnabled,
+            upcomingTabEnabled = navigation.upcomingTabEnabled,
+            fabPosition = navigation.fabPosition,
+            hideCompletedToday = navigation.hideCompletedToday,
+            todayRemainingCount = count
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainScreenUiState())
 
     val projects: StateFlow<List<Project>> = repository.getProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -244,7 +585,13 @@ class MainViewModel @Inject constructor(
             var changed = false
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
-                repository.upsertTask(task.copy(projectId = projectId, sortOrder = nextSortOrder), notify = false, resyncReminder = false)
+                repository.setTaskContainer(
+                    id = task.id,
+                    listId = task.listId,
+                    projectId = projectId,
+                    sortOrder = nextSortOrder,
+                    notify = false
+                )
                 nextSortOrder++
                 changed = true
             }
@@ -258,7 +605,13 @@ class MainViewModel @Inject constructor(
             var changed = false
             ids.forEach { id ->
                 val task = tasks.value.find { it.id == id } ?: return@forEach
-                repository.upsertTask(task.copy(listId = listId, sortOrder = nextSortOrder), notify = false, resyncReminder = false)
+                repository.setTaskContainer(
+                    id = task.id,
+                    listId = listId,
+                    projectId = task.projectId,
+                    sortOrder = nextSortOrder,
+                    notify = false
+                )
                 nextSortOrder++
                 changed = true
             }
@@ -328,7 +681,7 @@ class MainViewModel @Inject constructor(
             var changed = false
             orderedTasks.forEachIndexed { index, task ->
                 if (task.sortOrder != index) {
-                    repository.upsertTask(task.copy(sortOrder = index), notify = false, resyncReminder = false)
+                    repository.setTaskSortOrder(task.id, index, notify = false)
                     changed = true
                 }
             }
@@ -375,9 +728,11 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             val task = tasks.value.find { it.id == taskId } ?: return@launch
             val targetSiblings = tasks.value.filter { it.listId == targetListId && it.projectId == targetProjectId }
-            repository.upsertTask(
-                task.copy(listId = targetListId, projectId = targetProjectId, sortOrder = targetSiblings.size),
-                resyncReminder = false
+            repository.setTaskContainer(
+                id = task.id,
+                listId = targetListId,
+                projectId = targetProjectId,
+                sortOrder = targetSiblings.size
             )
         }
     }
@@ -399,7 +754,7 @@ class MainViewModel @Inject constructor(
     fun toggleTaskFlag(id: String) {
         viewModelScope.launch {
             val task = tasks.value.find { it.id == id } ?: return@launch
-            repository.upsertTask(task.copy(flag = !task.flag), resyncReminder = false)
+            repository.setTaskFlag(id, !task.flag)
         }
     }
 
@@ -413,7 +768,7 @@ class MainViewModel @Inject constructor(
                 "high" -> "none"
                 else -> "none"
             }
-            repository.upsertTask(task.copy(priority = nextPriority), resyncReminder = false)
+            repository.setTaskPriority(id, nextPriority)
         }
     }
 

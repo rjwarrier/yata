@@ -28,6 +28,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** One-tap filters shown before/alongside a text query — each is a self-contained predicate so
  * toggling several combines them with AND (narrows further, doesn't union). */
@@ -109,20 +110,18 @@ fun SearchScreen(
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
     val archivedProjectIds = remember(projects) { projects.archivedProjects().map { it.id }.toSet() }
-    val filteredTasks = remember(tasks, debouncedQuery, activeFilters.toList(), peopleById, tagsById, archivedProjectIds) {
+    val queryTasks by remember(debouncedQuery) {
+        viewModel.searchTasks(debouncedQuery)
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val filteredTasks = remember(tasks, queryTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty()) {
             emptyList()
         } else {
             val today = LocalDate.now()
-            tasks.filter { task ->
+            val sourceTasks = if (debouncedQuery.isBlank()) tasks else queryTasks
+            sourceTasks.filter { task ->
                 if (task.projectId in archivedProjectIds) return@filter false
-                val matchesQuery = debouncedQuery.isBlank() ||
-                    task.title.contains(debouncedQuery, ignoreCase = true) ||
-                    task.notes?.contains(debouncedQuery, ignoreCase = true) == true ||
-                    task.subtasks.any { it.title.contains(debouncedQuery, ignoreCase = true) } ||
-                    task.tagIds.any { tagsById[it]?.name?.contains(debouncedQuery, ignoreCase = true) == true } ||
-                    task.assigneeIds.any { peopleById[it]?.name?.contains(debouncedQuery, ignoreCase = true) == true }
-                matchesQuery && activeFilters.all { it.matches(task, today) }
+                activeFilters.all { it.matches(task, today) }
             }
         }
     }

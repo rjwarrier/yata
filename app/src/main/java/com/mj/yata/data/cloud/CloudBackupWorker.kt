@@ -55,10 +55,11 @@ class CloudBackupWorker @AssistedInject constructor(
         fun schedule(
             context: Context,
             intervalMinutes: Long = DEFAULT_INTERVAL_MINUTES,
-            policy: ExistingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.KEEP
+            policy: ExistingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.KEEP,
+            wifiOnly: Boolean = false
         ) {
             val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .setRequiredNetworkType(if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)
                 .build()
             val request = PeriodicWorkRequestBuilder<CloudBackupWorker>(
                 intervalMinutes.coerceAtLeast(15L), TimeUnit.MINUTES
