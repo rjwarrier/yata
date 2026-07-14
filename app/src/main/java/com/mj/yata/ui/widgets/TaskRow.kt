@@ -177,14 +177,20 @@ fun TaskRow(
             val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(LocalDate.now()) == true
 
             // Meta row below
-            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || (showDueDate && task.due != null)) {
+            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (overdue) {
+                    if (task.done && task.completedAt != null) {
+                        Text(
+                            text = TaskScheduleUtils.formatCompletedAt(task.completedAt),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
+                        )
+                    } else if (overdue) {
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))

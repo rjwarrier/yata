@@ -46,6 +46,20 @@ object TaskScheduleUtils {
 
     fun formatReminder(reminder: String?): String = reminder ?: "None"
 
+    fun formatCompletedAt(completedAt: Long?): String {
+        if (completedAt == null) return ""
+        val dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(completedAt), ZoneId.systemDefault())
+        val date = dateTime.toLocalDate()
+        val today = LocalDate.now()
+        val time = displayTimeFormatter.format(dateTime)
+        val dayLabel = when (ChronoUnit.DAYS.between(today, date)) {
+            0L -> return "Completed today at $time"
+            -1L -> "yesterday"
+            else -> if (date.year == today.year) shortDateFormatter.format(date) else longDateFormatter.format(date)
+        }
+        return "Completed $dayLabel at $time"
+    }
+
     fun parseDate(dateString: String?): LocalDate? {
         if (dateString.isNullOrBlank()) return null
         return try {
