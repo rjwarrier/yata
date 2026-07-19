@@ -109,6 +109,7 @@ fun MainScreen(
     // Sheet states
     var activeSheet by remember { mutableStateOf<MainSheetType>(MainSheetType.None) }
     var isNewListSheetOpen by remember { mutableStateOf(false) }
+    var showCommandPalette by remember { mutableStateOf(false) }
 
     // "Quick Add" launcher shortcut / widget tap lands here with this set — open the sheet once,
     // pre-selecting a list if the Quick Add widget's list chip was what was tapped.
@@ -142,6 +143,38 @@ fun MainScreen(
     val fabPosition = uiState.fabPosition
     val hideCompletedToday = uiState.hideCompletedToday
     val todayBadgeCount = uiState.todayRemainingCount
+    val recentTasks by viewModel.recentTasks.collectAsStateWithLifecycle()
+
+    fun toggleDoneWithUndo(id: String) {
+        val previous = tasks.find { it.id == id } ?: return
+        viewModel.toggleTaskDone(id) { if (!previous.done) celebrateTrigger++ }
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = if (previous.done) "Task marked open" else "Task completed",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.restoreTasks(listOf(previous))
+            }
+        }
+    }
+
+    fun bulkCompleteWithUndo(ids: List<String>) {
+        val previous = tasks.filter { it.id in ids }
+        if (previous.isEmpty()) return
+        viewModel.bulkCompleteTasks(ids)
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "${previous.size} task(s) completed",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.restoreTasks(previous)
+            }
+        }
+    }
 
     // If the tab currently open gets disabled out from under the user, fall back to Today
     // rather than leaving them stranded on a tab no longer reachable from the nav bar.
@@ -257,6 +290,12 @@ fun MainScreen(
                     item {
                         DrawerItem("Next 10 Days", Icons.Default.DateRange, false) {
                             onNavigateToNextDays()
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+                    item {
+                        DrawerItem("Command palette", Icons.Default.Bolt, false) {
+                            showCommandPalette = true
                             scope.launch { drawerState.close() }
                         }
                     }
@@ -520,16 +559,18 @@ fun MainScreen(
                             onNextDaysClick = onNavigateToNextDays,
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
-                            onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
+                            onToggleDone = { toggleDoneWithUndo(it) },
                             onQuickSnooze = { id, preset -> viewModel.quickSnoozeTask(id, preset) },
                             onSwipeToDelete = { bulkDeleteWithUndo(listOf(it)) },
-                            onBulkComplete = { viewModel.bulkCompleteTasks(it) },
+                            onBulkComplete = { bulkCompleteWithUndo(it) },
                             onBulkDelete = { bulkDeleteWithUndo(it) },
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
                             onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
+                            onBulkReschedule = { ids, preset -> viewModel.bulkRescheduleTasks(ids, preset) },
+                            onRenameTask = { id, title -> viewModel.renameTask(id, title) },
                             onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
@@ -608,16 +649,18 @@ fun MainScreen(
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
-                            onToggleDone = { viewModel.toggleTaskDone(it) { celebrateTrigger++ } },
+                            onToggleDone = { toggleDoneWithUndo(it) },
                             onQuickSnooze = { id, preset -> viewModel.quickSnoozeTask(id, preset) },
                             onSwipeToDelete = { bulkDeleteWithUndo(listOf(it)) },
-                            onBulkComplete = { viewModel.bulkCompleteTasks(it) },
+                            onBulkComplete = { bulkCompleteWithUndo(it) },
                             onBulkDelete = { bulkDeleteWithUndo(it) },
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
                             onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
                             onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
+                            onBulkReschedule = { ids, preset -> viewModel.bulkRescheduleTasks(ids, preset) },
+                            onRenameTask = { id, title -> viewModel.renameTask(id, title) },
                             onAddComment = { taskId, body -> viewModel.addComment(taskId, body) },
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
@@ -628,6 +671,45 @@ fun MainScreen(
                 }
             }
         }
+    }
+
+    if (showCommandPalette) {
+        CommandPaletteDialog(
+            tasks = tasks,
+            recentTasks = recentTasks,
+            projectsEnabled = projectsFeatureEnabled,
+            peopleEnabled = peopleFeatureEnabled,
+            tagsEnabled = tagsFeatureEnabled,
+            onDismiss = { showCommandPalette = false },
+            onNewTask = {
+                showCommandPalette = false
+                activeSheet = MainSheetType.NewTask
+            },
+            onSearch = {
+                showCommandPalette = false
+                onNavigateToSearch()
+            },
+            onSettings = {
+                showCommandPalette = false
+                onNavigateToSettings()
+            },
+            onAnalytics = {
+                showCommandPalette = false
+                onNavigateToAnalytics()
+            },
+            onNextDays = {
+                showCommandPalette = false
+                onNavigateToNextDays()
+            },
+            onSelectTab = { tab ->
+                selectedTab = tab
+                showCommandPalette = false
+            },
+            onOpenTask = { taskId ->
+                showCommandPalette = false
+                onNavigateToTaskDetail(taskId)
+            }
+        )
     }
 
     // Modal sheet routing
@@ -734,6 +816,136 @@ fun MainScreen(
             )
         }
     }
+}
+
+private data class PaletteEntry(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun CommandPaletteDialog(
+    tasks: List<Task>,
+    recentTasks: List<Task>,
+    projectsEnabled: Boolean,
+    peopleEnabled: Boolean,
+    tagsEnabled: Boolean,
+    onDismiss: () -> Unit,
+    onNewTask: () -> Unit,
+    onSearch: () -> Unit,
+    onSettings: () -> Unit,
+    onAnalytics: () -> Unit,
+    onNextDays: () -> Unit,
+    onSelectTab: (Int) -> Unit,
+    onOpenTask: (String) -> Unit
+) {
+    var query by remember { mutableStateOf("") }
+    val commandEntries = listOfNotNull(
+        PaletteEntry("New task", "Create a task", Icons.Default.Add, onNewTask),
+        PaletteEntry("Search", "Find tasks and saved filters", Icons.Default.Search, onSearch),
+        PaletteEntry("Today", "Open today's tasks", Icons.Default.Today) { onSelectTab(0) },
+        if (projectsEnabled) PaletteEntry("Projects", "Open projects", Icons.Default.Layers) { onSelectTab(1) } else null,
+        if (peopleEnabled) PaletteEntry("People", "Open people", Icons.Default.People) { onSelectTab(2) } else null,
+        if (tagsEnabled) PaletteEntry("Tags", "Open tags", Icons.AutoMirrored.Filled.Label) { onSelectTab(3) } else null,
+        PaletteEntry("Upcoming", "Open calendar and agenda", Icons.Default.CalendarViewWeek) { onSelectTab(4) },
+        PaletteEntry("Next 10 Days", "Open the focused date list", Icons.Default.DateRange, onNextDays),
+        PaletteEntry("Analytics", "Open productivity insights", Icons.Default.Analytics, onAnalytics),
+        PaletteEntry("Settings", "Open preferences", Icons.Default.Settings, onSettings)
+    )
+    val filteredCommands = commandEntries.filter {
+        query.isBlank() ||
+            it.title.contains(query, ignoreCase = true) ||
+            it.subtitle.contains(query, ignoreCase = true)
+    }
+    val filteredRecentTasks = recentTasks.filter {
+        query.isBlank() || it.title.contains(query, ignoreCase = true)
+    }.take(8)
+    val taskMatches = if (query.isBlank()) {
+        emptyList()
+    } else {
+        tasks.filter { it.title.contains(query, ignoreCase = true) }.take(8)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Command palette") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    placeholder = { Text("Search actions or tasks") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    if (filteredCommands.isNotEmpty()) {
+                        item { PaletteSectionLabel("Actions") }
+                        items(filteredCommands, key = { "cmd_${it.title}" }) { entry ->
+                            PaletteRow(entry.title, entry.subtitle, entry.icon, entry.onClick)
+                        }
+                    }
+                    if (filteredRecentTasks.isNotEmpty()) {
+                        item { PaletteSectionLabel("Recent") }
+                        items(filteredRecentTasks, key = { "recent_${it.id}" }) { task ->
+                            PaletteRow(task.title, task.due ?: "No due date", Icons.Default.History) {
+                                onOpenTask(task.id)
+                            }
+                        }
+                    }
+                    if (taskMatches.isNotEmpty()) {
+                        item { PaletteSectionLabel("Tasks") }
+                        items(taskMatches, key = { "task_${it.id}" }) { task ->
+                            PaletteRow(task.title, task.due ?: "No due date", Icons.Default.TaskAlt) {
+                                onOpenTask(task.id)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+@Composable
+private fun PaletteSectionLabel(label: String) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 6.dp, start = 4.dp)
+    )
+}
+
+@Composable
+private fun PaletteRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    ListItem(
+        headlineContent = { Text(title, maxLines = 1) },
+        supportingContent = { Text(subtitle, maxLines = 1) },
+        leadingContent = { Icon(icon, contentDescription = null) },
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+    )
 }
 
 @Composable

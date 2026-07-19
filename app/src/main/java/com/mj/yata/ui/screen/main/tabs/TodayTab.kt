@@ -63,6 +63,8 @@ fun TodayTab(
     onBulkSetList: (List<String>, String?) -> Unit = { _, _ -> },
     onBulkDuplicate: (List<String>) -> Unit = {},
     onBulkAssignPerson: (List<String>, String) -> Unit = { _, _ -> },
+    onBulkReschedule: (List<String>, QuickSnoozePreset) -> Unit = { _, _ -> },
+    onRenameTask: (String, String) -> Unit = { _, _ -> },
     onAddComment: (taskId: String, body: String) -> Unit = { _, _ -> },
     peopleEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
@@ -77,6 +79,7 @@ fun TodayTab(
     var showBulkTagSheet by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
+    var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
@@ -152,6 +155,7 @@ fun TodayTab(
                 onComplete = { onBulkComplete(selectedIds.toList()); selectedIds.clear() },
                 onAddTag = { showBulkTagSheet = true },
                 onMove = { showBulkMoveSheet = true },
+                onReschedule = { showBulkRescheduleSheet = true },
                 onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
                 onAssign = { showBulkAssignSheet = true },
@@ -322,6 +326,7 @@ fun TodayTab(
                         onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
                         onCommentClick = { pendingCommentTask = task },
                         onQuickSnooze = { preset -> onQuickSnooze(task.id, preset) },
+                        onRenameTask = { title -> onRenameTask(task.id, title) },
                         density = taskRowDensity,
                         onSwipeToDelete = { onSwipeToDelete(task.id) },
                         swipeEnabled = !selectionMode,
@@ -406,6 +411,23 @@ fun TodayTab(
                 },
                 onDismiss = { showBulkMoveSheet = false },
                 projectsEnabled = projectsEnabled
+            )
+        }
+    }
+
+    if (showBulkRescheduleSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkRescheduleSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkRescheduleSheet(
+                onSelectPreset = { preset ->
+                    onBulkReschedule(selectedIds.toList(), preset)
+                    selectedIds.clear()
+                    showBulkRescheduleSheet = false
+                },
+                onDismiss = { showBulkRescheduleSheet = false }
             )
         }
     }

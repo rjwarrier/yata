@@ -339,6 +339,7 @@ fun TagDetailScreen(
                         modifier = modifier,
                         onCommentClick = { pendingCommentTask = task },
                         onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                        onRenameTask = { viewModel.renameTask(task.id, it) },
                         density = taskRowDensity,
                         onSwipeToDelete = { deleteTaskWithUndo(task) },
                         showDueDate = true

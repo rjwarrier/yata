@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
@@ -78,12 +79,14 @@ fun TaskRow(
     // grouping context to imply one (unlike Today/Upcoming/NextDays, which already group by
     // date, or Tag/Person/Search, which mix tasks from many places at once).
     showDueDate: Boolean = false,
-    onQuickSnooze: ((QuickSnoozePreset) -> Unit)? = null
+    onQuickSnooze: ((QuickSnoozePreset) -> Unit)? = null,
+    onRenameTask: ((String) -> Unit)? = null
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var showRenameDialog by remember { mutableStateOf(false) }
 
     val titleTextColor by animateColorAsState(
         targetValue = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
@@ -276,6 +279,20 @@ fun TaskRow(
             )
         }
 
+        if (onRenameTask != null && !selectionMode) {
+            IconButton(
+                onClick = { showRenameDialog = true },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit title",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
         if (onQuickSnooze != null && !task.done) {
             var showSnoozeMenu by remember { mutableStateOf(false) }
             Box {
@@ -375,5 +392,30 @@ fun TaskRow(
         )
     } else {
         rowContent(modifier)
+    }
+
+    if (showRenameDialog && onRenameTask != null) {
+        var title by remember(task.id) { mutableStateOf(task.title) }
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text("Edit task") },
+            text = {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onRenameTask(title)
+                    showRenameDialog = false
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 }

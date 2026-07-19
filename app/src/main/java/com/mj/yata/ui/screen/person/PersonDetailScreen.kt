@@ -429,6 +429,7 @@ fun PersonDetailScreen(
                             ),
                             onCommentClick = { pendingCommentTask = task },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                            onRenameTask = { viewModel.renameTask(task.id, it) },
                             density = taskRowDensity,
                             onSwipeToDelete = { deleteTaskWithUndo(task) },
                             showDueDate = true
@@ -519,6 +520,7 @@ fun PersonDetailScreen(
                             ),
                             onCommentClick = { pendingCommentTask = task },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                            onRenameTask = { viewModel.renameTask(task.id, it) },
                             density = taskRowDensity,
                             onSwipeToDelete = { deleteTaskWithUndo(task) },
                             showDueDate = true

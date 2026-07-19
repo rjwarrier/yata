@@ -7,12 +7,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activePeople
@@ -38,6 +40,7 @@ fun TaskSelectionTopBar(
     onComplete: () -> Unit,
     onAddTag: () -> Unit,
     onMove: () -> Unit,
+    onReschedule: () -> Unit = {},
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     onAssign: () -> Unit = {},
@@ -67,7 +70,7 @@ fun TaskSelectionTopBar(
             }
             if (tagsEnabled) {
                 IconButton(onClick = onAddTag) {
-                    Icon(Icons.Default.Label, contentDescription = "Add tag", tint = MaterialTheme.colorScheme.onSurface)
+                    Icon(Icons.AutoMirrored.Filled.Label, contentDescription = "Add tag", tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
             if (peopleEnabled) {
@@ -78,12 +81,53 @@ fun TaskSelectionTopBar(
             IconButton(onClick = onMove) {
                 Icon(Icons.AutoMirrored.Filled.DriveFileMove, contentDescription = "Move to list or project", tint = MaterialTheme.colorScheme.onSurface)
             }
+            IconButton(onClick = onReschedule) {
+                Icon(Icons.Default.Schedule, contentDescription = "Reschedule", tint = MaterialTheme.colorScheme.onSurface)
+            }
             IconButton(onClick = onDuplicate) {
                 Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate", tint = MaterialTheme.colorScheme.onSurface)
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
             }
+        }
+    }
+}
+
+@Composable
+fun TaskBulkRescheduleSheet(
+    onSelectPreset: (QuickSnoozePreset) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = "Reschedule selected tasks",
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        QuickSnoozePreset.entries.forEach { preset ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onSelectPreset(preset) }
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(preset.label, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+        TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
+            Text("Cancel")
         }
     }
 }

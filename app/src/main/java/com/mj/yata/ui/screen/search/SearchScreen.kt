@@ -90,6 +90,7 @@ fun SearchScreen(
     var showBulkTagSheet by remember { mutableStateOf(false) }
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
+    var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -139,6 +140,37 @@ fun SearchScreen(
         }
     }
 
+    fun toggleTaskWithUndo(task: Task) {
+        viewModel.toggleTaskDone(task.id) {}
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = if (task.done) "Task marked open" else "Task completed",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.restoreTasks(listOf(task))
+            }
+        }
+    }
+
+    fun completeSelectedWithUndo() {
+        val previous = tasks.filter { it.id in selectedIds }
+        if (previous.isEmpty()) return
+        viewModel.bulkCompleteTasks(selectedIds.toList())
+        selectedIds.clear()
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "${previous.size} task(s) completed",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.restoreTasks(previous)
+            }
+        }
+    }
+
     if (selectionMode) {
         val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
         Scaffold(
@@ -167,9 +199,10 @@ fun SearchScreen(
                 com.mj.yata.ui.sheets.TaskSelectionTopBar(
                     selectedCount = selectedIds.size,
                     onCancel = { selectedIds.clear() },
-                    onComplete = { viewModel.bulkCompleteTasks(selectedIds.toList()); selectedIds.clear() },
+                    onComplete = { completeSelectedWithUndo() },
                     onAddTag = { showBulkTagSheet = true },
                     onMove = { showBulkMoveSheet = true },
+                    onReschedule = { showBulkRescheduleSheet = true },
                     onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
                     onAssign = { showBulkAssignSheet = true },
@@ -201,6 +234,7 @@ fun SearchScreen(
                 selectionMode = selectionMode,
                 selectedIds = selectedIds,
                 onTaskClick = onNavigateToTaskDetail,
+                onToggleTask = ::toggleTaskWithUndo,
                 onSwipeToDelete = ::deleteTaskWithUndo,
                 tagsEnabled = tagsFeatureEnabled,
                 peopleEnabled = peopleFeatureEnabled,
@@ -259,6 +293,7 @@ fun SearchScreen(
                     selectionMode = selectionMode,
                     selectedIds = selectedIds,
                     onTaskClick = onNavigateToTaskDetail,
+                    onToggleTask = ::toggleTaskWithUndo,
                     onSwipeToDelete = ::deleteTaskWithUndo,
                     tagsEnabled = tagsFeatureEnabled,
                     peopleEnabled = peopleFeatureEnabled
@@ -328,6 +363,23 @@ fun SearchScreen(
         }
     }
 
+    if (showBulkRescheduleSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkRescheduleSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkRescheduleSheet(
+                onSelectPreset = { preset ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                    selectedIds.clear()
+                    showBulkRescheduleSheet = false
+                },
+                onDismiss = { showBulkRescheduleSheet = false }
+            )
+        }
+    }
+
     if (showBulkDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showBulkDeleteDialog = false },
@@ -380,6 +432,7 @@ private fun SearchResultsList(
     selectionMode: Boolean,
     selectedIds: MutableList<String>,
     onTaskClick: (String) -> Unit,
+    onToggleTask: (Task) -> Unit,
     onSwipeToDelete: (Task) -> Unit = {},
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
@@ -503,7 +556,7 @@ private fun SearchResultsList(
                     list = taskList,
                     assignees = taskAssignees,
                     tags = taskTags,
-                    onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
+                    onToggleDone = { onToggleTask(task) },
                     onTaskClick = {
                         if (selectionMode) {
                             if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
@@ -519,6 +572,7 @@ private fun SearchResultsList(
                     ),
                     onCommentClick = { pendingCommentTask = task },
                     onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                    onRenameTask = { viewModel.renameTask(task.id, it) },
                     density = taskRowDensity,
                     onSwipeToDelete = { onSwipeToDelete(task) },
                     swipeEnabled = !selectionMode,

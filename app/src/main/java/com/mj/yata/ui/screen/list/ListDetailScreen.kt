@@ -318,6 +318,7 @@ fun ListDetailScreen(
                     showList = false,
                     onCommentClick = { pendingCommentTask = task },
                     onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                    onRenameTask = { viewModel.renameTask(task.id, it) },
                     density = taskRowDensity,
                     showDueDate = true
                 )

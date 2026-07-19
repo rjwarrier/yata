@@ -191,6 +191,7 @@ fun NextDaysScreen(
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
                             onSwipeToDelete = { deleteTaskWithUndo(task) },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                            onRenameTask = { viewModel.renameTask(task.id, it) },
                             density = taskRowDensity,
                             modifier = Modifier.animateItemPlacement(
                                 animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)

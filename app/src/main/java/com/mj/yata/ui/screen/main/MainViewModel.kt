@@ -531,6 +531,14 @@ private data class MainNavigationState(
     val savedSmartFilterSets: StateFlow<Set<String>> = userPreferences.savedSmartFilterSetsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
+    val recentTasks: StateFlow<List<Task>> = combine(
+        userPreferences.recentTaskIdsFlow,
+        tasks
+    ) { ids, taskList ->
+        val byId = taskList.associateBy { it.id }
+        ids.mapNotNull { byId[it] }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
         viewModelScope.launch {
@@ -572,6 +580,13 @@ private data class MainNavigationState(
                 changed = true
             }
             if (changed) repository.notifyTasksChanged()
+        }
+    }
+
+    fun restoreTasks(previousTasks: List<Task>) {
+        if (previousTasks.isEmpty()) return
+        viewModelScope.launch {
+            repository.upsertTasks(previousTasks, notify = true, resyncReminder = true)
         }
     }
 
@@ -829,6 +844,22 @@ private data class MainNavigationState(
         }
     }
 
+    fun renameTask(id: String, title: String) {
+        val trimmed = title.trim()
+        if (trimmed.isBlank()) return
+        viewModelScope.launch {
+            val task = tasks.value.find { it.id == id } ?: return@launch
+            repository.upsertTask(task.copy(title = trimmed), resyncReminder = false)
+            userPreferences.recordRecentTask(id)
+        }
+    }
+
+    fun recordTaskViewed(id: String) {
+        viewModelScope.launch {
+            userPreferences.recordRecentTask(id)
+        }
+    }
+
     fun quickSnoozeTask(id: String, preset: QuickSnoozePreset) {
         viewModelScope.launch {
             val task = tasks.value.find { it.id == id } ?: return@launch
@@ -846,6 +877,24 @@ private data class MainNavigationState(
                     completedAt = null
                 )
             )
+            userPreferences.recordRecentTask(id)
+        }
+    }
+
+    fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset) {
+        viewModelScope.launch {
+            val byId = tasks.value.associateBy { it.id }
+            val today = LocalDate.now()
+            val (dueDate, dueTime) = when (preset) {
+                QuickSnoozePreset.TONIGHT -> today to TaskScheduleUtils.formatTime(18, 0)
+                QuickSnoozePreset.TOMORROW_MORNING -> today.plusDays(1) to TaskScheduleUtils.formatTime(9, 0)
+                QuickSnoozePreset.NEXT_WEEKDAY -> nextWeekday(today.plusDays(1)) to TaskScheduleUtils.formatTime(9, 0)
+            }
+            val updated = ids.mapNotNull { byId[it] }.map {
+                it.copy(due = dueDate.toString(), time = dueTime, done = false, completedAt = null)
+            }
+            repository.upsertTasks(updated, notify = true, resyncReminder = true)
+            ids.take(8).forEach { userPreferences.recordRecentTask(it) }
         }
     }
 

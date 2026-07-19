@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation.NavBackStackEntry
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -29,7 +30,6 @@ import com.mj.yata.ui.screen.trash.TrashScreen
 import com.mj.yata.ui.screen.welcome.WelcomeScreen
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
-import androidx.compose.animation.core.tween
 
 @Composable
 fun AppNavigation(
@@ -102,6 +102,9 @@ fun AppNavigation(
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            LaunchedEffect(taskId) {
+                viewModel.recordTaskViewed(taskId)
+            }
             TaskDetailScreen(
                 viewModel = viewModel,
                 taskId = taskId,
