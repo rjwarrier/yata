@@ -14,11 +14,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -193,9 +193,11 @@ fun TagsTab(
             }
             if (tags.isEmpty()) {
                 com.mj.yata.ui.widgets.TabEmptyState(
-                    icon = Icons.Default.Label,
+                    icon = Icons.AutoMirrored.Filled.Label,
                     title = "No tags yet",
-                    subtitle = "Tag tasks to group them by topic, client, or anything you like."
+                    subtitle = "Tag tasks to group them by topic, client, or anything you like.",
+                    actionLabel = "New tag",
+                    onAction = onNewTagClick
                 )
             }
             tagGroups.forEach { group ->
@@ -397,7 +399,7 @@ private fun TagRow(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Label,
+                    imageVector = Icons.AutoMirrored.Filled.Label,
                     contentDescription = "Tag",
                     tint = tagColor,
                     modifier = Modifier.size(20.dp)

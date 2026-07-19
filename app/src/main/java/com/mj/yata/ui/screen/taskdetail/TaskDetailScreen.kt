@@ -115,6 +115,7 @@ fun TaskDetailScreen(
     val projects by viewModel.projects.collectAsState()
     val people by viewModel.people.collectAsState()
     val tags by viewModel.tags.collectAsState()
+    val allTasks by viewModel.tasks.collectAsState()
 
     val accents = LocalYataAccents.current
 
@@ -167,6 +168,24 @@ fun TaskDetailScreen(
     }
 
     val listColor = taskList?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
+    val recurrenceHistory = remember(task, allTasks) {
+        if (task.recurrence == null) {
+            emptyList()
+        } else {
+            allTasks
+                .filter {
+                    it.id != task.id &&
+                        it.done &&
+                        it.completedAt != null &&
+                        it.recurrence == null &&
+                        it.title == task.title &&
+                        it.projectId == task.projectId &&
+                        it.listId == task.listId
+                }
+                .sortedByDescending { it.completedAt }
+                .take(6)
+        }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -406,6 +425,41 @@ fun TaskDetailScreen(
                         accentColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else null,
                         onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
                     )
+
+                    if (recurrenceHistory.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Recurring history",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            recurrenceHistory.forEach { historyTask ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = com.mj.yata.util.TaskScheduleUtils.formatDueDate(historyTask.due),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = com.mj.yata.util.TaskScheduleUtils.formatCompletedAt(historyTask.completedAt),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     if (projectsFeatureEnabled) {
                         MetaRowItem(

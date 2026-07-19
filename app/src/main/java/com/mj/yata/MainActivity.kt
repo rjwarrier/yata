@@ -175,6 +175,7 @@ class MainActivity : ComponentActivity() {
             val dynamicColorEnabled by userPreferences.dynamicColorEnabledFlow.collectAsState(initial = true)
             val appFont by userPreferences.appFontFlow.collectAsState(initial = com.mj.yata.domain.model.AppFont.INTER)
             val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
+            val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
             val baseDensity = LocalDensity.current
             val scaledDensity = Density(
                 density = baseDensity.density * uiScale,
@@ -183,7 +184,8 @@ class MainActivity : ComponentActivity() {
 
             CompositionLocalProvider(
                 LocalDensity provides scaledDensity,
-                com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled
+                com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled,
+                com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled
             ) {
                 YataTheme(darkTheme = useDarkTheme, useDynamicColor = dynamicColorEnabled, appFont = appFont) {
                     // Cache the actually-rendered primary color so background notifications/widgets

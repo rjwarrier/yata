@@ -15,6 +15,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import android.net.Uri
 import com.mj.yata.ui.screen.analytics.AnalyticsScreen
 import com.mj.yata.ui.screen.main.MainScreen
 import com.mj.yata.ui.screen.main.MainViewModel
@@ -58,12 +59,12 @@ fun AppNavigation(
         composable(
             route = Screen.Main.route,
             arguments = listOf(
-                navArgument("tab") { type = NavType.IntType; defaultValue = 0 },
+                navArgument("tab") { type = NavType.IntType; defaultValue = -1 },
                 navArgument("quickAdd") { type = NavType.BoolType; defaultValue = false },
                 navArgument("quickAddListId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
-            val initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
+            val initialTab = backStackEntry.arguments?.getInt("tab") ?: -1
             val initialShowNewTaskSheet = backStackEntry.arguments?.getBoolean("quickAdd") ?: false
             val initialQuickAddListId = backStackEntry.arguments?.getString("quickAddListId")
             val viewModel: MainViewModel = hiltViewModel()
@@ -76,7 +77,8 @@ fun AppNavigation(
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigateToAnalytics = { navController.navigate(Screen.Analytics.route) },
                 onNavigateToNextDays = { navController.navigate(Screen.NextDays.route) },
-                onNavigateToSearch = { navController.navigate(Screen.Search.route) },
+                onNavigateToSearch = { navController.navigate(Screen.Search.createRoute()) },
+                onNavigateToSavedSearch = { filters -> navController.navigate(Screen.Search.createRoute(filters)) },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
@@ -197,10 +199,15 @@ fun AppNavigation(
         }
 
         // ── Search ────────────────────────────────────────────────────────────
-        composable(Screen.Search.route) { backStackEntry ->
+        composable(
+            route = Screen.Search.route,
+            arguments = listOf(navArgument("filters") { type = NavType.StringType; nullable = true; defaultValue = null })
+        ) { backStackEntry ->
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            val initialFilters = backStackEntry.arguments?.getString("filters")?.let { Uri.decode(it) }
             SearchScreen(
                 viewModel = viewModel,
+                initialSmartFilterSet = initialFilters,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))

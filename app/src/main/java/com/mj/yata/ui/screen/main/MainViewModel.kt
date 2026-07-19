@@ -8,6 +8,7 @@ import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.JsonExporter
+import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -50,6 +51,7 @@ data class SettingsUiState(
     val textScale: Float = 1.0f,
     val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
     val hapticsEnabled: Boolean = true,
+    val taskSwipeActionsEnabled: Boolean = true,
     val todayTabEnabled: Boolean = true,
     val upcomingTabEnabled: Boolean = true,
     val fabPosition: FabPosition = FabPosition.RIGHT,
@@ -120,6 +122,7 @@ private data class SettingsDisplayState(
 private data class SettingsFeatureState(
     val taskRowDensity: TaskRowDensity,
     val hapticsEnabled: Boolean,
+    val taskSwipeActionsEnabled: Boolean,
     val todayTabEnabled: Boolean,
     val upcomingTabEnabled: Boolean,
     val fabPosition: FabPosition
@@ -235,12 +238,15 @@ private data class MainNavigationState(
         },
         combine(
             userPreferences.taskRowDensityFlow,
-            userPreferences.hapticsEnabledFlow,
+            combine(userPreferences.hapticsEnabledFlow, userPreferences.taskSwipeActionsEnabledFlow) { hapticsEnabled, taskSwipeActionsEnabled ->
+                hapticsEnabled to taskSwipeActionsEnabled
+            },
             userPreferences.todayTabEnabledFlow,
             userPreferences.upcomingTabEnabledFlow,
             userPreferences.fabPositionFlow
-        ) { taskRowDensity, hapticsEnabled, todayTabEnabled, upcomingTabEnabled, fabPosition ->
-            SettingsFeatureState(taskRowDensity, hapticsEnabled, todayTabEnabled, upcomingTabEnabled, fabPosition)
+        ) { taskRowDensity, swipePrefs, todayTabEnabled, upcomingTabEnabled, fabPosition ->
+            val (hapticsEnabled, taskSwipeActionsEnabled) = swipePrefs
+            SettingsFeatureState(taskRowDensity, hapticsEnabled, taskSwipeActionsEnabled, todayTabEnabled, upcomingTabEnabled, fabPosition)
         },
         combine(
             userPreferences.uiScaleFlow,
@@ -294,6 +300,7 @@ private data class MainNavigationState(
             textScale = core.display.textScale,
             taskRowDensity = core.feature.taskRowDensity,
             hapticsEnabled = core.feature.hapticsEnabled,
+            taskSwipeActionsEnabled = core.feature.taskSwipeActionsEnabled,
             todayTabEnabled = core.feature.todayTabEnabled,
             upcomingTabEnabled = core.feature.upcomingTabEnabled,
             fabPosition = core.feature.fabPosition,
@@ -539,6 +546,9 @@ private data class MainNavigationState(
         ids.mapNotNull { byId[it] }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val lastHomeTab: StateFlow<Int> = userPreferences.lastHomeTabFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
         viewModelScope.launch {
@@ -689,6 +699,30 @@ private data class MainNavigationState(
                 duplicateTaskSuspend(task.id, dueAdjustment = { it.plusMonths(1) }, notify = false)
             }
             if (openTasks.isNotEmpty()) repository.notifyTasksChanged()
+        }
+    }
+
+    fun rolloverOverdueProjectTasks(projectId: String) {
+        viewModelScope.launch {
+            val today = LocalDate.now()
+            val overdueTasks = tasks.value.filter { task ->
+                task.projectId == projectId &&
+                    !task.done &&
+                    task.recurrence == null &&
+                    task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true
+            }
+            overdueTasks.forEach { task ->
+                duplicateTaskSuspend(
+                    task.id,
+                    dueAdjustment = { due ->
+                        var next = due.plusMonths(1)
+                        while (next.isBefore(today)) next = next.plusMonths(1)
+                        next
+                    },
+                    notify = false
+                )
+            }
+            if (overdueTasks.isNotEmpty()) repository.notifyTasksChanged()
         }
     }
 
@@ -849,8 +883,26 @@ private data class MainNavigationState(
         if (trimmed.isBlank()) return
         viewModelScope.launch {
             val task = tasks.value.find { it.id == id } ?: return@launch
-            repository.upsertTask(task.copy(title = trimmed), resyncReminder = false)
+            val parsed = NaturalLanguageParser.parse(trimmed)
+            val parsedTitle = parsed.title.ifBlank { trimmed }
+            repository.upsertTask(
+                task.copy(
+                    title = parsedTitle,
+                    due = parsed.due ?: task.due,
+                    time = parsed.time ?: task.time,
+                    reminder = parsed.reminder ?: task.reminder,
+                    recurrence = parsed.recurrence ?: task.recurrence,
+                    priority = parsed.priority ?: task.priority
+                ),
+                resyncReminder = parsed.due != null || parsed.time != null || parsed.reminder != null
+            )
             userPreferences.recordRecentTask(id)
+        }
+    }
+
+    fun setLastHomeTab(tab: Int) {
+        viewModelScope.launch {
+            userPreferences.setLastHomeTab(tab)
         }
     }
 
@@ -1229,6 +1281,12 @@ private data class MainNavigationState(
     fun setHapticsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setHapticsEnabled(enabled)
+        }
+    }
+
+    fun setTaskSwipeActionsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setTaskSwipeActionsEnabled(enabled)
         }
     }
 

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,6 +27,8 @@ fun TabEmptyState(
     icon: ImageVector,
     title: String,
     subtitle: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -60,5 +63,11 @@ fun TabEmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
         )
+        if (actionLabel != null && onAction != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            TextButton(onClick = onAction) {
+                Text(actionLabel)
+            }
+        }
     }
 }

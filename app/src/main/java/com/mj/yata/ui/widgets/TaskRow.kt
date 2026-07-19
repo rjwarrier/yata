@@ -53,6 +53,26 @@ private fun TaskRowDensity.verticalPadding() = when (this) {
     TaskRowDensity.SPACIOUS -> 16.dp
 }
 
+@Composable
+private fun TaskHealthBadge(label: String) {
+    val attention = label == "Needs date" || label == "Flagged no date"
+    val containerColor = if (attention) {
+        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.13f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    }
+    val contentColor = if (attention) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
+    Text(
+        text = label,
+        color = contentColor,
+        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(containerColor)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    )
+}
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TaskRow(
@@ -85,6 +105,7 @@ fun TaskRow(
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
+    val taskSwipeActionsEnabled = com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled.current
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     var showRenameDialog by remember { mutableStateOf(false) }
 
@@ -183,10 +204,19 @@ fun TaskRow(
             // Overdue is independent of showDueDate — it's a warning, not a date display
             // preference, so it surfaces on every screen (Today, Upcoming, Tag, Person, Search)
             // rather than only the manual-order List/Project detail screens.
-            val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(LocalDate.now()) == true
+            val today = LocalDate.now()
+            val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(today) == true
+            val healthBadges = remember(task, overdue, today) {
+                buildList {
+                    if (!task.done && task.due == today.toString()) add("Due today")
+                    if (!task.done && task.due == null && task.priority == "high") add("Needs date")
+                    if (!task.done && task.due == null && task.flag) add("Flagged no date")
+                    if (!task.done && task.due == null && task.time == null && task.recurrence == null && task.priority == "none" && !task.flag) add("Unplanned")
+                }.take(2)
+            }
 
             // Meta row below
-            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
+            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -256,6 +286,10 @@ fun TaskRow(
 
                     task.recurrence?.let {
                         RecurrenceBadge(recurrence = it, compact = true)
+                    }
+
+                    healthBadges.forEach { badge ->
+                        TaskHealthBadge(badge)
                     }
 
                     tags.take(2).forEach { t ->
@@ -336,7 +370,7 @@ fun TaskRow(
         }
     }
 
-    if (onSwipeToDelete != null && swipeEnabled) {
+    if (onSwipeToDelete != null && swipeEnabled && taskSwipeActionsEnabled) {
         // Both directions snap back immediately (confirmValueChange always returns false) —
         // the row never gets removed by the swipe box itself. Delete goes through the same
         // deferred-Undo-snackbar flow as everywhere else in the app (task data isn't touched

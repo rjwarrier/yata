@@ -262,6 +262,23 @@ fun NewTaskSheet(
 
     val quickAdd = remember(title.text) { NaturalLanguageParser.parse(title.text) }
     val quickAddMatched = !quickAddDismissed && quickAdd.title != title.text.trim()
+    val finalTitlePreview = remember(title.text, quickAddMatched, quickAdd.title) {
+        if (quickAddMatched) quickAdd.title else title.text.trim()
+    }
+    val conflictHints = remember(tasks, finalTitlePreview, selectedDueDate, selectedTime) {
+        if (finalTitlePreview.isBlank()) {
+            emptyList()
+        } else {
+            buildList {
+                val duplicate = findSimilarTask(finalTitlePreview, tasks)
+                if (duplicate != null) add("Similar open task: ${duplicate.title}")
+                if (selectedDueDate != null && selectedTime != null) {
+                    val slotCount = tasks.count { !it.done && it.due == selectedDueDate && it.time == selectedTime }
+                    if (slotCount > 0) add("$slotCount open task(s) already at $selectedTime")
+                }
+            }.take(2)
+        }
+    }
     LaunchedEffect(quickAdd, quickAddDismissed) {
         if (!quickAddDismissed) {
             if (!dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
@@ -562,6 +579,41 @@ fun NewTaskSheet(
                             .clip(CircleShape)
                             .clickable { quickAddDismissed = true }
                     )
+                }
+            }
+
+            if (conflictHints.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Flag,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Heads up",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                    conflictHints.forEach { hint ->
+                        Text(
+                            text = hint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
                 }
             }
 

@@ -51,6 +51,7 @@ fun TodayTab(
     onMenuClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNextDaysClick: () -> Unit = {},
+    onNewTaskClick: () -> Unit = {},
     onProfileClick: () -> Unit,
     onTaskClick: (String) -> Unit,
     onToggleDone: (String) -> Unit,
@@ -294,7 +295,11 @@ fun TodayTab(
                     com.mj.yata.ui.widgets.TabEmptyState(
                         icon = Icons.Default.TaskAlt,
                         title = "All caught up",
-                        subtitle = if (selectedFilter == "All") "No tasks for today." else "No tasks match this filter."
+                        subtitle = if (selectedFilter == "All") "No tasks for today." else "No tasks match this filter.",
+                        actionLabel = if (selectedFilter == "All") "Add task" else "Show all",
+                        onAction = {
+                            if (selectedFilter == "All") onNewTaskClick() else selectedFilter = "All"
+                        }
                     )
                 }
             } else {

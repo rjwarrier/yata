@@ -1,5 +1,7 @@
 package com.mj.yata.ui.navigation
 
+import android.net.Uri
+
 sealed class Screen(val route: String) {
     object Main : Screen("main?tab={tab}&quickAdd={quickAdd}&quickAddListId={quickAddListId}") {
         fun createRoute(tab: Int, quickAdd: Boolean = false, quickAddListId: String? = null) =
@@ -27,7 +29,10 @@ sealed class Screen(val route: String) {
     }
 
     object Welcome : Screen("welcome")
-    object Search : Screen("search")
+    object Search : Screen("search?filters={filters}") {
+        fun createRoute(filters: String? = null) =
+            "search" + (filters?.let { "?filters=${Uri.encode(it)}" } ?: "")
+    }
     object Settings : Screen("settings")
     object Analytics : Screen("analytics")
     object Trash : Screen("trash")

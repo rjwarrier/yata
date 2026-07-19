@@ -181,7 +181,9 @@ fun ProjectsTab(
                         com.mj.yata.ui.widgets.TabEmptyState(
                             icon = Icons.Default.Layers,
                             title = "No projects yet",
-                            subtitle = "Group related tasks into a project to track progress together."
+                            subtitle = "Group related tasks into a project to track progress together.",
+                            actionLabel = "New project",
+                            onAction = onNewProjectClick
                         )
                     }
                 }

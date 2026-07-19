@@ -82,6 +82,7 @@ class UserPreferences @Inject constructor(
         val TEXT_SCALE              = floatPreferencesKey("text_scale")
         val TASK_ROW_DENSITY        = stringPreferencesKey("task_row_density")
         val HAPTICS_ENABLED         = booleanPreferencesKey("haptics_enabled")
+        val TASK_SWIPE_ACTIONS_ENABLED = booleanPreferencesKey("task_swipe_actions_enabled")
         val TODAY_TAB_ENABLED       = booleanPreferencesKey("today_tab_enabled")
         val UPCOMING_TAB_ENABLED    = booleanPreferencesKey("upcoming_tab_enabled")
         val FAB_POSITION            = stringPreferencesKey("fab_position")
@@ -89,6 +90,7 @@ class UserPreferences @Inject constructor(
         val HIDE_COMPLETED_PROJECT  = booleanPreferencesKey("hide_completed_project")
         val HIDE_COMPLETED_LIST     = booleanPreferencesKey("hide_completed_list")
         val HIDE_COMPLETED_PERSON   = booleanPreferencesKey("hide_completed_person")
+        val LAST_HOME_TAB           = intPreferencesKey("last_home_tab")
         val HAS_SEEN_WELCOME       = booleanPreferencesKey("has_seen_welcome")
         val LAST_PRIMARY_ARGB      = intPreferencesKey("last_primary_argb")
         val SAVED_SMART_FILTER_SETS = stringSetPreferencesKey("saved_smart_filter_sets")
@@ -120,6 +122,7 @@ class UserPreferences @Inject constructor(
         }
     }
     val hapticsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[HAPTICS_ENABLED] ?: true }
+    val taskSwipeActionsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
     val todayTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TODAY_TAB_ENABLED] ?: true }
     val upcomingTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[UPCOMING_TAB_ENABLED] ?: true }
     val fabPositionFlow: Flow<com.mj.yata.domain.model.FabPosition> = dataStore.data.map { prefs ->
@@ -163,6 +166,7 @@ class UserPreferences @Inject constructor(
     val hideCompletedProjectFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PROJECT] ?: false }
     val hideCompletedListFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_LIST] ?: false }
     val hideCompletedPersonFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PERSON] ?: false }
+    val lastHomeTabFlow: Flow<Int> = dataStore.data.map { (it[LAST_HOME_TAB] ?: 0).coerceIn(0, 4) }
     val hasSeenWelcomeFlow: Flow<Boolean> = dataStore.data.map { it[HAS_SEEN_WELCOME] ?: false }
     val savedSmartFilterSetsFlow: Flow<Set<String>> = dataStore.data.map { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
     val recentTaskIdsFlow: Flow<List<String>> = dataStore.data.map { prefs ->
@@ -251,6 +255,10 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[HIDE_COMPLETED_PERSON] = hide }
     }
 
+    suspend fun setLastHomeTab(tab: Int) {
+        dataStore.edit { it[LAST_HOME_TAB] = tab.coerceIn(0, 4) }
+    }
+
     suspend fun setHasSeenWelcome(seen: Boolean) {
         dataStore.edit { it[HAS_SEEN_WELCOME] = seen }
     }
@@ -321,6 +329,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setHapticsEnabled(enabled: Boolean) {
         dataStore.edit { it[HAPTICS_ENABLED] = enabled }
+    }
+
+    suspend fun setTaskSwipeActionsEnabled(enabled: Boolean) {
+        dataStore.edit { it[TASK_SWIPE_ACTIONS_ENABLED] = enabled }
     }
 
     suspend fun setTodayTabEnabled(enabled: Boolean) {

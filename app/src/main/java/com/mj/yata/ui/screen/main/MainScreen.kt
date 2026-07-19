@@ -36,6 +36,12 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,12 +76,13 @@ fun MainScreen(
     onNavigateToAnalytics: () -> Unit,
     onNavigateToNextDays: () -> Unit,
     onNavigateToSearch: () -> Unit,
+    onNavigateToSavedSearch: (String) -> Unit = {},
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToProjectDetail: (String) -> Unit,
     onNavigateToPersonDetail: (String) -> Unit,
     onNavigateToTagDetail: (String) -> Unit,
     onNavigateToListDetail: (String) -> Unit,
-    initialTab: Int = 0,
+    initialTab: Int = -1,
     initialShowNewTaskSheet: Boolean = false,
     initialQuickAddListId: String? = null
 ) {
@@ -100,7 +107,8 @@ fun MainScreen(
     }
 
     // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
-    var selectedTab by remember { mutableIntStateOf(initialTab) }
+    var selectedTab by remember { mutableIntStateOf(if (initialTab >= 0) initialTab.coerceIn(0, 4) else 0) }
+    var restoredHomeTab by remember { mutableStateOf(initialTab >= 0) }
     var calendarSelectedDay by remember { mutableStateOf(java.time.LocalDate.now()) }
 
     // Confetti trigger
@@ -144,6 +152,19 @@ fun MainScreen(
     val hideCompletedToday = uiState.hideCompletedToday
     val todayBadgeCount = uiState.todayRemainingCount
     val recentTasks by viewModel.recentTasks.collectAsStateWithLifecycle()
+    val lastHomeTab by viewModel.lastHomeTab.collectAsStateWithLifecycle()
+    val savedSmartFilterSets by viewModel.savedSmartFilterSets.collectAsStateWithLifecycle()
+
+    LaunchedEffect(lastHomeTab, restoredHomeTab) {
+        if (!restoredHomeTab) {
+            selectedTab = lastHomeTab
+            restoredHomeTab = true
+        }
+    }
+
+    LaunchedEffect(selectedTab, restoredHomeTab) {
+        if (restoredHomeTab) viewModel.setLastHomeTab(selectedTab)
+    }
 
     fun toggleDoneWithUndo(id: String) {
         val previous = tasks.find { it.id == id } ?: return
@@ -297,6 +318,68 @@ fun MainScreen(
                         DrawerItem("Command palette", Icons.Default.Bolt, false) {
                             showCommandPalette = true
                             scope.launch { drawerState.close() }
+                        }
+                    }
+                    if (peopleFeatureEnabled) {
+                        item {
+                            DrawerItem("My Work", Icons.Default.AssignmentInd, false) {
+                                onNavigateToSavedSearch("ASSIGNED_TO_ME")
+                                scope.launch { drawerState.close() }
+                            }
+                        }
+                    }
+                    item {
+                        DrawerItem("Focus Mode", Icons.Default.CenterFocusStrong, false) {
+                            onNavigateToSavedSearch("FOCUS")
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+                    item {
+                        DrawerItem("Morning Review", Icons.Default.WbSunny, false) {
+                            onNavigateToSavedSearch("MORNING_REVIEW")
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+                    item {
+                        DrawerItem("Evening Review", Icons.Default.NightsStay, false) {
+                            onNavigateToSavedSearch("EVENING_REVIEW")
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+                    item {
+                        DrawerItem("Stale Nudges", Icons.Default.HourglassEmpty, false) {
+                            onNavigateToSavedSearch("STALE_TASKS")
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+                    item {
+                        DrawerItem("Task Health", Icons.Default.HealthAndSafety, false) {
+                            onNavigateToSavedSearch("AT_RISK")
+                            scope.launch { drawerState.close() }
+                        }
+                    }
+
+                    if (savedSmartFilterSets.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "CUSTOM VIEWS",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                        items(savedSmartFilterSets.sorted(), key = { "smart_$it" }) { encoded ->
+                            DrawerItem(
+                                label = encoded.smartFilterSetLabel(),
+                                icon = Icons.Default.FilterList,
+                                selected = false
+                            ) {
+                                onNavigateToSavedSearch(encoded)
+                                scope.launch { drawerState.close() }
+                            }
                         }
                     }
 
@@ -498,7 +581,10 @@ fun MainScreen(
                     PressableScaleBox(
                         onClick = {
                             activeSheet = sheetType
-                        }
+                        },
+                        modifier = Modifier
+                            .navigationBarsPadding()
+                            .padding(bottom = 6.dp)
                     ) {
                         Surface(
                             color = MaterialTheme.colorScheme.primary,
@@ -508,7 +594,9 @@ fun MainScreen(
                             shadowElevation = 6.dp
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                                modifier = Modifier
+                                    .heightIn(min = 56.dp)
+                                    .padding(horizontal = 22.dp, vertical = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
@@ -523,6 +611,27 @@ fun MainScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .onPreviewKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown && event.isCtrlPressed) {
+                            when (event.key) {
+                                Key.K -> {
+                                    showCommandPalette = true
+                                    true
+                                }
+                                Key.N -> {
+                                    activeSheet = MainSheetType.NewTask
+                                    true
+                                }
+                                Key.F -> {
+                                    onNavigateToSearch()
+                                    true
+                                }
+                                else -> false
+                            }
+                        } else {
+                            false
+                        }
+                    }
                     .padding(bottom = innerPadding.calculateBottomPadding())
             ) {
                 // Tab switcher with dynamic M3 slide-fade animations
@@ -557,6 +666,7 @@ fun MainScreen(
                             onMenuClick = { scope.launch { drawerState.open() } },
                             onSearchClick = onNavigateToSearch,
                             onNextDaysClick = onNavigateToNextDays,
+                            onNewTaskClick = { activeSheet = MainSheetType.NewTask },
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
                             onToggleDone = { toggleDoneWithUndo(it) },
@@ -824,6 +934,23 @@ private data class PaletteEntry(
     val icon: ImageVector,
     val onClick: () -> Unit
 )
+
+private fun String.smartFilterSetLabel(): String {
+    val labels = mapOf(
+        "OVERDUE" to "Overdue",
+        "FOCUS" to "Focus mode",
+        "MORNING_REVIEW" to "Morning review",
+        "EVENING_REVIEW" to "Evening review",
+        "STALE_TASKS" to "Stale nudges",
+        "AT_RISK" to "At risk",
+        "ASSIGNED_TO_ME" to "Assigned to me",
+        "HIGH_PRIORITY" to "High priority",
+        "FLAGGED" to "Flagged",
+        "DUE_TODAY" to "Due today",
+        "NO_DUE_DATE" to "No due date"
+    )
+    return split(",").mapNotNull { labels[it] }.ifEmpty { listOf("Saved view") }.joinToString(" + ")
+}
 
 @Composable
 private fun CommandPaletteDialog(

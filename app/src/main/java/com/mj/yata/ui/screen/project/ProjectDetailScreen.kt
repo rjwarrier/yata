@@ -72,6 +72,7 @@ fun ProjectDetailScreen(
     var showArchiveDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRolloverDialog by remember { mutableStateOf(false) }
+    var showOverdueRolloverDialog by remember { mutableStateOf(false) }
     val hideCompleted by viewModel.hideCompletedProject.collectAsState()
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -238,6 +239,14 @@ fun ProjectDetailScreen(
                                 onClick = {
                                     showMenu = false
                                     showRolloverDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Roll overdue forward") },
+                                onClick = {
+                                    showMenu = false
+                                    showOverdueRolloverDialog = true
                                 },
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
                             )
@@ -636,6 +645,35 @@ fun ProjectDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRolloverDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showOverdueRolloverDialog) {
+        val today = remember { java.time.LocalDate.now() }
+        val eligibleCount = remember(projectTasks, today) {
+            projectTasks.count { task ->
+                !task.done &&
+                    task.recurrence == null &&
+                    task.due?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true
+            }
+        }
+        AlertDialog(
+            onDismissRequest = { showOverdueRolloverDialog = false },
+            title = { Text("Roll overdue tasks forward?") },
+            text = { Text("Duplicates $eligibleCount overdue open task(s), moving each due date forward by month until it lands in the future. Recurring tasks are skipped.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showOverdueRolloverDialog = false
+                    viewModel.rolloverOverdueProjectTasks(project.id)
+                }) {
+                    Text("Roll forward")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOverdueRolloverDialog = false }) {
                     Text("Cancel")
                 }
             }

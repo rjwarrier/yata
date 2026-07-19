@@ -34,13 +34,29 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 /** One-tap filters shown before/alongside a text query — each is a self-contained predicate so
  * toggling several combines them with AND (narrows further, doesn't union). */
 private enum class SmartFilter(val label: String) {
+    FOCUS("Focus mode"),
+    MORNING_REVIEW("Morning review"),
+    EVENING_REVIEW("Evening review"),
+    STALE_TASKS("Stale nudges"),
+    AT_RISK("At risk"),
+    ASSIGNED_TO_ME("Assigned to me"),
     OVERDUE("Overdue") ,
     HIGH_PRIORITY("High priority"),
     FLAGGED("Flagged"),
     DUE_TODAY("Due today"),
     NO_DUE_DATE("No due date");
 
-    fun matches(task: Task, today: LocalDate): Boolean = when (this) {
+    fun matches(task: Task, today: LocalDate, myId: String): Boolean = when (this) {
+        FOCUS -> !task.done && (task.flag || task.priority == "high" || task.due == today.toString() || task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true)
+        MORNING_REVIEW -> !task.done && (task.due == today.toString() || task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true)
+        EVENING_REVIEW -> !task.done && (task.due == today.plusDays(1).toString() || (task.due == null && task.priority != "none"))
+        STALE_TASKS -> !task.done && task.due == null && task.time == null && task.recurrence == null && task.priority == "none" && !task.flag
+        AT_RISK -> !task.done && (
+            task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true ||
+                (task.priority == "high" && task.due == null) ||
+                (task.flag && task.due == null)
+            )
+        ASSIGNED_TO_ME -> task.assigneeIds.contains(myId)
         OVERDUE -> !task.done && task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true
         HIGH_PRIORITY -> task.priority == "high"
         FLAGGED -> task.flag
@@ -62,6 +78,7 @@ private fun String.smartFilterSetLabel(): String =
 @Composable
 fun SearchScreen(
     viewModel: MainViewModel,
+    initialSmartFilterSet: String? = null,
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
     onNavigateToTab: (Int) -> Unit,
@@ -84,6 +101,14 @@ fun SearchScreen(
         debouncedQuery = query
     }
     val activeFilters = remember { mutableStateListOf<SmartFilter>() }
+    var appliedInitialSmartFilterSet by remember(initialSmartFilterSet) { mutableStateOf(false) }
+    LaunchedEffect(initialSmartFilterSet, appliedInitialSmartFilterSet) {
+        if (!appliedInitialSmartFilterSet && !initialSmartFilterSet.isNullOrBlank()) {
+            activeFilters.clear()
+            activeFilters.addAll(initialSmartFilterSet.toSmartFilters())
+            appliedInitialSmartFilterSet = true
+        }
+    }
 
     val selectedIds = remember { mutableStateListOf<String>() }
     val selectionMode = selectedIds.isNotEmpty()
@@ -127,7 +152,8 @@ fun SearchScreen(
     val queryTasks by remember(debouncedQuery) {
         viewModel.searchTasks(debouncedQuery)
     }.collectAsStateWithLifecycle(initialValue = emptyList())
-    val filteredTasks = remember(tasks, queryTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds) {
+    val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
+    val filteredTasks = remember(tasks, queryTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds, myId) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty()) {
             emptyList()
         } else {
@@ -135,7 +161,7 @@ fun SearchScreen(
             val sourceTasks = if (debouncedQuery.isBlank()) tasks else queryTasks
             sourceTasks.filter { task ->
                 if (task.projectId in archivedProjectIds) return@filter false
-                activeFilters.all { it.matches(task, today) }
+                activeFilters.all { it.matches(task, today, myId) }
             }
         }
     }
@@ -224,6 +250,10 @@ fun SearchScreen(
                     activeFilters.addAll(encoded.toSmartFilters())
                 },
                 onRemoveSavedFilter = { encoded -> viewModel.removeSmartFilterSet(encoded) },
+                onClearSearchFilters = {
+                    query = ""
+                    activeFilters.clear()
+                },
                 filteredTasks = filteredTasks,
                 lists = lists,
                 projects = projects,
@@ -283,6 +313,10 @@ fun SearchScreen(
                         activeFilters.addAll(encoded.toSmartFilters())
                     },
                     onRemoveSavedFilter = { encoded -> viewModel.removeSmartFilterSet(encoded) },
+                    onClearSearchFilters = {
+                        query = ""
+                        activeFilters.clear()
+                    },
                     filteredTasks = filteredTasks,
                     lists = lists,
                     projects = projects,
@@ -422,6 +456,7 @@ private fun SearchResultsList(
     onSaveActiveFilters: () -> Unit,
     onApplySavedFilter: (String) -> Unit,
     onRemoveSavedFilter: (String) -> Unit,
+    onClearSearchFilters: () -> Unit,
     filteredTasks: List<Task>,
     lists: List<YataList>,
     projects: List<Project>,
@@ -529,17 +564,13 @@ private fun SearchResultsList(
             }
         } else if (filteredTasks.isEmpty()) {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(64.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No matching tasks found.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                }
+                com.mj.yata.ui.widgets.TabEmptyState(
+                    icon = Icons.Default.Search,
+                    title = "No matches",
+                    subtitle = "Try a different query or loosen the active filters.",
+                    actionLabel = "Clear search",
+                    onAction = onClearSearchFilters
+                )
             }
         } else {
             items(filteredTasks, key = { it.id }, contentType = { "task" }) { task ->

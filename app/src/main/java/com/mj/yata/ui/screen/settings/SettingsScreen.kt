@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -32,7 +33,6 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material3.*
@@ -113,6 +113,7 @@ fun SettingsScreen(
     val textScale = uiState.textScale
     val taskRowDensity = uiState.taskRowDensity
     val hapticsEnabled = uiState.hapticsEnabled
+    val taskSwipeActionsEnabled = uiState.taskSwipeActionsEnabled
     val todayTabEnabled = uiState.todayTabEnabled
     val upcomingTabEnabled = uiState.upcomingTabEnabled
     val fabPosition = uiState.fabPosition
@@ -797,6 +798,7 @@ fun SettingsScreen(
                                 }
                             }
                         )
+                        RowDensityPreview(taskRowDensity)
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -841,6 +843,30 @@ fun SettingsScreen(
                         Switch(
                             checked = hapticsEnabled,
                             onCheckedChange = { viewModel.setHapticsEnabled(it) }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Swipe actions",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Swipe rows to complete or delete tasks.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = taskSwipeActionsEnabled,
+                            onCheckedChange = { viewModel.setTaskSwipeActionsEnabled(it) }
                         )
                     }
                 }
@@ -996,7 +1022,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.CompareArrows,
+                                imageVector = Icons.AutoMirrored.Filled.CompareArrows,
                                 contentDescription = "Compare with backup",
                                 tint = MaterialTheme.colorScheme.tertiary
                             )
@@ -1982,6 +2008,51 @@ fun SettingsRow(
 /** A permission status row — the trailing chip is always tappable (both directions go through
  * [onClick], which just opens the relevant system settings screen) and its label/color flips
  * between "Granted" and "Grant" to match current state. */
+@Composable
+private fun RowDensityPreview(density: TaskRowDensity) {
+    val verticalPadding = when (density) {
+        TaskRowDensity.COMPACT -> 6.dp
+        TaskRowDensity.COMFORTABLE -> 11.dp
+        TaskRowDensity.SPACIOUS -> 16.dp
+    }
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(vertical = 6.dp)) {
+            listOf("Plan sprint review", "Send invoice reminder").forEachIndexed { index, title ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = verticalPadding),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (index == 0) "Today" else "No due date",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun NotificationPermissionRow(
     title: String,
