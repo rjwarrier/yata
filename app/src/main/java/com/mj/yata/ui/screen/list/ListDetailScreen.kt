@@ -56,7 +56,7 @@ fun ListDetailScreen(
 ) {
     val lists by viewModel.lists.collectAsState()
     val projects by viewModel.projects.collectAsState()
-    val tasks by viewModel.tasks.collectAsState()
+    val listTasks by remember(listId) { viewModel.getTasksForList(listId) }.collectAsState(initial = emptyList())
     val people by viewModel.people.collectAsState()
     val tags by viewModel.tags.collectAsState()
     val taskRowDensity by viewModel.taskRowDensity.collectAsState()
@@ -80,7 +80,6 @@ fun ListDetailScreen(
     com.mj.yata.ui.theme.StatusBarColor(
         listColor.copy(alpha = 0.18f).compositeOver(MaterialTheme.colorScheme.background)
     )
-    val listTasks = remember(tasks, list.id) { tasks.filter { it.listId == list.id }.sortedBy { it.sortOrder } }
     val doneTasks = listTasks.count { it.done }
     val openTasks = listTasks.size - doneTasks
     // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
@@ -318,6 +317,7 @@ fun ListDetailScreen(
                     modifier = modifier,
                     showList = false,
                     onCommentClick = { pendingCommentTask = task },
+                    onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                     density = taskRowDensity,
                     showDueDate = true
                 )
@@ -436,6 +436,7 @@ fun ListDetailScreen(
     }
 
     if (isNewTaskSheetOpen) {
+        val allTasks by viewModel.tasks.collectAsState()
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -446,7 +447,7 @@ fun ListDetailScreen(
                 projects = projects,
                 people = people,
                 tags = tags,
-                tasks = tasks,
+                tasks = allTasks,
                 initialListId = list.id,
                 onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
                     viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)

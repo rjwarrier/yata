@@ -7,6 +7,9 @@ interface YataRepository {
     // Tasks
     fun getTasks(): Flow<List<Task>>
     fun getTaskById(id: String): Flow<Task?>
+    fun getTasksForList(listId: String): Flow<List<Task>>
+    fun getTasksForProject(projectId: String): Flow<List<Task>>
+    fun getTasksForPerson(personId: String): Flow<List<Task>>
 
     // [notify] defaults to true (fires the widget-refresh/Wear-sync/cloud-backup-debounce
     // signal immediately, as every existing call site expects). Bulk callers that loop this N

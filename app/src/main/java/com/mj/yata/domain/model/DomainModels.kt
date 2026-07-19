@@ -101,6 +101,12 @@ data class Subtask(
     val sortOrder: Int = 0
 )
 
+enum class QuickSnoozePreset(val label: String) {
+    TONIGHT("Tonight"),
+    TOMORROW_MORNING("Tomorrow morning"),
+    NEXT_WEEKDAY("Next weekday")
+}
+
 data class Recurrence(
     val freq: String, // "daily" | "weekly" | "monthly" | "yearly"
     val interval: Int,

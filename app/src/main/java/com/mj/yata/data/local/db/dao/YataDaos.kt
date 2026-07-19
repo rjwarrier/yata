@@ -157,6 +157,23 @@ interface TaskDao {
     fun getTaskWithRelationsById(id: String): Flow<TaskDetailWithRelations?>
 
     @Transaction
+    @Query("SELECT * FROM tasks WHERE listId = :listId AND deletedAt IS NULL ORDER BY sortOrder ASC")
+    fun getTasksWithRelationsForList(listId: String): Flow<List<TaskWithRelations>>
+
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE projectId = :projectId AND deletedAt IS NULL ORDER BY sortOrder ASC")
+    fun getTasksWithRelationsForProject(projectId: String): Flow<List<TaskWithRelations>>
+
+    @Transaction
+    @Query("""
+        SELECT t.* FROM tasks t
+        INNER JOIN task_person_cross_ref r ON t.id = r.taskId
+        WHERE r.personId = :personId AND t.deletedAt IS NULL
+        ORDER BY t.sortOrder ASC
+    """)
+    fun getTasksWithRelationsForPerson(personId: String): Flow<List<TaskWithRelations>>
+
+    @Transaction
     @Query("""
         SELECT DISTINCT t.* FROM tasks t
         LEFT JOIN task_person_cross_ref pRef ON t.id = pRef.taskId

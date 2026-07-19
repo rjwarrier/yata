@@ -8,9 +8,11 @@ import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.JsonExporter
+import com.mj.yata.util.TaskScheduleUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
@@ -192,6 +194,14 @@ private data class MainNavigationState(
     // Data streams
     val tasks: StateFlow<List<Task>> = repository.getTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun getTaskById(taskId: String): Flow<Task?> = repository.getTaskById(taskId)
+
+    fun getTasksForList(listId: String): Flow<List<Task>> = repository.getTasksForList(listId)
+
+    fun getTasksForProject(projectId: String): Flow<List<Task>> = repository.getTasksForProject(projectId)
+
+    fun getTasksForPerson(personId: String): Flow<List<Task>> = repository.getTasksForPerson(personId)
 
     fun searchTasks(query: String): Flow<List<Task>> = repository.searchTasks(query)
 
@@ -518,6 +528,9 @@ private data class MainNavigationState(
     val cloudBackupArchiveMonths: StateFlow<Int> = userPreferences.cloudBackupArchiveMonthsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 6)
 
+    val savedSmartFilterSets: StateFlow<Set<String>> = userPreferences.savedSmartFilterSetsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
         viewModelScope.launch {
@@ -814,6 +827,34 @@ private data class MainNavigationState(
         viewModelScope.launch {
             repository.upsertTask(task)
         }
+    }
+
+    fun quickSnoozeTask(id: String, preset: QuickSnoozePreset) {
+        viewModelScope.launch {
+            val task = tasks.value.find { it.id == id } ?: return@launch
+            val today = LocalDate.now()
+            val (dueDate, dueTime) = when (preset) {
+                QuickSnoozePreset.TONIGHT -> today to TaskScheduleUtils.formatTime(18, 0)
+                QuickSnoozePreset.TOMORROW_MORNING -> today.plusDays(1) to TaskScheduleUtils.formatTime(9, 0)
+                QuickSnoozePreset.NEXT_WEEKDAY -> nextWeekday(today.plusDays(1)) to TaskScheduleUtils.formatTime(9, 0)
+            }
+            repository.upsertTask(
+                task.copy(
+                    due = dueDate.toString(),
+                    time = dueTime,
+                    done = false,
+                    completedAt = null
+                )
+            )
+        }
+    }
+
+    private fun nextWeekday(start: LocalDate): LocalDate {
+        var date = start
+        while (date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY) {
+            date = date.plusDays(1)
+        }
+        return date
     }
 
     fun deleteTask(task: Task) {
@@ -1267,6 +1308,18 @@ private data class MainNavigationState(
     fun setProjectsFeatureEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setProjectsFeatureEnabled(enabled)
+        }
+    }
+
+    fun saveSmartFilterSet(encodedFilters: String) {
+        viewModelScope.launch {
+            userPreferences.addSavedSmartFilterSet(encodedFilters)
+        }
+    }
+
+    fun removeSmartFilterSet(encodedFilters: String) {
+        viewModelScope.launch {
+            userPreferences.removeSavedSmartFilterSet(encodedFilters)
         }
     }
 

@@ -91,6 +91,7 @@ class UserPreferences @Inject constructor(
         val HIDE_COMPLETED_PERSON   = booleanPreferencesKey("hide_completed_person")
         val HAS_SEEN_WELCOME       = booleanPreferencesKey("has_seen_welcome")
         val LAST_PRIMARY_ARGB      = intPreferencesKey("last_primary_argb")
+        val SAVED_SMART_FILTER_SETS = stringSetPreferencesKey("saved_smart_filter_sets")
     }
 
     val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
@@ -162,6 +163,7 @@ class UserPreferences @Inject constructor(
     val hideCompletedListFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_LIST] ?: false }
     val hideCompletedPersonFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PERSON] ?: false }
     val hasSeenWelcomeFlow: Flow<Boolean> = dataStore.data.map { it[HAS_SEEN_WELCOME] ?: false }
+    val savedSmartFilterSetsFlow: Flow<Set<String>> = dataStore.data.map { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
     /** Last `MaterialTheme.colorScheme.primary` actually rendered by the foreground Activity —
      * background notification/widget code reads this instead of re-deriving dynamic color in a
      * receiver/worker context, where it can resolve differently than in the live Activity. Null
@@ -251,6 +253,24 @@ class UserPreferences @Inject constructor(
 
     suspend fun setLastPrimaryArgb(argb: Int) {
         dataStore.edit { it[LAST_PRIMARY_ARGB] = argb }
+    }
+
+    suspend fun addSavedSmartFilterSet(encodedFilters: String) {
+        if (encodedFilters.isBlank()) return
+        dataStore.edit { prefs ->
+            prefs[SAVED_SMART_FILTER_SETS] = (prefs[SAVED_SMART_FILTER_SETS] ?: emptySet()) + encodedFilters
+        }
+    }
+
+    suspend fun removeSavedSmartFilterSet(encodedFilters: String) {
+        dataStore.edit { prefs ->
+            val updated = (prefs[SAVED_SMART_FILTER_SETS] ?: emptySet()) - encodedFilters
+            if (updated.isEmpty()) {
+                prefs.remove(SAVED_SMART_FILTER_SETS)
+            } else {
+                prefs[SAVED_SMART_FILTER_SETS] = updated
+            }
+        }
     }
 
     suspend fun setCloudBackupAccountEmail(email: String?) {

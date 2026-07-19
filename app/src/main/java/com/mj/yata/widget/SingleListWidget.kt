@@ -85,7 +85,6 @@ class SingleListWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
-        android.util.Log.d("SingleListWidget", "provideGlance: id=$id, prefs=${prefs.asMap()}")
         val sourceId = prefs[SINGLE_LIST_ID_KEY]
         val sourceType = SingleWidgetSourceType.fromPref(prefs[SINGLE_SOURCE_TYPE_KEY])
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
@@ -93,13 +92,11 @@ class SingleListWidget : GlanceAppWidget() {
         var source: SingleWidgetSource? = null
         var tasks: List<Task> = emptyList()
 
-        android.util.Log.d("SingleListWidget", "provideGlance values: sourceId=$sourceId, sourceType=$sourceType")
         if (sourceId != null) {
             val allTasks = repository.getTasks().first()
             when (sourceType) {
                 SingleWidgetSourceType.PROJECT -> {
                     val project = repository.getProjectById(sourceId).first()
-                    android.util.Log.d("SingleListWidget", "project lookup: $project")
                     if (project != null) {
                         source = SingleWidgetSource(project.name, project.color, R.drawable.ic_widget_project)
                         tasks = allTasks.filter { it.projectId == project.id }.sortedBy { it.sortOrder }
@@ -107,7 +104,6 @@ class SingleListWidget : GlanceAppWidget() {
                 }
                 SingleWidgetSourceType.TAG -> {
                     val tag = repository.getTagById(sourceId).first()
-                    android.util.Log.d("SingleListWidget", "tag lookup: $tag")
                     if (tag != null) {
                         val projects = repository.getProjects().first()
                         source = SingleWidgetSource(tag.name, tag.color, R.drawable.ic_widget_tag)
@@ -116,7 +112,6 @@ class SingleListWidget : GlanceAppWidget() {
                 }
                 SingleWidgetSourceType.LIST -> {
                     val list = repository.getListById(sourceId).first()
-                    android.util.Log.d("SingleListWidget", "list lookup: $list")
                     if (list != null) {
                         source = SingleWidgetSource(list.name, list.color, R.drawable.ic_widget_list)
                         tasks = allTasks.filter { it.listId == list.id }.sortedBy { it.sortOrder }

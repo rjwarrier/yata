@@ -56,7 +56,6 @@ class WearSyncUpdaterImpl @Inject constructor(
                     .filter { it.due != null && it.due!! <= todayStr }
                     .sortedWith(compareBy({ it.done }, { it.sortOrder }))
                     .take(MAX_TASKS_SENT_TO_WATCH)
-                Log.d("YataWear", "notifyTasksChanged: pushing ${todayTasks.size} today-tasks: ${todayTasks.map { it.title }}")
 
                 val countRequest = PutDataMapRequest.create(TODAY_COUNT_PATH).apply {
                     dataMap.putInt(KEY_TODAY_COUNT, todayTasks.count { !it.done })
@@ -64,8 +63,7 @@ class WearSyncUpdaterImpl @Inject constructor(
                     // from last push (DataItems only notify listeners when their content differs).
                     dataMap.putLong("timestamp", System.currentTimeMillis())
                 }.asPutDataRequest().setUrgent()
-                val countResult = com.google.android.gms.tasks.Tasks.await(Wearable.getDataClient(context).putDataItem(countRequest))
-                Log.d("YataWear", "notifyTasksChanged: count DataItem put -> ${countResult.uri}")
+                com.google.android.gms.tasks.Tasks.await(Wearable.getDataClient(context).putDataItem(countRequest))
 
                 val taskMaps = ArrayList(todayTasks.map { task ->
                     DataMap().apply {
@@ -79,8 +77,7 @@ class WearSyncUpdaterImpl @Inject constructor(
                     dataMap.putDataMapArrayList(KEY_TASKS, taskMaps)
                     dataMap.putLong("timestamp", System.currentTimeMillis())
                 }.asPutDataRequest().setUrgent()
-                val tasksResult = com.google.android.gms.tasks.Tasks.await(Wearable.getDataClient(context).putDataItem(tasksRequest))
-                Log.d("YataWear", "notifyTasksChanged: tasks DataItem put -> ${tasksResult.uri}")
+                com.google.android.gms.tasks.Tasks.await(Wearable.getDataClient(context).putDataItem(tasksRequest))
             } catch (e: Exception) {
                 Log.e("YataWear", "notifyTasksChanged: failed", e)
             }

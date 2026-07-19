@@ -57,7 +57,7 @@ fun PersonDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val people by viewModel.people.collectAsState()
-    val tasks by viewModel.tasks.collectAsState()
+    val assignedTasks by remember(personId) { viewModel.getTasksForPerson(personId) }.collectAsState(initial = emptyList())
     val lists by viewModel.lists.collectAsState()
     val projects by viewModel.projects.collectAsState()
     val tags by viewModel.tags.collectAsState()
@@ -112,7 +112,6 @@ fun PersonDetailScreen(
     com.mj.yata.ui.theme.StatusBarColor(
         personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
-    val assignedTasks = remember(tasks, person.id) { tasks.filter { it.assigneeIds.contains(person.id) }.sortedBy { it.sortOrder } }
     var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
     val openTasks = remember(assignedTasks, searchQuery, sortMode) {
         assignedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
@@ -429,6 +428,7 @@ fun PersonDetailScreen(
                                 animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                             ),
                             onCommentClick = { pendingCommentTask = task },
+                            onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                             density = taskRowDensity,
                             onSwipeToDelete = { deleteTaskWithUndo(task) },
                             showDueDate = true
@@ -518,6 +518,7 @@ fun PersonDetailScreen(
                                 animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                             ),
                             onCommentClick = { pendingCommentTask = task },
+                            onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                             density = taskRowDensity,
                             onSwipeToDelete = { deleteTaskWithUndo(task) },
                             showDueDate = true
@@ -530,6 +531,7 @@ fun PersonDetailScreen(
     }
 
     if (isNewTaskSheetOpen) {
+        val allTasks by viewModel.tasks.collectAsState()
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { isNewTaskSheetOpen = false },
             properties = androidx.compose.ui.window.DialogProperties(
@@ -542,7 +544,7 @@ fun PersonDetailScreen(
                 projects = projects,
                 people = people,
                 tags = tags,
-                tasks = tasks,
+                tasks = allTasks,
                 initialAssigneeId = person.id,
                 onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
                     viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)

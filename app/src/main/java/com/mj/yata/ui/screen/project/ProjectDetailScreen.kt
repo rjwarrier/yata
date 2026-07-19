@@ -58,7 +58,7 @@ fun ProjectDetailScreen(
 ) {
     val projects by viewModel.projects.collectAsState()
     val lists by viewModel.lists.collectAsState()
-    val tasks by viewModel.tasks.collectAsState()
+    val projectTasks by remember(projectId) { viewModel.getTasksForProject(projectId) }.collectAsState(initial = emptyList())
     val people by viewModel.people.collectAsState()
     val tags by viewModel.tags.collectAsState()
     val taskRowDensity by viewModel.taskRowDensity.collectAsState()
@@ -85,7 +85,6 @@ fun ProjectDetailScreen(
     com.mj.yata.ui.theme.StatusBarColor(
         projectColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
-    val projectTasks = remember(tasks, project.id) { tasks.filter { it.projectId == project.id }.sortedBy { it.sortOrder } }
     // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
     // list — only Pending supports drag-reorder, Completed just renders below it with its own
     // header. Hiding completed drops both the tasks and the section headers entirely.
@@ -380,6 +379,7 @@ fun ProjectDetailScreen(
                     onTaskClick = { onNavigateToTaskDetail(task.id) },
                     modifier = modifier,
                     onCommentClick = { pendingCommentTask = task },
+                    onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                     density = taskRowDensity,
                     showDueDate = true
                 )
@@ -498,6 +498,7 @@ fun ProjectDetailScreen(
     }
 
     if (isNewTaskSheetOpen) {
+        val allTasks by viewModel.tasks.collectAsState()
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -508,7 +509,7 @@ fun ProjectDetailScreen(
                 projects = projects.activeProjects(includeId = project.id),
                 people = people.activePeople(),
                 tags = tags,
-                tasks = tasks,
+                tasks = allTasks,
                 initialProjectId = project.id,
                 onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
                     viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)

@@ -110,13 +110,12 @@ fun TaskDetailScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tasks by viewModel.tasks.collectAsState()
+    val taskState by remember(taskId) { viewModel.getTaskById(taskId) }.collectAsState(initial = null)
     val lists by viewModel.lists.collectAsState()
     val projects by viewModel.projects.collectAsState()
     val people by viewModel.people.collectAsState()
     val tags by viewModel.tags.collectAsState()
 
-    val task = remember(tasks, taskId) { tasks.find { it.id == taskId } }
     val accents = LocalYataAccents.current
 
     // Bottom sheet state
@@ -128,6 +127,7 @@ fun TaskDetailScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
+    val task = taskState
     if (task == null) {
         TaskDetailShimmer()
         return

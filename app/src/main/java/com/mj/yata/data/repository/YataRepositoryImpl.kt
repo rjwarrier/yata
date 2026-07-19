@@ -78,6 +78,24 @@ class YataRepositoryImpl @Inject constructor(
         return db.taskDao().getTaskWithRelationsById(id).map { it?.toDomain() }
     }
 
+    override fun getTasksForList(listId: String): Flow<List<Task>> {
+        return db.taskDao().getTasksWithRelationsForList(listId).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override fun getTasksForProject(projectId: String): Flow<List<Task>> {
+        return db.taskDao().getTasksWithRelationsForProject(projectId).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override fun getTasksForPerson(personId: String): Flow<List<Task>> {
+        return db.taskDao().getTasksWithRelationsForPerson(personId).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
     override fun notifyTasksChanged() {
         widgetUpdater.notifyTasksChanged()
     }

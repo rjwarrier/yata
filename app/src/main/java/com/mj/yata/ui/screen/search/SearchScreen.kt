@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -47,6 +48,15 @@ private enum class SmartFilter(val label: String) {
         NO_DUE_DATE -> task.due == null
     }
 }
+
+private fun List<SmartFilter>.encodedSmartFilterSet(): String =
+    distinct().sortedBy { it.name }.joinToString(",") { it.name }
+
+private fun String.toSmartFilters(): List<SmartFilter> =
+    split(",").mapNotNull { name -> SmartFilter.entries.find { it.name == name } }
+
+private fun String.smartFilterSetLabel(): String =
+    toSmartFilters().joinToString(" + ") { it.label }
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -108,6 +118,9 @@ fun SearchScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val savedSmartFilterSets by viewModel.savedSmartFilterSets.collectAsState()
+    val currentSmartFilterSet = activeFilters.toList().encodedSmartFilterSet()
+    val canSaveCurrentSmartFilterSet = currentSmartFilterSet.isNotBlank() && currentSmartFilterSet !in savedSmartFilterSets
 
     val archivedProjectIds = remember(projects) { projects.archivedProjects().map { it.id }.toSet() }
     val queryTasks by remember(debouncedQuery) {
@@ -170,6 +183,14 @@ fun SearchScreen(
                 query = query,
                 activeFilters = activeFilters,
                 onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
+                savedSmartFilterSets = savedSmartFilterSets,
+                canSaveCurrentSmartFilterSet = canSaveCurrentSmartFilterSet,
+                onSaveActiveFilters = { viewModel.saveSmartFilterSet(currentSmartFilterSet) },
+                onApplySavedFilter = { encoded ->
+                    activeFilters.clear()
+                    activeFilters.addAll(encoded.toSmartFilters())
+                },
+                onRemoveSavedFilter = { encoded -> viewModel.removeSmartFilterSet(encoded) },
                 filteredTasks = filteredTasks,
                 lists = lists,
                 projects = projects,
@@ -220,6 +241,14 @@ fun SearchScreen(
                     query = query,
                     activeFilters = activeFilters,
                     onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
+                    savedSmartFilterSets = savedSmartFilterSets,
+                    canSaveCurrentSmartFilterSet = canSaveCurrentSmartFilterSet,
+                    onSaveActiveFilters = { viewModel.saveSmartFilterSet(currentSmartFilterSet) },
+                    onApplySavedFilter = { encoded ->
+                        activeFilters.clear()
+                        activeFilters.addAll(encoded.toSmartFilters())
+                    },
+                    onRemoveSavedFilter = { encoded -> viewModel.removeSmartFilterSet(encoded) },
                     filteredTasks = filteredTasks,
                     lists = lists,
                     projects = projects,
@@ -336,6 +365,11 @@ private fun SearchResultsList(
     query: String,
     activeFilters: List<SmartFilter>,
     onToggleFilter: (SmartFilter) -> Unit,
+    savedSmartFilterSets: Set<String>,
+    canSaveCurrentSmartFilterSet: Boolean,
+    onSaveActiveFilters: () -> Unit,
+    onApplySavedFilter: (String) -> Unit,
+    onRemoveSavedFilter: (String) -> Unit,
     filteredTasks: List<Task>,
     lists: List<YataList>,
     projects: List<Project>,
@@ -372,6 +406,57 @@ private fun SearchResultsList(
                         onClick = { onToggleFilter(filter) },
                         label = { Text(filter.label) }
                     )
+                }
+                if (canSaveCurrentSmartFilterSet) {
+                    AssistChip(
+                        onClick = onSaveActiveFilters,
+                        label = { Text("Save") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.BookmarkAdd,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+        if (savedSmartFilterSets.isNotEmpty()) {
+            item {
+                androidx.compose.foundation.layout.FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    savedSmartFilterSets
+                        .mapNotNull { encoded ->
+                            val filters = encoded.toSmartFilters()
+                            if (filters.isEmpty()) null else encoded to filters
+                        }
+                        .sortedBy { (_, filters) -> filters.joinToString(",") { it.label } }
+                        .forEach { (encoded, filters) ->
+                            InputChip(
+                                selected = activeFilters.toSet() == filters.toSet(),
+                                onClick = { onApplySavedFilter(encoded) },
+                                label = { Text(encoded.smartFilterSetLabel()) },
+                                trailingIcon = {
+                                    IconButton(
+                                        onClick = { onRemoveSavedFilter(encoded) },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Remove saved filter",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            )
+                        }
                 }
             }
         }
@@ -433,6 +518,7 @@ private fun SearchResultsList(
                         animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                     ),
                     onCommentClick = { pendingCommentTask = task },
+                    onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                     density = taskRowDensity,
                     onSwipeToDelete = { onSwipeToDelete(task) },
                     swipeEnabled = !selectionMode,

@@ -17,9 +17,13 @@ import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
+import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.TaskRowDensity
@@ -72,7 +77,8 @@ fun TaskRow(
     // Project/List detail show this since tasks there carry arbitrary due dates with no
     // grouping context to imply one (unlike Today/Upcoming/NextDays, which already group by
     // date, or Tag/Person/Search, which mix tasks from many places at once).
-    showDueDate: Boolean = false
+    showDueDate: Boolean = false,
+    onQuickSnooze: ((QuickSnoozePreset) -> Unit)? = null
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
@@ -268,6 +274,37 @@ fun TaskRow(
                     .clickable { onCommentClick() }
                     .padding(6.dp)
             )
+        }
+
+        if (onQuickSnooze != null && !task.done) {
+            var showSnoozeMenu by remember { mutableStateOf(false) }
+            Box {
+                IconButton(
+                    onClick = { showSnoozeMenu = true },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = "Snooze",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = showSnoozeMenu,
+                    onDismissRequest = { showSnoozeMenu = false }
+                ) {
+                    QuickSnoozePreset.entries.forEach { preset ->
+                        DropdownMenuItem(
+                            text = { Text(preset.label) },
+                            onClick = {
+                                showSnoozeMenu = false
+                                onQuickSnooze(preset)
+                            }
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.width(8.dp))
