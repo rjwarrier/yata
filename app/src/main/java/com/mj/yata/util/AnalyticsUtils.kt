@@ -11,6 +11,12 @@ import java.time.ZoneId
 
 enum class AnalyticsPeriod { WEEK, MONTH, ALL }
 
+fun AnalyticsPeriod.label(): String = when (this) {
+    AnalyticsPeriod.WEEK -> "7 Days"
+    AnalyticsPeriod.MONTH -> "30 Days"
+    AnalyticsPeriod.ALL -> "All Time"
+}
+
 /** One breakdown row — a project, person, or tag with its task counts for the current period.
  * [overdue] and [onTimeRate] are only populated for people/tags (see [AnalyticsUtils.byPerson],
  * [AnalyticsUtils.byTag]) — projects don't compute them and leave the defaults. */
@@ -41,7 +47,68 @@ data class AgingBucket(val label: String, val count: Int)
  * independent of the period filter (it's a live snapshot, like [AnalyticsUtils.overdueCount]). */
 data class WorkloadShare(val person: Person, val openCount: Int, val share: Float)
 
+/** Every metric the Analytics screen renders, computed in one pass by [AnalyticsUtils.computeUiState]
+ * off the raw domain flows — the screen composable only ever reads this, it never derives a metric
+ * itself. [zeroOverdueStreakDays], [workloadShares] and [overdueCount] are live snapshots independent
+ * of [period]; everything else is scoped to it. */
+data class AnalyticsUiState(
+    val period: AnalyticsPeriod = AnalyticsPeriod.WEEK,
+    val totalCount: Int = 0,
+    val doneCount: Int = 0,
+    val completionPct: Float = 0f,
+    val previousPeriodCompletionPct: Float? = null,
+    val currentStreak: Int = 0,
+    val overdueCount: Int = 0,
+    val zeroOverdueStreakDays: Int = 0,
+    val overallOnTimeRate: Float? = null,
+    val dueNext7: Int = 0,
+    val dueNext30: Int = 0,
+    val agingBuckets: List<AgingBucket> = emptyList(),
+    val workloadShares: List<WorkloadShare> = emptyList(),
+    val dailyActivity: List<DayActivity> = emptyList(),
+    val priorityStats: List<PriorityStat> = emptyList(),
+    val projectStats: List<EntityStat> = emptyList(),
+    val personStats: List<EntityStat> = emptyList(),
+    val tagStats: List<EntityStat> = emptyList()
+)
+
 object AnalyticsUtils {
+    /** Single entrypoint the ViewModel calls off the UI thread whenever tasks/projects/people/tags
+     * or the selected period change — every metric on the Analytics screen is computed here, once,
+     * rather than scattered across `remember` blocks in the composable. */
+    fun computeUiState(
+        tasks: List<Task>,
+        projects: List<Project>,
+        people: List<Person>,
+        tags: List<Tag>,
+        period: AnalyticsPeriod,
+        today: LocalDate = LocalDate.now()
+    ): AnalyticsUiState {
+        val periodTasks = filterTasksByPeriod(tasks, period, today)
+        val totalCount = periodTasks.size
+        val doneCount = periodTasks.count { it.done }
+        return AnalyticsUiState(
+            period = period,
+            totalCount = totalCount,
+            doneCount = doneCount,
+            completionPct = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f,
+            previousPeriodCompletionPct = previousPeriodCompletionPct(tasks, period, today),
+            currentStreak = currentStreak(tasks, today),
+            overdueCount = overdueCount(tasks, today),
+            zeroOverdueStreakDays = zeroOverdueStreak(tasks, today),
+            overallOnTimeRate = overallOnTimeRate(tasks),
+            dueNext7 = upcomingDueCount(tasks, 7, today),
+            dueNext30 = upcomingDueCount(tasks, 30, today),
+            agingBuckets = agingBuckets(tasks, today),
+            workloadShares = workloadShare(tasks, people),
+            dailyActivity = dailyActivity(tasks, period, today),
+            priorityStats = byPriority(periodTasks),
+            projectStats = byProject(periodTasks, projects),
+            personStats = byPerson(periodTasks, tasks, people, today),
+            tagStats = byTag(periodTasks, tasks, projects, tags, today)
+        )
+    }
+
     private fun periodStart(period: AnalyticsPeriod, today: LocalDate): LocalDate = when (period) {
         AnalyticsPeriod.WEEK -> today.minusDays(6)
         AnalyticsPeriod.MONTH -> today.minusDays(29)

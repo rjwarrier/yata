@@ -7,10 +7,14 @@ import com.mj.yata.data.cloud.CloudBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.util.AnalyticsPeriod
+import com.mj.yata.util.AnalyticsUiState
+import com.mj.yata.util.AnalyticsUtils
 import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -428,6 +432,22 @@ private data class MainNavigationState(
 
     val personGroups: StateFlow<List<PersonGroup>> = repository.getPersonGroups()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val analyticsPeriodFlow = MutableStateFlow(AnalyticsPeriod.WEEK)
+    val analyticsPeriod: StateFlow<AnalyticsPeriod> = analyticsPeriodFlow.asStateFlow()
+
+    fun setAnalyticsPeriod(period: AnalyticsPeriod) {
+        analyticsPeriodFlow.value = period
+    }
+
+    /** Every Analytics-screen metric, computed off the UI thread in [AnalyticsUtils.computeUiState]
+     * whenever the underlying data or the selected period changes — the screen only renders this. */
+    val analyticsUiState: StateFlow<AnalyticsUiState> = combine(
+        tasks, projects, people, tags, analyticsPeriodFlow
+    ) { taskList, projectList, personList, tagList, period ->
+        AnalyticsUtils.computeUiState(taskList, projectList, personList, tagList, period)
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AnalyticsUiState())
 
     // Preferences
     val themeMode: StateFlow<ThemeMode> = userPreferences.themeModeFlow

@@ -31,10 +31,10 @@ import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.util.AnalyticsPeriod
-import com.mj.yata.util.AnalyticsUtils
 import com.mj.yata.util.DayActivity
 import com.mj.yata.util.EntityStat
 import com.mj.yata.util.PriorityStat
+import com.mj.yata.util.label
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 import androidx.compose.animation.core.animateFloatAsState
@@ -50,10 +50,6 @@ fun AnalyticsScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tasks by viewModel.tasks.collectAsState()
-    val projects by viewModel.projects.collectAsState()
-    val people by viewModel.people.collectAsState()
-    val tags by viewModel.tags.collectAsState()
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
@@ -61,28 +57,26 @@ fun AnalyticsScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
 
-    var period by remember { mutableStateOf(AnalyticsPeriod.WEEK) }
+    val period by viewModel.analyticsPeriod.collectAsState()
+    val stats by viewModel.analyticsUiState.collectAsState()
 
-    val periodTasks = remember(tasks, period) { AnalyticsUtils.filterTasksByPeriod(tasks, period) }
-    val totalCount = periodTasks.size
-    val doneCount = periodTasks.count { it.done }
-    val completionPct = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
-    val previousPct = remember(tasks, period) { AnalyticsUtils.previousPeriodCompletionPct(tasks, period) }
-
-    val streak = remember(tasks) { AnalyticsUtils.currentStreak(tasks) }
-    val overdue = remember(tasks) { AnalyticsUtils.overdueCount(tasks) }
-    val zeroOverdueStreak = remember(tasks) { AnalyticsUtils.zeroOverdueStreak(tasks) }
-    val overallOnTimeRate = remember(tasks) { AnalyticsUtils.overallOnTimeRate(tasks) }
-    val dueNext7 = remember(tasks) { AnalyticsUtils.upcomingDueCount(tasks, 7) }
-    val dueNext30 = remember(tasks) { AnalyticsUtils.upcomingDueCount(tasks, 30) }
-    val agingBuckets = remember(tasks) { AnalyticsUtils.agingBuckets(tasks) }
-    val workloadShares = remember(tasks, people) { AnalyticsUtils.workloadShare(tasks, people) }
-    val dailyActivity = remember(tasks, period) { AnalyticsUtils.dailyActivity(tasks, period) }
-    val priorityStats = remember(periodTasks) { AnalyticsUtils.byPriority(periodTasks) }
-
-    val projectStats = remember(periodTasks, projects) { AnalyticsUtils.byProject(periodTasks, projects) }
-    val personStats = remember(periodTasks, tasks, people) { AnalyticsUtils.byPerson(periodTasks, tasks, people) }
-    val tagStats = remember(periodTasks, tasks, projects, tags) { AnalyticsUtils.byTag(periodTasks, tasks, projects, tags) }
+    val totalCount = stats.totalCount
+    val doneCount = stats.doneCount
+    val completionPct = stats.completionPct
+    val previousPct = stats.previousPeriodCompletionPct
+    val streak = stats.currentStreak
+    val overdue = stats.overdueCount
+    val zeroOverdueStreak = stats.zeroOverdueStreakDays
+    val overallOnTimeRate = stats.overallOnTimeRate
+    val dueNext7 = stats.dueNext7
+    val dueNext30 = stats.dueNext30
+    val agingBuckets = stats.agingBuckets
+    val workloadShares = stats.workloadShares
+    val dailyActivity = stats.dailyActivity
+    val priorityStats = stats.priorityStats
+    val projectStats = stats.projectStats
+    val personStats = stats.personStats
+    val tagStats = stats.tagStats
 
     Scaffold(
         bottomBar = {
@@ -116,13 +110,8 @@ fun AnalyticsScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        val periodLabel = when (period) {
-                            AnalyticsPeriod.WEEK -> "7 Days"
-                            AnalyticsPeriod.MONTH -> "30 Days"
-                            AnalyticsPeriod.ALL -> "All Time"
-                        }
                         val markdown = com.mj.yata.util.buildAnalyticsMarkdown(
-                            periodLabel = periodLabel,
+                            periodLabel = period.label(),
                             totalCount = totalCount,
                             doneCount = doneCount,
                             overdueCount = overdue,
@@ -160,14 +149,8 @@ fun AnalyticsScreen(
             SegmentedControl(
                 items = listOf(AnalyticsPeriod.WEEK, AnalyticsPeriod.MONTH, AnalyticsPeriod.ALL),
                 selectedItem = period,
-                onItemSelected = { period = it },
-                labelProvider = {
-                    when (it) {
-                        AnalyticsPeriod.WEEK -> "7 Days"
-                        AnalyticsPeriod.MONTH -> "30 Days"
-                        AnalyticsPeriod.ALL -> "All Time"
-                    }
-                }
+                onItemSelected = { viewModel.setAnalyticsPeriod(it) },
+                labelProvider = { it.label() }
             )
 
             // Streak & overdue — always "right now", independent of the period filter above.
