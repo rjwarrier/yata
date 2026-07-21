@@ -495,9 +495,44 @@ fun PersonEditorSheet(
     }
     val isBulk = bulkNames.size > 1
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val photoScope = rememberCoroutineScope()
+    // Holds the decoded picked image while the crop dialog is open; the cropper's confirmed
+    // output is masked and copied into internal storage (never the picker's ephemeral content://
+    // grant, which is lost on relaunch and reverts the avatar to initials).
+    var pickedPhotoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
-    ) { uri -> if (uri != null) photoUri = uri.toString() }
+    ) { uri ->
+        if (uri != null) {
+            photoScope.launch {
+                val bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        com.mj.yata.util.ProfilePhotoUtils.decodeSampledBitmap(context, uri)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                pickedPhotoBitmap = bitmap
+            }
+        }
+    }
+
+    pickedPhotoBitmap?.let { bitmap ->
+        com.mj.yata.ui.widgets.CircularImageCropper(
+            source = bitmap,
+            onConfirm = { cropped ->
+                photoScope.launch {
+                    val saved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        com.mj.yata.util.ProfilePhotoUtils.saveCircularAvatar(context, cropped)
+                    }
+                    photoUri = saved.toString()
+                    pickedPhotoBitmap = null
+                }
+            },
+            onCancel = { pickedPhotoBitmap = null }
+        )
+    }
 
     Column(
         modifier = modifier

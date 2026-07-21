@@ -14,6 +14,7 @@ import java.io.FileOutputStream
 
 object ProfilePhotoUtils {
     private const val FILE_NAME = "profile_photo.png"
+    private const val AVATAR_DIR = "avatars"
     private const val MAX_DECODE_DIMENSION = 1600
 
     /** Downsampled decode so a multi-megapixel photo doesn't blow up memory in the cropper. */
@@ -34,12 +35,8 @@ object ProfilePhotoUtils {
         return resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
     }
 
-    /**
-     * Masks a square bitmap into a circle (transparent corners) and writes it as the app's
-     * single profile photo file, overwriting any previous one. The returned Uri has a
-     * cache-busting query param so avatar widgets keyed on the Uri string reload it.
-     */
-    fun saveCircularProfilePhoto(context: Context, squareBitmap: Bitmap): Uri {
+    /** Masks a square bitmap into a circle with transparent corners. */
+    private fun maskCircular(squareBitmap: Bitmap): Bitmap {
         val size = minOf(squareBitmap.width, squareBitmap.height)
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
@@ -48,12 +45,39 @@ object ProfilePhotoUtils {
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
         val rect = Rect(0, 0, size, size)
         canvas.drawBitmap(squareBitmap, rect, rect, paint)
+        return output
+    }
 
+    /**
+     * Masks a square bitmap into a circle and writes it as the app's single profile photo file,
+     * overwriting any previous one. The returned Uri has a cache-busting query param so avatar
+     * widgets keyed on the Uri string reload it.
+     */
+    fun saveCircularProfilePhoto(context: Context, squareBitmap: Bitmap): Uri {
+        val output = maskCircular(squareBitmap)
         val file = File(context.filesDir, FILE_NAME)
         FileOutputStream(file).use { out -> output.compress(Bitmap.CompressFormat.PNG, 100, out) }
 
         return Uri.fromFile(file).buildUpon()
             .appendQueryParameter("t", System.currentTimeMillis().toString())
             .build()
+    }
+
+    /**
+     * Masks a cropped square bitmap into a circle and writes it to a uniquely-named file under
+     * filesDir/avatars, returning a stable file:// Uri. Used for per-person avatars.
+     *
+     * A picked image must not be persisted as the Photo Picker's raw content:// Uri: that grant
+     * is a *one-time* process-scoped read (takePersistableUriPermission is unsupported for it), so
+     * the reference goes dead on relaunch and the avatar silently reverts to initials. Writing the
+     * bytes into an owned file fixes that. Unlike [saveCircularProfilePhoto]'s single fixed file,
+     * each call gets a unique name so multiple people don't overwrite one another.
+     */
+    fun saveCircularAvatar(context: Context, squareBitmap: Bitmap): Uri {
+        val output = maskCircular(squareBitmap)
+        val dir = File(context.filesDir, AVATAR_DIR).apply { mkdirs() }
+        val file = File(dir, "avatar_${System.currentTimeMillis()}_${java.util.UUID.randomUUID()}.png")
+        FileOutputStream(file).use { out -> output.compress(Bitmap.CompressFormat.PNG, 100, out) }
+        return Uri.fromFile(file)
     }
 }
