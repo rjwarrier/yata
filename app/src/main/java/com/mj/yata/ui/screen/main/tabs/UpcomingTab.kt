@@ -632,6 +632,7 @@ private fun DayPill(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
+            .padding(horizontal = 3.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
