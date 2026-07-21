@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -229,6 +230,11 @@ fun MainScreen(
                 val visibleStarredTags = if (tagsFeatureEnabled) starredTags else emptyList()
                 val visibleStarredPeople = if (peopleFeatureEnabled) starredPeople else emptyList()
 
+                // The reviews/modes/palette block is collapsed by default so the drawer stays
+                // compact; rememberSaveable keeps the user's choice across drawer open/close and
+                // process death.
+                var toolsExpanded by rememberSaveable { mutableStateOf(false) }
+
                 // Main content scrolls in its own weighted region so it never pushes Analytics/
                 // Settings off-screen — that footer is a fixed sibling below, not a LazyColumn
                 // item, so it sits flush at the bottom when content is short (nothing to scroll)
@@ -309,53 +315,51 @@ fun MainScreen(
                         }
                     }
                     item {
-                        DrawerItem("Next 10 Days", Icons.Default.DateRange, false) {
-                            onNavigateToNextDays()
-                            scope.launch { drawerState.close() }
-                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        DrawerSectionToggle(
+                            label = "Tools",
+                            expanded = toolsExpanded,
+                            onToggle = { toolsExpanded = !toolsExpanded }
+                        )
                     }
-                    item {
-                        DrawerItem("Command palette", Icons.Default.Bolt, false) {
-                            showCommandPalette = true
-                            scope.launch { drawerState.close() }
-                        }
-                    }
-                    if (peopleFeatureEnabled) {
-                        item {
-                            DrawerItem("My Work", Icons.Default.AssignmentInd, false) {
-                                onNavigateToSavedSearch("ASSIGNED_TO_ME")
-                                scope.launch { drawerState.close() }
+                    item(key = "tools_section") {
+                        androidx.compose.animation.AnimatedVisibility(visible = toolsExpanded) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                DrawerItem("Next 10 Days", Icons.Default.DateRange, false) {
+                                    onNavigateToNextDays()
+                                    scope.launch { drawerState.close() }
+                                }
+                                DrawerItem("Command palette", Icons.Default.Bolt, false) {
+                                    showCommandPalette = true
+                                    scope.launch { drawerState.close() }
+                                }
+                                if (peopleFeatureEnabled) {
+                                    DrawerItem("My Work", Icons.Default.AssignmentInd, false) {
+                                        onNavigateToSavedSearch("ASSIGNED_TO_ME")
+                                        scope.launch { drawerState.close() }
+                                    }
+                                }
+                                DrawerItem("Focus Mode", Icons.Default.CenterFocusStrong, false) {
+                                    onNavigateToSavedSearch("FOCUS")
+                                    scope.launch { drawerState.close() }
+                                }
+                                DrawerItem("Morning Review", Icons.Default.WbSunny, false) {
+                                    onNavigateToSavedSearch("MORNING_REVIEW")
+                                    scope.launch { drawerState.close() }
+                                }
+                                DrawerItem("Evening Review", Icons.Default.NightsStay, false) {
+                                    onNavigateToSavedSearch("EVENING_REVIEW")
+                                    scope.launch { drawerState.close() }
+                                }
+                                DrawerItem("Stale Nudges", Icons.Default.HourglassEmpty, false) {
+                                    onNavigateToSavedSearch("STALE_TASKS")
+                                    scope.launch { drawerState.close() }
+                                }
+                                DrawerItem("Task Health", Icons.Default.HealthAndSafety, false) {
+                                    onNavigateToSavedSearch("AT_RISK")
+                                    scope.launch { drawerState.close() }
+                                }
                             }
-                        }
-                    }
-                    item {
-                        DrawerItem("Focus Mode", Icons.Default.CenterFocusStrong, false) {
-                            onNavigateToSavedSearch("FOCUS")
-                            scope.launch { drawerState.close() }
-                        }
-                    }
-                    item {
-                        DrawerItem("Morning Review", Icons.Default.WbSunny, false) {
-                            onNavigateToSavedSearch("MORNING_REVIEW")
-                            scope.launch { drawerState.close() }
-                        }
-                    }
-                    item {
-                        DrawerItem("Evening Review", Icons.Default.NightsStay, false) {
-                            onNavigateToSavedSearch("EVENING_REVIEW")
-                            scope.launch { drawerState.close() }
-                        }
-                    }
-                    item {
-                        DrawerItem("Stale Nudges", Icons.Default.HourglassEmpty, false) {
-                            onNavigateToSavedSearch("STALE_TASKS")
-                            scope.launch { drawerState.close() }
-                        }
-                    }
-                    item {
-                        DrawerItem("Task Health", Icons.Default.HealthAndSafety, false) {
-                            onNavigateToSavedSearch("AT_RISK")
-                            scope.launch { drawerState.close() }
                         }
                     }
 
@@ -1110,6 +1114,44 @@ fun DrawerItem(
                 style = MaterialTheme.typography.labelLarge.copy(
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
                 )
+            )
+        }
+    }
+}
+
+/** Clickable drawer section header (uppercase label + chevron) that expands/collapses a group
+ * of drawer items, styled to match the static STARRED/LISTS section labels. */
+@Composable
+private fun DrawerSectionToggle(
+    label: String,
+    expanded: Boolean,
+    onToggle: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onToggle() },
+        color = Color.Transparent,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = if (expanded) "Collapse $label" else "Expand $label",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
