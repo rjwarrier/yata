@@ -34,6 +34,7 @@ sealed class Screen(val route: String) {
             "search" + (filters?.let { "?filters=${Uri.encode(it)}" } ?: "")
     }
     object Settings : Screen("settings")
+    object HelpAbout : Screen("help_about")
     object Analytics : Screen("analytics")
     object Trash : Screen("trash")
     object NextDays : Screen("next_days")

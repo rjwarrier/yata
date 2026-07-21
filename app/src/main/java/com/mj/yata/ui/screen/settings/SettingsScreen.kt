@@ -6,7 +6,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,12 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
@@ -35,6 +29,7 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,21 +61,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-/** One-line-each feature reference shown in the Help & About card — kept short on purpose;
- * the full walkthrough with more detail lives in the "Show Welcome Tour" replay above. */
-private val helpFeatures = listOf(
-    "Today & Upcoming" to "What's due now, a week/month calendar, and a Next 10 Days list.",
-    "Quick Add" to "Type naturally — \"call Priya tomorrow 3pm high priority\".",
-    "Projects & Lists" to "Group related tasks and star favorites for quick drawer access.",
-    "People" to "Assign work and see who's overdue, at a glance.",
-    "Tags" to "Flexible labels that cut across projects and lists.",
-    "Analytics" to "Completion streaks, on-time rate, and workload breakdowns.",
-    "Home Widgets & Wear OS" to "Agenda, quick add, and progress widgets; today's count on your watch.",
-    "Reminders" to "Per-task alerts that still fire after a reboot.",
-    "Backup & Export" to "Automatic Google Drive backup, plus JSON/.ics/Markdown export.",
-    "Trash" to "Deleted tasks are recoverable for 30 days before they're gone for good."
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -93,6 +73,7 @@ fun SettingsScreen(
     onNavigateToTab: (Int) -> Unit,
     onNavigateToTrash: () -> Unit,
     onNavigateToWelcome: () -> Unit,
+    onNavigateToHelpAbout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
@@ -1358,12 +1339,11 @@ fun SettingsScreen(
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         }
                     }
+
                 }
             }
         }
         item {
-            // 6. Help & About Section — a concise feature reference, with the app-identity
-            // "about" card (previously its own top-level section) now living at the bottom of it.
             Text(
                 text = "HELP & ABOUT",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
@@ -1374,74 +1354,34 @@ fun SettingsScreen(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    helpFeatures.forEach { (title, description) ->
-                        HelpFeatureRow(title = title, description = description)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                        .clickable { onNavigateToHelpAbout() }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(com.mj.yata.R.drawable.rj_logo_mark),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
-                            modifier = Modifier.size(width = 44.dp, height = 29.dp)
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Help and about",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Help & About",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "Feature guide, version, and app identity.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "yata",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontFamily = com.mj.yata.ui.theme.BodoniModaFamily,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "yet another todo app",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "v${com.mj.yata.BuildConfig.VERSION_NAME} build ${com.mj.yata.BuildConfig.VERSION_CODE}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "From the Labs of RJ",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Made in 🇮🇳",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
             }
@@ -1945,19 +1885,6 @@ private fun AnimatedManageRow(visible: Boolean, title: String, onClick: () -> Un
             )
         }
     }
-}
-
-@Composable
-private fun HelpFeatureRow(title: String, description: String) {
-    Text(
-        text = buildAnnotatedString {
-            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(title) }
-            append("  —  ")
-            append(description)
-        },
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurface
-    )
 }
 
 @Composable

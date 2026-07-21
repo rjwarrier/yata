@@ -26,6 +26,7 @@ import com.mj.yata.ui.screen.person.PersonDetailScreen
 import com.mj.yata.ui.screen.tag.TagDetailScreen
 import com.mj.yata.ui.screen.list.ListDetailScreen
 import com.mj.yata.ui.screen.search.SearchScreen
+import com.mj.yata.ui.screen.settings.HelpAboutScreen
 import com.mj.yata.ui.screen.settings.SettingsScreen
 import com.mj.yata.ui.screen.trash.TrashScreen
 import com.mj.yata.ui.screen.welcome.WelcomeScreen
@@ -228,7 +229,18 @@ fun AppNavigation(
                 onCloudSignInRequested = onCloudSignInRequested,
                 onNavigateToTab = onNavigateToTab,
                 onNavigateToTrash = { navController.navigate(Screen.Trash.route) },
-                onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) }
+                onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
+                onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) }
+            )
+        }
+
+        // -- Help & About ----------------------------------------------------
+        composable(Screen.HelpAbout.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            HelpAboutScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTab = onNavigateToTab
             )
         }
 
