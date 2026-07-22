@@ -6,6 +6,7 @@ import com.mj.yata.data.cloud.CloudBackupEntry
 import com.mj.yata.data.cloud.CloudBackupManager
 import com.mj.yata.data.local.backup.LocalBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.wear.WearSyncUpdater
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.AnalyticsPeriod
@@ -18,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.UUID
@@ -29,7 +31,8 @@ class MainViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val jsonExporter: JsonExporter,
     private val cloudBackupManager: CloudBackupManager,
-    private val localBackupManager: LocalBackupManager
+    private val localBackupManager: LocalBackupManager,
+    private val wearSyncUpdater: WearSyncUpdater
 ) : ViewModel() {
 
     init {
@@ -1502,6 +1505,17 @@ private data class MainNavigationState(
             val result = localBackupManager.restoreLatest()
             onResult(result.isSuccess)
         }
+    }
+
+    fun checkWearConnected(onResult: (Boolean) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val connected = wearSyncUpdater.isWatchConnected()
+            withContext(Dispatchers.Main) { onResult(connected) }
+        }
+    }
+
+    fun syncWearNow() {
+        wearSyncUpdater.notifyTasksChanged()
     }
 
     fun setCloudBackupWifiOnly(wifiOnly: Boolean) {

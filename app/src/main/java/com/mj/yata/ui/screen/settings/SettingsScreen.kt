@@ -1238,6 +1238,54 @@ fun SettingsScreen(
             }
         }
         item {
+            // Wear OS Section — connection status plus a manual sync trigger, since the normal
+            // push only fires after a task write (see WidgetUpdater.notifyTasksChanged) and
+            // there's otherwise no way to force a first sync or verify connectivity from here.
+            var wearConnected by remember { mutableStateOf<Boolean?>(null) }
+            LaunchedEffect(Unit) { viewModel.checkWearConnected { wearConnected = it } }
+
+            Text(
+                text = "WEAR OS",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Watch",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = when (wearConnected) {
+                                null -> "Checking connection…"
+                                true -> "Watch connected"
+                                false -> "No watch connected"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    TextButton(onClick = {
+                        viewModel.syncWearNow()
+                        scope.launch { snackbarHostState.showSnackbar("Syncing with watch…") }
+                    }) {
+                        Text("Sync now")
+                    }
+                }
+            }
+        }
+        item {
             // 5. Backup/Data Section
             Text(
                 text = "BACKUP & DATA",
