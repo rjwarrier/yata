@@ -6,9 +6,12 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,9 +34,11 @@ import com.mj.yata.data.cloud.CloudBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.navigation.AppNavigation
+import com.mj.yata.ui.screen.lock.LockScreen
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
+import com.mj.yata.util.PlainTextImporter
 import com.mj.yata.util.isDarkNow
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -43,10 +48,11 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : androidx.fragment.app.FragmentActivity() {
 
     @Inject lateinit var jsonExporter: JsonExporter
     @Inject lateinit var icsExporter: IcsExporter
+    @Inject lateinit var plainTextImporter: PlainTextImporter
     @Inject lateinit var userPreferences: UserPreferences
     @Inject lateinit var cloudBackupManager: CloudBackupManager
 
@@ -78,6 +84,29 @@ class MainActivity : ComponentActivity() {
                 this@MainActivity,
                         if (ok) "Data imported successfully" else "Import failed - check file format",
                 Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private val plainTextImportLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        lifecycleScope.launch {
+            val outcome = plainTextImporter.importData(uri)
+            Toast.makeText(
+                this@MainActivity,
+                outcome.fold(
+                    onSuccess = { r ->
+                        buildString {
+                            append("Imported ${r.imported} tasks")
+                            if (r.skippedDuplicates > 0) append(", skipped ${r.skippedDuplicates} duplicates")
+                            if (r.skippedMalformed > 0) append(", skipped ${r.skippedMalformed} invalid rows")
+                        }
+                    },
+                    onFailure = { "Import failed - check file format" }
+                ),
+                Toast.LENGTH_LONG
             ).show()
         }
     }
@@ -117,10 +146,43 @@ class MainActivity : ComponentActivity() {
     // triggers the same routing effect as a cold start — `intent` alone isn't observable state.
     private var currentIntent by mutableStateOf<Intent?>(null)
 
+    // Plain (non-Compose-state) mirror of the app-lock pref, kept in sync by a LaunchedEffect
+    // below so onStop — which runs outside Compose — can decide whether to re-lock.
+    private var appLockEnabled = false
+    private var isLocked by mutableStateOf(false)
+
+    private fun canAuthenticate(): Boolean =
+        BiometricManager.from(this).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL) ==
+            BiometricManager.BIOMETRIC_SUCCESS
+
+    private fun showBiometricPrompt() {
+        val prompt = BiometricPrompt(
+            this,
+            ContextCompat.getMainExecutor(this),
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    isLocked = false
+                }
+            }
+        )
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Unlock YATA")
+            .setAllowedAuthenticators(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)
+            .build()
+        prompt.authenticate(promptInfo)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         currentIntent = intent
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (appLockEnabled && canAuthenticate()) {
+            isLocked = true
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -176,6 +238,14 @@ class MainActivity : ComponentActivity() {
             val appFont by userPreferences.appFontFlow.collectAsState(initial = com.mj.yata.domain.model.AppFont.INTER)
             val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
             val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
+
+            val appLockEnabledPref by userPreferences.appLockEnabledFlow.collectAsState(initial = false)
+            LaunchedEffect(appLockEnabledPref) { appLockEnabled = appLockEnabledPref }
+            LaunchedEffect(Unit) {
+                if (userPreferences.appLockEnabledFlow.first() && canAuthenticate()) {
+                    isLocked = true
+                }
+            }
             val baseDensity = LocalDensity.current
             val scaledDensity = Density(
                 density = baseDensity.density * uiScale,
@@ -200,6 +270,11 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
+                        if (isLocked) {
+                            LockScreen(onUnlockClick = { showBiometricPrompt() })
+                            return@Surface
+                        }
+
                         val navController = rememberNavController()
 
                         // Route to task details if launched from a notification, or to the
@@ -257,6 +332,7 @@ class MainActivity : ComponentActivity() {
                             navController      = navController,
                             onExportRequested  = { exportLauncher.launch("yata_backup.json") },
                             onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
+                            onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
                             onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
                             onCloudSignInRequested = { cloudSignInLauncher.launch(cloudBackupManager.signInIntent()) }
                         )

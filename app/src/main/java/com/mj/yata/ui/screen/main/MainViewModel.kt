@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mj.yata.data.cloud.CloudBackupEntry
 import com.mj.yata.data.cloud.CloudBackupManager
+import com.mj.yata.data.local.backup.LocalBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
@@ -27,7 +28,8 @@ class MainViewModel @Inject constructor(
     private val repository: YataRepository,
     private val userPreferences: UserPreferences,
     private val jsonExporter: JsonExporter,
-    private val cloudBackupManager: CloudBackupManager
+    private val cloudBackupManager: CloudBackupManager,
+    private val localBackupManager: LocalBackupManager
 ) : ViewModel() {
 
     init {
@@ -56,6 +58,7 @@ data class SettingsUiState(
     val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
     val hapticsEnabled: Boolean = true,
     val taskSwipeActionsEnabled: Boolean = true,
+    val appLockEnabled: Boolean = false,
     val todayTabEnabled: Boolean = true,
     val upcomingTabEnabled: Boolean = true,
     val fabPosition: FabPosition = FabPosition.RIGHT,
@@ -71,6 +74,8 @@ data class SettingsUiState(
     val cloudBackupWifiOnly: Boolean = true,
     val cloudBackupIntervalMinutes: Long = 1440L,
     val cloudBackupArchiveMonths: Int = 6,
+    val localBackupEnabled: Boolean = false,
+    val localBackupLastAt: Long? = null,
     val todayRemainingCount: Int = 0
 )
 
@@ -127,6 +132,7 @@ private data class SettingsFeatureState(
     val taskRowDensity: TaskRowDensity,
     val hapticsEnabled: Boolean,
     val taskSwipeActionsEnabled: Boolean,
+    val appLockEnabled: Boolean,
     val todayTabEnabled: Boolean,
     val upcomingTabEnabled: Boolean,
     val fabPosition: FabPosition
@@ -151,7 +157,9 @@ private data class SettingsCloudState(
 private data class SettingsCloudScheduleState(
     val cloudBackupIntervalMinutes: Long,
     val cloudBackupArchiveMonths: Int,
-    val tasks: List<Task>
+    val tasks: List<Task>,
+    val localBackupEnabled: Boolean,
+    val localBackupLastAt: Long?
 )
 
 private data class SettingsCoreState(
@@ -242,15 +250,19 @@ private data class MainNavigationState(
         },
         combine(
             userPreferences.taskRowDensityFlow,
-            combine(userPreferences.hapticsEnabledFlow, userPreferences.taskSwipeActionsEnabledFlow) { hapticsEnabled, taskSwipeActionsEnabled ->
-                hapticsEnabled to taskSwipeActionsEnabled
+            combine(
+                userPreferences.hapticsEnabledFlow,
+                userPreferences.taskSwipeActionsEnabledFlow,
+                userPreferences.appLockEnabledFlow
+            ) { hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled ->
+                Triple(hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled)
             },
             userPreferences.todayTabEnabledFlow,
             userPreferences.upcomingTabEnabledFlow,
             userPreferences.fabPositionFlow
         ) { taskRowDensity, swipePrefs, todayTabEnabled, upcomingTabEnabled, fabPosition ->
-            val (hapticsEnabled, taskSwipeActionsEnabled) = swipePrefs
-            SettingsFeatureState(taskRowDensity, hapticsEnabled, taskSwipeActionsEnabled, todayTabEnabled, upcomingTabEnabled, fabPosition)
+            val (hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled) = swipePrefs
+            SettingsFeatureState(taskRowDensity, hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled, todayTabEnabled, upcomingTabEnabled, fabPosition)
         },
         combine(
             userPreferences.uiScaleFlow,
@@ -279,9 +291,11 @@ private data class MainNavigationState(
         combine(
             userPreferences.cloudBackupIntervalMinutesFlow,
             userPreferences.cloudBackupArchiveMonthsFlow,
-            repository.getTasks() // raw Flow tasks instead of StateFlow tasks to avoid initialization order cycle
-        ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, tasks ->
-            SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, tasks)
+            repository.getTasks(), // raw Flow tasks instead of StateFlow tasks to avoid initialization order cycle
+            userPreferences.localBackupEnabledFlow,
+            userPreferences.localBackupLastAtFlow
+        ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, tasks, localBackupEnabled, localBackupLastAt ->
+            SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, tasks, localBackupEnabled, localBackupLastAt)
         }
     ) { core, cloud, cloudSchedule ->
         val todayStr = LocalDate.now().toString()
@@ -305,6 +319,7 @@ private data class MainNavigationState(
             taskRowDensity = core.feature.taskRowDensity,
             hapticsEnabled = core.feature.hapticsEnabled,
             taskSwipeActionsEnabled = core.feature.taskSwipeActionsEnabled,
+            appLockEnabled = core.feature.appLockEnabled,
             todayTabEnabled = core.feature.todayTabEnabled,
             upcomingTabEnabled = core.feature.upcomingTabEnabled,
             fabPosition = core.feature.fabPosition,
@@ -320,6 +335,8 @@ private data class MainNavigationState(
             cloudBackupWifiOnly = cloud.cloudBackupWifiOnly,
             cloudBackupIntervalMinutes = cloudSchedule.cloudBackupIntervalMinutes,
             cloudBackupArchiveMonths = cloudSchedule.cloudBackupArchiveMonths,
+            localBackupEnabled = cloudSchedule.localBackupEnabled,
+            localBackupLastAt = cloudSchedule.localBackupLastAt,
             todayRemainingCount = count
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
@@ -1310,6 +1327,12 @@ private data class MainNavigationState(
         }
     }
 
+    fun setAppLockEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setAppLockEnabled(enabled)
+        }
+    }
+
     fun setTodayTabEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setTodayTabEnabled(enabled)
@@ -1459,6 +1482,25 @@ private data class MainNavigationState(
     fun setCloudBackupEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setCloudBackupEnabled(enabled)
+        }
+    }
+
+    fun setLocalBackupEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setLocalBackupEnabled(enabled)
+        }
+    }
+
+    fun backupLocalNow() {
+        viewModelScope.launch {
+            localBackupManager.backupNow()
+        }
+    }
+
+    fun restoreLocalBackup(onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = localBackupManager.restoreLatest()
+            onResult(result.isSuccess)
         }
     }
 

@@ -38,6 +38,7 @@ fun AppNavigation(
     navController: NavHostController,
     onExportRequested: () -> Unit,
     onImportRequested: () -> Unit,
+    onImportPlainTextRequested: () -> Unit,
     onExportIcsRequested: () -> Unit,
     onCloudSignInRequested: () -> Unit
 ) {
@@ -225,6 +226,7 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onExportRequested = onExportRequested,
                 onImportRequested = onImportRequested,
+                onImportPlainTextRequested = onImportPlainTextRequested,
                 onExportIcsRequested = onExportIcsRequested,
                 onCloudSignInRequested = onCloudSignInRequested,
                 onNavigateToTab = onNavigateToTab,

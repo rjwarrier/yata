@@ -68,6 +68,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onExportRequested: () -> Unit,
     onImportRequested: () -> Unit,
+    onImportPlainTextRequested: () -> Unit,
     onExportIcsRequested: () -> Unit,
     onCloudSignInRequested: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
@@ -95,6 +96,7 @@ fun SettingsScreen(
     val taskRowDensity = uiState.taskRowDensity
     val hapticsEnabled = uiState.hapticsEnabled
     val taskSwipeActionsEnabled = uiState.taskSwipeActionsEnabled
+    val appLockEnabled = uiState.appLockEnabled
     val todayTabEnabled = uiState.todayTabEnabled
     val upcomingTabEnabled = uiState.upcomingTabEnabled
     val fabPosition = uiState.fabPosition
@@ -109,6 +111,8 @@ fun SettingsScreen(
     val cloudBackupLastAt = uiState.cloudBackupLastAt
     val cloudBackupWifiOnly = uiState.cloudBackupWifiOnly
     val cloudBackupIntervalMinutes = uiState.cloudBackupIntervalMinutes
+    val localBackupEnabled = uiState.localBackupEnabled
+    val localBackupLastAt = uiState.localBackupLastAt
     val cloudBackupArchiveMonths = uiState.cloudBackupArchiveMonths
 
     var showDefaultListMenu by remember { mutableStateOf(false) }
@@ -125,6 +129,7 @@ fun SettingsScreen(
     val todayBadgeCount = uiState.todayRemainingCount
 
     var showDeleteAllDialog by remember { mutableStateOf(false) }
+    var showRestoreLocalDialog by remember { mutableStateOf(false) }
     var isDeletingAll by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -1158,6 +1163,81 @@ fun SettingsScreen(
             }
         }
         item {
+            // Local Backup Section — encrypted, on-device, no account needed.
+            Text(
+                text = "LOCAL BACKUP",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Encrypted local backup",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Automatically back up to this device, encrypted, no account needed.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = localBackupEnabled,
+                            onCheckedChange = { viewModel.setLocalBackupEnabled(it) }
+                        )
+                    }
+
+                    if (localBackupEnabled) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Last local backup: " + formatRelativeBackupTime(localBackupLastAt),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            TextButton(onClick = {
+                                viewModel.backupLocalNow()
+                                scope.launch { snackbarHostState.showSnackbar("Local backup started") }
+                            }) {
+                                Text("Back up now")
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showRestoreLocalDialog = true }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Restore latest local backup",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        item {
             // 5. Backup/Data Section
             Text(
                 text = "BACKUP & DATA",
@@ -1218,6 +1298,34 @@ fun SettingsScreen(
                             )
                             Text(
                                 text = "Restore tasks and configuration from a previous backup file.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onImportPlainTextRequested() }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDownload,
+                            contentDescription = "Import CSV or text",
+                            tint = MaterialTheme.colorScheme.tertiary
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Import CSV/text",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = "Add tasks from a CSV file (title,due,priority,list,notes) or a plain-text list, one title per line.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1344,6 +1452,54 @@ fun SettingsScreen(
             }
         }
         item {
+            // Privacy & Security Section
+            val context = LocalContext.current
+            val biometricAvailable = remember {
+                androidx.biometric.BiometricManager.from(context).canAuthenticate(
+                    androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                        androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                ) == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
+            }
+            Text(
+                text = "PRIVACY & SECURITY",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "App Lock",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = if (biometricAvailable)
+                                "Require biometric or device unlock to open YATA."
+                            else
+                                "No screen lock set up on this device.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = appLockEnabled && biometricAvailable,
+                        enabled = biometricAvailable,
+                        onCheckedChange = { viewModel.setAppLockEnabled(it) }
+                    )
+                }
+            }
+        }
+        item {
             Text(
                 text = "HELP & ABOUT",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
@@ -1418,6 +1574,36 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteAllDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showRestoreLocalDialog) {
+        AlertDialog(
+            onDismissRequest = { showRestoreLocalDialog = false },
+            title = { Text("Restore from local backup?") },
+            text = {
+                Text(
+                    "This overwrites your current lists, tasks, and settings with your last " +
+                        "on-device backup. This can't be undone."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRestoreLocalDialog = false
+                    viewModel.restoreLocalBackup { success ->
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                if (success) "Restored from local backup" else "Restore failed — no local backup found"
+                            )
+                        }
+                    }
+                }) {
+                    Text("Restore", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestoreLocalDialog = false }) { Text("Cancel") }
             }
         )
     }

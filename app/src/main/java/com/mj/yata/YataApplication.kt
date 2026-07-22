@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.mj.yata.data.cloud.CloudBackupWorker
+import com.mj.yata.data.local.backup.LocalBackupWorker
 import com.mj.yata.notification.DailyAgendaWorker
 import com.mj.yata.notification.OverdueEscalationWorker
 import dagger.hilt.android.HiltAndroidApp
@@ -44,6 +45,9 @@ class YataApplication : Application(), Configuration.Provider {
             val wifiOnly = userPreferences.cloudBackupWifiOnlyFlow.first()
             val interval = userPreferences.cloudBackupIntervalMinutesFlow.first()
             CloudBackupWorker.schedule(this@YataApplication, interval, androidx.work.ExistingPeriodicWorkPolicy.KEEP, wifiOnly)
+
+            val localInterval = userPreferences.localBackupIntervalMinutesFlow.first()
+            LocalBackupWorker.schedule(this@YataApplication, localInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
         }
         OverdueEscalationWorker.schedule(this)
         DailyAgendaWorker.schedule(this)

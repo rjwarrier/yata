@@ -74,6 +74,9 @@ class UserPreferences @Inject constructor(
         // cloud backup into a separate archive file so the primary doesn't grow forever. 0 means
         // "never archive" (always back up everything in one file).
         val CLOUD_BACKUP_ARCHIVE_MONTHS = intPreferencesKey("cloud_backup_archive_months")
+        val LOCAL_BACKUP_ENABLED    = booleanPreferencesKey("local_backup_enabled")
+        val LOCAL_BACKUP_LAST_AT    = longPreferencesKey("local_backup_last_at")
+        val LOCAL_BACKUP_INTERVAL_MINUTES = longPreferencesKey("local_backup_interval_minutes")
         val THEME_SCHEDULE_START_HOUR   = intPreferencesKey("theme_schedule_start_hour")
         val THEME_SCHEDULE_START_MINUTE = intPreferencesKey("theme_schedule_start_minute")
         val THEME_SCHEDULE_END_HOUR     = intPreferencesKey("theme_schedule_end_hour")
@@ -83,6 +86,7 @@ class UserPreferences @Inject constructor(
         val TASK_ROW_DENSITY        = stringPreferencesKey("task_row_density")
         val HAPTICS_ENABLED         = booleanPreferencesKey("haptics_enabled")
         val TASK_SWIPE_ACTIONS_ENABLED = booleanPreferencesKey("task_swipe_actions_enabled")
+        val APP_LOCK_ENABLED        = booleanPreferencesKey("app_lock_enabled")
         val TODAY_TAB_ENABLED       = booleanPreferencesKey("today_tab_enabled")
         val UPCOMING_TAB_ENABLED    = booleanPreferencesKey("upcoming_tab_enabled")
         val FAB_POSITION            = stringPreferencesKey("fab_position")
@@ -123,6 +127,7 @@ class UserPreferences @Inject constructor(
     }
     val hapticsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[HAPTICS_ENABLED] ?: true }
     val taskSwipeActionsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
+    val appLockEnabledFlow: Flow<Boolean> = dataStore.data.map { it[APP_LOCK_ENABLED] ?: false }
     val todayTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TODAY_TAB_ENABLED] ?: true }
     val upcomingTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[UPCOMING_TAB_ENABLED] ?: true }
     val fabPositionFlow: Flow<com.mj.yata.domain.model.FabPosition> = dataStore.data.map { prefs ->
@@ -162,6 +167,9 @@ class UserPreferences @Inject constructor(
     // 15-minute floor on periodic work, so this is clamped the same way on write.
     val cloudBackupIntervalMinutesFlow: Flow<Long> = dataStore.data.map { it[CLOUD_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
     val cloudBackupArchiveMonthsFlow: Flow<Int> = dataStore.data.map { it[CLOUD_BACKUP_ARCHIVE_MONTHS] ?: 6 }
+    val localBackupEnabledFlow: Flow<Boolean> = dataStore.data.map { it[LOCAL_BACKUP_ENABLED] ?: false }
+    val localBackupLastAtFlow: Flow<Long?> = dataStore.data.map { it[LOCAL_BACKUP_LAST_AT] }
+    val localBackupIntervalMinutesFlow: Flow<Long> = dataStore.data.map { it[LOCAL_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
     val hideCompletedTodayFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_TODAY] ?: false }
     val hideCompletedProjectFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PROJECT] ?: false }
     val hideCompletedListFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_LIST] ?: false }
@@ -315,6 +323,18 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[CLOUD_BACKUP_ARCHIVE_MONTHS] = months.coerceAtLeast(0) }
     }
 
+    suspend fun setLocalBackupEnabled(enabled: Boolean) {
+        dataStore.edit { it[LOCAL_BACKUP_ENABLED] = enabled }
+    }
+
+    suspend fun setLocalBackupLastAt(epochMillis: Long) {
+        dataStore.edit { it[LOCAL_BACKUP_LAST_AT] = epochMillis }
+    }
+
+    suspend fun setLocalBackupIntervalMinutes(minutes: Long) {
+        dataStore.edit { it[LOCAL_BACKUP_INTERVAL_MINUTES] = minutes.coerceAtLeast(15L) }
+    }
+
     suspend fun setReduceMotionEnabled(enabled: Boolean) {
         dataStore.edit { it[REDUCE_MOTION_ENABLED] = enabled }
     }
@@ -333,6 +353,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setTaskSwipeActionsEnabled(enabled: Boolean) {
         dataStore.edit { it[TASK_SWIPE_ACTIONS_ENABLED] = enabled }
+    }
+
+    suspend fun setAppLockEnabled(enabled: Boolean) {
+        dataStore.edit { it[APP_LOCK_ENABLED] = enabled }
     }
 
     suspend fun setTodayTabEnabled(enabled: Boolean) {
