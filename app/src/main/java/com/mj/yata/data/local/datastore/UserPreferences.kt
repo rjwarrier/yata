@@ -6,8 +6,13 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.ThemeMode
+import com.mj.yata.util.decodeSalt
+import com.mj.yata.util.encodeSalt
+import com.mj.yata.util.generateSalt
+import com.mj.yata.util.hashPin
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -87,6 +92,9 @@ class UserPreferences @Inject constructor(
         val HAPTICS_ENABLED         = booleanPreferencesKey("haptics_enabled")
         val TASK_SWIPE_ACTIONS_ENABLED = booleanPreferencesKey("task_swipe_actions_enabled")
         val APP_LOCK_ENABLED        = booleanPreferencesKey("app_lock_enabled")
+        val APP_LOCK_PIN_SALT       = stringPreferencesKey("app_lock_pin_salt")
+        val APP_LOCK_PIN_HASH       = stringPreferencesKey("app_lock_pin_hash")
+        val APP_LOCK_TIMEOUT_MINUTES = intPreferencesKey("app_lock_timeout_minutes")
         val TODAY_TAB_ENABLED       = booleanPreferencesKey("today_tab_enabled")
         val UPCOMING_TAB_ENABLED    = booleanPreferencesKey("upcoming_tab_enabled")
         val FAB_POSITION            = stringPreferencesKey("fab_position")
@@ -128,6 +136,8 @@ class UserPreferences @Inject constructor(
     val hapticsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[HAPTICS_ENABLED] ?: true }
     val taskSwipeActionsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
     val appLockEnabledFlow: Flow<Boolean> = dataStore.data.map { it[APP_LOCK_ENABLED] ?: false }
+    val appLockPinSetFlow: Flow<Boolean> = dataStore.data.map { !it[APP_LOCK_PIN_HASH].isNullOrBlank() }
+    val appLockTimeoutMinutesFlow: Flow<Int> = dataStore.data.map { it[APP_LOCK_TIMEOUT_MINUTES] ?: 0 }
     val todayTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TODAY_TAB_ENABLED] ?: true }
     val upcomingTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[UPCOMING_TAB_ENABLED] ?: true }
     val fabPositionFlow: Flow<com.mj.yata.domain.model.FabPosition> = dataStore.data.map { prefs ->
@@ -357,6 +367,34 @@ class UserPreferences @Inject constructor(
 
     suspend fun setAppLockEnabled(enabled: Boolean) {
         dataStore.edit { it[APP_LOCK_ENABLED] = enabled }
+    }
+
+    suspend fun setAppLockTimeoutMinutes(minutes: Int) {
+        dataStore.edit { it[APP_LOCK_TIMEOUT_MINUTES] = minutes }
+    }
+
+    /** [pin] null or blank clears the PIN (removes both keys); otherwise generates a fresh salt
+     * and stores only the salted hash, never the plaintext PIN. */
+    suspend fun setAppLockPin(pin: String?) {
+        if (pin.isNullOrBlank()) {
+            dataStore.edit {
+                it.remove(APP_LOCK_PIN_SALT)
+                it.remove(APP_LOCK_PIN_HASH)
+            }
+        } else {
+            val salt = generateSalt()
+            dataStore.edit {
+                it[APP_LOCK_PIN_SALT] = encodeSalt(salt)
+                it[APP_LOCK_PIN_HASH] = hashPin(pin, salt)
+            }
+        }
+    }
+
+    suspend fun verifyAppLockPin(pin: String): Boolean {
+        val prefs = dataStore.data.first()
+        val saltEncoded = prefs[APP_LOCK_PIN_SALT] ?: return false
+        val storedHash = prefs[APP_LOCK_PIN_HASH] ?: return false
+        return hashPin(pin, decodeSalt(saltEncoded)) == storedHash
     }
 
     suspend fun setTodayTabEnabled(enabled: Boolean) {

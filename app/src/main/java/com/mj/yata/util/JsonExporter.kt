@@ -516,8 +516,11 @@ class JsonExporter @Inject constructor(
                 }
             }
 
-            // 5. Import Tasks
+            // 5. Import Tasks — collected into one list and written with a single upsertTasks()
+            // call after the loop, instead of one upsertTask() (and one DB transaction, one
+            // reminder-default-time DataStore read) per row.
             val tasksArr = root.optJSONArray("tasks")
+            val tasksToImport = mutableListOf<Task>()
             if (tasksArr != null) {
                 for (i in 0 until tasksArr.length()) {
                     importRow("task", i) {
@@ -587,7 +590,7 @@ class JsonExporter @Inject constructor(
                             )
                         }
 
-                        repository.upsertTask(
+                        tasksToImport.add(
                             Task(
                                 id = o.getString("id"),
                                 title = o.getString("title"),
@@ -611,6 +614,9 @@ class JsonExporter @Inject constructor(
                         )
                     }
                 }
+            }
+            if (tasksToImport.isNotEmpty()) {
+                repository.upsertTasks(tasksToImport, notify = true, resyncReminder = true)
             }
 
             // 6. Import Comments (after tasks so the taskId foreign key exists)

@@ -157,9 +157,8 @@ fun UpcomingTab(
         base.format(DateTimeFormatter.ofPattern("MMMM yyyy")).uppercase(Locale.getDefault())
     }
 
-    val selectedDayTasks = remember(activeTasks, selectedDay, selectedFilter, myId) {
-        val dateStr = selectedDay.toString()
-        applyFilter(activeTasks.filter { it.due == dateStr })
+    val selectedDayTasks = remember(tasksByDate, selectedDay, selectedFilter, myId) {
+        applyFilter(tasksByDate[selectedDay.toString()].orEmpty())
     }
 
     val isSelectedToday = selectedDay == today
@@ -396,7 +395,7 @@ fun UpcomingTab(
             modifier = Modifier.weight(1f),
             label = "agenda"
         ) { day ->
-            val dayTasks = if (day == selectedDay) selectedDayTasks else applyFilter(activeTasks.filter { it.due == day.toString() })
+            val dayTasks = if (day == selectedDay) selectedDayTasks else applyFilter(tasksByDate[day.toString()].orEmpty())
             val label = if (day == today) "Today" else agendaLabel
 
             Column(modifier = Modifier.fillMaxSize()) {

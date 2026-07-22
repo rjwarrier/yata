@@ -44,6 +44,20 @@ class ReminderScheduler @Inject constructor(
         tasks.forEach { task -> scheduleReminder(task, defaultTime) }
     }
 
+    override suspend fun syncReminders(tasks: List<TaskEntity>) {
+        val defaultTime = LocalTime.of(
+            userPreferences.defaultReminderHourFlow.first(),
+            userPreferences.defaultReminderMinuteFlow.first()
+        )
+        tasks.forEach { task ->
+            if (task.done || task.dueDate == null || task.reminder.isNullOrBlank()) {
+                cancelReminder(task)
+            } else {
+                scheduleReminder(task, defaultTime)
+            }
+        }
+    }
+
     private fun scheduleReminder(task: TaskEntity, defaultTime: LocalTime) {
         if (task.dueDate == null || task.done || task.reminder.isNullOrBlank()) return
 

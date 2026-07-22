@@ -62,6 +62,8 @@ data class SettingsUiState(
     val hapticsEnabled: Boolean = true,
     val taskSwipeActionsEnabled: Boolean = true,
     val appLockEnabled: Boolean = false,
+    val appLockPinSet: Boolean = false,
+    val appLockTimeoutMinutes: Int = 0,
     val todayTabEnabled: Boolean = true,
     val upcomingTabEnabled: Boolean = true,
     val fabPosition: FabPosition = FabPosition.RIGHT,
@@ -136,9 +138,19 @@ private data class SettingsFeatureState(
     val hapticsEnabled: Boolean,
     val taskSwipeActionsEnabled: Boolean,
     val appLockEnabled: Boolean,
+    val appLockPinSet: Boolean,
+    val appLockTimeoutMinutes: Int,
     val todayTabEnabled: Boolean,
     val upcomingTabEnabled: Boolean,
     val fabPosition: FabPosition
+)
+
+private data class AppLockFlags(
+    val hapticsEnabled: Boolean,
+    val taskSwipeActionsEnabled: Boolean,
+    val appLockEnabled: Boolean,
+    val appLockPinSet: Boolean,
+    val appLockTimeoutMinutes: Int
 )
 
 private data class SettingsVisualFeatureState(
@@ -160,7 +172,6 @@ private data class SettingsCloudState(
 private data class SettingsCloudScheduleState(
     val cloudBackupIntervalMinutes: Long,
     val cloudBackupArchiveMonths: Int,
-    val tasks: List<Task>,
     val localBackupEnabled: Boolean,
     val localBackupLastAt: Long?
 )
@@ -206,12 +217,25 @@ private data class MainFeatureState(
 private data class MainNavigationState(
     val upcomingTabEnabled: Boolean,
     val fabPosition: FabPosition,
-    val hideCompletedToday: Boolean
+    val hideCompletedToday: Boolean,
+    val todayRemainingCount: Int
 )
 
     // Data streams
     val tasks: StateFlow<List<Task>> = repository.getTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar,
+     * and consumed by [settingsUiState]/[mainScreenUiState] below instead of each recomputing it
+     * independently (one of those inline copies had drifted and was missing the
+     * hiddenFromMainTaskProjectIds() filter the others apply). Declared early (uses the raw
+     * repository flows, not the [projects] StateFlow property, which is declared later) so it's
+     * available to both of those combine chains. */
+    val todayRemainingCount: StateFlow<Int> = combine(repository.getTasks(), repository.getProjects()) { list, projectList ->
+        val todayStr = LocalDate.now().toString()
+        val hiddenProjectIds = projectList.hiddenFromMainTaskProjectIds()
+        list.count { it.due != null && it.due <= todayStr && !it.done && it.projectId !in hiddenProjectIds }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     fun getTaskById(taskId: String): Flow<Task?> = repository.getTaskById(taskId)
 
@@ -256,16 +280,27 @@ private data class MainNavigationState(
             combine(
                 userPreferences.hapticsEnabledFlow,
                 userPreferences.taskSwipeActionsEnabledFlow,
-                userPreferences.appLockEnabledFlow
-            ) { hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled ->
-                Triple(hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled)
+                userPreferences.appLockEnabledFlow,
+                userPreferences.appLockPinSetFlow,
+                userPreferences.appLockTimeoutMinutesFlow
+            ) { hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled, appLockPinSet, appLockTimeoutMinutes ->
+                AppLockFlags(hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled, appLockPinSet, appLockTimeoutMinutes)
             },
             userPreferences.todayTabEnabledFlow,
             userPreferences.upcomingTabEnabledFlow,
             userPreferences.fabPositionFlow
-        ) { taskRowDensity, swipePrefs, todayTabEnabled, upcomingTabEnabled, fabPosition ->
-            val (hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled) = swipePrefs
-            SettingsFeatureState(taskRowDensity, hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled, todayTabEnabled, upcomingTabEnabled, fabPosition)
+        ) { taskRowDensity, appLockFlags, todayTabEnabled, upcomingTabEnabled, fabPosition ->
+            SettingsFeatureState(
+                taskRowDensity,
+                appLockFlags.hapticsEnabled,
+                appLockFlags.taskSwipeActionsEnabled,
+                appLockFlags.appLockEnabled,
+                appLockFlags.appLockPinSet,
+                appLockFlags.appLockTimeoutMinutes,
+                todayTabEnabled,
+                upcomingTabEnabled,
+                fabPosition
+            )
         },
         combine(
             userPreferences.uiScaleFlow,
@@ -294,15 +329,13 @@ private data class MainNavigationState(
         combine(
             userPreferences.cloudBackupIntervalMinutesFlow,
             userPreferences.cloudBackupArchiveMonthsFlow,
-            repository.getTasks(), // raw Flow tasks instead of StateFlow tasks to avoid initialization order cycle
             userPreferences.localBackupEnabledFlow,
             userPreferences.localBackupLastAtFlow
-        ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, tasks, localBackupEnabled, localBackupLastAt ->
-            SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, tasks, localBackupEnabled, localBackupLastAt)
-        }
-    ) { core, cloud, cloudSchedule ->
-        val todayStr = LocalDate.now().toString()
-        val count = cloudSchedule.tasks.count { it.due != null && it.due <= todayStr && !it.done }
+        ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt ->
+            SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt)
+        },
+        todayRemainingCount
+    ) { core, cloud, cloudSchedule, count ->
         SettingsUiState(
             themeMode = core.profile.themeMode,
             appFont = core.profile.appFont,
@@ -323,6 +356,8 @@ private data class MainNavigationState(
             hapticsEnabled = core.feature.hapticsEnabled,
             taskSwipeActionsEnabled = core.feature.taskSwipeActionsEnabled,
             appLockEnabled = core.feature.appLockEnabled,
+            appLockPinSet = core.feature.appLockPinSet,
+            appLockTimeoutMinutes = core.feature.appLockTimeoutMinutes,
             todayTabEnabled = core.feature.todayTabEnabled,
             upcomingTabEnabled = core.feature.upcomingTabEnabled,
             fabPosition = core.feature.fabPosition,
@@ -382,14 +417,12 @@ private data class MainNavigationState(
         combine(
             userPreferences.upcomingTabEnabledFlow,
             userPreferences.fabPositionFlow,
-            userPreferences.hideCompletedTodayFlow
-        ) { upcomingTabEnabled, fabPosition, hideCompletedToday ->
-            MainNavigationState(upcomingTabEnabled, fabPosition, hideCompletedToday)
+            userPreferences.hideCompletedTodayFlow,
+            todayRemainingCount
+        ) { upcomingTabEnabled, fabPosition, hideCompletedToday, todayCount ->
+            MainNavigationState(upcomingTabEnabled, fabPosition, hideCompletedToday, todayCount)
         }
     ) { data, extraData, profile, feature, navigation ->
-        val todayStr = LocalDate.now().toString()
-        val hiddenProjectIds = data.projects.hiddenFromMainTaskProjectIds()
-        val count = data.tasks.count { it.due != null && it.due <= todayStr && !it.done && it.projectId !in hiddenProjectIds }
         MainScreenUiState(
             tasks = data.tasks,
             projects = data.projects,
@@ -412,7 +445,7 @@ private data class MainNavigationState(
             upcomingTabEnabled = navigation.upcomingTabEnabled,
             fabPosition = navigation.fabPosition,
             hideCompletedToday = navigation.hideCompletedToday,
-            todayRemainingCount = count
+            todayRemainingCount = navigation.todayRemainingCount
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainScreenUiState())
 
@@ -425,12 +458,6 @@ private data class MainNavigationState(
     val archivedProjects: StateFlow<List<Project>> = repository.getArchivedProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar. */
-    val todayRemainingCount: StateFlow<Int> = combine(tasks, projects) { list, projectList ->
-        val todayStr = LocalDate.now().toString()
-        val hiddenProjectIds = projectList.hiddenFromMainTaskProjectIds()
-        list.count { it.due != null && it.due <= todayStr && !it.done && it.projectId !in hiddenProjectIds }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val lists: StateFlow<List<YataList>> = repository.getLists()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -609,9 +636,10 @@ private data class MainNavigationState(
 
     fun bulkCompleteTasks(ids: List<String>) {
         viewModelScope.launch {
+            val byId = tasks.value.associateBy { it.id }
             var changed = false
             ids.forEach { id ->
-                val task = tasks.value.find { it.id == id }
+                val task = byId[id]
                 if (task != null && !task.done) {
                     repository.toggleTaskDone(id, notify = false)
                     changed = true
@@ -623,9 +651,10 @@ private data class MainNavigationState(
 
     fun bulkDeleteTasks(ids: List<String>) {
         viewModelScope.launch {
+            val byId = tasks.value.associateBy { it.id }
             var changed = false
             ids.forEach { id ->
-                val task = tasks.value.find { it.id == id } ?: return@forEach
+                val task = byId[id] ?: return@forEach
                 repository.deleteTask(task, notify = false)
                 changed = true
             }
@@ -642,9 +671,10 @@ private data class MainNavigationState(
 
     fun bulkAddTag(ids: List<String>, tagId: String) {
         viewModelScope.launch {
+            val byId = tasks.value.associateBy { it.id }
             var changed = false
             ids.forEach { id ->
-                val task = tasks.value.find { it.id == id } ?: return@forEach
+                val task = byId[id] ?: return@forEach
                 if (!task.tagIds.contains(tagId)) {
                     repository.upsertTask(task.copy(tagIds = task.tagIds + tagId), notify = false, resyncReminder = false)
                     changed = true
@@ -659,10 +689,11 @@ private data class MainNavigationState(
             // Append after the destination's existing tasks, like moveTaskToList does for a
             // single move — otherwise every bulk-moved task keeps its old sortOrder, which can
             // collide with whatever's already in the destination project.
+            val byId = tasks.value.associateBy { it.id }
             var nextSortOrder = tasks.value.count { it.projectId == projectId }
             var changed = false
             ids.forEach { id ->
-                val task = tasks.value.find { it.id == id } ?: return@forEach
+                val task = byId[id] ?: return@forEach
                 repository.setTaskContainer(
                     id = task.id,
                     listId = task.listId,
@@ -679,10 +710,11 @@ private data class MainNavigationState(
 
     fun bulkSetList(ids: List<String>, listId: String?) {
         viewModelScope.launch {
+            val byId = tasks.value.associateBy { it.id }
             var nextSortOrder = tasks.value.count { it.listId == listId }
             var changed = false
             ids.forEach { id ->
-                val task = tasks.value.find { it.id == id } ?: return@forEach
+                val task = byId[id] ?: return@forEach
                 repository.setTaskContainer(
                     id = task.id,
                     listId = listId,
@@ -1333,6 +1365,18 @@ private data class MainNavigationState(
     fun setAppLockEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setAppLockEnabled(enabled)
+        }
+    }
+
+    fun setAppLockPin(pin: String?) {
+        viewModelScope.launch {
+            userPreferences.setAppLockPin(pin)
+        }
+    }
+
+    fun setAppLockTimeoutMinutes(minutes: Int) {
+        viewModelScope.launch {
+            userPreferences.setAppLockTimeoutMinutes(minutes)
         }
     }
 

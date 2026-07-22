@@ -47,7 +47,7 @@ class WearSyncUpdaterImpl @Inject constructor(
     @ApplicationContext private val context: Context
 ) : WearSyncUpdater {
 
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     override fun notifyTasksChanged() {
         Log.d("YataWear", "notifyTasksChanged: starting")

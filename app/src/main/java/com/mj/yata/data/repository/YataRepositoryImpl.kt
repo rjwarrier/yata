@@ -108,12 +108,22 @@ class YataRepositoryImpl @Inject constructor(
         if (tasks.isEmpty()) return
 
         db.withTransaction {
+            // Batch-fetch existing cross-refs for every task up front — 3 queries total instead
+            // of 3 per task — then diff each task against its slice of these in-memory maps.
+            val taskIds = tasks.map { it.id }
+            val existingPeopleByTask = db.taskDao().getPersonCrossRefsForTasks(taskIds)
+                .groupBy({ it.taskId }, { it.personId })
+            val existingTagsByTask = db.taskDao().getTagCrossRefsForTasks(taskIds)
+                .groupBy({ it.taskId }, { it.tagId })
+            val existingSubtasksByTask = db.subtaskDao().getSubtasksForTasksDirect(taskIds)
+                .groupBy { it.taskId }
+
             tasks.forEach { task ->
                 val entity = task.toEntity()
                 db.taskDao().insert(entity)
 
                 // Sync many-to-many assignees (only if changed!)
-                val existingPeople = db.taskDao().getPeopleForTaskDirect(task.id).map { it.id }
+                val existingPeople = existingPeopleByTask[task.id].orEmpty()
                 if (existingPeople.toSet() != task.assigneeIds.toSet()) {
                     db.taskDao().deleteTaskPersonCrossRefs(task.id)
                     if (task.assigneeIds.isNotEmpty()) {
@@ -123,7 +133,7 @@ class YataRepositoryImpl @Inject constructor(
                 }
 
                 // Sync many-to-many tags (only if changed!)
-                val existingTags = db.taskDao().getTagsForTaskDirect(task.id).map { it.id }
+                val existingTags = existingTagsByTask[task.id].orEmpty()
                 if (existingTags.toSet() != task.tagIds.toSet()) {
                     db.taskDao().deleteTaskTagCrossRefs(task.id)
                     if (task.tagIds.isNotEmpty()) {
@@ -133,8 +143,7 @@ class YataRepositoryImpl @Inject constructor(
                 }
 
                 // Sync subtasks (only if changed!)
-                val existingSubtasks = db.subtaskDao().getSubtasksForTaskDirect(task.id)
-                val existingDomainSubtasks = existingSubtasks.map { it.toDomain() }
+                val existingDomainSubtasks = existingSubtasksByTask[task.id].orEmpty().map { it.toDomain() }
                 if (existingDomainSubtasks != task.subtasks) {
                     db.subtaskDao().deleteForTask(task.id)
                     if (task.subtasks.isNotEmpty()) {
@@ -145,9 +154,7 @@ class YataRepositoryImpl @Inject constructor(
         }
 
         if (resyncReminder) {
-            tasks.forEach { task ->
-                syncReminder(task.toEntity())
-            }
+            reminderScheduler.syncReminders(tasks.map { it.toEntity() })
         }
         if (notify) widgetUpdater.notifyTasksChanged()
     }

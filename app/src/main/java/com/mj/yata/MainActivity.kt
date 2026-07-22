@@ -28,12 +28,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.mj.yata.data.cloud.CloudBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.navigation.AppNavigation
+import com.mj.yata.ui.screen.lock.AppLockState
 import com.mj.yata.ui.screen.lock.LockScreen
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.util.IcsExporter
@@ -146,11 +150,6 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     // triggers the same routing effect as a cold start — `intent` alone isn't observable state.
     private var currentIntent by mutableStateOf<Intent?>(null)
 
-    // Plain (non-Compose-state) mirror of the app-lock pref, kept in sync by a LaunchedEffect
-    // below so onStop — which runs outside Compose — can decide whether to re-lock.
-    private var appLockEnabled = false
-    private var isLocked by mutableStateOf(false)
-
     private fun canAuthenticate(): Boolean =
         BiometricManager.from(this).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL) ==
             BiometricManager.BIOMETRIC_SUCCESS
@@ -161,7 +160,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             ContextCompat.getMainExecutor(this),
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    isLocked = false
+                    AppLockState.isLocked = false
                 }
             }
         )
@@ -178,16 +177,33 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         currentIntent = intent
     }
 
-    override fun onStop() {
-        super.onStop()
-        if (appLockEnabled && canAuthenticate()) {
-            isLocked = true
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         currentIntent = intent
+
+        // Registered once per process (not per Activity recreation) — ON_STOP here only fires
+        // when every Activity in the process has stopped, i.e. true backgrounding, unlike this
+        // Activity's own onStop which also fires on rotation/multi-window recreation.
+        if (!AppLockState.hasRegisteredProcessObserver) {
+            AppLockState.hasRegisteredProcessObserver = true
+            ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+                override fun onStop(owner: LifecycleOwner) {
+                    if (AppLockState.appLockEnabled) {
+                        AppLockState.backgroundedAtMillis = System.currentTimeMillis()
+                    }
+                }
+
+                override fun onStart(owner: LifecycleOwner) {
+                    val backgroundedAt = AppLockState.backgroundedAtMillis ?: return
+                    AppLockState.backgroundedAtMillis = null
+                    if (!AppLockState.appLockEnabled) return
+                    val elapsedMinutes = (System.currentTimeMillis() - backgroundedAt) / 60_000.0
+                    if (elapsedMinutes >= AppLockState.appLockTimeoutMinutes) {
+                        AppLockState.isLocked = true
+                    }
+                }
+            })
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -240,10 +256,17 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
 
             val appLockEnabledPref by userPreferences.appLockEnabledFlow.collectAsState(initial = false)
-            LaunchedEffect(appLockEnabledPref) { appLockEnabled = appLockEnabledPref }
+            LaunchedEffect(appLockEnabledPref) { AppLockState.appLockEnabled = appLockEnabledPref }
+            val appLockTimeoutPref by userPreferences.appLockTimeoutMinutesFlow.collectAsState(initial = 0)
+            LaunchedEffect(appLockTimeoutPref) { AppLockState.appLockTimeoutMinutes = appLockTimeoutPref }
             LaunchedEffect(Unit) {
-                if (userPreferences.appLockEnabledFlow.first() && canAuthenticate()) {
-                    isLocked = true
+                // Only decide "start locked?" once per process — on Activity recreation
+                // (rotation/multi-window) this same check must not re-run and spuriously relock.
+                if (!AppLockState.hasCheckedInitialLock) {
+                    AppLockState.hasCheckedInitialLock = true
+                    if (userPreferences.appLockEnabledFlow.first() && canAuthenticate()) {
+                        AppLockState.isLocked = true
+                    }
                 }
             }
             val baseDensity = LocalDensity.current
@@ -270,8 +293,14 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        if (isLocked) {
-                            LockScreen(onUnlockClick = { showBiometricPrompt() })
+                        if (AppLockState.isLocked) {
+                            val pinSet by userPreferences.appLockPinSetFlow.collectAsState(initial = false)
+                            LockScreen(
+                                onUnlockClick = { showBiometricPrompt() },
+                                pinAvailable = pinSet,
+                                onVerifyPin = { pin -> userPreferences.verifyAppLockPin(pin) },
+                                onPinUnlocked = { AppLockState.isLocked = false }
+                            )
                             return@Surface
                         }
 

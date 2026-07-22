@@ -253,11 +253,19 @@ interface TaskDao {
     fun getPeopleForTask(taskId: String): Flow<List<PersonEntity>>
 
     @Query("""
-        SELECT p.* FROM people p 
-        INNER JOIN task_person_cross_ref r ON p.id = r.personId 
+        SELECT p.* FROM people p
+        INNER JOIN task_person_cross_ref r ON p.id = r.personId
         WHERE r.taskId = :taskId
     """)
     fun getPeopleForTaskDirect(taskId: String): List<PersonEntity>
+
+    // Batch variants of the cross-ref reads above, used by upsertTasks to diff-before-write for
+    // a whole bulk write in a handful of queries instead of 3 per task.
+    @Query("SELECT * FROM task_person_cross_ref WHERE taskId IN (:taskIds)")
+    suspend fun getPersonCrossRefsForTasks(taskIds: List<String>): List<TaskPersonCrossRef>
+
+    @Query("SELECT * FROM task_tag_cross_ref WHERE taskId IN (:taskIds)")
+    suspend fun getTagCrossRefsForTasks(taskIds: List<String>): List<TaskTagCrossRef>
 
     // Many-to-Many Tags
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -267,8 +275,8 @@ interface TaskDao {
     suspend fun deleteTaskTagCrossRefs(taskId: String)
 
     @Query("""
-        SELECT t.* FROM tags t 
-        INNER JOIN task_tag_cross_ref r ON t.id = r.tagId 
+        SELECT t.* FROM tags t
+        INNER JOIN task_tag_cross_ref r ON t.id = r.tagId
         WHERE r.taskId = :taskId
     """)
     fun getTagsForTask(taskId: String): Flow<List<TagEntity>>
@@ -288,6 +296,11 @@ interface SubtaskDao {
 
     @Query("SELECT * FROM subtasks WHERE taskId = :taskId ORDER BY sortOrder ASC")
     suspend fun getSubtasksForTaskDirect(taskId: String): List<SubtaskEntity>
+
+    // Batch variant used by upsertTasks to diff-before-write for a whole bulk write in one
+    // query instead of one per task.
+    @Query("SELECT * FROM subtasks WHERE taskId IN (:taskIds) ORDER BY sortOrder ASC")
+    suspend fun getSubtasksForTasksDirect(taskIds: List<String>): List<SubtaskEntity>
 
     @Upsert
     suspend fun upsertAll(subtasks: List<SubtaskEntity>)
