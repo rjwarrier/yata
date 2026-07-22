@@ -75,13 +75,19 @@ class WearMessageListenerService : WearableListenerService() {
         }
     }
 
-    /** Verifies the message actually came from a node currently paired with this phone, rather
-     * than trusting `event.sourceNodeId` blindly — this is the only real check available since
-     * the service's exported status can't be removed without breaking legitimate delivery. */
+    /** Verifies some watch is actually paired/connected right now, rather than trusting
+     * `event.sourceNodeId` blindly — this is the only real check available since the service's
+     * exported status can't be removed without breaking legitimate delivery.
+     *
+     * Deliberately checks "is any node connected" rather than "does a connected node's id equal
+     * [sourceNodeId]" — the exact-ID match was found to fail even for genuine messages from a
+     * paired watch (the id `MessageEvent.sourceNodeId` reports doesn't reliably match what
+     * `NodeClient.connectedNodes` returns for the same physical device across OEMs/pairing
+     * paths), which silently dropped every legitimate toggle/quick-add. */
     private fun isFromConnectedNode(sourceNodeId: String): Boolean {
         return try {
             val connectedNodes = Tasks.await(Wearable.getNodeClient(this).connectedNodes)
-            connectedNodes.any { it.id == sourceNodeId }
+            connectedNodes.isNotEmpty()
         } catch (e: Exception) {
             Log.w("YataWear", "isFromConnectedNode check failed, denying by default", e)
             false
