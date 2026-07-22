@@ -17,6 +17,7 @@ private const val KEY_TASK_ID = "id"
 private const val KEY_TASK_TITLE = "title"
 private const val KEY_TASK_DONE = "done"
 private const val KEY_TASK_TIME = "time"
+private const val KEY_TASK_DUE = "due"
 
 /** Receives the phone's pushed "tasks due today" count/list and forces an immediate complication
  * refresh — the complication itself never polls (UPDATE_PERIOD_SECONDS=0), it only reflects
@@ -47,7 +48,8 @@ class TaskCountListenerService : WearableListenerService() {
                             id = m.getString(KEY_TASK_ID) ?: "",
                             title = m.getString(KEY_TASK_TITLE) ?: "",
                             done = m.getBoolean(KEY_TASK_DONE),
-                            time = m.getString(KEY_TASK_TIME)?.takeIf { it.isNotEmpty() }
+                            time = m.getString(KEY_TASK_TIME)?.takeIf { it.isNotEmpty() },
+                            due = m.getString(KEY_TASK_DUE)?.takeIf { it.isNotEmpty() }
                         )
                     }
                     Log.d("YataWear", "watch: received ${tasks.size} tasks: ${tasks.map { it.title }}")

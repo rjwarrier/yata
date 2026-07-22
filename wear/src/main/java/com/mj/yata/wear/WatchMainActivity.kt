@@ -11,10 +11,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
+import androidx.wear.compose.material.ListHeader
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
@@ -27,6 +29,7 @@ import androidx.wear.compose.material.rememberScalingLazyListState
 import androidx.wear.input.RemoteInputIntentHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 private const val QUICK_ADD_INPUT_KEY = "quick_add_input"
 
@@ -82,10 +85,28 @@ class WatchMainActivity : ComponentActivity() {
     }
 }
 
+/** Relative "synced Nm ago" label — coarse on purpose, this is a freshness hint, not a clock. */
+private fun formatSyncAge(lastSyncedAt: Long?): String {
+    if (lastSyncedAt == null) return ""
+    val minutes = (System.currentTimeMillis() - lastSyncedAt) / 60_000
+    return when {
+        minutes < 1 -> "Synced just now"
+        minutes < 60 -> "Synced ${minutes}m ago"
+        minutes < 24 * 60 -> "Synced ${minutes / 60}h ago"
+        else -> "Synced ${minutes / (24 * 60)}d ago"
+    }
+}
+
 @androidx.compose.runtime.Composable
 private fun TaskListScreen(onToggle: (String) -> Unit, onQuickAdd: () -> Unit) {
     val tasks by WatchTaskRepository.tasks.collectAsState()
+    val lastSyncedAt by WatchTaskRepository.lastSyncedAt.collectAsState()
     val listState = rememberScalingLazyListState()
+    val todayStr = remember { LocalDate.now().toString() }
+
+    val overdue = tasks.filter { it.due != null && it.due < todayStr }
+    val today = tasks.filter { it.due == todayStr }
+    val upcoming = tasks.filter { it.due == null || it.due > todayStr }
 
     Scaffold(
         timeText = { TimeText() },
@@ -102,21 +123,39 @@ private fun TaskListScreen(onToggle: (String) -> Unit, onQuickAdd: () -> Unit) {
                     colors = ChipDefaults.primaryChipColors()
                 )
             }
-            if (tasks.isEmpty()) {
+            if (lastSyncedAt != null) {
                 item {
-                    Text("Nothing due today")
+                    Text(formatSyncAge(lastSyncedAt), style = MaterialTheme.typography.caption3)
                 }
-            } else {
-                tasks.forEach { task ->
-                    item {
-                        ToggleChip(
-                            checked = task.done,
-                            onCheckedChange = { onToggle(task.id) },
-                            label = { Text(task.title, maxLines = 2) },
-                            secondaryLabel = task.time?.let { time -> { Text(time) } },
-                            toggleControl = { androidx.wear.compose.material.Checkbox(checked = task.done) },
-                            colors = ToggleChipDefaults.toggleChipColors()
-                        )
+            }
+            when {
+                lastSyncedAt == null -> item {
+                    Text("Waiting to sync — open YATA on your phone")
+                }
+                tasks.isEmpty() -> item {
+                    Text("All caught up — nothing pending")
+                }
+                else -> {
+                    listOf(
+                        "Overdue" to overdue,
+                        "Today" to today,
+                        "Upcoming" to upcoming
+                    ).forEach { (label, bucket) ->
+                        if (bucket.isNotEmpty()) {
+                            item { ListHeader { Text(label) } }
+                            bucket.forEach { task ->
+                                item {
+                                    ToggleChip(
+                                        checked = task.done,
+                                        onCheckedChange = { onToggle(task.id) },
+                                        label = { Text(task.title, maxLines = 2) },
+                                        secondaryLabel = task.time?.let { time -> { Text(time) } },
+                                        toggleControl = { androidx.wear.compose.material.Checkbox(checked = task.done) },
+                                        colors = ToggleChipDefaults.toggleChipColors()
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -25,6 +25,7 @@ const val KEY_TASK_ID = "id"
 const val KEY_TASK_TITLE = "title"
 const val KEY_TASK_DONE = "done"
 const val KEY_TASK_TIME = "time"
+const val KEY_TASK_DUE = "due"
 
 private const val MAX_TASKS_SENT_TO_WATCH = 50
 
@@ -48,29 +49,37 @@ class WearSyncUpdaterImpl @Inject constructor(
             try {
                 val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
                 val todayStr = LocalDate.now().toString()
-                // Capped like every widget in this codebase already is — this list is unbounded
-                // by design (any never-completed task due today-or-earlier accumulates forever),
-                // and the Wearable Data Layer has a practical payload size ceiling that a large
-                // DataMap array can silently exceed without the phone side ever seeing an error.
-                val todayTasks = repository.getTasks().first()
-                    .filter { it.due != null && it.due!! <= todayStr }
-                    .sortedWith(compareBy({ it.done }, { it.sortOrder }))
+                val allTasks = repository.getTasks().first()
+
+                // Complication count stays "due today-or-earlier and not done" specifically,
+                // independent of the broader list below sent for the watch's own task screen.
+                val todayCount = allTasks.count { it.deletedAt == null && !it.done && it.due != null && it.due!! <= todayStr }
+
+                // Everything pending (not just today) for the watch's own list — capped like
+                // every widget in this codebase already is, since the Wearable Data Layer has a
+                // practical payload size ceiling that a large DataMap array can silently exceed
+                // without the phone side ever seeing an error. Completed tasks drop off the next
+                // push instead of accumulating forever.
+                val pendingTasks = allTasks
+                    .filter { it.deletedAt == null && !it.done }
+                    .sortedWith(compareBy(nullsLast()) { it.due })
                     .take(MAX_TASKS_SENT_TO_WATCH)
 
                 val countRequest = PutDataMapRequest.create(TODAY_COUNT_PATH).apply {
-                    dataMap.putInt(KEY_TODAY_COUNT, todayTasks.count { !it.done })
+                    dataMap.putInt(KEY_TODAY_COUNT, todayCount)
                     // Forces onDataChanged to fire watch-side even if the count is unchanged
                     // from last push (DataItems only notify listeners when their content differs).
                     dataMap.putLong("timestamp", System.currentTimeMillis())
                 }.asPutDataRequest().setUrgent()
                 com.google.android.gms.tasks.Tasks.await(Wearable.getDataClient(context).putDataItem(countRequest))
 
-                val taskMaps = ArrayList(todayTasks.map { task ->
+                val taskMaps = ArrayList(pendingTasks.map { task ->
                     DataMap().apply {
                         putString(KEY_TASK_ID, task.id)
                         putString(KEY_TASK_TITLE, task.title)
                         putBoolean(KEY_TASK_DONE, task.done)
                         putString(KEY_TASK_TIME, task.time ?: "")
+                        putString(KEY_TASK_DUE, task.due ?: "")
                     }
                 })
                 val tasksRequest = PutDataMapRequest.create(TODAY_TASKS_PATH).apply {
