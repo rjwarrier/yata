@@ -25,6 +25,7 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 **Task management**
 - Natural-language quick add — type a task and it parses out due date/time, priority, and list
 - Recurrence rules, subtasks, Markdown-rendered notes, per-task comments
+- Recurring-task streaks (2+ consecutive on-time completions) shown on the task detail screen
 - Priority levels, flags, per-task reminders
 - Duplicate-task detection when adding a new task
 - Voice quick add, share-to-task (share text/links from other apps straight into a new task)
@@ -39,6 +40,7 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 
 **Views & navigation**
 - **Today** — due-today + overdue tasks; progress ring reflects tasks pending as of the *start* of today (a task completed on a previous day no longer inflates the ring — only tasks still open, or completed *today*, count)
+- Tappable hero stats (Overdue / High priority / Due today) on Today and every entity-detail hero (Project/List/Tag/Person) filter the visible task list in place — tap again to clear, with a dismissible "Showing: X" banner
 - **Next 10 Days** — a flat, date-grouped agenda across a rolling 10-day window (reachable from the drawer and a shortcut button on Today)
 - **Upcoming** — 7-day strip or full month calendar, with a per-day agenda
 - **Projects / People / Tags** tabs, each with its own detail screen
@@ -54,6 +56,10 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 
 **Wear OS companion**
 - Today's-task-count complication, pushed from the phone app on every relevant change
+- Connection status and a manual "sync now" action, surfaced in phone-side Settings
+
+**Security**
+- Optional App Lock — PIN + biometric, with a configurable auto-lock timeout
 
 **Notifications & reminders**
 - Per-task reminders scheduled via `AlarmManager`, rescheduled automatically on device reboot
@@ -64,9 +70,10 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 - Assignment and delegation, per-person workload trend (overdue count over the last 7 days), Team Overdue widget
 
 **Backup & export**
-- Full JSON backup/restore
+- Full JSON backup/restore, CSV export/import
 - Google Drive cloud backup (Drive `appDataFolder` scope + Google Sign-In), periodic + debounced background upload via WorkManager, optional Wi-Fi-only
 - `.ics` calendar export, Markdown export for clipboard/share
+- Branded PDF/image export for any Project, Tag, or Person — accent-colored letterhead, stat chips + progress bar, tasks grouped by project/list with tag chips and assignee names, via an options sheet (include/exclude completed with an optional "older than N days" cutoff, strike-off toggle, show tags/assignees, Compact/Relaxed layout). PDFs paginate cleanly (never mid-row) with real page numbers and document metadata (Title/Author/Subject)
 
 **Customization**
 - Theme mode (light/dark/system) + dynamic color, scheduled theme window
@@ -91,6 +98,7 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 | Background work | WorkManager + Hilt-Work (cloud backup uploads) |
 | Cloud backup | Google Sign-In + Drive REST v3 over OkHttp |
 | Markdown | Markwon |
+| PDF metadata | `pdfbox-android` (Info-dictionary only — pages are rendered natively via `android.graphics.pdf.PdfDocument`) |
 | Wear sync | `play-services-wearable` |
 | Tasker plugin | `taskerpluginlibrary` |
 | Build | AGP 8.7.2, KSP, JDK 17 |
@@ -142,6 +150,7 @@ app/src/main/java/com/mj/yata/
 ├── notification/          Reminder scheduling + delivery
 ├── tasker/createtask/     Tasker plugin integration
 └── util/                  Exporters, recurrence, NLP quick-add parser, analytics, ...
+    └── export/            Branded PDF/image entity export (compose-to-bitmap render, pagination, PDF metadata)
 
 wear/src/main/java/com/mj/yata/wear/   Wear OS companion (today's-count complication)
 ```
@@ -195,4 +204,4 @@ There is no automated Compose UI test suite; UI-facing changes are verified manu
 
 ## Status
 
-Personal, actively-evolving project — schema and UI can change between commits. Current `versionName` (`app/build.gradle.kts`) is `0.1`.
+Personal, actively-evolving project — schema and UI can change between commits. Current `versionName` (`app/build.gradle.kts`) is `0.5`.
