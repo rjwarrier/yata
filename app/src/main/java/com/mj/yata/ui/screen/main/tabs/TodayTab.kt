@@ -132,12 +132,20 @@ fun TodayTab(
     val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
     val remainingCount = totalCount - doneCount
 
+    var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
+    val overdueCount = remember(progressBaseTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(progressBaseTasks) }
+    val highPriorityCount = remember(progressBaseTasks) { progressBaseTasks.count { !it.done && it.priority == "high" } }
+    val dueTodayCount = remember(progressBaseTasks, todayStr) { progressBaseTasks.count { !it.done && it.due == todayStr } }
+
     // Flat list, no more Morning/Afternoon grouping — split into Pending/Completed instead of
     // interleaving them in raw sortOrder. Hiding completed drops both the tasks and the section
     // headers themselves, rather than leaving an empty "Completed" heading around.
     var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
-    val pendingTasks = remember(filteredTasks, sortMode) {
-        filteredTasks.filter { !it.done }.sortedByMode(sortMode)
+    val pendingTasks = remember(filteredTasks, sortMode, activeStatFilter, today) {
+        filteredTasks
+            .filter { !it.done }
+            .filter { activeStatFilter == null || activeStatFilter!!.matches(it, today) }
+            .sortedByMode(sortMode)
     }
     val completedTasks = remember(filteredTasks, hideCompleted) {
         if (hideCompleted) emptyList() else filteredTasks.filter { it.done }
@@ -257,6 +265,45 @@ fun TodayTab(
             )
         }
 
+        // 2.5 Overdue/high-priority/due-today stats — tap one to filter Pending in place,
+        // matching the same tap-to-filter stat row on the Person/Project/List/Tag hero sections.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            com.mj.yata.ui.widgets.HeroStatCell(
+                label = "Overdue",
+                value = overdueCount,
+                accentColor = MaterialTheme.colorScheme.primary,
+                valueColor = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE,
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE) null else com.mj.yata.ui.widgets.HeroStatKind.OVERDUE }
+            )
+            com.mj.yata.ui.widgets.HeroStatCell(
+                label = "High priority",
+                value = highPriorityCount,
+                accentColor = MaterialTheme.colorScheme.primary,
+                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY,
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY) null else com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY }
+            )
+            com.mj.yata.ui.widgets.HeroStatCell(
+                label = "Due today",
+                value = dueTodayCount,
+                accentColor = MaterialTheme.colorScheme.primary,
+                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY,
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY) null else com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY }
+            )
+        }
+
+        if (activeStatFilter != null) {
+            com.mj.yata.ui.widgets.ActiveFilterBanner(
+                kind = activeStatFilter!!,
+                onClear = { activeStatFilter = null }
+            )
+        }
+
         // 3. Scrollable filter chips
         Row(
             modifier = Modifier
@@ -290,15 +337,19 @@ fun TodayTab(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 88.dp)
         ) {
-            if (filteredTasks.isEmpty()) {
+            if (pendingTasks.isEmpty() && completedTasks.isEmpty()) {
                 item {
+                    val filtered = selectedFilter != "All" || activeStatFilter != null
                     com.mj.yata.ui.widgets.TabEmptyState(
                         icon = Icons.Default.TaskAlt,
                         title = "All caught up",
-                        subtitle = if (selectedFilter == "All") "No tasks for today." else "No tasks match this filter.",
-                        actionLabel = if (selectedFilter == "All") "Add task" else "Show all",
+                        subtitle = if (!filtered) "No tasks for today." else "No tasks match this filter.",
+                        actionLabel = if (!filtered) "Add task" else "Show all",
                         onAction = {
-                            if (selectedFilter == "All") onNewTaskClick() else selectedFilter = "All"
+                            if (!filtered) onNewTaskClick() else {
+                                selectedFilter = "All"
+                                activeStatFilter = null
+                            }
                         }
                     )
                 }

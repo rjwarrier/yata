@@ -96,6 +96,13 @@ class YataRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getTaskStreak(taskId: String): Int = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val seriesId = db.taskDao().getByIdDirect(taskId)?.seriesId ?: return@withContext 0
+        val completions = db.taskDao().getCompletedTasksBySeriesId(seriesId)
+            .map { it.toDomain(assigneeIds = emptyList(), tagIds = emptyList()) }
+        com.mj.yata.util.RecurrenceEvaluator.computeStreak(completions)
+    }
+
     override fun notifyTasksChanged() {
         widgetUpdater.notifyTasksChanged()
     }
@@ -229,11 +236,16 @@ class YataRepositoryImpl @Inject constructor(
                     }
                     else -> recurrence
                 }
+                // Lazily assigned on the first completion of this series — carried forward
+                // unchanged on every completion after that, linking every historical instance
+                // back to the live row for streak computation (RecurrenceEvaluator.computeStreak).
+                val seriesId = taskEntity.seriesId ?: UUID.randomUUID().toString()
                 val updatedTask = taskEntity.copy(
                     done = false, // Reset done for next occurrence
                     completedAt = null,
                     dueDate = nextDate,
-                    recurrenceJson = serializeRecurrence(updatedRecurrence)
+                    recurrenceJson = serializeRecurrence(updatedRecurrence),
+                    seriesId = seriesId
                 )
                 val historicalTaskId = UUID.randomUUID().toString()
 
@@ -243,7 +255,8 @@ class YataRepositoryImpl @Inject constructor(
                         id = historicalTaskId,
                         done = true,
                         completedAt = System.currentTimeMillis(),
-                        recurrenceJson = null // one-off completed instance
+                        recurrenceJson = null, // one-off completed instance
+                        seriesId = seriesId
                     )
                     db.taskDao().insert(completedHistoryTask)
 

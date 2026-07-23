@@ -7,6 +7,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -219,16 +225,29 @@ private fun QuickAddDialogContent(
         }
     }
 
+    // Lighter scrim + top-anchored card (not screen-centered) so this reads as a quick popup
+    // from the widget, not a full app window taking over — plus a fast scale/fade-in instead of
+    // appearing instantly, since the transparent activity theme disables the system window
+    // animation entirely (Theme.Yata.Transparent's windowAnimationStyle = null).
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(Color.Black.copy(alpha = 0.25f))
             .clickable(indication = null, interactionSource = noRipple) { onDismiss() },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.TopCenter
     ) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(tween(150)) + scaleIn(tween(150), initialScale = 0.92f),
+            exit = fadeOut(tween(100)) + scaleOut(tween(100), targetScale = 0.92f)
+        ) {
         Surface(
             modifier = Modifier
-                .padding(32.dp)
+                .statusBarsPadding()
+                .padding(top = 24.dp, start = 24.dp, end = 24.dp)
                 .fillMaxWidth()
                 .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { /* swallow — don't dismiss */ },
             shape = RoundedCornerShape(20.dp),
@@ -273,6 +292,7 @@ private fun QuickAddDialogContent(
                     }
                 }
             }
+        }
         }
     }
 }

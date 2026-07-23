@@ -39,6 +39,7 @@ fun AppNavigation(
     onExportRequested: () -> Unit,
     onImportRequested: () -> Unit,
     onImportPlainTextRequested: () -> Unit,
+    onExportCsvRequested: () -> Unit,
     onExportIcsRequested: () -> Unit,
     onCloudSignInRequested: () -> Unit
 ) {
@@ -227,6 +228,7 @@ fun AppNavigation(
                 onExportRequested = onExportRequested,
                 onImportRequested = onImportRequested,
                 onImportPlainTextRequested = onImportPlainTextRequested,
+                onExportCsvRequested = onExportCsvRequested,
                 onExportIcsRequested = onExportIcsRequested,
                 onCloudSignInRequested = onCloudSignInRequested,
                 onNavigateToTab = onNavigateToTab,

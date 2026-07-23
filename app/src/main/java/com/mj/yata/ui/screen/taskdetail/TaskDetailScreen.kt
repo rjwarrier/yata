@@ -426,6 +426,26 @@ fun TaskDetailScreen(
                         onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
                     )
 
+                    // Reliable streak (linked via TaskEntity.seriesId, not the title-heuristic
+                    // recurrenceHistory below) — only counts completions since seriesId tracking
+                    // was added, so a brand-new streak isn't itself a bug.
+                    var streak by remember(task.id) { mutableIntStateOf(0) }
+                    LaunchedEffect(task.id, task.recurrence) {
+                        if (task.recurrence != null) {
+                            viewModel.streakForTask(task.id) { streak = it }
+                        } else {
+                            streak = 0
+                        }
+                    }
+                    if (task.recurrence != null && streak >= 2) {
+                        Text(
+                            text = "🔥 $streak-day streak",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+
                     if (recurrenceHistory.isNotEmpty()) {
                         Column(
                             modifier = Modifier

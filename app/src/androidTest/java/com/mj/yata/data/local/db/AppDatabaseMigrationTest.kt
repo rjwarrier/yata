@@ -419,6 +419,41 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate23To24_addsSeriesIdColumn_toTasks_preservingExistingRows() {
+        context.deleteDatabase(TEST_DB)
+        createVersion18TasksTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`completedAt`,`deletedAt`,`notes`,`recurrenceJson`,`sortOrder`) " +
+                    "VALUES ('t1','Water plants',NULL,NULL,'Morning','2026-01-01',NULL,NULL,'none',0,0,NULL,NULL,NULL,NULL,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(24) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    // The `tasks` table's columns are unchanged from v18 through v23 (18->19
+                    // through 22->23 only add an index/FTS side-table, and those touch other
+                    // tables like `people`/`lists` that this minimal tasks-only fixture doesn't
+                    // have) — so MIGRATION_23_24 is the only one that needs to actually run here.
+                    AppDatabase.MIGRATION_23_24.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `title`, `seriesId` FROM `tasks` WHERE `id` = 't1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("Water plants", cursor.getString(cursor.getColumnIndexOrThrow("title")))
+                assertTrue(cursor.isNull(cursor.getColumnIndexOrThrow("seriesId")))
+            }
+            close()
+        }
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)

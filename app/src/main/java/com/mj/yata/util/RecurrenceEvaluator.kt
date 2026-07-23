@@ -2,8 +2,11 @@ package com.mj.yata.util
 
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
+import com.mj.yata.domain.model.Task
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
@@ -188,6 +191,23 @@ object RecurrenceEvaluator {
         }
 
         return nextDate.format(dateFormatter)
+    }
+
+    /** [completions] must be sorted newest-first (as `getCompletedTasksBySeriesId` already
+     * returns them). Counts consecutive on-time completions from the most recent one back —
+     * "on-time" meaning completed on or before the due date it was completed against — stopping
+     * at the first late (or undated) completion. */
+    fun computeStreak(completions: List<Task>): Int {
+        var streak = 0
+        for (task in completions) {
+            val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: break
+            val completedDate = task.completedAt
+                ?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() }
+                ?: break
+            if (completedDate.isAfter(due)) break
+            streak++
+        }
+        return streak
     }
 
     private fun getOrdinal(n: Int): String {

@@ -141,7 +141,8 @@ data class Task(
     val recurrence: Recurrence?,
     val subtasks: List<Subtask>,
     val notes: String?,
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    val seriesId: String? = null // links a recurring task to its historical completed instances
 )
 
 /**

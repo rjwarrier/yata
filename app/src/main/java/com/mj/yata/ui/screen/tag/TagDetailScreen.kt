@@ -113,8 +113,13 @@ fun TagDetailScreen(
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
     var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
+    val heroToday = remember { java.time.LocalDate.now() }
     val pendingTaggedTasks = remember(allTaggedTasks, searchQuery, sortMode) {
         allTaggedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
+    }
+    val displayedPendingTaggedTasks = remember(pendingTaggedTasks, activeStatFilter, heroToday) {
+        pendingTaggedTasks.filter { activeStatFilter == null || activeStatFilter!!.matches(it, heroToday) }
     }
     val completedTaggedTasks = remember(allTaggedTasks, hideCompleted, searchQuery) {
         if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) }
@@ -302,8 +307,19 @@ fun TagDetailScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                         }
-                    }
+                    },
+                    activeFilter = activeStatFilter,
+                    onStatClick = { activeStatFilter = if (activeStatFilter == it) null else it }
                 )
+            }
+
+            if (activeStatFilter != null) {
+                item {
+                    com.mj.yata.ui.widgets.ActiveFilterBanner(
+                        kind = activeStatFilter!!,
+                        onClear = { activeStatFilter = null }
+                    )
+                }
             }
 
             // 2. Tasks list — split into Pending/Completed; headers vanish while hiding completed.
@@ -348,10 +364,24 @@ fun TagDetailScreen(
                     )
                 }
 
-                if (!hideCompleted && pendingTaggedTasks.isNotEmpty()) {
-                    item(key = "pending_header") { TaskSectionHeader("PENDING", pendingTaggedTasks.size) }
+                if (!hideCompleted && displayedPendingTaggedTasks.isNotEmpty()) {
+                    item(key = "pending_header") { TaskSectionHeader("PENDING", displayedPendingTaggedTasks.size) }
                 }
-                items(pendingTaggedTasks, key = { it.id }, contentType = { "task" }) { task ->
+                if (activeStatFilter != null && displayedPendingTaggedTasks.isEmpty()) {
+                    item(key = "no_filter_match") {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No tasks match this filter.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+                items(displayedPendingTaggedTasks, key = { it.id }, contentType = { "task" }) { task ->
                     taskRowFor(
                         task = task,
                         modifier = Modifier.animateItemPlacement(

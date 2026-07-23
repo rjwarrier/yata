@@ -173,6 +173,12 @@ interface TaskDao {
     """)
     fun getTasksWithRelationsForPerson(personId: String): Flow<List<TaskWithRelations>>
 
+    /** Completed historical instances of one recurring series, newest-first — used to compute a
+     * streak (RecurrenceEvaluator.computeStreak). See TaskEntity.seriesId's doc for how these
+     * rows come to exist. */
+    @Query("SELECT * FROM tasks WHERE seriesId = :seriesId AND done = 1 ORDER BY completedAt DESC")
+    suspend fun getCompletedTasksBySeriesId(seriesId: String): List<TaskEntity>
+
     @Transaction
     @Query("""
         SELECT DISTINCT t.* FROM tasks t

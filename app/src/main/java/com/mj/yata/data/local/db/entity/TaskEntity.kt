@@ -25,7 +25,7 @@ import androidx.room.PrimaryKey
     // hottest task queries (getTasks/getDeletedTasks filter on it alone; the Today query adds
     // done + dueDate on top) — SQLite can use a leading prefix of a composite index, so this one
     // index serves all three instead of needing three separate ones.
-    indices = [Index("listId"), Index("projectId"), Index(value = ["deletedAt", "done", "dueDate"])]
+    indices = [Index("listId"), Index("projectId"), Index(value = ["deletedAt", "done", "dueDate"]), Index("seriesId")]
 )
 data class TaskEntity(
     @PrimaryKey val id: String,
@@ -43,5 +43,9 @@ data class TaskEntity(
     val deletedAt: Long? = null,
     val notes: String?,
     val recurrenceJson: String?, // JSON representation of Recurrence
-    val sortOrder: Int = 0
+    val sortOrder: Int = 0,
+    // Links a recurring task's live row to every historical completed instance forked off it
+    // (see YataRepositoryImpl.toggleTaskDone) — null for non-recurring tasks and for any
+    // historical row completed before this column existed. Lazily assigned on first completion.
+    val seriesId: String? = null
 )

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
@@ -40,6 +41,43 @@ class PlainTextImporter @Inject constructor(
     private val repository: YataRepository,
     private val userPreferences: UserPreferences
 ) {
+    /** Exports every non-deleted task as CSV, in the exact `title,due,priority,list,notes`
+     * column shape [importData] reads — resolves each task's `listId` to a list name (reverse of
+     * import's name-to-id lookup) so the file stays human-editable, matching this file's role as
+     * the lighter complement to [JsonExporter]'s full-fidelity JSON backup. */
+    suspend fun exportCsv(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val tasks = repository.getTasks().first().filter { it.deletedAt == null }
+            val listNamesById = repository.getLists().first().associate { it.id to it.name }
+
+            val sb = StringBuilder("title,due,priority,list,notes\n")
+            tasks.forEach { task ->
+                sb.append(csvField(task.title)).append(',')
+                sb.append(csvField(task.due ?: "")).append(',')
+                sb.append(csvField(task.priority)).append(',')
+                sb.append(csvField(task.listId?.let { listNamesById[it] } ?: "")).append(',')
+                sb.append(csvField(task.notes ?: "")).append('\n')
+            }
+
+            context.contentResolver.openOutputStream(uri)?.use { os ->
+                OutputStreamWriter(os).use { writer -> writer.write(sb.toString()) }
+            } ?: return@withContext false
+            true
+        } catch (e: Exception) {
+            Log.e("PlainTextImporter", "exportCsv failed", e)
+            false
+        }
+    }
+
+    /** Wraps in quotes (doubling any embedded quotes) whenever the field contains a comma, quote,
+     * or newline — the counterpart to [splitCsvLine]'s quoted-field handling on import. */
+    private fun csvField(value: String): String =
+        if (value.any { it == ',' || it == '"' || it == '\n' }) {
+            "\"" + value.replace("\"", "\"\"") + "\""
+        } else {
+            value
+        }
+
     suspend fun importData(uri: Uri): Result<PlainTextImportResult> = withContext(Dispatchers.IO) {
         try {
             val lines = context.contentResolver.openInputStream(uri)?.use { ins ->

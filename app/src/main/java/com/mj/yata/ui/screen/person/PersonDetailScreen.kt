@@ -113,8 +113,15 @@ fun PersonDetailScreen(
         personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
     var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
+    val today = remember { java.time.LocalDate.now() }
+    // Unfiltered-by-stat count, used by the hero's own primary text/progress so those always
+    // reflect the true totals — only the rendered list below is narrowed by activeStatFilter.
     val openTasks = remember(assignedTasks, searchQuery, sortMode) {
         assignedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
+    }
+    val displayedOpenTasks = remember(openTasks, activeStatFilter) {
+        openTasks.filter { activeStatFilter == null || activeStatFilter!!.matches(it, today) }
     }
     val completedTasks = remember(assignedTasks, searchQuery) { assignedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) } }
 
@@ -309,7 +316,9 @@ fun PersonDetailScreen(
                             photoUri = person.photoUri,
                             size = 72.dp
                         )
-                    }
+                    },
+                    activeFilter = activeStatFilter,
+                    onStatClick = { activeStatFilter = if (activeStatFilter == it) null else it }
                 )
             }
 
@@ -388,7 +397,7 @@ fun PersonDetailScreen(
                             shape = RoundedCornerShape(9999.dp)
                         ) {
                             Text(
-                                text = openTasks.size.toString(),
+                                text = displayedOpenTasks.size.toString(),
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
@@ -404,8 +413,17 @@ fun PersonDetailScreen(
                 }
             }
 
+            if (activeStatFilter != null) {
+                item {
+                    com.mj.yata.ui.widgets.ActiveFilterBanner(
+                        kind = activeStatFilter!!,
+                        onClear = { activeStatFilter = null }
+                    )
+                }
+            }
+
             if (openExpanded) {
-                if (openTasks.isEmpty()) {
+                if (displayedOpenTasks.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -421,7 +439,7 @@ fun PersonDetailScreen(
                         }
                     }
                 } else {
-                    items(openTasks, key = { it.id }, contentType = { "task" }) { task ->
+                    items(displayedOpenTasks, key = { it.id }, contentType = { "task" }) { task ->
                         val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }

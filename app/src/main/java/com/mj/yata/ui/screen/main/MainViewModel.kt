@@ -1551,6 +1551,12 @@ private data class MainNavigationState(
         }
     }
 
+    fun streakForTask(taskId: String, onResult: (Int) -> Unit) {
+        viewModelScope.launch {
+            onResult(repository.getTaskStreak(taskId))
+        }
+    }
+
     fun checkWearConnected(onResult: (Boolean) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val connected = wearSyncUpdater.isWatchConnected()

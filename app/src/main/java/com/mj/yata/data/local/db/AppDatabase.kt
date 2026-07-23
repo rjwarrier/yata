@@ -24,7 +24,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -291,6 +291,13 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE TRIGGER IF NOT EXISTS `room_fts_content_sync_tasks_fts_AFTER_UPDATE` AFTER UPDATE ON `tasks` BEGIN INSERT INTO `tasks_fts`(`docid`, `title`, `notes`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`notes`); END")
                 db.execSQL("CREATE TRIGGER IF NOT EXISTS `room_fts_content_sync_tasks_fts_AFTER_INSERT` AFTER INSERT ON `tasks` BEGIN INSERT INTO `tasks_fts`(`docid`, `title`, `notes`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`notes`); END")
                 db.execSQL("INSERT INTO `tasks_fts` (docid, `title`, `notes`) SELECT rowid, `title`, `notes` FROM `tasks`")
+            }
+        }
+
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN seriesId TEXT")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_seriesId` ON `tasks` (`seriesId`)")
             }
         }
     }

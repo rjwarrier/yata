@@ -115,6 +115,20 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         }
     }
 
+    private val exportCsvLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        lifecycleScope.launch {
+            val ok = plainTextImporter.exportCsv(uri)
+            Toast.makeText(
+                this@MainActivity,
+                if (ok) "CSV exported successfully" else "Export failed",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     private val icsExportLauncher = registerForActivityResult(
         ActivityResultContracts.CreateDocument("text/calendar")
     ) { uri ->
@@ -362,6 +376,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                             onExportRequested  = { exportLauncher.launch("yata_backup.json") },
                             onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
                             onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
+                            onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
                             onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
                             onCloudSignInRequested = { cloudSignInLauncher.launch(cloudBackupManager.signInIntent()) }
                         )

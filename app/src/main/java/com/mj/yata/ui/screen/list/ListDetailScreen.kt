@@ -94,6 +94,12 @@ fun ListDetailScreen(
     val searchFilteredTasks = remember(listTasks, searchQuery) {
         if (searchQuery.isBlank()) emptyList() else listTasks.filter { taskMatchesQuery(it, searchQuery) }
     }
+    var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
+    val heroToday = remember { java.time.LocalDate.now() }
+    val statFilteredTasks = remember(listTasks, activeStatFilter, heroToday) {
+        val filter = activeStatFilter ?: return@remember emptyList()
+        listTasks.filter { filter.matches(it, heroToday) }
+    }
 
     // Not keyed on pendingListTasks — see ProjectDetailScreen for why: any task write anywhere
     // in the app used to reset this mid-drag and discard/corrupt the in-progress reorder.
@@ -280,7 +286,9 @@ fun ListDetailScreen(
                         )
                     }
                 },
-                ringSize = 48.dp
+                ringSize = 48.dp,
+                activeFilter = activeStatFilter,
+                onStatClick = { activeStatFilter = if (activeStatFilter == it) null else it }
             )
 
             // 2. Tasks list — Pending (drag-to-reorder, or drag to the top/bottom edge to move
@@ -313,6 +321,13 @@ fun ListDetailScreen(
                 )
             }
 
+            if (activeStatFilter != null) {
+                com.mj.yata.ui.widgets.ActiveFilterBanner(
+                    kind = activeStatFilter!!,
+                    onClear = { activeStatFilter = null }
+                )
+            }
+
             if (searchActive) {
                 if (searchQuery.isBlank()) {
                     Box(
@@ -342,6 +357,26 @@ fun ListDetailScreen(
                         contentPadding = PaddingValues(bottom = 88.dp)
                     ) {
                         items(searchFilteredTasks, key = { it.id }) { task -> taskRowFor(task) }
+                    }
+                }
+            } else if (activeStatFilter != null) {
+                if (statFilteredTasks.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No tasks match this filter.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                } else {
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(bottom = 88.dp)
+                    ) {
+                        items(statFilteredTasks, key = { it.id }) { task -> taskRowFor(task) }
                     }
                 }
             } else if (pendingListTasks.isEmpty() && completedListTasks.isEmpty()) {

@@ -11,6 +11,11 @@ interface YataRepository {
     fun getTasksForProject(projectId: String): Flow<List<Task>>
     fun getTasksForPerson(personId: String): Flow<List<Task>>
 
+    /** Consecutive on-time completions for [taskId]'s recurring series (0 if the task isn't
+     * recurring, or has never completed since seriesId tracking was added). See
+     * TaskEntity.seriesId and RecurrenceEvaluator.computeStreak. */
+    suspend fun getTaskStreak(taskId: String): Int
+
     // [notify] defaults to true (fires the widget-refresh/Wear-sync/cloud-backup-debounce
     // signal immediately, as every existing call site expects). Bulk callers that loop this N
     // times pass false and call [notifyTasksChanged] once after the loop instead — a 20-task

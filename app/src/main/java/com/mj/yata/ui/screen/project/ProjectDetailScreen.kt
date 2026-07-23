@@ -99,6 +99,15 @@ fun ProjectDetailScreen(
     val searchFilteredTasks = remember(projectTasks, searchQuery) {
         if (searchQuery.isBlank()) emptyList() else projectTasks.filter { taskMatchesQuery(it, searchQuery) }
     }
+    var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
+    val today = remember { java.time.LocalDate.now() }
+    // Tapping a hero stat behaves like search — a flat, non-draggable filtered list — since
+    // committing a drag-reorder over a filtered subset would corrupt sortOrder for the tasks
+    // the filter is hiding (same reasoning as searchFilteredTasks above).
+    val statFilteredTasks = remember(projectTasks, activeStatFilter, today) {
+        val filter = activeStatFilter ?: return@remember emptyList()
+        projectTasks.filter { filter.matches(it, today) }
+    }
 
     // Not keyed on pendingProjectTasks — any task write anywhere in the app (a reminder firing,
     // a recurring task rolling over) produces a new `tasks` list instance, which used to reset
@@ -367,7 +376,9 @@ fun ProjectDetailScreen(
                 },
                 trailingExtra = if (projectPeople.isNotEmpty()) {
                     { AssigneeStack(people = projectPeople, avatarSize = 24.dp) }
-                } else null
+                } else null,
+                activeFilter = activeStatFilter,
+                onStatClick = { activeStatFilter = if (activeStatFilter == it) null else it }
             )
 
             // 2. Task list — Pending (drag-to-reorder, or drag to the top/bottom edge to move to
@@ -400,6 +411,13 @@ fun ProjectDetailScreen(
                 )
             }
 
+            if (activeStatFilter != null) {
+                com.mj.yata.ui.widgets.ActiveFilterBanner(
+                    kind = activeStatFilter!!,
+                    onClear = { activeStatFilter = null }
+                )
+            }
+
             if (searchActive) {
                 if (searchQuery.isBlank()) {
                     Box(
@@ -429,6 +447,26 @@ fun ProjectDetailScreen(
                         contentPadding = PaddingValues(bottom = 88.dp)
                     ) {
                         items(searchFilteredTasks, key = { it.id }) { task -> taskRowFor(task) }
+                    }
+                }
+            } else if (activeStatFilter != null) {
+                if (statFilteredTasks.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No tasks match this filter.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                } else {
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(bottom = 88.dp)
+                    ) {
+                        items(statFilteredTasks, key = { it.id }) { task -> taskRowFor(task) }
                     }
                 }
             } else if (pendingProjectTasks.isEmpty() && completedProjectTasks.isEmpty()) {

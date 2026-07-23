@@ -70,6 +70,7 @@ fun SettingsScreen(
     onExportRequested: () -> Unit,
     onImportRequested: () -> Unit,
     onImportPlainTextRequested: () -> Unit,
+    onExportCsvRequested: () -> Unit,
     onExportIcsRequested: () -> Unit,
     onCloudSignInRequested: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
@@ -1065,6 +1066,34 @@ fun SettingsScreen(
                             )
                             Text(
                                 text = "Add tasks from a CSV file (title,due,priority,list,notes) or a plain-text list, one title per line.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onExportCsvRequested() }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudUpload,
+                            contentDescription = "Export CSV",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Export CSV",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = "Saves all tasks to a CSV file (title,due,priority,list,notes) — a human-editable spreadsheet, not a full backup.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
