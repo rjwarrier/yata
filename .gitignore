@@ -23,3 +23,10 @@ local.properties
 # Scratch/debug dumps
 .codex_tmp/
 ui_*.xml
+graphify-out/
+
+# Coding-agent planning/handoff artifacts — not project documentation
+task.md
+walkthrough.md
+implementation_plan.md
+FEE_TRACKER_*.md
