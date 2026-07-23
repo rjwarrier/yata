@@ -19,6 +19,7 @@ local.properties
 # Keystore files
 *.jks
 *.keystore
+keystore.properties
 
 # Scratch/debug dumps
 .codex_tmp/
