@@ -68,6 +68,11 @@ class QuickAddWidget : GlanceAppWidget() {
         val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
+        android.util.Log.d(
+            "QuickAddWidget",
+            "provideGlance id=$id label=$customLabel radius=$cornerRadius targetType=$targetType targetId=$targetId accent=$accentOverrideKey"
+        )
+
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val allLists = repository.getLists().first()
 

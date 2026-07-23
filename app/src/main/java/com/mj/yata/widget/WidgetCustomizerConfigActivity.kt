@@ -188,18 +188,18 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                 }
                 Log.d("WidgetConfig", "prefs written, forcing update for providerClass=$providerClass")
 
-                // Force widget update — matched by exact type, not providerClass, so a
-                // detection miss (unrecognized/null providerClass) can't silently skip every
-                // widget's render: the prefs would still be saved, but nothing would push the
-                // change to the home screen until the next unrelated refresh, which looks
-                // identical to "the setting didn't save" from the user's side.
+                // Force widget update through the same WidgetRefresher path every task-change
+                // refresh already uses (WidgetUpdater), rather than a one-off `SomeWidget().update()`
+                // call — that direct call was found to render stale content on the home screen
+                // until a later unrelated save/refresh caught it up, even though the prefs write
+                // itself (confirmed above) is correct on the very first save.
                 val updated = when {
-                    providerClass?.endsWith("SingleListWidgetReceiver") == true -> { SingleListWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
-                    providerClass?.endsWith("QuickAddWidgetReceiver") == true -> { QuickAddWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
-                    providerClass?.endsWith("YataAppWidgetReceiver") == true -> { YataAppWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
-                    providerClass?.endsWith("UpcomingWidgetReceiver") == true -> { UpcomingWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
-                    providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> { ProgressStatsWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
-                    providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> { TeamOverdueWidget().update(this@WidgetCustomizerConfigActivity, glanceId); true }
+                    providerClass?.endsWith("SingleListWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, SingleListWidget::class.java); true }
+                    providerClass?.endsWith("QuickAddWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, QuickAddWidget::class.java); true }
+                    providerClass?.endsWith("YataAppWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, YataAppWidget::class.java); true }
+                    providerClass?.endsWith("UpcomingWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, UpcomingWidget::class.java); true }
+                    providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, ProgressStatsWidget::class.java); true }
+                    providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, TeamOverdueWidget::class.java); true }
                     else -> false
                 }
                 if (!updated) {

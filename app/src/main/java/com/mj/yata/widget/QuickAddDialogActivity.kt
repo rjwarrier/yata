@@ -43,6 +43,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -102,10 +103,15 @@ class QuickAddDialogActivity : ComponentActivity() {
                         // the widget rendering and this dialog's "Add" tap. listId/projectId are
                         // FK-enforced, so inserting against a since-deleted id would otherwise
                         // crash instead of just dropping the stale preset.
-                        val listStillExists = targetType == "list" && targetId != null &&
-                            repository.getListById(targetId).first() != null
-                        val projectStillExists = targetType == "project" && targetId != null &&
-                            repository.getProjectById(targetId).first() != null
+                        val presetList = if (targetType == "list" && targetId != null) {
+                            repository.getListById(targetId).first()
+                        } else null
+                        val listStillExists = presetList != null
+                        val presetProject = if (targetType == "project" && targetId != null) {
+                            repository.getProjectById(targetId).first()
+                        } else null
+                        val projectStillExists = presetProject != null
+                        val due = parsedShared?.due ?: presetProject?.due ?: LocalDate.now().toString()
                         repository.upsertTask(
                             Task(
                                 id = "t_" + UUID.randomUUID().toString(),
@@ -113,7 +119,10 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 listId = if (listStillExists) targetId else null,
                                 projectId = if (projectStillExists) targetId else null,
                                 section = "Afternoon",
-                                due = parsedShared?.due ?: LocalDate.now().toString(),
+                                // Same fallback chain NewTaskSheet uses: an explicit due date
+                                // (here, one parsed from shared text) wins, otherwise the preset
+                                // project's own due date, otherwise today.
+                                due = due,
                                 time = parsedShared?.time,
                                 reminder = null,
                                 priority = "none",
@@ -127,6 +136,15 @@ class QuickAddDialogActivity : ComponentActivity() {
                             )
                         )
                         WidgetRefresher.refreshAll(this@QuickAddDialogActivity)
+
+                        val destination = presetProject?.name ?: presetList?.name
+                        val dueLabel = com.mj.yata.util.TaskScheduleUtils.formatDueDate(due)
+                        android.widget.Toast.makeText(
+                            this@QuickAddDialogActivity,
+                            if (destination != null) "Task created in $destination with due date $dueLabel" else "Task created with due date $dueLabel",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+
                         finish()
                     }
                 }
@@ -196,6 +214,7 @@ private fun QuickAddDialogContent(
     val focusRequester = remember { FocusRequester() }
     val noRipple = remember { MutableInteractionSource() }
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
@@ -220,24 +239,27 @@ private fun QuickAddDialogContent(
     LaunchedEffect(Unit) {
         try {
             focusRequester.requestFocus()
+            keyboardController?.show()
         } catch (_: IllegalStateException) {
             // Not yet attached — skip autofocus rather than crash.
         }
     }
 
-    // Lighter scrim + top-anchored card (not screen-centered) so this reads as a quick popup
-    // from the widget, not a full app window taking over — plus a fast scale/fade-in instead of
-    // appearing instantly, since the transparent activity theme disables the system window
-    // animation entirely (Theme.Yata.Transparent's windowAnimationStyle = null).
+    // Lighter scrim (not a full app-modal dim) so this reads as a quick popup from the widget,
+    // not the app opening — plus a fast scale/fade-in instead of appearing instantly, since the
+    // transparent activity theme disables the system window animation entirely
+    // (Theme.Yata.Transparent's windowAnimationStyle = null). Centered + imePadding so it sits
+    // just above the keyboard once it appears, rather than the keyboard covering it.
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .imePadding()
             .background(Color.Black.copy(alpha = 0.25f))
             .clickable(indication = null, interactionSource = noRipple) { onDismiss() },
-        contentAlignment = Alignment.TopCenter
+        contentAlignment = Alignment.Center
     ) {
         AnimatedVisibility(
             visible = visible,
@@ -246,8 +268,7 @@ private fun QuickAddDialogContent(
         ) {
         Surface(
             modifier = Modifier
-                .statusBarsPadding()
-                .padding(top = 24.dp, start = 24.dp, end = 24.dp)
+                .padding(horizontal = 24.dp)
                 .fillMaxWidth()
                 .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { /* swallow — don't dismiss */ },
             shape = RoundedCornerShape(20.dp),
