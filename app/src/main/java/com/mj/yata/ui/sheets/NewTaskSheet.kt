@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
@@ -106,6 +107,7 @@ import com.mj.yata.ui.widgets.YataDatePickerDialog
 import com.mj.yata.ui.widgets.YataSelectChip
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.ParsedQuickAdd
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
 import java.time.LocalDate
@@ -262,18 +264,30 @@ fun NewTaskSheet(
     }
     val canCreateTask = title.text.isNotBlank()
 
+    // Pasting/typing several newline-separated lines offers to create one task per line
+    // instead of a single task with a garbled multi-line title — each gets its own
+    // NaturalLanguageParser pass (see bulkTaskLines below), same engine as single-task mode.
+    var bulkModeDismissed by remember { mutableStateOf(false) }
+    val bulkTaskLines = remember(title.text) {
+        title.text.split("\n").map { it.trim() }.filter { it.isNotBlank() }
+    }
+    val isBulkTasks = !bulkModeDismissed && bulkTaskLines.size > 1
+
     val mention = remember(title, tagsEnabled, peopleEnabled) {
         detectMentionToken(title.text, title.selection.end)
             ?.takeIf { (it.trigger == '#' && tagsEnabled) || (it.trigger == '@' && peopleEnabled) }
     }
 
-    val quickAdd = remember(title.text) { NaturalLanguageParser.parse(title.text) }
-    val quickAddMatched = !quickAddDismissed && quickAdd.title != title.text.trim()
+    // Skipped entirely in bulk mode — parsing the whole multi-line blob as one task would
+    // pick up stray date/priority words from any line and misapply them sheet-wide (e.g. the
+    // due-date chip) even though bulk creation uses each line's own parse instead.
+    val quickAdd = remember(title.text) { if (isBulkTasks) ParsedQuickAdd("", null, null, null, highlightRanges = emptyList()) else NaturalLanguageParser.parse(title.text) }
+    val quickAddMatched = !isBulkTasks && !quickAddDismissed && quickAdd.title != title.text.trim()
     val finalTitlePreview = remember(title.text, quickAddMatched, quickAdd.title) {
         if (quickAddMatched) quickAdd.title else title.text.trim()
     }
-    val conflictHints = remember(tasks, finalTitlePreview, selectedDueDate, selectedTime) {
-        if (finalTitlePreview.isBlank()) {
+    val conflictHints = remember(tasks, finalTitlePreview, selectedDueDate, selectedTime, isBulkTasks) {
+        if (finalTitlePreview.isBlank() || isBulkTasks) {
             emptyList()
         } else {
             buildList {
@@ -286,8 +300,8 @@ fun NewTaskSheet(
             }.take(2)
         }
     }
-    LaunchedEffect(quickAdd, quickAddDismissed) {
-        if (!quickAddDismissed) {
+    LaunchedEffect(quickAdd, quickAddDismissed, isBulkTasks) {
+        if (!quickAddDismissed && !isBulkTasks) {
             if (!dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
             if (!timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
             if (!recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
@@ -346,32 +360,63 @@ fun NewTaskSheet(
     var pendingDuplicateTask by remember { mutableStateOf<Task?>(null) }
 
     val createTask = {
-        onAddTask(
-            if (quickAddMatched) quickAdd.title else title.text.trim(),
-            selectedListId,
-            selectedPriority,
-            selectedAssigneeIds.toList(),
-            selectedTagIds.toList(),
-            selectedRecurrence,
-            selectedDueDate,
-            selectedTime,
-            selectedReminder,
-            selectedSection,
-            selectedProjectId,
-            notes.trim().ifBlank { null },
-            subtasks.toList(),
-            selectedFlag
-        )
+        if (isBulkTasks) {
+            // Each line gets its own NaturalLanguageParser pass — independent due/time/
+            // priority/recurrence/flag per task — sharing only the sheet-level fields that
+            // aren't naturally per-line (project/list/section/assignees/tags/notes/subtasks).
+            bulkTaskLines.forEach { line ->
+                val parsed = NaturalLanguageParser.parse(line)
+                onAddTask(
+                    parsed.title,
+                    selectedListId,
+                    parsed.priority ?: "none",
+                    selectedAssigneeIds.toList(),
+                    selectedTagIds.toList(),
+                    parsed.recurrence,
+                    parsed.due ?: initialDueDate,
+                    parsed.time,
+                    parsed.reminder ?: selectedReminder,
+                    selectedSection,
+                    selectedProjectId,
+                    notes.trim().ifBlank { null },
+                    subtasks.toList(),
+                    parsed.flag
+                )
+            }
+        } else {
+            onAddTask(
+                if (quickAddMatched) quickAdd.title else title.text.trim(),
+                selectedListId,
+                selectedPriority,
+                selectedAssigneeIds.toList(),
+                selectedTagIds.toList(),
+                selectedRecurrence,
+                selectedDueDate,
+                selectedTime,
+                selectedReminder,
+                selectedSection,
+                selectedProjectId,
+                notes.trim().ifBlank { null },
+                subtasks.toList(),
+                selectedFlag
+            )
+        }
     }
 
     val submit = {
         if (canCreateTask) {
-            val finalTitle = if (quickAddMatched) quickAdd.title else title.text.trim()
-            val duplicate = findSimilarTask(finalTitle, tasks)
-            if (duplicate != null) {
-                pendingDuplicateTask = duplicate
-            } else {
+            if (isBulkTasks) {
+                // Trust the paste — checking N lines against the duplicate-similarity heuristic
+                // would mean up to N separate prompts, which is worse than just creating them.
                 createTask()
+            } else {
+                val finalTitle = if (quickAddMatched) quickAdd.title else title.text.trim()
+                val duplicate = findSimilarTask(finalTitle, tasks)
+                if (duplicate != null) {
+                    pendingDuplicateTask = duplicate
+                } else {
+                    createTask()
+                }
             }
         }
     }
@@ -484,7 +529,10 @@ fun NewTaskSheet(
                 BasicTextField(
                     value = title,
                     onValueChange = { newValue ->
-                        if (newValue.text != title.text) quickAddDismissed = false
+                        if (newValue.text != title.text) {
+                            quickAddDismissed = false
+                            bulkModeDismissed = false
+                        }
                         title = newValue
                     },
                     singleLine = true,
@@ -556,7 +604,34 @@ fun NewTaskSheet(
                 )
             }
 
-            if (quickAddMatched) {
+            if (isBulkTasks) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.List,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = "${bulkTaskLines.size} tasks detected — each line becomes its own task, parsed separately",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Treat as a single task instead",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .clickable { bulkModeDismissed = true }
+                    )
+                }
+            } else if (quickAddMatched) {
                 val detectedLabel = listOfNotNull(
                     quickAdd.due?.let { TaskScheduleUtils.formatDueDate(it) },
                     quickAdd.time,
@@ -907,7 +982,7 @@ fun NewTaskSheet(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Default.Send,
-                    contentDescription = "Create task",
+                    contentDescription = if (isBulkTasks) "Create ${bulkTaskLines.size} tasks" else "Create task",
                     tint = if (canCreateTask) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     modifier = Modifier.size(20.dp)
                 )

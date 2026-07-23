@@ -33,7 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** One-tap filters shown before/alongside a text query — each is a self-contained predicate so
  * toggling several combines them with AND (narrows further, doesn't union). */
-private enum class SmartFilter(val label: String) {
+internal enum class SmartFilter(val label: String) {
     FOCUS("Focus mode"),
     MORNING_REVIEW("Morning review"),
     EVENING_REVIEW("Evening review"),
@@ -74,6 +74,40 @@ private fun String.toSmartFilters(): List<SmartFilter> =
 private fun String.smartFilterSetLabel(): String =
     toSmartFilters().joinToString(" + ") { it.label }
 
+/** Natural-language phrases recognized in the search box, mapped to the same [SmartFilter]
+ * chips a user could tap by hand — longer/more specific phrases first so e.g. "no due date"
+ * claims itself whole before the shorter "no date" alternative would also match a substring
+ * of it. */
+internal val searchFilterPhrases = listOf(
+    "no due date" to SmartFilter.NO_DUE_DATE,
+    "no date" to SmartFilter.NO_DUE_DATE,
+    "undated" to SmartFilter.NO_DUE_DATE,
+    "high priority" to SmartFilter.HIGH_PRIORITY,
+    "assigned to me" to SmartFilter.ASSIGNED_TO_ME,
+    "due today" to SmartFilter.DUE_TODAY,
+    "overdue" to SmartFilter.OVERDUE,
+    "flagged" to SmartFilter.FLAGGED
+)
+
+internal data class ParsedSearchQuery(val filters: List<SmartFilter>, val residualText: String)
+
+/** Strips recognized filter phrases out of the typed query and reports which [SmartFilter]s
+ * they correspond to — the box itself always keeps showing exactly what was typed (this only
+ * changes what actually gets searched/filtered), same "detect, don't rewrite the input" rule
+ * NaturalLanguageParser follows for quick-add. */
+internal fun parseSearchQuery(raw: String): ParsedSearchQuery {
+    var remaining = raw
+    val matched = mutableListOf<SmartFilter>()
+    for ((phrase, filter) in searchFilterPhrases) {
+        val regex = Regex("\\b${Regex.escape(phrase)}\\b", RegexOption.IGNORE_CASE)
+        if (regex.containsMatchIn(remaining)) {
+            matched.add(filter)
+            remaining = regex.replace(remaining, " ")
+        }
+    }
+    return ParsedSearchQuery(matched.distinct(), remaining.replace(Regex("\\s{2,}"), " ").trim())
+}
+
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen(
@@ -92,15 +126,24 @@ fun SearchScreen(
     val taskRowDensity by viewModel.taskRowDensity.collectAsState()
 
     var query by remember { mutableStateOf("") }
+    // The box always shows exactly what was typed — only the derived search text and filter
+    // chips change. `parseSearchQuery` recognizes phrases like "high priority"/"overdue" and
+    // reports them as SmartFilter chips to auto-activate, with the phrase itself excluded from
+    // the plain-text search so e.g. "high priority report" both toggles the chip and searches
+    // for "report".
+    val parsedSearchQuery = remember(query) { parseSearchQuery(query) }
+    val activeFilters = remember { mutableStateListOf<SmartFilter>() }
+    LaunchedEffect(parsedSearchQuery.filters) {
+        parsedSearchQuery.filters.forEach { filter -> if (filter !in activeFilters) activeFilters.add(filter) }
+    }
     // The text field itself always reflects `query` immediately; filtering runs against
     // `debouncedQuery`, which lags by a beat so a long task list with heavy per-row composables
     // doesn't re-filter synchronously on every single keystroke.
     var debouncedQuery by remember { mutableStateOf("") }
     LaunchedEffect(query) {
         kotlinx.coroutines.delay(200)
-        debouncedQuery = query
+        debouncedQuery = parsedSearchQuery.residualText
     }
-    val activeFilters = remember { mutableStateListOf<SmartFilter>() }
     var appliedInitialSmartFilterSet by remember(initialSmartFilterSet) { mutableStateOf(false) }
     LaunchedEffect(initialSmartFilterSet, appliedInitialSmartFilterSet) {
         if (!appliedInitialSmartFilterSet && !initialSmartFilterSet.isNullOrBlank()) {
@@ -285,7 +328,7 @@ fun SearchScreen(
                 active = true,
                 onActiveChange = {},
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search tasks...") },
+                placeholder = { Text("Search, or try \"overdue\", \"flagged\"...") },
                 leadingIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
