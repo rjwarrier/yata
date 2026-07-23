@@ -24,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -38,7 +39,6 @@ import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.AssigneeStack
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
-import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
@@ -115,6 +115,10 @@ fun ProjectDetailScreen(
     val totalTasks = projectTasks.size
     val doneTasks = projectTasks.count { it.done }
     val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
+    val overdueCount = remember(projectTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(projectTasks) }
+    val highPriorityCount = remember(projectTasks) { projectTasks.count { !it.done && it.priority == "high" } }
+    val todayStr = remember { java.time.LocalDate.now().toString() }
+    val dueTodayCount = remember(projectTasks, todayStr) { projectTasks.count { !it.done && it.due == todayStr } }
 
     val projectPeople = remember(projectTasks, people) {
         val pids = projectTasks.flatMap { it.assigneeIds }.toSet()
@@ -317,28 +321,33 @@ fun ProjectDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            // 1. Header row — a single compact row (ring + stats + assignees) instead of a
-            // tall centered stack, so this doesn't eat a third of the screen before any tasks show.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(projectColor.copy(alpha = 0.16f))
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ProgressRing(
-                    progress = progress,
-                    size = 44.dp,
-                    strokeWidth = 4.dp,
-                    activeColor = projectColor
-                )
-                Spacer(modifier = Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "$doneTasks / $totalTasks completed",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            // 1. Hero section — icon tile + stats + assignees, with overdue/high-priority/
+            // due-today alongside the completed count. All derived from projectTasks (not
+            // search-filtered) so they always reflect the real workload.
+            com.mj.yata.ui.widgets.EntityHeroSection(
+                accentColor = projectColor,
+                progress = progress,
+                primaryText = "$doneTasks / $totalTasks completed",
+                overdueCount = overdueCount,
+                highPriorityCount = highPriorityCount,
+                dueTodayCount = dueTodayCount,
+                leadingContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(projectColor.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = com.mj.yata.ui.widgets.iconVectorFor(project.icon),
+                            contentDescription = null,
+                            tint = projectColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                secondaryContent = {
                     if (!project.description.isNullOrBlank()) {
                         Text(
                             text = project.description,
@@ -355,15 +364,11 @@ fun ProjectDetailScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                }
-                if (projectPeople.isNotEmpty()) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    AssigneeStack(
-                        people = projectPeople,
-                        avatarSize = 24.dp
-                    )
-                }
-            }
+                },
+                trailingExtra = if (projectPeople.isNotEmpty()) {
+                    { AssigneeStack(people = projectPeople, avatarSize = 24.dp) }
+                } else null
+            )
 
             // 2. Task list — Pending (drag-to-reorder, or drag to the top/bottom edge to move to
             // another list/project) above a static Completed section. While searching, drag

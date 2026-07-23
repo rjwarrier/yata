@@ -243,6 +243,10 @@ fun ListDetailScreen(
     ) { innerPadding ->
         val peopleById = remember(people) { people.associateBy { it.id } }
         val progress = if (listTasks.isNotEmpty()) doneTasks.toFloat() / listTasks.size else 0f
+        val overdueCount = remember(listTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(listTasks) }
+        val highPriorityCount = remember(listTasks) { listTasks.count { !it.done && it.priority == "high" } }
+        val todayStr = remember { java.time.LocalDate.now().toString() }
+        val dueTodayCount = remember(listTasks, todayStr) { listTasks.count { !it.done && it.due == todayStr } }
 
         Column(
             modifier = modifier
@@ -250,49 +254,34 @@ fun ListDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            // 1. Hero header — icon tile, list name, progress ring (per handoff's List Detail)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(listColor.copy(alpha = 0.18f))
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(listColor.copy(alpha = 0.3f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = com.mj.yata.ui.widgets.iconVectorFor(list.icon),
-                        contentDescription = null,
-                        tint = listColor,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = list.name,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold, fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "$openTasks open · $doneTasks completed",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                com.mj.yata.ui.widgets.ProgressRing(
-                    progress = progress,
-                    size = 48.dp,
-                    strokeWidth = 5.dp,
-                    activeColor = listColor
-                )
-            }
+            // 1. Hero header — icon tile, list name, progress ring, plus overdue/high-priority/
+            // due-today stats (per handoff's List Detail, extended to match Person/Project/Tag).
+            com.mj.yata.ui.widgets.EntityHeroSection(
+                accentColor = listColor,
+                progress = progress,
+                primaryText = "$openTasks open · $doneTasks completed",
+                overdueCount = overdueCount,
+                highPriorityCount = highPriorityCount,
+                dueTodayCount = dueTodayCount,
+                nameText = list.name,
+                leadingContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(listColor.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = com.mj.yata.ui.widgets.iconVectorFor(list.icon),
+                            contentDescription = null,
+                            tint = listColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                },
+                ringSize = 48.dp
+            )
 
             // 2. Tasks list — Pending (drag-to-reorder, or drag to the top/bottom edge to move
             // to another list/project) above a static Completed section. While searching, drag

@@ -105,6 +105,11 @@ fun TagDetailScreen(
     }
     val doneTasks = allTaggedTasks.count { it.done }
     val openTasks = allTaggedTasks.size - doneTasks
+    val progress = if (allTaggedTasks.isNotEmpty()) doneTasks.toFloat() / allTaggedTasks.size else 0f
+    val overdueCount = remember(allTaggedTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(allTaggedTasks) }
+    val highPriorityCount = remember(allTaggedTasks) { allTaggedTasks.count { !it.done && it.priority == "high" } }
+    val todayStr = remember { java.time.LocalDate.now().toString() }
+    val dueTodayCount = remember(allTaggedTasks, todayStr) { allTaggedTasks.count { !it.done && it.due == todayStr } }
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
     var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
@@ -272,36 +277,33 @@ fun TagDetailScreen(
                 .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // 1. Header row — compact icon + stats instead of a tall centered stack.
+            // 1. Hero section — icon tile, progress ring, and overdue/high-priority/due-today
+            // stats, matching Person/Project/List's hero (this screen previously had neither).
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(tagColor.copy(alpha = 0.16f))
-                        .padding(horizontal = 20.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(tagColor.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Label,
-                            contentDescription = null,
-                            tint = tagColor,
-                            modifier = Modifier.size(22.dp)
-                        )
+                com.mj.yata.ui.widgets.EntityHeroSection(
+                    accentColor = tagColor,
+                    progress = progress,
+                    primaryText = "$openTasks open · $doneTasks completed",
+                    overdueCount = overdueCount,
+                    highPriorityCount = highPriorityCount,
+                    dueTodayCount = dueTodayCount,
+                    leadingContent = {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(tagColor.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Label,
+                                contentDescription = null,
+                                tint = tagColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Text(
-                        text = "$openTasks open · $doneTasks completed",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                )
             }
 
             // 2. Tasks list — split into Pending/Completed; headers vanish while hiding completed.

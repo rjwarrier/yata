@@ -174,15 +174,19 @@ fun TagsTab(
             // Defense-in-depth: this tab is never routed to while tags are disabled, but if it
             // ever were, this keeps it from computing/showing tag-task associations anyway —
             // matching the pattern TodayTab/UpcomingTab already use for their cross-feature reads.
+            // (total, done) per tag — used for both the "N open" label and the progress ring,
+            // matching PeopleTab's PersonRow (totalTasks/doneTasks/progress) convention.
             val tagTaskCounts = remember(tasks, projects, tagsEnabled) {
                 if (!tagsEnabled) return@remember emptyMap()
-                val counts = mutableMapOf<String, Int>()
+                val totals = mutableMapOf<String, Int>()
+                val done = mutableMapOf<String, Int>()
                 tasks.forEach { task ->
                     task.effectiveTagIds(projects).forEach { tagId ->
-                        counts[tagId] = (counts[tagId] ?: 0) + 1
+                        totals[tagId] = (totals[tagId] ?: 0) + 1
+                        if (task.done) done[tagId] = (done[tagId] ?: 0) + 1
                     }
                 }
-                counts
+                totals.mapValues { (tagId, total) -> total to (done[tagId] ?: 0) }
             }
             fun onTagTap(id: String) {
                 if (selectionMode) {
@@ -259,7 +263,7 @@ fun TagsTab(
 private fun TagGroupSection(
     title: String?,
     tags: List<Tag>,
-    taskCounts: Map<String, Int>,
+    taskCounts: Map<String, Pair<Int, Int>>,
     onTagClick: (String) -> Unit,
     onToggleStar: (String) -> Unit = {},
     trailing: (@Composable () -> Unit)? = null,
@@ -324,9 +328,11 @@ private fun TagGroupSection(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 tags.forEach { tag ->
+                    val (total, done) = taskCounts[tag.id] ?: (0 to 0)
                     TagRow(
                         tag = tag,
-                        taskCount = taskCounts[tag.id] ?: 0,
+                        totalTasks = total,
+                        doneTasks = done,
                         onClick = { onTagClick(tag.id) },
                         onToggleStar = { onToggleStar(tag.id) },
                         selectionMode = selectionMode,
@@ -351,12 +357,15 @@ private fun TagGroupSection(
 @Composable
 private fun TagRow(
     tag: Tag,
-    taskCount: Int,
+    totalTasks: Int,
+    doneTasks: Int,
     onClick: () -> Unit,
     onToggleStar: () -> Unit = {},
     selectionMode: Boolean = false,
     selected: Boolean = false
 ) {
+    val openTasks = totalTasks - doneTasks
+    val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
     val accents = LocalYataAccents.current
     val tagColor = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
 
@@ -414,7 +423,7 @@ private fun TagRow(
                     style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onSurface)
                 )
                 Text(
-                    text = if (taskCount == 1) "1 task" else "$taskCount tasks",
+                    text = if (openTasks == 1) "1 open" else "$openTasks open",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
@@ -431,6 +440,16 @@ private fun TagRow(
                     starredColor = accents.accentD,
                     starredContentDescription = "Unstar tag",
                     unstarredContentDescription = "Star tag"
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                com.mj.yata.ui.widgets.ProgressRing(
+                    progress = progress,
+                    size = 32.dp,
+                    strokeWidth = 3.dp,
+                    activeColor = tagColor,
+                    showLabel = false
                 )
             }
         }

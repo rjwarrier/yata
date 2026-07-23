@@ -276,28 +276,41 @@ fun PersonDetailScreen(
                 .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // 1. Header row — compact avatar + stats instead of a tall centered stack.
+            // 1. Hero section — bigger avatar + progress ring, plus overdue/high-priority/due-today
+            // stats in addition to the open/completed count, all derived from assignedTasks (not
+            // search-filtered, unlike openTasks/completedTasks below) so these always reflect the
+            // person's real workload regardless of an active search query.
             item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(personColor.copy(alpha = 0.16f))
-                        .padding(horizontal = 20.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    PersonAvatar(
-                        initials = person.initials,
-                        accentKey = person.color,
-                        photoUri = person.photoUri,
-                        size = 44.dp
-                    )
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Text(
-                        text = "${openTasks.size} open · ${completedTasks.size} completed",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                val overdueCount = remember(assignedTasks) {
+                    com.mj.yata.util.AnalyticsUtils.overdueCount(assignedTasks)
                 }
+                val highPriorityCount = remember(assignedTasks) {
+                    assignedTasks.count { !it.done && it.priority == "high" }
+                }
+                val todayStr = remember { java.time.LocalDate.now().toString() }
+                val dueTodayCount = remember(assignedTasks, todayStr) {
+                    assignedTasks.count { !it.done && it.due == todayStr }
+                }
+                val totalCount = assignedTasks.size
+                val doneCount = assignedTasks.count { it.done }
+                val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
+
+                com.mj.yata.ui.widgets.EntityHeroSection(
+                    accentColor = personColor,
+                    progress = progress,
+                    primaryText = "${openTasks.size} open · ${completedTasks.size} completed",
+                    overdueCount = overdueCount,
+                    highPriorityCount = highPriorityCount,
+                    dueTodayCount = dueTodayCount,
+                    leadingContent = {
+                        PersonAvatar(
+                            initials = person.initials,
+                            accentKey = person.color,
+                            photoUri = person.photoUri,
+                            size = 72.dp
+                        )
+                    }
+                )
             }
 
             // 1.5 Workload trend — overdue count as it stood at the end of each of the last 7
