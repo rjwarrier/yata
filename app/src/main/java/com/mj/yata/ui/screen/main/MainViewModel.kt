@@ -919,7 +919,8 @@ private data class MainNavigationState(
         reminder: String? = null,
         section: String = "Afternoon",
         projectId: String? = null,
-        subtasks: List<Subtask> = emptyList()
+        subtasks: List<Subtask> = emptyList(),
+        flag: Boolean = false
     ) {
         viewModelScope.launch {
             val newTask = Task(
@@ -932,7 +933,7 @@ private data class MainNavigationState(
                 time = time,
                 reminder = reminder,
                 priority = priority,
-                flag = false,
+                flag = flag,
                 done = false,
                 assigneeIds = assigneeIds,
                 tagIds = tagIds,

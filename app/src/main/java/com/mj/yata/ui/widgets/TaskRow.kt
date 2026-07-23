@@ -116,8 +116,32 @@ fun TaskRow(
     )
 
     val rowContent: @Composable (Modifier) -> Unit = { rowModifier ->
-        Row(
+        Box(
             modifier = rowModifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+        // Priority color stripe, flush with the row's true left edge (outside the content
+        // padding below) — M3-style state indicator, same color mapping as PriorityBars'
+        // dots. IntrinsicSize.Min on this Box lets fillMaxHeight() below resolve against the
+        // Row's own (otherwise unbounded, LazyColumn-item) height.
+        if (!task.done && task.priority != "none") {
+            val priorityStripeColor = when (task.priority) {
+                "low" -> accents.accentE
+                "med" -> accents.accentD
+                "high" -> MaterialTheme.colorScheme.error
+                else -> Color.Transparent
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .fillMaxHeight()
+                    .width(3.dp)
+                    .background(priorityStripeColor)
+            )
+        }
+        Row(
+            modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(onClick = onTaskClick, onLongClick = onLongClick)
                 .padding(horizontal = horizontalPadding, vertical = density.verticalPadding()),
@@ -366,6 +390,7 @@ fun TaskRow(
                 people = assignees,
                 avatarSize = 24.dp
             )
+        }
         }
         }
     }

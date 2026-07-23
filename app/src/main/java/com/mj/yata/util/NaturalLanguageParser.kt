@@ -16,6 +16,7 @@ data class ParsedQuickAdd(
     val recurrence: Recurrence?, // null if nothing matched
     val reminder: String? = null, // one of TaskScheduleUtils.reminderOptions, or a literal "h:mm a" clock time
     val priority: String? = null, // "low" | "med" | "high", null if nothing matched
+    val flag: Boolean = false, // true if an "important"/"flag this"-style phrase matched
     val highlightRanges: List<IntRange> // recognized spans in the *original* raw string, for underlining
 )
 
@@ -71,16 +72,51 @@ object NaturalLanguageParser {
     // ── Recurrence ────────────────────────────────────────────────────────
     private val everyAlternateDayRegex = Regex("\\bevery\\s+(?:other|alternate)\\s+day(s)?\\b", RegexOption.IGNORE_CASE)
     private val everyAlternateWeekRegex = Regex("\\bevery\\s+(?:other|alternate)\\s+week(s)?\\b", RegexOption.IGNORE_CASE)
+    private val everyAlternateMonthRegex = Regex("\\bevery\\s+(?:other|alternate)\\s+month(s)?\\b", RegexOption.IGNORE_CASE)
+    private val everyAlternateYearRegex = Regex("\\bevery\\s+(?:other|alternate)\\s+year(s)?\\b", RegexOption.IGNORE_CASE)
     private val everyNDaysRegex = Regex("\\bevery\\s+(\\d+)\\s+day(s)?\\b", RegexOption.IGNORE_CASE)
     private val everyNWeeksRegex = Regex("\\bevery\\s+(\\d+)\\s+week(s)?\\b", RegexOption.IGNORE_CASE)
     private val everyNMonthsRegex = Regex("\\bevery\\s+(\\d+)\\s+month(s)?\\b", RegexOption.IGNORE_CASE)
+    private val everyNYearsRegex = Regex("\\bevery\\s+(\\d+)\\s+year(s)?\\b", RegexOption.IGNORE_CASE)
     private val everyWeekdayRegex = Regex("\\bevery\\s+(\\w+)\\b", RegexOption.IGNORE_CASE)
+    // Word aliases for existing frequencies. Spacing/hyphenation variants ("semi-annually",
+    // "semi annually") are included since those aren't really typos so much as equally common
+    // ways to write the same word — genuine arbitrary-typo tolerance (e.g. "quaterly",
+    // "biweekyl") would need fuzzy/edit-distance matching, a different technique from the
+    // exact-phrase rules this whole file is built on, so it's out of scope here.
+    //
+    // Order matters: this map is scanned top-to-bottom and stops at the first hit, and a
+    // hyphen or space still counts as a "word boundary" character for \b — so "weekly" would
+    // otherwise match as a bare substring right inside "bi-weekly" (the hyphen creates a
+    // boundary right before it), same for "annually" inside "semi-annually"/"bi-annually".
+    // Every hyphenated/spaced compound below is listed before the shorter plain word it
+    // contains, specifically to win that race. (Un-hyphenated forms like "biweekly" or
+    // "semiannually" don't have this problem — no boundary character means no accidental
+    // match — but are kept alongside their hyphenated siblings for readability.)
     private val bareRecurrenceWords = mapOf(
+        "bi-weekly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) },
+        "biweekly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) },
+        "fortnightly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) },
+        "fortnighly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) }, // common typo
+        "quarterly" to { Recurrence("monthly", 3, null, null, RecurrenceEnds.Never) },
+        "semi-annually" to { Recurrence("monthly", 6, null, null, RecurrenceEnds.Never) },
+        "semi annually" to { Recurrence("monthly", 6, null, null, RecurrenceEnds.Never) },
+        "semiannually" to { Recurrence("monthly", 6, null, null, RecurrenceEnds.Never) },
+        "semianually" to { Recurrence("monthly", 6, null, null, RecurrenceEnds.Never) }, // common typo
+        "twice a year" to { Recurrence("monthly", 6, null, null, RecurrenceEnds.Never) },
+        // "biannual" is genuinely ambiguous in English (some read it as "twice a year", others
+        // as "every two years") — mapped to every-2-years here for consistency with this
+        // file's own "bi-" = "interval of 2" convention ("biweekly" above), not because one
+        // reading is more correct. "Semiannually"/"twice a year" above are unambiguous, so
+        // those always mean twice a year regardless.
+        "bi-annually" to { Recurrence("yearly", 2, null, null, RecurrenceEnds.Never) },
+        "bi annually" to { Recurrence("yearly", 2, null, null, RecurrenceEnds.Never) },
+        "biannually" to { Recurrence("yearly", 2, null, null, RecurrenceEnds.Never) },
+        "annually" to { Recurrence("yearly", 1, null, null, RecurrenceEnds.Never) },
         "daily" to { Recurrence("daily", 1, null, null, RecurrenceEnds.Never) },
         "weekly" to { Recurrence("weekly", 1, null, null, RecurrenceEnds.Never) },
         "monthly" to { Recurrence("monthly", 1, null, null, RecurrenceEnds.Never) },
         "yearly" to { Recurrence("yearly", 1, null, null, RecurrenceEnds.Never) },
-        "annually" to { Recurrence("yearly", 1, null, null, RecurrenceEnds.Never) },
         "weekdays" to { Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never) },
         "weekends" to { Recurrence("weekly", 1, listOf("SA", "SU"), null, RecurrenceEnds.Never) }
     )
@@ -99,16 +135,25 @@ object NaturalLanguageParser {
     // "the 20th" / "on the 20th" with no month named — nearest upcoming month that has that day.
     private val ordinalDayOfMonthRegex = Regex("\\b(?:on\\s+)?the\\s+(\\d{1,2})(?:st|nd|rd|th)\\b", RegexOption.IGNORE_CASE)
     private val phraseDates = listOf(
+        // Longer/more specific phrases before their shorter substrings — "next weekend" must
+        // be checked as its own phrase since "weekend" isn't a weekday the generic "next
+        // <weekday>" rule below understands, and it'd otherwise silently fail to match at all.
+        "next weekend" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SATURDAY).plusDays(7) },
         "next week" to { ref: LocalDate -> ref.plusWeeks(1) },
         "next month" to { ref: LocalDate -> ref.plusMonths(1) },
+        "beginning of month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
+        "start of month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
         "end of month" to { ref: LocalDate -> YearMonth.from(ref).atEndOfMonth() },
         "end of week" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SUNDAY) },
         "this weekend" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SATURDAY) },
+        "bom" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
         "eom" to { ref: LocalDate -> YearMonth.from(ref).atEndOfMonth() },
-        "eow" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SUNDAY) },
-        "eod" to { ref: LocalDate -> ref },
-        "eob" to { ref: LocalDate -> ref }
+        "eow" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SUNDAY) }
+        // "eod"/"eob" are handled separately below (section 3) since — unlike every other
+        // entry here — they also imply a clock time, not just a date.
     )
+    private val eodTime: LocalTime = LocalTime.of(18, 0)
+    private val eobTime: LocalTime = LocalTime.of(17, 0)
     private val bareDateWords = listOf(
         "today" to { ref: LocalDate -> ref },
         "tomorrow" to { ref: LocalDate -> ref.plusDays(1) },
@@ -214,8 +259,36 @@ object NaturalLanguageParser {
     // ── Priority ──────────────────────────────────────────────────────────
     // "!1"/"!!1" (etc.) — 1 is the most urgent, matching the common "p1 is highest" convention.
     private val priorityShorthandRegex = Regex("!{1,2}([1-3])\\b")
+    // Bare "p1"/"p2"/"p3" (no "!") — same convention, checked alongside the "!N" shorthand
+    // since it's just as explicit, before falling through to the word-phrase list below.
+    private val priorityBareRegex = Regex("\\bp([1-3])\\b", RegexOption.IGNORE_CASE)
+    // Multi-word phrases first so "high priority" claims itself whole rather than leaving a
+    // dangling "priority" behind for a later rule to trip over.
+    private val priorityWordPhrases = listOf(
+        "top priority" to "high",
+        "high priority" to "high",
+        "medium priority" to "med",
+        "med priority" to "med",
+        "low priority" to "low",
+        "urgent" to "high",
+        "asap" to "high",
+        "critical" to "high",
+        "someday" to "low",
+        "whenever" to "low",
+        "no rush" to "low"
+    )
 
-    fun parse(raw: String, referenceDate: LocalDate = LocalDate.now()): ParsedQuickAdd {
+    // ── Flag ──────────────────────────────────────────────────────────────
+    // Distinct from priority — "important" flags a task (same boolean the flag icon toggles)
+    // rather than setting its priority level, so a task can be both flagged and low-priority.
+    private val flagPhrases = listOf("flag this", "flag it", "flagged", "star this", "star it", "important")
+
+    // ── Additional relative dates ─────────────────────────────────────────
+    private val inHoursRegex = Regex("\\bin\\s+(a|an|\\d+)\\s+hour(s)?\\b", RegexOption.IGNORE_CASE)
+    private val inMinutesRegex = Regex("\\bin\\s+(a|an|\\d+)\\s+min(?:ute)?s?\\b", RegexOption.IGNORE_CASE)
+    private val halfAnHourRegex = Regex("\\bin\\s+half\\s+(?:an?\\s+)?hour\\b", RegexOption.IGNORE_CASE)
+
+    fun parse(raw: String, referenceDate: LocalDate = LocalDate.now(), referenceTime: LocalTime = LocalTime.now()): ParsedQuickAdd {
         val claimed = mutableListOf<IntRange>()
         var due: LocalDate? = null
         var time: String? = null
@@ -244,9 +317,12 @@ object NaturalLanguageParser {
         // before the later bare-weekday due-date rule can also match "sunday"/"monday".
         everyAlternateDayRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("daily", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
         if (recurrence == null) everyAlternateWeekRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("weekly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
+        if (recurrence == null) everyAlternateMonthRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("monthly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
+        if (recurrence == null) everyAlternateYearRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("yearly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
         if (recurrence == null) firstFreeMatch(everyNDaysRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> recurrence = Recurrence("daily", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
         if (recurrence == null) firstFreeMatch(everyNWeeksRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> recurrence = Recurrence("weekly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
         if (recurrence == null) firstFreeMatch(everyNMonthsRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> recurrence = Recurrence("monthly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNYearsRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> recurrence = Recurrence("yearly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
         if (recurrence == null) {
             firstFreeMatch(everyWeekdayRegex)?.let { m ->
                 val token = m.groupValues[1].lowercase()
@@ -255,6 +331,7 @@ object NaturalLanguageParser {
                     token == "week" -> Recurrence("weekly", 1, null, null, RecurrenceEnds.Never)
                     token == "month" -> Recurrence("monthly", 1, null, null, RecurrenceEnds.Never)
                     token == "year" -> Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
+                    token == "quarter" || token == "qtr" -> Recurrence("monthly", 3, null, null, RecurrenceEnds.Never)
                     weekdayNames.containsKey(token) -> Recurrence("weekly", 1, listOf(rruleDay.getValue(weekdayNames.getValue(token))), null, RecurrenceEnds.Never)
                     else -> null
                 }
@@ -342,6 +419,27 @@ object NaturalLanguageParser {
             claim(m.range)
             dueRange = m.range
         }
+        // "in N hour(s)"/"in N minute(s)"/"in half an hour" — the only relative-date phrases
+        // precise enough to need a clock time, not just a calendar date, so they set both
+        // together (crossing midnight rolls the due date forward naturally, e.g. "in 3 hours"
+        // at 11pm is due tomorrow). A pre-existing explicit time claim wins if there already
+        // is one; the due date always gets set.
+        fun applyMinutesOffset(minutes: Long, range: IntRange) {
+            val target = java.time.LocalDateTime.of(referenceDate, referenceTime).plusMinutes(minutes)
+            due = target.toLocalDate()
+            if (time == null) time = target.toLocalTime().format(timeFormatter).uppercase(Locale.getDefault())
+            claim(range)
+            dueRange = range
+        }
+        if (due == null) {
+            firstFreeMatch(halfAnHourRegex)?.let { m -> applyMinutesOffset(30, m.range) }
+        }
+        if (due == null) {
+            firstFreeMatch(inHoursRegex)?.let { m -> applyMinutesOffset(countOrOne(m.groupValues[1]) * 60, m.range) }
+        }
+        if (due == null) {
+            firstFreeMatch(inMinutesRegex)?.let { m -> applyMinutesOffset(countOrOne(m.groupValues[1]), m.range) }
+        }
         // Numeric dates — most explicit, checked before everything else in this section.
         if (due == null) {
             firstFreeMatch(isoDateRegex)?.let { m ->
@@ -404,6 +502,24 @@ object NaturalLanguageParser {
                     dueRange = m.range
                 }
                 if (due != null) break
+            }
+        }
+        // "eod"/"eob" — today's date plus an implied clock time (unlike every other phrase
+        // above, which is date-only), since that's what people actually mean by them.
+        if (due == null) {
+            firstFreeWord("eod")?.let { m ->
+                due = referenceDate
+                if (time == null) time = eodTime.format(timeFormatter).uppercase(Locale.getDefault())
+                claim(m.range)
+                dueRange = m.range
+            }
+        }
+        if (due == null) {
+            firstFreeWord("eob")?.let { m ->
+                due = referenceDate
+                if (time == null) time = eobTime.format(timeFormatter).uppercase(Locale.getDefault())
+                claim(m.range)
+                dueRange = m.range
             }
         }
         if (due == null) {
@@ -497,6 +613,39 @@ object NaturalLanguageParser {
                 }
                 claim(m.range)
             }
+        // Bare "p1"/"p2"/"p3" — same convention as the "!N" shorthand, checked next since
+        // it's just as explicit as that (only if "!N" didn't already match).
+        if (priority == null) {
+            firstFreeMatch(priorityBareRegex)?.let { m ->
+                priority = when (m.groupValues[1]) {
+                    "1" -> "high"
+                    "2" -> "med"
+                    "3" -> "low"
+                    else -> null
+                }
+                if (priority != null) claim(m.range)
+            }
+        }
+        // Word-based priority — only if "!N"/"pN" above didn't already set one.
+        if (priority == null) {
+            for ((phrase, level) in priorityWordPhrases) {
+                firstFreeMatch(Regex("\\b${Regex.escape(phrase)}\\b", RegexOption.IGNORE_CASE))?.let { m ->
+                    priority = level
+                    claim(m.range)
+                }
+                if (priority != null) break
+            }
+        }
+
+        // 6. Flag — independent of priority (a task can be both flagged and low-priority).
+        var flag = false
+        for (phrase in flagPhrases) {
+            firstFreeMatch(Regex("\\b${Regex.escape(phrase)}\\b", RegexOption.IGNORE_CASE))?.let { m ->
+                flag = true
+                claim(m.range)
+            }
+            if (flag) break
+        }
 
         val sortedClaims = claimed.sortedBy { it.first }
         val sortedStrip = (claimed + stripOnly).sortedBy { it.first }
@@ -509,7 +658,16 @@ object NaturalLanguageParser {
             if (cursor < raw.length) append(raw, cursor, raw.length)
         }.replace(Regex("\\s{2,}"), " ").trim()
 
-        return ParsedQuickAdd(title = title, due = due?.toString(), time = time, recurrence = recurrence, reminder = reminder, priority = priority, highlightRanges = sortedClaims)
+        return ParsedQuickAdd(
+            title = title,
+            due = due?.toString(),
+            time = time,
+            recurrence = recurrence,
+            reminder = reminder,
+            priority = priority,
+            flag = flag,
+            highlightRanges = sortedClaims
+        )
     }
 
     private fun nextAfter(from: LocalDate, day: DayOfWeek): LocalDate {

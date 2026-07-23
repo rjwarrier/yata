@@ -11,7 +11,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
@@ -38,6 +40,8 @@ import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
 import com.mj.yata.util.taskMatchesQuery
 import com.mj.yata.util.sortedByMode
+import com.mj.yata.util.export.toExportRow
+import kotlinx.coroutines.launch
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
@@ -63,6 +67,27 @@ fun ListDetailScreen(
 
     val list = remember(lists, listId) { lists.find { it.id == listId } }
     val accents = LocalYataAccents.current
+    val scope = rememberCoroutineScope()
+    val exportContext = androidx.compose.ui.platform.LocalContext.current
+    var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
+
+    // A list's tasks are already scoped to this one list, so the export's subheading groups
+    // by project instead (a list name heading would be redundant on every group here) —
+    // mirroring how ProjectDetailScreen groups by list for the same reason, just flipped.
+    fun exportGroupLabel(task: Task): String =
+        projects.find { it.id == task.projectId }?.name?.let { "Project - $it" } ?: ""
+
+    val exportTagErrorColor = MaterialTheme.colorScheme.error
+    fun exportTagChips(task: Task): List<com.mj.yata.util.export.ExportTagChip> =
+        task.effectiveTagIds(projects).mapNotNull { tagId ->
+            tags.find { it.id == tagId }?.let { t ->
+                val color = if (t.color == "error") exportTagErrorColor else accents.getAccent(t.color)
+                com.mj.yata.util.export.ExportTagChip(t.name, color)
+            }
+        }
+
+    fun exportAssigneeNames(task: Task): List<String> =
+        task.assigneeIds.mapNotNull { id -> people.find { it.id == id }?.name }
 
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
@@ -209,6 +234,22 @@ fun ListDetailScreen(
                                     isEditSheetOpen = true
                                 },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export as image") },
+                                onClick = {
+                                    showMenu = false
+                                    exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
+                                },
+                                leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export as PDF") },
+                                onClick = {
+                                    showMenu = false
+                                    exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
+                                },
+                                leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
                             DropdownMenuItem(
                                 text = { Text("Delete list") },
@@ -474,8 +515,8 @@ fun ListDetailScreen(
                 tags = tags,
                 tasks = allTasks,
                 initialListId = list.id,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks, flag ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks, flag = flag)
                     isNewTaskSheetOpen = false
                 },
                 onGoToExistingTask = { id ->
@@ -537,6 +578,41 @@ fun ListDetailScreen(
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    exportFormatPending?.let { format ->
+        com.mj.yata.util.export.ExportOptionsDialog(
+            entityName = list.name,
+            onDismiss = { exportFormatPending = null },
+            onConfirm = { includeCompleted, excludeOlderThanDays, exportLayoutDensity, strikeThroughCompleted, showTags, showAssignees ->
+                exportFormatPending = null
+                val cutoffMillis = excludeOlderThanDays?.takeIf { it > 0 }?.let {
+                    System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
+                }
+                val exportTasks = listTasks.filter { task ->
+                    if (!task.done) return@filter true
+                    if (!includeCompleted) return@filter false
+                    cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)
+                }
+                scope.launch {
+                    com.mj.yata.util.export.exportEntityReport(
+                        context = exportContext,
+                        format = format,
+                        entityKind = "List",
+                        entityName = list.name,
+                        accentColor = listColor,
+                        doneCount = exportTasks.count { it.done },
+                        totalCount = exportTasks.size,
+                        overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                        tasks = exportTasks.map { it.toExportRow(exportGroupLabel(it), exportTagChips(it), exportAssigneeNames(it)) },
+                        layoutDensity = exportLayoutDensity,
+                        strikeThroughCompleted = strikeThroughCompleted,
+                        showTags = showTags,
+                        showAssignees = showAssignees
+                    )
                 }
             }
         )

@@ -620,8 +620,8 @@ fun PersonDetailScreen(
                 tags = tags,
                 tasks = allTasks,
                 initialAssigneeId = person.id,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks)
+                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks, flag ->
+                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks, flag = flag)
                     isNewTaskSheetOpen = false
                 },
                 onGoToExistingTask = { id ->

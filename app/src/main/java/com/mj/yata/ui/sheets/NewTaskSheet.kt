@@ -169,7 +169,8 @@ fun NewTaskSheet(
         section: String,
         projectId: String?,
         notes: String?,
-        subtasks: List<Subtask>
+        subtasks: List<Subtask>,
+        flag: Boolean
     ) -> Unit,
     onCreateTag: (id: String, name: String, color: String) -> Unit,
     onCreatePerson: (id: String, name: String, color: String) -> Unit,
@@ -188,6 +189,10 @@ fun NewTaskSheet(
     var selectedListId by remember { mutableStateOf(initialListId) }
     var selectedProjectId by remember { mutableStateOf(initialProjectId) }
     var selectedPriority by remember { mutableStateOf("none") }
+    // No manual toggle exists for this yet (unlike due/time/priority below) — quick-add is
+    // currently the only way to flag a task before it's created, so there's no "manually set"
+    // state to protect it from being overwritten.
+    var selectedFlag by remember { mutableStateOf(false) }
     var selectedSection by remember { mutableStateOf("Afternoon") }
 
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
@@ -286,6 +291,7 @@ fun NewTaskSheet(
             if (!recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
             if (!reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
             if (!priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
+            if (quickAdd.flag) selectedFlag = true
         }
     }
 
@@ -351,7 +357,8 @@ fun NewTaskSheet(
             selectedSection,
             selectedProjectId,
             notes.trim().ifBlank { null },
-            subtasks.toList()
+            subtasks.toList(),
+            selectedFlag
         )
     }
 
@@ -552,7 +559,8 @@ fun NewTaskSheet(
                     quickAdd.time,
                     quickAdd.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) },
                     quickAdd.reminder?.let { "remind $it" },
-                    quickAdd.priority?.let { "${it.uppercase()} priority" }
+                    quickAdd.priority?.let { "${it.uppercase()} priority" },
+                    "Flagged".takeIf { quickAdd.flag }
                 ).joinToString(" · ")
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

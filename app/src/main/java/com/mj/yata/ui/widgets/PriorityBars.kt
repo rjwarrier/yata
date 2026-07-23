@@ -2,7 +2,7 @@ package com.mj.yata.ui.widgets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,7 +26,7 @@ fun PriorityBars(
     }
 
     val accents = LocalYataAccents.current
-    val barColor = when (priority) {
+    val dotColor = when (priority) {
         "low" -> accents.accentE
         "med" -> accents.accentD
         "high" -> MaterialTheme.colorScheme.error
@@ -36,22 +36,16 @@ fun PriorityBars(
     val inactiveColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
 
     Row(
-        modifier = modifier.height(14.dp),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         for (i in 1..3) {
             val isFilled = i <= fillCount
-            val barHeight = when (i) {
-                1 -> 6.dp
-                2 -> 10.dp
-                else -> 14.dp
-            }
             Box(
                 modifier = Modifier
-                    .width(3.dp)
-                    .height(barHeight)
-                    .background(if (isFilled) barColor else inactiveColor, RoundedCornerShape(1.5.dp))
+                    .size(5.dp)
+                    .background(if (isFilled) dotColor else inactiveColor, CircleShape)
             )
         }
     }

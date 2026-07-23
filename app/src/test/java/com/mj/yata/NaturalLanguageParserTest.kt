@@ -4,6 +4,7 @@ import com.mj.yata.util.NaturalLanguageParser
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.LocalDate
+import java.time.LocalTime
 
 class NaturalLanguageParserTest {
 
@@ -195,7 +196,23 @@ class NaturalLanguageParserTest {
     fun parsesEodAbbreviation() {
         val result = NaturalLanguageParser.parse("finish slides eod", ref)
         assertEquals("2026-07-04", result.due)
+        assertEquals("6:00 PM", result.time)
         assertEquals("finish slides", result.title)
+    }
+
+    @Test
+    fun parsesEobAbbreviationWithOwnTime() {
+        val result = NaturalLanguageParser.parse("send invoice eob", ref)
+        assertEquals("2026-07-04", result.due)
+        assertEquals("5:00 PM", result.time)
+        assertEquals("send invoice", result.title)
+    }
+
+    @Test
+    fun eodDoesNotOverrideExplicitTime() {
+        val result = NaturalLanguageParser.parse("finish slides eod 3pm", ref)
+        assertEquals("2026-07-04", result.due)
+        assertEquals("3:00 PM", result.time)
     }
 
     @Test
@@ -471,5 +488,224 @@ class NaturalLanguageParserTest {
     @Test
     fun noPriorityWhenNotMentioned() {
         assertNull(NaturalLanguageParser.parse("buy milk", ref).priority)
+    }
+
+    @Test
+    fun parsesWordBasedPriority() {
+        assertEquals("high", NaturalLanguageParser.parse("urgent call client", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("asap fix bug", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("critical server down", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("high priority renew license", ref).priority)
+        assertEquals("med", NaturalLanguageParser.parse("medium priority follow up", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("low priority read book", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("someday learn guitar", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("whenever organize garage", ref).priority)
+    }
+
+    @Test
+    fun wordPriorityStrippedFromTitle() {
+        val result = NaturalLanguageParser.parse("urgent call client", ref)
+        assertEquals("call client", result.title)
+    }
+
+    @Test
+    fun shorthandPriorityWinsOverWordPriority() {
+        // Shouldn't realistically co-occur, but the explicit "!1" shorthand is checked first.
+        val result = NaturalLanguageParser.parse("!3 urgent call client", ref)
+        assertEquals("low", result.priority)
+    }
+
+    @Test
+    fun parsesFlagPhrases() {
+        assertTrue(NaturalLanguageParser.parse("flag this call client", ref).flag)
+        assertTrue(NaturalLanguageParser.parse("flag it call client", ref).flag)
+        assertTrue(NaturalLanguageParser.parse("flagged call client", ref).flag)
+        assertTrue(NaturalLanguageParser.parse("star this call client", ref).flag)
+        assertTrue(NaturalLanguageParser.parse("star it call client", ref).flag)
+        assertTrue(NaturalLanguageParser.parse("important call client", ref).flag)
+        assertFalse(NaturalLanguageParser.parse("buy milk", ref).flag)
+    }
+
+    @Test
+    fun parsesBarePriorityShorthand() {
+        assertEquals("high", NaturalLanguageParser.parse("p1 pay taxes", ref).priority)
+        assertEquals("med", NaturalLanguageParser.parse("p2 pay taxes", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("p3 pay taxes", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("top priority pay taxes", ref).priority)
+    }
+
+    @Test
+    fun flagStrippedFromTitle() {
+        val result = NaturalLanguageParser.parse("important call client", ref)
+        assertEquals("call client", result.title)
+    }
+
+    @Test
+    fun flagAndPriorityAreIndependent() {
+        val result = NaturalLanguageParser.parse("important low priority read book", ref)
+        assertTrue(result.flag)
+        assertEquals("low", result.priority)
+        assertEquals("read book", result.title)
+    }
+
+    @Test
+    fun parsesInNHoursWithReferenceTime() {
+        val result = NaturalLanguageParser.parse("in 2 hours submit report", ref, LocalTime.of(10, 0))
+        assertEquals("2026-07-04", result.due)
+        assertEquals("12:00 PM", result.time)
+        assertEquals("submit report", result.title)
+    }
+
+    @Test
+    fun parsesInAnHourWithoutDigit() {
+        val result = NaturalLanguageParser.parse("in an hour check oven", ref, LocalTime.of(10, 0))
+        assertEquals("2026-07-04", result.due)
+        assertEquals("11:00 AM", result.time)
+    }
+
+    @Test
+    fun inHoursRollsOverToNextDay() {
+        val result = NaturalLanguageParser.parse("in 3 hours call back", ref, LocalTime.of(23, 0))
+        assertEquals("2026-07-05", result.due)
+        assertEquals("2:00 AM", result.time)
+    }
+
+    @Test
+    fun parsesNextWeekend() {
+        // ref is Saturday 7/4 itself; "next weekend" should skip past this weekend to the one after.
+        val result = NaturalLanguageParser.parse("next weekend camping trip", ref)
+        assertEquals("2026-07-11", result.due)
+        assertEquals("camping trip", result.title)
+    }
+
+    @Test
+    fun parsesBeginningOfMonth() {
+        val result = NaturalLanguageParser.parse("beginning of month pay rent", ref)
+        assertEquals("2026-08-01", result.due)
+        assertEquals("pay rent", result.title)
+    }
+
+    @Test
+    fun parsesStartOfMonthAndBomAbbreviation() {
+        assertEquals("2026-08-01", NaturalLanguageParser.parse("start of month review budget", ref).due)
+        assertEquals("2026-08-01", NaturalLanguageParser.parse("bom review budget", ref).due)
+    }
+
+    @Test
+    fun parsesInNMinutes() {
+        val result = NaturalLanguageParser.parse("in 20 minutes check oven", ref, LocalTime.of(10, 0))
+        assertEquals("2026-07-04", result.due)
+        assertEquals("10:20 AM", result.time)
+        assertEquals("check oven", result.title)
+    }
+
+    @Test
+    fun parsesInAMinuteWithoutDigit() {
+        val result = NaturalLanguageParser.parse("in a minute call back", ref, LocalTime.of(10, 0))
+        assertEquals("10:01 AM", result.time)
+    }
+
+    @Test
+    fun parsesHalfAnHour() {
+        val result = NaturalLanguageParser.parse("in half an hour leave for airport", ref, LocalTime.of(10, 0))
+        assertEquals("2026-07-04", result.due)
+        assertEquals("10:30 AM", result.time)
+        assertEquals("leave for airport", result.title)
+    }
+
+    @Test
+    fun inMinutesRollsOverToNextDay() {
+        val result = NaturalLanguageParser.parse("in 30 minutes call back", ref, LocalTime.of(23, 45))
+        assertEquals("2026-07-05", result.due)
+        assertEquals("12:15 AM", result.time)
+    }
+
+    @Test
+    fun parsesBiweeklyAndQuarterlyRecurrence() {
+        assertEquals("weekly", NaturalLanguageParser.parse("biweekly team sync", ref).recurrence?.freq)
+        assertEquals(2, NaturalLanguageParser.parse("biweekly team sync", ref).recurrence?.interval)
+        assertEquals("monthly", NaturalLanguageParser.parse("quarterly review", ref).recurrence?.freq)
+        assertEquals(3, NaturalLanguageParser.parse("quarterly review", ref).recurrence?.interval)
+    }
+
+    @Test
+    fun parsesHyphenatedBiweekly() {
+        // Regression: a hyphen still counts as a \b word-boundary character, so the bare
+        // "weekly" entry could otherwise match as a substring right inside "bi-weekly" before
+        // the fuller phrase ever got a chance.
+        val result = NaturalLanguageParser.parse("bi-weekly team sync", ref)
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(2, result.recurrence?.interval)
+    }
+
+    @Test
+    fun parsesSemiannuallyAndTwiceAYear() {
+        for (phrase in listOf("semiannually pay premium", "semi-annually pay premium", "semi annually pay premium", "semianually pay premium", "twice a year pay premium")) {
+            val result = NaturalLanguageParser.parse(phrase, ref)
+            assertEquals(phrase, "monthly", result.recurrence?.freq)
+            assertEquals(phrase, 6, result.recurrence?.interval)
+        }
+    }
+
+    @Test
+    fun parsesBiannuallyAsEveryTwoYears() {
+        // "biannual" is ambiguous in English, but this file treats "bi-" consistently as
+        // "interval of 2" (matching "biweekly"), so biannually = every 2 years, not 6 months.
+        for (phrase in listOf("biannually renew passport", "bi-annually renew passport", "bi annually renew passport")) {
+            val result = NaturalLanguageParser.parse(phrase, ref)
+            assertEquals(phrase, "yearly", result.recurrence?.freq)
+            assertEquals(phrase, 2, result.recurrence?.interval)
+        }
+    }
+
+    @Test
+    fun parsesFortnightlyRecurrence() {
+        assertEquals("weekly", NaturalLanguageParser.parse("fortnightly haircut", ref).recurrence?.freq)
+        assertEquals(2, NaturalLanguageParser.parse("fortnightly haircut", ref).recurrence?.interval)
+        // Common typo, still recognized.
+        assertEquals(2, NaturalLanguageParser.parse("fortnighly haircut", ref).recurrence?.interval)
+    }
+
+    @Test
+    fun fortnightlyRecurrenceDistinctFromInAFortnightDueDate() {
+        // "fortnightly" (recurrence) vs "in a fortnight" (one-off due date) must not collide.
+        val recurring = NaturalLanguageParser.parse("fortnightly haircut", ref)
+        assertNotNull(recurring.recurrence)
+        assertNull(recurring.due)
+
+        val oneOff = NaturalLanguageParser.parse("in a fortnight review contract", ref)
+        assertNull(oneOff.recurrence)
+        assertEquals("2026-07-18", oneOff.due)
+    }
+
+    @Test
+    fun parsesEveryQuarterAndQtrAbbreviation() {
+        assertEquals("monthly", NaturalLanguageParser.parse("every quarter review budget", ref).recurrence?.freq)
+        assertEquals(3, NaturalLanguageParser.parse("every quarter review budget", ref).recurrence?.interval)
+        assertEquals(3, NaturalLanguageParser.parse("every qtr review budget", ref).recurrence?.interval)
+    }
+
+    @Test
+    fun parsesEveryNYears() {
+        val result = NaturalLanguageParser.parse("every 2 years renew passport", ref)
+        assertEquals("yearly", result.recurrence?.freq)
+        assertEquals(2, result.recurrence?.interval)
+        assertEquals("renew passport", result.title)
+    }
+
+    @Test
+    fun parsesEveryAlternateMonth() {
+        val result = NaturalLanguageParser.parse("every other month pest control", ref)
+        assertEquals("monthly", result.recurrence?.freq)
+        assertEquals(2, result.recurrence?.interval)
+        assertEquals("pest control", result.title)
+    }
+
+    @Test
+    fun parsesEveryAlternateYear() {
+        val result = NaturalLanguageParser.parse("every alternate year eye exam", ref)
+        assertEquals("yearly", result.recurrence?.freq)
+        assertEquals(2, result.recurrence?.interval)
+        assertEquals("eye exam", result.title)
     }
 }
