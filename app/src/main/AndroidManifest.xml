@@ -133,7 +133,9 @@
             android:label="@string/share_to_task_label"
             android:theme="@style/Theme.Yata.Transparent"
             android:excludeFromRecents="true"
-            android:noHistory="true">
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:windowSoftInputMode="adjustResize">
             <!-- Share-to-task: "Add to Yata" in other apps' share sheets, and on long-pressed
                  text selections anywhere on the device. -->
             <intent-filter>
@@ -209,6 +211,17 @@
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
             </intent-filter>
         </service>
+
+        <!-- Serves exported PDF/PNG entity reports (cache/exports/) to the share sheet -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <!-- Tasker plugin: Create Task action -->
         <activity

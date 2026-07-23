@@ -114,6 +114,11 @@ dependencies {
     // Tasker plugin (Create Task action)
     implementation("com.joaomgcd:taskerpluginlibrary:0.4.10")
 
+    // PDF Info dictionary (Title/Author/Subject/Keywords) — android.graphics.pdf.PdfDocument
+    // has no metadata API, so exported PDFs get a real doc-info pass through this after
+    // being rendered with PdfDocument.
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     androidTestImplementation(libs.room.testing)

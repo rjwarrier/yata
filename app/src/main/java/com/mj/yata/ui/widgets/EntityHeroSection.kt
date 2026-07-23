@@ -110,7 +110,7 @@ fun EntityHeroSection(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             HeroStatCell(
                 label = "Overdue",
@@ -118,21 +118,24 @@ fun EntityHeroSection(
                 valueColor = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 active = activeFilter == HeroStatKind.OVERDUE,
                 accentColor = accentColor,
-                onClick = onStatClick?.let { { it(HeroStatKind.OVERDUE) } }
+                onClick = onStatClick?.let { { it(HeroStatKind.OVERDUE) } },
+                modifier = Modifier.weight(1f)
             )
             HeroStatCell(
                 label = "High priority",
                 value = highPriorityCount,
                 active = activeFilter == HeroStatKind.HIGH_PRIORITY,
                 accentColor = accentColor,
-                onClick = onStatClick?.let { { it(HeroStatKind.HIGH_PRIORITY) } }
+                onClick = onStatClick?.let { { it(HeroStatKind.HIGH_PRIORITY) } },
+                modifier = Modifier.weight(1f)
             )
             HeroStatCell(
                 label = "Due today",
                 value = dueTodayCount,
                 active = activeFilter == HeroStatKind.DUE_TODAY,
                 accentColor = accentColor,
-                onClick = onStatClick?.let { { it(HeroStatKind.DUE_TODAY) } }
+                onClick = onStatClick?.let { { it(HeroStatKind.DUE_TODAY) } },
+                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -147,15 +150,16 @@ fun HeroStatCell(
     accentColor: Color,
     valueColor: Color = Color.Unspecified,
     active: Boolean = false,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
-            .background(if (active) accentColor.copy(alpha = 0.2f) else Color.Transparent)
-            .padding(horizontal = 10.dp, vertical = 4.dp)
+            .background(if (active) accentColor.copy(alpha = 0.2f) else accentColor.copy(alpha = 0.08f))
+            .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
         Text(
             text = value.toString(),

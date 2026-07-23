@@ -12,7 +12,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -36,6 +38,7 @@ import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
 import com.mj.yata.util.taskMatchesQuery
 import com.mj.yata.util.sortedByMode
+import com.mj.yata.util.export.toExportRow
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
@@ -71,7 +74,29 @@ fun TagDetailScreen(
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val exportContext = androidx.compose.ui.platform.LocalContext.current
+    var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Project name takes priority over list name for the export's subheading — a task's
+    // projectId/listId are mutually exclusive containers in this app, so this just picks
+    // whichever one the task actually has.
+    fun exportGroupLabel(task: Task): String =
+        projects.find { it.id == task.projectId }?.name?.let { "Project - $it" }
+            ?: lists.find { it.id == task.listId }?.name?.let { "List - $it" }
+            ?: ""
+
+    val exportTagErrorColor = MaterialTheme.colorScheme.error
+    fun exportTagChips(task: Task): List<com.mj.yata.util.export.ExportTagChip> =
+        task.effectiveTagIds(projects).mapNotNull { tagId ->
+            tags.find { it.id == tagId }?.let { t ->
+                val color = if (t.color == "error") exportTagErrorColor else accents.getAccent(t.color)
+                com.mj.yata.util.export.ExportTagChip(t.name, color)
+            }
+        }
+
+    fun exportAssigneeNames(task: Task): List<String> =
+        task.assigneeIds.mapNotNull { id -> people.find { it.id == id }?.name }
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
@@ -254,6 +279,22 @@ fun TagDetailScreen(
                                     isEditSheetOpen = true
                                 },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export as image") },
+                                onClick = {
+                                    showMenu = false
+                                    exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
+                                },
+                                leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export as PDF") },
+                                onClick = {
+                                    showMenu = false
+                                    exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
+                                },
+                                leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
                             DropdownMenuItem(
                                 text = { Text("Delete tag") },
@@ -497,6 +538,41 @@ fun TagDetailScreen(
                 pendingCommentTask = null
             },
             onDismiss = { pendingCommentTask = null }
+        )
+    }
+
+    exportFormatPending?.let { format ->
+        com.mj.yata.util.export.ExportOptionsDialog(
+            entityName = tag.name,
+            onDismiss = { exportFormatPending = null },
+            onConfirm = { includeCompleted, excludeOlderThanDays, exportLayoutDensity, strikeThroughCompleted, showTags, showAssignees ->
+                exportFormatPending = null
+                val cutoffMillis = excludeOlderThanDays?.takeIf { it > 0 }?.let {
+                    System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
+                }
+                val exportTasks = allTaggedTasks.filter { task ->
+                    if (!task.done) return@filter true
+                    if (!includeCompleted) return@filter false
+                    cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)
+                }
+                scope.launch {
+                    com.mj.yata.util.export.exportEntityReport(
+                        context = exportContext,
+                        format = format,
+                        entityKind = "Tag",
+                        entityName = tag.name,
+                        accentColor = tagColor,
+                        doneCount = exportTasks.count { it.done },
+                        totalCount = exportTasks.size,
+                        overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                        tasks = exportTasks.map { it.toExportRow(exportGroupLabel(it), exportTagChips(it), exportAssigneeNames(it)) },
+                        layoutDensity = exportLayoutDensity,
+                        strikeThroughCompleted = strikeThroughCompleted,
+                        showTags = showTags,
+                        showAssignees = showAssignees
+                    )
+                }
+            }
         )
     }
 }

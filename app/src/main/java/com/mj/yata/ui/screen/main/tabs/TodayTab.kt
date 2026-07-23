@@ -271,7 +271,7 @@ fun TodayTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             com.mj.yata.ui.widgets.HeroStatCell(
                 label = "Overdue",
@@ -279,21 +279,24 @@ fun TodayTab(
                 accentColor = MaterialTheme.colorScheme.primary,
                 valueColor = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE) null else com.mj.yata.ui.widgets.HeroStatKind.OVERDUE }
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE) null else com.mj.yata.ui.widgets.HeroStatKind.OVERDUE },
+                modifier = Modifier.weight(1f)
             )
             com.mj.yata.ui.widgets.HeroStatCell(
                 label = "High priority",
                 value = highPriorityCount,
                 accentColor = MaterialTheme.colorScheme.primary,
                 active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY) null else com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY }
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY) null else com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY },
+                modifier = Modifier.weight(1f)
             )
             com.mj.yata.ui.widgets.HeroStatCell(
                 label = "Due today",
                 value = dueTodayCount,
                 accentColor = MaterialTheme.colorScheme.primary,
                 active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY) null else com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY }
+                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY) null else com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY },
+                modifier = Modifier.weight(1f)
             )
         }
 

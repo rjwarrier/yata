@@ -14,8 +14,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Visibility
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mj.yata.util.taskMatchesQuery
 import com.mj.yata.util.sortedByMode
+import com.mj.yata.util.export.toExportRow
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -45,6 +48,7 @@ import com.mj.yata.ui.sheets.*
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -66,6 +70,26 @@ fun ProjectDetailScreen(
     val project = remember(projects, projectId) { projects.find { it.id == projectId } }
     val accents = LocalYataAccents.current
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
+
+    // A project's tasks are already scoped to this one project, so the export's subheading
+    // groups by list instead (a project name heading would be redundant on every group here).
+    val listsById = remember(lists) { lists.associateBy { it.id } }
+    fun exportGroupLabel(task: Task): String =
+        listsById[task.listId]?.name?.let { "List - $it" } ?: ""
+
+    val tagErrorColor = MaterialTheme.colorScheme.error
+    fun exportTagChips(task: Task): List<com.mj.yata.util.export.ExportTagChip> =
+        task.effectiveTagIds(projects).mapNotNull { tagId ->
+            tags.find { it.id == tagId }?.let { tag ->
+                val color = if (tag.color == "error") tagErrorColor else accents.getAccent(tag.color)
+                com.mj.yata.util.export.ExportTagChip(tag.name, color)
+            }
+        }
+
+    fun exportAssigneeNames(task: Task): List<String> =
+        task.assigneeIds.mapNotNull { id -> people.find { it.id == id }?.name }
 
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
@@ -246,6 +270,22 @@ fun ProjectDetailScreen(
                                     context.startActivity(Intent.createChooser(shareIntent, "Share ${project.name} tasks"))
                                 },
                                 leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export as image") },
+                                onClick = {
+                                    showMenu = false
+                                    exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
+                                },
+                                leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export as PDF") },
+                                onClick = {
+                                    showMenu = false
+                                    exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
+                                },
+                                leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
                             DropdownMenuItem(
                                 text = { Text("Roll over open tasks") },
@@ -547,6 +587,41 @@ fun ProjectDetailScreen(
                 pendingCommentTask = null
             },
             onDismiss = { pendingCommentTask = null }
+        )
+    }
+
+    exportFormatPending?.let { format ->
+        com.mj.yata.util.export.ExportOptionsDialog(
+            entityName = project.name,
+            onDismiss = { exportFormatPending = null },
+            onConfirm = { includeCompleted, excludeOlderThanDays, exportLayoutDensity, strikeThroughCompleted, showTags, showAssignees ->
+                exportFormatPending = null
+                val cutoffMillis = excludeOlderThanDays?.takeIf { it > 0 }?.let {
+                    System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
+                }
+                val exportTasks = projectTasks.filter { task ->
+                    if (!task.done) return@filter true
+                    if (!includeCompleted) return@filter false
+                    cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)
+                }
+                scope.launch {
+                    com.mj.yata.util.export.exportEntityReport(
+                        context = context,
+                        format = format,
+                        entityKind = "Project",
+                        entityName = project.name,
+                        accentColor = projectColor,
+                        doneCount = exportTasks.count { it.done },
+                        totalCount = exportTasks.size,
+                        overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                        tasks = exportTasks.map { it.toExportRow(exportGroupLabel(it), exportTagChips(it), exportAssigneeNames(it)) },
+                        layoutDensity = exportLayoutDensity,
+                        strikeThroughCompleted = strikeThroughCompleted,
+                        showTags = showTags,
+                        showAssignees = showAssignees
+                    )
+                }
+            }
         )
     }
 

@@ -377,6 +377,10 @@ fun TaskRow(
         // until the caller's snackbar times out, so Undo still works and the row disappears
         // naturally once the Flow re-emits without it, not via a dismiss animation here).
         val dismissState = rememberSwipeToDismissBoxState(
+            // Default threshold is 50% of row width, which a quick flick can cross well
+            // before it looks "intentional" — bumped to 75% so accidental swipes (e.g.
+            // scrolling with a thumb that grazes a row) settle back instead of registering.
+            positionalThreshold = { totalDistance -> totalDistance * 0.75f },
             confirmValueChange = { value ->
                 when (value) {
                     SwipeToDismissBoxValue.EndToStart -> {
