@@ -2,8 +2,6 @@
 
 A Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt — with a companion Wear OS app that mirrors today's task count as a complication.
 
-> Gradle root project name is `TodoExpressive` (legacy); the actual package/app id is `com.mj.yata`.
-
 ## Contents
 
 - [Overview](#overview)
