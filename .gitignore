@@ -31,3 +31,6 @@ task.md
 walkthrough.md
 implementation_plan.md
 FEE_TRACKER_*.md
+
+# Design handoff reference (non-executable HTML/JSX prototype, not project source)
+design_handoff_yata/
