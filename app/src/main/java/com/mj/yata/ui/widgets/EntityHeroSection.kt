@@ -101,8 +101,7 @@ fun EntityHeroSection(
                 progress = progress,
                 size = ringSize,
                 strokeWidth = ringStrokeWidth,
-                activeColor = accentColor,
-                showLabel = false
+                activeColor = accentColor
             )
         }
 

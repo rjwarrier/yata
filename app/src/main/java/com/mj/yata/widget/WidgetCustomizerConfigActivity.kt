@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
@@ -153,9 +154,21 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
     ) {
         Log.d("WidgetConfig", "onConfigSaved: radius=$radius, label=$label, useM3=$useM3Colors, sourceId=$sourceId, sourceType=$sourceType, opacity=$opacity, accentOverride=$accentOverride, providerClass=$providerClass")
         lifecycleScope.launch {
+            // Resolving the id and writing prefs is the part that must succeed for the save to
+            // count as successful at all — kept in its own try/catch, distinct from the refresh
+            // below, so a failure here (and only here) reports "couldn't save" and leaves the
+            // result RESULT_CANCELED (the default set in onCreate).
+            val glanceId = try {
+                GlanceAppWidgetManager(this@WidgetCustomizerConfigActivity).getGlanceIdBy(appWidgetId)
+            } catch (e: Exception) {
+                Log.e("WidgetConfig", "onConfigSaved: couldn't resolve glanceId for widget $appWidgetId", e)
+                showSaveFailedToast()
+                finish()
+                return@launch
+            }
+            Log.d("WidgetConfig", "glanceId: $glanceId")
+
             try {
-                val glanceId = GlanceAppWidgetManager(this@WidgetCustomizerConfigActivity).getGlanceIdBy(appWidgetId)
-                Log.d("WidgetConfig", "glanceId: $glanceId")
                 updateAppWidgetState(this@WidgetCustomizerConfigActivity, glanceId) { prefs ->
                     prefs[WIDGET_CORNER_RADIUS_KEY] = radius
                     if (label.isNotBlank()) {
@@ -187,41 +200,61 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                     }
                 }
                 Log.d("WidgetConfig", "prefs written, forcing update for providerClass=$providerClass")
-
-                // Force widget update through the same WidgetRefresher path every task-change
-                // refresh already uses (WidgetUpdater), rather than a one-off `SomeWidget().update()`
-                // call — that direct call was found to render stale content on the home screen
-                // until a later unrelated save/refresh caught it up, even though the prefs write
-                // itself (confirmed above) is correct on the very first save.
-                val updated = when {
-                    providerClass?.endsWith("SingleListWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, SingleListWidget::class.java); true }
-                    providerClass?.endsWith("QuickAddWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, QuickAddWidget::class.java); true }
-                    providerClass?.endsWith("YataAppWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, YataAppWidget::class.java); true }
-                    providerClass?.endsWith("UpcomingWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, UpcomingWidget::class.java); true }
-                    providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, ProgressStatsWidget::class.java); true }
-                    providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, TeamOverdueWidget::class.java); true }
-                    else -> false
-                }
-                if (!updated) {
-                    Log.w("WidgetConfig", "onConfigSaved: unrecognized providerClass='$providerClass' for widget $appWidgetId — settings saved but no .update() call matched, refreshing every widget type as a fallback")
-                    WidgetRefresher.refreshAll(this@WidgetCustomizerConfigActivity)
-                }
-
-                val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                setResult(Activity.RESULT_OK, resultValue)
             } catch (e: Exception) {
-                // Previously uncaught: a DataStore/GlanceId failure here left prefs (maybe)
-                // half-written, skipped the widget refresh, and never reached finish() or
-                // setResult — from the user's side that reads as "tapped Save, nothing happened."
-                Log.e("WidgetConfig", "onConfigSaved failed for widget $appWidgetId", e)
-                android.widget.Toast.makeText(
-                    this@WidgetCustomizerConfigActivity,
-                    "Couldn't save widget settings — please try again",
-                    android.widget.Toast.LENGTH_LONG
-                ).show()
+                Log.e("WidgetConfig", "onConfigSaved: prefs write failed for widget $appWidgetId (glanceId=$glanceId)", e)
+                showSaveFailedToast()
+                finish()
+                return@launch
             }
+
+            // Settings are durably saved at this point (confirmed above) — a failure past this
+            // point only means the on-screen widget is stale until the next unrelated refresh,
+            // NOT that the save itself failed, so it gets its own catch: logged for diagnosis,
+            // but doesn't block setResult(RESULT_OK)/finish() or show a misleading "couldn't
+            // save" toast for something that did in fact save.
+            //
+            // NonCancellable: this dispatch — and the redraw it triggers — must run to
+            // completion even if the Activity is torn down mid-flight (back-button spam,
+            // rotation, the system reclaiming it while WidgetRefresher's per-widget Mutex is
+            // still queued behind another in-flight update). Without this, lifecycleScope's
+            // cancellation on destroy could cut the work off partway through, which is exactly
+            // "closed the configure screen but the widget never actually got the update."
+            withContext(kotlinx.coroutines.NonCancellable) {
+                try {
+                    // Force widget update through the same WidgetRefresher path every task-change
+                    // refresh already uses (WidgetUpdater), rather than a one-off `SomeWidget().update()`
+                    // call — that direct call was found to render stale content on the home screen
+                    // until a later unrelated save/refresh caught it up.
+                    val updated = when {
+                        providerClass?.endsWith("SingleListWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, SingleListWidget::class.java); true }
+                        providerClass?.endsWith("QuickAddWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, QuickAddWidget::class.java); true }
+                        providerClass?.endsWith("YataAppWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, YataAppWidget::class.java); true }
+                        providerClass?.endsWith("UpcomingWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, UpcomingWidget::class.java); true }
+                        providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, ProgressStatsWidget::class.java); true }
+                        providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, TeamOverdueWidget::class.java); true }
+                        else -> false
+                    }
+                    if (!updated) {
+                        Log.w("WidgetConfig", "onConfigSaved: unrecognized providerClass='$providerClass' for widget $appWidgetId — settings saved but no .update() call matched, refreshing every widget type as a fallback")
+                        WidgetRefresher.refreshAll(this@WidgetCustomizerConfigActivity)
+                    }
+                } catch (e: Exception) {
+                    Log.e("WidgetConfig", "onConfigSaved: settings saved but widget refresh failed for widget $appWidgetId (providerClass=$providerClass)", e)
+                }
+            }
+
+            val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            setResult(Activity.RESULT_OK, resultValue)
             finish()
         }
+    }
+
+    private fun showSaveFailedToast() {
+        android.widget.Toast.makeText(
+            this,
+            "Couldn't save widget settings — please try again",
+            android.widget.Toast.LENGTH_LONG
+        ).show()
     }
 }
 
@@ -257,6 +290,10 @@ private fun WidgetCustomizerScreen(
 
     val isSingleList = providerClass?.endsWith("SingleListWidgetReceiver") == true
     val isQuickAdd = providerClass?.endsWith("QuickAddWidgetReceiver") == true
+    // Team Overdue has no per-entity accent to switch between M3/custom colors for (unlike the
+    // other widgets' per-list/per-task tint) — the toggle would be a visible no-op, so it's
+    // hidden here instead of silently doing nothing after Save.
+    val supportsM3Colors = providerClass?.endsWith("TeamOverdueWidgetReceiver") != true
 
     var sourceCategory by remember {
         mutableStateOf(
@@ -330,7 +367,8 @@ private fun WidgetCustomizerScreen(
                 }
             }
 
-            // M3 Colors Toggle
+            // M3 Colors Toggle — hidden for widgets that don't actually apply it (see supportsM3Colors)
+            if (supportsM3Colors) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
@@ -345,6 +383,7 @@ private fun WidgetCustomizerScreen(
                     }
                     Switch(checked = useM3, onCheckedChange = { useM3 = it })
                 }
+            }
             }
 
             // Opacity Customizer

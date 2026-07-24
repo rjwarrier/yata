@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.*
+import com.mj.yata.util.sortedByEntityMode
 import com.mj.yata.ui.sheets.GroupAssignSheet
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
@@ -60,7 +62,6 @@ fun PeopleTab(
     onCreateGroupAndAssign: (id: String, name: String, personIds: List<String>) -> Unit,
     onToggleStar: (String) -> Unit = {},
     onDeleteGroup: (PersonGroup) -> Unit = {},
-    onPeopleReordered: (List<Person>) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val tasksByPerson = remember(tasks) {
@@ -76,6 +77,7 @@ fun PeopleTab(
     var selectModeOn by remember { mutableStateOf(false) }
     val selectionMode = selectModeOn
     var showGroupPicker by remember { mutableStateOf(false) }
+    var sortMode by remember { mutableStateOf(com.mj.yata.util.EntitySortMode.NAME_ASC) }
 
     Column(
         modifier = modifier
@@ -137,6 +139,11 @@ fun PeopleTab(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    com.mj.yata.ui.widgets.EntitySortMenuButton(
+                        current = sortMode,
+                        onSelect = { sortMode = it },
+                        contentDescription = "Sort people"
+                    )
                     IconButton(onClick = { selectModeOn = true }) {
                         Icon(
                             imageVector = Icons.Default.Check,
@@ -167,7 +174,13 @@ fun PeopleTab(
         val activePeople = remember(people) { people.activePeople() }
         val archivedPeople = remember(people) { people.archivedPeople() }
         val groupedIds = personGroups.map { it.id }.toSet()
-        val ungrouped = activePeople.filter { it.groupId == null || it.groupId !in groupedIds }
+        fun List<Person>.sorted() = sortedByEntityMode(
+            sortMode,
+            name = { it.name },
+            starred = { it.starred },
+            taskCount = { tasksByPerson[it.id]?.size ?: 0 }
+        )
+        val ungrouped = activePeople.filter { it.groupId == null || it.groupId !in groupedIds }.sorted()
         val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
 
         LazyColumn(
@@ -175,8 +188,19 @@ fun PeopleTab(
             contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (people.isEmpty()) {
+                item {
+                    com.mj.yata.ui.widgets.TabEmptyState(
+                        icon = Icons.Default.Groups,
+                        title = "No people yet",
+                        subtitle = "Add people to assign tasks and track who's doing what.",
+                        actionLabel = "Add person",
+                        onAction = onAddPersonClick
+                    )
+                }
+            }
             personGroups.forEach { group ->
-                val groupPeople = activePeople.filter { it.groupId == group.id }.sortedBy { it.sortOrder }
+                val groupPeople = activePeople.filter { it.groupId == group.id }.sorted()
                 if (groupPeople.isNotEmpty()) {
                     val expanded = expandedGroups[group.id] ?: true
                     item(key = "header_${group.id}") {
@@ -188,15 +212,14 @@ fun PeopleTab(
                         )
                     }
                     if (expanded) {
-                        item(key = "group_dnd_${group.id}") {
-                            ReorderablePeopleSection(
-                                people = groupPeople,
+                        items(groupPeople, key = { "person_${it.id}" }) { person ->
+                            PersonListRow(
+                                person = person,
                                 tasksByPerson = tasksByPerson,
                                 selectionMode = selectionMode,
                                 selectedIds = selectedIds,
                                 onPersonClick = onPersonClick,
-                                onToggleStar = onToggleStar,
-                                onReordered = onPeopleReordered
+                                onToggleStar = onToggleStar
                             )
                         }
                     }
@@ -215,16 +238,14 @@ fun PeopleTab(
                     }
                 }
                 if (ungroupedExpanded) {
-                    item(key = "group_dnd_ungrouped") {
-                        val sortedUngrouped = remember(ungrouped) { ungrouped.sortedBy { it.sortOrder } }
-                        ReorderablePeopleSection(
-                            people = sortedUngrouped,
+                    items(ungrouped, key = { "person_${it.id}" }) { person ->
+                        PersonListRow(
+                            person = person,
                             tasksByPerson = tasksByPerson,
                             selectionMode = selectionMode,
                             selectedIds = selectedIds,
                             onPersonClick = onPersonClick,
-                            onToggleStar = onToggleStar,
-                            onReordered = onPeopleReordered
+                            onToggleStar = onToggleStar
                         )
                     }
                 }
@@ -240,7 +261,7 @@ fun PeopleTab(
                     )
                 }
                 if (archivedExpanded) {
-                    items(archivedPeople, key = { "archived_${it.id}" }) { person ->
+                    items(archivedPeople.sorted(), key = { "archived_${it.id}" }) { person ->
                         PersonRow(
                             person = person,
                             totalTasks = 0,
@@ -288,55 +309,39 @@ fun PeopleTab(
     }
 }
 
-/** One group's (or "Ungrouped") people, long-press-draggable to reorder within that group only —
- * nested inside PeopleTab's outer LazyColumn, so it doesn't scroll on its own. */
+/** One person's row within a group's (or "Ungrouped") alphabetically-sorted list. */
 @Composable
-private fun ReorderablePeopleSection(
-    people: List<Person>,
+private fun PersonListRow(
+    person: Person,
     tasksByPerson: Map<String, List<Task>>,
     selectionMode: Boolean,
     selectedIds: MutableList<String>,
     onPersonClick: (String) -> Unit,
-    onToggleStar: (String) -> Unit,
-    onReordered: (List<Person>) -> Unit
+    onToggleStar: (String) -> Unit
 ) {
-    var localOrder by remember { mutableStateOf(people) }
-    var isDragging by remember { mutableStateOf(false) }
-    LaunchedEffect(people) {
-        if (!isDragging) localOrder = people
+    val personTasks = remember(tasksByPerson, person.id) {
+        tasksByPerson[person.id] ?: emptyList()
     }
-
-    com.mj.yata.ui.widgets.DragReorderColumn(
-        items = localOrder,
-        key = { it.id },
-        onMove = { from, to -> localOrder = localOrder.toMutableList().apply { add(to, removeAt(from)) } },
-        onDragEnd = { onReordered(localOrder) },
-        onDragStateChanged = { isDragging = it }
-    ) { person ->
-        val personTasks = remember(tasksByPerson, person.id) {
-            tasksByPerson[person.id] ?: emptyList()
-        }
-        val doneCount = personTasks.count { it.done }
-        val overdueCount = remember(personTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(personTasks) }
-        PersonRow(
-            person = person,
-            totalTasks = personTasks.size,
-            doneTasks = doneCount,
-            overdueTasks = overdueCount,
-            progress = if (personTasks.isNotEmpty()) doneCount.toFloat() / personTasks.size else 0f,
-            selectionMode = selectionMode,
-            selected = selectedIds.contains(person.id),
-            onClick = {
-                if (selectionMode) {
-                    if (selectedIds.contains(person.id)) selectedIds.remove(person.id) else selectedIds.add(person.id)
-                } else {
-                    onPersonClick(person.id)
-                }
-            },
-            onToggleStar = { onToggleStar(person.id) },
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-    }
+    val doneCount = personTasks.count { it.done }
+    val overdueCount = remember(personTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(personTasks) }
+    PersonRow(
+        person = person,
+        totalTasks = personTasks.size,
+        doneTasks = doneCount,
+        overdueTasks = overdueCount,
+        progress = if (personTasks.isNotEmpty()) doneCount.toFloat() / personTasks.size else 0f,
+        selectionMode = selectionMode,
+        selected = selectedIds.contains(person.id),
+        onClick = {
+            if (selectionMode) {
+                if (selectedIds.contains(person.id)) selectedIds.remove(person.id) else selectedIds.add(person.id)
+            } else {
+                onPersonClick(person.id)
+            }
+        },
+        onToggleStar = { onToggleStar(person.id) },
+        modifier = Modifier.padding(bottom = 12.dp)
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -472,8 +477,7 @@ fun PersonRow(
                     progress = progress,
                     size = 32.dp,
                     strokeWidth = 3.dp,
-                    activeColor = accentColor,
-                    showLabel = false
+                    activeColor = accentColor
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))

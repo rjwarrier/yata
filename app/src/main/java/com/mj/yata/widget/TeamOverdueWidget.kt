@@ -51,7 +51,9 @@ class TeamOverdueWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
         val cornerRadius = prefs[WIDGET_CORNER_RADIUS_KEY] ?: 28
+        val customLabel = prefs[WIDGET_LABEL_KEY]
         val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
+        val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val tasks = repository.getTasks().first()
@@ -68,6 +70,7 @@ class TeamOverdueWidget : GlanceAppWidget() {
         }.sortedByDescending { it.second }
 
         val theme = resolveWidgetTheme(context)
+        val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -76,7 +79,9 @@ class TeamOverdueWidget : GlanceAppWidget() {
                     colors = theme.colorScheme,
                     widgetBackground = theme.widgetBackground,
                     cornerRadius = cornerRadius,
-                    opacity = opacity
+                    customLabel = customLabel,
+                    opacity = opacity,
+                    accentOverride = accentOverride
                 )
             }
         }
@@ -89,7 +94,9 @@ private fun TeamOverdueContent(
     colors: androidx.compose.material3.ColorScheme,
     widgetBackground: androidx.compose.ui.graphics.Color,
     cornerRadius: Int,
-    opacity: Float
+    customLabel: String?,
+    opacity: Float,
+    accentOverride: androidx.compose.ui.graphics.Color?
 ) {
     val maxRows = if (LocalSize.current.height > 180.dp) 8 else 5
     Box(
@@ -102,7 +109,7 @@ private fun TeamOverdueContent(
             .clickable(openAppAction())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
-            WidgetSectionHeader("Team Overdue", ColorProvider(colors.error))
+            WidgetSectionHeader(customLabel ?: "Team Overdue", ColorProvider(accentOverride ?: colors.error))
             Spacer(modifier = GlanceModifier.height(8.dp))
             if (overdueByPerson.isEmpty()) {
                 Box(modifier = GlanceModifier.fillMaxWidth().defaultWeight(), contentAlignment = Alignment.Center) {
@@ -127,7 +134,7 @@ private fun TeamOverdueContent(
                             )
                             Text(
                                 text = "$count overdue",
-                                style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(colors.error))
+                                style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(accentOverride ?: colors.error))
                             )
                         }
                     }

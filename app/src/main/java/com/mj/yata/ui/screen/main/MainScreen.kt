@@ -727,8 +727,7 @@ fun MainScreen(
                                 viewModel.setPeopleGroup(personIds, id)
                             },
                             onToggleStar = { viewModel.togglePersonStarred(it) },
-                            onDeleteGroup = { viewModel.deletePersonGroup(it) },
-                            onPeopleReordered = { viewModel.commitPersonOrder(it) }
+                            onDeleteGroup = { viewModel.deletePersonGroup(it) }
                         )
                         3 -> TagsTab(
                             tags = tags,

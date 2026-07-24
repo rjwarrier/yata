@@ -99,8 +99,11 @@ import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.ui.widgets.MentionSuggestions
 import com.mj.yata.ui.widgets.PriorityBars
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.consumeMentionToken
+import com.mj.yata.ui.widgets.detectMentionToken
 import com.mj.yata.ui.widgets.TagChip
 import com.mj.yata.ui.widgets.YataDashedAddChip
 import com.mj.yata.ui.widgets.YataDatePickerDialog
@@ -112,40 +115,12 @@ import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
 import java.time.LocalDate
 
-private fun pickAccentFor(name: String): String =
+internal fun pickAccentFor(name: String): String =
     com.mj.yata.ui.theme.ALL_ACCENT_KEYS[Math.floorMod(name.hashCode(), com.mj.yata.ui.theme.ALL_ACCENT_KEYS.size)]
 
 /** Forced on every chip in the Assigned-to/Tags rows so mixed content (avatars, dots, dashed
  * "add" pills) never drifts out of alignment — matches the attribute-chip row's YataSelectChip height. */
 private val CHIP_ROW_HEIGHT = 34.dp
-
-private data class MentionToken(val trigger: Char, val query: String, val startIndex: Int)
-
-/** Finds an in-progress `#tag` or `@person` token ending at the cursor, if any. */
-private fun detectMentionToken(text: String, cursor: Int): MentionToken? {
-    if (cursor <= 0 || cursor > text.length) return null
-    var i = cursor - 1
-    while (i >= 0) {
-        val c = text[i]
-        if (c == '#' || c == '@') {
-            val precededByBoundary = i == 0 || text[i - 1].isWhitespace()
-            if (!precededByBoundary) return null
-            val query = text.substring(i + 1, cursor)
-            if (query.any { it.isWhitespace() }) return null
-            return MentionToken(c, query, i)
-        }
-        if (c.isWhitespace()) return null
-        i--
-    }
-    return null
-}
-
-/** Removes the active mention token (trigger char + query) from the field, collapsing the gap. */
-private fun consumeMentionToken(value: TextFieldValue, mention: MentionToken): TextFieldValue {
-    val before = value.text.substring(0, mention.startIndex)
-    val after = value.text.substring(value.selection.end)
-    return TextFieldValue(before + after, TextRange(before.length))
-}
 
 internal fun initialsFor(name: String): String =
     name.trim().split(Regex("\\s+")).mapNotNull { it.firstOrNull()?.toString() }
@@ -1127,98 +1102,6 @@ private fun AssignedPersonChip(
 }
 
 @Composable
-private fun MentionSuggestions(
-    mention: MentionToken,
-    tags: List<Tag>,
-    people: List<Person>,
-    onSelectTag: (Tag) -> Unit,
-    onSelectPerson: (Person) -> Unit,
-    onCreateTag: (String) -> Unit,
-    onCreatePerson: (String) -> Unit
-) {
-    val accents = LocalYataAccents.current
-    val query = mention.query
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            if (mention.trigger == '#') {
-                val matches = tags.filter { it.name.contains(query, ignoreCase = true) }
-                if (matches.isEmpty() && query.isBlank()) {
-                    PanelHint("Type to search or create a tag")
-                }
-                matches.take(5).forEach { tag ->
-                    val color = accents.getAccent(tag.color)
-                    MentionRow(
-                        label = tag.name,
-                        onClick = { onSelectTag(tag) },
-                        leading = { Box(modifier = Modifier.size(8.dp).background(color, CircleShape)) }
-                    )
-                }
-                if (query.isNotBlank() && matches.none { it.name.equals(query, ignoreCase = true) }) {
-                    MentionRow(
-                        label = "Create tag \"$query\"",
-                        onClick = { onCreateTag(query) },
-                        leading = { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) },
-                        labelColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-            } else {
-                val matches = people.filter { it.name.contains(query, ignoreCase = true) }
-                if (matches.isEmpty() && query.isBlank()) {
-                    PanelHint("Type to search or create a person")
-                }
-                matches.take(5).forEach { person ->
-                    MentionRow(
-                        label = if (person.isMe) "You" else person.name,
-                        onClick = { onSelectPerson(person) },
-                        leading = {
-                            Box(
-                                modifier = Modifier.size(20.dp).background(accents.getAccent(person.color), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(person.initials, fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    )
-                }
-                if (query.isNotBlank() && matches.none { it.name.equals(query, ignoreCase = true) }) {
-                    MentionRow(
-                        label = "Create person \"$query\"",
-                        onClick = { onCreatePerson(query) },
-                        leading = { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) },
-                        labelColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MentionRow(
-    label: String,
-    onClick: () -> Unit,
-    leading: @Composable () -> Unit,
-    labelColor: Color = MaterialTheme.colorScheme.onSurface
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .clickable { onClick() }
-            .padding(horizontal = 8.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        leading()
-        Text(label, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = labelColor)
-    }
-}
-
-@Composable
 private fun YataRevealPanel(content: @Composable () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -1370,7 +1253,7 @@ private fun PeoplePanel(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        people.forEach { person ->
+        people.sortedBy { it.name.lowercase() }.forEach { person ->
             val selected = selectedAssigneeIds.contains(person.id)
             YataSelectChip(
                 label = if (person.isMe) "You" else person.name.substringBefore(" "),
@@ -1406,7 +1289,7 @@ private fun TagsPanel(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        tags.forEach { tag ->
+        tags.sortedBy { it.name.lowercase() }.forEach { tag ->
             val selected = selectedTagIds.contains(tag.id)
             val color = accents.getAccent(tag.color)
             YataSelectChip(

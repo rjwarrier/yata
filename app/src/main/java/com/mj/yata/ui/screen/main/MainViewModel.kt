@@ -845,18 +845,6 @@ private data class MainNavigationState(
         }
     }
 
-    /** Persists a drag-and-drop reorder of one group's (or "Ungrouped") people in the People tab —
-     * sortOrder is reassigned 0..n within that group only, other groups are never touched. */
-    fun commitPersonOrder(orderedPeople: List<Person>) {
-        viewModelScope.launch {
-            orderedPeople.forEachIndexed { index, person ->
-                if (person.sortOrder != index) {
-                    repository.upsertPerson(person.copy(sortOrder = index))
-                }
-            }
-        }
-    }
-
     /** Moves a task to a different list/project (drag-to-edge cross-container move), appended to the end. */
     fun moveTaskToList(taskId: String, targetListId: String?, targetProjectId: String? = null) {
         viewModelScope.launch {

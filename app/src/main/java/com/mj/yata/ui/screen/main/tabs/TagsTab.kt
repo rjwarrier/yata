@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.*
+import com.mj.yata.util.sortedByEntityMode
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
@@ -73,6 +74,7 @@ fun TagsTab(
     var selectModeOn by remember { mutableStateOf(false) }
     val selectionMode = selectModeOn
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    var sortMode by remember { mutableStateOf(com.mj.yata.util.EntitySortMode.NAME_ASC) }
 
     Column(
         modifier = modifier
@@ -134,6 +136,11 @@ fun TagsTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                com.mj.yata.ui.widgets.EntitySortMenuButton(
+                    current = sortMode,
+                    onSelect = { sortMode = it },
+                    contentDescription = "Sort tags"
+                )
                 IconButton(onClick = { selectModeOn = true }) {
                     Icon(
                         imageVector = Icons.Default.Check,
@@ -204,8 +211,14 @@ fun TagsTab(
                     onAction = onNewTagClick
                 )
             }
+            fun List<Tag>.sorted() = sortedByEntityMode(
+                sortMode,
+                name = { it.name },
+                starred = { it.starred },
+                taskCount = { tagTaskCounts[it.id]?.first ?: 0 }
+            )
             tagGroups.forEach { group ->
-                val groupTags = tags.filter { it.groupId == group.id }
+                val groupTags = tags.filter { it.groupId == group.id }.sorted()
                 if (groupTags.isNotEmpty()) {
                     TagGroupSection(
                         title = group.name,
@@ -221,7 +234,7 @@ fun TagsTab(
                     )
                 }
             }
-            val ungrouped = tags.filter { it.groupId == null || it.groupId !in groupedIds }
+            val ungrouped = tags.filter { it.groupId == null || it.groupId !in groupedIds }.sorted()
             TagGroupSection(
                 title = if (tagGroups.isEmpty()) null else "Ungrouped",
                 tags = ungrouped,
@@ -448,8 +461,7 @@ private fun TagRow(
                     progress = progress,
                     size = 32.dp,
                     strokeWidth = 3.dp,
-                    activeColor = tagColor,
-                    showLabel = false
+                    activeColor = tagColor
                 )
             }
         }

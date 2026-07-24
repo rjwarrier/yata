@@ -33,6 +33,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -189,6 +190,8 @@ fun TaskDetailScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
@@ -274,6 +277,30 @@ fun TaskDetailScreen(
                     }) {
                         Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate task")
                     }
+                    // Export as PDF/Image — options (include notes/comments) are confirmed via
+                    // TaskExportOptionsDialog before the off-screen render actually happens.
+                    var showExportMenu by remember { mutableStateOf(false) }
+                    IconButton(onClick = { showExportMenu = true }) {
+                        Icon(Icons.Default.IosShare, contentDescription = "Export task")
+                    }
+                    DropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Export as image") },
+                            onClick = {
+                                showExportMenu = false
+                                exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
+                            },
+                            leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Export as PDF") },
+                            onClick = {
+                                showExportMenu = false
+                                exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
+                            },
+                            leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
+                        )
+                    }
                     // Delete/Archive — deletion is deferred until the Undo snackbar times out,
                     // so the coroutine must outlive this composable's own scope (it navigates
                     // back only once the delete actually happens).
@@ -306,20 +333,11 @@ fun TaskDetailScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // 1. Check + Title Row — tap the title to rename it in place.
+            // 1. Check + Title Row — tap the title to rename it in place. Also the one place
+            // this screen recognizes inline #tag/@person mentions while editing (matching
+            // NewTaskSheet's own title field) — previously silently ignored here entirely.
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    SpringyCheck(
-                        checked = task.done,
-                        onCheckedChange = { viewModel.toggleTaskDone(task.id) {} },
-                        color = listColor,
-                        size = 28.dp
-                    )
-                    Spacer(modifier = Modifier.width(14.dp))
-
+                Column {
                     var isEditingTitle by remember(task.id) { mutableStateOf(false) }
                     var titleHasFocusedOnce by remember(task.id) { mutableStateOf(false) }
                     val titleFocusRequester = remember(task.id) { FocusRequester() }
@@ -330,44 +348,113 @@ fun TaskDetailScreen(
                         textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
                     )
 
-                    if (isEditingTitle) {
-                        // Bound to a local buffer, not task.title directly — task.title only
-                        // updates after a round trip through the DB (write -> Room re-query ->
-                        // Flow emission -> recompose), and fast typing outraces that, dropping
-                        // characters. The buffer reflects every keystroke instantly; the DB write
-                        // still happens on each change, it just isn't what the field displays.
-                        var titleBuffer by remember(task.id) { mutableStateOf(task.title) }
-                        LaunchedEffect(Unit) {
-                            titleHasFocusedOnce = false
-                            titleFocusRequester.requestFocus()
+                    // Bound to a local buffer, not task.title directly — task.title only
+                    // updates after a round trip through the DB (write -> Room re-query ->
+                    // Flow emission -> recompose), and fast typing outraces that, dropping
+                    // characters. The buffer reflects every keystroke instantly; the DB write
+                    // still happens on each change, it just isn't what the field displays.
+                    // A TextFieldValue (not a plain String) so the mention detector below knows
+                    // where the cursor actually is, not just the end of the string.
+                    var titleBuffer by remember(task.id) {
+                        mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(task.title, androidx.compose.ui.text.TextRange(task.title.length)))
+                    }
+                    val mention = remember(titleBuffer, tagsFeatureEnabled, peopleFeatureEnabled) {
+                        if (!isEditingTitle) {
+                            null
+                        } else {
+                            detectMentionToken(titleBuffer.text, titleBuffer.selection.end)
+                                ?.takeIf { (it.trigger == '#' && tagsFeatureEnabled) || (it.trigger == '@' && peopleFeatureEnabled) }
                         }
-                        androidx.compose.foundation.text.BasicTextField(
-                            value = titleBuffer,
-                            onValueChange = {
-                                titleBuffer = it
-                                if (it.isNotBlank()) viewModel.upsertTask(task.copy(title = it))
-                            },
-                            textStyle = titleStyle,
-                            singleLine = true,
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
-                            modifier = Modifier
-                                .weight(1f)
-                                .focusRequester(titleFocusRequester)
-                                .onFocusChanged {
-                                    if (it.isFocused) {
-                                        titleHasFocusedOnce = true
-                                    } else if (titleHasFocusedOnce) {
-                                        isEditingTitle = false
-                                    }
-                                }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        SpringyCheck(
+                            checked = task.done,
+                            onCheckedChange = { viewModel.toggleTaskDone(task.id) {} },
+                            color = listColor,
+                            size = 28.dp
                         )
-                    } else {
-                        Text(
-                            text = task.title,
-                            style = titleStyle,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { isEditingTitle = true }
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        if (isEditingTitle) {
+                            LaunchedEffect(Unit) {
+                                titleHasFocusedOnce = false
+                                titleFocusRequester.requestFocus()
+                            }
+                            androidx.compose.foundation.text.BasicTextField(
+                                value = titleBuffer,
+                                onValueChange = { newValue ->
+                                    titleBuffer = newValue
+                                    if (newValue.text.isNotBlank()) viewModel.upsertTask(task.copy(title = newValue.text))
+                                },
+                                textStyle = titleStyle,
+                                singleLine = true,
+                                cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .focusRequester(titleFocusRequester)
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            titleHasFocusedOnce = true
+                                        } else if (titleHasFocusedOnce) {
+                                            isEditingTitle = false
+                                        }
+                                    }
+                            )
+                        } else {
+                            Text(
+                                text = task.title,
+                                style = titleStyle,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { isEditingTitle = true }
+                            )
+                        }
+                    }
+
+                    if (mention != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        MentionSuggestions(
+                            mention = mention,
+                            tags = tags,
+                            people = people,
+                            onSelectTag = { tag ->
+                                val newTitleValue = consumeMentionToken(titleBuffer, mention)
+                                titleBuffer = newTitleValue
+                                val newTagIds = if (task.tagIds.contains(tag.id)) task.tagIds else task.tagIds + tag.id
+                                viewModel.upsertTask(task.copy(title = newTitleValue.text, tagIds = newTagIds))
+                            },
+                            onSelectPerson = { person ->
+                                val newTitleValue = consumeMentionToken(titleBuffer, mention)
+                                titleBuffer = newTitleValue
+                                val newAssigneeIds = if (task.assigneeIds.contains(person.id)) task.assigneeIds else task.assigneeIds + person.id
+                                viewModel.upsertTask(task.copy(title = newTitleValue.text, assigneeIds = newAssigneeIds))
+                            },
+                            onCreateTag = { name ->
+                                val id = "tag_" + UUID.randomUUID().toString()
+                                viewModel.upsertTag(com.mj.yata.domain.model.Tag(id = id, name = name, color = com.mj.yata.ui.sheets.pickAccentFor(name)))
+                                val newTitleValue = consumeMentionToken(titleBuffer, mention)
+                                titleBuffer = newTitleValue
+                                viewModel.upsertTask(task.copy(title = newTitleValue.text, tagIds = task.tagIds + id))
+                            },
+                            onCreatePerson = { name ->
+                                val id = "p_" + UUID.randomUUID().toString()
+                                viewModel.upsertPerson(
+                                    com.mj.yata.domain.model.Person(
+                                        id = id,
+                                        name = name,
+                                        initials = com.mj.yata.ui.sheets.initialsFor(name),
+                                        color = com.mj.yata.ui.sheets.pickAccentFor(name),
+                                        isMe = false
+                                    )
+                                )
+                                val newTitleValue = consumeMentionToken(titleBuffer, mention)
+                                titleBuffer = newTitleValue
+                                viewModel.upsertTask(task.copy(title = newTitleValue.text, assigneeIds = task.assigneeIds + id))
+                            }
                         )
                     }
                 }
@@ -1139,7 +1226,7 @@ fun TaskDetailScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            people.forEach { person ->
+                            people.sortedBy { it.name.lowercase() }.forEach { person ->
                                 val isAssigned = task.assigneeIds.contains(person.id)
                                 YataSelectChip(
                                     label = if (person.isMe) "You" else person.name,
@@ -1170,7 +1257,7 @@ fun TaskDetailScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            tags.forEach { tag ->
+                            tags.sortedBy { it.name.lowercase() }.forEach { tag ->
                                 val isSelected = task.tagIds.contains(tag.id)
                                 val color = accents.getAccent(tag.color)
                                 YataSelectChip(
@@ -1200,6 +1287,71 @@ fun TaskDetailScreen(
                 showDatePicker = false
             }
         )
+    }
+
+    exportFormatPending?.let { format ->
+        val hasNotes = !task.notes.isNullOrBlank()
+        val hasComments = comments.isNotEmpty()
+        val exportAccentColor = project?.let { accents.getAccent(it.color) } ?: listColor
+        val exportOverdue = task.due != null && !task.done &&
+            com.mj.yata.util.TaskScheduleUtils.parseDate(task.due)?.isBefore(java.time.LocalDate.now()) == true
+        val exportTagChips = (inheritedTags + ownTags).distinctBy { it.id }.map { tag ->
+            com.mj.yata.util.export.ExportTagChip(
+                tag.name,
+                if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
+            )
+        }
+        val peopleById = remember(people) { people.associateBy { it.id } }
+        val exportComments = remember(comments, people) {
+            comments.map { comment ->
+                val author = comment.authorId?.let { peopleById[it] }
+                com.mj.yata.util.export.ExportCommentRow(
+                    authorLabel = author?.let { if (it.isMe) "You" else it.name },
+                    timestampLabel = com.mj.yata.util.TaskScheduleUtils.formatDueDate(
+                        java.time.Instant.ofEpochMilli(comment.createdAt)
+                            .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
+                    ),
+                    body = comment.body
+                )
+            }
+        }
+
+        fun runExport(includeNotes: Boolean, includeComments: Boolean) {
+            exportFormatPending = null
+            scope.launch {
+                com.mj.yata.util.export.exportTaskReport(
+                    context = context,
+                    format = format,
+                    title = task.title,
+                    done = task.done,
+                    priority = task.priority,
+                    flagged = task.flag,
+                    dueLabel = task.due?.let { com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time) },
+                    overdue = exportOverdue,
+                    completedAtLabel = if (task.done) com.mj.yata.util.TaskScheduleUtils.formatCompletedAt(task.completedAt) else null,
+                    projectName = project?.name,
+                    listName = taskList?.name,
+                    assigneeNames = taskAssignees.map { if (it.isMe) "You" else it.name },
+                    tagChips = exportTagChips,
+                    notes = task.notes,
+                    includeNotes = includeNotes,
+                    comments = exportComments,
+                    includeComments = includeComments,
+                    accentColor = exportAccentColor
+                )
+            }
+        }
+
+        if (hasNotes || hasComments) {
+            com.mj.yata.util.export.TaskExportOptionsDialog(
+                hasNotes = hasNotes,
+                hasComments = hasComments,
+                onDismiss = { exportFormatPending = null },
+                onConfirm = { includeNotes, includeComments -> runExport(includeNotes, includeComments) }
+            )
+        } else {
+            LaunchedEffect(format) { runExport(includeNotes = false, includeComments = false) }
+        }
     }
 
     YataTimePickerLauncher(
