@@ -87,6 +87,10 @@ class UserPreferences @Inject constructor(
         val THEME_SCHEDULE_END_HOUR     = intPreferencesKey("theme_schedule_end_hour")
         val THEME_SCHEDULE_END_MINUTE   = intPreferencesKey("theme_schedule_end_minute")
         val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
+        val ENHANCED_M3_THEMING_ENABLED = booleanPreferencesKey("enhanced_m3_theming_enabled")
+        val FLOATING_BOTTOM_NAV_ENABLED = booleanPreferencesKey("floating_bottom_nav_enabled")
+        val COMPLETION_SOUND_ENABLED = booleanPreferencesKey("completion_sound_enabled")
+        val VOICE_RECOGNITION_LANGUAGE = stringPreferencesKey("voice_recognition_language")
         val TEXT_SCALE              = floatPreferencesKey("text_scale")
         val TASK_ROW_DENSITY        = stringPreferencesKey("task_row_density")
         val HAPTICS_ENABLED         = booleanPreferencesKey("haptics_enabled")
@@ -125,6 +129,10 @@ class UserPreferences @Inject constructor(
     val themeScheduleEndMinuteFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_END_MINUTE] ?: 0 }
 
     val reduceMotionEnabledFlow: Flow<Boolean> = dataStore.data.map { it[REDUCE_MOTION_ENABLED] ?: false }
+    val enhancedM3ThemingEnabledFlow: Flow<Boolean> = dataStore.data.map { it[ENHANCED_M3_THEMING_ENABLED] ?: false }
+    val floatingBottomNavEnabledFlow: Flow<Boolean> = dataStore.data.map { it[FLOATING_BOTTOM_NAV_ENABLED] ?: false }
+    val completionSoundEnabledFlow: Flow<Boolean> = dataStore.data.map { it[COMPLETION_SOUND_ENABLED] ?: true }
+    val voiceRecognitionLanguageFlow: Flow<String> = dataStore.data.map { it[VOICE_RECOGNITION_LANGUAGE] ?: "default" }
     val textScaleFlow: Flow<Float> = dataStore.data.map { it[TEXT_SCALE] ?: 1.0f }
     val taskRowDensityFlow: Flow<com.mj.yata.domain.model.TaskRowDensity> = dataStore.data.map { prefs ->
         when (prefs[TASK_ROW_DENSITY]) {
@@ -347,6 +355,22 @@ class UserPreferences @Inject constructor(
 
     suspend fun setReduceMotionEnabled(enabled: Boolean) {
         dataStore.edit { it[REDUCE_MOTION_ENABLED] = enabled }
+    }
+
+    suspend fun setEnhancedM3ThemingEnabled(enabled: Boolean) {
+        dataStore.edit { it[ENHANCED_M3_THEMING_ENABLED] = enabled }
+    }
+
+    suspend fun setFloatingBottomNavEnabled(enabled: Boolean) {
+        dataStore.edit { it[FLOATING_BOTTOM_NAV_ENABLED] = enabled }
+    }
+
+    suspend fun setCompletionSoundEnabled(enabled: Boolean) {
+        dataStore.edit { it[COMPLETION_SOUND_ENABLED] = enabled }
+    }
+
+    suspend fun setVoiceRecognitionLanguage(lang: String) {
+        dataStore.edit { it[VOICE_RECOGNITION_LANGUAGE] = lang }
     }
 
     suspend fun setTextScale(scale: Float) {

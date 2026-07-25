@@ -38,6 +38,8 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Mic
+import com.mj.yata.ui.widgets.PressableScaleBox
+import com.mj.yata.util.toProperCase
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Repeat
@@ -162,7 +164,8 @@ fun NewTaskSheet(
     initialDueDateOverride: String? = null,
     projectsEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
-    peopleEnabled: Boolean = true
+    peopleEnabled: Boolean = true,
+    voiceLanguage: String = "default"
 ) {
     var title by remember { mutableStateOf(TextFieldValue("")) }
     var selectedListId by remember { mutableStateOf(initialListId) }
@@ -177,8 +180,14 @@ fun NewTaskSheet(
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
     // otherwise fall back to the pre-selected project's due date, otherwise today.
     val initialDueDate = remember(projects, initialProjectId, initialDueDateOverride) {
-        val projectObj = projects.find { it.id == initialProjectId }
-        initialDueDateOverride ?: projectObj?.due ?: LocalDate.now().toString()
+        if (initialDueDateOverride != null) {
+            initialDueDateOverride
+        } else if (initialProjectId != null) {
+            val projectObj = projects.find { it.id == initialProjectId }
+            projectObj?.due
+        } else {
+            LocalDate.now().toString()
+        }
     }
     var selectedDueDate by remember { mutableStateOf<String?>(initialDueDate) }
     var selectedTime by remember { mutableStateOf<String?>(null) }
@@ -299,28 +308,55 @@ fun NewTaskSheet(
         }
     }
 
-    val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    var isVoiceOverlayOpen by remember { mutableStateOf(false) }
+
+    val speechLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim()
+            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spoken = matches?.firstOrNull()?.trim()
             if (!spoken.isNullOrBlank()) {
-                // Appended rather than replacing, so a second voice tap adds on to what's
-                // already typed instead of clobbering it.
-                val merged = if (title.text.isBlank()) spoken else title.text.trimEnd() + " " + spoken
-                title = TextFieldValue(merged, TextRange(merged.length))
+                val parsed = NaturalLanguageParser.parse(spoken)
+                val properTitle = parsed.title.toProperCase()
+                title = TextFieldValue(properTitle, TextRange(properTitle.length))
+                if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
+                if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
+                if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
+                if (parsed.flag) selectedFlag = true
+                if (parsed.projectName != null) {
+                    val pMatch = projects.find { it.name.equals(parsed.projectName, ignoreCase = true) }
+                        ?: projects.find { it.name.startsWith(parsed.projectName, ignoreCase = true) || parsed.projectName.startsWith(it.name, ignoreCase = true) }
+                    pMatch?.let { selectedProjectId = it.id }
+                }
+                if (parsed.listName != null) {
+                    val lMatch = lists.find { it.name.equals(parsed.listName, ignoreCase = true) }
+                        ?: lists.find { it.name.startsWith(parsed.listName, ignoreCase = true) || parsed.listName.startsWith(it.name, ignoreCase = true) }
+                    lMatch?.let { selectedListId = it.id }
+                }
+                if (parsed.tagNames.isNotEmpty()) {
+                    val matchedTagIds = tags.filter { t ->
+                        parsed.tagNames.any { target ->
+                            t.name.equals(target, ignoreCase = true) || t.name.contains(target, ignoreCase = true) || target.contains(t.name, ignoreCase = true)
+                        }
+                    }.map { it.id }
+                    selectedTagIds.addAll(matchedTagIds)
+                }
+                if (parsed.assigneeNames.isNotEmpty()) {
+                    val matchedAssigneeIds = activePeople.filter { p ->
+                        parsed.assigneeNames.any { target ->
+                            p.name.equals(target, ignoreCase = true) || p.name.startsWith(target, ignoreCase = true) || target.startsWith(p.name, ignoreCase = true)
+                        }
+                    }.map { it.id }
+                    selectedAssigneeIds.addAll(matchedAssigneeIds)
+                }
                 quickAddDismissed = false
             }
         }
     }
+
     val startVoiceInput = {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your task")
-        }
-        if (intent.resolveActivity(context.packageManager) != null) {
-            speechLauncher.launch(intent)
-        } else {
-            android.widget.Toast.makeText(context, "Voice input isn't available on this device.", android.widget.Toast.LENGTH_SHORT).show()
-        }
+        isVoiceOverlayOpen = true
     }
 
     val focusRequester = remember { FocusRequester() }
@@ -359,8 +395,9 @@ fun NewTaskSheet(
                 )
             }
         } else {
+            val finalTitle = (if (quickAddMatched) quickAdd.title else title.text.trim()).toProperCase()
             onAddTask(
-                if (quickAddMatched) quickAdd.title else title.text.trim(),
+                finalTitle,
                 selectedListId,
                 selectedPriority,
                 selectedAssigneeIds.toList(),
@@ -542,12 +579,25 @@ fun NewTaskSheet(
                         inner()
                     }
                 )
-                IconButton(onClick = startVoiceInput) {
-                    Icon(
-                        imageVector = Icons.Default.Mic,
-                        contentDescription = "Add task by voice",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                PressableScaleBox(
+                    onClick = startVoiceInput,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), CircleShape)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "Add task by voice",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
 
@@ -1030,6 +1080,49 @@ fun NewTaskSheet(
             showReminderTimePicker = false
         }
     )
+
+    if (isVoiceOverlayOpen) {
+        com.mj.yata.ui.widgets.VoiceTaskOverlay(
+            isOpen = isVoiceOverlayOpen,
+            onDismiss = { isVoiceOverlayOpen = false },
+            voiceLanguage = voiceLanguage,
+            onTaskRecognized = { parsed ->
+                val properTitle = parsed.title.toProperCase()
+                title = TextFieldValue(properTitle, TextRange(properTitle.length))
+                if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
+                if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
+                if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
+                if (parsed.flag) selectedFlag = true
+                if (parsed.projectName != null) {
+                    val pMatch = projects.find { it.name.equals(parsed.projectName, ignoreCase = true) }
+                        ?: projects.find { it.name.startsWith(parsed.projectName, ignoreCase = true) || parsed.projectName.startsWith(it.name, ignoreCase = true) }
+                    pMatch?.let { selectedProjectId = it.id }
+                }
+                if (parsed.listName != null) {
+                    val lMatch = lists.find { it.name.equals(parsed.listName, ignoreCase = true) }
+                        ?: lists.find { it.name.startsWith(parsed.listName, ignoreCase = true) || parsed.listName.startsWith(it.name, ignoreCase = true) }
+                    lMatch?.let { selectedListId = it.id }
+                }
+                if (parsed.tagNames.isNotEmpty()) {
+                    val matchedTagIds = tags.filter { t ->
+                        parsed.tagNames.any { target ->
+                            t.name.equals(target, ignoreCase = true) || t.name.contains(target, ignoreCase = true) || target.contains(t.name, ignoreCase = true)
+                        }
+                    }.map { it.id }
+                    selectedTagIds.addAll(matchedTagIds)
+                }
+                if (parsed.assigneeNames.isNotEmpty()) {
+                    val matchedAssigneeIds = activePeople.filter { p ->
+                        parsed.assigneeNames.any { target ->
+                            p.name.equals(target, ignoreCase = true) || p.name.startsWith(target, ignoreCase = true) || target.startsWith(p.name, ignoreCase = true)
+                        }
+                    }.map { it.id }
+                    selectedAssigneeIds.addAll(matchedAssigneeIds)
+                }
+                quickAddDismissed = false
+            }
+        )
+    }
 }
 
 private fun Modifier.drawBottomBorder(color: Color): Modifier = this.then(

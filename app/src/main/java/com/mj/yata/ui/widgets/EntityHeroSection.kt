@@ -3,6 +3,7 @@ package com.mj.yata.ui.widgets
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -152,24 +153,36 @@ fun HeroStatCell(
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
-            .background(if (active) accentColor.copy(alpha = 0.2f) else accentColor.copy(alpha = 0.08f))
-            .padding(horizontal = 14.dp, vertical = 8.dp)
-    ) {
-        Text(
-            text = value.toString(),
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
-            color = if (valueColor == Color.Unspecified) MaterialTheme.colorScheme.onSurface else valueColor
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    val cellContent: @Composable () -> Unit = {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (active) accentColor.copy(alpha = 0.2f) else accentColor.copy(alpha = 0.08f))
+                .padding(horizontal = 14.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                color = if (valueColor == Color.Unspecified) MaterialTheme.colorScheme.onSurface else valueColor
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    if (onClick != null) {
+        PressableScaleBox(onClick = onClick, modifier = modifier) {
+            cellContent()
+        }
+    } else {
+        Box(modifier = modifier) {
+            cellContent()
+        }
     }
 }
 

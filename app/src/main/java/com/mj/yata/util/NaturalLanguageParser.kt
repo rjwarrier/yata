@@ -17,6 +17,10 @@ data class ParsedQuickAdd(
     val reminder: String? = null, // one of TaskScheduleUtils.reminderOptions, or a literal "h:mm a" clock time
     val priority: String? = null, // "low" | "med" | "high", null if nothing matched
     val flag: Boolean = false, // true if an "important"/"flag this"-style phrase matched
+    val projectName: String? = null,
+    val listName: String? = null,
+    val tagNames: List<String> = emptyList(),
+    val assigneeNames: List<String> = emptyList(),
     val highlightRanges: List<IntRange> // recognized spans in the *original* raw string, for underlining
 )
 
@@ -33,6 +37,19 @@ data class ParsedQuickAdd(
  * sunday" is claimed whole by the recurrence rule, so the later bare-weekday rule doesn't
  * also treat "sunday" as a one-off due date).
  */
+fun String.toProperCase(): String {
+    if (this.isBlank()) return this
+    return this.split(" ")
+        .filter { it.isNotEmpty() }
+        .joinToString(" ") { word ->
+            if (word.length > 1 && word.all { it.isUpperCase() }) {
+                word
+            } else {
+                word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+            }
+        }
+}
+
 object NaturalLanguageParser {
 
     private val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
@@ -52,13 +69,32 @@ object NaturalLanguageParser {
     )
 
     // ── Time ──────────────────────────────────────────────────────────────
-    // Accepts "5:30pm" and "5.30pm" alike — "." is a common typing shorthand for the minute
-    // separator that users reach for as often as ":", especially on numeric keyboards.
-    private val time12Regex = Regex("\\b(at\\s+)?(\\d{1,2})([:.](\\d{2}))?\\s*(am|pm|AM|PM)\\b")
-    // Colon only (no ".") — unlike the 12h form this has no am/pm to disambiguate it from a
-    // plain decimal like "2.50" (a price, a quantity), so widening the separator here would
-    // risk misreading those as times.
+    // Accepts "5:30pm", "5.30pm", "5 a.m.", "5:30 a. m.", "at 5 pm", "10 A.M.", "5p.m."
+    private val time12Regex = Regex("\\b(?:at\\s+)?(\\d{1,2})(?:[:.](\\d{2}))?\\s*(a\\.?\\s*m\\.?|p\\.?\\s*m\\.?|AM|PM|A\\.?\\s*M\\.?|P\\.?\\s*M\\.?)\\b", RegexOption.IGNORE_CASE)
+    private val timeOClockRegex = Regex("\\b(?:at\\s+)?(\\d{1,2})\\s*o'?clock(?:\\s+(?:in\\s+the\\s+)?(morning|afternoon|evening|night|a\\.?\\s*m\\.?|p\\.?\\s*m\\.?))?\\b", RegexOption.IGNORE_CASE)
+    private val atTimeRegex = Regex("\\bat\\s+(\\d{1,2})(?:[:.](\\d{2}))?(?:\\s+(?:in\\s+the\\s+)?(morning|afternoon|evening|night|a\\.?\\s*m\\.?|p\\.?\\s*m\\.?))?\\b", RegexOption.IGNORE_CASE)
+    private val bareMeridiemRegex = Regex("\\b(a\\.?\\s*m\\.?|p\\.?\\s*m\\.?)\\b", RegexOption.IGNORE_CASE)
     private val time24Regex = Regex("\\b(?:at\\s+)?([01]?\\d|2[0-3]):([0-5]\\d)\\b")
+
+    private val wordToHourMap = mapOf(
+        "one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5,
+        "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10,
+        "eleven" to 11, "twelve" to 12
+    )
+
+    private val writtenHourRegex = Regex(
+        "\\b(?:at\\s+)?(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)" +
+        "(?:\\s+(thirty|fifteen|forty\\s+five|45|30|15))?" +
+        "(?:\\s+(?:in\\s+the\\s+)?(morning|afternoon|evening|night|a\\.?\\s*m\\.?|p\\.?\\s*m\\.?|am|pm))?\\b",
+        RegexOption.IGNORE_CASE
+    )
+
+    private val quarterHalfRegex = Regex(
+        "\\b(quarter\\s+past|half\\s+past|quarter\\s+to)\\s+(\\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)" +
+        "(?:\\s+(?:in\\s+the\\s+)?(morning|afternoon|evening|night|a\\.?\\s*m\\.?|p\\.?\\s*m\\.?|am|pm))?\\b",
+        RegexOption.IGNORE_CASE
+    )
+
     private val timeOfDayWords = mapOf(
         "night" to LocalTime.of(21, 0),
         "midnight" to LocalTime.of(0, 0),
@@ -265,30 +301,58 @@ object NaturalLanguageParser {
     // Multi-word phrases first so "high priority" claims itself whole rather than leaving a
     // dangling "priority" behind for a later rule to trip over.
     private val priorityWordPhrases = listOf(
+        "highest priority" to "high",
         "top priority" to "high",
         "high priority" to "high",
+        "super urgent" to "high",
+        "must do" to "high",
+        "vital" to "high",
+        "essential" to "high",
+        "urgent" to "high",
+        "critical" to "high",
+        "asap" to "high",
         "medium priority" to "med",
         "med priority" to "med",
+        "normal priority" to "med",
+        "lowest priority" to "low",
         "low priority" to "low",
-        "urgent" to "high",
-        "asap" to "high",
-        "critical" to "high",
+        "minor priority" to "low",
         "someday" to "low",
         "whenever" to "low",
         "no rush" to "low"
     )
 
     // ── Flag ──────────────────────────────────────────────────────────────
-    // Distinct from priority — "important" flags a task (same boolean the flag icon toggles)
-    // rather than setting its priority level, so a task can be both flagged and low-priority.
-    private val flagPhrases = listOf("flag this", "flag it", "flagged", "star this", "star it", "important")
+    private val flagPhrases = listOf(
+        "flag this", "flag it", "flagged", "star this", "star it", "starred",
+        "important", "mark as important", "bookmark", "bookmarked"
+    )
 
     // ── Additional relative dates ─────────────────────────────────────────
     private val inHoursRegex = Regex("\\bin\\s+(a|an|\\d+)\\s+hour(s)?\\b", RegexOption.IGNORE_CASE)
     private val inMinutesRegex = Regex("\\bin\\s+(a|an|\\d+)\\s+min(?:ute)?s?\\b", RegexOption.IGNORE_CASE)
     private val halfAnHourRegex = Regex("\\bin\\s+half\\s+(?:an?\\s+)?hour\\b", RegexOption.IGNORE_CASE)
+    private val cacheLock = Any()
+    private val parseCache = object : java.util.LinkedHashMap<String, ParsedQuickAdd>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ParsedQuickAdd>?): Boolean {
+            return size > 64
+        }
+    }
 
-    fun parse(raw: String, referenceDate: LocalDate = LocalDate.now(), referenceTime: LocalTime = LocalTime.now()): ParsedQuickAdd {
+    fun parse(rawInput: String, referenceDate: LocalDate = LocalDate.now(), referenceTime: LocalTime = LocalTime.now()): ParsedQuickAdd {
+        val cacheKey = "$rawInput|$referenceDate"
+        synchronized(cacheLock) {
+            parseCache[cacheKey]?.let { return it }
+        }
+
+        val raw = rawInput
+            .replace(Regex("\\bto\\s+day\\b", RegexOption.IGNORE_CASE), "today")
+            .replace(Regex("\\b(to|two|2)\\s*morrow\\b", RegexOption.IGNORE_CASE), "tomorrow")
+            .replace(Regex("\\bate\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "8 $1")
+            .replace(Regex("\\bwon\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "1 $1")
+            .replace(Regex("\\btoo\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "2 $1")
+            .replace(Regex("\\bfor\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "4 $1")
+
         val claimed = mutableListOf<IntRange>()
         var due: LocalDate? = null
         var time: String? = null
@@ -387,19 +451,118 @@ object NaturalLanguageParser {
         // 2. Explicit time — checked before day-count phrases so "tomorrow 3pm" doesn't have
         // "3" mistaken for a bare number, and before time-of-day words so "6pm" wins over "evening".
         firstFreeMatch(time12Regex)?.let { m ->
-            val hour = m.groupValues[2].toIntOrNull()
-            val minute = m.groupValues[4].toIntOrNull() ?: 0
-            val meridiem = m.groupValues[5]
+            val hour = m.groupValues[1].toIntOrNull()
+            val minute = m.groupValues[2].toIntOrNull() ?: 0
+            val meridiem = m.groupValues[3]
             if (hour != null && hour in 1..12 && minute in 0..59) {
+                val isPm = meridiem.contains("p", ignoreCase = true)
+                val isAm = meridiem.contains("a", ignoreCase = true)
                 val hour24 = when {
-                    meridiem.equals("am", ignoreCase = true) && hour == 12 -> 0
-                    meridiem.equals("pm", ignoreCase = true) && hour != 12 -> hour + 12
+                    isPm && hour != 12 -> hour + 12
+                    isAm && hour == 12 -> 0
                     else -> hour
                 }
                 time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
                 claim(m.range)
             }
         }
+
+        if (time == null) {
+            firstFreeMatch(timeOClockRegex)?.let { m ->
+                val hour = m.groupValues[1].toIntOrNull()
+                val modifier = m.groupValues[2].lowercase()
+                if (hour != null && hour in 1..12) {
+                    val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
+                    val isAm = modifier.contains("a") || modifier == "morning"
+                    val hour24 = when {
+                        isPm && hour != 12 -> hour + 12
+                        isAm && hour == 12 -> 0
+                        !isPm && !isAm && hour in 1..7 -> hour + 12
+                        else -> hour
+                    }
+                    time = LocalTime.of(hour24, 0).format(timeFormatter).uppercase(Locale.getDefault())
+                    claim(m.range)
+                }
+            }
+        }
+
+        if (time == null) {
+            firstFreeMatch(atTimeRegex)?.let { m ->
+                val hour = m.groupValues[1].toIntOrNull()
+                val minute = m.groupValues[2].toIntOrNull() ?: 0
+                val modifier = m.groupValues[3].lowercase()
+                if (hour != null && hour in 1..12 && minute in 0..59) {
+                    val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
+                    val isAm = modifier.contains("a") || modifier == "morning"
+                    val hour24 = when {
+                        isPm && hour != 12 -> hour + 12
+                        isAm && hour == 12 -> 0
+                        !isPm && !isAm && hour in 1..7 -> hour + 12
+                        else -> hour
+                    }
+                    time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
+                    claim(m.range)
+                }
+            }
+        }
+
+        if (time == null) {
+            firstFreeMatch(quarterHalfRegex)?.let { m ->
+                val type = m.groupValues[1].lowercase()
+                val hourRaw = m.groupValues[2].lowercase()
+                val modifier = m.groupValues[3].lowercase()
+                val baseHour = hourRaw.toIntOrNull() ?: wordToHourMap[hourRaw]
+                if (baseHour != null && baseHour in 1..12) {
+                    val (effectiveHour, minute) = when {
+                        type.contains("half") -> baseHour to 30
+                        type.contains("quarter past") -> baseHour to 15
+                        type.contains("quarter to") -> {
+                            val h = if (baseHour == 1) 12 else baseHour - 1
+                            h to 45
+                        }
+                        else -> baseHour to 0
+                    }
+                    val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
+                    val isAm = modifier.contains("a") || modifier == "morning"
+                    val hour24 = when {
+                        isPm && effectiveHour != 12 -> effectiveHour + 12
+                        isAm && effectiveHour == 12 -> 0
+                        !isPm && !isAm && effectiveHour in 1..7 -> effectiveHour + 12
+                        else -> effectiveHour
+                    }
+                    time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
+                    claim(m.range)
+                }
+            }
+        }
+
+        if (time == null) {
+            firstFreeMatch(writtenHourRegex)?.let { m ->
+                val hourWord = m.groupValues[1].lowercase()
+                val minuteWord = m.groupValues[2].lowercase()
+                val modifier = m.groupValues[3].lowercase()
+                val hour = wordToHourMap[hourWord]
+                val minute = when (minuteWord) {
+                    "fifteen", "15" -> 15
+                    "thirty", "30" -> 30
+                    "forty five", "45" -> 45
+                    else -> 0
+                }
+                if (hour != null && hour in 1..12) {
+                    val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
+                    val isAm = modifier.contains("a") || modifier == "morning"
+                    val hour24 = when {
+                        isPm && hour != 12 -> hour + 12
+                        isAm && hour == 12 -> 0
+                        !isPm && !isAm && hour in 1..7 -> hour + 12
+                        else -> hour
+                    }
+                    time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
+                    claim(m.range)
+                }
+            }
+        }
+
         if (time == null) {
             firstFreeMatch(time24Regex)?.let { m ->
                 val hour = m.groupValues[1].toIntOrNull()
@@ -588,7 +751,6 @@ object NaturalLanguageParser {
             }
         }
 
-        // 4. Time-of-day words — only if no explicit time was already found.
         if (time == null) {
             for ((word, clock) in timeOfDayWords) {
                 firstFreeWord(word)?.let { m ->
@@ -596,6 +758,14 @@ object NaturalLanguageParser {
                     claim(m.range)
                 }
                 if (time != null) break
+            }
+        }
+        if (time == null) {
+            firstFreeMatch(bareMeridiemRegex)?.let { m ->
+                val meridiem = m.groupValues[1].lowercase()
+                val isPm = meridiem.contains("p")
+                time = if (isPm) "5:00 PM" else "9:00 AM"
+                claim(m.range)
             }
         }
 
@@ -647,9 +817,53 @@ object NaturalLanguageParser {
             if (flag) break
         }
 
-        val sortedClaims = claimed.sortedBy { it.first }
-        val sortedStrip = (claimed + stripOnly).sortedBy { it.first }
-        val title = buildString {
+        // 7. Project, List, Tag, Assignee keywords
+        var projectName: String? = null
+        firstFreeMatch(Regex("\\b(?:in\\s+project|for\\s+project|under\\s+project|project)\\s+([A-Za-z0-9_\\-\\s]+?)(?=\\s+(?:list|tag|tagged?|label|labeled?|#|assign(?:ed)?\\s+to|give(?:n)?\\s+to|delegate|send\\s+to|assign|@|due|at|every|on|!|p[1-3]|$))\\b", RegexOption.IGNORE_CASE))?.let { m ->
+            projectName = m.groupValues[1].trim()
+            claim(m.range)
+        }
+
+        var listName: String? = null
+        firstFreeMatch(Regex("\\b(?:in\\s+list|for\\s+list|under\\s+list|list)\\s+([A-Za-z0-9_\\-\\s]+?)(?=\\s+(?:project|tag|tagged?|label|labeled?|#|assign(?:ed)?\\s+to|give(?:n)?\\s+to|delegate|send\\s+to|assign|@|due|at|every|on|!|p[1-3]|$))\\b", RegexOption.IGNORE_CASE))?.let { m ->
+            listName = m.groupValues[1].trim()
+            claim(m.range)
+        }
+
+        val tagNames = mutableListOf<String>()
+        val tagMatches = Regex("\\b(?:tagged?\\s+as\\s+|tagged?\\s+|tag\\s+as\\s+|tag\\s+|labeled?\\s+as\\s+|labeled?\\s+|label\\s+as\\s+|label\\s+|with\\s+tag\\s+|#)([A-Za-z0-9_\\-]+)\\b", RegexOption.IGNORE_CASE).findAll(raw)
+        for (m in tagMatches) {
+            if (isFree(m.range)) {
+                tagNames.add(m.groupValues[1].trim())
+                claim(m.range)
+            }
+        }
+
+        val assigneeNames = mutableListOf<String>()
+        val assigneeMatches = Regex("\\b(?:assign(?:ed)?\\s+to\\s+|give(?:n)?\\s+to\\s+|delegate(?:d)?\\s+to\\s+|send\\s+to\\s+|assign\\s+|@)([A-Za-z0-9_\\-\\s]+?)(?=\\s+(?:project|list|tag|tagged?|label|labeled?|#|due|at|every|on|!|p[1-3]|$))\\b", RegexOption.IGNORE_CASE).findAll(raw)
+        for (m in assigneeMatches) {
+            if (isFree(m.range)) {
+                assigneeNames.add(m.groupValues[1].trim())
+                claim(m.range)
+            }
+        }
+
+        val prepositionRegex = Regex("\\b(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on)\\s*$", RegexOption.IGNORE_CASE)
+
+        val expandedClaims = claimed.map { range ->
+            var start = range.first
+            val prefix = raw.substring(0, start)
+            prepositionRegex.find(prefix)?.let { m ->
+                if (isFree(m.range)) {
+                    start = m.range.first
+                }
+            }
+            start..range.last
+        }
+
+        val sortedClaims = expandedClaims.sortedBy { it.first }
+        val sortedStrip = (expandedClaims + stripOnly).sortedBy { it.first }
+        val titleRaw = buildString {
             var cursor = 0
             for (range in sortedStrip) {
                 if (range.first > cursor) append(raw, cursor, range.first)
@@ -658,7 +872,19 @@ object NaturalLanguageParser {
             if (cursor < raw.length) append(raw, cursor, raw.length)
         }.replace(Regex("\\s{2,}"), " ").trim()
 
-        return ParsedQuickAdd(
+        var titleClean = titleRaw
+        repeat(3) {
+            titleClean = titleClean
+                .replace(Regex("\\b(a\\.?\\s*m\\.?|p\\.?\\s*m\\.?)\\b", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("[.,;:_\\-/\\\\]+$"), "")
+                .replace(Regex("^\\s*[.,;:_\\-/\\\\]+"), "")
+                .replace(Regex("\\s{2,}"), " ")
+                .trim()
+        }
+
+        val title = if (titleClean.isNotBlank()) titleClean else raw.replace(Regex("[.,;:_\\-/\\\\]+$"), "").trim()
+
+        val result = ParsedQuickAdd(
             title = title,
             due = due?.toString(),
             time = time,
@@ -666,8 +892,16 @@ object NaturalLanguageParser {
             reminder = reminder,
             priority = priority,
             flag = flag,
+            projectName = projectName,
+            listName = listName,
+            tagNames = tagNames,
+            assigneeNames = assigneeNames,
             highlightRanges = sortedClaims
         )
+        synchronized(cacheLock) {
+            parseCache[cacheKey] = result
+        }
+        return result
     }
 
     private fun nextAfter(from: LocalDate, day: DayOfWeek): LocalDate {

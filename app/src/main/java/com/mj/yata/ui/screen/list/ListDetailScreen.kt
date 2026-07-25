@@ -454,7 +454,7 @@ fun ListDetailScreen(
                     footer = {
                         if (!hideCompleted && completedListTasks.isNotEmpty()) {
                             item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedListTasks.size) }
-                            items(completedListTasks, key = { it.id }) { task ->
+                            items(completedListTasks, key = { "completed_" + it.id }) { task ->
                                 taskRowFor(
                                     task = task,
                                     modifier = Modifier.animateItemPlacement(

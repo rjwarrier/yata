@@ -266,6 +266,9 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val textScale by userPreferences.textScaleFlow.collectAsState(initial = 1.0f)
             val dynamicColorEnabled by userPreferences.dynamicColorEnabledFlow.collectAsState(initial = true)
             val appFont by userPreferences.appFontFlow.collectAsState(initial = com.mj.yata.domain.model.AppFont.INTER)
+            val enhancedM3ThemingEnabled by userPreferences.enhancedM3ThemingEnabledFlow.collectAsState(initial = false)
+            val floatingBottomNavEnabled by userPreferences.floatingBottomNavEnabledFlow.collectAsState(initial = false)
+            val completionSoundEnabled by userPreferences.completionSoundEnabledFlow.collectAsState(initial = true)
             val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
             val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
 
@@ -294,7 +297,14 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled,
                 com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled
             ) {
-                YataTheme(darkTheme = useDarkTheme, useDynamicColor = dynamicColorEnabled, appFont = appFont) {
+                YataTheme(
+                    darkTheme = useDarkTheme,
+                    useDynamicColor = dynamicColorEnabled,
+                    appFont = appFont,
+                    enhancedM3Theming = enhancedM3ThemingEnabled,
+                    floatingBottomNav = floatingBottomNavEnabled,
+                    completionSound = completionSoundEnabled
+                ) {
                     // Cache the actually-rendered primary color so background notifications/widgets
                     // can match it exactly, instead of re-resolving dynamic color in a receiver/worker
                     // context where it's been observed to diverge from what's shown here live.

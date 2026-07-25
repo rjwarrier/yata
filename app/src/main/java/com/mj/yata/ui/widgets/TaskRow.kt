@@ -1,6 +1,8 @@
 package com.mj.yata.ui.widgets
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
@@ -125,6 +127,7 @@ fun TaskRow(
         // padding below) — M3-style state indicator, same color mapping as PriorityBars'
         // dots. IntrinsicSize.Min on this Box lets fillMaxHeight() below resolve against the
         // Row's own (otherwise unbounded, LazyColumn-item) height.
+        val isEnhancedM3 = com.mj.yata.ui.theme.LocalEnhancedM3Theming.current
         if (!task.done && task.priority != "none") {
             val priorityStripeColor = when (task.priority) {
                 "low" -> accents.accentE
@@ -136,8 +139,11 @@ fun TaskRow(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .fillMaxHeight()
-                    .width(3.dp)
-                    .background(priorityStripeColor)
+                    .width(if (isEnhancedM3) 4.dp else 3.dp)
+                    .background(
+                        color = priorityStripeColor,
+                        shape = if (isEnhancedM3) RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp) else RoundedCornerShape(0.dp)
+                    )
             )
         }
         Row(
@@ -213,7 +219,13 @@ fun TaskRow(
                     modifier = Modifier.weight(1f, fill = false)
                 )
 
-                if (task.flag) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = task.flag,
+                    enter = androidx.compose.animation.scaleIn(
+                        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
+                    ) + fadeIn(),
+                    exit = androidx.compose.animation.scaleOut() + fadeOut()
+                ) {
                     Icon(
                         imageVector = Icons.Default.Flag,
                         contentDescription = "Flagged",
@@ -228,7 +240,7 @@ fun TaskRow(
             // Overdue is independent of showDueDate — it's a warning, not a date display
             // preference, so it surfaces on every screen (Today, Upcoming, Tag, Person, Search)
             // rather than only the manual-order List/Project detail screens.
-            val today = LocalDate.now()
+            val today = remember { LocalDate.now() }
             val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(today) == true
             val healthBadges = remember(task, overdue, today) {
                 buildList {

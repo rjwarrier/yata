@@ -543,7 +543,7 @@ fun ProjectDetailScreen(
                     footer = {
                         if (!hideCompleted && completedProjectTasks.isNotEmpty()) {
                             item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedProjectTasks.size) }
-                            items(completedProjectTasks, key = { it.id }) { task ->
+                            items(completedProjectTasks, key = { "completed_" + it.id }) { task ->
                                 taskRowFor(
                                     task = task,
                                     modifier = Modifier.animateItemPlacement(

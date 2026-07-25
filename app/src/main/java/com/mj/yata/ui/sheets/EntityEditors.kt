@@ -251,46 +251,37 @@ fun ProjectEditorSheet(
             Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
         }
 
-        // Project Due Date Picker Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { showDatePicker = true }
-                .padding(vertical = 4.dp, horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.weight(1f)
+        // Project Due Date Section
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Project Due Date",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Today,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                com.mj.yata.ui.widgets.YataSelectChip(
+                    label = "No due date",
+                    selected = dueDate == null,
+                    onClick = { dueDate = null }
                 )
-                Column {
-                    Text(
-                        text = "Due Date",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = TaskScheduleUtils.formatDueDate(dueDate),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (dueDate != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            if (dueDate != null) {
-                IconButton(onClick = { dueDate = null }) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Clear due date"
-                    )
-                }
+                com.mj.yata.ui.widgets.YataSelectChip(
+                    label = "Today",
+                    selected = dueDate == LocalDate.now().toString(),
+                    onClick = { dueDate = LocalDate.now().toString() }
+                )
+                com.mj.yata.ui.widgets.YataSelectChip(
+                    label = "Tomorrow",
+                    selected = dueDate == LocalDate.now().plusDays(1).toString(),
+                    onClick = { dueDate = LocalDate.now().plusDays(1).toString() }
+                )
+                com.mj.yata.ui.widgets.YataSelectChip(
+                    label = if (dueDate != null && dueDate != LocalDate.now().toString() && dueDate != LocalDate.now().plusDays(1).toString()) TaskScheduleUtils.formatDueDate(dueDate) else "Pick date...",
+                    selected = dueDate != null && dueDate != LocalDate.now().toString() && dueDate != LocalDate.now().plusDays(1).toString(),
+                    onClick = { showDatePicker = true }
+                )
             }
         }
 

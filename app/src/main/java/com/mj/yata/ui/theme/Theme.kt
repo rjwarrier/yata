@@ -14,11 +14,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+import androidx.compose.runtime.staticCompositionLocalOf
+
+val LocalEnhancedM3Theming = staticCompositionLocalOf { false }
+val LocalFloatingBottomNav = staticCompositionLocalOf { false }
+val LocalCompletionSoundEnabled = staticCompositionLocalOf { true }
+
 @Composable
 fun YataTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     useDynamicColor: Boolean = true,
     appFont: com.mj.yata.domain.model.AppFont = com.mj.yata.domain.model.AppFont.INTER,
+    enhancedM3Theming: Boolean = false,
+    floatingBottomNav: Boolean = false,
+    completionSound: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -45,7 +54,10 @@ fun YataTheme(
     }
 
     CompositionLocalProvider(
-        LocalYataAccents provides accents
+        LocalYataAccents provides accents,
+        LocalEnhancedM3Theming provides enhancedM3Theming,
+        LocalFloatingBottomNav provides floatingBottomNav,
+        LocalCompletionSoundEnabled provides completionSound
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

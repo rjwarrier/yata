@@ -94,6 +94,9 @@ fun SettingsScreen(
     val themeScheduleEndHour = uiState.themeScheduleEndHour
     val themeScheduleEndMinute = uiState.themeScheduleEndMinute
     val reduceMotionEnabled = uiState.reduceMotionEnabled
+    val enhancedM3ThemingEnabled = uiState.enhancedM3ThemingEnabled
+    val floatingBottomNavEnabled = uiState.floatingBottomNavEnabled
+    val completionSoundEnabled = uiState.completionSoundEnabled
     val textScale = uiState.textScale
     val taskRowDensity = uiState.taskRowDensity
     val hapticsEnabled = uiState.hapticsEnabled
@@ -119,6 +122,8 @@ fun SettingsScreen(
     val localBackupLastAt = uiState.localBackupLastAt
     val cloudBackupArchiveMonths = uiState.cloudBackupArchiveMonths
 
+    val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
+    var showVoiceLanguageMenu by remember { mutableStateOf(false) }
     var showDefaultListMenu by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
     var showThemeScheduleStartPicker by remember { mutableStateOf(false) }
@@ -408,6 +413,78 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Enable enhanced M3 theming",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Translucent glassmorphic navigation, enhanced spring physics, dynamic glow accents, and responsive elevation.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = enhancedM3ThemingEnabled,
+                            onCheckedChange = { viewModel.setEnhancedM3ThemingEnabled(it) }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Use floating bottom panel",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Display the bottom navigation bar as a floating pill panel detached from screen edges.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = floatingBottomNavEnabled,
+                            onCheckedChange = { viewModel.setFloatingBottomNavEnabled(it) }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Play sound on completion",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Play a crisp chime sound effect whenever a task is marked complete.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = completionSoundEnabled,
+                            onCheckedChange = { viewModel.setCompletionSoundEnabled(it) }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                     // Start of week
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -454,6 +531,41 @@ fun SettingsScreen(
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Voice Input Language
+                    val voiceLanguages = remember {
+                        listOf(
+                            "default" to "System Default (Auto)",
+                            "en-US" to "English (US)",
+                            "en-IN" to "English (India)",
+                            "en-GB" to "English (UK)",
+                            "es-ES" to "Spanish",
+                            "fr-FR" to "French",
+                            "de-DE" to "German",
+                            "hi-IN" to "Hindi",
+                            "ja-JP" to "Japanese",
+                            "zh-CN" to "Chinese",
+                            "pt-BR" to "Portuguese"
+                        )
+                    }
+                    Box {
+                        SettingsRow(
+                            label = "Voice input language",
+                            value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: "System Default (Auto)",
+                            onClick = { showVoiceLanguageMenu = true }
+                        )
+                        DropdownMenu(expanded = showVoiceLanguageMenu, onDismissRequest = { showVoiceLanguageMenu = false }) {
+                            voiceLanguages.forEach { (code, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        viewModel.setVoiceRecognitionLanguage(code)
+                                        showVoiceLanguageMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
 
                     // Default reminder time
                     SettingsRow(

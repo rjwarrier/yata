@@ -16,6 +16,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -155,6 +156,7 @@ fun MainScreen(
     val recentTasks by viewModel.recentTasks.collectAsStateWithLifecycle()
     val lastHomeTab by viewModel.lastHomeTab.collectAsStateWithLifecycle()
     val savedSmartFilterSets by viewModel.savedSmartFilterSets.collectAsStateWithLifecycle()
+    val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
 
     LaunchedEffect(lastHomeTab, restoredHomeTab) {
         if (!restoredHomeTab) {
@@ -605,7 +607,17 @@ fun MainScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null)
-                                Text(fabLabel, style = MaterialTheme.typography.labelLarge)
+                                androidx.compose.animation.AnimatedContent(
+                                    targetState = fabLabel,
+                                    transitionSpec = {
+                                        (androidx.compose.animation.slideInVertically { height -> height } + fadeIn()).togetherWith(
+                                            androidx.compose.animation.slideOutVertically { height -> -height } + fadeOut()
+                                        )
+                                    },
+                                    label = "fabLabelAnim"
+                                ) { targetLabel ->
+                                    Text(targetLabel, style = MaterialTheme.typography.labelLarge)
+                                }
                             }
                         }
                     }
@@ -862,7 +874,8 @@ fun MainScreen(
                     initialDueDateOverride = if (selectedTab == 4) calendarSelectedDay.toString() else null,
                     projectsEnabled = projectsFeatureEnabled,
                     tagsEnabled = tagsFeatureEnabled,
-                    peopleEnabled = peopleFeatureEnabled
+                    peopleEnabled = peopleFeatureEnabled,
+                    voiceLanguage = voiceLanguage
                 )
             }
         } else {
@@ -1193,27 +1206,71 @@ fun CustomBottomNav(
     var pillSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
     val density = androidx.compose.ui.platform.LocalDensity.current
 
-    Surface(
+    val isEnhancedM3 = com.mj.yata.ui.theme.LocalEnhancedM3Theming.current
+    val isFloatingNav = com.mj.yata.ui.theme.LocalFloatingBottomNav.current
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
-            .drawBehind {
-                drawLine(
-                    color = navDividerColor,
-                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                    end = androidx.compose.ui.geometry.Offset(size.width, 0f),
-                    strokeWidth = navDividerStrokeWidth
-                )
-            },
-        color = MaterialTheme.colorScheme.surfaceContainer
+            .then(
+                if (isFloatingNav) {
+                    Modifier
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                } else {
+                    Modifier
+                }
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(vertical = 4.dp)
-                .onGloballyPositioned { containerCoords = it }
+        Surface(
+            modifier = when {
+                isFloatingNav -> Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(32.dp))
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                        shape = RoundedCornerShape(32.dp)
+                    )
+                isEnhancedM3 -> Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+                    .height(68.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(28.dp)
+                    )
+                else -> Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .drawBehind {
+                        drawLine(
+                            color = navDividerColor,
+                            start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                            end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                            strokeWidth = navDividerStrokeWidth
+                        )
+                    }
+            },
+            color = when {
+                isFloatingNav && isEnhancedM3 -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f)
+                isFloatingNav -> MaterialTheme.colorScheme.surfaceContainerHigh
+                isEnhancedM3 -> MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.88f)
+                else -> MaterialTheme.colorScheme.surfaceContainer
+            },
+            shadowElevation = if (isFloatingNav) 6.dp else 0.dp
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isFloatingNav) Modifier else Modifier.navigationBarsPadding())
+                    .padding(vertical = 4.dp)
+                    .onGloballyPositioned { containerCoords = it }
+            ) {
             val targetOffset = iconPositions[selectedTab]
             if (targetOffset != null && pillSize != androidx.compose.ui.unit.IntSize.Zero) {
                 val animatedX by animateDpAsState(
@@ -1307,4 +1364,5 @@ fun CustomBottomNav(
             }
         }
     }
+}
 }

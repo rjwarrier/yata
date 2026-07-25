@@ -480,7 +480,7 @@ fun PersonDetailScreen(
                         }
                     }
                 } else {
-                    items(displayedOpenTasks, key = { it.id }, contentType = { "task" }) { task ->
+                    items(displayedOpenTasks, key = { "open_" + it.id }, contentType = { "task" }) { task ->
                         val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
@@ -571,7 +571,7 @@ fun PersonDetailScreen(
                         }
                     }
                 } else {
-                    items(completedTasks, key = { it.id }, contentType = { "task" }) { task ->
+                    items(completedTasks, key = { "completed_" + it.id }, contentType = { "task" }) { task ->
                         val taskList = remember(task.listId, listsById) { listsById[task.listId] }
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }

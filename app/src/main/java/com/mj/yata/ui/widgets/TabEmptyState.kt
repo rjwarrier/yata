@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,20 @@ fun TabEmptyState(
     onAction: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val isEnhancedM3 = com.mj.yata.ui.theme.LocalEnhancedM3Theming.current
+    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "emptyPulse")
+    val pulseScale = if (isEnhancedM3) {
+        infiniteTransition.animateFloat(
+            initialValue = 0.96f,
+            targetValue = 1.04f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                animation = androidx.compose.animation.core.tween(2000, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+            ),
+            label = "emptyScale"
+        ).value
+    } else 1.0f
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -40,6 +56,10 @@ fun TabEmptyState(
         androidx.compose.foundation.layout.Box(
             modifier = Modifier
                 .size(64.dp)
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                }
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center

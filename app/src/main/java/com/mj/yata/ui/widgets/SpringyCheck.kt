@@ -16,14 +16,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,17 +40,37 @@ fun SpringyCheck(
     size: Dp = 24.dp
 ) {
     val scale = remember { Animatable(1f) }
+    val iconScale = remember { Animatable(if (checked) 1f else 0f) }
+    val rippleScale = remember { Animatable(0f) }
+    val rippleAlpha = remember { Animatable(0f) }
+    val soundEnabled = com.mj.yata.ui.theme.LocalCompletionSoundEnabled.current
+    var isFirstComposition by remember { mutableStateOf(true) }
 
     LaunchedEffect(checked) {
+        if (isFirstComposition) {
+            isFirstComposition = false
+            return@LaunchedEffect
+        }
         if (checked) {
-            scale.snapTo(0.6f)
-            scale.animateTo(
-                targetValue = 1f,
-                animationSpec = spring(
-                    dampingRatio = 0.55f, // Bounce/overshoot pop
-                    stiffness = Spring.StiffnessMedium
-                )
-            )
+            if (soundEnabled) {
+                com.mj.yata.ui.util.CompletionSoundPlayer.playCompletionChime()
+            }
+            rippleScale.snapTo(1f)
+            rippleAlpha.snapTo(0.45f)
+            scale.snapTo(0.4f)
+            iconScale.snapTo(0.3f)
+            launch {
+                rippleScale.animateTo(2.2f, spring(stiffness = Spring.StiffnessLow))
+            }
+            launch {
+                rippleAlpha.animateTo(0f, androidx.compose.animation.core.tween(300))
+            }
+            iconScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow))
+            scale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow))
+        } else {
+            scale.snapTo(0.85f)
+            iconScale.snapTo(0f)
+            scale.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium))
         }
     }
 
@@ -64,6 +89,18 @@ fun SpringyCheck(
             },
         contentAlignment = Alignment.Center
     ) {
+        if (rippleAlpha.value > 0f) {
+            Box(
+                modifier = Modifier
+                    .size(size)
+                    .graphicsLayer {
+                        scaleX = rippleScale.value
+                        scaleY = rippleScale.value
+                        alpha = rippleAlpha.value
+                    }
+                    .background(color, CircleShape)
+            )
+        }
         // Inner checkbox maintains visual size
         Box(
             modifier = Modifier
@@ -88,7 +125,12 @@ fun SpringyCheck(
                     imageVector = Icons.Default.Check,
                     contentDescription = "Check",
                     tint = Color.White,
-                    modifier = Modifier.size(size * 0.65f)
+                    modifier = Modifier
+                        .size(size * 0.65f)
+                        .graphicsLayer {
+                            scaleX = iconScale.value
+                            scaleY = iconScale.value
+                        }
                 )
             }
         }

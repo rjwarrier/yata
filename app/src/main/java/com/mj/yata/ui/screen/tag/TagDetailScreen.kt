@@ -422,7 +422,7 @@ fun TagDetailScreen(
                         }
                     }
                 }
-                items(displayedPendingTaggedTasks, key = { it.id }, contentType = { "task" }) { task ->
+                items(displayedPendingTaggedTasks, key = { "pending_" + it.id }, contentType = { "task" }) { task ->
                     taskRowFor(
                         task = task,
                         modifier = Modifier.animateItemPlacement(
@@ -432,7 +432,7 @@ fun TagDetailScreen(
                 }
                 if (!hideCompleted && completedTaggedTasks.isNotEmpty()) {
                     item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedTaggedTasks.size) }
-                    items(completedTaggedTasks, key = { it.id }, contentType = { "task" }) { task ->
+                    items(completedTaggedTasks, key = { "completed_" + it.id }, contentType = { "task" }) { task ->
                         taskRowFor(
                             task = task,
                             modifier = Modifier.animateItemPlacement(

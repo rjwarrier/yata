@@ -57,10 +57,13 @@ data class SettingsUiState(
     val themeScheduleEndHour: Int = 7,
     val themeScheduleEndMinute: Int = 0,
     val reduceMotionEnabled: Boolean = false,
+    val enhancedM3ThemingEnabled: Boolean = false,
+    val floatingBottomNavEnabled: Boolean = false,
     val textScale: Float = 1.0f,
     val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
     val hapticsEnabled: Boolean = true,
     val taskSwipeActionsEnabled: Boolean = true,
+    val completionSoundEnabled: Boolean = true,
     val appLockEnabled: Boolean = false,
     val appLockPinSet: Boolean = false,
     val appLockTimeoutMinutes: Int = 0,
@@ -125,11 +128,20 @@ private data class SettingsReminderState(
     val themeScheduleStartHour: Int
 )
 
+private data class SettingsDisplayFlags(
+    val reduceMotionEnabled: Boolean,
+    val enhancedM3ThemingEnabled: Boolean,
+    val floatingBottomNavEnabled: Boolean,
+    val textScale: Float
+)
+
 private data class SettingsDisplayState(
     val themeScheduleStartMinute: Int,
     val themeScheduleEndHour: Int,
     val themeScheduleEndMinute: Int,
     val reduceMotionEnabled: Boolean,
+    val enhancedM3ThemingEnabled: Boolean,
+    val floatingBottomNavEnabled: Boolean,
     val textScale: Float
 )
 
@@ -137,6 +149,7 @@ private data class SettingsFeatureState(
     val taskRowDensity: TaskRowDensity,
     val hapticsEnabled: Boolean,
     val taskSwipeActionsEnabled: Boolean,
+    val completionSoundEnabled: Boolean,
     val appLockEnabled: Boolean,
     val appLockPinSet: Boolean,
     val appLockTimeoutMinutes: Int,
@@ -148,6 +161,7 @@ private data class SettingsFeatureState(
 private data class AppLockFlags(
     val hapticsEnabled: Boolean,
     val taskSwipeActionsEnabled: Boolean,
+    val completionSoundEnabled: Boolean,
     val appLockEnabled: Boolean,
     val appLockPinSet: Boolean,
     val appLockTimeoutMinutes: Int
@@ -237,6 +251,15 @@ private data class MainNavigationState(
         list.count { it.due != null && it.due <= todayStr && !it.done && it.projectId !in hiddenProjectIds }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    val voiceRecognitionLanguage: StateFlow<String> = userPreferences.voiceRecognitionLanguageFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "default")
+
+    fun setVoiceRecognitionLanguage(lang: String) {
+        viewModelScope.launch {
+            userPreferences.setVoiceRecognitionLanguage(lang)
+        }
+    }
+
     fun getTaskById(taskId: String): Flow<Task?> = repository.getTaskById(taskId)
 
     fun getTasksForList(listId: String): Flow<List<Task>> = repository.getTasksForList(listId)
@@ -270,21 +293,47 @@ private data class MainNavigationState(
             userPreferences.themeScheduleStartMinuteFlow,
             userPreferences.themeScheduleEndHourFlow,
             userPreferences.themeScheduleEndMinuteFlow,
-            userPreferences.reduceMotionEnabledFlow,
-            userPreferences.textScaleFlow
-        ) { themeScheduleStartMinute, themeScheduleEndHour, themeScheduleEndMinute, reduceMotionEnabled, textScale ->
-            SettingsDisplayState(themeScheduleStartMinute, themeScheduleEndHour, themeScheduleEndMinute, reduceMotionEnabled, textScale)
+            combine(
+                userPreferences.reduceMotionEnabledFlow,
+                userPreferences.enhancedM3ThemingEnabledFlow,
+                userPreferences.floatingBottomNavEnabledFlow,
+                userPreferences.textScaleFlow
+            ) { reduceMotion, enhancedM3, floatingNav, textScale ->
+                SettingsDisplayFlags(reduceMotion, enhancedM3, floatingNav, textScale)
+            }
+        ) { themeScheduleStartMinute, themeScheduleEndHour, themeScheduleEndMinute, flags ->
+            SettingsDisplayState(
+                themeScheduleStartMinute,
+                themeScheduleEndHour,
+                themeScheduleEndMinute,
+                flags.reduceMotionEnabled,
+                flags.enhancedM3ThemingEnabled,
+                flags.floatingBottomNavEnabled,
+                flags.textScale
+            )
         },
         combine(
             userPreferences.taskRowDensityFlow,
             combine(
                 userPreferences.hapticsEnabledFlow,
                 userPreferences.taskSwipeActionsEnabledFlow,
-                userPreferences.appLockEnabledFlow,
-                userPreferences.appLockPinSetFlow,
-                userPreferences.appLockTimeoutMinutesFlow
-            ) { hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled, appLockPinSet, appLockTimeoutMinutes ->
-                AppLockFlags(hapticsEnabled, taskSwipeActionsEnabled, appLockEnabled, appLockPinSet, appLockTimeoutMinutes)
+                userPreferences.completionSoundEnabledFlow,
+                combine(
+                    userPreferences.appLockEnabledFlow,
+                    userPreferences.appLockPinSetFlow,
+                    userPreferences.appLockTimeoutMinutesFlow
+                ) { appLockEnabled, appLockPinSet, appLockTimeoutMinutes ->
+                    Triple(appLockEnabled, appLockPinSet, appLockTimeoutMinutes)
+                }
+            ) { hapticsEnabled, taskSwipeActionsEnabled, completionSoundEnabled, appLockDetails ->
+                AppLockFlags(
+                    hapticsEnabled,
+                    taskSwipeActionsEnabled,
+                    completionSoundEnabled,
+                    appLockDetails.first,
+                    appLockDetails.second,
+                    appLockDetails.third
+                )
             },
             userPreferences.todayTabEnabledFlow,
             userPreferences.upcomingTabEnabledFlow,
@@ -294,6 +343,7 @@ private data class MainNavigationState(
                 taskRowDensity,
                 appLockFlags.hapticsEnabled,
                 appLockFlags.taskSwipeActionsEnabled,
+                appLockFlags.completionSoundEnabled,
                 appLockFlags.appLockEnabled,
                 appLockFlags.appLockPinSet,
                 appLockFlags.appLockTimeoutMinutes,
@@ -351,10 +401,13 @@ private data class MainNavigationState(
             themeScheduleEndHour = core.display.themeScheduleEndHour,
             themeScheduleEndMinute = core.display.themeScheduleEndMinute,
             reduceMotionEnabled = core.display.reduceMotionEnabled,
+            enhancedM3ThemingEnabled = core.display.enhancedM3ThemingEnabled,
+            floatingBottomNavEnabled = core.display.floatingBottomNavEnabled,
             textScale = core.display.textScale,
             taskRowDensity = core.feature.taskRowDensity,
             hapticsEnabled = core.feature.hapticsEnabled,
             taskSwipeActionsEnabled = core.feature.taskSwipeActionsEnabled,
+            completionSoundEnabled = core.feature.completionSoundEnabled,
             appLockEnabled = core.feature.appLockEnabled,
             appLockPinSet = core.feature.appLockPinSet,
             appLockTimeoutMinutes = core.feature.appLockTimeoutMinutes,
@@ -554,6 +607,12 @@ private data class MainNavigationState(
     val reduceMotionEnabled: StateFlow<Boolean> = userPreferences.reduceMotionEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val enhancedM3ThemingEnabled: StateFlow<Boolean> = userPreferences.enhancedM3ThemingEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val floatingBottomNavEnabled: StateFlow<Boolean> = userPreferences.floatingBottomNavEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val hideCompletedToday: StateFlow<Boolean> = userPreferences.hideCompletedTodayFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -571,6 +630,12 @@ private data class MainNavigationState(
 
     val taskRowDensity: StateFlow<com.mj.yata.domain.model.TaskRowDensity> = userPreferences.taskRowDensityFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.TaskRowDensity.COMFORTABLE)
+
+    val taskSwipeActionsEnabled: StateFlow<Boolean> = userPreferences.taskSwipeActionsEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val completionSoundEnabled: StateFlow<Boolean> = userPreferences.completionSoundEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val hapticsEnabled: StateFlow<Boolean> = userPreferences.hapticsEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -1327,6 +1392,18 @@ private data class MainNavigationState(
         }
     }
 
+    fun setEnhancedM3ThemingEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setEnhancedM3ThemingEnabled(enabled)
+        }
+    }
+
+    fun setFloatingBottomNavEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setFloatingBottomNavEnabled(enabled)
+        }
+    }
+
     fun setTextScale(scale: Float) {
         viewModelScope.launch {
             userPreferences.setTextScale(scale)
@@ -1348,6 +1425,12 @@ private data class MainNavigationState(
     fun setTaskSwipeActionsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setTaskSwipeActionsEnabled(enabled)
+        }
+    }
+
+    fun setCompletionSoundEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setCompletionSoundEnabled(enabled)
         }
     }
 
