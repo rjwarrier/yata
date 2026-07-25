@@ -35,8 +35,20 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
     private val _rmsDb = MutableStateFlow(0f)
     val rmsDb: StateFlow<Float> = _rmsDb.asStateFlow()
 
+    private var isListeningActive = false
+    private var accumulatedText = ""
+    private var lastLanguage = "default"
+    private var lastStrictOffline = true
+
     fun startListening(useStrictOffline: Boolean = true, language: String = "default") {
-        stopListening()
+        isListeningActive = true
+        lastLanguage = language
+        lastStrictOffline = useStrictOffline
+        restartInternal()
+    }
+
+    private fun restartInternal() {
+        stopRecognizerOnly()
 
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             _state.value = VoiceState.Error("Voice recognition service not available on this device")
@@ -44,8 +56,9 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
         }
 
         mainHandler.post {
+            if (!isListeningActive) return@post
             try {
-                val recognizer = if (useStrictOffline && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                val recognizer = if (lastStrictOffline && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                     SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
                 ) {
                     SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
@@ -57,11 +70,19 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
 
                 recognizer.setRecognitionListener(object : RecognitionListener {
                     override fun onReadyForSpeech(params: Bundle?) {
-                        _state.value = VoiceState.Listening
+                        if (isListeningActive) {
+                            if (accumulatedText.isNotBlank()) {
+                                _state.value = VoiceState.FinalResult(accumulatedText)
+                            } else {
+                                _state.value = VoiceState.Listening
+                            }
+                        }
                     }
 
                     override fun onBeginningOfSpeech() {
-                        _state.value = VoiceState.Speaking(partialText = "", rmsDb = 0f)
+                        if (isListeningActive) {
+                            _state.value = VoiceState.Speaking(partialText = accumulatedText, rmsDb = 0f)
+                        }
                     }
 
                     override fun onRmsChanged(rmsdB: Float) {
@@ -78,9 +99,25 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
                     override fun onEndOfSpeech() {}
 
                     override fun onError(error: Int) {
-                        // If strict offline failed due to missing offline pack (client/network error), fallback once
-                        if (useStrictOffline && (error == SpeechRecognizer.ERROR_CLIENT || error == SpeechRecognizer.ERROR_NETWORK)) {
-                            startListening(useStrictOffline = false)
+                        if (!isListeningActive) return
+
+                        // Fallback once if strict offline engine is unavailable
+                        if (lastStrictOffline && (error == SpeechRecognizer.ERROR_CLIENT || error == SpeechRecognizer.ERROR_NETWORK)) {
+                            lastStrictOffline = false
+                            restartInternal()
+                            return
+                        }
+
+                        // For transient pause/timeout errors, automatically restart continuous listening!
+                        if (error == SpeechRecognizer.ERROR_NO_MATCH ||
+                            error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT ||
+                            error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY
+                        ) {
+                            mainHandler.postDelayed({
+                                if (isListeningActive) {
+                                    restartInternal()
+                                }
+                            }, 200)
                             return
                         }
 
@@ -90,35 +127,41 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
                             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission denied."
                             SpeechRecognizer.ERROR_NETWORK -> "Network connection required for online speech engine."
                             SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Speech recognition network timeout."
-                            SpeechRecognizer.ERROR_NO_MATCH -> "No speech detected. Tap mic to try again."
-                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Speech engine busy. Retrying..."
                             SpeechRecognizer.ERROR_SERVER -> "Speech server error."
-                            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech heard. Tap mic to try again."
                             else -> "Voice recognition error (code $error)"
                         }
 
-                        if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                            _state.value = VoiceState.Idle
-                        } else {
-                            _state.value = VoiceState.Error(message)
-                        }
+                        _state.value = VoiceState.Error(message)
                     }
 
                     override fun onResults(results: Bundle?) {
+                        if (!isListeningActive) return
                         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                        val text = matches?.firstOrNull() ?: ""
+                        val text = matches?.firstOrNull()?.trim() ?: ""
                         if (text.isNotBlank()) {
-                            _state.value = VoiceState.FinalResult(text)
-                        } else {
-                            _state.value = VoiceState.Idle
+                            accumulatedText = if (accumulatedText.isNotBlank()) "$accumulatedText $text" else text
                         }
+                        if (accumulatedText.isNotBlank()) {
+                            _state.value = VoiceState.FinalResult(accumulatedText)
+                        } else {
+                            _state.value = VoiceState.Listening
+                        }
+
+                        // Continuously restart listening until user clicks "Create Task" or dismisses overlay
+                        mainHandler.postDelayed({
+                            if (isListeningActive) {
+                                restartInternal()
+                            }
+                        }, 150)
                     }
 
                     override fun onPartialResults(partialResults: Bundle?) {
+                        if (!isListeningActive) return
                         val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                        val text = matches?.firstOrNull() ?: ""
-                        if (text.isNotBlank()) {
-                            _state.value = VoiceState.Speaking(partialText = text, rmsDb = _rmsDb.value)
+                        val partial = matches?.firstOrNull()?.trim() ?: ""
+                        if (partial.isNotBlank()) {
+                            val combined = if (accumulatedText.isNotBlank()) "$accumulatedText $partial" else partial
+                            _state.value = VoiceState.Speaking(partialText = combined, rmsDb = _rmsDb.value)
                         }
                     }
 
@@ -127,22 +170,23 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
 
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    val langTag = if (language != "default") language else Locale.getDefault().toLanguageTag()
+                    val langTag = if (lastLanguage != "default") lastLanguage else Locale.getDefault().toLanguageTag()
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
-                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
-                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
-                    if (useStrictOffline) {
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2500L)
+                    if (lastStrictOffline) {
                         putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                     }
                 }
 
                 recognizer.startListening(intent)
             } catch (e: Exception) {
-                if (useStrictOffline) {
-                    startListening(useStrictOffline = false)
+                if (lastStrictOffline) {
+                    lastStrictOffline = false
+                    restartInternal()
                 } else {
                     _state.value = VoiceState.Error(e.localizedMessage ?: "Failed to start speech recognizer")
                 }
@@ -150,18 +194,22 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
         }
     }
 
+    private fun stopRecognizerOnly() {
+        try {
+            speechRecognizer?.stopListening()
+            speechRecognizer?.destroy()
+        } catch (_: Exception) {}
+        speechRecognizer = null
+    }
+
     fun stopListening() {
-        mainHandler.post {
-            try {
-                speechRecognizer?.stopListening()
-                speechRecognizer?.destroy()
-            } catch (_: Exception) {}
-            speechRecognizer = null
-        }
+        isListeningActive = false
+        stopRecognizerOnly()
     }
 
     fun reset() {
         stopListening()
+        accumulatedText = ""
         _state.value = VoiceState.Idle
         _rmsDb.value = 0f
     }
