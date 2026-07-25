@@ -56,3 +56,40 @@ fun findSimilarTask(title: String, tasks: List<Task>, threshold: Double = 0.75):
         .filter { it.second >= threshold }
         .maxByOrNull { it.second }
         ?.first
+
+/**
+ * Generic fuzzy matcher that searches existing candidate objects (projects, lists, tags, people)
+ * and returns the best matching existing item crossing the similarity threshold.
+ * Voice task creation strictly attaches tasks to existing items rather than spawning unknown ones.
+ */
+fun <T> findBestEntityMatch(
+    query: String,
+    candidates: List<T>,
+    nameExtractor: (T) -> String,
+    minSimilarityThreshold: Double = 0.40
+): T? {
+    val cleanQuery = query.trim().lowercase()
+    if (cleanQuery.isEmpty() || candidates.isEmpty()) return null
+
+    // 1. Exact case-insensitive match
+    candidates.find { nameExtractor(it).trim().lowercase() == cleanQuery }?.let { return it }
+
+    // 2. Starts-with match
+    candidates.find {
+        val name = nameExtractor(it).trim().lowercase()
+        name.startsWith(cleanQuery) || cleanQuery.startsWith(name)
+    }?.let { return it }
+
+    // 3. Substring contains match
+    candidates.find {
+        val name = nameExtractor(it).trim().lowercase()
+        name.contains(cleanQuery) || cleanQuery.contains(name)
+    }?.let { return it }
+
+    // 4. Best similarity score above threshold (Levenshtein + Token Jaccard)
+    return candidates.asSequence()
+        .map { it to titleSimilarity(cleanQuery, nameExtractor(it)) }
+        .filter { it.second >= minSimilarityThreshold }
+        .maxByOrNull { it.second }
+        ?.first
+}

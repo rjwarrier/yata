@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Mic
 import com.mj.yata.ui.widgets.PressableScaleBox
+import com.mj.yata.util.findBestEntityMatch
 import com.mj.yata.util.toProperCase
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
@@ -292,6 +293,25 @@ fun NewTaskSheet(
             if (!reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
             if (!priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
             if (quickAdd.flag) selectedFlag = true
+
+            if (selectedProjectId == null && quickAdd.projectName != null) {
+                findBestEntityMatch(quickAdd.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
+            }
+            if (selectedListId == null && quickAdd.listName != null) {
+                findBestEntityMatch(quickAdd.listName, lists, { it.name })?.let { selectedListId = it.id }
+            }
+            if (quickAdd.tagNames.isNotEmpty()) {
+                val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
+                    findBestEntityMatch(target, tags, { it.name })?.id
+                }.distinct()
+                selectedTagIds.addAll(matchedTagIds)
+            }
+            if (quickAdd.assigneeNames.isNotEmpty()) {
+                val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
+                    findBestEntityMatch(target, activePeople, { it.name })?.id
+                }.distinct()
+                selectedAssigneeIds.addAll(matchedAssigneeIds)
+            }
         }
     }
 
@@ -325,29 +345,21 @@ fun NewTaskSheet(
                 if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
                 if (parsed.flag) selectedFlag = true
                 if (parsed.projectName != null) {
-                    val pMatch = projects.find { it.name.equals(parsed.projectName, ignoreCase = true) }
-                        ?: projects.find { it.name.startsWith(parsed.projectName, ignoreCase = true) || parsed.projectName.startsWith(it.name, ignoreCase = true) }
-                    pMatch?.let { selectedProjectId = it.id }
+                    findBestEntityMatch(parsed.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
                 }
                 if (parsed.listName != null) {
-                    val lMatch = lists.find { it.name.equals(parsed.listName, ignoreCase = true) }
-                        ?: lists.find { it.name.startsWith(parsed.listName, ignoreCase = true) || parsed.listName.startsWith(it.name, ignoreCase = true) }
-                    lMatch?.let { selectedListId = it.id }
+                    findBestEntityMatch(parsed.listName, lists, { it.name })?.let { selectedListId = it.id }
                 }
                 if (parsed.tagNames.isNotEmpty()) {
-                    val matchedTagIds = tags.filter { t ->
-                        parsed.tagNames.any { target ->
-                            t.name.equals(target, ignoreCase = true) || t.name.contains(target, ignoreCase = true) || target.contains(t.name, ignoreCase = true)
-                        }
-                    }.map { it.id }
+                    val matchedTagIds = parsed.tagNames.mapNotNull { target ->
+                        findBestEntityMatch(target, tags, { it.name })?.id
+                    }.distinct()
                     selectedTagIds.addAll(matchedTagIds)
                 }
                 if (parsed.assigneeNames.isNotEmpty()) {
-                    val matchedAssigneeIds = activePeople.filter { p ->
-                        parsed.assigneeNames.any { target ->
-                            p.name.equals(target, ignoreCase = true) || p.name.startsWith(target, ignoreCase = true) || target.startsWith(p.name, ignoreCase = true)
-                        }
-                    }.map { it.id }
+                    val matchedAssigneeIds = parsed.assigneeNames.mapNotNull { target ->
+                        findBestEntityMatch(target, activePeople, { it.name })?.id
+                    }.distinct()
                     selectedAssigneeIds.addAll(matchedAssigneeIds)
                 }
                 quickAddDismissed = false
@@ -1094,29 +1106,21 @@ fun NewTaskSheet(
                 if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
                 if (parsed.flag) selectedFlag = true
                 if (parsed.projectName != null) {
-                    val pMatch = projects.find { it.name.equals(parsed.projectName, ignoreCase = true) }
-                        ?: projects.find { it.name.startsWith(parsed.projectName, ignoreCase = true) || parsed.projectName.startsWith(it.name, ignoreCase = true) }
-                    pMatch?.let { selectedProjectId = it.id }
+                    findBestEntityMatch(parsed.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
                 }
                 if (parsed.listName != null) {
-                    val lMatch = lists.find { it.name.equals(parsed.listName, ignoreCase = true) }
-                        ?: lists.find { it.name.startsWith(parsed.listName, ignoreCase = true) || parsed.listName.startsWith(it.name, ignoreCase = true) }
-                    lMatch?.let { selectedListId = it.id }
+                    findBestEntityMatch(parsed.listName, lists, { it.name })?.let { selectedListId = it.id }
                 }
                 if (parsed.tagNames.isNotEmpty()) {
-                    val matchedTagIds = tags.filter { t ->
-                        parsed.tagNames.any { target ->
-                            t.name.equals(target, ignoreCase = true) || t.name.contains(target, ignoreCase = true) || target.contains(t.name, ignoreCase = true)
-                        }
-                    }.map { it.id }
+                    val matchedTagIds = parsed.tagNames.mapNotNull { target ->
+                        findBestEntityMatch(target, tags, { it.name })?.id
+                    }.distinct()
                     selectedTagIds.addAll(matchedTagIds)
                 }
                 if (parsed.assigneeNames.isNotEmpty()) {
-                    val matchedAssigneeIds = activePeople.filter { p ->
-                        parsed.assigneeNames.any { target ->
-                            p.name.equals(target, ignoreCase = true) || p.name.startsWith(target, ignoreCase = true) || target.startsWith(p.name, ignoreCase = true)
-                        }
-                    }.map { it.id }
+                    val matchedAssigneeIds = parsed.assigneeNames.mapNotNull { target ->
+                        findBestEntityMatch(target, activePeople, { it.name })?.id
+                    }.distinct()
                     selectedAssigneeIds.addAll(matchedAssigneeIds)
                 }
                 quickAddDismissed = false
