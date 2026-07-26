@@ -20,8 +20,61 @@ import javax.inject.Singleton
 @Singleton
 class JsonExporter @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val repository: YataRepository
+    private val repository: YataRepository,
+    private val userPreferences: com.mj.yata.data.local.datastore.UserPreferences
 ) {
+    /**
+     * Photos are stored as file:// Uris into the app's own filesDir (see ProfilePhotoUtils), so
+     * the Uri string alone is worthless in a backup — after a reinstall or on a different device
+     * the path doesn't exist and the avatar silently falls back to initials. The image bytes
+     * therefore travel with the backup, base64-encoded, and are rewritten to fresh files on
+     * restore. The Uri is still exported alongside, purely so a same-device restore that predates
+     * this field keeps working.
+     */
+    private fun encodePhoto(uriString: String?): String? {
+        if (uriString.isNullOrBlank()) return null
+        return try {
+            // Strip the cache-busting ?t= query param saveCircularProfilePhoto appends.
+            val path = Uri.parse(uriString).path ?: return null
+            val file = java.io.File(path)
+            if (!file.exists()) return null
+            android.util.Base64.encodeToString(file.readBytes(), android.util.Base64.NO_WRAP)
+        } catch (e: Exception) {
+            Log.w("JsonExporter", "Could not read photo for backup: $uriString", e)
+            null
+        }
+    }
+
+    private fun decodePhotoToAvatarFile(base64: String?): Uri? {
+        if (base64.isNullOrBlank()) return null
+        return try {
+            val bytes = android.util.Base64.decode(base64, android.util.Base64.NO_WRAP)
+            val dir = java.io.File(context.filesDir, "avatars").apply { mkdirs() }
+            val file = java.io.File(dir, "avatar_restored_${java.util.UUID.randomUUID()}.png")
+            file.writeBytes(bytes)
+            Uri.fromFile(file)
+        } catch (e: Exception) {
+            Log.w("JsonExporter", "Could not restore person photo", e)
+            null
+        }
+    }
+
+    /** The user's own photo lives at a single fixed filename, unlike per-person avatars. */
+    private fun decodeProfilePhoto(base64: String?): Uri? {
+        if (base64.isNullOrBlank()) return null
+        return try {
+            val bytes = android.util.Base64.decode(base64, android.util.Base64.NO_WRAP)
+            val file = java.io.File(context.filesDir, "profile_photo.png")
+            file.writeBytes(bytes)
+            // Cache-busting param so avatar composables keyed on the Uri string reload it.
+            Uri.fromFile(file).buildUpon()
+                .appendQueryParameter("t", System.currentTimeMillis().toString())
+                .build()
+        } catch (e: Exception) {
+            Log.w("JsonExporter", "Could not restore profile photo", e)
+            null
+        }
+    }
     /** Everything a backup payload is built from — loaded once so both the full export and the
      * primary/archive split can slice [tasks]/[comments] differently without hitting the
      * repository twice. */

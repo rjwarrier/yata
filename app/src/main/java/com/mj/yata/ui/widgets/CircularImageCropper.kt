@@ -70,13 +70,21 @@ fun CircularImageCropper(
     val displayWidthDp = with(density) { (source.width * baseScale).toDp() }
     val displayHeightDp = with(density) { (source.height * baseScale).toDp() }
 
-    Dialog(onDismissRequest = onCancel, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    Dialog(
+        onDismissRequest = onCancel,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            // Must be false, matching every other full-screen Dialog in the app. Left at the
+            // default (true) on a targetSdk 35 build, the window is sized to the whole screen but
+            // its content is still offset by the system bars, so the bottom is clipped by that
+            // much — which silently swallowed the entire Cancel / Use photo row. Opting out makes
+            // Compose's own insets the single source of truth, and safeDrawingPadding below then
+            // does the insetting exactly once.
+            decorFitsSystemWindows = false
+        )
+    ) {
         Surface(color = Color.Black, modifier = Modifier.fillMaxSize()) {
             Column(
-                // safeDrawingPadding keeps the action row clear of the system bars. Without it
-                // the Cancel/Use photo buttons render *behind* the gesture nav bar on API 35+,
-                // where edge-to-edge is enforced and the window no longer insets itself — the
-                // screen then looks like it simply has no way to confirm the crop.
                 modifier = Modifier
                     .fillMaxSize()
                     .safeDrawingPadding(),
@@ -119,13 +127,15 @@ fun CircularImageCropper(
                     )
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                // Deliberately directly beneath the circle rather than pinned to the bottom of
+                // the window. Bottom-anchored, these buttons kept getting clipped on API 35 —
+                // the circle and hint always render, so keeping the actions in that same centred
+                // block makes them visible regardless of how the dialog window resolves insets.
+                Spacer(modifier = Modifier.height(28.dp))
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 24.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onCancel) {
@@ -137,6 +147,11 @@ fun CircularImageCropper(
                         Text("Use photo")
                     }
                 }
+
+                // Balances the leading weight spacer so hint + circle + actions stay centred as
+                // one block. Without it the leading spacer alone would shove everything to the
+                // bottom edge — straight back into the clipping this change exists to avoid.
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
