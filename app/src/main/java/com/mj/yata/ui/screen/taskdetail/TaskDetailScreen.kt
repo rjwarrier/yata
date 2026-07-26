@@ -27,6 +27,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.Task
@@ -247,7 +249,7 @@ fun TaskDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
@@ -266,14 +268,14 @@ fun TaskDetailScreen(
                                 }
                             }
                         }) {
-                            Icon(Icons.Default.SkipNext, contentDescription = "Skip this occurrence")
+                            Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.task_detail_skip_this_occurrence))
                         }
                     }
                     // Flag toggle
                     IconButton(onClick = { viewModel.toggleTaskFlag(task.id) }) {
                         Icon(
                             imageVector = if (task.flag) Icons.Default.Flag else Icons.Default.OutlinedFlag,
-                            contentDescription = "Flag",
+                            contentDescription = stringResource(R.string.task_detail_flag),
                             tint = if (task.flag) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -282,17 +284,17 @@ fun TaskDetailScreen(
                         viewModel.duplicateTask(task.id)
                         scope.launch { snackbarHostState.showSnackbar("Task duplicated") }
                     }) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate task")
+                        Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.task_detail_duplicate_task))
                     }
                     // Export as PDF/Image — options (include notes/comments) are confirmed via
                     // TaskExportOptionsDialog before the off-screen render actually happens.
                     var showExportMenu by remember { mutableStateOf(false) }
                     IconButton(onClick = { showExportMenu = true }) {
-                        Icon(Icons.Default.IosShare, contentDescription = "Export task")
+                        Icon(Icons.Default.IosShare, contentDescription = stringResource(R.string.task_detail_export_task))
                     }
                     DropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
                         DropdownMenuItem(
-                            text = { Text("Export as image") },
+                            text = { Text(stringResource(R.string.action_export_as_image)) },
                             onClick = {
                                 showExportMenu = false
                                 exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
@@ -300,7 +302,7 @@ fun TaskDetailScreen(
                             leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Export as PDF") },
+                            text = { Text(stringResource(R.string.action_export_as_pdf)) },
                             onClick = {
                                 showExportMenu = false
                                 exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
@@ -331,7 +333,7 @@ fun TaskDetailScreen(
                         // Deep link back to this task — paste into a note, a message, or an
                         // automation and it reopens exactly here.
                         DropdownMenuItem(
-                            text = { Text("Copy link to task") },
+                            text = { Text(stringResource(R.string.task_detail_copy_link_to_task)) },
                             onClick = {
                                 showExportMenu = false
                                 clipboardManager.setText(
@@ -358,7 +360,7 @@ fun TaskDetailScreen(
                             }
                         }
                     }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete task")
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.task_detail_delete_task))
                     }
                 }
             )
@@ -676,7 +678,7 @@ fun TaskDetailScreen(
                         InputChip(
                             selected = false,
                             onClick = { activeSheet = DetailSheetType.AssigneePicker },
-                            label = { Text("Assign...") },
+                            label = { Text(stringResource(R.string.task_detail_assign)) },
                             leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         )
                     }
@@ -714,7 +716,7 @@ fun TaskDetailScreen(
                         InputChip(
                             selected = false,
                             onClick = { activeSheet = DetailSheetType.TagPicker },
-                            label = { Text("Tag...") },
+                            label = { Text(stringResource(R.string.task_detail_tag)) },
                             leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         )
                     }
@@ -822,10 +824,10 @@ fun TaskDetailScreen(
                                     modifier = Modifier.weight(1f)
                                 )
                                 IconButton(onClick = { addingChild = !addingChild }) {
-                                    Icon(Icons.Default.Add, contentDescription = "Add sub-item", modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.task_detail_add_sub_item), modifier = Modifier.size(16.dp))
                                 }
                                 IconButton(onClick = { deleteSubtask(sub.id) }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Delete subtask", modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.task_detail_delete_subtask), modifier = Modifier.size(16.dp))
                                 }
                             }
 
@@ -850,7 +852,7 @@ fun TaskDetailScreen(
                                         modifier = Modifier.weight(1f)
                                     )
                                     IconButton(onClick = { deleteSubtask(child.id) }) {
-                                        Icon(Icons.Default.Close, contentDescription = "Delete sub-item", modifier = Modifier.size(14.dp))
+                                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.task_detail_delete_sub_item), modifier = Modifier.size(14.dp))
                                     }
                                 }
                             }
@@ -865,7 +867,7 @@ fun TaskDetailScreen(
                                     OutlinedTextField(
                                         value = childTitle,
                                         onValueChange = { childTitle = it },
-                                        placeholder = { Text("Add a sub-item...") },
+                                        placeholder = { Text(stringResource(R.string.task_detail_add_a_sub_item)) },
                                         singleLine = true,
                                         modifier = Modifier.weight(1f),
                                         shape = RoundedCornerShape(12.dp)
@@ -889,7 +891,7 @@ fun TaskDetailScreen(
                                         },
                                         enabled = childTitle.isNotBlank()
                                     ) {
-                                        Icon(Icons.Default.Add, contentDescription = "Add sub-item")
+                                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.task_detail_add_sub_item))
                                     }
                                 }
                             }
@@ -905,7 +907,7 @@ fun TaskDetailScreen(
                             OutlinedTextField(
                                 value = newSubtaskTitle,
                                 onValueChange = { newSubtaskTitle = it },
-                                placeholder = { Text("Add a subtask...") },
+                                placeholder = { Text(stringResource(R.string.action_add_a_subtask)) },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp)
@@ -926,7 +928,7 @@ fun TaskDetailScreen(
                                 },
                                 enabled = newSubtaskTitle.isNotBlank()
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = "Add subtask")
+                                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_subtask))
                             }
                         }
                     }
@@ -970,7 +972,7 @@ fun TaskDetailScreen(
                                 notesBuffer = it
                                 viewModel.upsertTask(task.copy(notes = it))
                             },
-                            placeholder = { Text("Tap to add notes... (supports markdown)") },
+                            placeholder = { Text(stringResource(R.string.task_detail_tap_to_add_notes_supports_markdown)) },
                             minLines = 3,
                             modifier = Modifier.fillMaxWidth()
                                 .focusRequester(notesFocusRequester)
@@ -1028,7 +1030,7 @@ fun TaskDetailScreen(
                         OutlinedTextField(
                             value = newComment,
                             onValueChange = { newComment = it },
-                            placeholder = { Text("Add a comment...") },
+                            placeholder = { Text(stringResource(R.string.task_detail_add_a_comment)) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -1042,7 +1044,7 @@ fun TaskDetailScreen(
                             },
                             enabled = newComment.isNotBlank()
                         ) {
-                            Icon(Icons.AutoMirrored.Default.Send, contentDescription = "Post comment")
+                            Icon(Icons.AutoMirrored.Default.Send, contentDescription = stringResource(R.string.task_detail_post_comment))
                         }
                     }
                     comments.forEach { comment ->
@@ -1076,7 +1078,7 @@ fun TaskDetailScreen(
                                     )
                                 }
                                 IconButton(onClick = { viewModel.deleteComment(comment) }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Delete comment", modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.task_detail_delete_comment), modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -1097,7 +1099,7 @@ fun TaskDetailScreen(
             when (activeSheet) {
                 DetailSheetType.ScheduleEditor -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Due date and time", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.task_detail_due_date_and_time), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1146,14 +1148,14 @@ fun TaskDetailScreen(
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             TextButton(onClick = { activeSheet = DetailSheetType.None }) {
-                                Text("Done")
+                                Text(stringResource(R.string.action_done))
                             }
                         }
                     }
                 }
                 DetailSheetType.ReminderPicker -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Reminder", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.task_detail_reminder), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         if (task.due == null) {
                             LocalPanelHint("Pick a due date before setting a reminder.")
                         } else {
@@ -1196,7 +1198,7 @@ fun TaskDetailScreen(
                 )
                 DetailSheetType.ListPicker -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Select list", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.task_detail_select_list), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1227,7 +1229,7 @@ fun TaskDetailScreen(
                 }
                 DetailSheetType.ProjectPicker -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Select project", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.task_detail_select_project), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1262,7 +1264,7 @@ fun TaskDetailScreen(
                 }
                 DetailSheetType.AssigneePicker -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Assign people", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.task_detail_assign_people), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1293,7 +1295,7 @@ fun TaskDetailScreen(
                 }
                 DetailSheetType.TagPicker -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Select tags", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.action_select_tags), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)

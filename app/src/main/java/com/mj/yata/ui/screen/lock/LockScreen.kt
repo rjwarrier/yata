@@ -1,5 +1,6 @@
 package com.mj.yata.ui.screen.lock
 
+import com.mj.yata.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -76,11 +78,11 @@ fun LockScreen(
                     modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
                 )
                 Button(onClick = onUnlockClick) {
-                    Text("Unlock")
+                    Text(stringResource(R.string.lock_unlock))
                 }
                 if (pinAvailable) {
                     TextButton(onClick = { showPinEntry = true }, modifier = Modifier.padding(top = 8.dp)) {
-                        Text("Use PIN instead")
+                        Text(stringResource(R.string.lock_use_pin_instead))
                     }
                 }
             }
@@ -152,7 +154,7 @@ private fun PinEntryScreen(
                                 errorMessage = null
                                 digits = digits.dropLast(1)
                             }) {
-                                Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = "Backspace")
+                                Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = stringResource(R.string.lock_backspace))
                             }
                             else -> IconButton(onClick = {
                                 errorMessage = null
@@ -168,12 +170,12 @@ private fun PinEntryScreen(
 
         Row(modifier = Modifier.padding(top = 16.dp)) {
             IconButton(onClick = { submit() }) {
-                Icon(Icons.Filled.Check, contentDescription = "Confirm PIN")
+                Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.action_confirm_pin))
             }
         }
 
         TextButton(onClick = onUseBiometricInstead, modifier = Modifier.padding(top = 8.dp)) {
-            Text("Use biometric instead")
+            Text(stringResource(R.string.lock_use_biometric_instead))
         }
     }
 }

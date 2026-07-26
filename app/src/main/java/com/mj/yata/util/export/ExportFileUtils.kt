@@ -1,5 +1,6 @@
 package com.mj.yata.util.export
 
+import com.mj.yata.R
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -98,7 +99,7 @@ fun saveBitmapAsPdf(
         val bitmapSlice = Bitmap.createBitmap(bitmap, 0, slice.startY, bitmap.width, slice.height)
         canvas.drawBitmap(bitmapSlice, margin.toFloat(), margin.toFloat(), null)
         canvas.drawText(
-            "Page ${index + 1} of ${slices.size}",
+            context.getString(R.string.export_page_of, index + 1, slices.size),
             pageWidth / 2f,
             pageHeight - margin / 2f,
             pageNumberPaint

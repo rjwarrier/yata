@@ -13,8 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
@@ -115,7 +118,7 @@ fun NextDaysScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Next $WINDOW_DAYS Days",
+                        pluralStringResource(R.plurals.next_days_title, WINDOW_DAYS, WINDOW_DAYS),
                         style = androidx.compose.ui.text.TextStyle(
                             fontWeight = FontWeight.ExtraBold,
                             fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
@@ -124,7 +127,7 @@ fun NextDaysScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 }
             )

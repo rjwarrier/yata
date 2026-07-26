@@ -36,12 +36,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.data.cloud.CloudBackupError
 import com.mj.yata.data.cloud.isCloudBackupStale
 import com.mj.yata.domain.model.AppFont
@@ -208,8 +210,7 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Settings",
+                    Text(stringResource(R.string.settings_settings),
                         style = androidx.compose.ui.text.TextStyle(
                             fontWeight = FontWeight.ExtraBold,
                             fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
@@ -218,7 +219,7 @@ fun SettingsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 }
             )
@@ -276,7 +277,7 @@ fun SettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CameraAlt,
-                                contentDescription = "Change profile photo",
+                                contentDescription = stringResource(R.string.settings_change_profile_photo),
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(11.dp)
                             )
@@ -294,7 +295,7 @@ fun SettingsScreen(
                                         viewModel.setUserName(tempName)
                                         editingName = false
                                     }) {
-                                        Icon(Icons.Default.Check, contentDescription = "Save name")
+                                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.settings_save_name))
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
@@ -322,7 +323,7 @@ fun SettingsScreen(
                                         viewModel.setUserEmail(tempEmail)
                                         editingEmail = false
                                     }) {
-                                        Icon(Icons.Default.Check, contentDescription = "Save email")
+                                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.settings_save_email))
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
@@ -1130,7 +1131,7 @@ fun SettingsScreen(
                             }
                             if (appLockPinSet) {
                                 TextButton(onClick = { viewModel.setAppLockPin(null) }) {
-                                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                                    Text(stringResource(R.string.settings_remove), color = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
@@ -1192,7 +1193,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CloudUpload,
-                            contentDescription = "Export data",
+                            contentDescription = stringResource(R.string.settings_export_data),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1220,7 +1221,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CloudDownload,
-                            contentDescription = "Import data",
+                            contentDescription = stringResource(R.string.settings_import_data),
                             tint = MaterialTheme.colorScheme.tertiary
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1248,7 +1249,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CloudDownload,
-                            contentDescription = "Import CSV or text",
+                            contentDescription = stringResource(R.string.settings_import_csv_or_text),
                             tint = MaterialTheme.colorScheme.tertiary
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1276,7 +1277,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CloudUpload,
-                            contentDescription = "Export CSV",
+                            contentDescription = stringResource(R.string.settings_export_csv),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1304,7 +1305,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = "Export to calendar",
+                            contentDescription = stringResource(R.string.settings_export_to_calendar),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1332,7 +1333,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.TaskAlt,
-                            contentDescription = "Show welcome tour",
+                            contentDescription = stringResource(R.string.settings_show_welcome_tour),
                             tint = MaterialTheme.colorScheme.secondary
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1360,7 +1361,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Trash",
+                            contentDescription = stringResource(R.string.trash_title),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1388,7 +1389,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Archive,
-                            contentDescription = "Archive",
+                            contentDescription = stringResource(R.string.archive_title),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1416,7 +1417,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.DeleteForever,
-                            contentDescription = "Delete all data",
+                            contentDescription = stringResource(R.string.settings_delete_all_data),
                             tint = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.width(16.dp))
@@ -1485,7 +1486,7 @@ fun SettingsScreen(
                             )
                         } else {
                             TextButton(onClick = onCloudSignInRequested) {
-                                Text("Sign in")
+                                Text(stringResource(R.string.settings_sign_in))
                             }
                         }
                     }
@@ -1512,7 +1513,7 @@ fun SettingsScreen(
                                 )
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Dismiss",
+                                    contentDescription = stringResource(R.string.settings_dismiss),
                                     tint = MaterialTheme.colorScheme.onErrorContainer,
                                     modifier = Modifier
                                         .size(18.dp)
@@ -1591,7 +1592,7 @@ fun SettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.CompareArrows,
-                                contentDescription = "Compare with backup",
+                                contentDescription = stringResource(R.string.settings_compare_with_backup_2),
                                 tint = MaterialTheme.colorScheme.tertiary
                             )
                             Spacer(modifier = Modifier.width(16.dp))
@@ -1712,7 +1713,7 @@ fun SettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CloudDownload,
-                                contentDescription = "Restore from cloud",
+                                contentDescription = stringResource(R.string.settings_restore_from_cloud),
                                 tint = MaterialTheme.colorScheme.tertiary
                             )
                             Spacer(modifier = Modifier.width(16.dp))
@@ -1796,7 +1797,7 @@ fun SettingsScreen(
                                 viewModel.backupLocalNow()
                                 scope.launch { snackbarHostState.showSnackbar("Local backup started") }
                             }) {
-                                Text("Back up now")
+                                Text(stringResource(R.string.settings_back_up_now))
                             }
                         }
 
@@ -1839,7 +1840,7 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Info,
-                        contentDescription = "Help and about",
+                        contentDescription = stringResource(R.string.settings_help_and_about),
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(16.dp))
@@ -1868,10 +1869,9 @@ fun SettingsScreen(
     if (showDeleteAllDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteAllDialog = false },
-            title = { Text("Delete all data?") },
+            title = { Text(stringResource(R.string.settings_delete_all_data_2)) },
             text = {
-                Text(
-                    "This backs up everything to your Downloads folder first, then permanently " +
+                Text(stringResource(R.string.settings_this_backs_up_everything_to_your_downloads) +
                         "erases all tasks, projects, people, and tags from this device. This can't be undone."
                 )
             },
@@ -1889,11 +1889,11 @@ fun SettingsScreen(
                         }
                     }
                 }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteAllDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteAllDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -1901,10 +1901,9 @@ fun SettingsScreen(
     if (showRestoreLocalDialog) {
         AlertDialog(
             onDismissRequest = { showRestoreLocalDialog = false },
-            title = { Text("Restore from local backup?") },
+            title = { Text(stringResource(R.string.settings_restore_from_local_backup)) },
             text = {
-                Text(
-                    "This overwrites your current lists, tasks, and settings with your last " +
+                Text(stringResource(R.string.settings_this_overwrites_your_current_lists_tasks_a) +
                         "on-device backup. This can't be undone."
                 )
             },
@@ -1919,11 +1918,11 @@ fun SettingsScreen(
                         }
                     }
                 }) {
-                    Text("Restore", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.cd_trash_restore), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showRestoreLocalDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showRestoreLocalDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -1931,7 +1930,7 @@ fun SettingsScreen(
     if (showBackupDiffDialog) {
         AlertDialog(
             onDismissRequest = { showBackupDiffDialog = false },
-            title = { Text("Compare with Backup") },
+            title = { Text(stringResource(R.string.settings_compare_with_backup)) },
             text = {
                 when {
                     isLoadingBackupDiff -> {
@@ -1949,29 +1948,27 @@ fun SettingsScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             if (diff.pendingDiff == 0 && diff.doneDiff == 0) {
-                                Text(
-                                    "Up to date — no changes since last backup.",
+                                Text(stringResource(R.string.settings_up_to_date_no_changes_since_last_backup),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                                 )
                             } else {
                                 Text(
-                                    "${signedCount(diff.pendingDiff)} Pending Tasks, ${signedCount(diff.doneDiff)} Done Tasks",
+                                    stringResource(R.string.settings_backup_diff_summary, signedCount(diff.pendingDiff), signedCount(diff.doneDiff)),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                            Text(
-                                "Last backup: " + formatBackupTimestamp(diff.backupCreatedTime),
+                            Text(stringResource(R.string.settings_last_backup_at, formatBackupTimestamp(diff.backupCreatedTime)),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                "Now: ${diff.currentPending} pending, ${diff.currentDone} done",
+                                stringResource(R.string.settings_backup_now_counts, diff.currentPending, diff.currentDone),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                "Backup: ${diff.backupPending} pending, ${diff.backupDone} done",
+                                stringResource(R.string.settings_backup_backup_counts, diff.backupPending, diff.backupDone),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1983,7 +1980,7 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showBackupDiffDialog = false }) { Text("Close") }
+                TextButton(onClick = { showBackupDiffDialog = false }) { Text(stringResource(R.string.action_close)) }
             },
             dismissButton = if (backupDiffIsReauth) {
                 {
@@ -1991,7 +1988,7 @@ fun SettingsScreen(
                         showBackupDiffDialog = false
                         onCloudSignInRequested()
                     }) {
-                        Text("Reauthorize")
+                        Text(stringResource(R.string.settings_reauthorize))
                     }
                 }
             } else null
@@ -2001,13 +1998,13 @@ fun SettingsScreen(
     if (showFrequencyDialog) {
         AlertDialog(
             onDismissRequest = { showFrequencyDialog = false },
-            title = { Text("Backup frequency") },
+            title = { Text(stringResource(R.string.settings_backup_frequency)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = freqNumberText,
                         onValueChange = { new -> if (new.length <= 4 && new.all { it.isDigit() }) freqNumberText = new },
-                        label = { Text("Every") },
+                        label = { Text(stringResource(R.string.settings_every)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
@@ -2030,11 +2027,11 @@ fun SettingsScreen(
                     viewModel.setCloudBackupIntervalMinutes(intervalDisplayToMinutes(value, freqUnit))
                     showFrequencyDialog = false
                 }) {
-                    Text("Save")
+                    Text(stringResource(R.string.action_save))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showFrequencyDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showFrequencyDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -2042,7 +2039,7 @@ fun SettingsScreen(
     if (showArchiveMonthsDialog) {
         AlertDialog(
             onDismissRequest = { showArchiveMonthsDialog = false },
-            title = { Text("Archive old completed tasks") },
+            title = { Text(stringResource(R.string.settings_archive_old_completed_tasks)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
@@ -2076,7 +2073,7 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showArchiveMonthsDialog = false }) { Text("Done") }
+                TextButton(onClick = { showArchiveMonthsDialog = false }) { Text(stringResource(R.string.action_done)) }
             }
         )
     }
@@ -2084,7 +2081,7 @@ fun SettingsScreen(
     if (showCloudRestoreSheet) {
         AlertDialog(
             onDismissRequest = { if (!isRestoringCloudBackup) showCloudRestoreSheet = false },
-            title = { Text("Restore from Cloud Backup") },
+            title = { Text(stringResource(R.string.settings_restore_from_cloud_backup)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     when {
@@ -2094,8 +2091,7 @@ fun SettingsScreen(
                             }
                         }
                         cloudBackupList.isEmpty() -> {
-                            Text(
-                                "No cloud backups found yet.",
+                            Text(stringResource(R.string.settings_no_cloud_backups_found_yet),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -2140,7 +2136,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showCloudRestoreSheet = false }, enabled = !isRestoringCloudBackup) {
-                    Text("Close")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -2149,12 +2145,10 @@ fun SettingsScreen(
     pendingRestoreEntry?.let { entry ->
         AlertDialog(
             onDismissRequest = { pendingRestoreEntry = null },
-            title = { Text("Restore this backup?") },
+            title = { Text(stringResource(R.string.settings_restore_this_backup)) },
             text = {
                 Text(
-                    "This merges the backup from ${formatBackupTimestamp(entry.createdTime)} into your " +
-                        "current data — tasks, lists, tags, and people from it are added or updated. " +
-                        "Nothing currently on this device is deleted."
+                    stringResource(R.string.settings_restore_merge_body, formatBackupTimestamp(entry.createdTime))
                 )
             },
             confirmButton = {
@@ -2175,11 +2169,11 @@ fun SettingsScreen(
                         }
                     }
                 }) {
-                    Text("Restore", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.cd_trash_restore), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRestoreEntry = null }) { Text("Cancel") }
+                TextButton(onClick = { pendingRestoreEntry = null }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -2344,13 +2338,13 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Set PIN") },
+        title = { Text(stringResource(R.string.settings_set_pin)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = newPin,
                     onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) { newPin = it; error = null } },
-                    label = { Text("New PIN (4-8 digits)") },
+                    label = { Text(stringResource(R.string.settings_new_pin_4_8_digits)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     singleLine = true
@@ -2358,7 +2352,7 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
                 OutlinedTextField(
                     value = confirmPin,
                     onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) { confirmPin = it; error = null } },
-                    label = { Text("Confirm PIN") },
+                    label = { Text(stringResource(R.string.action_confirm_pin)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     singleLine = true
@@ -2376,11 +2370,11 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
                     else -> onConfirm(newPin)
                 }
             }) {
-                Text("Save")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
@@ -2481,7 +2475,7 @@ fun SettingsRow(
         }
         Icon(
             imageVector = Icons.Default.ChevronRight,
-            contentDescription = "Edit",
+            contentDescription = stringResource(R.string.settings_edit),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
     }

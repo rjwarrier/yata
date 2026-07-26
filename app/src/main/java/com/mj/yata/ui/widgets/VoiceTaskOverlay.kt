@@ -61,6 +61,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -72,6 +73,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.mj.yata.R
 import com.mj.yata.data.voice.OnDeviceVoiceRecognizer
 import com.mj.yata.data.voice.VoiceState
 import com.mj.yata.util.NaturalLanguageParser
@@ -216,7 +218,7 @@ fun VoiceTaskOverlay(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.action_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -286,7 +288,7 @@ fun VoiceTaskOverlay(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 androidx.compose.material3.TextButton(onClick = { launchSystemDictation() }) {
-                    Text("Tap to use System Voice Dialog")
+                    Text(stringResource(R.string.voice_task_overlay_tap_to_use_system_voice_dialog))
                 }
             }
         }
@@ -396,7 +398,7 @@ fun VoiceTaskOverlay(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Speak Again",
+                        contentDescription = stringResource(R.string.voice_task_overlay_speak_again),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }

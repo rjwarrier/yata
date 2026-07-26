@@ -127,7 +127,8 @@ object NotificationHelper {
 
         return NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
             .setContentTitle("Reminder: $taskTitle")
-            .setContentText("This task is due")
+            // getString, not stringResource: notifications are built outside composition.
+            .setContentText(context.getString(R.string.notification_helper_this_task_is_due))
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setColor(accentColor)
             .setContentIntent(openIntent)

@@ -11,10 +11,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.util.RecurrenceEvaluator
 
@@ -39,7 +41,7 @@ fun RecurrenceBadge(
     ) {
         Icon(
             imageVector = Icons.Default.Repeat,
-            contentDescription = "Repeats",
+            contentDescription = stringResource(R.string.recurrence_badge_repeats),
             tint = color,
             modifier = Modifier.size(12.dp)
         )

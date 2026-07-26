@@ -1,5 +1,6 @@
 package com.mj.yata.ui.widgets
 
+import com.mj.yata.R
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarData
@@ -12,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 
 /** Matches the SnackbarDuration.Short used by delete-undo snackbars, so the visible countdown
@@ -40,7 +42,7 @@ fun DeleteUndoSnackbar(data: SnackbarData) {
                 onClick = { data.performAction() },
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.inversePrimary)
             ) {
-                Text("UNDO (${remaining}s)", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.snackbar_undo_countdown, remaining), fontWeight = FontWeight.Bold)
             }
         }
     ) {

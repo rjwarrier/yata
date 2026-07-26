@@ -15,12 +15,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import com.mj.yata.R
 import com.mj.yata.ui.widgets.ColorPicker
 import com.mj.yata.ui.widgets.YataDatePickerDialog
 import com.mj.yata.util.TaskScheduleUtils
@@ -99,7 +101,7 @@ fun <G> GroupAssignSheet(
                 OutlinedTextField(
                     value = newGroupName,
                     onValueChange = { newGroupName = it },
-                    placeholder = { Text("Group name") },
+                    placeholder = { Text(stringResource(R.string.entity_editors_group_name)) },
                     singleLine = true,
                     modifier = Modifier.weight(1f)
                 )
@@ -111,7 +113,7 @@ fun <G> GroupAssignSheet(
                         newGroupName = ""
                     }
                 }) {
-                    Icon(Icons.Default.Check, contentDescription = "Create group")
+                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.entity_editors_create_group))
                 }
             }
         } else {
@@ -125,7 +127,7 @@ fun <G> GroupAssignSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("New group", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.entity_editors_new_group), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyLarge)
             }
         }
     }
@@ -214,8 +216,8 @@ fun ProjectEditorSheet(
         OutlinedTextField(
             value = name,
             onValueChange = { if (it.length <= NAME_LIMIT) name = it },
-            label = { Text("Project name") },
-            placeholder = { Text("e.g. Work list") },
+            label = { Text(stringResource(R.string.entity_editors_project_name)) },
+            placeholder = { Text(stringResource(R.string.entity_editors_e_g_work_list)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -223,9 +225,9 @@ fun ProjectEditorSheet(
         OutlinedTextField(
             value = description,
             onValueChange = { if (it.length <= descriptionLimit) description = it },
-            label = { Text("Description") },
-            placeholder = { Text("What's this project about?") },
-            supportingText = { Text("${description.length}/$descriptionLimit") },
+            label = { Text(stringResource(R.string.entity_editors_description)) },
+            placeholder = { Text(stringResource(R.string.entity_editors_what_s_this_project_about)) },
+            supportingText = { Text(stringResource(R.string.editor_char_counter, description.length, descriptionLimit)) },
             minLines = 2,
             modifier = Modifier.fillMaxWidth()
         )
@@ -373,7 +375,7 @@ fun ProjectEditorSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
@@ -441,7 +443,7 @@ private fun <G> GroupPickerSection(
                 OutlinedTextField(
                     value = newGroupName,
                     onValueChange = { newGroupName = it },
-                    placeholder = { Text("Group name") },
+                    placeholder = { Text(stringResource(R.string.entity_editors_group_name)) },
                     singleLine = true,
                     trailingIcon = {
                         IconButton(onClick = {
@@ -451,7 +453,7 @@ private fun <G> GroupPickerSection(
                                 showNewGroupField = false
                             }
                         }) {
-                            Icon(Icons.Default.Check, contentDescription = "Create group")
+                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.entity_editors_create_group))
                         }
                     },
                     modifier = Modifier.widthIn(min = 160.dp)
@@ -550,10 +552,10 @@ fun PersonEditorSheet(
         OutlinedTextField(
             value = name,
             onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
-            label = { Text("Person's name") },
+            label = { Text(stringResource(R.string.entity_editors_person_s_name)) },
             placeholder = { Text(if (isCreateMode) "e.g. Clara, Alex, Sam" else "e.g. Clara") },
             supportingText = if (isCreateMode) {
-                { Text("Separate multiple names with commas to add several at once.") }
+                { Text(stringResource(R.string.entity_editors_separate_multiple_names_with_commas_to_add)) }
             } else null,
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -582,7 +584,7 @@ fun PersonEditorSheet(
                     }
                     if (photoUri != null) {
                         TextButton(onClick = { photoUri = null }) {
-                            Text("Remove photo", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.entity_editors_remove_photo), color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -622,7 +624,7 @@ fun PersonEditorSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
@@ -686,10 +688,10 @@ fun TagEditorSheet(
         OutlinedTextField(
             value = name,
             onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
-            label = { Text("Tag label") },
+            label = { Text(stringResource(R.string.entity_editors_tag_label)) },
             placeholder = { Text(if (isCreateMode) "e.g. urgent, work, personal" else "e.g. urgent") },
             supportingText = if (isCreateMode) {
-                { Text("Separate multiple tags with commas to create several at once.") }
+                { Text(stringResource(R.string.entity_editors_separate_multiple_tags_with_commas_to_crea)) }
             } else null,
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -749,7 +751,7 @@ fun TagEditorSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
@@ -805,8 +807,8 @@ fun ListEditorSheet(
         OutlinedTextField(
             value = name,
             onValueChange = { if (it.length <= NAME_LIMIT) name = it },
-            label = { Text("List name") },
-            placeholder = { Text("e.g. Personal") },
+            label = { Text(stringResource(R.string.entity_editors_list_name)) },
+            placeholder = { Text(stringResource(R.string.entity_editors_e_g_personal)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -864,7 +866,7 @@ fun ListEditorSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(

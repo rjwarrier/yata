@@ -22,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -194,7 +196,7 @@ fun TagDetailScreen(
                         modifier = Modifier.size(56.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add task tagged #${tag.name}")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_tagged, tag.name))
                     }
                 }
             }
@@ -210,7 +212,7 @@ fun TagDetailScreen(
                             onValueChange = { searchQuery = it },
                             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                             singleLine = true,
-                            placeholder = { Text("Search in #${tag.name}") },
+                            placeholder = { Text(stringResource(R.string.search_in_tag, tag.name)) },
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
@@ -244,12 +246,12 @@ fun TagDetailScreen(
                     if (searchActive) {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                             }
                         }
                     } else {
                         IconButton(onClick = { searchActive = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search in tag")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.tag_detail_search_in_tag))
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
@@ -266,14 +268,14 @@ fun TagDetailScreen(
                         }
                         var showMenu by remember { mutableStateOf(false) }
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit tag") },
+                                text = { Text(stringResource(R.string.tag_detail_edit_tag)) },
                                 onClick = {
                                     showMenu = false
                                     isEditSheetOpen = true
@@ -281,7 +283,7 @@ fun TagDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as image") },
+                                text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
@@ -289,7 +291,7 @@ fun TagDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as PDF") },
+                                text = { Text(stringResource(R.string.action_export_as_pdf)) },
                                 onClick = {
                                     showMenu = false
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
@@ -297,7 +299,7 @@ fun TagDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete tag") },
+                                text = { Text(stringResource(R.string.tag_detail_delete_tag)) },
                                 onClick = {
                                     showMenu = false
                                     showDeleteDialog = true
@@ -509,8 +511,8 @@ fun TagDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete tag?") },
-            text = { Text("This tag will be removed from all tasks.") },
+            title = { Text(stringResource(R.string.tag_detail_delete_tag_2)) },
+            text = { Text(stringResource(R.string.tag_detail_this_tag_will_be_removed_from_all_tasks)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -519,12 +521,12 @@ fun TagDetailScreen(
                         onNavigateBack()
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )

@@ -23,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -31,6 +32,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -169,7 +171,7 @@ fun ListDetailScreen(
                             onValueChange = { searchQuery = it },
                             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                             singleLine = true,
-                            placeholder = { Text("Search in ${list.name}") },
+                            placeholder = { Text(stringResource(R.string.search_in_list, list.name)) },
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
@@ -195,12 +197,12 @@ fun ListDetailScreen(
                     if (searchActive) {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                             }
                         }
                     } else {
                         IconButton(onClick = { searchActive = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search in list")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.list_detail_search_in_list))
                         }
                         IconButton(onClick = { viewModel.toggleListStarred(list.id) }) {
                             Icon(
@@ -221,14 +223,14 @@ fun ListDetailScreen(
                         }
                         var showMenu by remember { mutableStateOf(false) }
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit list") },
+                                text = { Text(stringResource(R.string.list_detail_edit_list)) },
                                 onClick = {
                                     showMenu = false
                                     isEditSheetOpen = true
@@ -236,7 +238,7 @@ fun ListDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as image") },
+                                text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
@@ -244,7 +246,7 @@ fun ListDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as PDF") },
+                                text = { Text(stringResource(R.string.action_export_as_pdf)) },
                                 onClick = {
                                     showMenu = false
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
@@ -252,7 +254,7 @@ fun ListDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Delete list") },
+                                text = { Text(stringResource(R.string.list_detail_delete_list)) },
                                 onClick = {
                                     showMenu = false
                                     showDeleteDialog = true
@@ -282,7 +284,7 @@ fun ListDetailScreen(
                         modifier = Modifier.size(56.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add task")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
                     }
                 }
             }
@@ -562,8 +564,8 @@ fun ListDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete list?") },
-            text = { Text("All tasks inside this list will be permanently deleted.") },
+            title = { Text(stringResource(R.string.list_detail_delete_list_2)) },
+            text = { Text(stringResource(R.string.list_detail_all_tasks_inside_this_list_will_be_permane)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -572,12 +574,12 @@ fun ListDetailScreen(
                         onNavigateBack()
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )

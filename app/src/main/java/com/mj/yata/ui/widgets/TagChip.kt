@@ -13,11 +13,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.ui.theme.LocalYataAccents
 
 @Composable
@@ -70,7 +72,7 @@ fun TagChip(
         if (onRemoveClick != null) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Remove tag",
+                contentDescription = stringResource(R.string.tag_chip_remove_tag),
                 tint = accentColor,
                 modifier = Modifier
                     .size(if (size == "sm") 11.dp else 13.dp)

@@ -46,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -213,8 +214,7 @@ fun HelpAboutScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Help & About",
+                    Text(stringResource(R.string.help_about_help_about),
                         style = androidx.compose.ui.text.TextStyle(
                             fontWeight = FontWeight.ExtraBold,
                             fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
@@ -223,7 +223,7 @@ fun HelpAboutScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 }
             )

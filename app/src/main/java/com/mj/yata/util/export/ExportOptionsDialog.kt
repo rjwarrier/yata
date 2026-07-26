@@ -25,10 +25,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.ui.widgets.SegmentedControl
 
 /**
@@ -96,7 +98,7 @@ fun ExportOptionsDialog(
                 OutlinedTextField(
                     value = daysText,
                     onValueChange = { value -> if (value.all { it.isDigit() } && value.length <= 4) daysText = value },
-                    placeholder = { Text("No limit") },
+                    placeholder = { Text(stringResource(R.string.export_options_no_limit)) },
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
@@ -135,12 +137,12 @@ fun ExportOptionsDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End)
             ) {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                 Button(
                     onClick = {
                         onConfirm(includeCompleted, daysText.toIntOrNull(), density, strikeThroughCompleted, showTags, showAssignees)
                     }
-                ) { Text("Export") }
+                ) { Text(stringResource(R.string.action_export)) }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }

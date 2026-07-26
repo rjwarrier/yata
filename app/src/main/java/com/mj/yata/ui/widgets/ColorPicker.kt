@@ -21,10 +21,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
+import com.mj.yata.R
 import com.mj.yata.ui.theme.ALL_ACCENT_KEYS
 import com.mj.yata.ui.theme.LocalYataAccents
 
@@ -66,7 +68,7 @@ fun ColorPicker(
                 if (isSelected) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Selected",
+                        contentDescription = stringResource(R.string.cd_task_selected),
                         tint = if (color.luminance() > 0.5f) Color.Black else Color.White,
                         modifier = Modifier.size(16.dp)
                     )
@@ -91,7 +93,7 @@ fun ColorPicker(
         ) {
             Icon(
                 imageVector = if (isCustom) Icons.Default.Check else Icons.Default.Colorize,
-                contentDescription = "Custom color",
+                contentDescription = stringResource(R.string.action_custom_color),
                 tint = if (isCustom) {
                     if (accents.getAccent(selectedColorKey).luminance() > 0.5f) Color.Black else Color.White
                 } else {
@@ -108,13 +110,13 @@ fun ColorPicker(
 
         AlertDialog(
             onDismissRequest = { showHexDialog = false },
-            title = { Text("Custom color") },
+            title = { Text(stringResource(R.string.action_custom_color)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = hexInput,
                         onValueChange = { hexInput = it.uppercase() },
-                        placeholder = { Text("#RRGGBB") },
+                        placeholder = { Text(stringResource(R.string.color_picker_rrggbb)) },
                         singleLine = true,
                         isError = hexInput.isNotEmpty() && !isValid
                     )
@@ -133,10 +135,10 @@ fun ColorPicker(
                         onColorSelected(hexInput)
                         showHexDialog = false
                     }
-                ) { Text("Use color") }
+                ) { Text(stringResource(R.string.color_picker_use_color)) }
             },
             dismissButton = {
-                TextButton(onClick = { showHexDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showHexDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }

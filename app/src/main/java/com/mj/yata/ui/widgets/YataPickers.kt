@@ -12,7 +12,9 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mj.yata.R
 import com.mj.yata.util.TaskScheduleUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,12 +37,12 @@ fun YataDatePickerDialog(
                     onConfirm(TaskScheduleUtils.pickerMillisToDateString(selectedDate))
                 }
             ) {
-                Text("Save")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     ) {
@@ -71,12 +73,12 @@ fun YataTimePickerLauncher(
             TextButton(onClick = {
                 onConfirm(TaskScheduleUtils.formatTime(timePickerState.hour, timePickerState.minute))
             }) {
-                Text("Save")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         },
         text = {

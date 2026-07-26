@@ -25,11 +25,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.joaomgcd.taskerpluginlibrary.config.TaskerPluginConfig
 import com.joaomgcd.taskerpluginlibrary.config.TaskerPluginConfigHelperNoOutput
 import com.joaomgcd.taskerpluginlibrary.input.TaskerInput
+import com.mj.yata.R
 import com.mj.yata.ui.theme.YataTheme
 
 class CreateTaskConfigHelper(config: TaskerPluginConfig<CreateTaskInput>) :
@@ -95,10 +97,10 @@ class CreateTaskConfigActivity : ComponentActivity(), TaskerPluginConfig<CreateT
                 Scaffold(
                     topBar = {
                         TopAppBar(
-                            title = { Text("Create Task", fontWeight = FontWeight.Bold) },
+                            title = { Text(stringResource(R.string.create_task_config_create_task), fontWeight = FontWeight.Bold) },
                             actions = {
                                 IconButton(onClick = { taskerHelper.finishForTasker() }) {
-                                    Icon(Icons.Default.Check, contentDescription = "Save")
+                                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.action_save))
                                 }
                             }
                         )

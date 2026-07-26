@@ -33,6 +33,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.ui.navigation.Screen
@@ -491,7 +493,7 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
-                                    contentDescription = "New list",
+                                    contentDescription = stringResource(R.string.main_new_list),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -1022,7 +1024,7 @@ private fun CommandPaletteDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Command palette") },
+        title = { Text(stringResource(R.string.main_command_palette)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -1030,7 +1032,7 @@ private fun CommandPaletteDialog(
                     onValueChange = { query = it },
                     singleLine = true,
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    placeholder = { Text("Search actions or tasks") },
+                    placeholder = { Text(stringResource(R.string.main_search_actions_or_tasks)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 LazyColumn(
@@ -1067,7 +1069,7 @@ private fun CommandPaletteDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.action_close))
             }
         }
     )

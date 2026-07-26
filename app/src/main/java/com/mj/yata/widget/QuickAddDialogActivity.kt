@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import com.mj.yata.R
 import com.mj.yata.MainActivity
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.repository.YataRepository
@@ -169,15 +171,15 @@ class QuickAddDialogActivity : ComponentActivity() {
                 pendingDuplicate?.let { existing ->
                     AlertDialog(
                         onDismissRequest = { pendingDuplicate = null },
-                        title = { Text("Similar task already exists") },
-                        text = { Text("\"${existing.title}\" looks like a match for what you're creating.") },
+                        title = { Text(stringResource(R.string.action_similar_task_already_exists)) },
+                        text = { Text(stringResource(R.string.duplicate_task_match_body, existing.title)) },
                         confirmButton = {
                             TextButton(onClick = {
                                 val title = pendingTitle
                                 pendingDuplicate = null
                                 createTask(title)
                             }) {
-                                Text("Ignore and create")
+                                Text(stringResource(R.string.action_ignore_and_create))
                             }
                         },
                         dismissButton = {
@@ -193,7 +195,7 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 )
                                 finish()
                             }) {
-                                Text("Go to existing task")
+                                Text(stringResource(R.string.action_go_to_existing_task))
                             }
                         }
                     )
@@ -276,7 +278,7 @@ private fun QuickAddDialogContent(
             tonalElevation = 6.dp
         ) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Quick add", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.quick_add_dialog_quick_add), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 if (targetName != null) {
                     Text(
                         text = "Adding to $targetName",
@@ -287,7 +289,7 @@ private fun QuickAddDialogContent(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    placeholder = { Text("What needs doing?") },
+                    placeholder = { Text(stringResource(R.string.quick_add_dialog_what_needs_doing)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
@@ -295,7 +297,7 @@ private fun QuickAddDialogContent(
                     ),
                     trailingIcon = {
                         IconButton(onClick = startVoiceInput) {
-                            Icon(Icons.Default.Mic, contentDescription = "Add task by voice")
+                            Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.cd_add_task_by_voice))
                         }
                     },
                     modifier = Modifier
@@ -303,13 +305,13 @@ private fun QuickAddDialogContent(
                         .focusRequester(focusRequester)
                 )
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = { if (title.isNotBlank()) onSubmit(title.trim()) },
                         enabled = title.isNotBlank()
                     ) {
-                        Text("Add")
+                        Text(stringResource(R.string.action_add))
                     }
                 }
             }

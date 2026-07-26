@@ -1,5 +1,6 @@
 package com.mj.yata.util.export
 
+import com.mj.yata.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,12 +76,12 @@ fun TaskExportOptionsDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.End)
             ) {
-                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                 Button(
                     onClick = {
                         onConfirm(hasNotes && includeNotes, hasComments && includeComments)
                     }
-                ) { Text("Export") }
+                ) { Text(stringResource(R.string.action_export)) }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }

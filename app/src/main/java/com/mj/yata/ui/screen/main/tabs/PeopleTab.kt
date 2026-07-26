@@ -26,6 +26,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.util.sortedByEntityMode
 import com.mj.yata.ui.sheets.GroupAssignSheet
@@ -97,7 +99,7 @@ fun PeopleTab(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel selection", tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
                     }
                     Text(
                         text = "${selectedIds.size} selected",
@@ -105,7 +107,7 @@ fun PeopleTab(
                     )
                 }
                 TextButton(onClick = { showGroupPicker = true }) {
-                    Text("Add to group")
+                    Text(stringResource(R.string.people_add_to_group))
                 }
             }
         } else {
@@ -122,7 +124,7 @@ fun PeopleTab(
                 IconButton(onClick = onMenuClick) {
                     Icon(
                         imageVector = Icons.Default.Menu,
-                        contentDescription = "Open menu",
+                        contentDescription = stringResource(R.string.cd_open_menu),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -143,19 +145,19 @@ fun PeopleTab(
                     com.mj.yata.ui.widgets.EntitySortMenuButton(
                         current = sortMode,
                         onSelect = onSortModeChange,
-                        contentDescription = "Sort people"
+                        contentDescription = stringResource(R.string.people_sort_people)
                     )
                     IconButton(onClick = { selectModeOn = true }) {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Select people",
+                            contentDescription = stringResource(R.string.people_select_people),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = onSearchClick) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
+                            contentDescription = stringResource(R.string.cd_search),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -387,7 +389,7 @@ fun PersonRow(
                     contentAlignment = Alignment.Center
                 ) {
                     if (selected) {
-                        Icon(Icons.Default.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.cd_task_selected), tint = Color.White, modifier = Modifier.size(16.dp))
                     }
                 }
                 Spacer(modifier = Modifier.width(14.dp))
@@ -485,7 +487,7 @@ fun PersonRow(
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
-                    contentDescription = "Details",
+                    contentDescription = stringResource(R.string.people_details),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     modifier = Modifier.size(20.dp)
                 )
@@ -536,7 +538,7 @@ private fun GroupHeader(
             IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(28.dp)) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Delete group",
+                    contentDescription = stringResource(R.string.cd_delete_group),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     modifier = Modifier.size(16.dp)
                 )
@@ -585,7 +587,7 @@ fun AddPersonDashedRow(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Add person",
+                contentDescription = stringResource(R.string.people_add_person),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(

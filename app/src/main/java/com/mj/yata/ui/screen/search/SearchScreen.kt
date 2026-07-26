@@ -13,7 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
@@ -328,16 +331,16 @@ fun SearchScreen(
                 active = true,
                 onActiveChange = {},
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search, or try \"overdue\", \"flagged\"...") },
+                placeholder = { Text(stringResource(R.string.search_search_or_try_overdue_flagged)) },
                 leadingIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
                         IconButton(onClick = { query = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                         }
                     } else {
                         Icon(Icons.Default.Search, contentDescription = null)
@@ -460,8 +463,8 @@ fun SearchScreen(
     if (showBulkDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showBulkDeleteDialog = false },
-            title = { Text("Delete ${selectedIds.size} tasks?") },
-            text = { Text("This can't be undone.") },
+            title = { Text(pluralStringResource(R.plurals.confirm_delete_tasks_title, selectedIds.size, selectedIds.size)) },
+            text = { Text(stringResource(R.string.action_this_can_t_be_undone)) },
             confirmButton = {
                 TextButton(onClick = {
                     val ids = selectedIds.toList()
@@ -478,11 +481,11 @@ fun SearchScreen(
                         }
                     }
                 }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -541,7 +544,7 @@ private fun SearchResultsList(
                 if (canSaveCurrentSmartFilterSet) {
                     AssistChip(
                         onClick = onSaveActiveFilters,
-                        label = { Text("Save") },
+                        label = { Text(stringResource(R.string.action_save)) },
                         leadingIcon = {
                             Icon(
                                 Icons.Default.BookmarkAdd,
@@ -581,7 +584,7 @@ private fun SearchResultsList(
                                     ) {
                                         Icon(
                                             Icons.Default.Close,
-                                            contentDescription = "Remove saved filter",
+                                            contentDescription = stringResource(R.string.search_remove_saved_filter),
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }

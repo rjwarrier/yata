@@ -14,6 +14,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.mj.yata.R
 import com.mj.yata.util.TaskSortMode
 
 private fun TaskSortMode.label() = when (this) {
@@ -35,7 +37,7 @@ fun TaskSortMenuButton(
     IconButton(onClick = { expanded = true }, modifier = modifier) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.Sort,
-            contentDescription = "Sort tasks",
+            contentDescription = stringResource(R.string.task_sort_menu_button_sort_tasks),
             tint = if (current != TaskSortMode.MANUAL) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
         )
     }

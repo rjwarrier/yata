@@ -25,6 +25,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.lifecycle.lifecycleScope
+import com.mj.yata.R
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
@@ -315,7 +317,7 @@ private fun WidgetCustomizerScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Widget Customizer", fontWeight = FontWeight.Bold) })
+            TopAppBar(title = { Text(stringResource(R.string.widget_config_widget_customizer), fontWeight = FontWeight.Bold) })
         }
     ) { innerPadding ->
         Column(
@@ -333,9 +335,9 @@ private fun WidgetCustomizerScreen(
             // Corner Radius Customizer
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Corner Radius", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.widget_config_corner_radius), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(
-                        "${radius} dp",
+                        stringResource(R.string.widget_config_radius_dp, radius),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -355,12 +357,12 @@ private fun WidgetCustomizerScreen(
             // Custom Label Customizer
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Custom Header Label", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.widget_config_custom_header_label), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = label,
                         onValueChange = { label = it },
-                        placeholder = { Text("e.g. Work, Today, Quick Add") },
+                        placeholder = { Text(stringResource(R.string.widget_config_e_g_work_today_quick_add)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -378,8 +380,8 @@ private fun WidgetCustomizerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Use Material 3 Colors", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("Themes widget using standard system/M3 colors", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.widget_config_use_material_3_colors), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.widget_config_themes_widget_using_standard_system_m3_col), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = useM3, onCheckedChange = { useM3 = it })
                 }
@@ -389,9 +391,9 @@ private fun WidgetCustomizerScreen(
             // Opacity Customizer
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Opacity", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.widget_config_opacity), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(
-                        "${(opacity * 100).toInt()}%",
+                        stringResource(R.string.widget_config_opacity_percent, (opacity * 100).toInt()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -406,9 +408,8 @@ private fun WidgetCustomizerScreen(
             // Accent Color Override
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Widget Accent Color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(
-                        "Overrides the app's default accent for this widget only.",
+                    Text(stringResource(R.string.widget_config_widget_accent_color), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.widget_config_overrides_the_app_s_default_accent_for_thi),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -426,7 +427,7 @@ private fun WidgetCustomizerScreen(
                                 if (accentOverride == null) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
-                                        contentDescription = "App default",
+                                        contentDescription = stringResource(R.string.widget_config_app_default),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -450,7 +451,7 @@ private fun WidgetCustomizerScreen(
                                 if (accentOverride == key) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
-                                        contentDescription = "Selected",
+                                        contentDescription = stringResource(R.string.cd_task_selected),
                                         tint = Color.White
                                     )
                                 }
@@ -503,7 +504,7 @@ private fun WidgetCustomizerScreen(
                                         selectedSourceId = null
                                         selectedSourceType = "list"
                                     }) {
-                                        Text("Clear Preset")
+                                        Text(stringResource(R.string.widget_config_clear_preset))
                                     }
                                 }
                             }
@@ -563,7 +564,7 @@ private fun WidgetCustomizerScreen(
                                 modifier = Modifier.fillMaxWidth().height(120.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("No items available in this category.")
+                                Text(stringResource(R.string.widget_config_no_items_available_in_this_category))
                             }
                         } else {
                             // Fixed (not weight()-based) height — this Card sits inside the
@@ -622,7 +623,7 @@ private fun WidgetCustomizerScreen(
                 enabled = !isSingleList || selectedSourceId != null,
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp)
             ) {
-                Text("Save Changes", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.widget_config_save_changes), fontWeight = FontWeight.Bold)
             }
         }
     }

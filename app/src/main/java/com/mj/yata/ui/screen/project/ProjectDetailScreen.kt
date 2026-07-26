@@ -26,6 +26,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -34,6 +36,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mj.yata.R
 import com.mj.yata.util.taskMatchesQuery
 import com.mj.yata.util.sortedByMode
 import com.mj.yata.util.export.toExportRow
@@ -189,7 +192,7 @@ fun ProjectDetailScreen(
                             onValueChange = { searchQuery = it },
                             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                             singleLine = true,
-                            placeholder = { Text("Search in ${project.name}") },
+                            placeholder = { Text(stringResource(R.string.search_in_project, project.name)) },
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
@@ -223,12 +226,12 @@ fun ProjectDetailScreen(
                     if (searchActive) {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                             }
                         }
                     } else {
                         IconButton(onClick = { searchActive = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search in project")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.project_detail_search_in_project))
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
@@ -242,14 +245,14 @@ fun ProjectDetailScreen(
                         }
                         var showMenu by remember { mutableStateOf(false) }
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit project") },
+                                text = { Text(stringResource(R.string.project_detail_edit_project)) },
                                 onClick = {
                                     showMenu = false
                                     isEditSheetOpen = true
@@ -257,12 +260,13 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as Markdown") },
+                                text = { Text(stringResource(R.string.project_detail_export_as_markdown)) },
                                 onClick = {
                                     showMenu = false
                                     val markdown = com.mj.yata.util.buildPendingTasksMarkdown(project, projectTasks)
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(ClipData.newPlainText("Pending tasks", markdown))
+                                    // getString: an onClick lambda is not a composable scope.
+                                    clipboard.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.project_detail_pending_tasks), markdown))
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
                                         putExtra(Intent.EXTRA_TEXT, markdown)
@@ -272,7 +276,7 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as image") },
+                                text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
@@ -280,7 +284,7 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as PDF") },
+                                text = { Text(stringResource(R.string.action_export_as_pdf)) },
                                 onClick = {
                                     showMenu = false
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
@@ -288,7 +292,7 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Roll over open tasks") },
+                                text = { Text(stringResource(R.string.project_detail_roll_over_open_tasks)) },
                                 onClick = {
                                     showMenu = false
                                     showRolloverDialog = true
@@ -296,7 +300,7 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Roll overdue forward") },
+                                text = { Text(stringResource(R.string.project_detail_roll_overdue_forward)) },
                                 onClick = {
                                     showMenu = false
                                     showOverdueRolloverDialog = true
@@ -305,7 +309,7 @@ fun ProjectDetailScreen(
                             )
                             if (project.archived) {
                                 DropdownMenuItem(
-                                    text = { Text("Restore project") },
+                                    text = { Text(stringResource(R.string.project_detail_restore_project)) },
                                     onClick = {
                                         showMenu = false
                                         viewModel.setProjectArchived(project, false)
@@ -313,7 +317,7 @@ fun ProjectDetailScreen(
                                     leadingIcon = { Icon(Icons.Default.Visibility, contentDescription = null) }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Delete project") },
+                                    text = { Text(stringResource(R.string.project_detail_delete_project)) },
                                     onClick = {
                                         showMenu = false
                                         showDeleteDialog = true
@@ -322,7 +326,7 @@ fun ProjectDetailScreen(
                                 )
                             } else {
                                 DropdownMenuItem(
-                                    text = { Text("Archive project") },
+                                    text = { Text(stringResource(R.string.project_detail_archive_project)) },
                                     onClick = {
                                         showMenu = false
                                         showArchiveDialog = true
@@ -354,7 +358,7 @@ fun ProjectDetailScreen(
                             modifier = Modifier.size(56.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add task")
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
                         }
                     }
                 }
@@ -691,8 +695,8 @@ fun ProjectDetailScreen(
     if (showArchiveDialog) {
         AlertDialog(
             onDismissRequest = { showArchiveDialog = false },
-            title = { Text("Archive project?") },
-            text = { Text("Tasks inside stay linked. The project is hidden from active project surfaces until you restore it.") },
+            title = { Text(stringResource(R.string.project_detail_archive_project_2)) },
+            text = { Text(stringResource(R.string.project_detail_tasks_inside_stay_linked_the_project_is_hi)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -701,12 +705,12 @@ fun ProjectDetailScreen(
                         onNavigateBack()
                     }
                 ) {
-                    Text("Archive", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.archive_title), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -715,8 +719,8 @@ fun ProjectDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete archived project?") },
-            text = { Text("Delete only the project to keep its tasks without a project, or delete the project and all tasks inside it.") },
+            title = { Text(stringResource(R.string.project_detail_delete_archived_project)) },
+            text = { Text(stringResource(R.string.project_detail_delete_only_the_project_to_keep_its_tasks)) },
             confirmButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(
@@ -726,7 +730,7 @@ fun ProjectDetailScreen(
                             onNavigateBack()
                         }
                     ) {
-                        Text("Project only")
+                        Text(stringResource(R.string.project_detail_project_only))
                     }
                     TextButton(
                         onClick = {
@@ -735,13 +739,13 @@ fun ProjectDetailScreen(
                             onNavigateBack()
                         }
                     ) {
-                        Text("Project + tasks", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.project_detail_project_tasks), color = MaterialTheme.colorScheme.error)
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -751,19 +755,19 @@ fun ProjectDetailScreen(
         val eligibleCount = remember(projectTasks) { projectTasks.count { !it.done && it.recurrence == null } }
         AlertDialog(
             onDismissRequest = { showRolloverDialog = false },
-            title = { Text("Roll over open tasks?") },
-            text = { Text("Duplicates $eligibleCount open task(s) with due dates shifted one month forward. Recurring tasks are skipped since they already advance on their own.") },
+            title = { Text(stringResource(R.string.project_detail_roll_over_open_tasks_2)) },
+            text = { Text(pluralStringResource(R.plurals.project_rollover_body, eligibleCount, eligibleCount)) },
             confirmButton = {
                 TextButton(onClick = {
                     showRolloverDialog = false
                     viewModel.rolloverProjectTasks(project.id)
                 }) {
-                    Text("Roll over")
+                    Text(stringResource(R.string.project_detail_roll_over))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRolloverDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -780,19 +784,19 @@ fun ProjectDetailScreen(
         }
         AlertDialog(
             onDismissRequest = { showOverdueRolloverDialog = false },
-            title = { Text("Roll overdue tasks forward?") },
-            text = { Text("Duplicates $eligibleCount overdue open task(s), moving each due date forward by month until it lands in the future. Recurring tasks are skipped.") },
+            title = { Text(stringResource(R.string.project_detail_roll_overdue_tasks_forward)) },
+            text = { Text(pluralStringResource(R.plurals.project_rollover_overdue_body, eligibleCount, eligibleCount)) },
             confirmButton = {
                 TextButton(onClick = {
                     showOverdueRolloverDialog = false
                     viewModel.rolloverOverdueProjectTasks(project.id)
                 }) {
-                    Text("Roll forward")
+                    Text(stringResource(R.string.project_detail_roll_forward))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showOverdueRolloverDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )

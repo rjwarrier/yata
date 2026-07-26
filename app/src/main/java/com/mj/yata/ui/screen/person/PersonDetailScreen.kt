@@ -24,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -31,6 +32,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -190,7 +192,7 @@ fun PersonDetailScreen(
                             onValueChange = { searchQuery = it },
                             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                             singleLine = true,
-                            placeholder = { Text("Search ${person.name}'s tasks") },
+                            placeholder = { Text(stringResource(R.string.search_person_tasks, person.name)) },
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
@@ -224,12 +226,12 @@ fun PersonDetailScreen(
                     if (searchActive) {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                             }
                         }
                     } else {
                         IconButton(onClick = { searchActive = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search this person's tasks")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.person_detail_search_this_person_s_tasks))
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
@@ -243,14 +245,14 @@ fun PersonDetailScreen(
                         }
                         var showMenu by remember { mutableStateOf(false) }
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit person") },
+                                text = { Text(stringResource(R.string.person_detail_edit_person)) },
                                 onClick = {
                                     showMenu = false
                                     isEditSheetOpen = true
@@ -258,7 +260,7 @@ fun PersonDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as image") },
+                                text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.IMAGE
@@ -266,7 +268,7 @@ fun PersonDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Export as PDF") },
+                                text = { Text(stringResource(R.string.action_export_as_pdf)) },
                                 onClick = {
                                     showMenu = false
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
@@ -302,14 +304,14 @@ fun PersonDetailScreen(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit person")
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.person_detail_edit_person))
                 }
                 FloatingActionButton(
                     onClick = { isNewTaskSheetOpen = true },
                     containerColor = personColor,
                     contentColor = Color.White
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add task for ${person.name}")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_for_person, person.name))
                 }
             }
         }
@@ -447,7 +449,7 @@ fun PersonDetailScreen(
 
                     Icon(
                         imageVector = Icons.Default.ExpandMore,
-                        contentDescription = "Expand",
+                        contentDescription = stringResource(R.string.person_detail_expand),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.rotate(openChevronRotation)
                     )
@@ -547,7 +549,7 @@ fun PersonDetailScreen(
 
                     Icon(
                         imageVector = Icons.Default.ExpandMore,
-                        contentDescription = "Expand",
+                        contentDescription = stringResource(R.string.person_detail_expand),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.rotate(completedChevronRotation)
                     )
@@ -675,8 +677,8 @@ fun PersonDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Archive person?") },
-            text = { Text("Their past assigned tasks and stats stay. They're hidden from the People tab — you can unarchive them anytime from this same menu.") },
+            title = { Text(stringResource(R.string.person_detail_archive_person)) },
+            text = { Text(stringResource(R.string.person_detail_their_past_assigned_tasks_and_stats_stay_t)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -685,12 +687,12 @@ fun PersonDetailScreen(
                         onNavigateBack()
                     }
                 ) {
-                    Text("Archive", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.archive_title), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )

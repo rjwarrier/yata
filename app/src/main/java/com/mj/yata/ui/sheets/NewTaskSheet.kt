@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Mic
+import com.mj.yata.R
 import com.mj.yata.ui.widgets.PressableScaleBox
 import com.mj.yata.util.findBestEntityMatch
 import com.mj.yata.util.toProperCase
@@ -72,6 +73,7 @@ import androidx.compose.animation.core.tween
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -465,7 +467,7 @@ fun NewTaskSheet(
             },
             navigationIcon = {
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                    Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.action_close))
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -611,7 +613,7 @@ fun NewTaskSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Mic,
-                            contentDescription = "Add task by voice",
+                            contentDescription = stringResource(R.string.cd_add_task_by_voice),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(22.dp)
                         )
@@ -666,7 +668,7 @@ fun NewTaskSheet(
                     )
                     Icon(
                         Icons.Default.Close,
-                        contentDescription = "Treat as a single task instead",
+                        contentDescription = stringResource(R.string.new_task_treat_as_a_single_task_instead),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(16.dp)
@@ -701,7 +703,7 @@ fun NewTaskSheet(
                     )
                     Icon(
                         Icons.Default.Close,
-                        contentDescription = "Ignore detected date/time",
+                        contentDescription = stringResource(R.string.new_task_ignore_detected_date_time),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .size(16.dp)
@@ -942,7 +944,7 @@ fun NewTaskSheet(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    placeholder = { Text("Add notes...") },
+                    placeholder = { Text(stringResource(R.string.new_task_add_notes)) },
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -962,7 +964,7 @@ fun NewTaskSheet(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { subtasks.remove(sub) }) {
-                            Icon(Icons.Default.Close, contentDescription = "Remove subtask", modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.new_task_remove_subtask), modifier = Modifier.size(16.dp))
                         }
                     }
                 }
@@ -973,7 +975,7 @@ fun NewTaskSheet(
                     OutlinedTextField(
                         value = newSubtaskTitle,
                         onValueChange = { newSubtaskTitle = it },
-                        placeholder = { Text("Add a subtask...") },
+                        placeholder = { Text(stringResource(R.string.action_add_a_subtask)) },
                         singleLine = true,
                         modifier = Modifier.weight(1f)
                     )
@@ -990,7 +992,7 @@ fun NewTaskSheet(
                             newSubtaskTitle = ""
                         }
                     }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add subtask")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_subtask))
                     }
                 }
             }
@@ -1036,14 +1038,14 @@ fun NewTaskSheet(
     pendingDuplicateTask?.let { existing ->
         AlertDialog(
             onDismissRequest = { pendingDuplicateTask = null },
-            title = { Text("Similar task already exists") },
-            text = { Text("\"${existing.title}\" looks like a match for what you're creating.") },
+            title = { Text(stringResource(R.string.action_similar_task_already_exists)) },
+            text = { Text(stringResource(R.string.duplicate_task_match_body, existing.title)) },
             confirmButton = {
                 TextButton(onClick = {
                     pendingDuplicateTask = null
                     createTask()
                 }) {
-                    Text("Ignore and create")
+                    Text(stringResource(R.string.action_ignore_and_create))
                 }
             },
             dismissButton = {
@@ -1052,7 +1054,7 @@ fun NewTaskSheet(
                     pendingDuplicateTask = null
                     onGoToExistingTask(existingId)
                 }) {
-                    Text("Go to existing task")
+                    Text(stringResource(R.string.action_go_to_existing_task))
                 }
             }
         )
@@ -1194,7 +1196,7 @@ private fun AssignedPersonChip(
         )
         Icon(
             imageVector = Icons.Default.Close,
-            contentDescription = "Remove ${person.name}",
+            contentDescription = stringResource(R.string.cd_remove_person, person.name),
             tint = MaterialTheme.colorScheme.onTertiaryContainer,
             modifier = Modifier
                 .size(15.dp)

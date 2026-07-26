@@ -27,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -39,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
@@ -97,7 +100,7 @@ fun ProjectsTab(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel selection", tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
                     }
                     Text(
                         text = "${selectedIds.size} selected",
@@ -105,7 +108,7 @@ fun ProjectsTab(
                     )
                 }
                 IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
-                    Icon(Icons.Default.Delete, contentDescription = "Archive selected", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.projects_archive_selected), tint = MaterialTheme.colorScheme.error)
                 }
             }
         } else {
@@ -122,7 +125,7 @@ fun ProjectsTab(
             IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Open drawer",
+                    contentDescription = stringResource(R.string.cd_open_drawer),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -143,14 +146,14 @@ fun ProjectsTab(
                 IconButton(onClick = { selectModeOn = true }) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Select projects",
+                        contentDescription = stringResource(R.string.projects_select_projects),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 IconButton(onClick = onSearchClick) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
+                        contentDescription = stringResource(R.string.cd_search),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -247,8 +250,8 @@ fun ProjectsTab(
     if (showBulkDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showBulkDeleteDialog = false },
-            title = { Text("Archive ${selectedIds.size} project(s)?") },
-            text = { Text("Tasks inside stay linked, and the projects are hidden from active project surfaces until you restore them.") },
+            title = { Text(pluralStringResource(R.plurals.confirm_archive_projects_title, selectedIds.size, selectedIds.size)) },
+            text = { Text(stringResource(R.string.projects_tasks_inside_stay_linked_and_the_projects)) },
             confirmButton = {
                 TextButton(onClick = {
                     onBulkArchiveProjects(selectedIds.toList())
@@ -256,11 +259,11 @@ fun ProjectsTab(
                     selectModeOn = false
                     showBulkDeleteDialog = false
                 }) {
-                    Text("Archive", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.archive_title), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -318,7 +321,7 @@ fun ProjectCard(
                             contentAlignment = Alignment.Center
                         ) {
                             if (selected) {
-                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.cd_task_selected), tint = Color.White, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -332,7 +335,7 @@ fun ProjectCard(
                     ) {
                         Icon(
                             imageVector = iconVector,
-                            contentDescription = "Project icon",
+                            contentDescription = stringResource(R.string.projects_project_icon),
                             tint = projectColor,
                             modifier = Modifier.size(24.dp)
                         )
@@ -409,7 +412,7 @@ fun NewProjectDashedCard(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Add project",
+                contentDescription = stringResource(R.string.projects_add_project),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(

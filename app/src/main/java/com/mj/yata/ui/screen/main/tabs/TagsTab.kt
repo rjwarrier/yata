@@ -26,6 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -43,6 +45,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.util.sortedByEntityMode
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -94,7 +97,7 @@ fun TagsTab(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel selection", tint = MaterialTheme.colorScheme.onSurface)
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
                     }
                     Text(
                         text = "${selectedIds.size} selected",
@@ -102,7 +105,7 @@ fun TagsTab(
                     )
                 }
                 IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.tags_delete_selected), tint = MaterialTheme.colorScheme.error)
                 }
             }
         } else {
@@ -119,7 +122,7 @@ fun TagsTab(
             IconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Open menu",
+                    contentDescription = stringResource(R.string.cd_open_menu),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -140,19 +143,19 @@ fun TagsTab(
                 com.mj.yata.ui.widgets.EntitySortMenuButton(
                     current = sortMode,
                     onSelect = onSortModeChange,
-                    contentDescription = "Sort tags"
+                    contentDescription = stringResource(R.string.tags_sort_tags)
                 )
                 IconButton(onClick = { selectModeOn = true }) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Select tags",
+                        contentDescription = stringResource(R.string.action_select_tags),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 IconButton(onClick = onSearchClick) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
+                        contentDescription = stringResource(R.string.cd_search),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -254,8 +257,8 @@ fun TagsTab(
     if (showBulkDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showBulkDeleteDialog = false },
-            title = { Text("Delete ${selectedIds.size} tag(s)?") },
-            text = { Text("Tasks keep their other tags. This can't be undone.") },
+            title = { Text(pluralStringResource(R.plurals.confirm_delete_tags_title, selectedIds.size, selectedIds.size)) },
+            text = { Text(stringResource(R.string.tags_tasks_keep_their_other_tags_this_can_t_be)) },
             confirmButton = {
                 TextButton(onClick = {
                     onBulkDeleteTags(selectedIds.toList())
@@ -263,11 +266,11 @@ fun TagsTab(
                     selectModeOn = false
                     showBulkDeleteDialog = false
                 }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -324,7 +327,7 @@ private fun TagGroupSection(
                     IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(28.dp)) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Delete group",
+                            contentDescription = stringResource(R.string.cd_delete_group),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -408,7 +411,7 @@ private fun TagRow(
                     contentAlignment = Alignment.Center
                 ) {
                     if (selected) {
-                        Icon(Icons.Default.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.cd_task_selected), tint = Color.White, modifier = Modifier.size(16.dp))
                     }
                 }
                 Spacer(modifier = Modifier.width(14.dp))
@@ -423,7 +426,7 @@ private fun TagRow(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Label,
-                    contentDescription = "Tag",
+                    contentDescription = stringResource(R.string.tags_tag),
                     tint = tagColor,
                     modifier = Modifier.size(20.dp)
                 )
@@ -498,7 +501,7 @@ private fun NewTagDashedRow(onClick: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "New tag",
+                contentDescription = stringResource(R.string.tags_new_tag),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(

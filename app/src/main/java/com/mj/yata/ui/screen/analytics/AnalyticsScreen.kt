@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.PersonAvatar
@@ -95,8 +97,7 @@ fun AnalyticsScreen(
             val context = androidx.compose.ui.platform.LocalContext.current
             TopAppBar(
                 title = {
-                    Text(
-                        "Analytics",
+                    Text(stringResource(R.string.analytics_analytics),
                         style = androidx.compose.ui.text.TextStyle(
                             fontWeight = FontWeight.ExtraBold,
                             fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
@@ -105,7 +106,7 @@ fun AnalyticsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
@@ -131,7 +132,7 @@ fun AnalyticsScreen(
                         }
                         context.startActivity(android.content.Intent.createChooser(shareIntent, "Share analytics"))
                     }) {
-                        Icon(Icons.Default.IosShare, contentDescription = "Share analytics")
+                        Icon(Icons.Default.IosShare, contentDescription = stringResource(R.string.analytics_share_analytics))
                     }
                 }
             )
@@ -720,7 +721,7 @@ private fun EntityStatRow(
                 if (stat.overdue > 0) {
                     Icon(
                         imageVector = Icons.Default.WarningAmber,
-                        contentDescription = "Has overdue tasks",
+                        contentDescription = stringResource(R.string.analytics_has_overdue_tasks),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(14.dp)
                     )

@@ -32,6 +32,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -39,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
@@ -197,7 +200,7 @@ fun UpcomingTab(
                 IconButton(onClick = onMenuClick, modifier = Modifier.align(Alignment.CenterStart)) {
                     Icon(
                         imageVector = Icons.Default.Menu,
-                        contentDescription = "Open drawer",
+                        contentDescription = stringResource(R.string.cd_open_drawer),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -209,7 +212,7 @@ fun UpcomingTab(
                         IconButton(onClick = { selectedMonth = selectedMonth.minusMonths(1) }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                contentDescription = "Previous month",
+                                contentDescription = stringResource(R.string.upcoming_previous_month),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -227,7 +230,7 @@ fun UpcomingTab(
                         IconButton(onClick = { selectedMonth = selectedMonth.plusMonths(1) }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = "Next month",
+                                contentDescription = stringResource(R.string.upcoming_next_month),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -241,7 +244,7 @@ fun UpcomingTab(
                     IconButton(onClick = onSearchClick) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
+                            contentDescription = stringResource(R.string.cd_search),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -423,7 +426,7 @@ fun UpcomingTab(
                     if (day != today) {
                         AssistChip(
                             onClick = { onSelectedDayChange(today) },
-                            label = { Text("Today", style = MaterialTheme.typography.labelMedium) },
+                            label = { Text(stringResource(R.string.shortcut_today_short), style = MaterialTheme.typography.labelMedium) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Today,
@@ -563,19 +566,19 @@ fun UpcomingTab(
     if (showBulkDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showBulkDeleteDialog = false },
-            title = { Text("Delete ${selectedIds.size} tasks?") },
-            text = { Text("This can't be undone.") },
+            title = { Text(pluralStringResource(R.plurals.confirm_delete_tasks_title, selectedIds.size, selectedIds.size)) },
+            text = { Text(stringResource(R.string.action_this_can_t_be_undone)) },
             confirmButton = {
                 TextButton(onClick = {
                     onBulkDelete(selectedIds.toList())
                     selectedIds.clear()
                     showBulkDeleteDialog = false
                 }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBulkDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }

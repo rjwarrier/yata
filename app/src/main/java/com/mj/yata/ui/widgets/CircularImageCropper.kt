@@ -1,5 +1,6 @@
 package com.mj.yata.ui.widgets
 
+import com.mj.yata.R
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -19,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -139,12 +141,12 @@ fun CircularImageCropper(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onCancel) {
-                        Text("Cancel", color = Color.White)
+                        Text(stringResource(R.string.action_cancel), color = Color.White)
                     }
                     Button(onClick = {
                         onConfirm(cropVisibleRegion(source, viewportPx, baseScale, zoom, offset))
                     }) {
-                        Text("Use photo")
+                        Text(stringResource(R.string.circular_image_cropper_use_photo))
                     }
                 }
 

@@ -1,5 +1,6 @@
 package com.mj.yata.ui.widgets
 
+import com.mj.yata.R
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
@@ -123,7 +125,7 @@ fun SpringyCheck(
             if (checked) {
                 Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = "Check",
+                    contentDescription = stringResource(R.string.springy_check_check),
                     tint = Color.White,
                     modifier = Modifier
                         .size(size * 0.65f)

@@ -1,5 +1,6 @@
 package com.mj.yata.ui.widgets
 
+import com.mj.yata.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -66,7 +68,7 @@ fun CustomColorPickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Custom color", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.action_custom_color), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(
@@ -94,7 +96,7 @@ fun CustomColorPickerDialog(
                                 } catch (_: IllegalArgumentException) { /* keep typing */ }
                             }
                         },
-                        label = { Text("Hex") },
+                        label = { Text(stringResource(R.string.custom_color_picker_hex)) },
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Text),
                         modifier = Modifier.weight(1f)
@@ -146,10 +148,10 @@ fun CustomColorPickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(currentColor) }) { Text("Apply") }
+            TextButton(onClick = { onConfirm(currentColor) }) { Text(stringResource(R.string.custom_color_picker_apply)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
