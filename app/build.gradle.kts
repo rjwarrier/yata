@@ -90,10 +90,10 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation("androidx.lifecycle:lifecycle-process:2.7.0")
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.activity.compose)
-    implementation("androidx.biometric:biometric:1.1.0")
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.security.crypto)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
@@ -116,21 +116,21 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
 
-    // Missing Dependencies
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    // Hilt integration for Compose navigation
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // Glance (home-screen App Widget)
-    implementation("androidx.glance:glance-appwidget:1.1.1")
-    implementation("androidx.glance:glance-material3:1.1.1")
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
 
     // Cloud backup: Google Sign-In (Drive appDataFolder scope) + Drive REST v3 over OkHttp
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.play.services.auth)
+    implementation(libs.okhttp)
 
     // Cloud backup: periodic + debounced background upload
-    implementation("androidx.work:work-runtime-ktx:2.9.1")
-    implementation("androidx.hilt:hilt-work:1.2.0")
-    ksp("androidx.hilt:hilt-compiler:1.2.0")
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     // Baseline profile: profileinstaller applies the packaged ART profile at install time,
     // the :baselineprofile module generates it (see that module's BaselineProfileGenerator).
@@ -138,23 +138,23 @@ dependencies {
     baselineProfile(project(":baselineprofile"))
 
     // Markdown rendering for task notes
-    implementation("io.noties.markwon:core:4.6.2")
+    implementation(libs.markwon.core)
 
     // Tasker plugin (Create Task action)
-    implementation("com.joaomgcd:taskerpluginlibrary:0.4.10")
+    implementation(libs.tasker.plugin.library)
 
     // PDF Info dictionary (Title/Author/Subject/Keywords) — android.graphics.pdf.PdfDocument
     // has no metadata API, so exported PDFs get a real doc-info pass through this after
     // being rendered with PdfDocument.
-    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    implementation(libs.pdfbox.android)
 
     testImplementation(libs.junit)
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation("androidx.test:core-ktx:1.5.0")
-    androidTestImplementation("androidx.test:rules:1.5.0")
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)

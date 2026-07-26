@@ -27,11 +27,13 @@ All commands run from the repo root using the Gradle wrapper (`./gradlew` on Bas
 ./gradlew :app:testDebugUnitTest --tests "com.mj.yata.RecurrenceEvaluatorTest"
 ./gradlew :app:testDebugUnitTest --tests "com.mj.yata.RecurrenceEvaluatorTest.testWeeklyRecurrence"
 
-# Instrumented tests (require a connected device/emulator) — Room migration tests live here
-./gradlew :app:connectedDebugAndroidTest --tests "com.mj.yata.data.local.db.AppDatabaseMigrationTest"
+# Instrumented tests (require a connected device/emulator). Note `--tests` does NOT work here —
+# that's Gradle's unit-test filter; connectedAndroidTest takes a runner argument instead.
+./gradlew :app:connectedDebugAndroidTest   # whole suite
+./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.mj.yata.data.local.db.AppDatabaseMigrationTest
 
 # Compose UI smoke suite (launch, add, complete, tab switch, delete-undo)
-./gradlew :app:connectedDebugAndroidTest --tests "com.mj.yata.MainScreenSmokeTest"
+./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.mj.yata.MainScreenSmokeTest
 
 # Regenerate the baseline profile (needs a rooted/userdebug device or emulator, API 28+)
 ./gradlew :baselineprofile:generateBaselineProfile
