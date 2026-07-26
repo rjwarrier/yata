@@ -14,8 +14,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mj.yata.R
 import com.mj.yata.domain.model.Task
 import com.mj.yata.ui.screen.main.MainViewModel
 import java.time.Instant
@@ -64,7 +67,7 @@ fun TrashScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Trash",
+                        stringResource(R.string.trash_title),
                         style = androidx.compose.ui.text.TextStyle(
                             fontWeight = FontWeight.ExtraBold,
                             fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
@@ -73,7 +76,7 @@ fun TrashScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
@@ -81,7 +84,7 @@ fun TrashScreen(
                         IconButton(onClick = { showEmptyTrashDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.DeleteSweep,
-                                contentDescription = "Empty trash",
+                                contentDescription = stringResource(R.string.cd_trash_empty),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -99,7 +102,7 @@ fun TrashScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Trash is empty.",
+                    text = stringResource(R.string.trash_empty_state),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -115,7 +118,7 @@ fun TrashScreen(
             ) {
                 item {
                     Text(
-                        text = "Deleted tasks are kept for 30 days, then removed automatically.",
+                        text = stringResource(R.string.trash_retention_notice),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp)
@@ -138,19 +141,19 @@ fun TrashScreen(
     if (showEmptyTrashDialog) {
         AlertDialog(
             onDismissRequest = { showEmptyTrashDialog = false },
-            title = { Text("Empty trash?") },
-            text = { Text("Permanently deletes all ${deletedTasks.size} tasks in Trash. This can't be undone.") },
+            title = { Text(stringResource(R.string.trash_empty_confirm_title)) },
+            text = { Text(pluralStringResource(R.plurals.trash_empty_confirm_body, deletedTasks.size, deletedTasks.size)) },
             confirmButton = {
                 TextButton(onClick = {
                     showEmptyTrashDialog = false
                     viewModel.emptyTrash()
                 }) {
-                    Text("Empty Trash", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.trash_empty_confirm_action), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEmptyTrashDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -159,19 +162,19 @@ fun TrashScreen(
     pendingPermanentDelete?.let { task ->
         AlertDialog(
             onDismissRequest = { pendingPermanentDelete = null },
-            title = { Text("Delete forever?") },
-            text = { Text("\"${task.title}\" will be permanently deleted. This can't be undone.") },
+            title = { Text(stringResource(R.string.trash_delete_forever_title)) },
+            text = { Text(stringResource(R.string.trash_delete_forever_body, task.title)) },
             confirmButton = {
                 TextButton(onClick = {
                     pendingPermanentDelete = null
                     viewModel.permanentlyDeleteTask(task)
                 }) {
-                    Text("Delete Forever", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.trash_delete_forever_action), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingPermanentDelete = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -212,14 +215,14 @@ private fun TrashTaskRow(
             IconButton(onClick = onRestore) {
                 Icon(
                     imageVector = Icons.Default.Restore,
-                    contentDescription = "Restore",
+                    contentDescription = stringResource(R.string.cd_trash_restore),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
             IconButton(onClick = onDeleteForever) {
                 Icon(
                     imageVector = Icons.Default.DeleteForever,
-                    contentDescription = "Delete forever",
+                    contentDescription = stringResource(R.string.cd_trash_delete_forever),
                     tint = MaterialTheme.colorScheme.error
                 )
             }

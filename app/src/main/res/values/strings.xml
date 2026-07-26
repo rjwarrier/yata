@@ -44,4 +44,68 @@
     <string name="widget_upcoming_description">What\'s due today, tomorrow, and beyond.</string>
     <string name="widget_team_overdue_label">YATA: Team Overdue</string>
     <string name="widget_team_overdue_description">Per-person overdue task counts, at a glance.</string>
+
+    <!--
+        UI strings below follow three prefixes:
+          action_*  button and menu labels
+          cd_*      contentDescription, spoken by TalkBack but never displayed
+          <screen>_* everything specific to one screen
+
+        Reuse the shared action_*/cd_* entries rather than adding a second copy of a word like
+        "Cancel" per screen — a translator should render it once, and a screen-specific duplicate
+        will drift. Anything with a count takes a <plurals>, never string concatenation, because
+        other languages have more than two plural forms.
+    -->
+
+    <!-- Shared actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_duplicate">Duplicate</string>
+    <string name="action_none_remove_from_project">None (remove from project)</string>
+    <string name="action_none_remove_from_list">None (remove from list)</string>
+
+    <!-- Shared content descriptions -->
+    <string name="cd_back">Back</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_duplicate">Duplicate</string>
+
+    <!-- Trash -->
+    <string name="trash_title">Trash</string>
+    <string name="trash_empty_state">Trash is empty.</string>
+    <string name="trash_retention_notice">Deleted tasks are kept for 30 days, then removed automatically.</string>
+    <string name="trash_empty_confirm_title">Empty trash?</string>
+    <string name="trash_empty_confirm_action">Empty Trash</string>
+    <plurals name="trash_empty_confirm_body">
+        <item quantity="one">Permanently deletes the %1$d task in Trash. This can\'t be undone.</item>
+        <item quantity="other">Permanently deletes all %1$d tasks in Trash. This can\'t be undone.</item>
+    </plurals>
+    <string name="trash_delete_forever_title">Delete forever?</string>
+    <string name="trash_delete_forever_action">Delete Forever</string>
+    <string name="trash_delete_forever_body">\"%1$s\" will be permanently deleted. This can\'t be undone.</string>
+    <string name="cd_trash_empty">Empty trash</string>
+    <string name="cd_trash_restore">Restore</string>
+    <string name="cd_trash_delete_forever">Delete forever</string>
+
+    <!-- Archive -->
+    <string name="archive_title">Archive</string>
+    <string name="archive_empty_state">No archived tasks.</string>
+    <string name="archive_notice">Archived tasks are kept indefinitely and hidden from your lists. Unarchive to bring one back.</string>
+    <string name="cd_archive_unarchive">Unarchive task</string>
+
+    <!-- Bulk selection toolbar -->
+    <string name="cd_bulk_cancel_selection">Cancel selection</string>
+    <string name="cd_bulk_mark_done">Mark done</string>
+    <string name="cd_bulk_add_tag">Add tag</string>
+    <string name="cd_bulk_assign_person">Assign to person</string>
+    <string name="cd_bulk_move">Move to list or project</string>
+    <string name="cd_bulk_reschedule">Reschedule</string>
+
+    <!-- Task row -->
+    <string name="task_row_edit_title">Edit task</string>
+    <string name="cd_task_selected">Selected</string>
+    <string name="cd_task_flagged">Flagged</string>
+    <string name="cd_task_add_comment">Add comment</string>
+    <string name="cd_task_edit_title">Edit title</string>
+    <string name="cd_task_snooze">Snooze</string>
 </resources>

@@ -80,6 +80,51 @@ android {
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
     }
+
+    lint {
+        // Translation readiness. HardcodedText only catches literals in XML layouts, which this
+        // app has none of — the Compose equivalent is caught by the :app:lintHardcodedStrings
+        // helper task below. These two do apply: MissingTranslation fires once a non-default
+        // locale exists and a key is absent from it, and MissingQuantity catches a <plurals>
+        // missing a form some language requires.
+        warningsAsErrors = false
+        abortOnError = false
+        checkDependencies = false
+        disable += "HardcodedText"
+    }
+}
+
+/**
+ * Reports Kotlin UI strings still written as literals rather than pulled from strings.xml.
+ * Advisory, not a build failure — the migration is incremental, so failing the build would
+ * block every unrelated change until all of it is done. Run it to see what's left:
+ *
+ *   ./gradlew :app:lintHardcodedStrings
+ */
+tasks.register("lintHardcodedStrings") {
+    group = "verification"
+    description = "Counts hardcoded UI strings still needing extraction to strings.xml."
+    val sourceDir = file("src/main/java")
+    doLast {
+        val pattern = Regex("""(Text\(\s*"[^"]{2,}"|contentDescription\s*=\s*"[^"]{2,}")""")
+        var total = 0
+        val perFile = sortedMapOf<String, Int>()
+        sourceDir.walkTopDown().filter { it.extension == "kt" }.forEach { f ->
+            val n = pattern.findAll(f.readText()).count()
+            if (n > 0) {
+                perFile[f.relativeTo(sourceDir).path] = n
+                total += n
+            }
+        }
+        if (total == 0) {
+            logger.lifecycle("No hardcoded UI strings found — extraction complete.")
+        } else {
+            logger.lifecycle("$total hardcoded UI string(s) remaining across ${perFile.size} file(s):")
+            perFile.entries.sortedByDescending { it.value }.take(25).forEach { (path, n) ->
+                logger.lifecycle(String.format("  %4d  %s", n, path))
+            }
+        }
+    }
 }
 
 ksp {

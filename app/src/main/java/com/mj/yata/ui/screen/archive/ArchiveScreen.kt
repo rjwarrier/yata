@@ -15,8 +15,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mj.yata.R
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
@@ -59,7 +61,7 @@ fun ArchiveScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Archive",
+                        stringResource(R.string.archive_title),
                         style = androidx.compose.ui.text.TextStyle(
                             fontWeight = FontWeight.ExtraBold,
                             fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
@@ -68,7 +70,7 @@ fun ArchiveScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 }
             )
@@ -83,7 +85,7 @@ fun ArchiveScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No archived tasks.",
+                    text = stringResource(R.string.archive_empty_state),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -99,8 +101,7 @@ fun ArchiveScreen(
             ) {
                 item {
                     Text(
-                        text = "Archived tasks are kept indefinitely and hidden from your lists. " +
-                            "Unarchive to bring one back.",
+                        text = stringResource(R.string.archive_notice),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp)
@@ -138,7 +139,7 @@ fun ArchiveScreen(
                                 }
                             }
                             IconButton(onClick = { viewModel.setTaskArchived(task.id, false) }) {
-                                Icon(Icons.Default.Unarchive, contentDescription = "Unarchive task")
+                                Icon(Icons.Default.Unarchive, contentDescription = stringResource(R.string.cd_archive_unarchive))
                             }
                         }
                     }

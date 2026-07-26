@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.graphicsLayer
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Tag
@@ -174,7 +176,7 @@ fun TaskRow(
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = "Selected",
+                    contentDescription = stringResource(R.string.cd_task_selected),
                     tint = Color.White,
                     modifier = Modifier
                         .size(16.dp)
@@ -230,7 +232,7 @@ fun TaskRow(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Flag,
-                        contentDescription = "Flagged",
+                        contentDescription = stringResource(R.string.cd_task_flagged),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp)
                     )
@@ -340,7 +342,7 @@ fun TaskRow(
         if (onCommentClick != null) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.Comment,
-                contentDescription = "Add comment",
+                contentDescription = stringResource(R.string.cd_task_add_comment),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier
                     .padding(start = 4.dp)
@@ -358,7 +360,7 @@ fun TaskRow(
             ) {
                 Icon(
                     imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit title",
+                    contentDescription = stringResource(R.string.cd_task_edit_title),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.size(18.dp)
                 )
@@ -374,7 +376,7 @@ fun TaskRow(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
-                        contentDescription = "Snooze",
+                        contentDescription = stringResource(R.string.cd_task_snooze),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.size(18.dp)
                     )
@@ -475,7 +477,7 @@ fun TaskRow(
         var title by remember(task.id) { mutableStateOf(task.title) }
         AlertDialog(
             onDismissRequest = { showRenameDialog = false },
-            title = { Text("Edit task") },
+            title = { Text(stringResource(R.string.task_row_edit_title)) },
             text = {
                 OutlinedTextField(
                     value = title,
@@ -488,10 +490,10 @@ fun TaskRow(
                 TextButton(onClick = {
                     onRenameTask(title)
                     showRenameDialog = false
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.action_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showRenameDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showRenameDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }

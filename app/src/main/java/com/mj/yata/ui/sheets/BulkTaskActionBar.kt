@@ -18,10 +18,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.QuickSnoozePreset
@@ -57,7 +59,7 @@ fun TaskSelectionTopBar(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onCancel) {
-                Icon(Icons.Default.Close, contentDescription = "Cancel selection", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
             }
             Text(
                 text = "$selectedCount selected",
@@ -66,29 +68,29 @@ fun TaskSelectionTopBar(
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onComplete) {
-                Icon(Icons.Default.Check, contentDescription = "Mark done", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.cd_bulk_mark_done), tint = MaterialTheme.colorScheme.onSurface)
             }
             if (tagsEnabled) {
                 IconButton(onClick = onAddTag) {
-                    Icon(Icons.AutoMirrored.Filled.Label, contentDescription = "Add tag", tint = MaterialTheme.colorScheme.onSurface)
+                    Icon(Icons.AutoMirrored.Filled.Label, contentDescription = stringResource(R.string.cd_bulk_add_tag), tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
             if (peopleEnabled) {
                 IconButton(onClick = onAssign) {
-                    Icon(Icons.Default.PersonAdd, contentDescription = "Assign to person", tint = MaterialTheme.colorScheme.onSurface)
+                    Icon(Icons.Default.PersonAdd, contentDescription = stringResource(R.string.cd_bulk_assign_person), tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
             IconButton(onClick = onMove) {
-                Icon(Icons.AutoMirrored.Filled.DriveFileMove, contentDescription = "Move to list or project", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.AutoMirrored.Filled.DriveFileMove, contentDescription = stringResource(R.string.cd_bulk_move), tint = MaterialTheme.colorScheme.onSurface)
             }
             IconButton(onClick = onReschedule) {
-                Icon(Icons.Default.Schedule, contentDescription = "Reschedule", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.Default.Schedule, contentDescription = stringResource(R.string.cd_bulk_reschedule), tint = MaterialTheme.colorScheme.onSurface)
             }
             IconButton(onClick = onDuplicate) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.cd_duplicate), tint = MaterialTheme.colorScheme.onSurface)
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.cd_delete), tint = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -127,7 +129,7 @@ fun TaskBulkRescheduleSheet(
             }
         }
         TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-            Text("Cancel")
+            Text(stringResource(R.string.action_cancel))
         }
     }
 }
@@ -172,7 +174,7 @@ fun TaskBulkMoveSheet(
                         .padding(vertical = 12.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("None (remove from project)", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.action_none_remove_from_project), style = MaterialTheme.typography.bodyLarge)
                 }
                 activeProjects.forEach { pr ->
                     val color = accents.getAccent(pr.color)
@@ -206,7 +208,7 @@ fun TaskBulkMoveSheet(
                     .padding(vertical = 12.dp, horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("None (remove from list)", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.action_none_remove_from_list), style = MaterialTheme.typography.bodyLarge)
             }
             lists.forEach { l ->
                 val color = accents.getAccent(l.color)
