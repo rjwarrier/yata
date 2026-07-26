@@ -2,7 +2,6 @@ package com.mj.yata.widget
 
 import android.content.Context
 import com.mj.yata.data.cloud.CloudBackupManager
-import com.mj.yata.wear.WearSyncUpdater
 import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +26,6 @@ interface WidgetUpdater {
 @Singleton
 class WidgetUpdaterImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val wearSyncUpdater: WearSyncUpdater,
     // Lazy breaks Dagger cycles
     private val cloudBackupManager: Lazy<CloudBackupManager>,
     private val yataRepository: Lazy<YataRepository>
@@ -44,7 +42,6 @@ class WidgetUpdaterImpl @Inject constructor(
     private var lastTeamHash: Any? = null
     private var lastSingleListHash: Any? = null
     private var lastAppWidgetHash: Any? = null
-    private var lastWearHash: Any? = null
 
     init {
         @OptIn(kotlinx.coroutines.FlowPreview::class)
@@ -112,13 +109,6 @@ class WidgetUpdaterImpl @Inject constructor(
                 lastAppWidgetHash = appWidgetHash
                 WidgetRefresher.refreshWidget(context, YataAppWidget::class.java)
             }
-        }
-
-        // 6. Wear Sync Update — not a Glance widget, no "placed instances" concept applies.
-        val wearHash = tasks.map { it.id to it.title to it.done to it.due to it.time to it.assigneeIds }
-        if (wearHash != lastWearHash) {
-            lastWearHash = wearHash
-            wearSyncUpdater.notifyTasksChanged()
         }
 
         // Trigger backup debounce

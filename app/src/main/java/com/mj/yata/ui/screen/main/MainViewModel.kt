@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mj.yata.data.cloud.CloudBackupEntry
 import com.mj.yata.data.local.datastore.UserPreferences
-import com.mj.yata.wear.WearSyncUpdater
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.domain.usecase.BackupOperations
@@ -26,7 +25,6 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val repository: YataRepository,
     private val userPreferences: UserPreferences,
-    private val wearSyncUpdater: WearSyncUpdater,
     private val taskOperations: TaskOperations,
     private val backupOperations: BackupOperations
 ) : ViewModel() {
@@ -1452,17 +1450,6 @@ private data class MainNavigationState(
         viewModelScope.launch {
             onResult(repository.getTaskStreak(taskId))
         }
-    }
-
-    fun checkWearConnected(onResult: (Boolean) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val connected = wearSyncUpdater.isWatchConnected()
-            withContext(Dispatchers.Main) { onResult(connected) }
-        }
-    }
-
-    fun syncWearNow() {
-        wearSyncUpdater.notifyTasksChanged()
     }
 
     fun setCloudBackupWifiOnly(wifiOnly: Boolean) {

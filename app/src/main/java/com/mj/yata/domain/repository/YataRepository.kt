@@ -16,7 +16,7 @@ interface YataRepository {
      * TaskEntity.seriesId and RecurrenceEvaluator.computeStreak. */
     suspend fun getTaskStreak(taskId: String): Int
 
-    // [notify] defaults to true (fires the widget-refresh/Wear-sync/cloud-backup-debounce
+    // [notify] defaults to true (fires the widget-refresh/cloud-backup-debounce
     // signal immediately, as every existing call site expects). Bulk callers that loop this N
     // times pass false and call [notifyTasksChanged] once after the loop instead — a 20-task
     // bulk action used to fire that whole pipeline 20 times.

@@ -32,7 +32,7 @@ import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -149,14 +149,14 @@ private val helpSections = listOf(
         icon = Icons.Default.Notifications
     ),
     HelpSection(
-        title = "Widgets & Wear OS",
+        title = "Widgets",
         description = "Keep YATA visible outside the phone app.",
         bullets = listOf(
             "Home widgets cover today, upcoming, progress, quick add, team overdue, and one pinned list.",
             "Widget appearance can use dynamic color, opacity, corner radius, labels, and accents.",
-            "The Wear companion receives today's task count from the phone."
+            "A Quick Settings tile adds a task straight from the notification shade."
         ),
-        icon = Icons.Default.Watch
+        icon = Icons.Default.Widgets
     ),
     HelpSection(
         title = "Backup & Export",

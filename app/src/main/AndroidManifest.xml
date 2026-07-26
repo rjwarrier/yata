@@ -217,15 +217,6 @@
                 android:resource="@xml/upcoming_widget_info" />
         </receiver>
 
-        <!-- Receives commands from the Wear OS companion app (checking a task off, quick-add) -->
-        <service
-            android:name=".wear.WearMessageListenerService"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
-            </intent-filter>
-        </service>
-
         <!-- Serves exported PDF/PNG entity reports (cache/exports/) to the share sheet -->
         <provider
             android:name="androidx.core.content.FileProvider"

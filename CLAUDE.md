@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project
 
 YATA ("Yet Another Task App") — a Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt. Gradle root project name is `TodoExpressive` (legacy); package/app id is `com.mj.yata`. Two modules:
-- `:app` — the phone app (`com.mj.yata`, minSdk 26, compileSdk/targetSdk 34).
-- `:wear` — a companion Wear OS app (`com.mj.yata.wear`, minSdk 30) that shows a today's-task-count complication and receives sync pushes from the phone.
+- `:app` — the phone app (`com.mj.yata`, minSdk 26, compileSdk/targetSdk 35).
+- `:baselineprofile` — a `com.android.test` module that records the ART baseline profile packaged with the app.
 
 ## Commands
 
@@ -30,11 +30,14 @@ All commands run from the repo root using the Gradle wrapper (`./gradlew` on Bas
 # Instrumented tests (require a connected device/emulator) — Room migration tests live here
 ./gradlew :app:connectedDebugAndroidTest --tests "com.mj.yata.data.local.db.AppDatabaseMigrationTest"
 
-# Wear module
-./gradlew :wear:assembleDebug -q
+# Compose UI smoke suite (launch, add, complete, tab switch, delete-undo)
+./gradlew :app:connectedDebugAndroidTest --tests "com.mj.yata.MainScreenSmokeTest"
+
+# Regenerate the baseline profile (needs a rooted/userdebug device or emulator, API 28+)
+./gradlew :baselineprofile:generateBaselineProfile
 ```
 
-After changing anything under `app/src/main/java`, the fast loop is `compileDebugKotlin` to catch errors, then `installDebug` before manually verifying in the UI — there is no automated Compose UI test suite, so behavior changes need a manual pass on-device.
+After changing anything under `app/src/main/java`, the fast loop is `compileDebugKotlin` to catch errors, then `installDebug` before manually verifying in the UI. `MainScreenSmokeTest` covers only the core add/complete/delete paths, so anything beyond those still needs a manual pass on-device.
 
 ## Architecture
 
@@ -50,7 +53,7 @@ After changing anything under `app/src/main/java`, the fast loop is `compileDebu
 
 **Delete-with-undo pattern:** deleting a task (single, from `TaskDetailScreen`, or bulk, from Today/Upcoming/Search's multiselect toolbar) does not delete immediately — it shows a `Snackbar` with `actionLabel = "Undo"` and only calls the repository delete if the snackbar result is `Dismissed` (i.e. it timed out without the user tapping Undo). The custom countdown rendering (`ui/widgets/DeleteUndoSnackbar.kt`) is picked in each `SnackbarHost`'s content lambda by checking `data.visuals.actionLabel == "Undo"`. Any new delete flow should follow this same shape rather than deleting synchronously.
 
-**Home-screen widgets (Glance, `widget/`):** each widget (`YataAppWidget`, `SingleListWidget`, `QuickAddWidget`, `ProgressStatsWidget`, `UpcomingWidget`, `TeamOverdueWidget`) is instantiated directly by Android (`new SomeWidget()`), not through Hilt, so it can't get constructor injection — instead it reaches app dependencies via `WidgetEntryPoint`, a `@EntryPoint` Hilt interface exposing `repository()`/`userPreferences()`. `WidgetUpdater.notifyTasksChanged()` is the single hook called after any task write; it refreshes all placed widget instances via `WidgetRefresher` *and* pushes to the paired Wear OS watch via `WearSyncUpdater` — both home-screen widgets and the watch complication ride the same "something changed" signal. All six widgets share one configure Activity, `WidgetCustomizerConfigActivity` (`Theme.Yata.Transparent`), for corner radius / custom label / M3-colors toggle / opacity / accent-color override; Single List and Quick Add additionally get a source picker (list/project/tag) from the same screen. Each widget's `provideGlance` must explicitly read+apply every `WIDGET_*_KEY` it wants to support — the config screen doesn't know which keys a given widget type actually renders, so a widget that's supposed to honor a shared option but doesn't read it fails silently (this bit `TeamOverdueWidget` once; see `supportsM3Colors` in `WidgetCustomizerConfigActivity` for how an unsupported option gets hidden instead of silently ignored).
+**Home-screen widgets (Glance, `widget/`):** each widget (`YataAppWidget`, `SingleListWidget`, `QuickAddWidget`, `ProgressStatsWidget`, `UpcomingWidget`, `TeamOverdueWidget`) is instantiated directly by Android (`new SomeWidget()`), not through Hilt, so it can't get constructor injection — instead it reaches app dependencies via `WidgetEntryPoint`, a `@EntryPoint` Hilt interface exposing `repository()`/`userPreferences()`. `WidgetUpdater.notifyTasksChanged()` is the single hook called after any task write; it refreshes all placed widget instances via `WidgetRefresher` and debounces the cloud-backup upload. All six widgets share one configure Activity, `WidgetCustomizerConfigActivity` (`Theme.Yata.Transparent`), for corner radius / custom label / M3-colors toggle / opacity / accent-color override; Single List and Quick Add additionally get a source picker (list/project/tag) from the same screen. Each widget's `provideGlance` must explicitly read+apply every `WIDGET_*_KEY` it wants to support — the config screen doesn't know which keys a given widget type actually renders, so a widget that's supposed to honor a shared option but doesn't read it fails silently (this bit `TeamOverdueWidget` once; see `supportsM3Colors` in `WidgetCustomizerConfigActivity` for how an unsupported option gets hidden instead of silently ignored).
 
 **Reminders/notifications (`notification/`):** `ReminderScheduler`/`TaskReminderScheduler` schedule via `AlarmManager`, delivered by `ReminderReceiver`; `BootReceiver` reschedules everything on device reboot; `NotificationActionReceiver` handles notification-inline actions (e.g. mark done) without opening the app. `DailyAgendaWorker` and `OverdueEscalationWorker` are WorkManager jobs (not `AlarmManager`) for, respectively, a daily agenda summary notification and escalating overdue-task nudges.
 
