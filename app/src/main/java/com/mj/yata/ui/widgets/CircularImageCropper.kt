@@ -73,7 +73,13 @@ fun CircularImageCropper(
     Dialog(onDismissRequest = onCancel, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(color = Color.Black, modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                // safeDrawingPadding keeps the action row clear of the system bars. Without it
+                // the Cancel/Use photo buttons render *behind* the gesture nav bar on API 35+,
+                // where edge-to-edge is enforced and the window no longer insets itself — the
+                // screen then looks like it simply has no way to confirm the crop.
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.weight(1f))

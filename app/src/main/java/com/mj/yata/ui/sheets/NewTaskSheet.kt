@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.FlowRow
@@ -450,7 +450,11 @@ fun NewTaskSheet(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .imePadding()
+            // safeDrawing covers the IME *and* the system bars, so this replaces the previous
+            // imePadding(). The host Dialog opts out of decor fitting, and API 35 enforces
+            // edge-to-edge, so without the bars inset the title row sits under the status bar
+            // and the create button ends up behind the gesture nav bar.
+            .safeDrawingPadding()
     ) {
         TopAppBar(
             title = {
