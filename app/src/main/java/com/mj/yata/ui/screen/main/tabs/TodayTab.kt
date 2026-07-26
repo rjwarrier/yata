@@ -67,6 +67,8 @@ fun TodayTab(
     onBulkReschedule: (List<String>, QuickSnoozePreset) -> Unit = { _, _ -> },
     onRenameTask: (String, String) -> Unit = { _, _ -> },
     onAddComment: (taskId: String, body: String) -> Unit = { _, _ -> },
+    sortMode: com.mj.yata.util.TaskSortMode = com.mj.yata.util.TaskSortMode.MANUAL,
+    onSortModeChange: (com.mj.yata.util.TaskSortMode) -> Unit = {},
     peopleEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     projectsEnabled: Boolean = true,
@@ -140,7 +142,6 @@ fun TodayTab(
     // Flat list, no more Morning/Afternoon grouping — split into Pending/Completed instead of
     // interleaving them in raw sortOrder. Hiding completed drops both the tasks and the section
     // headers themselves, rather than leaving an empty "Completed" heading around.
-    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
     val pendingTasks = remember(filteredTasks, sortMode, activeStatFilter, today) {
         filteredTasks
             .filter { !it.done }
@@ -201,7 +202,7 @@ fun TodayTab(
                 }
                 com.mj.yata.ui.widgets.TaskSortMenuButton(
                     current = sortMode,
-                    onSelect = { sortMode = it }
+                    onSelect = onSortModeChange
                 )
                 IconButton(onClick = { onHideCompletedChange(!hideCompleted) }) {
                     Icon(

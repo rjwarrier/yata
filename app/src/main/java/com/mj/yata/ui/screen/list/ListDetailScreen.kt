@@ -109,7 +109,7 @@ fun ListDetailScreen(
     val openTasks = listTasks.size - doneTasks
     // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
     // list. Hiding completed drops both the tasks and the section headers entirely.
-    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val sortMode by viewModel.sortModeList.collectAsState()
     val pendingListTasks = remember(listTasks, sortMode) {
         listTasks.filter { !it.done }.sortedByMode(sortMode)
     }
@@ -211,7 +211,7 @@ fun ListDetailScreen(
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
-                            onSelect = { sortMode = it }
+                            onSelect = { viewModel.setSortModeList(it) }
                         )
                         IconButton(onClick = { viewModel.setHideCompletedList(!hideCompleted) }) {
                             Icon(

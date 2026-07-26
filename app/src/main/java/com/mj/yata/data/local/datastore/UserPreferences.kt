@@ -8,6 +8,8 @@ import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.util.decodeSalt
 import com.mj.yata.util.encodeSalt
+import com.mj.yata.util.EntitySortMode
+import com.mj.yata.util.TaskSortMode
 import com.mj.yata.util.generateSalt
 import com.mj.yata.util.hashPin
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -114,7 +116,24 @@ class UserPreferences @Inject constructor(
         val LAST_PRIMARY_ARGB      = intPreferencesKey("last_primary_argb")
         val SAVED_SMART_FILTER_SETS = stringSetPreferencesKey("saved_smart_filter_sets")
         val RECENT_TASK_IDS       = stringPreferencesKey("recent_task_ids")
+        // Sort mode per screen, persisted alongside HIDE_COMPLETED_* above — both are
+        // per-screen view state the user expects to survive navigating away and back.
+        val SORT_MODE_TODAY       = stringPreferencesKey("sort_mode_today")
+        val SORT_MODE_PROJECT     = stringPreferencesKey("sort_mode_project")
+        val SORT_MODE_LIST        = stringPreferencesKey("sort_mode_list")
+        val SORT_MODE_PERSON      = stringPreferencesKey("sort_mode_person")
+        val SORT_MODE_TAG_DETAIL  = stringPreferencesKey("sort_mode_tag_detail")
+        val SORT_MODE_TAGS_TAB    = stringPreferencesKey("sort_mode_tags_tab")
+        val SORT_MODE_PEOPLE_TAB  = stringPreferencesKey("sort_mode_people_tab")
     }
+
+    /** Unknown/absent values fall back to the enum default rather than throwing — a persisted
+     * name can go stale if an enum constant is ever renamed or removed. */
+    private fun taskSortModeOf(raw: String?): TaskSortMode =
+        TaskSortMode.entries.firstOrNull { it.name == raw } ?: TaskSortMode.MANUAL
+
+    private fun entitySortModeOf(raw: String?): EntitySortMode =
+        EntitySortMode.entries.firstOrNull { it.name == raw } ?: EntitySortMode.NAME_ASC
 
     val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
         when (prefs[THEME_MODE]) {
@@ -201,6 +220,13 @@ class UserPreferences @Inject constructor(
     val hideCompletedProjectFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PROJECT] ?: false }
     val hideCompletedListFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_LIST] ?: false }
     val hideCompletedPersonFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PERSON] ?: false }
+    val sortModeTodayFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TODAY]) }
+    val sortModeProjectFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_PROJECT]) }
+    val sortModeListFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_LIST]) }
+    val sortModePersonFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_PERSON]) }
+    val sortModeTagDetailFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
+    val sortModeTagsTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
+    val sortModePeopleTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
     val lastHomeTabFlow: Flow<Int> = dataStore.data.map { (it[LAST_HOME_TAB] ?: 0).coerceIn(0, 4) }
     val hasSeenWelcomeFlow: Flow<Boolean> = dataStore.data.map { it[HAS_SEEN_WELCOME] ?: false }
     val savedSmartFilterSetsFlow: Flow<Set<String>> = dataStore.data.map { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
@@ -288,6 +314,34 @@ class UserPreferences @Inject constructor(
 
     suspend fun setHideCompletedPerson(hide: Boolean) {
         dataStore.edit { it[HIDE_COMPLETED_PERSON] = hide }
+    }
+
+    suspend fun setSortModeToday(mode: TaskSortMode) {
+        dataStore.edit { it[SORT_MODE_TODAY] = mode.name }
+    }
+
+    suspend fun setSortModeProject(mode: TaskSortMode) {
+        dataStore.edit { it[SORT_MODE_PROJECT] = mode.name }
+    }
+
+    suspend fun setSortModeList(mode: TaskSortMode) {
+        dataStore.edit { it[SORT_MODE_LIST] = mode.name }
+    }
+
+    suspend fun setSortModePerson(mode: TaskSortMode) {
+        dataStore.edit { it[SORT_MODE_PERSON] = mode.name }
+    }
+
+    suspend fun setSortModeTagDetail(mode: TaskSortMode) {
+        dataStore.edit { it[SORT_MODE_TAG_DETAIL] = mode.name }
+    }
+
+    suspend fun setSortModeTagsTab(mode: EntitySortMode) {
+        dataStore.edit { it[SORT_MODE_TAGS_TAB] = mode.name }
+    }
+
+    suspend fun setSortModePeopleTab(mode: EntitySortMode) {
+        dataStore.edit { it[SORT_MODE_PEOPLE_TAB] = mode.name }
     }
 
     suspend fun setLastHomeTab(tab: Int) {

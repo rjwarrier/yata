@@ -153,6 +153,9 @@ fun MainScreen(
     val fabPosition = uiState.fabPosition
     val hideCompletedToday = uiState.hideCompletedToday
     val todayBadgeCount = uiState.todayRemainingCount
+    val sortModeToday by viewModel.sortModeToday.collectAsStateWithLifecycle()
+    val sortModeTagsTab by viewModel.sortModeTagsTab.collectAsStateWithLifecycle()
+    val sortModePeopleTab by viewModel.sortModePeopleTab.collectAsStateWithLifecycle()
     val recentTasks by viewModel.recentTasks.collectAsStateWithLifecycle()
     val lastHomeTab by viewModel.lastHomeTab.collectAsStateWithLifecycle()
     val savedSmartFilterSets by viewModel.savedSmartFilterSets.collectAsStateWithLifecycle()
@@ -703,7 +706,9 @@ fun MainScreen(
                             projectsEnabled = projectsFeatureEnabled,
                             taskRowDensity = taskRowDensity,
                             hideCompleted = hideCompletedToday,
-                            onHideCompletedChange = { viewModel.setHideCompletedToday(it) }
+                            onHideCompletedChange = { viewModel.setHideCompletedToday(it) },
+                            sortMode = sortModeToday,
+                            onSortModeChange = { viewModel.setSortModeToday(it) }
                         )
                         1 -> ProjectsTab(
                             projects = projects,
@@ -739,7 +744,9 @@ fun MainScreen(
                                 viewModel.setPeopleGroup(personIds, id)
                             },
                             onToggleStar = { viewModel.togglePersonStarred(it) },
-                            onDeleteGroup = { viewModel.deletePersonGroup(it) }
+                            onDeleteGroup = { viewModel.deletePersonGroup(it) },
+                            sortMode = sortModePeopleTab,
+                            onSortModeChange = { viewModel.setSortModePeopleTab(it) }
                         )
                         3 -> TagsTab(
                             tags = tags,
@@ -757,7 +764,9 @@ fun MainScreen(
                             onToggleStar = { viewModel.toggleTagStarred(it) },
                             onDeleteGroup = { viewModel.deleteTagGroup(it) },
                             onBulkDeleteTags = { viewModel.bulkDeleteTags(it) },
-                            tagsEnabled = tagsFeatureEnabled
+                            tagsEnabled = tagsFeatureEnabled,
+                            sortMode = sortModeTagsTab,
+                            onSortModeChange = { viewModel.setSortModeTagsTab(it) }
                         )
                         4 -> UpcomingTab(
                             tasks = tasks,

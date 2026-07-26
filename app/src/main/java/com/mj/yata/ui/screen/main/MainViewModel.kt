@@ -634,6 +634,28 @@ private data class MainNavigationState(
     val hideCompletedPerson: StateFlow<Boolean> = userPreferences.hideCompletedPersonFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    // Per-screen sort mode, persisted like hideCompleted* above so it survives navigation.
+    val sortModeToday: StateFlow<com.mj.yata.util.TaskSortMode> = userPreferences.sortModeTodayFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.util.TaskSortMode.MANUAL)
+
+    val sortModeProject: StateFlow<com.mj.yata.util.TaskSortMode> = userPreferences.sortModeProjectFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.util.TaskSortMode.MANUAL)
+
+    val sortModeList: StateFlow<com.mj.yata.util.TaskSortMode> = userPreferences.sortModeListFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.util.TaskSortMode.MANUAL)
+
+    val sortModePerson: StateFlow<com.mj.yata.util.TaskSortMode> = userPreferences.sortModePersonFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.util.TaskSortMode.MANUAL)
+
+    val sortModeTagDetail: StateFlow<com.mj.yata.util.TaskSortMode> = userPreferences.sortModeTagDetailFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.util.TaskSortMode.MANUAL)
+
+    val sortModeTagsTab: StateFlow<com.mj.yata.util.EntitySortMode> = userPreferences.sortModeTagsTabFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.util.EntitySortMode.NAME_ASC)
+
+    val sortModePeopleTab: StateFlow<com.mj.yata.util.EntitySortMode> = userPreferences.sortModePeopleTabFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.util.EntitySortMode.NAME_ASC)
+
     val textScale: StateFlow<Float> = userPreferences.textScaleFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
 
@@ -1384,6 +1406,34 @@ private data class MainNavigationState(
         viewModelScope.launch {
             userPreferences.setHideCompletedPerson(hide)
         }
+    }
+
+    fun setSortModeToday(mode: com.mj.yata.util.TaskSortMode) {
+        viewModelScope.launch { userPreferences.setSortModeToday(mode) }
+    }
+
+    fun setSortModeProject(mode: com.mj.yata.util.TaskSortMode) {
+        viewModelScope.launch { userPreferences.setSortModeProject(mode) }
+    }
+
+    fun setSortModeList(mode: com.mj.yata.util.TaskSortMode) {
+        viewModelScope.launch { userPreferences.setSortModeList(mode) }
+    }
+
+    fun setSortModePerson(mode: com.mj.yata.util.TaskSortMode) {
+        viewModelScope.launch { userPreferences.setSortModePerson(mode) }
+    }
+
+    fun setSortModeTagDetail(mode: com.mj.yata.util.TaskSortMode) {
+        viewModelScope.launch { userPreferences.setSortModeTagDetail(mode) }
+    }
+
+    fun setSortModeTagsTab(mode: com.mj.yata.util.EntitySortMode) {
+        viewModelScope.launch { userPreferences.setSortModeTagsTab(mode) }
+    }
+
+    fun setSortModePeopleTab(mode: com.mj.yata.util.EntitySortMode) {
+        viewModelScope.launch { userPreferences.setSortModePeopleTab(mode) }
     }
 
     fun setHasSeenWelcome() {

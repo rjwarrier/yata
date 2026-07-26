@@ -137,7 +137,7 @@ fun PersonDetailScreen(
     com.mj.yata.ui.theme.StatusBarColor(
         personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
-    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val sortMode by viewModel.sortModePerson.collectAsState()
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
     val today = remember { java.time.LocalDate.now() }
     // Unfiltered-by-stat count, used by the hero's own primary text/progress so those always
@@ -233,7 +233,7 @@ fun PersonDetailScreen(
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
-                            onSelect = { sortMode = it }
+                            onSelect = { viewModel.setSortModePerson(it) }
                         )
                         IconButton(onClick = { viewModel.setHideCompletedPerson(!hideCompleted) }) {
                             Icon(

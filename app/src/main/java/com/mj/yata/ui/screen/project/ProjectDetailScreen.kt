@@ -113,7 +113,7 @@ fun ProjectDetailScreen(
     // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
     // list — only Pending supports drag-reorder, Completed just renders below it with its own
     // header. Hiding completed drops both the tasks and the section headers entirely.
-    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val sortMode by viewModel.sortModeProject.collectAsState()
     val pendingProjectTasks = remember(projectTasks, sortMode) {
         projectTasks.filter { !it.done }.sortedByMode(sortMode)
     }
@@ -232,7 +232,7 @@ fun ProjectDetailScreen(
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
-                            onSelect = { sortMode = it }
+                            onSelect = { viewModel.setSortModeProject(it) }
                         )
                         IconButton(onClick = { viewModel.setHideCompletedProject(!hideCompleted) }) {
                             Icon(

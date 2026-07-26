@@ -62,6 +62,8 @@ fun PeopleTab(
     onCreateGroupAndAssign: (id: String, name: String, personIds: List<String>) -> Unit,
     onToggleStar: (String) -> Unit = {},
     onDeleteGroup: (PersonGroup) -> Unit = {},
+    sortMode: com.mj.yata.util.EntitySortMode = com.mj.yata.util.EntitySortMode.NAME_ASC,
+    onSortModeChange: (com.mj.yata.util.EntitySortMode) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val tasksByPerson = remember(tasks) {
@@ -77,7 +79,6 @@ fun PeopleTab(
     var selectModeOn by remember { mutableStateOf(false) }
     val selectionMode = selectModeOn
     var showGroupPicker by remember { mutableStateOf(false) }
-    var sortMode by remember { mutableStateOf(com.mj.yata.util.EntitySortMode.NAME_ASC) }
 
     Column(
         modifier = modifier
@@ -141,7 +142,7 @@ fun PeopleTab(
                 ) {
                     com.mj.yata.ui.widgets.EntitySortMenuButton(
                         current = sortMode,
-                        onSelect = { sortMode = it },
+                        onSelect = onSortModeChange,
                         contentDescription = "Sort people"
                     )
                     IconButton(onClick = { selectModeOn = true }) {

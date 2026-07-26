@@ -137,7 +137,7 @@ fun TagDetailScreen(
     val dueTodayCount = remember(allTaggedTasks, todayStr) { allTaggedTasks.count { !it.done && it.due == todayStr } }
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
-    var sortMode by remember { mutableStateOf(com.mj.yata.util.TaskSortMode.MANUAL) }
+    val sortMode by viewModel.sortModeTagDetail.collectAsState()
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
     val heroToday = remember { java.time.LocalDate.now() }
     val pendingTaggedTasks = remember(allTaggedTasks, searchQuery, sortMode) {
@@ -253,7 +253,7 @@ fun TagDetailScreen(
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
-                            onSelect = { sortMode = it }
+                            onSelect = { viewModel.setSortModeTagDetail(it) }
                         )
                         IconButton(onClick = {
                             hideCompleted = !hideCompleted

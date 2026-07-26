@@ -67,6 +67,8 @@ fun TagsTab(
     onToggleStar: (String) -> Unit = {},
     onDeleteGroup: (TagGroup) -> Unit = {},
     onBulkDeleteTags: (List<String>) -> Unit = {},
+    sortMode: com.mj.yata.util.EntitySortMode = com.mj.yata.util.EntitySortMode.NAME_ASC,
+    onSortModeChange: (com.mj.yata.util.EntitySortMode) -> Unit = {},
     tagsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -74,7 +76,6 @@ fun TagsTab(
     var selectModeOn by remember { mutableStateOf(false) }
     val selectionMode = selectModeOn
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
-    var sortMode by remember { mutableStateOf(com.mj.yata.util.EntitySortMode.NAME_ASC) }
 
     Column(
         modifier = modifier
@@ -138,7 +139,7 @@ fun TagsTab(
             ) {
                 com.mj.yata.ui.widgets.EntitySortMenuButton(
                     current = sortMode,
-                    onSelect = { sortMode = it },
+                    onSelect = onSortModeChange,
                     contentDescription = "Sort tags"
                 )
                 IconButton(onClick = { selectModeOn = true }) {
