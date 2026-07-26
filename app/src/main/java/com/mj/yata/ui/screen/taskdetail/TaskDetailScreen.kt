@@ -33,7 +33,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -194,6 +196,7 @@ fun TaskDetailScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
 
@@ -303,6 +306,19 @@ fun TaskDetailScreen(
                                 exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
                             },
                             leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
+                        )
+                        // Deep link back to this task — paste into a note, a message, or an
+                        // automation and it reopens exactly here.
+                        DropdownMenuItem(
+                            text = { Text("Copy link to task") },
+                            onClick = {
+                                showExportMenu = false
+                                clipboardManager.setText(
+                                    AnnotatedString(com.mj.yata.ui.navigation.DeepLink.task(task.id))
+                                )
+                                scope.launch { snackbarHostState.showSnackbar("Link copied") }
+                            },
+                            leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) }
                         )
                     }
                     // Delete/Archive — deletion is deferred until the Undo snackbar times out,

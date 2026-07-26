@@ -15,6 +15,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import android.net.Uri
 import com.mj.yata.ui.screen.analytics.AnalyticsScreen
 import com.mj.yata.ui.screen.main.MainScreen
@@ -103,7 +104,8 @@ fun AppNavigation(
         // ── Task Detail ──────────────────────────────────────────────────────
         composable(
             route = Screen.TaskDetail.route,
-            arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+            arguments = listOf(navArgument("taskId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = "${DeepLink.SCHEME}://task/{taskId}" })
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
@@ -121,7 +123,8 @@ fun AppNavigation(
         // ── Project Detail ───────────────────────────────────────────────────
         composable(
             route = Screen.ProjectDetail.route,
-            arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = "${DeepLink.SCHEME}://project/{projectId}" })
         ) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: ""
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
@@ -139,7 +142,8 @@ fun AppNavigation(
         // ── Person Detail ────────────────────────────────────────────────────
         composable(
             route = Screen.PersonDetail.route,
-            arguments = listOf(navArgument("personId") { type = NavType.StringType })
+            arguments = listOf(navArgument("personId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = "${DeepLink.SCHEME}://person/{personId}" })
         ) { backStackEntry ->
             val personId = backStackEntry.arguments?.getString("personId") ?: ""
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
@@ -157,7 +161,8 @@ fun AppNavigation(
         // ── Tag Detail ───────────────────────────────────────────────────────
         composable(
             route = Screen.TagDetail.route,
-            arguments = listOf(navArgument("tagId") { type = NavType.StringType })
+            arguments = listOf(navArgument("tagId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = "${DeepLink.SCHEME}://tag/{tagId}" })
         ) { backStackEntry ->
             val tagId = backStackEntry.arguments?.getString("tagId") ?: ""
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
@@ -175,7 +180,8 @@ fun AppNavigation(
         // ── List Detail ───────────────────────────────────────────────────────
         composable(
             route = Screen.ListDetail.route,
-            arguments = listOf(navArgument("listId") { type = NavType.StringType })
+            arguments = listOf(navArgument("listId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = "${DeepLink.SCHEME}://list/{listId}" })
         ) { backStackEntry ->
             val listId = backStackEntry.arguments?.getString("listId") ?: ""
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)

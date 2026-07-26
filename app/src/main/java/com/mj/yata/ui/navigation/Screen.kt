@@ -2,6 +2,25 @@ package com.mj.yata.ui.navigation
 
 import android.net.Uri
 
+/**
+ * Custom scheme backing the app's deep links (`yata://task/<id>`). A custom scheme rather than
+ * an https App Link because App Links require hosting a verified assetlinks.json on a domain —
+ * this app has no web presence, and an unverified https filter would show a disambiguation
+ * chooser instead of opening directly.
+ *
+ * These are stable, user-visible identifiers once anyone pastes one into a note or a message —
+ * treat the patterns as an API and don't rename them casually.
+ */
+object DeepLink {
+    const val SCHEME = "yata"
+
+    fun task(taskId: String) = "$SCHEME://task/$taskId"
+    fun project(projectId: String) = "$SCHEME://project/$projectId"
+    fun person(personId: String) = "$SCHEME://person/$personId"
+    fun tag(tagId: String) = "$SCHEME://tag/$tagId"
+    fun list(listId: String) = "$SCHEME://list/$listId"
+}
+
 sealed class Screen(val route: String) {
     object Main : Screen("main?tab={tab}&quickAdd={quickAdd}&quickAddListId={quickAddListId}") {
         fun createRoute(tab: Int, quickAdd: Boolean = false, quickAddListId: String? = null) =

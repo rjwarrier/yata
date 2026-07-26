@@ -164,6 +164,12 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     // triggers the same routing effect as a cold start — `intent` alone isn't observable state.
     private var currentIntent by mutableStateOf<Intent?>(null)
 
+    // Deep-link intents (yata://task/<id>) delivered while the Activity is already alive. A cold
+    // start is handled for free — NavController.setGraph() inspects the launching intent — but
+    // that never re-runs for onNewIntent, so those would otherwise be silently dropped. Set only
+    // from onNewIntent and cleared once consumed, so cold starts don't navigate twice.
+    private var pendingDeepLinkIntent by mutableStateOf<Intent?>(null)
+
     private fun canAuthenticate(): Boolean =
         BiometricManager.from(this).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL) ==
             BiometricManager.BIOMETRIC_SUCCESS
@@ -189,6 +195,11 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         currentIntent = intent
+        if (intent.action == Intent.ACTION_VIEW &&
+            intent.data?.scheme == com.mj.yata.ui.navigation.DeepLink.SCHEME
+        ) {
+            pendingDeepLinkIntent = intent
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -375,6 +386,15 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                                     launchSingleTop = true
                                 }
                             }
+                        }
+
+                        // Deep link arriving while the app is already running. Cold starts are
+                        // already covered by setGraph(), so only onNewIntent-delivered ones
+                        // land here (see pendingDeepLinkIntent).
+                        LaunchedEffect(pendingDeepLinkIntent) {
+                            val deepLinkIntent = pendingDeepLinkIntent ?: return@LaunchedEffect
+                            pendingDeepLinkIntent = null
+                            navController.handleDeepLink(deepLinkIntent)
                         }
 
                         // First launch after install (or after a fresh restore): show the
