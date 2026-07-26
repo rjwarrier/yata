@@ -19,16 +19,24 @@ import androidx.compose.ui.platform.LocalView
  * not over the app's background — passing a translucent tint directly would blend against the
  * wrong surface and render a different shade than the header actually shows on screen. Composite
  * your tint over `MaterialTheme.colorScheme.background` yourself first (`tint.compositeOver(bg)`).
+ *
+ * On API 35+ (targetSdk 35) `window.statusBarColor` is ignored — edge-to-edge is enforced, so
+ * whatever the screen draws behind the status bar inset (typically its `TopAppBar` container
+ * color) shows instead. That's a coherent look, just without the per-screen tint; screens that
+ * want the tint on 35+ should set it as their `TopAppBar` containerColor.
  */
 @Composable
 fun StatusBarColor(color: Color) {
     val view = LocalView.current
     val defaultColor = MaterialTheme.colorScheme.background
     if (view.isInEditMode) return
+    if (android.os.Build.VERSION.SDK_INT >= 35) return
     DisposableEffect(color) {
         val window = (view.context as Activity).window
+        @Suppress("DEPRECATION")
         window.statusBarColor = color.toArgb()
         onDispose {
+            @Suppress("DEPRECATION")
             window.statusBarColor = defaultColor.toArgb()
         }
     }

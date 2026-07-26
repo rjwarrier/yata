@@ -56,13 +56,16 @@ import com.mj.yata.ui.theme.YataEase
 import java.util.UUID
 
 /** Equal-width rectangular (not pill-shaped) toggle for the Subtasks/Notes/Comments chip row —
- * highlighted while its section is visible, plain otherwise. */
+ * highlighted while its section is visible, plain otherwise. While collapsed, [count] (if
+ * non-null and > 0) is appended as a "(n)" badge so the chip previews how much content is
+ * hidden — the badge drops once expanded since the content itself is then visible below. */
 @Composable
 private fun SectionToggleChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    count: Int? = null
 ) {
     val bgColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -74,6 +77,7 @@ private fun SectionToggleChip(
         animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
         label = "sectionToggleText"
     )
+    val displayLabel = if (!selected && count != null && count > 0) "$label ($count)" else label
 
     Box(
         modifier = modifier
@@ -84,7 +88,7 @@ private fun SectionToggleChip(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = label,
+            text = displayLabel,
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = textColor
         )
@@ -694,9 +698,9 @@ fun TaskDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SectionToggleChip("Subtasks", showSubtasks, { showSubtasks = !showSubtasks }, Modifier.weight(1f))
-                    SectionToggleChip("Notes", showNotes, { showNotes = !showNotes }, Modifier.weight(1f))
-                    SectionToggleChip("Comments", showComments, { showComments = !showComments; userToggledComments = true }, Modifier.weight(1f))
+                    SectionToggleChip("Subtasks", showSubtasks, { showSubtasks = !showSubtasks }, Modifier.weight(1f), count = task.subtasks.size)
+                    SectionToggleChip("Notes", showNotes, { showNotes = !showNotes }, Modifier.weight(1f), count = if (!task.notes.isNullOrBlank()) 1 else 0)
+                    SectionToggleChip("Comments", showComments, { showComments = !showComments; userToggledComments = true }, Modifier.weight(1f), count = comments.size)
                 }
             }
 

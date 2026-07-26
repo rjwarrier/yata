@@ -265,9 +265,11 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val uiScale by userPreferences.uiScaleFlow.collectAsState(initial = 1.0f)
             val textScale by userPreferences.textScaleFlow.collectAsState(initial = 1.0f)
             val dynamicColorEnabled by userPreferences.dynamicColorEnabledFlow.collectAsState(initial = true)
+            val customThemeSeedColorArgb by userPreferences.customThemeSeedColorFlow.collectAsState(initial = null)
             val appFont by userPreferences.appFontFlow.collectAsState(initial = com.mj.yata.domain.model.AppFont.INTER)
             val enhancedM3ThemingEnabled by userPreferences.enhancedM3ThemingEnabledFlow.collectAsState(initial = false)
             val floatingBottomNavEnabled by userPreferences.floatingBottomNavEnabledFlow.collectAsState(initial = false)
+            val bottomNavLabelsEnabled by userPreferences.bottomNavLabelsEnabledFlow.collectAsState(initial = true)
             val completionSoundEnabled by userPreferences.completionSoundEnabledFlow.collectAsState(initial = true)
             val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
             val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
@@ -300,10 +302,13 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 YataTheme(
                     darkTheme = useDarkTheme,
                     useDynamicColor = dynamicColorEnabled,
+                    customThemeSeedColor = customThemeSeedColorArgb?.let { androidx.compose.ui.graphics.Color(it) },
                     appFont = appFont,
                     enhancedM3Theming = enhancedM3ThemingEnabled,
                     floatingBottomNav = floatingBottomNavEnabled,
-                    completionSound = completionSoundEnabled
+                    completionSound = completionSoundEnabled,
+                    bottomNavLabelsEnabled = bottomNavLabelsEnabled,
+                    edgeToEdge = true
                 ) {
                     // Cache the actually-rendered primary color so background notifications/widgets
                     // can match it exactly, instead of re-resolving dynamic color in a receiver/worker

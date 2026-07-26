@@ -3,24 +3,20 @@ package com.mj.yata.ui.screen.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mj.yata.data.cloud.CloudBackupEntry
-import com.mj.yata.data.cloud.CloudBackupManager
-import com.mj.yata.data.local.backup.LocalBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
-import com.mj.yata.wear.WearSyncUpdater
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.domain.usecase.BackupOperations
+import com.mj.yata.domain.usecase.TaskOperations
 import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.AnalyticsUiState
 import com.mj.yata.util.AnalyticsUtils
-import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.NaturalLanguageParser
-import com.mj.yata.util.TaskScheduleUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
@@ -29,10 +25,8 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val repository: YataRepository,
     private val userPreferences: UserPreferences,
-    private val jsonExporter: JsonExporter,
-    private val cloudBackupManager: CloudBackupManager,
-    private val localBackupManager: LocalBackupManager,
-    private val wearSyncUpdater: WearSyncUpdater
+    private val taskOperations: TaskOperations,
+    private val backupOperations: BackupOperations
 ) : ViewModel() {
 
     init {
@@ -59,6 +53,7 @@ data class SettingsUiState(
     val reduceMotionEnabled: Boolean = false,
     val enhancedM3ThemingEnabled: Boolean = false,
     val floatingBottomNavEnabled: Boolean = false,
+    val bottomNavLabelsEnabled: Boolean = true,
     val textScale: Float = 1.0f,
     val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
     val hapticsEnabled: Boolean = true,
@@ -132,6 +127,7 @@ private data class SettingsDisplayFlags(
     val reduceMotionEnabled: Boolean,
     val enhancedM3ThemingEnabled: Boolean,
     val floatingBottomNavEnabled: Boolean,
+    val bottomNavLabelsEnabled: Boolean,
     val textScale: Float
 )
 
@@ -142,6 +138,7 @@ private data class SettingsDisplayState(
     val reduceMotionEnabled: Boolean,
     val enhancedM3ThemingEnabled: Boolean,
     val floatingBottomNavEnabled: Boolean,
+    val bottomNavLabelsEnabled: Boolean,
     val textScale: Float
 )
 
@@ -297,9 +294,10 @@ private data class MainNavigationState(
                 userPreferences.reduceMotionEnabledFlow,
                 userPreferences.enhancedM3ThemingEnabledFlow,
                 userPreferences.floatingBottomNavEnabledFlow,
+                userPreferences.bottomNavLabelsEnabledFlow,
                 userPreferences.textScaleFlow
-            ) { reduceMotion, enhancedM3, floatingNav, textScale ->
-                SettingsDisplayFlags(reduceMotion, enhancedM3, floatingNav, textScale)
+            ) { reduceMotion, enhancedM3, floatingNav, bottomNavLabels, textScale ->
+                SettingsDisplayFlags(reduceMotion, enhancedM3, floatingNav, bottomNavLabels, textScale)
             }
         ) { themeScheduleStartMinute, themeScheduleEndHour, themeScheduleEndMinute, flags ->
             SettingsDisplayState(
@@ -309,6 +307,7 @@ private data class MainNavigationState(
                 flags.reduceMotionEnabled,
                 flags.enhancedM3ThemingEnabled,
                 flags.floatingBottomNavEnabled,
+                flags.bottomNavLabelsEnabled,
                 flags.textScale
             )
         },
@@ -403,6 +402,7 @@ private data class MainNavigationState(
             reduceMotionEnabled = core.display.reduceMotionEnabled,
             enhancedM3ThemingEnabled = core.display.enhancedM3ThemingEnabled,
             floatingBottomNavEnabled = core.display.floatingBottomNavEnabled,
+            bottomNavLabelsEnabled = core.display.bottomNavLabelsEnabled,
             textScale = core.display.textScale,
             taskRowDensity = core.feature.taskRowDensity,
             hapticsEnabled = core.feature.hapticsEnabled,
@@ -595,6 +595,9 @@ private data class MainNavigationState(
     val dynamicColorEnabled: StateFlow<Boolean> = userPreferences.dynamicColorEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val customThemeSeedColor: StateFlow<Int?> = userPreferences.customThemeSeedColorFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val peopleFeatureEnabled: StateFlow<Boolean> = userPreferences.peopleFeatureEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -611,6 +614,12 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val floatingBottomNavEnabled: StateFlow<Boolean> = userPreferences.floatingBottomNavEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val bottomNavLabelsEnabled: StateFlow<Boolean> = userPreferences.bottomNavLabelsEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val demoModeEnabled: StateFlow<Boolean> = userPreferences.demoModeEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val hideCompletedToday: StateFlow<Boolean> = userPreferences.hideCompletedTodayFlow
@@ -699,32 +708,14 @@ private data class MainNavigationState(
         }
     }
 
+    // Multi-task orchestration lives in TaskOperations (domain/usecase) — these wrappers only
+    // supply the coroutine scope, so screens keep their existing entry points.
     fun bulkCompleteTasks(ids: List<String>) {
-        viewModelScope.launch {
-            val byId = tasks.value.associateBy { it.id }
-            var changed = false
-            ids.forEach { id ->
-                val task = byId[id]
-                if (task != null && !task.done) {
-                    repository.toggleTaskDone(id, notify = false)
-                    changed = true
-                }
-            }
-            if (changed) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.bulkComplete(ids) }
     }
 
     fun bulkDeleteTasks(ids: List<String>) {
-        viewModelScope.launch {
-            val byId = tasks.value.associateBy { it.id }
-            var changed = false
-            ids.forEach { id ->
-                val task = byId[id] ?: return@forEach
-                repository.deleteTask(task, notify = false)
-                changed = true
-            }
-            if (changed) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.bulkDelete(ids) }
     }
 
     fun restoreTasks(previousTasks: List<Task>) {
@@ -735,157 +726,35 @@ private data class MainNavigationState(
     }
 
     fun bulkAddTag(ids: List<String>, tagId: String) {
-        viewModelScope.launch {
-            val byId = tasks.value.associateBy { it.id }
-            var changed = false
-            ids.forEach { id ->
-                val task = byId[id] ?: return@forEach
-                if (!task.tagIds.contains(tagId)) {
-                    repository.upsertTask(task.copy(tagIds = task.tagIds + tagId), notify = false, resyncReminder = false)
-                    changed = true
-                }
-            }
-            if (changed) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.bulkAddTag(ids, tagId) }
     }
 
     fun bulkSetProject(ids: List<String>, projectId: String?) {
-        viewModelScope.launch {
-            // Append after the destination's existing tasks, like moveTaskToList does for a
-            // single move — otherwise every bulk-moved task keeps its old sortOrder, which can
-            // collide with whatever's already in the destination project.
-            val byId = tasks.value.associateBy { it.id }
-            var nextSortOrder = tasks.value.count { it.projectId == projectId }
-            var changed = false
-            ids.forEach { id ->
-                val task = byId[id] ?: return@forEach
-                repository.setTaskContainer(
-                    id = task.id,
-                    listId = task.listId,
-                    projectId = projectId,
-                    sortOrder = nextSortOrder,
-                    notify = false
-                )
-                nextSortOrder++
-                changed = true
-            }
-            if (changed) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.bulkSetProject(ids, projectId) }
     }
 
     fun bulkSetList(ids: List<String>, listId: String?) {
-        viewModelScope.launch {
-            val byId = tasks.value.associateBy { it.id }
-            var nextSortOrder = tasks.value.count { it.listId == listId }
-            var changed = false
-            ids.forEach { id ->
-                val task = byId[id] ?: return@forEach
-                repository.setTaskContainer(
-                    id = task.id,
-                    listId = listId,
-                    projectId = task.projectId,
-                    sortOrder = nextSortOrder,
-                    notify = false
-                )
-                nextSortOrder++
-                changed = true
-            }
-            if (changed) repository.notifyTasksChanged()
-        }
-    }
-
-    /**
-     * Duplicates a single task, keeping every field (priority, flag, assignees, tags,
-     * subtasks) except id (fresh UUID) and done (reset to false). due is left unchanged
-     * unless the caller supplies a dueAdjustment (e.g. rollover shifts +1 month).
-     */
-    /** Suspend core shared by [duplicateTask], [bulkDuplicateTasks], and [rolloverProjectTasks] —
-     * callers that duplicate many tasks at once await these sequentially in one coroutine
-     * instead of each fanning out its own untracked `launch`, so there's a real completion
-     * point and no unordered race between the writes. */
-    private suspend fun duplicateTaskSuspend(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }, notify: Boolean = true) {
-        val task = tasks.value.find { it.id == taskId } ?: return
-        val newDue = task.due?.let { due ->
-            try {
-                dueAdjustment(LocalDate.parse(due)).toString()
-            } catch (e: Exception) {
-                due
-            }
-        }
-        repository.upsertTask(
-            task.copy(id = "t_" + UUID.randomUUID().toString(), due = newDue, done = false),
-            notify = notify
-        )
+        viewModelScope.launch { taskOperations.bulkSetList(ids, listId) }
     }
 
     fun duplicateTask(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
-        viewModelScope.launch { duplicateTaskSuspend(taskId, dueAdjustment) }
+        viewModelScope.launch { taskOperations.duplicate(taskId, dueAdjustment) }
     }
 
-    /**
-     * Duplicates every open, non-recurring task in a project's lists into next month
-     * (due date shifted +1 month, or no due date if the task had none). Recurring tasks
-     * already advance themselves on completion, so they're excluded here.
-     */
     fun rolloverProjectTasks(projectId: String) {
-        viewModelScope.launch {
-            val openTasks = tasks.value.filter {
-                it.projectId == projectId && !it.done && it.recurrence == null
-            }
-            openTasks.forEach { task ->
-                duplicateTaskSuspend(task.id, dueAdjustment = { it.plusMonths(1) }, notify = false)
-            }
-            if (openTasks.isNotEmpty()) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.rolloverProjectTasks(projectId) }
     }
 
     fun rolloverOverdueProjectTasks(projectId: String) {
-        viewModelScope.launch {
-            val today = LocalDate.now()
-            val overdueTasks = tasks.value.filter { task ->
-                task.projectId == projectId &&
-                    !task.done &&
-                    task.recurrence == null &&
-                    task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true
-            }
-            overdueTasks.forEach { task ->
-                duplicateTaskSuspend(
-                    task.id,
-                    dueAdjustment = { due ->
-                        var next = due.plusMonths(1)
-                        while (next.isBefore(today)) next = next.plusMonths(1)
-                        next
-                    },
-                    notify = false
-                )
-            }
-            if (overdueTasks.isNotEmpty()) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.rolloverOverdueProjectTasks(projectId) }
     }
 
     fun bulkDuplicateTasks(ids: List<String>) {
-        viewModelScope.launch {
-            ids.forEach { duplicateTaskSuspend(it, notify = false) }
-            if (ids.isNotEmpty()) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.bulkDuplicate(ids) }
     }
 
-    /**
-     * Persists a drag-and-drop reorder: [orderedTasks] is the final order of one container
-     * (a single list's or project's tasks), sortOrder is reassigned 0..n within it only —
-     * other tasks are never touched.
-     */
     fun commitTaskOrder(orderedTasks: List<Task>) {
-        viewModelScope.launch {
-            var changed = false
-            orderedTasks.forEachIndexed { index, task ->
-                if (task.sortOrder != index) {
-                    repository.setTaskSortOrder(task.id, index, notify = false)
-                    changed = true
-                }
-            }
-            if (changed) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.commitTaskOrder(orderedTasks) }
     }
 
     /** Persists a drag-and-drop reorder of the whole Projects tab (a single flat list). */
@@ -910,32 +779,12 @@ private data class MainNavigationState(
         }
     }
 
-    /** Moves a task to a different list/project (drag-to-edge cross-container move), appended to the end. */
     fun moveTaskToList(taskId: String, targetListId: String?, targetProjectId: String? = null) {
-        viewModelScope.launch {
-            val task = tasks.value.find { it.id == taskId } ?: return@launch
-            val targetSiblings = tasks.value.filter { it.listId == targetListId && it.projectId == targetProjectId }
-            repository.setTaskContainer(
-                id = task.id,
-                listId = targetListId,
-                projectId = targetProjectId,
-                sortOrder = targetSiblings.size
-            )
-        }
+        viewModelScope.launch { taskOperations.moveTaskToList(taskId, targetListId, targetProjectId) }
     }
 
     fun bulkAssignPerson(ids: List<String>, personId: String) {
-        viewModelScope.launch {
-            var changed = false
-            ids.forEach { id ->
-                val task = tasks.value.find { it.id == id } ?: return@forEach
-                if (!task.assigneeIds.contains(personId)) {
-                    repository.upsertTask(task.copy(assigneeIds = task.assigneeIds + personId), notify = false, resyncReminder = false)
-                    changed = true
-                }
-            }
-            if (changed) repository.notifyTasksChanged()
-        }
+        viewModelScope.launch { taskOperations.bulkAssignPerson(ids, personId) }
     }
 
     fun toggleTaskFlag(id: String) {
@@ -1040,48 +889,16 @@ private data class MainNavigationState(
 
     fun quickSnoozeTask(id: String, preset: QuickSnoozePreset) {
         viewModelScope.launch {
-            val task = tasks.value.find { it.id == id } ?: return@launch
-            val today = LocalDate.now()
-            val (dueDate, dueTime) = when (preset) {
-                QuickSnoozePreset.TONIGHT -> today to TaskScheduleUtils.formatTime(18, 0)
-                QuickSnoozePreset.TOMORROW_MORNING -> today.plusDays(1) to TaskScheduleUtils.formatTime(9, 0)
-                QuickSnoozePreset.NEXT_WEEKDAY -> nextWeekday(today.plusDays(1)) to TaskScheduleUtils.formatTime(9, 0)
-            }
-            repository.upsertTask(
-                task.copy(
-                    due = dueDate.toString(),
-                    time = dueTime,
-                    done = false,
-                    completedAt = null
-                )
-            )
+            taskOperations.quickSnooze(id, preset)
             userPreferences.recordRecentTask(id)
         }
     }
 
     fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset) {
         viewModelScope.launch {
-            val byId = tasks.value.associateBy { it.id }
-            val today = LocalDate.now()
-            val (dueDate, dueTime) = when (preset) {
-                QuickSnoozePreset.TONIGHT -> today to TaskScheduleUtils.formatTime(18, 0)
-                QuickSnoozePreset.TOMORROW_MORNING -> today.plusDays(1) to TaskScheduleUtils.formatTime(9, 0)
-                QuickSnoozePreset.NEXT_WEEKDAY -> nextWeekday(today.plusDays(1)) to TaskScheduleUtils.formatTime(9, 0)
-            }
-            val updated = ids.mapNotNull { byId[it] }.map {
-                it.copy(due = dueDate.toString(), time = dueTime, done = false, completedAt = null)
-            }
-            repository.upsertTasks(updated, notify = true, resyncReminder = true)
+            taskOperations.bulkReschedule(ids, preset)
             ids.take(8).forEach { userPreferences.recordRecentTask(it) }
         }
-    }
-
-    private fun nextWeekday(start: LocalDate): LocalDate {
-        var date = start
-        while (date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY) {
-            date = date.plusDays(1)
-        }
-        return date
     }
 
     fun deleteTask(task: Task) {
@@ -1398,9 +1215,32 @@ private data class MainNavigationState(
         }
     }
 
+    /** Pass null to clear back to the app's default warm coral palette. Only takes visual effect
+     * while Material You dynamic color is off. */
+    fun setCustomThemeSeedColor(argb: Int?) {
+        viewModelScope.launch {
+            userPreferences.setCustomThemeSeedColor(argb)
+        }
+    }
+
     fun setFloatingBottomNavEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setFloatingBottomNavEnabled(enabled)
+        }
+    }
+
+    fun setBottomNavLabelsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setBottomNavLabelsEnabled(enabled)
+        }
+    }
+
+    /** Toggled by tapping the logo on the Help & About screen. Demo mode swaps every screen's
+     * data source to an in-memory sample dataset (see RoutingYataRepository) for taking store
+     * screenshots — the real database is never read from or written to while it's active. */
+    fun toggleDemoMode() {
+        viewModelScope.launch {
+            userPreferences.setDemoModeEnabled(!demoModeEnabled.value)
         }
     }
 
@@ -1470,18 +1310,8 @@ private data class MainNavigationState(
         }
     }
 
-    /**
-     * Backs up everything to Downloads first, and only wipes the database if that backup
-     * actually succeeded — never delete without a safety copy landing on disk.
-     */
     fun backupThenDeleteAllData(onResult: (backupFilename: String?) -> Unit) {
-        viewModelScope.launch {
-            val filename = jsonExporter.exportToDownloads()
-            if (filename != null) {
-                repository.deleteAllData()
-            }
-            onResult(filename)
-        }
+        viewModelScope.launch { onResult(backupOperations.backupThenDeleteAllData()) }
     }
 
     fun setUserName(name: String) {
@@ -1593,9 +1423,7 @@ private data class MainNavigationState(
     }
 
     fun cloudSignOut() {
-        viewModelScope.launch {
-            cloudBackupManager.signOut()
-        }
+        viewModelScope.launch { backupOperations.cloudSignOut() }
     }
 
     fun setCloudBackupEnabled(enabled: Boolean) {
@@ -1611,33 +1439,17 @@ private data class MainNavigationState(
     }
 
     fun backupLocalNow() {
-        viewModelScope.launch {
-            localBackupManager.backupNow()
-        }
+        viewModelScope.launch { backupOperations.backupLocalNow() }
     }
 
     fun restoreLocalBackup(onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val result = localBackupManager.restoreLatest()
-            onResult(result.isSuccess)
-        }
+        viewModelScope.launch { onResult(backupOperations.restoreLatestLocalBackup()) }
     }
 
     fun streakForTask(taskId: String, onResult: (Int) -> Unit) {
         viewModelScope.launch {
             onResult(repository.getTaskStreak(taskId))
         }
-    }
-
-    fun checkWearConnected(onResult: (Boolean) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val connected = wearSyncUpdater.isWatchConnected()
-            withContext(Dispatchers.Main) { onResult(connected) }
-        }
-    }
-
-    fun syncWearNow() {
-        wearSyncUpdater.notifyTasksChanged()
     }
 
     fun setCloudBackupWifiOnly(wifiOnly: Boolean) {
@@ -1650,7 +1462,7 @@ private data class MainNavigationState(
         viewModelScope.launch {
             userPreferences.setCloudBackupIntervalMinutes(minutes)
         }
-        cloudBackupManager.updateBackupInterval(minutes)
+        backupOperations.updateCloudBackupInterval(minutes)
     }
 
     fun setCloudBackupArchiveMonths(months: Int) {
@@ -1660,26 +1472,18 @@ private data class MainNavigationState(
     }
 
     fun cloudBackupNow(onResult: (Result<Unit>) -> Unit) {
-        viewModelScope.launch {
-            onResult(cloudBackupManager.backupNow())
-        }
+        viewModelScope.launch { onResult(backupOperations.cloudBackupNow()) }
     }
 
     fun listCloudBackups(onResult: (Result<List<CloudBackupEntry>>) -> Unit) {
-        viewModelScope.launch {
-            onResult(cloudBackupManager.listBackups())
-        }
+        viewModelScope.launch { onResult(backupOperations.listCloudBackups()) }
     }
 
     fun restoreCloudBackup(fileId: String, onResult: (Result<Unit>) -> Unit) {
-        viewModelScope.launch {
-            onResult(cloudBackupManager.restoreBackup(fileId))
-        }
+        viewModelScope.launch { onResult(backupOperations.restoreCloudBackup(fileId)) }
     }
 
     fun compareWithLastBackup(onResult: (Result<com.mj.yata.data.cloud.CloudBackupDiff>) -> Unit) {
-        viewModelScope.launch {
-            onResult(cloudBackupManager.compareWithLatestBackup(tasks.value))
-        }
+        viewModelScope.launch { onResult(backupOperations.compareWithLastBackup(tasks.value)) }
     }
 }

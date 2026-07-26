@@ -1,7 +1,9 @@
 package com.mj.yata.ui.screen.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +32,7 @@ import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.ViewAgenda
-import androidx.compose.material.icons.filled.Watch
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,11 +43,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -145,14 +149,14 @@ private val helpSections = listOf(
         icon = Icons.Default.Notifications
     ),
     HelpSection(
-        title = "Widgets & Wear OS",
+        title = "Widgets",
         description = "Keep YATA visible outside the phone app.",
         bullets = listOf(
             "Home widgets cover today, upcoming, progress, quick add, team overdue, and one pinned list.",
             "Widget appearance can use dynamic color, opacity, corner radius, labels, and accents.",
-            "The Wear companion receives today's task count from the phone."
+            "A Quick Settings tile adds a task straight from the notification shade."
         ),
-        icon = Icons.Default.Watch
+        icon = Icons.Default.Widgets
     ),
     HelpSection(
         title = "Backup & Export",
@@ -190,6 +194,8 @@ fun HelpAboutScreen(
     val projectsFeatureEnabled = viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle().value
     val todayTabEnabled = viewModel.todayTabEnabled.collectAsStateWithLifecycle().value
     val upcomingTabEnabled = viewModel.upcomingTabEnabled.collectAsStateWithLifecycle().value
+    val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     Scaffold(
         bottomBar = {
@@ -266,7 +272,15 @@ fun HelpAboutScreen(
                             modifier = Modifier
                                 .size(64.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .clickable {
+                                    viewModel.toggleDemoMode()
+                                    Toast.makeText(
+                                        context,
+                                        if (demoModeEnabled) "Demo mode off — showing your real data" else "Demo mode on — showing sample data for screenshots",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -274,6 +288,13 @@ fun HelpAboutScreen(
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
                                 modifier = Modifier.size(width = 44.dp, height = 29.dp)
+                            )
+                        }
+                        if (demoModeEnabled) {
+                            Text(
+                                text = "DEMO MODE — tap logo to switch back",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))

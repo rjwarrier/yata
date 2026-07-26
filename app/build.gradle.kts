@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlinCompose)
+    alias(libs.plugins.baselineprofile)
 }
 
 // Release signing — kept out of git entirely (both the keystore itself, elsewhere on disk,
@@ -19,12 +20,12 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.mj.yata"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.mj.yata"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 5
         versionName = "0.7 beta"
 
@@ -122,9 +123,6 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
 
-    // Wear OS companion (today's task count complication)
-    implementation("com.google.android.gms:play-services-wearable:18.2.0")
-
     // Cloud backup: Google Sign-In (Drive appDataFolder scope) + Drive REST v3 over OkHttp
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
@@ -133,6 +131,11 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.hilt:hilt-work:1.2.0")
     ksp("androidx.hilt:hilt-compiler:1.2.0")
+
+    // Baseline profile: profileinstaller applies the packaged ART profile at install time,
+    // the :baselineprofile module generates it (see that module's BaselineProfileGenerator).
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
 
     // Markdown rendering for task notes
     implementation("io.noties.markwon:core:4.6.2")
@@ -150,6 +153,8 @@ dependencies {
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation("androidx.test:core-ktx:1.5.0")
+    androidTestImplementation("androidx.test:rules:1.5.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)

@@ -1,6 +1,6 @@
 package com.mj.yata.di
 
-import com.mj.yata.data.repository.YataRepositoryImpl
+import com.mj.yata.data.demo.RoutingYataRepository
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.notification.ReminderScheduler
 import com.mj.yata.notification.TaskReminderScheduler
@@ -15,7 +15,7 @@ import javax.inject.Singleton
 abstract class RepositoryModule {
 
     @Binds @Singleton
-    abstract fun bindYataRepository(impl: YataRepositoryImpl): YataRepository
+    abstract fun bindYataRepository(impl: RoutingYataRepository): YataRepository
 
     @Binds @Singleton
     abstract fun bindTaskReminderScheduler(impl: ReminderScheduler): TaskReminderScheduler

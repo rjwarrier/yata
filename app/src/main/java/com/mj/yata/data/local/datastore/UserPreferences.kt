@@ -89,6 +89,9 @@ class UserPreferences @Inject constructor(
         val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
         val ENHANCED_M3_THEMING_ENABLED = booleanPreferencesKey("enhanced_m3_theming_enabled")
         val FLOATING_BOTTOM_NAV_ENABLED = booleanPreferencesKey("floating_bottom_nav_enabled")
+        val BOTTOM_NAV_LABELS_ENABLED = booleanPreferencesKey("bottom_nav_labels_enabled")
+        val DEMO_MODE_ENABLED = booleanPreferencesKey("demo_mode_enabled")
+        val CUSTOM_THEME_SEED_COLOR = intPreferencesKey("custom_theme_seed_color")
         val COMPLETION_SOUND_ENABLED = booleanPreferencesKey("completion_sound_enabled")
         val VOICE_RECOGNITION_LANGUAGE = stringPreferencesKey("voice_recognition_language")
         val TEXT_SCALE              = floatPreferencesKey("text_scale")
@@ -131,6 +134,12 @@ class UserPreferences @Inject constructor(
     val reduceMotionEnabledFlow: Flow<Boolean> = dataStore.data.map { it[REDUCE_MOTION_ENABLED] ?: false }
     val enhancedM3ThemingEnabledFlow: Flow<Boolean> = dataStore.data.map { it[ENHANCED_M3_THEMING_ENABLED] ?: false }
     val floatingBottomNavEnabledFlow: Flow<Boolean> = dataStore.data.map { it[FLOATING_BOTTOM_NAV_ENABLED] ?: false }
+    val bottomNavLabelsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[BOTTOM_NAV_LABELS_ENABLED] ?: true }
+    val demoModeEnabledFlow: Flow<Boolean> = dataStore.data.map { it[DEMO_MODE_ENABLED] ?: false }
+
+    /** Non-null means a seed-color theme (preset or custom) is active; null means the app's
+     * default warm coral palette. Ignored entirely when Material You dynamic color is on. */
+    val customThemeSeedColorFlow: Flow<Int?> = dataStore.data.map { it[CUSTOM_THEME_SEED_COLOR] }
     val completionSoundEnabledFlow: Flow<Boolean> = dataStore.data.map { it[COMPLETION_SOUND_ENABLED] ?: true }
     val voiceRecognitionLanguageFlow: Flow<String> = dataStore.data.map { it[VOICE_RECOGNITION_LANGUAGE] ?: "default" }
     val textScaleFlow: Flow<Float> = dataStore.data.map { it[TEXT_SCALE] ?: 1.0f }
@@ -363,6 +372,20 @@ class UserPreferences @Inject constructor(
 
     suspend fun setFloatingBottomNavEnabled(enabled: Boolean) {
         dataStore.edit { it[FLOATING_BOTTOM_NAV_ENABLED] = enabled }
+    }
+
+    suspend fun setBottomNavLabelsEnabled(enabled: Boolean) {
+        dataStore.edit { it[BOTTOM_NAV_LABELS_ENABLED] = enabled }
+    }
+
+    suspend fun setDemoModeEnabled(enabled: Boolean) {
+        dataStore.edit { it[DEMO_MODE_ENABLED] = enabled }
+    }
+
+    suspend fun setCustomThemeSeedColor(argb: Int?) {
+        dataStore.edit {
+            if (argb == null) it.remove(CUSTOM_THEME_SEED_COLOR) else it[CUSTOM_THEME_SEED_COLOR] = argb
+        }
     }
 
     suspend fun setCompletionSoundEnabled(enabled: Boolean) {

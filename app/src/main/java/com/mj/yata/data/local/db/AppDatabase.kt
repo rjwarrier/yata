@@ -25,7 +25,9 @@ import org.json.JSONArray
         TaskCommentEntity::class
     ],
     version = 24,
-    exportSchema = false
+    // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
+    // purely-additive future changes use Room auto-migrations instead of hand-written ones.
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun personDao(): PersonDao

@@ -1,6 +1,6 @@
 # YATA — Yet Another Task App
 
-A Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt — with a companion Wear OS app that mirrors today's task count as a complication.
+A Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt.
 <img width="1080" height="1920" alt="yata-status-v5" src="https://github.com/user-attachments/assets/f23751e7-6288-424b-bddd-628c8d037061" />
 <img width="1080" height="1920" alt="yata-status-v4" src="https://github.com/user-attachments/assets/04997998-3970-4d53-b86c-e925f0f3a134" />
 <img width="1080" height="1920" alt="yata-status-v3" src="https://github.com/user-attachments/assets/1dbfe773-84ea-4a46-8db7-d6e5a99f654a" />
@@ -56,11 +56,8 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 **Home-screen widgets (Glance)**
 - Full agenda widget, Single List, Quick Add (with a lightweight config dialog instead of launching the full app), Progress/Stats ring, Upcoming, Team Overdue
 - Per-widget corner radius, opacity, Material You dynamic color, accent override, and custom label
-- One shared refresh signal keeps every placed widget *and* the Wear OS complication in sync after any task write
-
-**Wear OS companion**
-- Today's-task-count complication, pushed from the phone app on every relevant change
-- Connection status and a manual "sync now" action, surfaced in phone-side Settings
+- One shared refresh signal keeps every placed widget in sync after any task write
+- A Quick Settings tile opens the quick-add dialog straight from the notification shade
 
 **Security**
 - Optional App Lock — PIN + biometric, with a configurable auto-lock timeout
@@ -103,15 +100,14 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 | Cloud backup | Google Sign-In + Drive REST v3 over OkHttp |
 | Markdown | Markwon |
 | PDF metadata | `pdfbox-android` (Info-dictionary only — pages are rendered natively via `android.graphics.pdf.PdfDocument`) |
-| Wear sync | `play-services-wearable` |
 | Tasker plugin | `taskerpluginlibrary` |
 | Build | AGP 8.7.2, KSP, JDK 17 |
 
 ## Architecture
 
 Two Gradle modules:
-- **`:app`** — the phone app, `com.mj.yata`, minSdk 26, compileSdk/targetSdk 34
-- **`:wear`** — companion Wear OS app, `com.mj.yata.wear`, minSdk 30
+- **`:app`** — the phone app, `com.mj.yata`, minSdk 26, compileSdk/targetSdk 35
+- **`:baselineprofile`** — generates the ART baseline profile packaged with the app
 
 Layering is one-directional:
 
@@ -155,15 +151,13 @@ app/src/main/java/com/mj/yata/
 ├── tasker/createtask/     Tasker plugin integration
 └── util/                  Exporters, recurrence, NLP quick-add parser, analytics, ...
     └── export/            Branded PDF/image entity export (compose-to-bitmap render, pagination, PDF metadata)
-
-wear/src/main/java/com/mj/yata/wear/   Wear OS companion (today's-count complication)
 ```
 
 ## Getting started
 
 ### Prerequisites
 - Android Studio (recent stable) or a JDK 17 + Android SDK command-line setup
-- compileSdk/targetSdk 34; minSdk 26 (phone), 30 (Wear)
+- compileSdk/targetSdk 35; minSdk 26
 
 ### Build & run
 
@@ -179,9 +173,6 @@ cd yata
 
 # Install to a connected device/emulator
 ./gradlew :app:installDebug -q
-
-# Wear companion
-./gradlew :wear:assembleDebug -q
 ```
 
 On native Windows shells, use `gradlew.bat` in place of `./gradlew`.

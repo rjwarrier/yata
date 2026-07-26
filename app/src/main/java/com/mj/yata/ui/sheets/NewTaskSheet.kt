@@ -80,6 +80,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -575,7 +576,8 @@ fun NewTaskSheet(
                             androidx.compose.foundation.BorderStroke(0.dp, Color.Transparent)
                         )
                         .padding(vertical = 10.dp)
-                        .drawBottomBorder(MaterialTheme.colorScheme.primary),
+                        .drawBottomBorder(MaterialTheme.colorScheme.primary)
+                        .testTag("new_task_title_input"),
                     decorationBox = { inner ->
                         if (title.text.isEmpty()) {
                             Text(

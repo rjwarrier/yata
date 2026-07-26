@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">yata</string>
     <string name="share_to_task_label">Add to Yata</string>
+    <string name="qs_tile_quick_add_label">Quick add task</string>
 
     <!-- Tasker "Create Task" plugin field labels -->
     <string name="tasker_field_title">Title</string>
