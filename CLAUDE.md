@@ -67,4 +67,12 @@ After changing anything under `app/src/main/java`, the fast loop is `compileDebu
 
 **Theming:** `ui/theme/` implements M3 Expressive with a warm coral palette by default (see `design/README.md` / `design_handoff_yata/README.md` for the original design tokens/handoff — these HTML/JSX files are non-executable design references, not code to import from). Accent colors for lists/projects/tags/people are named `accentA`..`accentP` (plus a literal `"error"` for tags) resolved through `LocalYataAccents`, not raw `Color` values, so accent pickers (`ColorPicker`, `IconPicker` in `ui/widgets/`) work uniformly across entity types.
 
+**Localization (`res/values/strings.xml`):** English (`en-US`) is the source language, declared by `tools:locale="en"` on `<resources>` and by `res/resources.properties`' `unqualifiedResLocale`. String migration is **in progress** — a large number of UI strings are still Kotlin literals; run `./gradlew :app:lintHardcodedStrings` for the current count ranked by file. New UI text must go through `stringResource`/`pluralStringResource` (or `context.getString` outside composables), never a literal.
+
+Naming: `action_*` (buttons/menu labels), `cd_*` (contentDescription), `<screen>_*` (screen-specific). Reuse the shared `action_*`/`cd_*` entries instead of adding a per-screen copy of a common word. Anything with a count uses `<plurals>` rather than string concatenation, and interpolated values use positional args (`%1$s`) so translators can reorder them.
+
+Adding a language is only: create `res/values-<code>/strings.xml`, translate the values (never the `name` attributes). `androidResources.generateLocaleConfig = true` regenerates the locale config from whichever folders exist and injects `android:localeConfig` into the merged manifest, so the language appears in Android 13+'s per-app language picker with no list to update by hand. Missing keys fall back to English, and lint's `MissingTranslation` reports them once a second locale exists.
+
+Debug builds enable `isPseudoLocalesEnabled`, adding **en-XA** (accented/padded — anything still rendering plain English is hardcoded, and clipped layouts won't survive a longer language) and **ar-XB** (right-to-left). Both work without any translation existing, which makes them the practical way to test translation readiness now.
+
 **Export/import (`util/`):** `JsonExporter` (full backup/restore), `IcsExporter` (calendar `.ics`), `MarkdownExporter` (plain-text task list for clipboard/share) all operate on the same domain models, independent of the DB layer.

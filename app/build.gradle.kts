@@ -48,6 +48,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Adds the en-XA and ar-XB pseudolocales, selectable from the device's language
+            // settings on a debug build. en-XA pads every resource-backed string with accents and
+            // extra characters, so anything that stays plain English is still hardcoded, and any
+            // clipped or overflowing layout is one that won't survive a longer language. ar-XB is
+            // right-to-left, which surfaces layouts that assume left-to-right. Both work with no
+            // translation written, which is what makes them useful this early.
+            isPseudoLocalesEnabled = true
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -75,6 +84,15 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    androidResources {
+        // Generates res/xml/locales_config and wires android:localeConfig into the merged
+        // manifest from whichever values-<code>/ folders exist, so Android 13+ shows YATA in
+        // the system's per-app language picker. Adding a language is then just adding the
+        // folder — there is no hand-maintained list to forget to update.
+        // The source locale of the unqualified values/ folder is declared in res/resources.properties.
+        generateLocaleConfig = true
     }
 
     sourceSets {

@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<!--
+    English (en-US) — the source language. This unqualified values/ folder is both the English
+    copy and the fallback for any key a translation has not covered yet, so nothing here may be
+    deleted just because a translated file exists.
+
+    To add a language, copy this file to values-<code>/strings.xml (values-fr, values-de,
+    values-hi, values-pt-rBR …) and translate the values only — never the name attributes. AGP
+    regenerates the locale config from the folders that exist, so the language then appears in
+    Android 13+'s per-app language picker with no further wiring.
+
+    Leave a key out of a translation and English is used for it; lint's MissingTranslation check
+    reports those once a second locale exists.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
     <string name="app_name">yata</string>
     <string name="share_to_task_label">Add to Yata</string>
     <string name="qs_tile_quick_add_label">Quick add task</string>
