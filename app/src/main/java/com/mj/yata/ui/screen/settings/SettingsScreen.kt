@@ -120,6 +120,7 @@ fun SettingsScreen(
     val fabPosition = uiState.fabPosition
     val uiScale = uiState.uiScale
     val dynamicColorEnabled = uiState.dynamicColorEnabled
+    val amoledModeEnabled by viewModel.amoledModeEnabled.collectAsState()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
@@ -427,6 +428,33 @@ fun SettingsScreen(
                                 onCheckedChange = { viewModel.setDynamicColorEnabled(it) }
                             )
                         }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "AMOLED dark mode",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                // Says plainly that it does nothing in light mode, rather than
+                                // leaving a switch that appears to do nothing at all.
+                                text = "Use true black backgrounds to save power on OLED screens. " +
+                                    "Applies while the dark theme is active.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = amoledModeEnabled,
+                            onCheckedChange = { viewModel.setAmoledModeEnabled(it) }
+                        )
                     }
 
                     val dynamicColorActive = dynamicColorEnabled && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S

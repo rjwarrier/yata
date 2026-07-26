@@ -3,6 +3,7 @@ package com.mj.yata.ui.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -22,10 +23,37 @@ val LocalFloatingBottomNav = staticCompositionLocalOf { false }
 val LocalCompletionSoundEnabled = staticCompositionLocalOf { true }
 val LocalBottomNavLabelsEnabled = staticCompositionLocalOf { true }
 
+/**
+ * Collapses a dark scheme's near-black surfaces to true black for OLED panels, where a #000000
+ * pixel is switched off entirely rather than dimly lit — that's the power saving, and it also
+ * makes the app disappear into the bezel.
+ *
+ * Applied as a transform over whatever dark scheme is already resolved, rather than as a separate
+ * hand-written palette, so it composes with Material You dynamic color and custom seed colors
+ * instead of overriding them. Only backgrounds and container tiers are flattened; primary,
+ * secondary, error and every `on*` role keep their contrast pairing untouched.
+ *
+ * The container tiers stay very slightly separated (0xFF0A0A0A / 0xFF141414) instead of all going
+ * to pure black, so cards, sheets and the nav bar remain distinguishable from the page behind
+ * them — flattening everything to #000000 makes elevation vanish and the UI read as one void.
+ */
+private fun ColorScheme.toAmoled(): ColorScheme = copy(
+    background = Color.Black,
+    surface = Color.Black,
+    surfaceContainerLowest = Color.Black,
+    surfaceContainerLow = Color(0xFF0A0A0A),
+    surfaceContainer = Color(0xFF0F0F0F),
+    surfaceContainerHigh = Color(0xFF141414),
+    surfaceContainerHighest = Color(0xFF1A1A1A),
+    surfaceBright = Color(0xFF1A1A1A),
+    surfaceDim = Color.Black
+)
+
 @Composable
 fun YataTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     useDynamicColor: Boolean = true,
+    amoledMode: Boolean = false,
     customThemeSeedColor: Color? = null,
     appFont: com.mj.yata.domain.model.AppFont = com.mj.yata.domain.model.AppFont.INTER,
     enhancedM3Theming: Boolean = false,
@@ -37,13 +65,16 @@ fun YataTheme(
 ) {
     val context = LocalContext.current
     val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val colorScheme = when {
+    val baseColorScheme = when {
         useDynamicColor && supportsDynamicColor && darkTheme -> dynamicDarkColorScheme(context)
         useDynamicColor && supportsDynamicColor -> dynamicLightColorScheme(context)
         !useDynamicColor && customThemeSeedColor != null -> colorSchemeFromSeed(customThemeSeedColor, darkTheme)
         darkTheme -> DarkColors
         else -> LightColors
     }
+    // AMOLED is a dark-theme modifier, never a theme of its own — leaving it applied in light
+    // mode would produce black surfaces under dark-on-light text.
+    val colorScheme = if (darkTheme && amoledMode) baseColorScheme.toAmoled() else baseColorScheme
     // Entity accent swatches (task/tag/person colors) stay fixed regardless of dynamic color —
     // only MaterialTheme.colorScheme (chrome, surfaces, primary/secondary) follows the wallpaper.
     val accents = if (darkTheme) DarkAccents else LightAccents
