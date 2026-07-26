@@ -307,6 +307,27 @@ fun TaskDetailScreen(
                             },
                             leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                         )
+                        // Archive is not delete: the task keeps everything and simply leaves the
+                        // normal listings until unarchived from Settings -> Archive.
+                        DropdownMenuItem(
+                            text = { Text(if (task.archived) "Unarchive task" else "Archive task") },
+                            onClick = {
+                                showExportMenu = false
+                                val nowArchived = !task.archived
+                                viewModel.setTaskArchived(task.id, nowArchived)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        if (nowArchived) "Task archived" else "Task unarchived"
+                                    )
+                                }
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    if (task.archived) Icons.Default.Unarchive else Icons.Default.Archive,
+                                    contentDescription = null
+                                )
+                            }
+                        )
                         // Deep link back to this task — paste into a note, a message, or an
                         // automation and it reopens exactly here.
                         DropdownMenuItem(

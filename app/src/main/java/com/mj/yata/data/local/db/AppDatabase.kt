@@ -24,7 +24,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 24,
+    version = 25,
     // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
     // purely-additive future changes use Room auto-migrations instead of hand-written ones.
     exportSchema = true
@@ -300,6 +300,14 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE tasks ADD COLUMN seriesId TEXT")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_seriesId` ON `tasks` (`seriesId`)")
+            }
+        }
+
+        /** Task-level archive — shelve a task without deleting it. Existing rows default to
+         * not-archived, so nothing changes visibly for data already on device. */
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

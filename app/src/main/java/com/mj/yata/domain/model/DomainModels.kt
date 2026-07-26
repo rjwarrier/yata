@@ -142,7 +142,10 @@ data class Task(
     val subtasks: List<Subtask>,
     val notes: String?,
     val sortOrder: Int = 0,
-    val seriesId: String? = null // links a recurring task to its historical completed instances
+    val seriesId: String? = null, // links a recurring task to its historical completed instances
+    // Shelved but intact — hidden from normal listings, recoverable from Archive. Independent of
+    // [deletedAt]/Trash; mirrors the same flag on Project/Person/YataList.
+    val archived: Boolean = false
 )
 
 /**

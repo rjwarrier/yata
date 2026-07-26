@@ -63,6 +63,8 @@ class RoutingYataRepository @Inject constructor(
     override suspend fun deleteTask(task: Task, notify: Boolean) = write { real.deleteTask(task, notify) }
     override fun getDeletedTasks(): Flow<List<Task>> = routed(real.getDeletedTasks(), demo.getDeletedTasks())
     override suspend fun restoreTask(id: String) = write { real.restoreTask(id) }
+    override fun getArchivedTasks(): Flow<List<Task>> = routed(real.getArchivedTasks(), demo.getArchivedTasks())
+    override suspend fun setTaskArchived(id: String, archived: Boolean) = write { real.setTaskArchived(id, archived) }
     override suspend fun permanentlyDeleteTask(task: Task) = write { real.permanentlyDeleteTask(task) }
     override suspend fun emptyTrash() = write { real.emptyTrash() }
     override suspend fun purgeOldTrash() = real.purgeOldTrash()

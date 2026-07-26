@@ -48,6 +48,8 @@ class DemoRepository @Inject constructor() : YataRepository {
     override suspend fun deleteTask(task: Task, notify: Boolean) = Unit
     override fun getDeletedTasks(): Flow<List<Task>> = dataset.map { emptyList() }
     override suspend fun restoreTask(id: String) = Unit
+    override fun getArchivedTasks(): Flow<List<Task>> = dataset.map { emptyList() }
+    override suspend fun setTaskArchived(id: String, archived: Boolean) = Unit
     override suspend fun permanentlyDeleteTask(task: Task) = Unit
     override suspend fun emptyTrash() = Unit
     override suspend fun purgeOldTrash() = Unit

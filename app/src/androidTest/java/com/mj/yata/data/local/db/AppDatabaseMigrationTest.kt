@@ -454,6 +454,43 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate24To25_addsArchivedColumn_defaultingToNotArchived_preservingExistingRows() {
+        context.deleteDatabase(TEST_DB)
+        createVersion18TasksTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`completedAt`,`deletedAt`,`notes`,`recurrenceJson`,`sortOrder`) " +
+                    "VALUES ('t1','File taxes',NULL,NULL,'Morning','2026-04-15',NULL,NULL,'high',0,0,NULL,NULL,NULL,NULL,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(25) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    // Same reasoning as the 23->24 test above: the tasks table is unchanged from
+                    // v18 through v23, so only the last two migrations need to run on this
+                    // minimal tasks-only fixture.
+                    AppDatabase.MIGRATION_23_24.migrate(db)
+                    AppDatabase.MIGRATION_24_25.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `title`, `archived` FROM `tasks` WHERE `id` = 't1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("File taxes", cursor.getString(cursor.getColumnIndexOrThrow("title")))
+                // Existing rows must come through un-archived — anything else would make a
+                // user's whole task list vanish from every screen on upgrade.
+                assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("archived")))
+            }
+            close()
+        }
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)

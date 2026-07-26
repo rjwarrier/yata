@@ -347,6 +347,20 @@ class YataRepositoryImpl @Inject constructor(
         widgetUpdater.notifyTasksChanged()
     }
 
+    override fun getArchivedTasks(): Flow<List<Task>> {
+        return db.taskDao().getArchivedTasksWithRelations().map { list -> list.map { it.toDomain() } }
+    }
+
+    override suspend fun setTaskArchived(id: String, archived: Boolean) {
+        db.taskDao().setArchived(id, archived)
+        // An archived task shouldn't keep firing reminders; unarchiving re-arms whatever
+        // schedule the row still carries.
+        db.taskDao().getByIdDirect(id)?.let { entity ->
+            if (archived) reminderScheduler.cancelReminder(entity) else syncReminder(entity)
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
     override suspend fun permanentlyDeleteTask(task: Task) {
         reminderScheduler.cancelReminder(task.toEntity())
         db.taskDao().delete(task.toEntity())

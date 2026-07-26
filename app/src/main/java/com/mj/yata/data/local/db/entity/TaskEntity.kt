@@ -47,5 +47,10 @@ data class TaskEntity(
     // Links a recurring task's live row to every historical completed instance forked off it
     // (see YataRepositoryImpl.toggleTaskDone) — null for non-recurring tasks and for any
     // historical row completed before this column existed. Lazily assigned on first completion.
-    val seriesId: String? = null
+    val seriesId: String? = null,
+    // Archived is distinct from deletedAt/Trash: the row stays fully intact and recoverable from
+    // the Archive screen, it's just excluded from the default task listings. Mirrors the same
+    // flag on Project/Person/YataList. A task can be archived without being deleted, and the two
+    // states are independent — archiving does not touch deletedAt.
+    val archived: Boolean = false
 )

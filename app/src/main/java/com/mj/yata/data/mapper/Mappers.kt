@@ -155,7 +155,8 @@ fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>, subtask
     subtasks = subtasks,
     notes = notes,
     sortOrder = sortOrder,
-    seriesId = seriesId
+    seriesId = seriesId,
+    archived = archived
 )
 
 fun Task.toEntity() = TaskEntity(
@@ -175,7 +176,8 @@ fun Task.toEntity() = TaskEntity(
     notes = notes,
     recurrenceJson = serializeRecurrence(recurrence),
     sortOrder = sortOrder,
-    seriesId = seriesId
+    seriesId = seriesId,
+    archived = archived
 )
 
 fun TaskWithRelations.toDomain() = task.toDomain(

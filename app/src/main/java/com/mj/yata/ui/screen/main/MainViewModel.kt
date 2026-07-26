@@ -939,6 +939,22 @@ private data class MainNavigationState(
         }
     }
 
+    // Archive — shelved but intact, separate from Trash (see YataRepository.getArchivedTasks).
+    val archivedTasks: StateFlow<List<Task>> = repository.getArchivedTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setTaskArchived(id: String, archived: Boolean) {
+        viewModelScope.launch {
+            repository.setTaskArchived(id, archived)
+        }
+    }
+
+    fun bulkArchiveTasks(ids: List<String>, archived: Boolean) {
+        viewModelScope.launch {
+            ids.forEach { repository.setTaskArchived(it, archived) }
+        }
+    }
+
     fun permanentlyDeleteTask(task: Task) {
         viewModelScope.launch {
             repository.permanentlyDeleteTask(task)

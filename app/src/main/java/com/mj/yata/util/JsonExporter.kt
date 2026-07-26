@@ -43,7 +43,11 @@ class JsonExporter @Inject constructor(
         lists = repository.getLists().first(),
         tags = repository.getTags().first(),
         tagGroups = repository.getTagGroups().first(),
-        tasks = repository.getTasks().first(),
+        // Archived tasks must be included explicitly: getTasks() excludes them by design, and a
+        // backup that silently omitted them would lose them outright on restore — and worse, the
+        // export-then-wipe path (backupThenDeleteAllData) would delete them after writing a
+        // backup that never contained them. Trash (deletedAt) is still deliberately excluded.
+        tasks = repository.getTasks().first() + repository.getArchivedTasks().first(),
         comments = repository.getAllComments().first()
     )
 
@@ -233,6 +237,7 @@ class JsonExporter @Inject constructor(
             o.put("completedAt", t.completedAt ?: JSONObject.NULL)
             o.put("notes", t.notes)
             o.put("sortOrder", t.sortOrder)
+            o.put("archived", t.archived)
 
             // Assignees
             val assArr = JSONArray()
@@ -609,7 +614,10 @@ class JsonExporter @Inject constructor(
                                 recurrence = recurrence,
                                 subtasks = subtasks,
                                 notes = if (o.isNull("notes")) null else o.optString("notes"),
-                                sortOrder = o.optInt("sortOrder", i)
+                                sortOrder = o.optInt("sortOrder", i),
+                                // Absent in backups written before task archiving existed —
+                                // those restore as un-archived, which is the correct reading.
+                                archived = o.optBoolean("archived", false)
                             )
                         )
                     }

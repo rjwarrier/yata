@@ -43,6 +43,11 @@ interface YataRepository {
     suspend fun deleteTask(task: Task, notify: Boolean = true)
     fun getDeletedTasks(): Flow<List<Task>>
     suspend fun restoreTask(id: String)
+
+    /** Archived tasks — shelved but intact, excluded from every default listing. Independent of
+     * Trash: [setTaskArchived] never touches deletedAt, and vice versa. */
+    fun getArchivedTasks(): Flow<List<Task>>
+    suspend fun setTaskArchived(id: String, archived: Boolean)
     suspend fun permanentlyDeleteTask(task: Task)
     suspend fun emptyTrash()
 

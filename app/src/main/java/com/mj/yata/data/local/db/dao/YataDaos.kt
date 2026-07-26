@@ -144,9 +144,18 @@ interface PersonGroupDao {
 
 @Dao
 interface TaskDao {
+    // archived = 0 on every default listing below: an archived task stays fully intact but is
+    // excluded from normal surfaces, the same way an archived Project/List/Person is. Trash
+    // (deletedAt) and Archive are independent — a row can be in either, and neither implies
+    // the other. getTaskWithRelationsById deliberately has no filter, so an archived task can
+    // still be opened directly (from Archive, a deep link, or a notification).
     @Transaction
-    @Query("SELECT * FROM tasks WHERE deletedAt IS NULL")
+    @Query("SELECT * FROM tasks WHERE deletedAt IS NULL AND archived = 0")
     fun getTasksWithRelations(): Flow<List<TaskWithRelations>>
+
+    @Transaction
+    @Query("SELECT * FROM tasks WHERE deletedAt IS NULL AND archived = 1 ORDER BY sortOrder ASC")
+    fun getArchivedTasksWithRelations(): Flow<List<TaskWithRelations>>
 
     @Transaction
     @Query("SELECT * FROM tasks WHERE deletedAt IS NOT NULL ORDER BY deletedAt DESC")
@@ -157,18 +166,18 @@ interface TaskDao {
     fun getTaskWithRelationsById(id: String): Flow<TaskDetailWithRelations?>
 
     @Transaction
-    @Query("SELECT * FROM tasks WHERE listId = :listId AND deletedAt IS NULL ORDER BY sortOrder ASC")
+    @Query("SELECT * FROM tasks WHERE listId = :listId AND deletedAt IS NULL AND archived = 0 ORDER BY sortOrder ASC")
     fun getTasksWithRelationsForList(listId: String): Flow<List<TaskWithRelations>>
 
     @Transaction
-    @Query("SELECT * FROM tasks WHERE projectId = :projectId AND deletedAt IS NULL ORDER BY sortOrder ASC")
+    @Query("SELECT * FROM tasks WHERE projectId = :projectId AND deletedAt IS NULL AND archived = 0 ORDER BY sortOrder ASC")
     fun getTasksWithRelationsForProject(projectId: String): Flow<List<TaskWithRelations>>
 
     @Transaction
     @Query("""
         SELECT t.* FROM tasks t
         INNER JOIN task_person_cross_ref r ON t.id = r.taskId
-        WHERE r.personId = :personId AND t.deletedAt IS NULL
+        WHERE r.personId = :personId AND t.deletedAt IS NULL AND t.archived = 0
         ORDER BY t.sortOrder ASC
     """)
     fun getTasksWithRelationsForPerson(personId: String): Flow<List<TaskWithRelations>>
@@ -216,6 +225,9 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET deletedAt = NULL WHERE id = :id")
     suspend fun restore(id: String)
+
+    @Query("UPDATE tasks SET archived = :archived WHERE id = :id")
+    suspend fun setArchived(id: String, archived: Boolean)
 
     @Query("UPDATE tasks SET projectId = NULL WHERE projectId = :projectId")
     suspend fun clearProject(projectId: String)

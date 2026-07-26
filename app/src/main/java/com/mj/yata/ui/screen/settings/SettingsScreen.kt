@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -82,6 +83,7 @@ fun SettingsScreen(
     onCloudSignInRequested: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
     onNavigateToTrash: () -> Unit,
+    onNavigateToArchive: () -> Unit,
     onNavigateToWelcome: () -> Unit,
     onNavigateToHelpAbout: () -> Unit,
     modifier: Modifier = Modifier
@@ -1341,6 +1343,34 @@ fun SettingsScreen(
                             )
                             Text(
                                 text = "Deleted tasks are kept here for 30 days.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNavigateToArchive() }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Archive,
+                            contentDescription = "Archive",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Archive",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = "Shelved tasks, kept indefinitely and hidden from your lists.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
