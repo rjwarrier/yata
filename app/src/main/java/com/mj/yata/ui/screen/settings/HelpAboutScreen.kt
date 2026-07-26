@@ -1,7 +1,9 @@
 package com.mj.yata.ui.screen.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,11 +43,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -190,6 +194,8 @@ fun HelpAboutScreen(
     val projectsFeatureEnabled = viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle().value
     val todayTabEnabled = viewModel.todayTabEnabled.collectAsStateWithLifecycle().value
     val upcomingTabEnabled = viewModel.upcomingTabEnabled.collectAsStateWithLifecycle().value
+    val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     Scaffold(
         bottomBar = {
@@ -266,7 +272,15 @@ fun HelpAboutScreen(
                             modifier = Modifier
                                 .size(64.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .clickable {
+                                    viewModel.toggleDemoMode()
+                                    Toast.makeText(
+                                        context,
+                                        if (demoModeEnabled) "Demo mode off — showing your real data" else "Demo mode on — showing sample data for screenshots",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -274,6 +288,13 @@ fun HelpAboutScreen(
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
                                 modifier = Modifier.size(width = 44.dp, height = 29.dp)
+                            )
+                        }
+                        if (demoModeEnabled) {
+                            Text(
+                                text = "DEMO MODE — tap logo to switch back",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))

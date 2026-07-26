@@ -6,11 +6,13 @@ plugins {
 
 android {
     namespace = "com.mj.yata.wear"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.mj.yata.wear"
         minSdk = 30
+        // Play's Wear OS target requirement is API 34 (phone apps need 35); Wear stays here
+        // until Wear OS 5.1 (API 35) enforcement lands.
         targetSdk = 34
         versionCode = 2
         versionName = "0.2"

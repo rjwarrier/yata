@@ -1208,6 +1208,7 @@ fun CustomBottomNav(
 
     val isEnhancedM3 = com.mj.yata.ui.theme.LocalEnhancedM3Theming.current
     val isFloatingNav = com.mj.yata.ui.theme.LocalFloatingBottomNav.current
+    val showLabels = com.mj.yata.ui.theme.LocalBottomNavLabelsEnabled.current
 
     Box(
         modifier = Modifier
@@ -1237,7 +1238,7 @@ fun CustomBottomNav(
                 isEnhancedM3 -> Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .fillMaxWidth()
-                    .height(68.dp)
+                    .heightIn(min = 68.dp)
                     .clip(RoundedCornerShape(28.dp))
                     .border(
                         width = 1.dp,
@@ -1246,7 +1247,7 @@ fun CustomBottomNav(
                     )
                 else -> Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .heightIn(min = 80.dp)
                     .drawBehind {
                         drawLine(
                             color = navDividerColor,
@@ -1293,7 +1294,9 @@ fun CustomBottomNav(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (showLabels) Modifier else Modifier.align(Alignment.Center)),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1351,14 +1354,16 @@ fun CustomBottomNav(
                                 )
                             }
                         }
-                        Text(
-                            text = navIcon.label,
-                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 11.sp
+                        if (showLabels) {
+                            Text(
+                                text = navIcon.label,
+                                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 11.sp
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }

@@ -50,12 +50,19 @@ import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.theme.THEME_PRESETS
+import com.mj.yata.ui.theme.colorSchemeFromSeed
 import com.mj.yata.notification.NotificationPermissionUtils
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.CircularImageCropper
+import com.mj.yata.ui.widgets.CustomColorPickerDialog
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.toArgb
 import com.mj.yata.util.ProfilePhotoUtils
 import com.mj.yata.util.TaskScheduleUtils
 import kotlinx.coroutines.launch
@@ -80,6 +87,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
+    val customThemeSeedColorArgb by viewModel.customThemeSeedColor.collectAsStateWithLifecycle()
     val themeMode = uiState.themeMode
     val appFont = uiState.appFont
     val userName = uiState.userName
@@ -96,6 +104,7 @@ fun SettingsScreen(
     val reduceMotionEnabled = uiState.reduceMotionEnabled
     val enhancedM3ThemingEnabled = uiState.enhancedM3ThemingEnabled
     val floatingBottomNavEnabled = uiState.floatingBottomNavEnabled
+    val bottomNavLabelsEnabled = uiState.bottomNavLabelsEnabled
     val completionSoundEnabled = uiState.completionSoundEnabled
     val textScale = uiState.textScale
     val taskRowDensity = uiState.taskRowDensity
@@ -353,7 +362,14 @@ fun SettingsScreen(
                             items = listOf(ThemeMode.SYSTEM, ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.SCHEDULED),
                             selectedItem = themeMode,
                             onItemSelected = { viewModel.setThemeMode(it) },
-                            labelProvider = { if (it == ThemeMode.SCHEDULED) "Scheduled" else it.name }
+                            labelProvider = {
+                                when (it) {
+                                    ThemeMode.SYSTEM -> "System"
+                                    ThemeMode.LIGHT -> "Light"
+                                    ThemeMode.DARK -> "Dark"
+                                    ThemeMode.SCHEDULED -> "Scheduled"
+                                }
+                            }
                         )
                         if (themeMode == ThemeMode.SCHEDULED) {
                             SettingsRow(
@@ -411,6 +427,17 @@ fun SettingsScreen(
                         }
                     }
 
+                    val dynamicColorActive = dynamicColorEnabled && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+                    AnimatedVisibility(visible = !dynamicColorActive) {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            ThemeColorPicker(
+                                selectedSeedArgb = customThemeSeedColorArgb,
+                                onSelect = { argb -> viewModel.setCustomThemeSeedColor(argb) }
+                            )
+                        }
+                    }
+
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     Row(
@@ -456,6 +483,30 @@ fun SettingsScreen(
                         Switch(
                             checked = floatingBottomNavEnabled,
                             onCheckedChange = { viewModel.setFloatingBottomNavEnabled(it) }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Show bottom nav labels",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Show text labels under the icons in the bottom navigation bar.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = bottomNavLabelsEnabled,
+                            onCheckedChange = { viewModel.setBottomNavLabelsEnabled(it) }
                         )
                     }
 
@@ -2517,6 +2568,119 @@ private fun NotificationPermissionRow(
                 labelColor = chipColor,
                 leadingIconContentColor = chipColor
             )
+        )
+    }
+}
+
+/** Row of seed-color swatches shown when Material You dynamic color is off — "Default" (the
+ * app's fixed warm coral palette), 11 curated presets, and a "Custom" slot that opens a free-form
+ * color picker. All of them (including presets) feed the same [colorSchemeFromSeed] generator, so
+ * picking one is just choosing which seed color to theme from. */
+@Composable
+private fun ThemeColorPicker(selectedSeedArgb: Int?, onSelect: (Int?) -> Unit) {
+    var showCustomPicker by remember { mutableStateOf(false) }
+    val presetArgbs = remember { THEME_PRESETS.map { it.seed.toArgb() }.toSet() }
+    val isCustomActive = selectedSeedArgb != null && selectedSeedArgb !in presetArgbs
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "App theme color",
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+        )
+        Text(
+            text = "Pick a seed color to theme the app with — used instead of Material You while it's off.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(vertical = 4.dp)
+        ) {
+            item {
+                ThemeSwatch(
+                    color = com.mj.yata.ui.theme.LightColors.primary,
+                    label = "Default",
+                    selected = selectedSeedArgb == null,
+                    onClick = { onSelect(null) }
+                )
+            }
+            items(THEME_PRESETS) { preset ->
+                ThemeSwatch(
+                    color = preset.seed,
+                    label = preset.name,
+                    selected = selectedSeedArgb == preset.seed.toArgb(),
+                    onClick = { onSelect(preset.seed.toArgb()) }
+                )
+            }
+            item {
+                ThemeSwatch(
+                    color = if (isCustomActive) Color(selectedSeedArgb!!) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    label = "Custom",
+                    selected = isCustomActive,
+                    showAddIcon = !isCustomActive,
+                    onClick = { showCustomPicker = true }
+                )
+            }
+        }
+    }
+
+    if (showCustomPicker) {
+        CustomColorPickerDialog(
+            initialColor = if (isCustomActive) Color(selectedSeedArgb!!) else com.mj.yata.ui.theme.LightColors.primary,
+            onDismiss = { showCustomPicker = false },
+            onConfirm = { color ->
+                onSelect(color.toArgb())
+                showCustomPicker = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun ThemeSwatch(
+    color: Color,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    showAddIcon: Boolean = false
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(color)
+                .border(
+                    width = if (selected) 3.dp else 1.dp,
+                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    shape = CircleShape
+                )
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) {
+            if (showAddIcon) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp).rotate(45f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else if (selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = androidx.compose.ui.graphics.Color.White
+                )
+            }
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

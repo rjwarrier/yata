@@ -36,7 +36,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Yata"
-        tools:targetApi="31">
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="33">
 
         <!-- WorkManager auto-init disabled — YataApplication provides its own Configuration
              (via Configuration.Provider) so HiltWorkerFactory can inject CloudBackupWorker. -->
@@ -150,6 +151,18 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+
+        <!-- Quick Settings tile: quick-add task from the notification shade -->
+        <service
+            android:name=".widget.QuickAddTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_qs_quick_add"
+            android:label="@string/qs_tile_quick_add_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <!-- Home-screen widget: progress / stats -->
         <receiver
