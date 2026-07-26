@@ -1,6 +1,12 @@
 # YATA — Yet Another Task App
 
 A Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt — with a companion Wear OS app that mirrors today's task count as a complication.
+<img width="1080" height="1920" alt="yata-status-v5" src="https://github.com/user-attachments/assets/f23751e7-6288-424b-bddd-628c8d037061" />
+<img width="1080" height="1920" alt="yata-status-v4" src="https://github.com/user-attachments/assets/04997998-3970-4d53-b86c-e925f0f3a134" />
+<img width="1080" height="1920" alt="yata-status-v3" src="https://github.com/user-attachments/assets/1dbfe773-84ea-4a46-8db7-d6e5a99f654a" />
+<img width="1080" height="1920" alt="yata-status-v2" src="https://github.com/user-attachments/assets/f9dfd14f-5592-425a-b538-151c706dac2c" />
+<img width="1080" height="1920" alt="yata-status-v1" src="https://github.com/user-attachments/assets/07d877b7-c0f1-48dd-a8d0-e8d16903cf37" />
+
 
 ## Contents
 
