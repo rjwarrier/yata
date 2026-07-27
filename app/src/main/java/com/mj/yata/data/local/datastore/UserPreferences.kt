@@ -128,6 +128,9 @@ class UserPreferences @Inject constructor(
         // Days a soft-deleted task stays in Trash before purgeOldTrash removes it. 0 = keep
         // forever; the purge is skipped entirely rather than treating 0 as "delete immediately".
         val TRASH_RETENTION_DAYS  = intPreferencesKey("trash_retention_days")
+        // Days after completion before a task is auto-archived. 0 = off (default),
+        // so this never shelves anything unless the user opts in.
+        val AUTO_ARCHIVE_DAYS     = intPreferencesKey("auto_archive_days")
         val SORT_MODE_TAG_DETAIL  = stringPreferencesKey("sort_mode_tag_detail")
         val SORT_MODE_TAGS_TAB    = stringPreferencesKey("sort_mode_tags_tab")
         val SORT_MODE_PEOPLE_TAB  = stringPreferencesKey("sort_mode_people_tab")
@@ -239,6 +242,7 @@ class UserPreferences @Inject constructor(
         prefs[DEFAULT_PRIORITY]?.takeIf { it in setOf("none", "low", "med", "high") } ?: "none"
     }
     val trashRetentionDaysFlow: Flow<Int> = dataStore.data.map { it[TRASH_RETENTION_DAYS] ?: 30 }
+    val autoArchiveDaysFlow: Flow<Int> = dataStore.data.map { it[AUTO_ARCHIVE_DAYS] ?: 0 }
     val sortModeTagDetailFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
     val sortModeTagsTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
     val sortModePeopleTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
@@ -353,6 +357,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setDefaultPriority(priority: String) {
         dataStore.edit { it[DEFAULT_PRIORITY] = priority }
+    }
+
+    suspend fun setAutoArchiveDays(days: Int) {
+        dataStore.edit { it[AUTO_ARCHIVE_DAYS] = days }
     }
 
     suspend fun setTrashRetentionDays(days: Int) {

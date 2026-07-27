@@ -53,6 +53,7 @@ class DemoRepository @Inject constructor() : YataRepository {
     override suspend fun permanentlyDeleteTask(task: Task) = Unit
     override suspend fun emptyTrash() = Unit
     override suspend fun purgeOldTrash() = Unit
+    override suspend fun autoArchiveOldCompleted() = Unit
 
     override fun getCommentsForTask(taskId: String): Flow<List<TaskComment>> =
         dataset.map { d -> d.comments.filter { it.taskId == taskId } }

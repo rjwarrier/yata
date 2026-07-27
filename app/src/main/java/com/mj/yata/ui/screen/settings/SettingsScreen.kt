@@ -125,6 +125,7 @@ fun SettingsScreen(
     val uiScale = uiState.uiScale
     val dynamicColorEnabled = uiState.dynamicColorEnabled
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsState()
+    val autoArchiveDays by viewModel.autoArchiveDays.collectAsState()
     val defaultDueDate by viewModel.defaultDueDate.collectAsState()
     val defaultPriority by viewModel.defaultPriority.collectAsState()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
@@ -144,6 +145,7 @@ fun SettingsScreen(
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
     var showDefaultListMenu by remember { mutableStateOf(false) }
     var showTrashRetentionMenu by remember { mutableStateOf(false) }
+    var showAutoArchiveMenu by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
     var editingName by remember { mutableStateOf(false) }
@@ -1398,14 +1400,57 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Archive",
+                                text = stringResource(R.string.archive_title),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Shelved tasks, kept indefinitely and hidden from your lists.",
+                                text = stringResource(R.string.settings_archive_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Box {
+                        // Off by default — silently shelving a user's completed tasks without
+                        // them asking would look like data loss.
+                        val autoArchiveOptions = listOf(0, 7, 30, 90)
+                        SettingsRow(
+                            label = stringResource(R.string.settings_auto_archive),
+                            value = if (autoArchiveDays <= 0) {
+                                stringResource(R.string.settings_auto_archive_off)
+                            } else {
+                                pluralStringResource(
+                                    R.plurals.settings_auto_archive_value,
+                                    autoArchiveDays,
+                                    autoArchiveDays
+                                )
+                            },
+                            onClick = { showAutoArchiveMenu = true }
+                        )
+                        DropdownMenu(
+                            expanded = showAutoArchiveMenu,
+                            onDismissRequest = { showAutoArchiveMenu = false }
+                        ) {
+                            autoArchiveOptions.forEach { days ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (days <= 0) {
+                                                stringResource(R.string.settings_auto_archive_off)
+                                            } else {
+                                                pluralStringResource(R.plurals.settings_auto_archive_value, days, days)
+                                            }
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.setAutoArchiveDays(days)
+                                        showAutoArchiveMenu = false
+                                    }
+                                )
+                            }
                         }
                     }
 

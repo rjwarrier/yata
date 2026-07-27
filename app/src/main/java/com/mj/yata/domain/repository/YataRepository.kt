@@ -55,6 +55,9 @@ interface YataRepository {
     // grow forever for someone who never visits it.
     suspend fun purgeOldTrash()
 
+    /** Shelves completed tasks older than the user's auto-archive window. No-op when disabled. */
+    suspend fun autoArchiveOldCompleted()
+
     // Comments
     fun getCommentsForTask(taskId: String): Flow<List<TaskComment>>
     fun getAllComments(): Flow<List<TaskComment>>

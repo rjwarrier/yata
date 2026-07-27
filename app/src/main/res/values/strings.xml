@@ -130,6 +130,15 @@
     <string name="settings_priority_med">Medium</string>
     <string name="settings_priority_high">High</string>
 
+    <!-- Archive -->
+    <string name="settings_archive_desc">Shelved tasks, kept indefinitely and hidden from your lists.</string>
+    <string name="settings_auto_archive">Auto-archive completed after</string>
+    <string name="settings_auto_archive_off">Off</string>
+    <plurals name="settings_auto_archive_value">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+
     <!-- Trash retention -->
     <string name="settings_trash_retention">Keep deleted tasks for</string>
     <string name="settings_trash_forever">Forever</string>

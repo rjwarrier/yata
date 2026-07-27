@@ -68,6 +68,7 @@ class RoutingYataRepository @Inject constructor(
     override suspend fun permanentlyDeleteTask(task: Task) = write { real.permanentlyDeleteTask(task) }
     override suspend fun emptyTrash() = write { real.emptyTrash() }
     override suspend fun purgeOldTrash() = real.purgeOldTrash()
+    override suspend fun autoArchiveOldCompleted() = real.autoArchiveOldCompleted()
 
     override fun getCommentsForTask(taskId: String): Flow<List<TaskComment>> = routed(real.getCommentsForTask(taskId), demo.getCommentsForTask(taskId))
     override fun getAllComments(): Flow<List<TaskComment>> = routed(real.getAllComments(), demo.getAllComments())

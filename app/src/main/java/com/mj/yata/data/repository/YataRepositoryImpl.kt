@@ -373,6 +373,15 @@ class YataRepositoryImpl @Inject constructor(
         widgetUpdater.notifyTasksChanged()
     }
 
+    override suspend fun autoArchiveOldCompleted() {
+        val days = userPreferences.autoArchiveDaysFlow.first()
+        if (days <= 0) return // off
+        val cutoff = System.currentTimeMillis() - days.toLong() * 24 * 60 * 60 * 1000
+        val archived = db.taskDao().archiveCompletedOlderThan(cutoff)
+        // Only refresh widgets when something actually moved — this runs on every app start.
+        if (archived > 0) widgetUpdater.notifyTasksChanged()
+    }
+
     override suspend fun purgeOldTrash() {
         // 0 means "keep forever" — skip the purge entirely rather than treating a zero-day
         // cutoff as "delete everything currently in Trash".

@@ -33,6 +33,7 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             repository.seedInitialDataIfNeeded()
             repository.purgeOldTrash()
+            repository.autoArchiveOldCompleted()
         }
     }
 
@@ -604,6 +605,13 @@ private data class MainNavigationState(
 
     val trashRetentionDays: StateFlow<Int> = userPreferences.trashRetentionDaysFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 30)
+
+    val autoArchiveDays: StateFlow<Int> = userPreferences.autoArchiveDaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    fun setAutoArchiveDays(days: Int) {
+        viewModelScope.launch { userPreferences.setAutoArchiveDays(days) }
+    }
 
     fun setDefaultDueDate(mode: com.mj.yata.domain.model.DefaultDueDate) {
         viewModelScope.launch { userPreferences.setDefaultDueDate(mode) }

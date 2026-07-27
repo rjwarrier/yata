@@ -253,6 +253,19 @@ interface TaskDao {
     @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL AND deletedAt < :threshold")
     suspend fun purgeTrashOlderThan(threshold: Long)
 
+    /**
+     * Auto-archive: shelve tasks completed before [threshold]. Excludes rows already archived,
+     * anything in Trash, and — importantly — tasks with a null completedAt. Those are historical
+     * rows completed before that column existed; treating null as "very old" would archive a
+     * user's entire completed history the first time this ran.
+     */
+    @Query("""
+        UPDATE tasks SET archived = 1
+        WHERE done = 1 AND archived = 0 AND deletedAt IS NULL
+          AND completedAt IS NOT NULL AND completedAt < :threshold
+    """)
+    suspend fun archiveCompletedOlderThan(threshold: Long): Int
+
     @Delete
     suspend fun delete(task: TaskEntity)
 
