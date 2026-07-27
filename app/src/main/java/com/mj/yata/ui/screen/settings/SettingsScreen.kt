@@ -122,7 +122,6 @@ fun SettingsScreen(
     val fabPosition = uiState.fabPosition
     val uiScale = uiState.uiScale
     val dynamicColorEnabled = uiState.dynamicColorEnabled
-    val amoledModeEnabled by viewModel.amoledModeEnabled.collectAsState()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
@@ -140,8 +139,6 @@ fun SettingsScreen(
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
     var showDefaultListMenu by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
-    var showThemeScheduleStartPicker by remember { mutableStateOf(false) }
-    var showThemeScheduleEndPicker by remember { mutableStateOf(false) }
 
     var editingName by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf(userName) }
@@ -237,7 +234,7 @@ fun SettingsScreen(
             item {
             // 1. Profile Section
             Text(
-                text = "PROFILE",
+                text = stringResource(R.string.settings_section_profile),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -346,7 +343,7 @@ fun SettingsScreen(
         item {
             // 2. Preferences Section
             Text(
-                text = "PREFERENCES",
+                text = stringResource(R.string.settings_section_appearance),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -362,47 +359,30 @@ fun SettingsScreen(
                             text = "Theme mode",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                         )
+                        val themeSystemLabel = stringResource(R.string.theme_mode_system)
+                        val themeLightLabel = stringResource(R.string.theme_mode_light)
+                        val themeDarkLabel = stringResource(R.string.theme_mode_dark)
+                        val themeAmoledLabel = stringResource(R.string.theme_mode_amoled)
                         SegmentedControl(
-                            items = listOf(ThemeMode.SYSTEM, ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.SCHEDULED),
+                            items = listOf(ThemeMode.SYSTEM, ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.AMOLED),
                             selectedItem = themeMode,
                             onItemSelected = { viewModel.setThemeMode(it) },
                             labelProvider = {
                                 when (it) {
-                                    ThemeMode.SYSTEM -> "System"
-                                    ThemeMode.LIGHT -> "Light"
-                                    ThemeMode.DARK -> "Dark"
-                                    ThemeMode.SCHEDULED -> "Scheduled"
+                                    ThemeMode.SYSTEM -> themeSystemLabel
+                                    ThemeMode.LIGHT -> themeLightLabel
+                                    ThemeMode.DARK -> themeDarkLabel
+                                    ThemeMode.AMOLED -> themeAmoledLabel
                                 }
                             }
                         )
-                        if (themeMode == ThemeMode.SCHEDULED) {
-                            SettingsRow(
-                                label = "Dark from",
-                                value = TaskScheduleUtils.formatTime(themeScheduleStartHour, themeScheduleStartMinute),
-                                onClick = { showThemeScheduleStartPicker = true }
-                            )
-                            SettingsRow(
-                                label = "Light from",
-                                value = TaskScheduleUtils.formatTime(themeScheduleEndHour, themeScheduleEndMinute),
-                                onClick = { showThemeScheduleEndPicker = true }
+                        if (themeMode == ThemeMode.AMOLED) {
+                            Text(
+                                text = stringResource(R.string.theme_mode_amoled_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // Font SegmentedControl
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Font",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        SegmentedControl(
-                            items = listOf(AppFont.INTER, AppFont.JETBRAINS_MONO),
-                            selectedItem = appFont,
-                            onItemSelected = { viewModel.setAppFont(it) },
-                            labelProvider = { if (it == AppFont.INTER) "Inter" else "JetBrains Mono" }
-                        )
                     }
 
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
@@ -431,33 +411,6 @@ fun SettingsScreen(
                         }
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "AMOLED dark mode",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                // Says plainly that it does nothing in light mode, rather than
-                                // leaving a switch that appears to do nothing at all.
-                                text = "Use true black backgrounds to save power on OLED screens. " +
-                                    "Applies while the dark theme is active.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = amoledModeEnabled,
-                            onCheckedChange = { viewModel.setAmoledModeEnabled(it) }
-                        )
-                    }
-
                     val dynamicColorActive = dynamicColorEnabled && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
                     AnimatedVisibility(visible = !dynamicColorActive) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -467,6 +420,24 @@ fun SettingsScreen(
                                 onSelect = { argb -> viewModel.setCustomThemeSeedColor(argb) }
                             )
                         }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Font sits after the color controls: theme mode, Material You and the seed
+                    // picker are one continuous "what color is the app" decision, and the font
+                    // choice was previously splitting that group in half.
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.settings_font),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        SegmentedControl(
+                            items = listOf(AppFont.INTER, AppFont.JETBRAINS_MONO),
+                            selectedItem = appFont,
+                            onItemSelected = { viewModel.setAppFont(it) },
+                            labelProvider = { if (it == AppFont.INTER) "Inter" else "JetBrains Mono" }
+                        )
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -493,331 +464,14 @@ fun SettingsScreen(
                         )
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Use floating bottom panel",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = "Display the bottom navigation bar as a floating pill panel detached from screen edges.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = floatingBottomNavEnabled,
-                            onCheckedChange = { viewModel.setFloatingBottomNavEnabled(it) }
-                        )
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Show bottom nav labels",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = "Show text labels under the icons in the bottom navigation bar.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = bottomNavLabelsEnabled,
-                            onCheckedChange = { viewModel.setBottomNavLabelsEnabled(it) }
-                        )
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Play sound on completion",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = "Play a crisp chime sound effect whenever a task is marked complete.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = completionSoundEnabled,
-                            onCheckedChange = { viewModel.setCompletionSoundEnabled(it) }
-                        )
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // Start of week
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Start week on Sunday",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = "App agendas will start on Sunday instead of Monday.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = startOfWeekSunday,
-                            onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
-                        )
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // Default list for new tasks
-                    Box {
-                        SettingsRow(
-                            label = "Default list for new tasks",
-                            value = lists.find { it.id == defaultListId }?.name ?: "None",
-                            onClick = { showDefaultListMenu = true }
-                        )
-                        DropdownMenu(expanded = showDefaultListMenu, onDismissRequest = { showDefaultListMenu = false }) {
-                            lists.forEach { list ->
-                                DropdownMenuItem(
-                                    text = { Text(list.name) },
-                                    onClick = {
-                                        viewModel.setDefaultListId(list.id)
-                                        showDefaultListMenu = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    // Voice Input Language
-                    val voiceLanguages = remember {
-                        listOf(
-                            "default" to "System Default (Auto)",
-                            "en-US" to "English (US)",
-                            "en-IN" to "English (India)",
-                            "en-GB" to "English (UK)",
-                            "es-ES" to "Spanish",
-                            "fr-FR" to "French",
-                            "de-DE" to "German",
-                            "hi-IN" to "Hindi",
-                            "ja-JP" to "Japanese",
-                            "zh-CN" to "Chinese",
-                            "pt-BR" to "Portuguese"
-                        )
-                    }
-                    Box {
-                        SettingsRow(
-                            label = "Voice input language",
-                            value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: "System Default (Auto)",
-                            onClick = { showVoiceLanguageMenu = true }
-                        )
-                        DropdownMenu(expanded = showVoiceLanguageMenu, onDismissRequest = { showVoiceLanguageMenu = false }) {
-                            voiceLanguages.forEach { (code, label) ->
-                                DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = {
-                                        viewModel.setVoiceRecognitionLanguage(code)
-                                        showVoiceLanguageMenu = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    // Default reminder time
-                    SettingsRow(
-                        label = "Default reminder time",
-                        value = TaskScheduleUtils.formatTime(defaultReminderHour, defaultReminderMinute),
-                        onClick = { showReminderTimePicker = true }
-                    )
                 }
             }
         }
-        item {
-            // Notifications Section — Android (especially Samsung/One UI) silently downgrades
-            // reminders to a fuzzy ~1hr-late delivery window, or kills them outright in Doze,
-            // unless these two OS-level permissions are granted. Neither is requestable at
-            // runtime like POST_NOTIFICATIONS — the user has to grant them from system settings.
-            Text(
-                text = "NOTIFICATIONS",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    var exactAlarmsAllowed by remember { mutableStateOf(NotificationPermissionUtils.canScheduleExactAlarms(context)) }
-                    var batteryUnrestricted by remember { mutableStateOf(NotificationPermissionUtils.isIgnoringBatteryOptimizations(context)) }
 
-                    // Re-check when coming back from system settings (the app doesn't get a
-                    // callback for these — only a lifecycle resume).
-                    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
-                    DisposableEffect(lifecycleOwner) {
-                        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-                            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                                exactAlarmsAllowed = NotificationPermissionUtils.canScheduleExactAlarms(context)
-                                batteryUnrestricted = NotificationPermissionUtils.isIgnoringBatteryOptimizations(context)
-                            }
-                        }
-                        lifecycleOwner.lifecycle.addObserver(observer)
-                        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-                    }
-
-                    NotificationPermissionRow(
-                        title = "Exact alarm timing",
-                        granted = exactAlarmsAllowed,
-                        grantedSubtitle = "Reminders fire at the exact time.",
-                        deniedSubtitle = "Reminders may arrive up to an hour late — tap to fix.",
-                        onClick = { NotificationPermissionUtils.openExactAlarmSettings(context) }
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    NotificationPermissionRow(
-                        title = "Background delivery",
-                        granted = batteryUnrestricted,
-                        grantedSubtitle = "Battery optimization won't block reminders.",
-                        deniedSubtitle = "Battery optimization may delay or drop reminders — tap to fix.",
-                        onClick = { NotificationPermissionUtils.requestIgnoreBatteryOptimizations(context) }
-                    )
-                }
-            }
-        }
-        item {
-            // Features Section — hides the entire tab/pickers/chips for a feature, but never
-            // touches stored data, so re-enabling shows everything exactly as it was.
-            Text(
-                text = "FEATURES",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Guard against hiding every tab and stranding the user with an empty
-                    // bottom nav — the last remaining visible tab can't be switched off.
-                    val visibleTabCount = listOf(
-                        todayTabEnabled, upcomingTabEnabled,
-                        projectsFeatureEnabled, peopleFeatureEnabled, tagsFeatureEnabled
-                    ).count { it }
-
-                    FeatureToggleRow(
-                        title = "Today tab",
-                        checked = todayTabEnabled,
-                        onCheckedChange = { viewModel.setTodayTabEnabled(it) },
-                        enabled = !todayTabEnabled || visibleTabCount > 1
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    FeatureToggleRow(
-                        title = "Upcoming tab",
-                        checked = upcomingTabEnabled,
-                        onCheckedChange = { viewModel.setUpcomingTabEnabled(it) },
-                        enabled = !upcomingTabEnabled || visibleTabCount > 1
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    FeatureToggleRow(
-                        title = "Projects",
-                        checked = projectsFeatureEnabled,
-                        onCheckedChange = { viewModel.setProjectsFeatureEnabled(it) },
-                        enabled = !projectsFeatureEnabled || visibleTabCount > 1
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    FeatureToggleRow(
-                        title = "People",
-                        checked = peopleFeatureEnabled,
-                        onCheckedChange = { viewModel.setPeopleFeatureEnabled(it) },
-                        enabled = !peopleFeatureEnabled || visibleTabCount > 1
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    FeatureToggleRow(
-                        title = "Tags",
-                        checked = tagsFeatureEnabled,
-                        onCheckedChange = { viewModel.setTagsFeatureEnabled(it) },
-                        enabled = !tagsFeatureEnabled || visibleTabCount > 1
-                    )
-                }
-            }
-        }
-        item {
-            // Manage Section — tap-through to the People/Tags/Projects tabs, per handoff's Settings "Manage" rows.
-            // Purely a visibility toggle (see Features section above), so each row/divider fades
-            // and collapses in and out in step with its feature flag rather than popping instantly.
-            AnimatedVisibility(
-                visible = projectsFeatureEnabled || peopleFeatureEnabled || tagsFeatureEnabled,
-                enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) +
-                    expandVertically(tween(YataDur.sheet, easing = YataEase.emphasized)),
-                exit = fadeOut(tween(YataDur.fade)) +
-                    shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
-            ) {
-                Column {
-                    Text(
-                        text = "MANAGE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                            AnimatedManageRow(
-                                visible = projectsFeatureEnabled,
-                                title = "Projects",
-                                onClick = { onNavigateToTab(1) }
-                            )
-                            AnimatedDivider(visible = projectsFeatureEnabled && (peopleFeatureEnabled || tagsFeatureEnabled))
-                            AnimatedManageRow(
-                                visible = peopleFeatureEnabled,
-                                title = "People",
-                                onClick = { onNavigateToTab(2) }
-                            )
-                            AnimatedDivider(visible = peopleFeatureEnabled && tagsFeatureEnabled)
-                            AnimatedManageRow(
-                                visible = tagsFeatureEnabled,
-                                title = "Tags",
-                                onClick = { onNavigateToTab(3) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
         item {
             // 3. Display Section
             Text(
-                text = "DISPLAY",
+                text = stringResource(R.string.settings_section_display),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -985,73 +639,310 @@ fun SettingsScreen(
                         RowDensityPreview(taskRowDensity)
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Quick-add button position",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        SegmentedControl(
-                            items = listOf(FabPosition.LEFT, FabPosition.RIGHT, FabPosition.HIDDEN),
-                            selectedItem = fabPosition,
-                            onItemSelected = { viewModel.setFabPosition(it) },
-                            labelProvider = {
-                                when (it) {
-                                    FabPosition.LEFT -> "Left"
-                                    FabPosition.RIGHT -> "Right"
-                                    FabPosition.HIDDEN -> "Hidden"
-                                }
+                }
+            }
+        }
+        item {
+            // Navigation — everything that changes the bottom nav's shape or contents. Split out
+            // of the old PREFERENCES catch-all, which mixed these with theming and task defaults.
+            SettingsSectionHeader(stringResource(R.string.settings_section_navigation))
+            SettingsSectionCard {
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_floating_bottom_panel),
+                    subtitle = stringResource(R.string.settings_floating_bottom_panel_desc),
+                    checked = floatingBottomNavEnabled,
+                    onCheckedChange = { viewModel.setFloatingBottomNavEnabled(it) }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_bottom_nav_labels),
+                    subtitle = stringResource(R.string.settings_bottom_nav_labels_desc),
+                    checked = bottomNavLabelsEnabled,
+                    onCheckedChange = { viewModel.setBottomNavLabelsEnabled(it) }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_quick_add_position),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    val fabLeftLabel = stringResource(R.string.settings_fab_left)
+                    val fabRightLabel = stringResource(R.string.settings_fab_right)
+                    val fabHiddenLabel = stringResource(R.string.settings_fab_hidden)
+                    SegmentedControl(
+                        items = listOf(FabPosition.LEFT, FabPosition.RIGHT, FabPosition.HIDDEN),
+                        selectedItem = fabPosition,
+                        onItemSelected = { viewModel.setFabPosition(it) },
+                        labelProvider = {
+                            when (it) {
+                                FabPosition.LEFT -> fabLeftLabel
+                                FabPosition.RIGHT -> fabRightLabel
+                                FabPosition.HIDDEN -> fabHiddenLabel
                             }
-                        )
+                        }
+                    )
+                }
+            }
+        }
+
+        item {
+            // Sound & feedback — the app's response to an action, as opposed to its layout.
+            SettingsSectionHeader(stringResource(R.string.settings_section_sound_feedback))
+            SettingsSectionCard {
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_completion_sound),
+                    subtitle = stringResource(R.string.settings_completion_sound_desc),
+                    checked = completionSoundEnabled,
+                    onCheckedChange = { viewModel.setCompletionSoundEnabled(it) }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_haptic_feedback),
+                    subtitle = stringResource(R.string.settings_haptic_feedback_desc),
+                    checked = hapticsEnabled,
+                    onCheckedChange = { viewModel.setHapticsEnabled(it) }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_swipe_actions),
+                    subtitle = stringResource(R.string.settings_swipe_actions_desc),
+                    checked = taskSwipeActionsEnabled,
+                    onCheckedChange = { viewModel.setTaskSwipeActionsEnabled(it) }
+                )
+            }
+        }
+
+        item {
+            // Task defaults — what a newly created task inherits, plus the calendar/voice
+            // conventions the app assumes. Previously buried at the end of PREFERENCES.
+            SettingsSectionHeader(stringResource(R.string.settings_section_task_defaults))
+            SettingsSectionCard {
+                Box {
+                    SettingsRow(
+                        label = stringResource(R.string.settings_default_list),
+                        value = lists.find { it.id == defaultListId }?.name ?: stringResource(R.string.settings_none),
+                        onClick = { showDefaultListMenu = true }
+                    )
+                    DropdownMenu(expanded = showDefaultListMenu, onDismissRequest = { showDefaultListMenu = false }) {
+                        lists.forEach { list ->
+                            DropdownMenuItem(
+                                text = { Text(list.name) },
+                                onClick = {
+                                    viewModel.setDefaultListId(list.id)
+                                    showDefaultListMenu = false
+                                }
+                            )
+                        }
                     }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                SettingsRow(
+                    label = stringResource(R.string.settings_default_reminder_time),
+                    value = TaskScheduleUtils.formatTime(defaultReminderHour, defaultReminderMinute),
+                    onClick = { showReminderTimePicker = true }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_start_week_sunday),
+                    subtitle = stringResource(R.string.settings_start_week_sunday_desc),
+                    checked = startOfWeekSunday,
+                    onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                val systemDefaultVoiceLabel = stringResource(R.string.settings_voice_system_default)
+                val voiceLanguages = remember(systemDefaultVoiceLabel) {
+                    listOf(
+                        "default" to systemDefaultVoiceLabel,
+                        "en-US" to "English (US)",
+                        "en-IN" to "English (India)",
+                        "en-GB" to "English (UK)",
+                        "es-ES" to "Spanish",
+                        "fr-FR" to "French",
+                        "de-DE" to "German",
+                        "hi-IN" to "Hindi",
+                        "ja-JP" to "Japanese",
+                        "zh-CN" to "Chinese",
+                        "pt-BR" to "Portuguese"
+                    )
+                }
+                Box {
+                    SettingsRow(
+                        label = stringResource(R.string.settings_voice_input_language),
+                        value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: systemDefaultVoiceLabel,
+                        onClick = { showVoiceLanguageMenu = true }
+                    )
+                    DropdownMenu(expanded = showVoiceLanguageMenu, onDismissRequest = { showVoiceLanguageMenu = false }) {
+                        voiceLanguages.forEach { (code, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    viewModel.setVoiceRecognitionLanguage(code)
+                                    showVoiceLanguageMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            // Notifications Section — Android (especially Samsung/One UI) silently downgrades
+            // reminders to a fuzzy ~1hr-late delivery window, or kills them outright in Doze,
+            // unless these two OS-level permissions are granted. Neither is requestable at
+            // runtime like POST_NOTIFICATIONS — the user has to grant them from system settings.
+            Text(
+                text = stringResource(R.string.settings_section_notifications),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    var exactAlarmsAllowed by remember { mutableStateOf(NotificationPermissionUtils.canScheduleExactAlarms(context)) }
+                    var batteryUnrestricted by remember { mutableStateOf(NotificationPermissionUtils.isIgnoringBatteryOptimizations(context)) }
+
+                    // Re-check when coming back from system settings (the app doesn't get a
+                    // callback for these — only a lifecycle resume).
+                    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                                exactAlarmsAllowed = NotificationPermissionUtils.canScheduleExactAlarms(context)
+                                batteryUnrestricted = NotificationPermissionUtils.isIgnoringBatteryOptimizations(context)
+                            }
+                        }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+                        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                    }
+
+                    NotificationPermissionRow(
+                        title = "Exact alarm timing",
+                        granted = exactAlarmsAllowed,
+                        grantedSubtitle = "Reminders fire at the exact time.",
+                        deniedSubtitle = "Reminders may arrive up to an hour late — tap to fix.",
+                        onClick = { NotificationPermissionUtils.openExactAlarmSettings(context) }
+                    )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Haptic feedback",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = "Vibrate on checkbox, swipe, and drag actions.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = hapticsEnabled,
-                            onCheckedChange = { viewModel.setHapticsEnabled(it) }
-                        )
-                    }
+                    NotificationPermissionRow(
+                        title = "Background delivery",
+                        granted = batteryUnrestricted,
+                        grantedSubtitle = "Battery optimization won't block reminders.",
+                        deniedSubtitle = "Battery optimization may delay or drop reminders — tap to fix.",
+                        onClick = { NotificationPermissionUtils.requestIgnoreBatteryOptimizations(context) }
+                    )
+                }
+            }
+        }
+        item {
+            // Features Section — hides the entire tab/pickers/chips for a feature, but never
+            // touches stored data, so re-enabling shows everything exactly as it was.
+            Text(
+                text = stringResource(R.string.settings_section_features),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Guard against hiding every tab and stranding the user with an empty
+                    // bottom nav — the last remaining visible tab can't be switched off.
+                    val visibleTabCount = listOf(
+                        todayTabEnabled, upcomingTabEnabled,
+                        projectsFeatureEnabled, peopleFeatureEnabled, tagsFeatureEnabled
+                    ).count { it }
 
+                    FeatureToggleRow(
+                        title = "Today tab",
+                        checked = todayTabEnabled,
+                        onCheckedChange = { viewModel.setTodayTabEnabled(it) },
+                        enabled = !todayTabEnabled || visibleTabCount > 1
+                    )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    FeatureToggleRow(
+                        title = "Upcoming tab",
+                        checked = upcomingTabEnabled,
+                        onCheckedChange = { viewModel.setUpcomingTabEnabled(it) },
+                        enabled = !upcomingTabEnabled || visibleTabCount > 1
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    FeatureToggleRow(
+                        title = "Projects",
+                        checked = projectsFeatureEnabled,
+                        onCheckedChange = { viewModel.setProjectsFeatureEnabled(it) },
+                        enabled = !projectsFeatureEnabled || visibleTabCount > 1
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    FeatureToggleRow(
+                        title = "People",
+                        checked = peopleFeatureEnabled,
+                        onCheckedChange = { viewModel.setPeopleFeatureEnabled(it) },
+                        enabled = !peopleFeatureEnabled || visibleTabCount > 1
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    FeatureToggleRow(
+                        title = "Tags",
+                        checked = tagsFeatureEnabled,
+                        onCheckedChange = { viewModel.setTagsFeatureEnabled(it) },
+                        enabled = !tagsFeatureEnabled || visibleTabCount > 1
+                    )
+                }
+            }
+        }
+        item {
+            // Manage Section — tap-through to the People/Tags/Projects tabs, per handoff's Settings "Manage" rows.
+            // Purely a visibility toggle (see Features section above), so each row/divider fades
+            // and collapses in and out in step with its feature flag rather than popping instantly.
+            AnimatedVisibility(
+                visible = projectsFeatureEnabled || peopleFeatureEnabled || tagsFeatureEnabled,
+                enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) +
+                    expandVertically(tween(YataDur.sheet, easing = YataEase.emphasized)),
+                exit = fadeOut(tween(YataDur.fade)) +
+                    shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.settings_section_manage),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Swipe actions",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            AnimatedManageRow(
+                                visible = projectsFeatureEnabled,
+                                title = "Projects",
+                                onClick = { onNavigateToTab(1) }
                             )
-                            Text(
-                                text = "Swipe rows to complete or delete tasks.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            AnimatedDivider(visible = projectsFeatureEnabled && (peopleFeatureEnabled || tagsFeatureEnabled))
+                            AnimatedManageRow(
+                                visible = peopleFeatureEnabled,
+                                title = "People",
+                                onClick = { onNavigateToTab(2) }
+                            )
+                            AnimatedDivider(visible = peopleFeatureEnabled && tagsFeatureEnabled)
+                            AnimatedManageRow(
+                                visible = tagsFeatureEnabled,
+                                title = "Tags",
+                                onClick = { onNavigateToTab(3) }
                             )
                         }
-                        Switch(
-                            checked = taskSwipeActionsEnabled,
-                            onCheckedChange = { viewModel.setTaskSwipeActionsEnabled(it) }
-                        )
                     }
                 }
             }
@@ -1068,7 +959,7 @@ fun SettingsScreen(
             var showPinDialog by remember { mutableStateOf(false) }
 
             Text(
-                text = "PRIVACY & SECURITY",
+                text = stringResource(R.string.settings_section_privacy),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -1174,7 +1065,7 @@ fun SettingsScreen(
         item {
             // 5. Backup/Data Section
             Text(
-                text = "BACKUP & DATA",
+                text = stringResource(R.string.settings_section_backup),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -1444,7 +1335,7 @@ fun SettingsScreen(
         item {
             // 4. Cloud Backup Section
             Text(
-                text = "CLOUD BACKUP",
+                text = stringResource(R.string.settings_section_cloud_backup),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -1748,7 +1639,7 @@ fun SettingsScreen(
         item {
             // Local Backup Section — encrypted, on-device, no account needed.
             Text(
-                text = "LOCAL BACKUP",
+                text = stringResource(R.string.settings_section_local_backup),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -1822,7 +1713,7 @@ fun SettingsScreen(
         }
         item {
             Text(
-                text = "HELP & ABOUT",
+                text = stringResource(R.string.settings_section_help_about),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
@@ -2191,32 +2082,6 @@ fun SettingsScreen(
         }
     )
 
-    YataTimePickerLauncher(
-        show = showThemeScheduleStartPicker,
-        initialTime = TaskScheduleUtils.formatTime(themeScheduleStartHour, themeScheduleStartMinute),
-        onDismiss = { showThemeScheduleStartPicker = false },
-        onConfirm = { formatted ->
-            val parsed = TaskScheduleUtils.parseTime(formatted)
-            if (parsed != null) {
-                viewModel.setThemeSchedule(parsed.hour, parsed.minute, themeScheduleEndHour, themeScheduleEndMinute)
-            }
-            showThemeScheduleStartPicker = false
-        }
-    )
-
-    YataTimePickerLauncher(
-        show = showThemeScheduleEndPicker,
-        initialTime = TaskScheduleUtils.formatTime(themeScheduleEndHour, themeScheduleEndMinute),
-        onDismiss = { showThemeScheduleEndPicker = false },
-        onConfirm = { formatted ->
-            val parsed = TaskScheduleUtils.parseTime(formatted)
-            if (parsed != null) {
-                viewModel.setThemeSchedule(themeScheduleStartHour, themeScheduleStartMinute, parsed.hour, parsed.minute)
-            }
-            showThemeScheduleEndPicker = false
-        }
-    )
-
     pickedPhotoBitmap?.let { bitmap ->
         CircularImageCropper(
             source = bitmap,
@@ -2444,6 +2309,60 @@ private fun AnimatedDivider(visible: Boolean) {
         exit = fadeOut(tween(YataDur.fade))
     ) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    }
+}
+
+/** The primary-colored caps label above each settings group. */
+@Composable
+private fun SettingsSectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.primary
+    )
+}
+
+/** The rounded card every settings group sits in. Was copy-pasted per section. */
+@Composable
+private fun SettingsSectionCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            content = content
+        )
+    }
+}
+
+/** Title + explanatory subtitle on the left, Switch on the right — the shape most settings use. */
+@Composable
+private fun SettingsToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

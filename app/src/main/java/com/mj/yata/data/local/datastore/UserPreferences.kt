@@ -46,7 +46,7 @@ class UserPreferences @Inject constructor(
             themeMode = when (prefs[THEME_MODE]) {
                 ThemeMode.LIGHT.name     -> ThemeMode.LIGHT
                 ThemeMode.DARK.name      -> ThemeMode.DARK
-                ThemeMode.SCHEDULED.name -> ThemeMode.SCHEDULED
+                ThemeMode.AMOLED.name    -> ThemeMode.AMOLED
                 else                     -> ThemeMode.SYSTEM
             },
             dynamicColorEnabled = prefs[DYNAMIC_COLOR_ENABLED] ?: true,
@@ -122,7 +122,6 @@ class UserPreferences @Inject constructor(
         val SORT_MODE_PROJECT     = stringPreferencesKey("sort_mode_project")
         val SORT_MODE_LIST        = stringPreferencesKey("sort_mode_list")
         val SORT_MODE_PERSON      = stringPreferencesKey("sort_mode_person")
-        val AMOLED_MODE_ENABLED   = booleanPreferencesKey("amoled_mode_enabled")
         val SORT_MODE_TAG_DETAIL  = stringPreferencesKey("sort_mode_tag_detail")
         val SORT_MODE_TAGS_TAB    = stringPreferencesKey("sort_mode_tags_tab")
         val SORT_MODE_PEOPLE_TAB  = stringPreferencesKey("sort_mode_people_tab")
@@ -140,7 +139,7 @@ class UserPreferences @Inject constructor(
         when (prefs[THEME_MODE]) {
             ThemeMode.LIGHT.name     -> ThemeMode.LIGHT
             ThemeMode.DARK.name      -> ThemeMode.DARK
-            ThemeMode.SCHEDULED.name -> ThemeMode.SCHEDULED
+            ThemeMode.AMOLED.name    -> ThemeMode.AMOLED
             else                     -> ThemeMode.SYSTEM
         }
     }
@@ -225,8 +224,6 @@ class UserPreferences @Inject constructor(
     val sortModeProjectFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_PROJECT]) }
     val sortModeListFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_LIST]) }
     val sortModePersonFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_PERSON]) }
-    /** True-black dark theme for OLED panels. Only has any effect while the dark theme is active. */
-    val amoledModeEnabledFlow: Flow<Boolean> = dataStore.data.map { it[AMOLED_MODE_ENABLED] ?: false }
     val sortModeTagDetailFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
     val sortModeTagsTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
     val sortModePeopleTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
@@ -333,10 +330,6 @@ class UserPreferences @Inject constructor(
 
     suspend fun setSortModePerson(mode: TaskSortMode) {
         dataStore.edit { it[SORT_MODE_PERSON] = mode.name }
-    }
-
-    suspend fun setAmoledModeEnabled(enabled: Boolean) {
-        dataStore.edit { it[AMOLED_MODE_ENABLED] = enabled }
     }
 
     suspend fun setSortModeTagDetail(mode: TaskSortMode) {

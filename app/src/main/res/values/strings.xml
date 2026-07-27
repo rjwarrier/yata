@@ -70,6 +70,54 @@
         other languages have more than two plural forms.
     -->
 
+    <!-- Theme mode picker. AMOLED replaced a "Scheduled" option that switched on a clock. -->
+    <string name="theme_mode_system">System</string>
+    <string name="theme_mode_light">Light</string>
+    <string name="theme_mode_dark">Dark</string>
+    <string name="theme_mode_amoled">AMOLED</string>
+    <string name="theme_mode_amoled_hint">True black backgrounds, which switch OLED pixels off entirely to save power.</string>
+    <string name="settings_font">Font</string>
+
+    <!-- Settings section headings, in screen order. -->
+    <string name="settings_section_profile">PROFILE</string>
+    <string name="settings_section_appearance">APPEARANCE</string>
+    <string name="settings_section_display">DISPLAY</string>
+    <string name="settings_section_notifications">NOTIFICATIONS</string>
+    <string name="settings_section_features">FEATURES</string>
+    <string name="settings_section_manage">MANAGE</string>
+    <string name="settings_section_privacy">PRIVACY &amp; SECURITY</string>
+    <string name="settings_section_backup">BACKUP &amp; DATA</string>
+    <string name="settings_section_cloud_backup">CLOUD BACKUP</string>
+    <string name="settings_section_local_backup">LOCAL BACKUP</string>
+    <string name="settings_section_help_about">HELP &amp; ABOUT</string>
+    <string name="settings_section_navigation">NAVIGATION</string>
+    <string name="settings_section_sound_feedback">SOUND &amp; FEEDBACK</string>
+    <string name="settings_section_task_defaults">TASK DEFAULTS</string>
+
+    <string name="settings_floating_bottom_panel">Use floating bottom panel</string>
+    <string name="settings_floating_bottom_panel_desc">Display the bottom navigation bar as a floating pill panel detached from screen edges.</string>
+    <string name="settings_bottom_nav_labels">Show bottom nav labels</string>
+    <string name="settings_bottom_nav_labels_desc">Show text labels under the icons in the bottom navigation bar.</string>
+    <string name="settings_quick_add_position">Quick-add button position</string>
+    <string name="settings_fab_left">Left</string>
+    <string name="settings_fab_right">Right</string>
+    <string name="settings_fab_hidden">Hidden</string>
+
+    <string name="settings_completion_sound">Play sound on completion</string>
+    <string name="settings_completion_sound_desc">Play a crisp chime sound effect whenever a task is marked complete.</string>
+    <string name="settings_haptic_feedback">Haptic feedback</string>
+    <string name="settings_haptic_feedback_desc">Vibrate on checkbox, swipe, and drag actions.</string>
+    <string name="settings_swipe_actions">Swipe actions</string>
+    <string name="settings_swipe_actions_desc">Swipe rows to complete or delete tasks.</string>
+
+    <string name="settings_default_list">Default list for new tasks</string>
+    <string name="settings_default_reminder_time">Default reminder time</string>
+    <string name="settings_start_week_sunday">Start week on Sunday</string>
+    <string name="settings_start_week_sunday_desc">App agendas will start on Sunday instead of Monday.</string>
+    <string name="settings_voice_input_language">Voice input language</string>
+    <string name="settings_voice_system_default">System Default (Auto)</string>
+    <string name="settings_none">None</string>
+
     <!-- Shared actions -->
     <string name="action_cancel">Cancel</string>
     <string name="action_save">Save</string>

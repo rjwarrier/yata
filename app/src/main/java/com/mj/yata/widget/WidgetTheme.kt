@@ -15,10 +15,8 @@ import com.mj.yata.ui.theme.DarkColors
 import com.mj.yata.ui.theme.LightAccents
 import com.mj.yata.ui.theme.LightColors
 import com.mj.yata.ui.theme.YataAccents
-import com.mj.yata.util.isDarkNow
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
-import java.time.LocalTime
 
 data class WidgetTheme(val colorScheme: ColorScheme, val accents: YataAccents, val widgetBackground: Color) {
     /** Glance wants a light+dark pair, but we've already resolved which one actually applies
@@ -38,14 +36,14 @@ suspend fun resolveWidgetTheme(context: Context): WidgetTheme {
     val themeMode = snapshot.themeMode
     val dynamicEnabled = snapshot.dynamicColorEnabled
     val systemDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+    // AMOLED resolves dark here like the main app. The true-black surface treatment itself is
+    // not applied to widgets: they render on the launcher's wallpaper, where a pure-black panel
+    // reads as a hole rather than as part of the home screen.
     val isDark = when (themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
+        ThemeMode.AMOLED -> true
         ThemeMode.SYSTEM -> systemDark
-        ThemeMode.SCHEDULED -> isDarkNow(
-            LocalTime.of(snapshot.themeScheduleStartHour, snapshot.themeScheduleStartMinute),
-            LocalTime.of(snapshot.themeScheduleEndHour, snapshot.themeScheduleEndMinute)
-        )
     }
     val supportsDynamic = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val colorScheme = when {

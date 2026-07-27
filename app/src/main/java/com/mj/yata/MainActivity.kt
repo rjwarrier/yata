@@ -43,12 +43,10 @@ import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.PlainTextImporter
-import com.mj.yata.util.isDarkNow
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.LocalTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -240,32 +238,13 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val themeMode by userPreferences.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
             val systemDark = isSystemInDarkTheme()
 
-            val scheduleStartHour by userPreferences.themeScheduleStartHourFlow.collectAsState(initial = 21)
-            val scheduleStartMinute by userPreferences.themeScheduleStartMinuteFlow.collectAsState(initial = 0)
-            val scheduleEndHour by userPreferences.themeScheduleEndHourFlow.collectAsState(initial = 7)
-            val scheduleEndMinute by userPreferences.themeScheduleEndMinuteFlow.collectAsState(initial = 0)
-
-            // Only ticks while SCHEDULED is active, so the theme keeps up with the clock without
-            // needing an AlarmManager/BroadcastReceiver round-trip for a live-in-app switch.
-            var currentTime by remember { mutableStateOf(LocalTime.now()) }
-            LaunchedEffect(themeMode) {
-                if (themeMode == ThemeMode.SCHEDULED) {
-                    while (true) {
-                        currentTime = LocalTime.now()
-                        delay(60_000)
-                    }
-                }
-            }
-
+            // AMOLED is a dark variant, so it resolves dark here and separately switches on the
+            // true-black surface treatment below.
             val useDarkTheme = when (themeMode) {
-                ThemeMode.LIGHT     -> false
-                ThemeMode.DARK      -> true
-                ThemeMode.SYSTEM    -> systemDark
-                ThemeMode.SCHEDULED -> isDarkNow(
-                    LocalTime.of(scheduleStartHour, scheduleStartMinute),
-                    LocalTime.of(scheduleEndHour, scheduleEndMinute),
-                    currentTime
-                )
+                ThemeMode.LIGHT  -> false
+                ThemeMode.DARK   -> true
+                ThemeMode.AMOLED -> true
+                ThemeMode.SYSTEM -> systemDark
             }
 
             val reduceMotionEnabled by userPreferences.reduceMotionEnabledFlow.collectAsState(initial = false)
@@ -276,7 +255,6 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val uiScale by userPreferences.uiScaleFlow.collectAsState(initial = 1.0f)
             val textScale by userPreferences.textScaleFlow.collectAsState(initial = 1.0f)
             val dynamicColorEnabled by userPreferences.dynamicColorEnabledFlow.collectAsState(initial = true)
-            val amoledModeEnabled by userPreferences.amoledModeEnabledFlow.collectAsState(initial = false)
             val customThemeSeedColorArgb by userPreferences.customThemeSeedColorFlow.collectAsState(initial = null)
             val appFont by userPreferences.appFontFlow.collectAsState(initial = com.mj.yata.domain.model.AppFont.INTER)
             val enhancedM3ThemingEnabled by userPreferences.enhancedM3ThemingEnabledFlow.collectAsState(initial = false)
@@ -314,7 +292,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 YataTheme(
                     darkTheme = useDarkTheme,
                     useDynamicColor = dynamicColorEnabled,
-                    amoledMode = amoledModeEnabled,
+                    amoledMode = themeMode == ThemeMode.AMOLED,
                     customThemeSeedColor = customThemeSeedColorArgb?.let { androidx.compose.ui.graphics.Color(it) },
                     appFont = appFont,
                     enhancedM3Theming = enhancedM3ThemingEnabled,

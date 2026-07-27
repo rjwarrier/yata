@@ -595,9 +595,6 @@ private data class MainNavigationState(
     val dynamicColorEnabled: StateFlow<Boolean> = userPreferences.dynamicColorEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val amoledModeEnabled: StateFlow<Boolean> = userPreferences.amoledModeEnabledFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
     val customThemeSeedColor: StateFlow<Int?> = userPreferences.customThemeSeedColorFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
@@ -1400,12 +1397,6 @@ private data class MainNavigationState(
     fun setDynamicColorEnabled(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setDynamicColorEnabled(enabled)
-        }
-    }
-
-    fun setAmoledModeEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            userPreferences.setAmoledModeEnabled(enabled)
         }
     }
 
