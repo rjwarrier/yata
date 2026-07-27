@@ -1,0 +1,50 @@
+package com.mj.yata
+
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * Guards the shape of the photo fields in a backup payload. The encode/decode helpers themselves
+ * need a real Context (filesDir, Base64), so what's asserted here is the JSON contract those
+ * helpers depend on — specifically the two behaviours that made photos not survive a restore:
+ * a missing key must read as null rather than the string "null", and an absent photoData must
+ * leave the legacy photoUri fallback reachable.
+ */
+class JsonExporterPhotoTest {
+
+    @Test
+    fun absentProfilePhoto_readsAsNull_notTheStringNull() {
+        val root = JSONObject().apply { put("version", 4) }
+        // optString(name, null) is the accessor the importer uses; verify it really yields null
+        // for a key that was never written, since optString(name) alone returns "" instead.
+        assertNull(root.optString("profilePhoto", null))
+    }
+
+    @Test
+    fun presentProfilePhoto_roundTripsThroughJson() {
+        val encoded = "aGVsbG8td29ybGQ="
+        val root = JSONObject().apply { put("profilePhoto", encoded) }
+        assertEquals(encoded, root.optString("profilePhoto", null))
+    }
+
+    @Test
+    fun personWithoutPhotoData_stillExposesLegacyPhotoUri() {
+        // A backup written before photoData existed: photoUri must remain readable so those
+        // restores are no worse than they were.
+        val person = JSONObject().apply {
+            put("id", "p1")
+            put("photoUri", "file:///data/user/0/com.mj.yata/files/avatars/a.png")
+        }
+        assertNull(person.optString("photoData", null))
+        assertTrue(person.optString("photoUri").endsWith("a.png"))
+    }
+
+    @Test
+    fun personWithNullPhotoUri_isDetectedAsNull() {
+        val person = JSONObject().apply { put("photoUri", JSONObject.NULL) }
+        assertTrue(person.isNull("photoUri"))
+    }
+}

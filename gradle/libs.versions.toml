@@ -27,6 +27,7 @@ markwon = "4.6.2"
 taskerPlugin = "0.4.10"
 pdfboxAndroid = "2.0.27.0"
 coroutinesTest = "1.8.1"
+orgJson = "20240303"
 androidxTest = "1.5.0"             # androidx.test core-ktx + rules
 
 [libraries]
@@ -74,6 +75,7 @@ markwon-core = { group = "io.noties.markwon", name = "core", version.ref = "mark
 tasker-plugin-library = { group = "com.joaomgcd", name = "taskerpluginlibrary", version.ref = "taskerPlugin" }
 pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTest" }
 androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTest" }
 

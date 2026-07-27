@@ -213,6 +213,9 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // org.json ships in android.jar as method stubs that throw at runtime, so anything touching
+    // JSONObject is untestable on the JVM without a real implementation on the test classpath.
+    testImplementation(libs.org.json)
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

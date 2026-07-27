@@ -86,7 +86,9 @@ class JsonExporter @Inject constructor(
         val tags: List<Tag>,
         val tagGroups: List<TagGroup>,
         val tasks: List<Task>,
-        val comments: List<TaskComment>
+        val comments: List<TaskComment>,
+        /** The user's own avatar, base64-encoded. Null when none is set or the file is gone. */
+        val profilePhoto: String?
     )
 
     private suspend fun loadBackupData(): BackupData = BackupData(
@@ -101,7 +103,8 @@ class JsonExporter @Inject constructor(
         // export-then-wipe path (backupThenDeleteAllData) would delete them after writing a
         // backup that never contained them. Trash (deletedAt) is still deliberately excluded.
         tasks = repository.getTasks().first() + repository.getArchivedTasks().first(),
-        comments = repository.getAllComments().first()
+        comments = repository.getAllComments().first(),
+        profilePhoto = encodePhoto(userPreferences.userPhotoUriFlow.first())
     )
 
     suspend fun exportData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
@@ -173,6 +176,9 @@ class JsonExporter @Inject constructor(
 
             val root = JSONObject()
             root.put("version", 4)
+            // The user's own avatar. Lives in DataStore rather than the database, so it is not
+            // part of any entity list and has to be carried at the root.
+            data.profilePhoto?.let { root.put("profilePhoto", it) }
 
             // People
             val peopleArr = JSONArray()
@@ -183,6 +189,9 @@ class JsonExporter @Inject constructor(
                 o.put("initials", p.initials)
                 o.put("color", p.color)
                 o.put("photoUri", p.photoUri ?: JSONObject.NULL)
+                // The bytes, not just the path — see encodePhoto. Absent for people with no
+                // avatar, so backups don't carry empty keys for most rows.
+                encodePhoto(p.photoUri)?.let { o.put("photoData", it) }
                 o.put("isMe", p.isMe)
                 o.put("groupId", p.groupId ?: JSONObject.NULL)
                 o.put("starred", p.starred)
@@ -452,6 +461,15 @@ class JsonExporter @Inject constructor(
                 }
             }
 
+            // 0. The user's own avatar, written back to filesDir and re-pointed in DataStore.
+            // Only overwrites when the backup actually carries one, so restoring an older
+            // backup can't wipe a photo set since it was taken.
+            root.optString("profilePhoto", null)?.let { encoded ->
+                decodeProfilePhoto(encoded)?.let { uri ->
+                    userPreferences.setUserPhotoUri(uri.toString())
+                }
+            }
+
             // 1. Import Person groups (must exist before people reference them)
             val personGroupsArr = root.optJSONArray("personGroups")
             if (personGroupsArr != null) {
@@ -477,7 +495,14 @@ class JsonExporter @Inject constructor(
                                 name = o.getString("name"),
                                 initials = o.getString("initials"),
                                 color = o.getString("color"),
-                                photoUri = if (o.isNull("photoUri")) null else o.optString("photoUri"),
+                                // Prefer the embedded bytes, rewritten to a fresh local file.
+                                // The stored photoUri only survives a same-device restore where
+                                // that exact path still exists; on a new device or after a
+                                // reinstall it is a dangling reference that silently degrades to
+                                // initials. Backups written before photoData existed still fall
+                                // back to it, which is no worse than before.
+                                photoUri = decodePhotoToAvatarFile(o.optString("photoData", null))?.toString()
+                                    ?: if (o.isNull("photoUri")) null else o.optString("photoUri"),
                                 isMe = o.optBoolean("isMe", false),
                                 groupId = if (o.isNull("groupId")) null else o.optString("groupId", null),
                                 starred = o.optBoolean("starred", false),
