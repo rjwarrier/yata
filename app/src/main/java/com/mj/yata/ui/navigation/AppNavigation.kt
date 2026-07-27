@@ -272,7 +272,10 @@ fun AppNavigation(
             TrashScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToTab = onNavigateToTab
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                }
             )
         }
 

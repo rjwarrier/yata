@@ -30,6 +30,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -37,6 +38,7 @@ fun TrashScreen(
     viewModel: MainViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onNavigateToTaskDetail: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val deletedTasks by viewModel.deletedTasks.collectAsState()
@@ -50,8 +52,11 @@ fun TrashScreen(
 
     var showEmptyTrashDialog by remember { mutableStateOf(false) }
     var pendingPermanentDelete by remember { mutableStateOf<Task?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = -1,
@@ -137,7 +142,19 @@ fun TrashScreen(
                     TrashTaskRow(
                         task = task,
                         retentionDays = trashRetentionDays,
-                        onRestore = { viewModel.restoreTask(task.id) },
+                        onRestore = {
+                            viewModel.restoreTask(task.id)
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Restored \"${task.title}\"",
+                                    actionLabel = "View",
+                                    duration = SnackbarDuration.Long
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    onNavigateToTaskDetail(task.id)
+                                }
+                            }
+                        },
                         onDeleteForever = { pendingPermanentDelete = task },
                         modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                         )

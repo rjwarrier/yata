@@ -22,6 +22,7 @@ import com.mj.yata.R
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import kotlinx.coroutines.launch
 
 /**
  * Archived tasks — shelved but fully intact, unlike Trash. Nothing here expires or is purged;
@@ -43,8 +44,13 @@ fun ArchiveScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val openArchivedTasks = remember(archivedTasks) { archivedTasks.filter { !it.done } }
+    val completedArchivedTasks = remember(archivedTasks) { archivedTasks.filter { it.done } }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = -1,
@@ -84,11 +90,24 @@ fun ArchiveScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = stringResource(R.string.archive_empty_state),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.archive_empty_state),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = stringResource(R.string.archive_empty_state_desc),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(onClick = { onNavigateToTab(0) }) {
+                        Text(stringResource(R.string.archive_empty_state_action))
+                    }
+                }
             }
         } else {
             LazyColumn(
@@ -107,42 +126,98 @@ fun ArchiveScreen(
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                 }
-                items(archivedTasks, key = { it.id }) { task ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
-                            )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onNavigateToTaskDetail(task.id) }
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = task.title,
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                    maxLines = 2
-                                )
-                                task.due?.let { due ->
-                                    Text(
-                                        text = due,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                if (openArchivedTasks.isNotEmpty()) {
+                    item { ArchiveSectionHeader("Shelved active tasks", openArchivedTasks.size) }
+                    items(openArchivedTasks, key = { it.id }) { task ->
+                        ArchiveTaskRow(
+                            task = task,
+                            onClick = { onNavigateToTaskDetail(task.id) },
+                            onUnarchive = {
+                                viewModel.setTaskArchived(task.id, false)
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "Unarchived \"${task.title}\"",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Long
                                     )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.setTaskArchived(task.id, true)
+                                    }
                                 }
                             }
-                            IconButton(onClick = { viewModel.setTaskArchived(task.id, false) }) {
-                                Icon(Icons.Default.Unarchive, contentDescription = stringResource(R.string.cd_archive_unarchive))
-                            }
-                        }
+                        )
                     }
                 }
+                if (completedArchivedTasks.isNotEmpty()) {
+                    item { ArchiveSectionHeader("Shelved completed tasks", completedArchivedTasks.size) }
+                    items(completedArchivedTasks, key = { it.id }) { task ->
+                        ArchiveTaskRow(
+                            task = task,
+                            onClick = { onNavigateToTaskDetail(task.id) },
+                            onUnarchive = {
+                                viewModel.setTaskArchived(task.id, false)
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "Unarchived \"${task.title}\"",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.setTaskArchived(task.id, true)
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArchiveSectionHeader(label: String, count: Int) {
+    Text(
+        text = "$label - $count",
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+    )
+}
+
+@Composable
+@OptIn(ExperimentalFoundationApi::class)
+private fun ArchiveTaskRow(
+    task: com.mj.yata.domain.model.Task,
+    onClick: () -> Unit,
+    onUnarchive: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    maxLines = 2
+                )
+                Text(
+                    text = listOfNotNull(task.due, task.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) }).joinToString(" - "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = onUnarchive) {
+                Icon(Icons.Default.Unarchive, contentDescription = stringResource(R.string.cd_archive_unarchive))
             }
         }
     }

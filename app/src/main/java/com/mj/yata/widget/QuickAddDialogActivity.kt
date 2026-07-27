@@ -17,6 +17,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -55,6 +57,7 @@ import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -100,6 +103,7 @@ class QuickAddDialogActivity : ComponentActivity() {
 
                 fun createTask(title: String) {
                     lifecycleScope.launch {
+                        val parsedTyped = NaturalLanguageParser.parse(title)
                         // Belt-and-suspenders re-check: the widget already drops a target once its
                         // list/project is gone, but a target can also be deleted in the gap between
                         // the widget rendering and this dialog's "Add" tap. listId/projectId are
@@ -113,11 +117,11 @@ class QuickAddDialogActivity : ComponentActivity() {
                             repository.getProjectById(targetId).first()
                         } else null
                         val projectStillExists = presetProject != null
-                        val due = parsedShared?.due ?: presetProject?.due ?: LocalDate.now().toString()
+                        val due = parsedTyped.due ?: parsedShared?.due ?: presetProject?.due ?: LocalDate.now().toString()
                         repository.upsertTask(
                             Task(
                                 id = "t_" + UUID.randomUUID().toString(),
-                                title = title,
+                                title = parsedTyped.title.takeIf { it.isNotBlank() } ?: title,
                                 listId = if (listStillExists) targetId else null,
                                 projectId = if (projectStillExists) targetId else null,
                                 section = "Afternoon",
@@ -125,14 +129,14 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 // (here, one parsed from shared text) wins, otherwise the preset
                                 // project's own due date, otherwise today.
                                 due = due,
-                                time = parsedShared?.time,
-                                reminder = null,
-                                priority = "none",
-                                flag = false,
+                                time = parsedTyped.time ?: parsedShared?.time,
+                                reminder = parsedTyped.reminder ?: parsedShared?.reminder,
+                                priority = parsedTyped.priority ?: "none",
+                                flag = parsedTyped.flag || (parsedShared?.flag == true),
                                 done = false,
                                 assigneeIds = emptyList(),
                                 tagIds = emptyList(),
-                                recurrence = parsedShared?.recurrence,
+                                recurrence = parsedTyped.recurrence ?: parsedShared?.recurrence,
                                 subtasks = emptyList(),
                                 notes = sharedNotes
                             )
@@ -205,6 +209,7 @@ class QuickAddDialogActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QuickAddDialogContent(
     targetName: String?,
@@ -213,6 +218,18 @@ private fun QuickAddDialogContent(
     onDismiss: () -> Unit
 ) {
     var title by remember { mutableStateOf(initialTitle) }
+    val parsedPreview = remember(title) { NaturalLanguageParser.parse(title) }
+    val previewItems = remember(parsedPreview, targetName) {
+        listOfNotNull(
+            parsedPreview.title.takeIf { it.isNotBlank() && it != title.trim() }?.let { "Title: $it" },
+            parsedPreview.due?.let { "Due ${TaskScheduleUtils.formatDueDate(it)}" },
+            parsedPreview.time?.let { "Time $it" },
+            parsedPreview.recurrence?.let { "Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}" },
+            parsedPreview.priority?.let { "${it.uppercase()} priority" },
+            "Flagged".takeIf { parsedPreview.flag },
+            targetName?.let { "Target $it" }
+        )
+    }
     val focusRequester = remember { FocusRequester() }
     val noRipple = remember { MutableInteractionSource() }
     val context = LocalContext.current
@@ -304,6 +321,33 @@ private fun QuickAddDialogContent(
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
                 )
+                if (previewItems.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "Smart add preview",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            previewItems.forEach { item ->
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                    shape = RoundedCornerShape(999.dp)
+                                ) {
+                                    Text(
+                                        text = item,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                     Spacer(modifier = Modifier.width(8.dp))

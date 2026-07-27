@@ -150,6 +150,8 @@
     <string name="settings_app_language_desc">Choose the language YATA is displayed in.</string>
 
     <!-- Archive -->
+    <string name="settings_task_lifecycle">Task lifecycle</string>
+    <string name="settings_task_lifecycle_desc">Trash deletes tasks after a retention window; Archive only hides tasks and keeps them intact.</string>
     <string name="settings_archive_desc">Shelve tasks without deleting them. Archived tasks are hidden from lists, kept indefinitely, and can be unarchived.</string>
     <string name="settings_auto_archive">Auto-archive completed after</string>
     <string name="settings_auto_archive_off">Off</string>
@@ -206,6 +208,8 @@
     <!-- Archive -->
     <string name="archive_title">Archive</string>
     <string name="archive_empty_state">No shelved tasks in Archive.</string>
+    <string name="archive_empty_state_desc">Archived tasks will appear here. Use Archive when you want to hide a task without deleting it.</string>
+    <string name="archive_empty_state_action">Go to Today</string>
     <string name="archive_notice">Archive shelves tasks without deleting them. They stay hidden from normal lists, never expire, and can be unarchived anytime.</string>
     <string name="cd_archive_unarchive">Unarchive task</string>
 

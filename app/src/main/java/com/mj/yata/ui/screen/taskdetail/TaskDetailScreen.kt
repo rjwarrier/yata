@@ -316,9 +316,14 @@ fun TaskDetailScreen(
                                 val nowArchived = !task.archived
                                 viewModel.setTaskArchived(task.id, nowArchived)
                                 scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        if (nowArchived) "Task archived" else "Task unarchived"
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = if (nowArchived) "Task archived" else "Task unarchived",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Long
                                     )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.setTaskArchived(task.id, !nowArchived)
+                                    }
                                 }
                             },
                             leadingIcon = {

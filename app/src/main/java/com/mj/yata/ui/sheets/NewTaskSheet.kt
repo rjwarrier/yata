@@ -2,6 +2,11 @@ package com.mj.yata.ui.sheets
 
 import android.content.Intent
 import android.speech.RecognizerIntent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -47,6 +52,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -158,6 +164,22 @@ fun NewTaskSheet(
         subtasks: List<Subtask>,
         flag: Boolean
     ) -> Unit,
+    onAddTaskAndContinue: ((
+        title: String,
+        listId: String?,
+        priority: String,
+        assigneeIds: List<String>,
+        tagIds: List<String>,
+        recurrence: Recurrence?,
+        due: String?,
+        time: String?,
+        reminder: String?,
+        section: String,
+        projectId: String?,
+        notes: String?,
+        subtasks: List<Subtask>,
+        flag: Boolean
+    ) -> Unit)? = null,
     onCreateTag: (id: String, name: String, color: String) -> Unit,
     onCreatePerson: (id: String, name: String, color: String) -> Unit,
     onDismiss: () -> Unit,
@@ -216,6 +238,7 @@ fun NewTaskSheet(
     var reminderManuallySet by remember { mutableStateOf(false) }
     var priorityManuallySet by remember { mutableStateOf(false) }
     var quickAddDismissed by remember { mutableStateOf(false) }
+    var keepAdding by remember { mutableStateOf(false) }
     val setDueDate: (String?) -> Unit = { selectedDueDate = it; dueManuallySet = true }
     val setTime: (String?) -> Unit = { selectedTime = it; timeManuallySet = true }
     val setRecurrence: (Recurrence?) -> Unit = { selectedRecurrence = it; recurrenceManuallySet = true }
@@ -392,6 +415,27 @@ fun NewTaskSheet(
 
     var pendingDuplicateTask by remember { mutableStateOf<Task?>(null) }
 
+    val resetAfterCreateAnother = {
+        title = TextFieldValue("")
+        selectedPriority = defaultPriority
+        selectedFlag = false
+        selectedTime = null
+        selectedReminder = null
+        selectedRecurrence = null
+        notes = ""
+        subtasks.clear()
+        newSubtaskTitle = ""
+        dueManuallySet = initialDueDateOverride != null
+        timeManuallySet = false
+        recurrenceManuallySet = false
+        reminderManuallySet = false
+        priorityManuallySet = false
+        quickAddDismissed = false
+        bulkModeDismissed = false
+        activePanel = null
+        selectedDueDate = initialDueDate
+    }
+
     val createTask = {
         if (isBulkTasks) {
             // Each line gets its own NaturalLanguageParser pass — independent due/time/
@@ -418,7 +462,8 @@ fun NewTaskSheet(
             }
         } else {
             val finalTitle = (if (quickAddMatched) quickAdd.title else title.text.trim()).toProperCase()
-            onAddTask(
+            val add = if (keepAdding && onAddTaskAndContinue != null) onAddTaskAndContinue else onAddTask
+            add(
                 finalTitle,
                 selectedListId,
                 selectedPriority,
@@ -434,6 +479,9 @@ fun NewTaskSheet(
                 subtasks.toList(),
                 selectedFlag
             )
+            if (keepAdding && onAddTaskAndContinue != null) {
+                resetAfterCreateAnother()
+            }
         }
     }
 
@@ -684,26 +732,36 @@ fun NewTaskSheet(
                     )
                 }
             } else if (quickAddMatched) {
-                val detectedItems = listOfNotNull(
-                    quickAdd.due?.let { "Due ${TaskScheduleUtils.formatDueDate(it)}" },
-                    quickAdd.time?.let { "Time $it" },
-                    quickAdd.recurrence?.let { "Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}" },
-                    quickAdd.reminder?.let { "Remind $it" },
-                    quickAdd.priority?.let { "${it.uppercase()} priority" },
-                    "Flagged".takeIf { quickAdd.flag },
-                    quickAdd.projectName?.let { "Project $it" },
-                    quickAdd.listName?.let { "List $it" },
-                    quickAdd.tagNames.takeIf { it.isNotEmpty() }?.joinToString(", ") { "#$it" }?.let { "Tags $it" },
-                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() }?.joinToString(", ") { "@$it" }?.let { "People $it" }
+                val detectedItems = listOfNotNull<Pair<String, () -> Unit>>(
+                    quickAdd.due?.let { "Due ${TaskScheduleUtils.formatDueDate(it)}" to { activePanel = "DueDate" } },
+                    quickAdd.time?.let { "Time $it" to { activePanel = "Time" } },
+                    quickAdd.recurrence?.let {
+                        "Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}" to {
+                            activePanel = null
+                            showRecurrenceSheet = true
+                        }
+                    },
+                    quickAdd.reminder?.let { "Remind $it" to { activePanel = "Reminder" } },
+                    quickAdd.priority?.let { "${it.uppercase()} priority" to { activePanel = "Priority" } },
+                    "Flagged".takeIf { quickAdd.flag }?.let { it to { selectedFlag = !selectedFlag } },
+                    quickAdd.projectName?.let { "Project $it" to { activePanel = "Project" } },
+                    quickAdd.listName?.let { "List $it" to { activePanel = "List" } },
+                    quickAdd.tagNames.takeIf { it.isNotEmpty() }?.joinToString(", ") { "#$it" }?.let { "Tags $it" to { activePanel = "Tags" } },
+                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() }?.joinToString(", ") { "@$it" }?.let { "People $it" to { activePanel = "People" } }
                 )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(tween(150)) + expandVertically(tween(150)),
+                    exit = fadeOut(tween(100)) + shrinkVertically(tween(100))
                 ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -739,17 +797,18 @@ fun NewTaskSheet(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        detectedItems.forEach { item ->
+                        detectedItems.forEach { (item, onItemClick) ->
                             YataSelectChip(
                                 label = item,
                                 selected = true,
-                                onClick = {},
+                                onClick = onItemClick,
                                 tint = MaterialTheme.colorScheme.primary,
                                 showCheck = false,
                                 height = 30.dp
                             )
                         }
                     }
+                }
                 }
             }
 
@@ -916,6 +975,7 @@ fun NewTaskSheet(
                         )
                         "Repeat" -> RepeatPanel(
                             selectedRecurrence = selectedRecurrence,
+                            selectedDueDate = selectedDueDate,
                             onSelect = { setRecurrence(it) },
                             onCustom = {
                                 activePanel = null
@@ -1046,6 +1106,32 @@ fun NewTaskSheet(
 
         // Footer submit bar
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        if (onAddTaskAndContinue != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { keepAdding = !keepAdding }
+                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Checkbox(
+                    checked = keepAdding,
+                    onCheckedChange = { keepAdding = it }
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Create another",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = "Keep this sheet open after saving.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1475,17 +1561,30 @@ private fun TagsPanel(
 @Composable
 private fun RepeatPanel(
     selectedRecurrence: Recurrence?,
+    selectedDueDate: String?,
     onSelect: (Recurrence?) -> Unit,
     onCustom: () -> Unit
 ) {
     Column {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val baseDate = selectedDueDate
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                ?: LocalDate.now()
+            val weeklyDay = when (baseDate.dayOfWeek) {
+                java.time.DayOfWeek.MONDAY -> "MO"
+                java.time.DayOfWeek.TUESDAY -> "TU"
+                java.time.DayOfWeek.WEDNESDAY -> "WE"
+                java.time.DayOfWeek.THURSDAY -> "TH"
+                java.time.DayOfWeek.FRIDAY -> "FR"
+                java.time.DayOfWeek.SATURDAY -> "SA"
+                java.time.DayOfWeek.SUNDAY -> "SU"
+            }
             val presets = listOf<Pair<String, Recurrence?>>(
                 "None" to null,
                 "Daily" to Recurrence("daily", 1, null, null, RecurrenceEnds.Never),
                 "Weekdays" to Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never),
-                "Weekly" to Recurrence("weekly", 1, listOf("TH"), null, RecurrenceEnds.Never),
-                "Monthly" to Recurrence("monthly", 1, null, 16, RecurrenceEnds.Never),
+                "Weekly" to Recurrence("weekly", 1, listOf(weeklyDay), null, RecurrenceEnds.Never),
+                "Monthly" to Recurrence("monthly", 1, null, baseDate.dayOfMonth, RecurrenceEnds.Never),
                 "Yearly" to Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
             )
             presets.forEach { (label, rec) ->

@@ -112,6 +112,24 @@ internal fun parseSearchQuery(raw: String): ParsedSearchQuery {
     return ParsedSearchQuery(matched.distinct(), remaining.replace(Regex("\\s{2,}"), " ").trim())
 }
 
+private fun Task.matchesSearchText(
+    query: String,
+    peopleById: Map<String, Person>,
+    tags: List<Tag>,
+    projects: List<Project>
+): Boolean {
+    val terms = query.split(Regex("\\s+")).filter { it.isNotBlank() }
+    if (terms.isEmpty()) return true
+    val haystack = buildString {
+        append(title).append(' ')
+        append(notes.orEmpty()).append(' ')
+        assigneeIds.mapNotNull { peopleById[it]?.name }.forEach { append(it).append(' ') }
+        effectiveTags(projects, tags).forEach { append(it.name).append(' ') }
+        subtasks.forEach { append(it.title).append(' ') }
+    }.lowercase()
+    return terms.all { haystack.contains(it.lowercase()) }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen(
@@ -127,6 +145,8 @@ fun SearchScreen(
     val projects by viewModel.projects.collectAsState()
     val people by viewModel.people.collectAsState()
     val tags by viewModel.tags.collectAsState()
+    val archivedTasks by viewModel.archivedTasks.collectAsState()
+    val deletedTasks by viewModel.deletedTasks.collectAsState()
     val taskRowDensity by viewModel.taskRowDensity.collectAsState()
 
     var query by remember { mutableStateOf("") }
@@ -164,6 +184,8 @@ fun SearchScreen(
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    var includeArchived by remember { mutableStateOf(false) }
+    var includeTrash by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -197,14 +219,29 @@ fun SearchScreen(
         viewModel.searchTasks(debouncedQuery)
     }.collectAsStateWithLifecycle(initialValue = emptyList())
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
-    val filteredTasks = remember(tasks, queryTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds, myId) {
-        if (debouncedQuery.isBlank() && activeFilters.isEmpty()) {
+    val filteredTasks = remember(tasks, queryTasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tags, projects) {
+        if (debouncedQuery.isBlank() && activeFilters.isEmpty() && !includeArchived && !includeTrash) {
             emptyList()
         } else {
             val today = LocalDate.now()
-            val sourceTasks = if (debouncedQuery.isBlank()) tasks else queryTasks
+            val activeSource = if (debouncedQuery.isBlank()) tasks else queryTasks
+            val archivedSource = if (!includeArchived) {
+                emptyList()
+            } else if (debouncedQuery.isBlank()) {
+                archivedTasks
+            } else {
+                archivedTasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tags, projects) }
+            }
+            val trashSource = if (!includeTrash) {
+                emptyList()
+            } else if (debouncedQuery.isBlank()) {
+                deletedTasks
+            } else {
+                deletedTasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tags, projects) }
+            }
+            val sourceTasks = (activeSource + archivedSource + trashSource).distinctBy { it.id }
             sourceTasks.filter { task ->
-                if (task.projectId in archivedProjectIds) return@filter false
+                if (!includeArchived && task.projectId in archivedProjectIds) return@filter false
                 activeFilters.all { it.matches(task, today, myId) }
             }
         }
@@ -289,7 +326,13 @@ fun SearchScreen(
                 onClearSearchFilters = {
                     query = ""
                     activeFilters.clear()
+                    includeArchived = false
+                    includeTrash = false
                 },
+                includeArchived = includeArchived,
+                includeTrash = includeTrash,
+                onToggleIncludeArchived = { includeArchived = !includeArchived },
+                onToggleIncludeTrash = { includeTrash = !includeTrash },
                 filteredTasks = filteredTasks,
                 lists = lists,
                 projects = projects,
@@ -351,8 +394,14 @@ fun SearchScreen(
                     onRemoveSavedFilter = { encoded -> viewModel.removeSmartFilterSet(encoded) },
                     onClearSearchFilters = {
                         query = ""
-                        activeFilters.clear()
-                    },
+                    activeFilters.clear()
+                    includeArchived = false
+                    includeTrash = false
+                },
+                    includeArchived = includeArchived,
+                    includeTrash = includeTrash,
+                    onToggleIncludeArchived = { includeArchived = !includeArchived },
+                    onToggleIncludeTrash = { includeTrash = !includeTrash },
                     filteredTasks = filteredTasks,
                     lists = lists,
                     projects = projects,
@@ -489,6 +538,10 @@ private fun SearchResultsList(
     onApplySavedFilter: (String) -> Unit,
     onRemoveSavedFilter: (String) -> Unit,
     onClearSearchFilters: () -> Unit,
+    includeArchived: Boolean,
+    includeTrash: Boolean,
+    onToggleIncludeArchived: () -> Unit,
+    onToggleIncludeTrash: () -> Unit,
     filteredTasks: List<Task>,
     lists: List<YataList>,
     projects: List<Project>,
@@ -527,6 +580,16 @@ private fun SearchResultsList(
                         label = { Text(filter.label) }
                     )
                 }
+                FilterChip(
+                    selected = includeArchived,
+                    onClick = onToggleIncludeArchived,
+                    label = { Text("Archived") }
+                )
+                FilterChip(
+                    selected = includeTrash,
+                    onClick = onToggleIncludeTrash,
+                    label = { Text("Trash") }
+                )
                 if (canSaveCurrentSmartFilterSet) {
                     AssistChip(
                         onClick = onSaveActiveFilters,

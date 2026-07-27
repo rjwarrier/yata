@@ -856,6 +856,9 @@ fun MainScreen(
                         viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks, flag = flag)
                         activeSheet = MainSheetType.None
                     },
+                    onAddTaskAndContinue = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks, flag ->
+                        viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks, flag = flag)
+                    },
                     onGoToExistingTask = { id ->
                         activeSheet = MainSheetType.None
                         onNavigateToTaskDetail(id)
