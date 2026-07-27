@@ -139,6 +139,10 @@ class UserPreferences @Inject constructor(
         val OVERDUE_NUDGES_ENABLED = booleanPreferencesKey("overdue_nudges_enabled")
         // Seconds an undo stays available after a delete. 4 matches the old SnackbarDuration.Short.
         val UNDO_WINDOW_SECONDS   = intPreferencesKey("undo_window_seconds")
+        val SNOOZE_TONIGHT_HOUR   = intPreferencesKey("snooze_tonight_hour")
+        val SNOOZE_TONIGHT_MINUTE = intPreferencesKey("snooze_tonight_minute")
+        val SNOOZE_TOMORROW_HOUR  = intPreferencesKey("snooze_tomorrow_hour")
+        val SNOOZE_TOMORROW_MINUTE = intPreferencesKey("snooze_tomorrow_minute")
         val SORT_MODE_TAG_DETAIL  = stringPreferencesKey("sort_mode_tag_detail")
         val SORT_MODE_TAGS_TAB    = stringPreferencesKey("sort_mode_tags_tab")
         val SORT_MODE_PEOPLE_TAB  = stringPreferencesKey("sort_mode_people_tab")
@@ -256,6 +260,10 @@ class UserPreferences @Inject constructor(
     val dailyAgendaMinuteFlow: Flow<Int> = dataStore.data.map { it[DAILY_AGENDA_MINUTE] ?: 30 }
     val overdueNudgesEnabledFlow: Flow<Boolean> = dataStore.data.map { it[OVERDUE_NUDGES_ENABLED] ?: true }
     val undoWindowSecondsFlow: Flow<Int> = dataStore.data.map { it[UNDO_WINDOW_SECONDS] ?: 4 }
+    val snoozeTonightHourFlow: Flow<Int> = dataStore.data.map { it[SNOOZE_TONIGHT_HOUR] ?: 18 }
+    val snoozeTonightMinuteFlow: Flow<Int> = dataStore.data.map { it[SNOOZE_TONIGHT_MINUTE] ?: 0 }
+    val snoozeTomorrowHourFlow: Flow<Int> = dataStore.data.map { it[SNOOZE_TOMORROW_HOUR] ?: 9 }
+    val snoozeTomorrowMinuteFlow: Flow<Int> = dataStore.data.map { it[SNOOZE_TOMORROW_MINUTE] ?: 0 }
     val sortModeTagDetailFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
     val sortModeTagsTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
     val sortModePeopleTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
@@ -382,6 +390,14 @@ class UserPreferences @Inject constructor(
 
     suspend fun setUndoWindowSeconds(seconds: Int) {
         dataStore.edit { it[UNDO_WINDOW_SECONDS] = seconds }
+    }
+
+    suspend fun setSnoozeTonightTime(hour: Int, minute: Int) {
+        dataStore.edit { it[SNOOZE_TONIGHT_HOUR] = hour; it[SNOOZE_TONIGHT_MINUTE] = minute }
+    }
+
+    suspend fun setSnoozeTomorrowTime(hour: Int, minute: Int) {
+        dataStore.edit { it[SNOOZE_TOMORROW_HOUR] = hour; it[SNOOZE_TOMORROW_MINUTE] = minute }
     }
 
     suspend fun setOverdueNudgesEnabled(enabled: Boolean) {
@@ -580,6 +596,28 @@ class UserPreferences @Inject constructor(
             it[THEME_SCHEDULE_START_MINUTE] = startMinute
             it[THEME_SCHEDULE_END_HOUR] = endHour
             it[THEME_SCHEDULE_END_MINUTE] = endMinute
+        }
+    }
+
+    /** Restores user-facing behavior defaults while preserving profile identity, app-lock
+     * credentials, backup accounts/history, saved searches, and all task data. */
+    suspend fun resetAppSettings() {
+        dataStore.edit { prefs ->
+            prefs.remove(THEME_MODE); prefs.remove(APP_FONT); prefs.remove(DEFAULT_LIST_ID)
+            prefs.remove(START_OF_WEEK_SUNDAY); prefs.remove(DEFAULT_REMINDER_HOUR); prefs.remove(DEFAULT_REMINDER_MINUTE)
+            prefs.remove(UI_SCALE); prefs.remove(TEXT_SCALE); prefs.remove(DYNAMIC_COLOR_ENABLED)
+            prefs.remove(CUSTOM_THEME_SEED_COLOR); prefs.remove(REDUCE_MOTION_ENABLED); prefs.remove(ENHANCED_M3_THEMING_ENABLED)
+            prefs.remove(FLOATING_BOTTOM_NAV_ENABLED); prefs.remove(BOTTOM_NAV_LABELS_ENABLED); prefs.remove(COMPLETION_SOUND_ENABLED)
+            prefs.remove(HAPTICS_ENABLED); prefs.remove(TASK_SWIPE_ACTIONS_ENABLED); prefs.remove(TASK_ROW_DENSITY)
+            prefs.remove(TODAY_TAB_ENABLED); prefs.remove(UPCOMING_TAB_ENABLED); prefs.remove(FAB_POSITION)
+            prefs.remove(DEFAULT_DUE_DATE); prefs.remove(DEFAULT_PRIORITY); prefs.remove(DAILY_AGENDA_ENABLED)
+            prefs.remove(DAILY_AGENDA_HOUR); prefs.remove(DAILY_AGENDA_MINUTE); prefs.remove(OVERDUE_NUDGES_ENABLED)
+            prefs.remove(UNDO_WINDOW_SECONDS); prefs.remove(TRASH_RETENTION_DAYS); prefs.remove(AUTO_ARCHIVE_DAYS)
+            prefs.remove(SNOOZE_TONIGHT_HOUR); prefs.remove(SNOOZE_TONIGHT_MINUTE)
+            prefs.remove(SNOOZE_TOMORROW_HOUR); prefs.remove(SNOOZE_TOMORROW_MINUTE)
+            prefs.remove(THEME_SCHEDULE_START_HOUR); prefs.remove(THEME_SCHEDULE_START_MINUTE)
+            prefs.remove(THEME_SCHEDULE_END_HOUR); prefs.remove(THEME_SCHEDULE_END_MINUTE)
+            prefs.remove(VOICE_RECOGNITION_LANGUAGE)
         }
     }
 }

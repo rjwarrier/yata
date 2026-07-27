@@ -624,8 +624,25 @@ private data class MainNavigationState(
     val undoWindowSeconds: StateFlow<Int> = userPreferences.undoWindowSecondsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
 
+    val snoozeTonightHour: StateFlow<Int> = userPreferences.snoozeTonightHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 18)
+    val snoozeTonightMinute: StateFlow<Int> = userPreferences.snoozeTonightMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val snoozeTomorrowHour: StateFlow<Int> = userPreferences.snoozeTomorrowHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 9)
+    val snoozeTomorrowMinute: StateFlow<Int> = userPreferences.snoozeTomorrowMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     fun setUndoWindowSeconds(seconds: Int) {
         viewModelScope.launch { userPreferences.setUndoWindowSeconds(seconds) }
+    }
+
+    fun setSnoozeTonightTime(hour: Int, minute: Int) {
+        viewModelScope.launch { userPreferences.setSnoozeTonightTime(hour, minute) }
+    }
+
+    fun setSnoozeTomorrowTime(hour: Int, minute: Int) {
+        viewModelScope.launch { userPreferences.setSnoozeTomorrowTime(hour, minute) }
     }
 
     fun setDailyAgendaEnabled(enabled: Boolean) {
@@ -654,6 +671,10 @@ private data class MainNavigationState(
 
     fun setTrashRetentionDays(days: Int) {
         viewModelScope.launch { userPreferences.setTrashRetentionDays(days) }
+    }
+
+    fun resetAppSettings() {
+        viewModelScope.launch { userPreferences.resetAppSettings() }
     }
 
     val customThemeSeedColor: StateFlow<Int?> = userPreferences.customThemeSeedColorFlow

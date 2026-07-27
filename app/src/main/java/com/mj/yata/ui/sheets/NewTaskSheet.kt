@@ -74,6 +74,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
@@ -82,6 +87,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -135,6 +141,82 @@ internal fun pickAccentFor(name: String): String =
 /** Forced on every chip in the Assigned-to/Tags rows so mixed content (avatars, dots, dashed
  * "add" pills) never drifts out of alignment — matches the attribute-chip row's YataSelectChip height. */
 private val CHIP_ROW_HEIGHT = 34.dp
+
+private val stringStateListSaver: Saver<SnapshotStateList<String>, Any> = listSaver(
+    save = { it.toList() },
+    restore = { it.map(Any?::toString).toMutableStateList() }
+)
+
+private fun encodeSubtask(subtask: Subtask): String = listOf(
+    subtask.id,
+    android.net.Uri.encode(subtask.title),
+    subtask.done.toString(),
+    android.net.Uri.encode(subtask.parentSubtaskId.orEmpty()),
+    subtask.sortOrder.toString()
+).joinToString("|")
+
+private fun decodeSubtask(value: String): Subtask? = runCatching {
+    val parts = value.split('|')
+    Subtask(
+        id = parts[0],
+        title = android.net.Uri.decode(parts[1]),
+        done = parts[2].toBoolean(),
+        parentSubtaskId = android.net.Uri.decode(parts[3]).ifBlank { null },
+        sortOrder = parts[4].toInt()
+    )
+}.getOrNull()
+
+private val subtaskStateListSaver: Saver<SnapshotStateList<Subtask>, Any> = listSaver(
+    save = { it.map(::encodeSubtask) },
+    restore = { values -> values.mapNotNull { decodeSubtask(it.toString()) }.toMutableStateList() }
+)
+
+private fun encodeRecurrence(recurrence: Recurrence?): String {
+    if (recurrence == null) return ""
+    val ends = when (val value = recurrence.ends) {
+        RecurrenceEnds.Never -> "never"
+        is RecurrenceEnds.After -> "after:${value.count}"
+        is RecurrenceEnds.On -> "on:${value.date}"
+    }
+    return listOf(
+        recurrence.freq,
+        recurrence.interval.toString(),
+        recurrence.byday.orEmpty().joinToString(","),
+        recurrence.bymonthday?.toString().orEmpty(),
+        ends,
+        recurrence.basedOnCompletion.toString()
+    ).joinToString("|") { android.net.Uri.encode(it) }
+}
+
+private fun decodeRecurrence(value: String): Recurrence? {
+    if (value.isBlank()) return null
+    return runCatching {
+        val parts = value.split('|').map(android.net.Uri::decode)
+        val ends = when {
+            parts[4] == "never" -> RecurrenceEnds.Never
+            parts[4].startsWith("after:") -> RecurrenceEnds.After(parts[4].substringAfter(':').toInt())
+            else -> RecurrenceEnds.On(parts[4].substringAfter(':'))
+        }
+        Recurrence(
+            freq = parts[0],
+            interval = parts[1].toInt(),
+            byday = parts[2].takeIf(String::isNotBlank)?.split(','),
+            bymonthday = parts[3].toIntOrNull(),
+            ends = ends,
+            basedOnCompletion = parts[5].toBoolean()
+        )
+    }.getOrNull()
+}
+
+private val recurrenceSaver = Saver<Recurrence?, String>(
+    save = { encodeRecurrence(it) },
+    restore = { decodeRecurrence(it) }
+)
+
+private val stringSetSaver = Saver<Set<String>, ArrayList<String>>(
+    save = { ArrayList(it) },
+    restore = { it.toSet() }
+)
 
 internal fun initialsFor(name: String): String =
     name.trim().split(Regex("\\s+")).mapNotNull { it.firstOrNull()?.toString() }
@@ -195,17 +277,18 @@ fun NewTaskSheet(
     peopleEnabled: Boolean = true,
     voiceLanguage: String = "default",
     defaultDueDate: com.mj.yata.domain.model.DefaultDueDate = com.mj.yata.domain.model.DefaultDueDate.TODAY,
-    defaultPriority: String = "none"
+    defaultPriority: String = "none",
+    onDraftStateChanged: (Boolean) -> Unit = {}
 ) {
-    var title by remember { mutableStateOf(TextFieldValue("")) }
-    var selectedListId by remember { mutableStateOf(initialListId) }
-    var selectedProjectId by remember { mutableStateOf(initialProjectId) }
-    var selectedPriority by remember { mutableStateOf(defaultPriority) }
+    var title by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue("")) }
+    var selectedListId by rememberSaveable { mutableStateOf(initialListId) }
+    var selectedProjectId by rememberSaveable { mutableStateOf(initialProjectId) }
+    var selectedPriority by rememberSaveable { mutableStateOf(defaultPriority) }
     // No manual toggle exists for this yet (unlike due/time/priority below) — quick-add is
     // currently the only way to flag a task before it's created, so there's no "manually set"
     // state to protect it from being overwritten.
-    var selectedFlag by remember { mutableStateOf(false) }
-    var selectedSection by remember { mutableStateOf("Afternoon") }
+    var selectedFlag by rememberSaveable { mutableStateOf(false) }
+    var selectedSection by rememberSaveable { mutableStateOf("Afternoon") }
 
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
     // otherwise the pre-selected project's due date, otherwise the user's configured default
@@ -220,27 +303,28 @@ fun NewTaskSheet(
             defaultDueDate.resolve()
         }
     }
-    var selectedDueDate by remember { mutableStateOf<String?>(initialDueDate) }
-    var selectedTime by remember { mutableStateOf<String?>(null) }
-    var selectedReminder by remember { mutableStateOf<String?>(null) }
+    var selectedDueDate by rememberSaveable { mutableStateOf<String?>(initialDueDate) }
+    var selectedTime by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedReminder by rememberSaveable { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
-    var selectedRecurrence by remember { mutableStateOf<Recurrence?>(null) }
+    var selectedRecurrence by rememberSaveable(stateSaver = recurrenceSaver) { mutableStateOf<Recurrence?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
+    var reminderValidationMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var showRecurrenceSheet by remember { mutableStateOf(false) }
 
     // Quick-add: typing a date/time phrase in the title (e.g. "tomorrow 3pm") prefills these
     // chips. Once the user picks a due date/time manually, their choice always wins over
     // further parsing — see setDueDate/setTime below.
-    var dueManuallySet by remember { mutableStateOf(initialDueDateOverride != null) }
-    var timeManuallySet by remember { mutableStateOf(false) }
-    var recurrenceManuallySet by remember { mutableStateOf(false) }
-    var reminderManuallySet by remember { mutableStateOf(false) }
-    var priorityManuallySet by remember { mutableStateOf(false) }
-    var quickAddDismissed by remember { mutableStateOf(false) }
-    var ignoredQuickAddFields by remember { mutableStateOf(setOf<String>()) }
-    var keepAdding by remember { mutableStateOf(false) }
+    var dueManuallySet by rememberSaveable { mutableStateOf(initialDueDateOverride != null) }
+    var timeManuallySet by rememberSaveable { mutableStateOf(false) }
+    var recurrenceManuallySet by rememberSaveable { mutableStateOf(false) }
+    var reminderManuallySet by rememberSaveable { mutableStateOf(false) }
+    var priorityManuallySet by rememberSaveable { mutableStateOf(false) }
+    var quickAddDismissed by rememberSaveable { mutableStateOf(false) }
+    var ignoredQuickAddFields by rememberSaveable(stateSaver = stringSetSaver) { mutableStateOf(setOf<String>()) }
+    var keepAdding by rememberSaveable { mutableStateOf(false) }
     val setDueDate: (String?) -> Unit = { selectedDueDate = it; dueManuallySet = true }
     val setTime: (String?) -> Unit = { selectedTime = it; timeManuallySet = true }
     val setRecurrence: (Recurrence?) -> Unit = { selectedRecurrence = it; recurrenceManuallySet = true }
@@ -248,7 +332,7 @@ fun NewTaskSheet(
     val setPriority: (String) -> Unit = { selectedPriority = it; priorityManuallySet = true }
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
-    val selectedAssigneeIds = remember { mutableStateListOf<String>() }
+    val selectedAssigneeIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf<String>() }
 
     LaunchedEffect(initialAssigneeId, myId, peopleEnabled) {
         if (peopleEnabled && selectedAssigneeIds.isEmpty()) {
@@ -256,7 +340,7 @@ fun NewTaskSheet(
         }
     }
 
-    val selectedTagIds = remember { mutableStateListOf<String>() }
+    val selectedTagIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf<String>() }
     LaunchedEffect(initialTagId, tagsEnabled) {
         if (tagsEnabled && initialTagId != null && !selectedTagIds.contains(initialTagId)) {
             selectedTagIds.add(initialTagId)
@@ -264,13 +348,13 @@ fun NewTaskSheet(
     }
     var activePanel by remember { mutableStateOf<String?>(null) }
 
-    var notes by remember { mutableStateOf("") }
-    val subtasks = remember { mutableStateListOf<Subtask>() }
-    var newSubtaskTitle by remember { mutableStateOf("") }
+    var notes by rememberSaveable { mutableStateOf("") }
+    val subtasks = rememberSaveable(saver = subtaskStateListSaver) { mutableStateListOf<Subtask>() }
+    var newSubtaskTitle by rememberSaveable { mutableStateOf("") }
 
     val accents = LocalYataAccents.current
     val list = lists.find { it.id == selectedListId }
-    val listName = list?.name ?: "List"
+    val listName = list?.name ?: stringResource(R.string.entity_list)
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val project = projects.find { it.id == selectedProjectId }
     val projectColor = project?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
@@ -281,6 +365,13 @@ fun NewTaskSheet(
         people.activePeople(includeIds = selectedAssigneeIds.toSet())
     }
     val canCreateTask = title.text.isNotBlank()
+    val hasMeaningfulDraft = title.text.isNotBlank() || notes.isNotBlank() || subtasks.isNotEmpty() ||
+        selectedListId != initialListId || selectedProjectId != initialProjectId ||
+        selectedPriority != defaultPriority || selectedFlag || selectedTime != null ||
+        selectedReminder != null || selectedRecurrence != null ||
+        selectedTagIds.any { it != initialTagId } ||
+        selectedAssigneeIds.any { it != (initialAssigneeId ?: myId) }
+    LaunchedEffect(hasMeaningfulDraft) { onDraftStateChanged(hasMeaningfulDraft) }
 
     // Pasting/typing several newline-separated lines offers to create one task per line
     // instead of a single task with a garbled multi-line title — each gets its own
@@ -310,10 +401,10 @@ fun NewTaskSheet(
         } else {
             buildList {
                 val duplicate = findSimilarTask(finalTitlePreview, tasks)
-                if (duplicate != null) add("Similar open task: ${duplicate.title}")
+                if (duplicate != null) add(context.getString(R.string.new_task_similar_open_task, duplicate.title))
                 if (selectedDueDate != null && selectedTime != null) {
                     val slotCount = tasks.count { !it.done && it.due == selectedDueDate && it.time == selectedTime }
-                    if (slotCount > 0) add("$slotCount open task(s) already at $selectedTime")
+                    if (slotCount > 0) add(context.resources.getQuantityString(R.plurals.new_task_schedule_conflict, slotCount, slotCount, selectedTime))
                 }
             }.take(2)
         }
@@ -518,7 +609,7 @@ fun NewTaskSheet(
         TopAppBar(
             title = {
                 Text(
-                    text = "New task",
+                    text = stringResource(R.string.new_task_title),
                     style = MaterialTheme.typography.titleMedium
                 )
             },
@@ -645,7 +736,7 @@ fun NewTaskSheet(
                     decorationBox = { inner ->
                         if (title.text.isEmpty()) {
                             Text(
-                                text = "What needs doing? Try # for tags, @ for people",
+                                text = stringResource(R.string.new_task_title_hint),
                                 style = TextStyle(
                                     fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
                                     fontWeight = FontWeight.Medium,
@@ -830,7 +921,7 @@ fun NewTaskSheet(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "Smart add understood this task as:",
+                            text = stringResource(R.string.new_task_smart_add_summary),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
@@ -846,7 +937,7 @@ fun NewTaskSheet(
                         )
                     }
                     Text(
-                        text = "Title: ${quickAdd.title.toProperCase()}",
+                        text = stringResource(R.string.new_task_detected_title, quickAdd.title.toProperCase()),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -895,7 +986,7 @@ fun NewTaskSheet(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "Heads up",
+                            text = stringResource(R.string.new_task_heads_up),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
@@ -925,7 +1016,7 @@ fun NewTaskSheet(
                 )
                 if (projectsEnabled) {
                     YataSelectChip(
-                        label = project?.name ?: "Project",
+                        label = project?.name ?: stringResource(R.string.entity_project),
                         selected = project != null,
                         onClick = { activePanel = if (activePanel == "Project") null else "Project" },
                         tint = projectColor,
@@ -942,7 +1033,7 @@ fun NewTaskSheet(
                     showCheck = false
                 )
                 YataSelectChip(
-                    label = if (selectedPriority == "none") "Priority" else selectedPriority.uppercase(),
+                    label = if (selectedPriority == "none") stringResource(R.string.new_task_priority) else selectedPriority.uppercase(),
                     selected = selectedPriority != "none",
                     onClick = { activePanel = if (activePanel == "Priority") null else "Priority" },
                     tint = priorityChipColor(selectedPriority, accents),
@@ -956,7 +1047,7 @@ fun NewTaskSheet(
                     showCheck = false
                 )
                 YataSelectChip(
-                    label = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) } ?: "Repeat",
+                    label = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) } ?: stringResource(R.string.new_task_repeat),
                     selected = selectedRecurrence != null,
                     onClick = { activePanel = if (activePanel == "Repeat") null else "Repeat" },
                     tint = MaterialTheme.colorScheme.tertiary,
@@ -966,7 +1057,7 @@ fun NewTaskSheet(
                 // Time/Reminder live in this same row (not a separate one further down) so the
                 // reveal panel below always opens right under whichever chip triggered it.
                 YataSelectChip(
-                    label = selectedTime ?: "Time",
+                    label = selectedTime ?: stringResource(R.string.new_task_time),
                     selected = selectedTime != null,
                     onClick = { activePanel = if (activePanel == "Time") null else "Time" },
                     tint = MaterialTheme.colorScheme.tertiary,
@@ -1052,7 +1143,7 @@ fun NewTaskSheet(
             // Assigned to — always shows real avatar+name chips, not a count
             if (peopleEnabled) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionLabel("Assigned to")
+                    SectionLabel(stringResource(R.string.new_task_assigned_to))
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1068,7 +1159,7 @@ fun NewTaskSheet(
                             }
                         }
                         YataDashedAddChip(
-                            label = if (selectedAssigneeIds.isEmpty()) "Assign" else "Add",
+                            label = if (selectedAssigneeIds.isEmpty()) stringResource(R.string.new_task_assign) else stringResource(R.string.action_add),
                             onClick = { activePanel = if (activePanel == "People") null else "People" },
                             height = CHIP_ROW_HEIGHT
                         )
@@ -1079,7 +1170,7 @@ fun NewTaskSheet(
             // Tags — always shows real tag chips, not a count
             if (tagsEnabled) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionLabel("Tags")
+                    SectionLabel(stringResource(R.string.new_task_tags))
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1096,7 +1187,7 @@ fun NewTaskSheet(
                             }
                         }
                         YataDashedAddChip(
-                            label = if (selectedTagIds.isEmpty()) "Tag" else "Add",
+                            label = if (selectedTagIds.isEmpty()) stringResource(R.string.new_task_tag) else stringResource(R.string.action_add),
                             onClick = { activePanel = if (activePanel == "Tags") null else "Tags" },
                             height = CHIP_ROW_HEIGHT
                         )
@@ -1107,7 +1198,7 @@ fun NewTaskSheet(
             // Notes — kept last, after every attribute chip/reveal panel, so opening a panel
             // (List, Priority, Repeat, etc.) never pushes these below the fold or reflows them.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionLabel("Notes")
+                SectionLabel(stringResource(R.string.new_task_notes))
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
@@ -1119,7 +1210,7 @@ fun NewTaskSheet(
 
             // Subtasks — also last, for the same reason.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionLabel("Subtasks")
+                SectionLabel(stringResource(R.string.new_task_subtasks))
                 subtasks.forEach { sub ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1167,6 +1258,25 @@ fun NewTaskSheet(
             Spacer(modifier = Modifier.size(12.dp))
         }
 
+        reminderValidationMessage?.let { message ->
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(message, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { reminderValidationMessage = null }, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_close), modifier = Modifier.size(18.dp))
+                    }
+                }
+            }
+        }
+
         // Footer submit bar
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         if (onAddTaskAndContinue != null) {
@@ -1184,11 +1294,11 @@ fun NewTaskSheet(
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Create another",
+                        text = stringResource(R.string.new_task_create_another),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     Text(
-                        text = "Keep this sheet open after saving.",
+                        text = stringResource(R.string.new_task_keep_open),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1202,7 +1312,7 @@ fun NewTaskSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val repeatText = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) }
-            val contextText = listOfNotNull(project?.name, list?.name).joinToString(" · ").ifEmpty { "No project or list" }
+            val contextText = listOfNotNull(project?.name, list?.name).joinToString(" · ").ifEmpty { context.getString(R.string.new_task_no_container) }
             Text(
                 text = contextText + (repeatText?.let { " · $it" } ?: ""),
                 style = MaterialTheme.typography.labelMedium,
@@ -1220,7 +1330,7 @@ fun NewTaskSheet(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Default.Send,
-                    contentDescription = if (isBulkTasks) "Create ${bulkTaskLines.size} tasks" else "Create task",
+                    contentDescription = if (isBulkTasks) pluralStringResource(R.plurals.new_task_create_tasks, bulkTaskLines.size, bulkTaskLines.size) else stringResource(R.string.new_task_create_task),
                     tint = if (canCreateTask) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     modifier = Modifier.size(20.dp)
                 )
@@ -1281,13 +1391,14 @@ fun NewTaskSheet(
         onConfirm = {
             when {
                 !TaskScheduleUtils.isCustomReminderBeforeDue(it, selectedTime) -> {
-                    android.widget.Toast.makeText(context, "Reminder must be before the due time.", android.widget.Toast.LENGTH_SHORT).show()
+                    reminderValidationMessage = context.getString(R.string.reminder_before_due_error)
                 }
                 !TaskScheduleUtils.isReminderTimeInFuture(selectedDueDate, it) -> {
-                    android.widget.Toast.makeText(context, "That reminder time has already passed today.", android.widget.Toast.LENGTH_SHORT).show()
+                    reminderValidationMessage = context.getString(R.string.reminder_in_past_error)
                 }
                 else -> {
                     setReminder(it)
+                    reminderValidationMessage = null
                 }
             }
             showReminderTimePicker = false
@@ -1439,11 +1550,11 @@ private fun DueDatePanel(
     onPickDate: () -> Unit
 ) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        YataSelectChip("Today", selectedDueDate == LocalDate.now().toString(), { onPick(LocalDate.now().toString()) })
-        YataSelectChip("Tomorrow", selectedDueDate == LocalDate.now().plusDays(1).toString(), { onPick(LocalDate.now().plusDays(1).toString()) })
-        YataSelectChip("Next week", selectedDueDate == LocalDate.now().plusWeeks(1).toString(), { onPick(LocalDate.now().plusWeeks(1).toString()) })
-        YataSelectChip("No due date", selectedDueDate == null, { onClear() })
-        YataSelectChip("Pick date", false, { onPickDate() })
+        YataSelectChip(stringResource(R.string.date_today), selectedDueDate == LocalDate.now().toString(), { onPick(LocalDate.now().toString()) })
+        YataSelectChip(stringResource(R.string.date_tomorrow), selectedDueDate == LocalDate.now().plusDays(1).toString(), { onPick(LocalDate.now().plusDays(1).toString()) })
+        YataSelectChip(stringResource(R.string.date_next_week), selectedDueDate == LocalDate.now().plusWeeks(1).toString(), { onPick(LocalDate.now().plusWeeks(1).toString()) })
+        YataSelectChip(stringResource(R.string.date_no_due), selectedDueDate == null, { onClear() })
+        YataSelectChip(stringResource(R.string.date_pick), false, { onPickDate() })
     }
 }
 
@@ -1456,14 +1567,15 @@ private fun TimePanel(
     onCustom: () -> Unit
 ) {
     if (!hasDueDate) {
-        PanelHint("Add a due date first so the time has something to attach to.")
+        PanelHint(stringResource(R.string.time_requires_due_date))
     } else {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            YataSelectChip("9:00 AM", selectedTime == "9:00 AM", { onPick("9:00 AM") })
-            YataSelectChip("12:00 PM", selectedTime == "12:00 PM", { onPick("12:00 PM") })
-            YataSelectChip("6:00 PM", selectedTime == "6:00 PM", { onPick("6:00 PM") })
-            YataSelectChip("Custom time", false, { onCustom() })
-            YataSelectChip("Clear", selectedTime == null, { onPick(null) })
+            listOf(9 to 0, 12 to 0, 18 to 0).forEach { (hour, minute) ->
+                val formatted = TaskScheduleUtils.formatTime(hour, minute)
+                YataSelectChip(formatted, selectedTime == formatted, { onPick(formatted) })
+            }
+            YataSelectChip(stringResource(R.string.time_custom), false, { onCustom() })
+            YataSelectChip(stringResource(R.string.action_clear), selectedTime == null, { onPick(null) })
         }
     }
 }
@@ -1477,15 +1589,15 @@ private fun ReminderPanel(
     onCustom: () -> Unit
 ) {
     if (!hasDueDate) {
-        PanelHint("Pick a due date before setting a reminder.")
+        PanelHint(stringResource(R.string.reminder_requires_due_date))
     } else {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            YataSelectChip("None", selectedReminder == null, { onPick(null) })
+            YataSelectChip(stringResource(R.string.settings_none), selectedReminder == null, { onPick(null) })
             TaskScheduleUtils.reminderOptions.forEach { option ->
                 YataSelectChip(option, selectedReminder == option, { onPick(option) })
             }
             val customReminderSelected = selectedReminder != null && TaskScheduleUtils.parseTime(selectedReminder) != null
-            YataSelectChip("Custom time", customReminderSelected, { onCustom() })
+            YataSelectChip(stringResource(R.string.time_custom), customReminderSelected, { onCustom() })
         }
     }
 }
@@ -1499,14 +1611,14 @@ private fun ListPanel(
     onSelect: (String?) -> Unit
 ) {
     if (lists.isEmpty()) {
-        PanelHint("No lists yet — create one from the drawer.")
+        PanelHint(stringResource(R.string.new_task_no_lists))
     } else {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             YataSelectChip(
-                label = "None",
+                label = stringResource(R.string.settings_none),
                 selected = selectedListId == null,
                 onClick = { onSelect(null) }
             )
@@ -1533,14 +1645,14 @@ private fun ProjectPanel(
     onSelect: (String?) -> Unit
 ) {
     if (projects.isEmpty()) {
-        PanelHint("No projects yet — create one from the Projects tab.")
+        PanelHint(stringResource(R.string.new_task_no_projects))
     } else {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             YataSelectChip(
-                label = "None",
+                label = stringResource(R.string.settings_none),
                 selected = selectedProjectId == null,
                 onClick = { onSelect(null) }
             )
@@ -1572,7 +1684,7 @@ private fun PeoplePanel(
         people.sortedBy { it.name.lowercase() }.forEach { person ->
             val selected = selectedAssigneeIds.contains(person.id)
             YataSelectChip(
-                label = if (person.isMe) "You" else person.name.substringBefore(" "),
+                label = if (person.isMe) stringResource(R.string.person_you) else person.name.substringBefore(" "),
                 selected = selected,
                 onClick = {
                     if (selected) selectedAssigneeIds.remove(person.id) else selectedAssigneeIds.add(person.id)
@@ -1644,12 +1756,12 @@ private fun RepeatPanel(
                 java.time.DayOfWeek.SUNDAY -> "SU"
             }
             val presets = listOf<Pair<String, Recurrence?>>(
-                "None" to null,
-                "Daily" to Recurrence("daily", 1, null, null, RecurrenceEnds.Never),
-                "Weekdays" to Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never),
-                "Weekly" to Recurrence("weekly", 1, listOf(weeklyDay), null, RecurrenceEnds.Never),
-                "Monthly" to Recurrence("monthly", 1, null, baseDate.dayOfMonth, RecurrenceEnds.Never),
-                "Yearly" to Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
+                stringResource(R.string.settings_none) to null,
+                stringResource(R.string.recurrence_daily) to Recurrence("daily", 1, null, null, RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_weekdays) to Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_weekly) to Recurrence("weekly", 1, listOf(weeklyDay), null, RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_monthly) to Recurrence("monthly", 1, null, baseDate.dayOfMonth, RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_yearly) to Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
             )
             presets.forEach { (label, rec) ->
                 val isSelected = if (rec == null) selectedRecurrence == null
@@ -1663,13 +1775,13 @@ private fun RepeatPanel(
                 )
             }
             YataDashedAddChip(
-                label = "Custom…",
+                label = stringResource(R.string.recurrence_custom),
                 onClick = onCustom
             )
         }
         Spacer(modifier = Modifier.size(8.dp))
         Text(
-            text = "Custom rules support intervals, weekdays, monthly dates, yearly repeats, and end dates.",
+            text = stringResource(R.string.recurrence_custom_help),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

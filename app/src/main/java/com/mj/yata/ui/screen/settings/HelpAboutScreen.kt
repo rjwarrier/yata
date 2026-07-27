@@ -1,6 +1,5 @@
 package com.mj.yata.ui.screen.settings
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,14 +42,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,6 +62,7 @@ import com.mj.yata.R
 import com.mj.yata.ui.screen.main.CustomBottomNav
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.BodoniModaFamily
+import kotlinx.coroutines.delay
 
 private data class HelpSection(
     val title: String,
@@ -196,7 +199,14 @@ fun HelpAboutScreen(
     val todayTabEnabled = viewModel.todayTabEnabled.collectAsStateWithLifecycle().value
     val upcomingTabEnabled = viewModel.upcomingTabEnabled.collectAsStateWithLifecycle().value
     val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(demoModeFeedback) {
+        if (demoModeFeedback != null) {
+            delay(3_000)
+            demoModeFeedback = null
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -275,11 +285,11 @@ fun HelpAboutScreen(
                                 .background(MaterialTheme.colorScheme.primaryContainer)
                                 .clickable {
                                     viewModel.toggleDemoMode()
-                                    Toast.makeText(
-                                        context,
-                                        if (demoModeEnabled) "Demo mode off — showing your real data" else "Demo mode on — showing sample data for screenshots",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    demoModeFeedback = if (demoModeEnabled) {
+                                        R.string.help_demo_mode_off
+                                    } else {
+                                        R.string.help_demo_mode_on
+                                    }
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -292,9 +302,16 @@ fun HelpAboutScreen(
                         }
                         if (demoModeEnabled) {
                             Text(
-                                text = "DEMO MODE — tap logo to switch back",
+                                text = stringResource(R.string.help_demo_mode_active),
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        demoModeFeedback?.let { messageRes ->
+                            Text(
+                                text = stringResource(messageRes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))

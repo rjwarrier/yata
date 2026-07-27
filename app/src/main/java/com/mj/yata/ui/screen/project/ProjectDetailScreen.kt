@@ -1,5 +1,7 @@
 package com.mj.yata.ui.screen.project
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -37,6 +39,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mj.yata.R
+import com.mj.yata.ui.widgets.showSuccess
+import com.mj.yata.ui.widgets.showError
 import com.mj.yata.util.taskMatchesQuery
 import com.mj.yata.util.sortedByMode
 import com.mj.yata.util.export.toExportRow
@@ -63,19 +67,19 @@ fun ProjectDetailScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val projects by viewModel.projects.collectAsState()
-    val lists by viewModel.lists.collectAsState()
-    val projectTasks by remember(projectId) { viewModel.getTasksForProject(projectId) }.collectAsState(initial = emptyList())
-    val people by viewModel.people.collectAsState()
-    val tags by viewModel.tags.collectAsState()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
+    val projects by viewModel.projects.collectAsStateWithLifecycle()
+    val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val projectTasks by remember(projectId) { viewModel.getTasksForProject(projectId) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val people by viewModel.people.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
 
     val project = remember(projects, projectId) { projects.find { it.id == projectId } }
     val accents = LocalYataAccents.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val defaultDueDate by viewModel.defaultDueDate.collectAsState()
-    val defaultPriority by viewModel.defaultPriority.collectAsState()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
+    val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -104,12 +108,20 @@ fun ProjectDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRolloverDialog by remember { mutableStateOf(false) }
     var showOverdueRolloverDialog by remember { mutableStateOf(false) }
-    val hideCompleted by viewModel.hideCompletedProject.collectAsState()
+    val hideCompleted by viewModel.hideCompletedProject.collectAsStateWithLifecycle()
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
+    val showMissingProject = com.mj.yata.ui.widgets.rememberMissingContentVisible(projectId, project == null)
     if (project == null) {
-        com.mj.yata.ui.widgets.ListDetailShimmer()
+        if (showMissingProject) {
+            com.mj.yata.ui.widgets.MissingContentState(
+                itemName = stringResource(R.string.entity_project),
+                onNavigateBack = onNavigateBack
+            )
+        } else {
+            com.mj.yata.ui.widgets.ListDetailShimmer()
+        }
         return
     }
 
@@ -120,7 +132,7 @@ fun ProjectDetailScreen(
     // Split into Pending (draggable) / Completed (static) instead of one combined, interleaved
     // list — only Pending supports drag-reorder, Completed just renders below it with its own
     // header. Hiding completed drops both the tasks and the section headers entirely.
-    val sortMode by viewModel.sortModeProject.collectAsState()
+    val sortMode by viewModel.sortModeProject.collectAsStateWithLifecycle()
     val pendingProjectTasks = remember(projectTasks, sortMode) {
         projectTasks.filter { !it.done }.sortedByMode(sortMode)
     }
@@ -165,15 +177,15 @@ fun ProjectDetailScreen(
         people.filter { pids.contains(it.id) }
     }
 
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = 1,
@@ -646,9 +658,9 @@ fun ProjectDetailScreen(
                     }
                     exportInProgress = false
                     exportResult.onSuccess { outcome ->
-                        snackbarHostState.showSnackbar(outcome.userMessage())
+                        snackbarHostState.showSuccess(outcome.userMessage())
                     }.onFailure { error ->
-                        snackbarHostState.showSnackbar(error.message ?: "Export failed.")
+                        snackbarHostState.showError(error.message ?: context.getString(R.string.export_failed))
                     }
                 }
             }
@@ -659,7 +671,7 @@ fun ProjectDetailScreen(
     }
 
     if (isNewTaskSheetOpen) {
-        val allTasks by viewModel.tasks.collectAsState()
+        val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),

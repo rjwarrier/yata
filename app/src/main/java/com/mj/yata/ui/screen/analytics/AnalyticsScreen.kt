@@ -1,5 +1,7 @@
 package com.mj.yata.ui.screen.analytics
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -52,15 +54,15 @@ fun AnalyticsScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
 
-    val period by viewModel.analyticsPeriod.collectAsState()
-    val stats by viewModel.analyticsUiState.collectAsState()
+    val period by viewModel.analyticsPeriod.collectAsStateWithLifecycle()
+    val stats by viewModel.analyticsUiState.collectAsStateWithLifecycle()
 
     val totalCount = stats.totalCount
     val doneCount = stats.doneCount

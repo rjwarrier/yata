@@ -27,6 +27,7 @@ import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.QuickSnoozePreset
+import com.mj.yata.ui.widgets.quickSnoozeLabel
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activePeople
@@ -110,7 +111,7 @@ fun TaskBulkRescheduleSheet(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "Reschedule selected tasks",
+            text = stringResource(R.string.bulk_reschedule_selected),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
             modifier = Modifier.padding(bottom = 12.dp)
         )
@@ -125,7 +126,7 @@ fun TaskBulkRescheduleSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(preset.label, style = MaterialTheme.typography.bodyLarge)
+                Text(quickSnoozeLabel(preset), style = MaterialTheme.typography.bodyLarge)
             }
         }
         TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {

@@ -126,7 +126,7 @@ object NotificationHelper {
         }
 
         return NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
-            .setContentTitle("Reminder: $taskTitle")
+            .setContentTitle(context.getString(R.string.notification_reminder_title, taskTitle))
             // getString, not stringResource: notifications are built outside composition.
             .setContentText(context.getString(R.string.notification_helper_this_task_is_due))
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
@@ -137,22 +137,22 @@ object NotificationHelper {
             .setAllowSystemGeneratedContextualActions(false)
             .addAction(
                 android.R.drawable.checkbox_on_background,
-                "Complete",
+                context.getString(R.string.notification_action_complete),
                 actionPendingIntent(NotificationActionReceiver.ACTION_COMPLETE_TASK, notifId + 1000)
             )
             .addAction(
                 android.R.drawable.ic_lock_idle_alarm,
-                "Snooze 15m",
+                context.getString(R.string.notification_action_snooze_15m),
                 actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_15M, notifId + 2000)
             )
             .addAction(
                 android.R.drawable.ic_lock_idle_alarm,
-                "Snooze 1hr",
+                context.getString(R.string.notification_action_snooze_1h),
                 actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_TASK, notifId + 3000)
             )
             .addAction(
                 android.R.drawable.ic_lock_idle_alarm,
-                "Snooze tomorrow",
+                context.getString(R.string.notification_action_snooze_tomorrow),
                 actionPendingIntent(NotificationActionReceiver.ACTION_SNOOZE_TOMORROW, notifId + 4000)
             )
             .build()

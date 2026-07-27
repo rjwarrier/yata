@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import com.mj.yata.data.local.db.AppDatabase
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.data.local.datastore.UserPreferences
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -13,6 +14,7 @@ import dagger.hilt.EntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -30,6 +32,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         fun appDatabase(): AppDatabase
         fun yataRepository(): YataRepository
         fun reminderScheduler(): ReminderScheduler
+        fun userPreferences(): UserPreferences
     }
 
     companion object {
@@ -52,6 +55,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         val db = entryPoint.appDatabase()
         val repository = entryPoint.yataRepository()
         val scheduler = entryPoint.reminderScheduler()
+        val userPreferences = entryPoint.userPreferences()
         val notifManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val pendingResult = goAsync()
@@ -79,7 +83,11 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     ACTION_SNOOZE_TOMORROW -> {
                         val task = db.taskDao().getByIdDirect(taskId)
                         if (task != null) {
-                            val tomorrow9am = LocalDate.now().plusDays(1).atTime(LocalTime.of(9, 0))
+                            val tomorrowTime = LocalTime.of(
+                                userPreferences.snoozeTomorrowHourFlow.first(),
+                                userPreferences.snoozeTomorrowMinuteFlow.first()
+                            )
+                            val tomorrow9am = LocalDate.now().plusDays(1).atTime(tomorrowTime)
                                 .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                             val delay = (tomorrow9am - System.currentTimeMillis()).coerceAtLeast(0L)
                             scheduler.scheduleReminderDelayed(task, delay)

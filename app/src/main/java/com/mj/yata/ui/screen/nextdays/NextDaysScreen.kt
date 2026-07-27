@@ -1,5 +1,7 @@
 package com.mj.yata.ui.screen.nextdays
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -42,18 +44,18 @@ fun NextDaysScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tasks by viewModel.tasks.collectAsState()
-    val lists by viewModel.lists.collectAsState()
-    val projects by viewModel.projects.collectAsState()
-    val people by viewModel.people.collectAsState()
-    val tags by viewModel.tags.collectAsState()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val projects by viewModel.projects.collectAsStateWithLifecycle()
+    val people by viewModel.people.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
@@ -92,13 +94,7 @@ fun NextDaysScreen(
 
     Scaffold(
         snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
-                    com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
-                } else {
-                    Snackbar(data)
-                }
-            }
+            SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
         },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(

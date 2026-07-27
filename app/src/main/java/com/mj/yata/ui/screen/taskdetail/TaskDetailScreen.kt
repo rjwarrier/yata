@@ -1,5 +1,7 @@
 package com.mj.yata.ui.screen.taskdetail
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloatAsState
@@ -141,12 +143,12 @@ fun TaskDetailScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val taskState by remember(taskId) { viewModel.getTaskById(taskId) }.collectAsState(initial = null)
-    val lists by viewModel.lists.collectAsState()
-    val projects by viewModel.projects.collectAsState()
-    val people by viewModel.people.collectAsState()
-    val tags by viewModel.tags.collectAsState()
-    val allTasks by viewModel.tasks.collectAsState()
+    val taskState by remember(taskId) { viewModel.getTaskById(taskId) }.collectAsStateWithLifecycle(initialValue = null)
+    val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val projects by viewModel.projects.collectAsStateWithLifecycle()
+    val people by viewModel.people.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
 
     val accents = LocalYataAccents.current
 
@@ -160,15 +162,23 @@ fun TaskDetailScreen(
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
     val task = taskState
+    val showMissingTask = com.mj.yata.ui.widgets.rememberMissingContentVisible(taskId, task == null)
     if (task == null) {
-        TaskDetailShimmer()
+        if (showMissingTask) {
+            MissingContentState(
+                itemName = stringResource(R.string.entity_task),
+                onNavigateBack = onNavigateBack
+            )
+        } else {
+            TaskDetailShimmer()
+        }
         return
     }
 
     // Subtasks/Notes/Comments section visibility — toggled via the chip row above them.
     // Defaults to whichever sections actually have content, instead of always showing all
     // three regardless of whether there's anything in them.
-    val comments by remember(task.id) { viewModel.getCommentsForTask(task.id) }.collectAsState()
+    val comments by remember(task.id) { viewModel.getCommentsForTask(task.id) }.collectAsStateWithLifecycle()
     var showSubtasks by remember(task.id) { mutableStateOf(task.subtasks.isNotEmpty()) }
     var showNotes by remember(task.id) { mutableStateOf(!task.notes.isNullOrBlank()) }
     var showComments by remember(task.id) { mutableStateOf(comments.isNotEmpty()) }
@@ -226,22 +236,16 @@ fun TaskDetailScreen(
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
 
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
 
     Scaffold(
         snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
-                    DeleteUndoSnackbar(data)
-                } else {
-                    Snackbar(data)
-                }
-            }
+            SnackbarHost(snackbarHostState) { data -> YataSnackbar(data) }
         },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
@@ -279,18 +283,6 @@ fun TaskDetailScreen(
                 actions = {
                     // Skip this occurrence (recurring tasks only) — advances the due date without
                     // completing it. Deferred until the Undo snackbar times out, same pattern as delete.
-                    if (task.recurrence != null && !task.done) {
-                        IconButton(onClick = {
-                            scope.launch {
-                                val result = showUndoSnackbar(snackbarHostState, "Occurrence skipped", undoWindowSeconds)
-                                if (!result) {
-                                    viewModel.skipTaskOccurrence(task.id)
-                                }
-                            }
-                        }) {
-                            Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.task_detail_skip_this_occurrence))
-                        }
-                    }
                     // Flag toggle
                     IconButton(onClick = { viewModel.toggleTaskFlag(task.id) }) {
                         Icon(
@@ -300,19 +292,35 @@ fun TaskDetailScreen(
                         )
                     }
                     // Duplicate — clones the task (new id, done reset), keeps everything else
-                    IconButton(onClick = {
-                        viewModel.duplicateTask(task.id)
-                        scope.launch { snackbarHostState.showSnackbar("Task duplicated") }
-                    }) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.task_detail_duplicate_task))
-                    }
                     // Export as PDF/Image — options (include notes/comments) are confirmed via
                     // TaskExportOptionsDialog before the off-screen render actually happens.
                     var showExportMenu by remember { mutableStateOf(false) }
                     IconButton(onClick = { showExportMenu = true }) {
-                        Icon(Icons.Default.IosShare, contentDescription = stringResource(R.string.task_detail_export_task))
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                     }
                     DropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
+                        if (task.recurrence != null && !task.done) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.task_detail_skip_this_occurrence)) },
+                                onClick = {
+                                    showExportMenu = false
+                                    scope.launch {
+                                        val result = showUndoSnackbar(snackbarHostState, context.getString(R.string.task_occurrence_skipped), undoWindowSeconds)
+                                        if (!result) viewModel.skipTaskOccurrence(task.id)
+                                    }
+                                },
+                                leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.task_detail_duplicate_task)) },
+                            onClick = {
+                                showExportMenu = false
+                                viewModel.duplicateTask(task.id)
+                                scope.launch { snackbarHostState.showSuccess(context.getString(R.string.task_duplicated)) }
+                            },
+                            leadingIcon = { Icon(Icons.Default.ContentCopy, contentDescription = null) }
+                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_export_as_image)) },
                             onClick = {
@@ -332,15 +340,15 @@ fun TaskDetailScreen(
                         // Archive is not delete: the task keeps everything and simply leaves the
                         // normal listings until unarchived from Settings -> Archive.
                         DropdownMenuItem(
-                            text = { Text(if (task.archived) "Unarchive task" else "Archive task") },
+                            text = { Text(if (task.archived) stringResource(R.string.task_unarchive_action) else stringResource(R.string.task_archive_action)) },
                             onClick = {
                                 showExportMenu = false
                                 val nowArchived = !task.archived
                                 viewModel.setTaskArchived(task.id, nowArchived)
                                 scope.launch {
                                     val result = snackbarHostState.showSnackbar(
-                                        message = if (nowArchived) "Task archived" else "Task unarchived",
-                                        actionLabel = "Undo",
+                                        message = if (nowArchived) context.getString(R.string.task_archived) else context.getString(R.string.task_unarchived),
+                                        actionLabel = com.mj.yata.ui.widgets.UNDO_ACTION_LABEL,
                                         duration = SnackbarDuration.Long
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
@@ -364,25 +372,29 @@ fun TaskDetailScreen(
                                 clipboardManager.setText(
                                     AnnotatedString(com.mj.yata.ui.navigation.DeepLink.task(task.id))
                                 )
-                                scope.launch { snackbarHostState.showSnackbar("Link copied") }
+                                scope.launch { snackbarHostState.showSuccess(context.getString(R.string.task_link_copied)) }
                             },
                             leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) }
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.task_detail_delete_task), color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                showExportMenu = false
+                                scope.launch {
+                                    val result = showUndoSnackbar(snackbarHostState, context.getString(R.string.task_deleted), undoWindowSeconds)
+                                    if (!result) {
+                                        viewModel.deleteTask(task)
+                                        onNavigateBack()
+                                    }
+                                }
+                            },
+                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                         )
                     }
                     // Delete/Archive — deletion is deferred until the Undo snackbar times out,
                     // so the coroutine must outlive this composable's own scope (it navigates
                     // back only once the delete actually happens).
-                    IconButton(onClick = {
-                        scope.launch {
-                            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
-                            if (!result) {
-                                viewModel.deleteTask(task)
-                                onNavigateBack()
-                            }
-                        }
-                    }) {
-                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.task_detail_delete_task))
-                    }
                 }
             )
         }
@@ -1193,7 +1205,7 @@ fun TaskDetailScreen(
                                 com.mj.yata.util.TaskScheduleUtils.reminderOptions.forEach { option ->
                                     LocalScheduleChip(option, task.reminder == option) {
                                         if (!com.mj.yata.util.TaskScheduleUtils.isPresetReminderInFuture(task.due, task.time, option)) {
-                                            scope.launch { snackbarHostState.showSnackbar("That reminder time has already passed.") }
+                                            scope.launch { snackbarHostState.showError(context.getString(R.string.reminder_in_past_error)) }
                                         } else {
                                             viewModel.upsertTask(task.copy(reminder = option))
                                             activeSheet = DetailSheetType.None
@@ -1422,9 +1434,9 @@ fun TaskDetailScreen(
                 }
                 exportInProgress = false
                 exportResult.onSuccess { outcome ->
-                    snackbarHostState.showSnackbar(outcome.userMessage())
+                    snackbarHostState.showSuccess(outcome.userMessage())
                 }.onFailure { error ->
-                    snackbarHostState.showSnackbar(error.message ?: "Export failed.")
+                    snackbarHostState.showError(error.message ?: context.getString(R.string.export_failed))
                 }
             }
         }
@@ -1464,10 +1476,10 @@ fun TaskDetailScreen(
             showReminderTimePicker = false
             when {
                 !com.mj.yata.util.TaskScheduleUtils.isCustomReminderBeforeDue(it, task.time) -> {
-                    scope.launch { snackbarHostState.showSnackbar("Reminder must be before the due time.") }
+                    scope.launch { snackbarHostState.showError(context.getString(R.string.reminder_before_due_error)) }
                 }
                 !com.mj.yata.util.TaskScheduleUtils.isReminderTimeInFuture(task.due, it) -> {
-                    scope.launch { snackbarHostState.showSnackbar("That reminder time has already passed today.") }
+                    scope.launch { snackbarHostState.showError(context.getString(R.string.reminder_in_past_error)) }
                 }
                 else -> {
                     viewModel.upsertTask(task.copy(reminder = it))

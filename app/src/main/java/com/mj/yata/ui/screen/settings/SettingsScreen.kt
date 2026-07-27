@@ -32,6 +32,9 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,15 +69,26 @@ import com.mj.yata.ui.widgets.CircularImageCropper
 import com.mj.yata.ui.widgets.CustomColorPickerDialog
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
+import com.mj.yata.ui.widgets.showSuccess
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.toArgb
 import com.mj.yata.util.ProfilePhotoUtils
 import com.mj.yata.util.TaskScheduleUtils
+import com.mj.yata.util.localized
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
+private data class SettingsSearchTarget(
+    val title: String,
+    val summary: String,
+    val keywords: String,
+    val itemIndex: Int
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,15 +140,19 @@ fun SettingsScreen(
     val fabPosition = uiState.fabPosition
     val uiScale = uiState.uiScale
     val dynamicColorEnabled = uiState.dynamicColorEnabled
-    val trashRetentionDays by viewModel.trashRetentionDays.collectAsState()
-    val autoArchiveDays by viewModel.autoArchiveDays.collectAsState()
-    val dailyAgendaEnabled by viewModel.dailyAgendaEnabled.collectAsState()
-    val dailyAgendaHour by viewModel.dailyAgendaHour.collectAsState()
-    val dailyAgendaMinute by viewModel.dailyAgendaMinute.collectAsState()
-    val overdueNudgesEnabled by viewModel.overdueNudgesEnabled.collectAsState()
-    val undoWindowSeconds by viewModel.undoWindowSeconds.collectAsState()
-    val defaultDueDate by viewModel.defaultDueDate.collectAsState()
-    val defaultPriority by viewModel.defaultPriority.collectAsState()
+    val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
+    val autoArchiveDays by viewModel.autoArchiveDays.collectAsStateWithLifecycle()
+    val dailyAgendaEnabled by viewModel.dailyAgendaEnabled.collectAsStateWithLifecycle()
+    val dailyAgendaHour by viewModel.dailyAgendaHour.collectAsStateWithLifecycle()
+    val dailyAgendaMinute by viewModel.dailyAgendaMinute.collectAsStateWithLifecycle()
+    val overdueNudgesEnabled by viewModel.overdueNudgesEnabled.collectAsStateWithLifecycle()
+    val undoWindowSeconds by viewModel.undoWindowSeconds.collectAsStateWithLifecycle()
+    val snoozeTonightHour by viewModel.snoozeTonightHour.collectAsStateWithLifecycle()
+    val snoozeTonightMinute by viewModel.snoozeTonightMinute.collectAsStateWithLifecycle()
+    val snoozeTomorrowHour by viewModel.snoozeTomorrowHour.collectAsStateWithLifecycle()
+    val snoozeTomorrowMinute by viewModel.snoozeTomorrowMinute.collectAsStateWithLifecycle()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
+    val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
@@ -155,6 +173,8 @@ fun SettingsScreen(
     var showAutoArchiveMenu by remember { mutableStateOf(false) }
     var showAgendaTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
+    var showSnoozeTonightPicker by remember { mutableStateOf(false) }
+    var showSnoozeTomorrowPicker by remember { mutableStateOf(false) }
 
     var editingName by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf(userName) }
@@ -169,6 +189,42 @@ fun SettingsScreen(
     var isDeletingAll by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val settingsListState = rememberLazyListState()
+    var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
+    var pendingSettingsIndex by remember { mutableStateOf<Int?>(null) }
+    var showSettingsMenu by remember { mutableStateOf(false) }
+    var showResetSettingsDialog by remember { mutableStateOf(false) }
+
+    val settingsSearchTargets = listOf(
+        SettingsSearchTarget(stringResource(R.string.settings_section_profile), stringResource(R.string.settings_search_profile_summary), "name email photo account", 1),
+        SettingsSearchTarget(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_search_appearance_summary), "theme dark light amoled color font language motion", 2),
+        SettingsSearchTarget(stringResource(R.string.settings_section_display), stringResource(R.string.settings_search_display_summary), "scale text density compact spacious", 3),
+        SettingsSearchTarget(stringResource(R.string.settings_section_navigation), stringResource(R.string.settings_search_navigation_summary), "bottom navigation labels fab quick add", 4),
+        SettingsSearchTarget(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", 5),
+        SettingsSearchTarget(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice", 6),
+        SettingsSearchTarget(stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", 7),
+        SettingsSearchTarget(stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", 8),
+        SettingsSearchTarget(stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", 9),
+        SettingsSearchTarget(stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", 10),
+        SettingsSearchTarget(stringResource(R.string.settings_section_backup), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", 11),
+        SettingsSearchTarget(stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "cloud backup restore wifi frequency", 12),
+        SettingsSearchTarget(stringResource(R.string.settings_section_local_backup), stringResource(R.string.settings_search_local_summary), "local backup restore", 13),
+        SettingsSearchTarget(stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide", 14)
+    )
+    val normalizedSettingsQuery = settingsSearchQuery.trim().lowercase()
+    val filteredSettingsTargets = remember(normalizedSettingsQuery, settingsSearchTargets) {
+        if (normalizedSettingsQuery.isBlank()) emptyList() else settingsSearchTargets.filter {
+            val haystack = "${it.title} ${it.summary} ${it.keywords}".lowercase()
+            normalizedSettingsQuery.split(Regex("\\s+")).all(haystack::contains)
+        }
+    }
+
+    LaunchedEffect(pendingSettingsIndex) {
+        pendingSettingsIndex?.let { index ->
+            settingsListState.animateScrollToItem(index)
+            pendingSettingsIndex = null
+        }
+    }
 
     var isCloudBackingUp by remember { mutableStateOf(false) }
     var showCloudRestoreSheet by remember { mutableStateOf(false) }
@@ -207,7 +263,7 @@ fun SettingsScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = -1,
@@ -234,11 +290,27 @@ fun SettingsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
+                },
+                actions = {
+                    IconButton(onClick = { showSettingsMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
+                    }
+                    DropdownMenu(expanded = showSettingsMenu, onDismissRequest = { showSettingsMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.settings_reset_settings)) },
+                            leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
+                            onClick = {
+                                showSettingsMenu = false
+                                showResetSettingsDialog = true
+                            }
+                        )
+                    }
                 }
             )
         }
     ) { innerPadding ->
         LazyColumn(
+            state = settingsListState,
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -247,6 +319,59 @@ fun SettingsScreen(
             contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            item(key = "settings_search") {
+                OutlinedTextField(
+                    value = settingsSearchQuery,
+                    onValueChange = { settingsSearchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (settingsSearchQuery.isNotEmpty()) {
+                            IconButton(onClick = { settingsSearchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
+                            }
+                        }
+                    },
+                    label = { Text(stringResource(R.string.settings_search_label)) },
+                    placeholder = { Text(stringResource(R.string.settings_search_placeholder)) }
+                )
+            }
+            if (settingsSearchQuery.isNotBlank()) {
+                item(key = "settings_search_results") {
+                    SettingsSectionCard {
+                        if (filteredSettingsTargets.isEmpty()) {
+                            Text(
+                                stringResource(R.string.settings_search_no_results),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        } else {
+                            filteredSettingsTargets.forEachIndexed { index, target ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            settingsSearchQuery = ""
+                                            pendingSettingsIndex = target.itemIndex
+                                        }
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(target.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                        Text(target.summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Icon(Icons.Default.ChevronRight, contentDescription = null)
+                                }
+                                if (index != filteredSettingsTargets.lastIndex) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             item {
             // 1. Profile Section
             Text(
@@ -372,7 +497,7 @@ fun SettingsScreen(
                     // Theme SegmentedControl
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Theme mode",
+                            text = stringResource(R.string.settings_theme_mode),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         val themeSystemLabel = stringResource(R.string.theme_mode_system)
@@ -411,11 +536,11 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Material You colors",
+                                    text = stringResource(R.string.settings_material_you_colors),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                 )
                                 Text(
-                                    text = "Theme the app from your wallpaper's colors instead of the fixed accent theme.",
+                                    text = stringResource(R.string.settings_material_you_colors_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -509,11 +634,11 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Enable enhanced M3 theming",
+                                text = stringResource(R.string.settings_enhanced_theming),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
-                                text = "Translucent glassmorphic navigation, enhanced spring physics, dynamic glow accents, and responsive elevation.",
+                                text = stringResource(R.string.settings_enhanced_theming_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -542,11 +667,11 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "UI size",
+                        text = stringResource(R.string.settings_ui_size),
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                     )
                     Text(
-                        text = "Scales text and elements across the whole app.",
+                        text = stringResource(R.string.settings_ui_size_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -600,11 +725,11 @@ fun SettingsScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     Text(
-                        text = "Text size",
+                        text = stringResource(R.string.settings_text_size),
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                     )
                     Text(
-                        text = "Scales text only, independent of overall UI size.",
+                        text = stringResource(R.string.settings_text_size_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -662,11 +787,11 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Reduce motion",
+                                text = stringResource(R.string.settings_reduce_motion),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
-                                text = "Shortens navigation, sheet, and fade animations.",
+                                text = stringResource(R.string.settings_reduce_motion_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -681,7 +806,7 @@ fun SettingsScreen(
 
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Task row density",
+                            text = stringResource(R.string.settings_task_row_density),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         SegmentedControl(
@@ -952,6 +1077,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    var notificationsEnabled by remember { mutableStateOf(NotificationPermissionUtils.areNotificationsEnabled(context)) }
                     var exactAlarmsAllowed by remember { mutableStateOf(NotificationPermissionUtils.canScheduleExactAlarms(context)) }
                     var batteryUnrestricted by remember { mutableStateOf(NotificationPermissionUtils.isIgnoringBatteryOptimizations(context)) }
 
@@ -961,6 +1087,7 @@ fun SettingsScreen(
                     DisposableEffect(lifecycleOwner) {
                         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
                             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                                notificationsEnabled = NotificationPermissionUtils.areNotificationsEnabled(context)
                                 exactAlarmsAllowed = NotificationPermissionUtils.canScheduleExactAlarms(context)
                                 batteryUnrestricted = NotificationPermissionUtils.isIgnoringBatteryOptimizations(context)
                             }
@@ -969,21 +1096,45 @@ fun SettingsScreen(
                         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
                     }
 
+                    Surface(
+                        color = if (notificationsEnabled && exactAlarmsAllowed && batteryUnrestricted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = if (notificationsEnabled && exactAlarmsAllowed && batteryUnrestricted) stringResource(R.string.settings_reminder_health_ready) else stringResource(R.string.settings_reminder_health_attention),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(stringResource(R.string.settings_reminder_health_explanation), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+
                     NotificationPermissionRow(
-                        title = "Exact alarm timing",
+                        title = stringResource(R.string.settings_notification_access),
+                        granted = notificationsEnabled,
+                        grantedSubtitle = stringResource(R.string.settings_notification_access_granted),
+                        deniedSubtitle = stringResource(R.string.settings_notification_access_denied),
+                        onClick = { NotificationPermissionUtils.openNotificationSettings(context) }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    NotificationPermissionRow(
+                        title = stringResource(R.string.settings_exact_alarm_timing),
                         granted = exactAlarmsAllowed,
-                        grantedSubtitle = "Reminders fire at the exact time.",
-                        deniedSubtitle = "Reminders may arrive up to an hour late — tap to fix.",
+                        grantedSubtitle = stringResource(R.string.settings_exact_alarm_granted),
+                        deniedSubtitle = stringResource(R.string.settings_exact_alarm_denied),
                         onClick = { NotificationPermissionUtils.openExactAlarmSettings(context) }
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     NotificationPermissionRow(
-                        title = "Background delivery",
+                        title = stringResource(R.string.settings_background_delivery),
                         granted = batteryUnrestricted,
-                        grantedSubtitle = "Battery optimization won't block reminders.",
-                        deniedSubtitle = "Battery optimization may delay or drop reminders — tap to fix.",
+                        grantedSubtitle = stringResource(R.string.settings_background_delivery_granted),
+                        deniedSubtitle = stringResource(R.string.settings_background_delivery_denied),
                         onClick = { NotificationPermissionUtils.requestIgnoreBatteryOptimizations(context) }
                     )
 
@@ -1029,6 +1180,25 @@ fun SettingsScreen(
                             }
                         }
                     )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Text(stringResource(R.string.settings_quick_snooze_times), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.settings_quick_snooze_times_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    SettingsRow(
+                        label = stringResource(R.string.settings_snooze_tonight),
+                        value = TaskScheduleUtils.formatTime(snoozeTonightHour, snoozeTonightMinute),
+                        onClick = { showSnoozeTonightPicker = true }
+                    )
+                    SettingsRow(
+                        label = stringResource(R.string.settings_snooze_tomorrow),
+                        value = TaskScheduleUtils.formatTime(snoozeTomorrowHour, snoozeTomorrowMinute),
+                        onClick = { showSnoozeTomorrowPicker = true }
+                    )
                 }
             }
         }
@@ -1054,35 +1224,35 @@ fun SettingsScreen(
                     ).count { it }
 
                     FeatureToggleRow(
-                        title = "Today tab",
+                        title = stringResource(R.string.settings_today_tab),
                         checked = todayTabEnabled,
                         onCheckedChange = { viewModel.setTodayTabEnabled(it) },
                         enabled = !todayTabEnabled || visibleTabCount > 1
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     FeatureToggleRow(
-                        title = "Upcoming tab",
+                        title = stringResource(R.string.settings_upcoming_tab),
                         checked = upcomingTabEnabled,
                         onCheckedChange = { viewModel.setUpcomingTabEnabled(it) },
                         enabled = !upcomingTabEnabled || visibleTabCount > 1
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     FeatureToggleRow(
-                        title = "Projects",
+                        title = stringResource(R.string.settings_projects),
                         checked = projectsFeatureEnabled,
                         onCheckedChange = { viewModel.setProjectsFeatureEnabled(it) },
                         enabled = !projectsFeatureEnabled || visibleTabCount > 1
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     FeatureToggleRow(
-                        title = "People",
+                        title = stringResource(R.string.settings_people),
                         checked = peopleFeatureEnabled,
                         onCheckedChange = { viewModel.setPeopleFeatureEnabled(it) },
                         enabled = !peopleFeatureEnabled || visibleTabCount > 1
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     FeatureToggleRow(
-                        title = "Tags",
+                        title = stringResource(R.string.settings_tags),
                         checked = tagsFeatureEnabled,
                         onCheckedChange = { viewModel.setTagsFeatureEnabled(it) },
                         enabled = !tagsFeatureEnabled || visibleTabCount > 1
@@ -1922,7 +2092,7 @@ fun SettingsScreen(
                                 .fillMaxWidth()
                                 .clickable {
                                     viewModel.cloudSignOut()
-                                    scope.launch { snackbarHostState.showSnackbar("Signed out of cloud backup") }
+                                    scope.launch { snackbarHostState.showSuccess(context.getString(R.string.settings_cloud_signed_out)) }
                                 }
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -1987,7 +2157,7 @@ fun SettingsScreen(
                             )
                             TextButton(onClick = {
                                 viewModel.backupLocalNow()
-                                scope.launch { snackbarHostState.showSnackbar("Local backup started") }
+                                scope.launch { snackbarHostState.showSuccess(context.getString(R.string.settings_local_backup_started)) }
                             }) {
                                 Text(stringResource(R.string.settings_back_up_now))
                             }
@@ -2057,6 +2227,30 @@ fun SettingsScreen(
         }
     }
 }
+
+    if (showResetSettingsDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetSettingsDialog = false },
+            title = { Text(stringResource(R.string.settings_reset_dialog_title)) },
+            text = { Text(stringResource(R.string.settings_reset_dialog_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResetSettingsDialog = false
+                    viewModel.resetAppSettings()
+                    DailyAgendaWorker.schedule(context, 7, 30)
+                    OverdueEscalationWorker.schedule(context)
+                    scope.launch { snackbarHostState.showSuccess(context.getString(R.string.settings_reset_success)) }
+                }) {
+                    Text(stringResource(R.string.settings_reset_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetSettingsDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
 
     if (showDeleteAllDialog) {
         AlertDialog(
@@ -2398,6 +2592,30 @@ fun SettingsScreen(
         }
     )
 
+    YataTimePickerLauncher(
+        show = showSnoozeTonightPicker,
+        initialTime = TaskScheduleUtils.formatTime(snoozeTonightHour, snoozeTonightMinute),
+        onDismiss = { showSnoozeTonightPicker = false },
+        onConfirm = { formatted ->
+            TaskScheduleUtils.parseTime(formatted)?.let { parsed ->
+                viewModel.setSnoozeTonightTime(parsed.hour, parsed.minute)
+            }
+            showSnoozeTonightPicker = false
+        }
+    )
+
+    YataTimePickerLauncher(
+        show = showSnoozeTomorrowPicker,
+        initialTime = TaskScheduleUtils.formatTime(snoozeTomorrowHour, snoozeTomorrowMinute),
+        onDismiss = { showSnoozeTomorrowPicker = false },
+        onConfirm = { formatted ->
+            TaskScheduleUtils.parseTime(formatted)?.let { parsed ->
+                viewModel.setSnoozeTomorrowTime(parsed.hour, parsed.minute)
+            }
+            showSnoozeTomorrowPicker = false
+        }
+    )
+
     pickedPhotoBitmap?.let { bitmap ->
         CircularImageCropper(
             source = bitmap,
@@ -2434,17 +2652,13 @@ private fun formatBackupSize(bytes: Long?): String? {
 
 private fun formatAbsoluteBackupTime(epochMillis: Long?): String? {
     if (epochMillis == null) return null
-    return java.time.format.DateTimeFormatter.ofPattern("MMM d, h:mm a")
-        .withZone(java.time.ZoneId.systemDefault())
-        .format(java.time.Instant.ofEpochMilli(epochMillis))
+    return java.time.Instant.ofEpochMilli(epochMillis).localized()
 }
 
 private fun formatBackupTimestamp(isoCreatedTime: String): String {
     return try {
         val instant = java.time.Instant.parse(isoCreatedTime)
-        java.time.format.DateTimeFormatter.ofPattern("MMM d, h:mm a")
-            .withZone(java.time.ZoneId.systemDefault())
-            .format(instant)
+        instant.localized()
     } catch (e: Exception) {
         isoCreatedTime
     }

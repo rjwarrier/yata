@@ -78,8 +78,12 @@ fun ExportOptionsDialog(
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            val shareLabel = stringResource(R.string.action_share)
+            val saveLabel = stringResource(R.string.action_save)
+            val relaxedLabel = stringResource(R.string.export_density_relaxed)
+            val compactLabel = stringResource(R.string.export_density_compact)
             Text(
-                text = "Export $entityName",
+                text = stringResource(R.string.export_entity_title, entityName),
                 style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold)
             )
             Text(
@@ -93,11 +97,11 @@ fun ExportOptionsDialog(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            SectionLabel("File")
+            SectionLabel(stringResource(R.string.export_section_file))
             OutlinedTextField(
                 value = fileNameText,
                 onValueChange = { fileNameText = it.take(64) },
-                label = { Text("Filename") },
+                label = { Text(stringResource(R.string.export_filename)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -106,23 +110,23 @@ fun ExportOptionsDialog(
                 items = listOf(ExportDestination.SHARE, ExportDestination.SAVE_TO_DOWNLOADS),
                 selectedItem = destination,
                 onItemSelected = { destination = it },
-                labelProvider = { if (it == ExportDestination.SHARE) "Share" else "Save" }
+                labelProvider = { if (it == ExportDestination.SHARE) shareLabel else saveLabel }
             )
 
             Spacer(modifier = Modifier.height(10.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             Spacer(modifier = Modifier.height(8.dp))
 
-            SectionLabel("Completed tasks")
+            SectionLabel(stringResource(R.string.export_section_completed_tasks))
             ToggleRow(
-                title = "Include completed tasks",
+                title = stringResource(R.string.export_include_completed),
                 checked = includeCompleted,
                 onCheckedChange = { includeCompleted = it }
             )
             if (includeCompleted) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Exclude completed tasks done more than this many days ago",
+                    text = stringResource(R.string.export_exclude_completed_older_than),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -137,7 +141,7 @@ fun ExportOptionsDialog(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 ToggleRow(
-                    title = "Strike off completed tasks",
+                    title = stringResource(R.string.export_strike_completed),
                     checked = strikeThroughCompleted,
                     onCheckedChange = { strikeThroughCompleted = it }
                 )
@@ -154,22 +158,22 @@ fun ExportOptionsDialog(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             Spacer(modifier = Modifier.height(8.dp))
 
-            SectionLabel("Display")
-            ToggleRow(title = "Privacy mode", checked = privacyMode, onCheckedChange = { privacyMode = it })
+            SectionLabel(stringResource(R.string.export_section_display))
+            ToggleRow(title = stringResource(R.string.export_privacy_mode), checked = privacyMode, onCheckedChange = { privacyMode = it })
             ToggleRow(
-                title = "Show tags",
+                title = stringResource(R.string.export_show_tags),
                 checked = privacyTags,
                 enabled = !privacyMode,
                 onCheckedChange = { showTags = it }
             )
             ToggleRow(
-                title = "Show assigned to",
+                title = stringResource(R.string.export_show_assignees),
                 checked = privacyAssignees,
                 enabled = !privacyMode,
                 onCheckedChange = { showAssignees = it }
             )
             ToggleRow(
-                title = "Show Made with YATA footer",
+                title = stringResource(R.string.export_show_footer),
                 checked = showMadeWithFooter,
                 onCheckedChange = { showMadeWithFooter = it }
             )
@@ -178,7 +182,7 @@ fun ExportOptionsDialog(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             Spacer(modifier = Modifier.height(8.dp))
 
-            SectionLabel("Format")
+            SectionLabel(stringResource(R.string.export_section_format))
             if (format == ExportFormat.PDF) {
                 SegmentedControl(
                     items = listOf(ExportPdfPageSize.A4, ExportPdfPageSize.LETTER),
@@ -199,7 +203,7 @@ fun ExportOptionsDialog(
                 items = listOf(ExportDensity.RELAXED, ExportDensity.COMPACT),
                 selectedItem = density,
                 onItemSelected = { density = it },
-                labelProvider = { if (it == ExportDensity.RELAXED) "Relaxed" else "Compact" }
+                labelProvider = { if (it == ExportDensity.RELAXED) relaxedLabel else compactLabel }
             )
 
             Spacer(modifier = Modifier.height(20.dp))

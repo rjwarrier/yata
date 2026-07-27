@@ -140,14 +140,14 @@ fun SearchScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tasks by viewModel.tasks.collectAsState()
-    val lists by viewModel.lists.collectAsState()
-    val projects by viewModel.projects.collectAsState()
-    val people by viewModel.people.collectAsState()
-    val tags by viewModel.tags.collectAsState()
-    val archivedTasks by viewModel.archivedTasks.collectAsState()
-    val deletedTasks by viewModel.deletedTasks.collectAsState()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val projects by viewModel.projects.collectAsStateWithLifecycle()
+    val people by viewModel.people.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val archivedTasks by viewModel.archivedTasks.collectAsStateWithLifecycle()
+    val deletedTasks by viewModel.deletedTasks.collectAsStateWithLifecycle()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
 
     var query by remember { mutableStateOf("") }
     // The box always shows exactly what was typed — only the derived search text and filter
@@ -205,12 +205,12 @@ fun SearchScreen(
     val tagsById = remember(tags) { tags.associateBy { it.id } }
     val listsById = remember(lists) { lists.associateBy { it.id } }
 
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
-    val savedSmartFilterSets by viewModel.savedSmartFilterSets.collectAsState()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
+    val savedSmartFilterSets by viewModel.savedSmartFilterSets.collectAsStateWithLifecycle()
     val currentSmartFilterSet = activeFilters.toList().encodedSmartFilterSet()
     val canSaveCurrentSmartFilterSet = currentSmartFilterSet.isNotBlank() && currentSmartFilterSet !in savedSmartFilterSets
 
@@ -273,16 +273,10 @@ fun SearchScreen(
     }
 
     if (selectionMode) {
-        val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
+        val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
         Scaffold(
             snackbarHost = {
-                SnackbarHost(snackbarHostState) { data ->
-                    if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
-                        com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
-                    } else {
-                        Snackbar(data)
-                    }
-                }
+                SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
             },
             bottomBar = {
                 com.mj.yata.ui.screen.main.CustomBottomNav(
@@ -570,7 +564,7 @@ private fun SearchResultsList(
     modifier: Modifier = Modifier
 ) {
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
-    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),

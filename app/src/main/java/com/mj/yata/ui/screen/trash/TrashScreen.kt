@@ -1,5 +1,7 @@
 package com.mj.yata.ui.screen.trash
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,14 +43,14 @@ fun TrashScreen(
     onNavigateToTaskDetail: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val deletedTasks by viewModel.deletedTasks.collectAsState()
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
-    val trashRetentionDays by viewModel.trashRetentionDays.collectAsState()
+    val deletedTasks by viewModel.deletedTasks.collectAsStateWithLifecycle()
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
+    val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
 
     var showEmptyTrashDialog by remember { mutableStateOf(false) }
     var pendingPermanentDelete by remember { mutableStateOf<Task?>(null) }
@@ -56,7 +58,7 @@ fun TrashScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
                 selectedTab = -1,

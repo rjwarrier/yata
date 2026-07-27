@@ -1,5 +1,7 @@
 package com.mj.yata.ui.widgets
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -98,8 +100,8 @@ fun VoiceTaskOverlay(
 
     val context = LocalContext.current
     val voiceRecognizer = remember(context) { OnDeviceVoiceRecognizer(context) }
-    val voiceState by voiceRecognizer.state.collectAsState()
-    val rmsDb by voiceRecognizer.rmsDb.collectAsState()
+    val voiceState by voiceRecognizer.state.collectAsStateWithLifecycle()
+    val rmsDb by voiceRecognizer.rmsDb.collectAsStateWithLifecycle()
 
     var hasMicPermission by remember {
         mutableStateOf(

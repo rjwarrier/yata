@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import com.mj.yata.util.localized
 
 private fun cardWidth(scale: ExportImageScale) = scale.widthDp.dp
 
@@ -36,7 +36,7 @@ suspend fun exportEntityReport(
 ): ExportOutcome {
     val displayDensity = context.resources.displayMetrics.density
     val widthPx = (cardWidth(imageScale).value * displayDensity).toInt()
-    val generatedOn = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM d, yyyy, h:mm a"))
+    val generatedOn = LocalDateTime.now().localized()
 
     // Collected as a side effect of BrandedExportCard's layout pass — see saveBitmapAsPdf for
     // why the PDF path needs these (only legal page-break points, so rows never split).

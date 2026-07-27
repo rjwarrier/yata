@@ -64,13 +64,7 @@ import com.mj.yata.ui.widgets.PressableScaleBox
 import com.mj.yata.ui.sheets.*
 import kotlinx.coroutines.launch
 
-sealed interface MainSheetType {
-    object None : MainSheetType
-    object NewTask : MainSheetType
-    object NewProject : MainSheetType
-    object NewPerson : MainSheetType
-    object NewTag : MainSheetType
-}
+enum class MainSheetType { None, NewTask, NewProject, NewPerson, NewTag }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -111,7 +105,7 @@ fun MainScreen(
     }
 
     // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
-    var selectedTab by remember { mutableIntStateOf(if (initialTab >= 0) initialTab.coerceIn(0, 4) else 0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(if (initialTab >= 0) initialTab.coerceIn(0, 4) else 0) }
     var restoredHomeTab by remember { mutableStateOf(initialTab >= 0) }
     var calendarSelectedDay by remember { mutableStateOf(java.time.LocalDate.now()) }
 
@@ -119,7 +113,9 @@ fun MainScreen(
     var celebrateTrigger by remember { mutableIntStateOf(0) }
 
     // Sheet states
-    var activeSheet by remember { mutableStateOf<MainSheetType>(MainSheetType.None) }
+    var activeSheet by rememberSaveable { mutableStateOf(MainSheetType.None) }
+    var newTaskHasDraft by rememberSaveable { mutableStateOf(false) }
+    var showDiscardNewTaskDialog by rememberSaveable { mutableStateOf(false) }
     var isNewListSheetOpen by remember { mutableStateOf(false) }
     var showCommandPalette by remember { mutableStateOf(false) }
 
@@ -535,13 +531,7 @@ fun MainScreen(
     ) {
         Scaffold(
             snackbarHost = {
-                SnackbarHost(snackbarHostState) { data ->
-                    if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
-                        com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
-                    } else {
-                        Snackbar(data)
-                    }
-                }
+                SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
             },
             floatingActionButtonPosition = if (fabPosition == com.mj.yata.domain.model.FabPosition.LEFT) {
                 androidx.compose.material3.FabPosition.Start
@@ -839,8 +829,12 @@ fun MainScreen(
     // Modal sheet routing
     if (activeSheet != MainSheetType.None) {
         if (activeSheet == MainSheetType.NewTask) {
+            val requestDismissNewTask = {
+                if (newTaskHasDraft) showDiscardNewTaskDialog = true
+                else activeSheet = MainSheetType.None
+            }
             androidx.compose.ui.window.Dialog(
-                onDismissRequest = { activeSheet = MainSheetType.None },
+                onDismissRequest = requestDismissNewTask,
                 properties = androidx.compose.ui.window.DialogProperties(
                     usePlatformDefaultWidth = false,
                     decorFitsSystemWindows = false
@@ -854,12 +848,14 @@ fun MainScreen(
                     tasks = tasks,
                     onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks, flag ->
                         viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks, flag = flag)
+                        newTaskHasDraft = false
                         activeSheet = MainSheetType.None
                     },
                     onAddTaskAndContinue = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks, flag ->
                         viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks, flag = flag)
                     },
                     onGoToExistingTask = { id ->
+                        newTaskHasDraft = false
                         activeSheet = MainSheetType.None
                         onNavigateToTaskDetail(id)
                     },
@@ -871,7 +867,7 @@ fun MainScreen(
                             Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false)
                         )
                     },
-                    onDismiss = { activeSheet = MainSheetType.None },
+                    onDismiss = requestDismissNewTask,
                     initialListId = initialQuickAddListId,
                     initialDueDateOverride = if (selectedTab == 4) calendarSelectedDay.toString() else null,
                     projectsEnabled = projectsFeatureEnabled,
@@ -879,7 +875,8 @@ fun MainScreen(
                     peopleEnabled = peopleFeatureEnabled,
                     voiceLanguage = voiceLanguage,
                     defaultDueDate = defaultDueDate,
-                    defaultPriority = defaultPriority
+                    defaultPriority = defaultPriority,
+                    onDraftStateChanged = { newTaskHasDraft = it }
                 )
             }
         } else {
@@ -926,6 +923,28 @@ fun MainScreen(
                 }
             }
         }
+    }
+
+    if (showDiscardNewTaskDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardNewTaskDialog = false },
+            title = { Text(stringResource(R.string.discard_task_draft_title)) },
+            text = { Text(stringResource(R.string.discard_task_draft_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardNewTaskDialog = false
+                    newTaskHasDraft = false
+                    activeSheet = MainSheetType.None
+                }) {
+                    Text(stringResource(R.string.action_discard), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardNewTaskDialog = false }) {
+                    Text(stringResource(R.string.action_keep_editing))
+                }
+            }
+        )
     }
 
     // Independent of activeSheet — the drawer's "New folder" + button only sets this flag,

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 
 /**
  * Exact-alarm scheduling and battery-optimization exemption are both OS-level special
@@ -15,6 +16,9 @@ import android.provider.Settings
  * and deep-link intents rather than a `registerForActivityResult` permission launcher.
  */
 object NotificationPermissionUtils {
+
+    fun areNotificationsEnabled(context: Context): Boolean =
+        NotificationManagerCompat.from(context).areNotificationsEnabled()
 
     fun canScheduleExactAlarms(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true // no such restriction before Android 12
@@ -38,6 +42,13 @@ object NotificationPermissionUtils {
     fun requestIgnoreBatteryOptimizations(context: Context) {
         val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
             data = Uri.parse("package:${context.packageName}")
+        }
+        context.startActivity(intent)
+    }
+
+    fun openNotificationSettings(context: Context) {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         }
         context.startActivity(intent)
     }

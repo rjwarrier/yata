@@ -1,5 +1,7 @@
 package com.mj.yata.ui.screen.person
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,6 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.widgets.showUndoSnackbar
+import com.mj.yata.ui.widgets.showSuccess
+import com.mj.yata.ui.widgets.showError
 import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
@@ -62,13 +66,13 @@ fun PersonDetailScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val people by viewModel.people.collectAsState()
-    val assignedTasks by remember(personId) { viewModel.getTasksForPerson(personId) }.collectAsState(initial = emptyList())
-    val lists by viewModel.lists.collectAsState()
-    val projects by viewModel.projects.collectAsState()
-    val tags by viewModel.tags.collectAsState()
-    val personGroups by viewModel.personGroups.collectAsState()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
+    val people by viewModel.people.collectAsStateWithLifecycle()
+    val assignedTasks by remember(personId) { viewModel.getTasksForPerson(personId) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val projects by viewModel.projects.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val personGroups by viewModel.personGroups.collectAsStateWithLifecycle()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
 
     val person = remember(people, personId) { people.find { it.id == personId } }
     val accents = LocalYataAccents.current
@@ -78,14 +82,14 @@ fun PersonDetailScreen(
     var isEditSheetOpen by remember { mutableStateOf(false) }
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    val hideCompleted by viewModel.hideCompletedPerson.collectAsState()
+    val hideCompleted by viewModel.hideCompletedPerson.collectAsStateWithLifecycle()
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
-    val defaultDueDate by viewModel.defaultDueDate.collectAsState()
-    val defaultPriority by viewModel.defaultPriority.collectAsState()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
+    val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
@@ -131,8 +135,16 @@ fun PersonDetailScreen(
         label = "completedChevronRotation"
     )
 
+    val showMissingPerson = com.mj.yata.ui.widgets.rememberMissingContentVisible(personId, person == null)
     if (person == null) {
-        com.mj.yata.ui.widgets.ListDetailShimmer()
+        if (showMissingPerson) {
+            com.mj.yata.ui.widgets.MissingContentState(
+                itemName = stringResource(R.string.entity_person),
+                onNavigateBack = onNavigateBack
+            )
+        } else {
+            com.mj.yata.ui.widgets.ListDetailShimmer()
+        }
         return
     }
 
@@ -140,7 +152,7 @@ fun PersonDetailScreen(
     com.mj.yata.ui.theme.StatusBarColor(
         personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background)
     )
-    val sortMode by viewModel.sortModePerson.collectAsState()
+    val sortMode by viewModel.sortModePerson.collectAsStateWithLifecycle()
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
     val today = remember { java.time.LocalDate.now() }
     // Unfiltered-by-stat count, used by the hero's own primary text/progress so those always
@@ -153,22 +165,16 @@ fun PersonDetailScreen(
     }
     val completedTasks = remember(assignedTasks, searchQuery) { assignedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) } }
 
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
 
     Scaffold(
         snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
-                    com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
-                } else {
-                    Snackbar(data)
-                }
-            }
+            SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
         },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
@@ -606,7 +612,7 @@ fun PersonDetailScreen(
     }
 
     if (isNewTaskSheetOpen) {
-        val allTasks by viewModel.tasks.collectAsState()
+        val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { isNewTaskSheetOpen = false },
             properties = androidx.compose.ui.window.DialogProperties(
@@ -758,9 +764,9 @@ fun PersonDetailScreen(
                     }
                     exportInProgress = false
                     exportResult.onSuccess { outcome ->
-                        snackbarHostState.showSnackbar(outcome.userMessage())
+                        snackbarHostState.showSuccess(outcome.userMessage())
                     }.onFailure { error ->
-                        snackbarHostState.showSnackbar(error.message ?: "Export failed.")
+                        snackbarHostState.showError(error.message ?: exportContext.getString(R.string.export_failed))
                     }
                 }
             }

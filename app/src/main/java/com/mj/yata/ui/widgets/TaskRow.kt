@@ -387,7 +387,7 @@ fun TaskRow(
                 ) {
                     QuickSnoozePreset.entries.forEach { preset ->
                         DropdownMenuItem(
-                            text = { Text(preset.label) },
+                            text = { Text(quickSnoozeLabel(preset)) },
                             onClick = {
                                 showSnoozeMenu = false
                                 onQuickSnooze(preset)

@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import com.mj.yata.util.localized
 
 /**
  * Renders a [TaskExportCard] for a single task off-screen and shares it as PNG or PDF via the
@@ -42,7 +42,7 @@ suspend fun exportTaskReport(
 ): ExportOutcome {
     val displayDensity = context.resources.displayMetrics.density
     val widthPx = (imageScale.widthDp.dp.value * displayDensity).toInt()
-    val generatedOn = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM d, yyyy, h:mm a"))
+    val generatedOn = LocalDateTime.now().localized()
 
     val rowBreaks = mutableListOf<Float>()
     val bitmap = captureComposableToBitmap(context, widthPx) {

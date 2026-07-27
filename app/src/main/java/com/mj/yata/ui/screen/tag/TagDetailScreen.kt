@@ -1,5 +1,7 @@
 package com.mj.yata.ui.screen.tag
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.widgets.showUndoSnackbar
+import com.mj.yata.ui.widgets.showSuccess
+import com.mj.yata.ui.widgets.showError
 import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
@@ -59,13 +63,13 @@ fun TagDetailScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tags by viewModel.tags.collectAsState()
-    val tasks by viewModel.tasks.collectAsState()
-    val lists by viewModel.lists.collectAsState()
-    val projects by viewModel.projects.collectAsState()
-    val people by viewModel.people.collectAsState()
-    val tagGroups by viewModel.tagGroups.collectAsState()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsState()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val projects by viewModel.projects.collectAsStateWithLifecycle()
+    val people by viewModel.people.collectAsStateWithLifecycle()
+    val tagGroups by viewModel.tagGroups.collectAsStateWithLifecycle()
+    val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
 
     val tag = remember(tags, tagId) { tags.find { it.id == tagId } }
     val accents = LocalYataAccents.current
@@ -78,8 +82,8 @@ fun TagDetailScreen(
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
-    val defaultDueDate by viewModel.defaultDueDate.collectAsState()
-    val defaultPriority by viewModel.defaultPriority.collectAsState()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
+    val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
@@ -114,8 +118,16 @@ fun TagDetailScreen(
         }
     }
 
+    val showMissingTag = com.mj.yata.ui.widgets.rememberMissingContentVisible(tagId, tag == null)
     if (tag == null) {
-        com.mj.yata.ui.widgets.ListDetailShimmer()
+        if (showMissingTag) {
+            com.mj.yata.ui.widgets.MissingContentState(
+                itemName = stringResource(R.string.entity_tag),
+                onNavigateBack = onNavigateBack
+            )
+        } else {
+            com.mj.yata.ui.widgets.ListDetailShimmer()
+        }
         return
     }
 
@@ -140,7 +152,7 @@ fun TagDetailScreen(
     val dueTodayCount = remember(allTaggedTasks, todayStr) { allTaggedTasks.count { !it.done && it.due == todayStr } }
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
-    val sortMode by viewModel.sortModeTagDetail.collectAsState()
+    val sortMode by viewModel.sortModeTagDetail.collectAsStateWithLifecycle()
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
     val heroToday = remember { java.time.LocalDate.now() }
     val pendingTaggedTasks = remember(allTaggedTasks, searchQuery, sortMode) {
@@ -153,22 +165,16 @@ fun TagDetailScreen(
         if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) }
     }
 
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsState()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
+    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
+    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
+    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
+    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
+    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
 
     Scaffold(
         snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
-                    com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
-                } else {
-                    Snackbar(data)
-                }
-            }
+            SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
         },
         bottomBar = {
             com.mj.yata.ui.screen.main.CustomBottomNav(
@@ -592,9 +598,9 @@ fun TagDetailScreen(
                     }
                     exportInProgress = false
                     exportResult.onSuccess { outcome ->
-                        snackbarHostState.showSnackbar(outcome.userMessage())
+                        snackbarHostState.showSuccess(outcome.userMessage())
                     }.onFailure { error ->
-                        snackbarHostState.showSnackbar(error.message ?: "Export failed.")
+                        snackbarHostState.showError(error.message ?: exportContext.getString(R.string.export_failed))
                     }
                 }
             }

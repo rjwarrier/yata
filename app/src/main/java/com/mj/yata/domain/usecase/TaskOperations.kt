@@ -3,6 +3,7 @@ package com.mj.yata.domain.usecase
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.util.TaskScheduleUtils
 import kotlinx.coroutines.flow.first
 import java.time.DayOfWeek
@@ -22,7 +23,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class TaskOperations @Inject constructor(
-    private val repository: YataRepository
+    private val repository: YataRepository,
+    private val userPreferences: UserPreferences
 ) {
 
     private suspend fun currentTasks(): List<Task> = repository.getTasks().first()
@@ -205,12 +207,21 @@ class TaskOperations @Inject constructor(
         repository.upsertTasks(updated, notify = true, resyncReminder = true)
     }
 
-    private fun presetSchedule(preset: QuickSnoozePreset): Pair<LocalDate, String> {
+    private suspend fun presetSchedule(preset: QuickSnoozePreset): Pair<LocalDate, String> {
         val today = LocalDate.now()
         return when (preset) {
-            QuickSnoozePreset.TONIGHT -> today to TaskScheduleUtils.formatTime(18, 0)
-            QuickSnoozePreset.TOMORROW_MORNING -> today.plusDays(1) to TaskScheduleUtils.formatTime(9, 0)
-            QuickSnoozePreset.NEXT_WEEKDAY -> nextWeekday(today.plusDays(1)) to TaskScheduleUtils.formatTime(9, 0)
+            QuickSnoozePreset.TONIGHT -> today to TaskScheduleUtils.formatTime(
+                userPreferences.snoozeTonightHourFlow.first(),
+                userPreferences.snoozeTonightMinuteFlow.first()
+            )
+            QuickSnoozePreset.TOMORROW_MORNING -> today.plusDays(1) to TaskScheduleUtils.formatTime(
+                userPreferences.snoozeTomorrowHourFlow.first(),
+                userPreferences.snoozeTomorrowMinuteFlow.first()
+            )
+            QuickSnoozePreset.NEXT_WEEKDAY -> nextWeekday(today.plusDays(1)) to TaskScheduleUtils.formatTime(
+                userPreferences.snoozeTomorrowHourFlow.first(),
+                userPreferences.snoozeTomorrowMinuteFlow.first()
+            )
         }
     }
 
