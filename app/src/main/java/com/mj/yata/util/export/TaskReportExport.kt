@@ -28,10 +28,20 @@ suspend fun exportTaskReport(
     includeNotes: Boolean,
     comments: List<ExportCommentRow>,
     includeComments: Boolean,
-    accentColor: Color
-) {
+    accentColor: Color,
+    showMadeWithFooter: Boolean = true,
+    recurrenceLabel: String? = null,
+    reminderLabel: String? = null,
+    subtasks: List<ExportSubtaskRow> = emptyList(),
+    includeSubtasks: Boolean = true,
+    includeScheduleDetails: Boolean = true,
+    destination: ExportDestination = ExportDestination.SHARE,
+    fileNameBase: String = "yata_${sanitizeExportFileName(title)}",
+    pdfPageSize: ExportPdfPageSize = ExportPdfPageSize.A4,
+    imageScale: ExportImageScale = ExportImageScale.STANDARD
+): ExportOutcome {
     val displayDensity = context.resources.displayMetrics.density
-    val widthPx = (420.dp.value * displayDensity).toInt()
+    val widthPx = (imageScale.widthDp.dp.value * displayDensity).toInt()
     val generatedOn = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM d, yyyy, h:mm a"))
 
     val rowBreaks = mutableListOf<Float>()
@@ -52,20 +62,27 @@ suspend fun exportTaskReport(
             includeNotes = includeNotes,
             comments = comments,
             includeComments = includeComments,
+            recurrenceLabel = recurrenceLabel,
+            reminderLabel = reminderLabel,
+            subtasks = subtasks,
+            includeSubtasks = includeSubtasks,
+            includeScheduleDetails = includeScheduleDetails,
             accentColor = accentColor,
             generatedOn = generatedOn,
+            showMadeWithFooter = showMadeWithFooter,
+            cardWidth = imageScale.widthDp.dp,
             onRowBoundary = { rowBreaks.add(it) }
         )
     }
 
-    val baseName = "yata_${sanitizeExportFileName(title)}"
+    val baseName = sanitizeExportFileName(fileNameBase)
     when (format) {
         ExportFormat.IMAGE -> {
             val file = saveBitmapAsPng(context, bitmap, "$baseName.png")
-            shareExportedFile(context, file, "image/png", "Share $title")
+            return deliverExportedFile(context, file, "image/png", "Share $title", destination)
         }
         ExportFormat.PDF -> {
-            val file = saveBitmapAsPdf(context, bitmap, "$baseName.pdf", rowBreaks)
+            val file = saveBitmapAsPdf(context, bitmap, "$baseName.pdf", rowBreaks, pdfPageSize)
             applyPdfMetadata(
                 context = context,
                 file = file,
@@ -73,7 +90,7 @@ suspend fun exportTaskReport(
                 subject = "YATA task export: $title",
                 keywords = "YATA, task, $title"
             )
-            shareExportedFile(context, file, "application/pdf", "Share $title")
+            return deliverExportedFile(context, file, "application/pdf", "Share $title", destination)
         }
     }
 }

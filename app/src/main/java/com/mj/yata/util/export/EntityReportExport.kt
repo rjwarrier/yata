@@ -2,14 +2,11 @@ package com.mj.yata.util.export
 
 import android.content.Context
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-enum class ExportFormat { IMAGE, PDF }
-
-private val cardWidth: Dp = 420.dp
+private fun cardWidth(scale: ExportImageScale) = scale.widthDp.dp
 
 /**
  * Renders a [BrandedExportCard] for a tag/person off-screen and shares it as PNG or PDF via
@@ -30,10 +27,15 @@ suspend fun exportEntityReport(
     layoutDensity: ExportDensity = ExportDensity.RELAXED,
     strikeThroughCompleted: Boolean = false,
     showTags: Boolean = true,
-    showAssignees: Boolean = true
-) {
+    showAssignees: Boolean = true,
+    showMadeWithFooter: Boolean = true,
+    destination: ExportDestination = ExportDestination.SHARE,
+    fileNameBase: String = "yata_${sanitizeExportFileName(entityName)}",
+    pdfPageSize: ExportPdfPageSize = ExportPdfPageSize.A4,
+    imageScale: ExportImageScale = ExportImageScale.STANDARD
+): ExportOutcome {
     val displayDensity = context.resources.displayMetrics.density
-    val widthPx = (cardWidth.value * displayDensity).toInt()
+    val widthPx = (cardWidth(imageScale).value * displayDensity).toInt()
     val generatedOn = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM d, yyyy, h:mm a"))
 
     // Collected as a side effect of BrandedExportCard's layout pass — see saveBitmapAsPdf for
@@ -53,18 +55,20 @@ suspend fun exportEntityReport(
             strikeThroughCompleted = strikeThroughCompleted,
             showTags = showTags,
             showAssignees = showAssignees,
+            showMadeWithFooter = showMadeWithFooter,
+            cardWidth = cardWidth(imageScale),
             onRowBoundary = { rowBreaks.add(it) }
         )
     }
 
-    val baseName = "yata_${sanitizeExportFileName(entityName)}"
+    val baseName = sanitizeExportFileName(fileNameBase)
     when (format) {
         ExportFormat.IMAGE -> {
             val file = saveBitmapAsPng(context, bitmap, "$baseName.png")
-            shareExportedFile(context, file, "image/png", "Share $entityName")
+            return deliverExportedFile(context, file, "image/png", "Share $entityName", destination)
         }
         ExportFormat.PDF -> {
-            val file = saveBitmapAsPdf(context, bitmap, "$baseName.pdf", rowBreaks)
+            val file = saveBitmapAsPdf(context, bitmap, "$baseName.pdf", rowBreaks, pdfPageSize)
             applyPdfMetadata(
                 context = context,
                 file = file,
@@ -72,7 +76,7 @@ suspend fun exportEntityReport(
                 subject = "$entityKind task report for $entityName ($doneCount/$totalCount done)",
                 keywords = "YATA, $entityKind, $entityName, tasks, report"
             )
-            shareExportedFile(context, file, "application/pdf", "Share $entityName")
+            return deliverExportedFile(context, file, "application/pdf", "Share $entityName", destination)
         }
     }
 }

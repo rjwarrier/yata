@@ -14,6 +14,8 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 
+private const val MAX_EXPORT_BITMAP_BYTES = 96L * 1024L * 1024L
+
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
@@ -57,6 +59,10 @@ suspend fun captureComposableToBitmap(
         composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
 
         val height = composeView.measuredHeight.coerceAtLeast(1)
+        val estimatedBytes = widthPx.toLong() * height.toLong() * 4L
+        if (estimatedBytes > MAX_EXPORT_BITMAP_BYTES) {
+            throw IllegalStateException("Export is too large. Try Compact layout, Standard image size, or fewer completed tasks.")
+        }
         val bitmap = Bitmap.createBitmap(widthPx, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.WHITE)

@@ -56,6 +56,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -238,6 +239,7 @@ fun NewTaskSheet(
     var reminderManuallySet by remember { mutableStateOf(false) }
     var priorityManuallySet by remember { mutableStateOf(false) }
     var quickAddDismissed by remember { mutableStateOf(false) }
+    var ignoredQuickAddFields by remember { mutableStateOf(setOf<String>()) }
     var keepAdding by remember { mutableStateOf(false) }
     val setDueDate: (String?) -> Unit = { selectedDueDate = it; dueManuallySet = true }
     val setTime: (String?) -> Unit = { selectedTime = it; timeManuallySet = true }
@@ -316,31 +318,31 @@ fun NewTaskSheet(
             }.take(2)
         }
     }
-    LaunchedEffect(quickAdd, quickAddDismissed, isBulkTasks) {
+    LaunchedEffect(quickAdd, quickAddDismissed, isBulkTasks, ignoredQuickAddFields) {
         if (!quickAddDismissed && !isBulkTasks) {
-            if (!dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
-            if (!timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
-            if (!recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
-            if (!reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
-            if (!priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
-            if (quickAdd.flag) selectedFlag = true
+            if ("due" !in ignoredQuickAddFields && !dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
+            if ("time" !in ignoredQuickAddFields && !timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
+            if ("recurrence" !in ignoredQuickAddFields && !recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
+            if ("reminder" !in ignoredQuickAddFields && !reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
+            if ("priority" !in ignoredQuickAddFields && !priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
+            if ("flag" !in ignoredQuickAddFields && quickAdd.flag) selectedFlag = true
 
-            if (selectedProjectId == null && quickAdd.projectName != null) {
+            if ("project" !in ignoredQuickAddFields && selectedProjectId == null && quickAdd.projectName != null) {
                 findBestEntityMatch(quickAdd.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
             }
-            if (selectedListId == null && quickAdd.listName != null) {
+            if ("list" !in ignoredQuickAddFields && selectedListId == null && quickAdd.listName != null) {
                 findBestEntityMatch(quickAdd.listName, lists, { it.name })?.let { selectedListId = it.id }
             }
-            if (quickAdd.tagNames.isNotEmpty()) {
+            if ("tags" !in ignoredQuickAddFields && quickAdd.tagNames.isNotEmpty()) {
                 val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
                     findBestEntityMatch(target, tags, { it.name })?.id
-                }.distinct()
+                }.distinct().filterNot { it in selectedTagIds }
                 selectedTagIds.addAll(matchedTagIds)
             }
-            if (quickAdd.assigneeNames.isNotEmpty()) {
+            if ("people" !in ignoredQuickAddFields && quickAdd.assigneeNames.isNotEmpty()) {
                 val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
                     findBestEntityMatch(target, activePeople, { it.name })?.id
-                }.distinct()
+                }.distinct().filterNot { it in selectedAssigneeIds }
                 selectedAssigneeIds.addAll(matchedAssigneeIds)
             }
         }
@@ -617,6 +619,7 @@ fun NewTaskSheet(
                     onValueChange = { newValue ->
                         if (newValue.text != title.text) {
                             quickAddDismissed = false
+                            ignoredQuickAddFields = emptySet()
                             bulkModeDismissed = false
                         }
                         title = newValue
@@ -732,22 +735,76 @@ fun NewTaskSheet(
                     )
                 }
             } else if (quickAddMatched) {
-                val detectedItems = listOfNotNull<Pair<String, () -> Unit>>(
-                    quickAdd.due?.let { "Due ${TaskScheduleUtils.formatDueDate(it)}" to { activePanel = "DueDate" } },
-                    quickAdd.time?.let { "Time $it" to { activePanel = "Time" } },
-                    quickAdd.recurrence?.let {
-                        "Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}" to {
+                val detectedItems = listOfNotNull<Triple<String, () -> Unit, () -> Unit>>(
+                    quickAdd.due?.takeIf { "due" !in ignoredQuickAddFields }?.let {
+                        Triple("Due ${TaskScheduleUtils.formatDueDate(it)}", { activePanel = "DueDate" }, {
+                            setDueDate(null)
+                            ignoredQuickAddFields = ignoredQuickAddFields + "due"
+                        })
+                    },
+                    quickAdd.time?.takeIf { "time" !in ignoredQuickAddFields }?.let {
+                        Triple("Time $it", { activePanel = "Time" }, {
+                            setTime(null)
+                            ignoredQuickAddFields = ignoredQuickAddFields + "time"
+                        })
+                    },
+                    quickAdd.recurrence?.takeIf { "recurrence" !in ignoredQuickAddFields }?.let {
+                        Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}", {
                             activePanel = null
                             showRecurrenceSheet = true
-                        }
+                        }, {
+                            setRecurrence(null)
+                            ignoredQuickAddFields = ignoredQuickAddFields + "recurrence"
+                        })
                     },
-                    quickAdd.reminder?.let { "Remind $it" to { activePanel = "Reminder" } },
-                    quickAdd.priority?.let { "${it.uppercase()} priority" to { activePanel = "Priority" } },
-                    "Flagged".takeIf { quickAdd.flag }?.let { it to { selectedFlag = !selectedFlag } },
-                    quickAdd.projectName?.let { "Project $it" to { activePanel = "Project" } },
-                    quickAdd.listName?.let { "List $it" to { activePanel = "List" } },
-                    quickAdd.tagNames.takeIf { it.isNotEmpty() }?.joinToString(", ") { "#$it" }?.let { "Tags $it" to { activePanel = "Tags" } },
-                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() }?.joinToString(", ") { "@$it" }?.let { "People $it" to { activePanel = "People" } }
+                    quickAdd.reminder?.takeIf { "reminder" !in ignoredQuickAddFields }?.let {
+                        Triple("Remind $it", { activePanel = "Reminder" }, {
+                            setReminder(null)
+                            ignoredQuickAddFields = ignoredQuickAddFields + "reminder"
+                        })
+                    },
+                    quickAdd.priority?.takeIf { "priority" !in ignoredQuickAddFields }?.let {
+                        Triple("${it.uppercase()} priority", { activePanel = "Priority" }, {
+                            setPriority("none")
+                            ignoredQuickAddFields = ignoredQuickAddFields + "priority"
+                        })
+                    },
+                    "Flagged".takeIf { quickAdd.flag && "flag" !in ignoredQuickAddFields }?.let {
+                        Triple(it, { selectedFlag = !selectedFlag }, {
+                            selectedFlag = false
+                            ignoredQuickAddFields = ignoredQuickAddFields + "flag"
+                        })
+                    },
+                    quickAdd.projectName?.takeIf { "project" !in ignoredQuickAddFields }?.let {
+                        Triple("Project $it", { activePanel = "Project" }, {
+                            selectedProjectId = null
+                            ignoredQuickAddFields = ignoredQuickAddFields + "project"
+                        })
+                    },
+                    quickAdd.listName?.takeIf { "list" !in ignoredQuickAddFields }?.let {
+                        Triple("List $it", { activePanel = "List" }, {
+                            selectedListId = null
+                            ignoredQuickAddFields = ignoredQuickAddFields + "list"
+                        })
+                    },
+                    quickAdd.tagNames.takeIf { it.isNotEmpty() && "tags" !in ignoredQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
+                        Triple("Tags $it", { activePanel = "Tags" }, {
+                            val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
+                                findBestEntityMatch(target, tags, { tag -> tag.name })?.id
+                            }.toSet()
+                            selectedTagIds.removeAll(matchedTagIds)
+                            ignoredQuickAddFields = ignoredQuickAddFields + "tags"
+                        })
+                    },
+                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() && "people" !in ignoredQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
+                        Triple("People $it", { activePanel = "People" }, {
+                            val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
+                                findBestEntityMatch(target, activePeople, { person -> person.name })?.id
+                            }.toSet()
+                            selectedAssigneeIds.removeAll(matchedAssigneeIds)
+                            ignoredQuickAddFields = ignoredQuickAddFields + "people"
+                        })
+                    }
                 )
                 AnimatedVisibility(
                     visible = true,
@@ -797,14 +854,20 @@ fun NewTaskSheet(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        detectedItems.forEach { (item, onItemClick) ->
-                            YataSelectChip(
-                                label = item,
+                        detectedItems.forEach { (item, onItemClick, onDismissItem) ->
+                            InputChip(
                                 selected = true,
                                 onClick = onItemClick,
-                                tint = MaterialTheme.colorScheme.primary,
-                                showCheck = false,
-                                height = 30.dp
+                                label = { Text(item) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Ignore $item",
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clickable { onDismissItem() }
+                                    )
+                                }
                             )
                         }
                     }
@@ -1241,7 +1304,8 @@ fun NewTaskSheet(
                     setRecurrence(it)
                     showRecurrenceSheet = false
                 },
-                onDismiss = { showRecurrenceSheet = false }
+                onDismiss = { showRecurrenceSheet = false },
+                referenceDate = selectedDueDate
             )
         }
     }

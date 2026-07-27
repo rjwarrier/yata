@@ -37,17 +37,32 @@ fun RecurrenceSheet(
     initialRecurrence: Recurrence?,
     onSave: (Recurrence?) -> Unit,
     onDismiss: () -> Unit,
+    referenceDate: String? = null,
     modifier: Modifier = Modifier
 ) {
     var enabled by remember { mutableStateOf(initialRecurrence != null) }
     var showEndDatePicker by remember { mutableStateOf(false) }
+    val baseDate = remember(referenceDate) {
+        referenceDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: LocalDate.now()
+    }
+    val baseWeekday = remember(baseDate) {
+        when (baseDate.dayOfWeek) {
+            java.time.DayOfWeek.MONDAY -> "MO"
+            java.time.DayOfWeek.TUESDAY -> "TU"
+            java.time.DayOfWeek.WEDNESDAY -> "WE"
+            java.time.DayOfWeek.THURSDAY -> "TH"
+            java.time.DayOfWeek.FRIDAY -> "FR"
+            java.time.DayOfWeek.SATURDAY -> "SA"
+            java.time.DayOfWeek.SUNDAY -> "SU"
+        }
+    }
     var r by remember {
         mutableStateOf(
             initialRecurrence ?: Recurrence(
                 freq = "weekly",
                 interval = 1,
-                byday = listOf("MO"),
-                bymonthday = null,
+                byday = listOf(baseWeekday),
+                bymonthday = baseDate.dayOfMonth,
                 ends = RecurrenceEnds.Never
             )
         )

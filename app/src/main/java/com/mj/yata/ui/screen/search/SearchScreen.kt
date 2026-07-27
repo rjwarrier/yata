@@ -215,6 +215,8 @@ fun SearchScreen(
     val canSaveCurrentSmartFilterSet = currentSmartFilterSet.isNotBlank() && currentSmartFilterSet !in savedSmartFilterSets
 
     val archivedProjectIds = remember(projects) { projects.archivedProjects().map { it.id }.toSet() }
+    val archivedTaskIds = remember(archivedTasks) { archivedTasks.map { it.id }.toSet() }
+    val deletedTaskIds = remember(deletedTasks) { deletedTasks.map { it.id }.toSet() }
     val queryTasks by remember(debouncedQuery) {
         viewModel.searchTasks(debouncedQuery)
     }.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -339,6 +341,9 @@ fun SearchScreen(
                 tags = tags,
                 listsById = listsById,
                 peopleById = peopleById,
+                archivedTaskIds = archivedTaskIds,
+                deletedTaskIds = deletedTaskIds,
+                archivedProjectIds = archivedProjectIds,
                 viewModel = viewModel,
                 selectionMode = selectionMode,
                 selectedIds = selectedIds,
@@ -408,6 +413,9 @@ fun SearchScreen(
                     tags = tags,
                     listsById = listsById,
                     peopleById = peopleById,
+                    archivedTaskIds = archivedTaskIds,
+                    deletedTaskIds = deletedTaskIds,
+                    archivedProjectIds = archivedProjectIds,
                     viewModel = viewModel,
                     selectionMode = selectionMode,
                     selectedIds = selectedIds,
@@ -548,6 +556,9 @@ private fun SearchResultsList(
     tags: List<Tag>,
     listsById: Map<String, YataList>,
     peopleById: Map<String, Person>,
+    archivedTaskIds: Set<String>,
+    deletedTaskIds: Set<String>,
+    archivedProjectIds: Set<String>,
     viewModel: MainViewModel,
     selectionMode: Boolean,
     selectedIds: MutableList<String>,
@@ -677,32 +688,68 @@ private fun SearchResultsList(
                     if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
                 }
 
-                TaskRow(
-                    task = task,
-                    list = taskList,
-                    assignees = taskAssignees,
-                    tags = taskTags,
-                    onToggleDone = { onToggleTask(task) },
-                    onTaskClick = {
-                        if (selectionMode) {
-                            if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
-                        } else {
-                            onTaskClick(task.id)
+                Column(
+                    modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized))
+                ) {
+                    val lifecycleBadges = listOfNotNull(
+                        "In Trash".takeIf { task.id in deletedTaskIds || task.deletedAt != null },
+                        "Archived".takeIf { task.id in archivedTaskIds || task.archived },
+                        "Archived project".takeIf { task.projectId in archivedProjectIds }
+                    )
+                    if (lifecycleBadges.isNotEmpty()) {
+                        androidx.compose.foundation.layout.FlowRow(
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            lifecycleBadges.forEach { label ->
+                                Surface(
+                                    color = if (label == "In Trash") {
+                                        MaterialTheme.colorScheme.errorContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.tertiaryContainer
+                                    },
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(999.dp)
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (label == "In Trash") {
+                                            MaterialTheme.colorScheme.onErrorContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onTertiaryContainer
+                                        },
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
+                            }
                         }
-                    },
-                    selectionMode = selectionMode,
-                    selected = selectedIds.contains(task.id),
-                    onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
-                    modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
-                    ),
-                    onCommentClick = { pendingCommentTask = task },
-                    onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
-                    onRenameTask = { viewModel.renameTask(task.id, it) },
-                    density = taskRowDensity,
-                    onSwipeToDelete = { onSwipeToDelete(task) },
-                    swipeEnabled = !selectionMode,
-                    showDueDate = true
-                )
+                    }
+                    TaskRow(
+                        task = task,
+                        list = taskList,
+                        assignees = taskAssignees,
+                        tags = taskTags,
+                        onToggleDone = { onToggleTask(task) },
+                        onTaskClick = {
+                            if (selectionMode) {
+                                if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                            } else {
+                                onTaskClick(task.id)
+                            }
+                        },
+                        selectionMode = selectionMode,
+                        selected = selectedIds.contains(task.id),
+                        onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
+                        onCommentClick = { pendingCommentTask = task },
+                        onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                        onRenameTask = { viewModel.renameTask(task.id, it) },
+                        density = taskRowDensity,
+                        onSwipeToDelete = { onSwipeToDelete(task) },
+                        swipeEnabled = !selectionMode && task.id !in deletedTaskIds,
+                        showDueDate = true
+                    )
+                }
             }
         }
     }

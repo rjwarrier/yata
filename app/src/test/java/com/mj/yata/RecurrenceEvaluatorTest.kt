@@ -33,6 +33,27 @@ class RecurrenceEvaluatorTest {
     }
 
     @Test
+    fun testYearlyRecurrence() {
+        val r = Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-02")
+        assertEquals("2027-07-02", next)
+    }
+
+    @Test
+    fun testEveryTwoYearsRecurrence() {
+        val r = Recurrence("yearly", 2, null, null, RecurrenceEnds.Never)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-02")
+        assertEquals("2028-07-02", next)
+    }
+
+    @Test
+    fun testLeapDayYearlyRecurrenceUsesLocalDateSemantics() {
+        val r = Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2024-02-29")
+        assertEquals("2025-02-28", next)
+    }
+
+    @Test
     fun testRecurrenceSummary() {
         val r = Recurrence("daily", 1, null, null, RecurrenceEnds.Never)
         val summary = RecurrenceEvaluator.recurrenceSummary(r)
@@ -41,6 +62,18 @@ class RecurrenceEvaluatorTest {
         val r2 = Recurrence("weekly", 2, listOf("MO", "WE"), null, RecurrenceEnds.Never)
         val summary2 = RecurrenceEvaluator.recurrenceSummary(r2)
         assertEquals("Every 2 weeks on Mon, Wed", summary2)
+
+        val r3 = Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
+        assertEquals("Yearly", RecurrenceEvaluator.recurrenceSummary(r3))
+
+        val r4 = Recurrence("yearly", 2, null, null, RecurrenceEnds.Never)
+        assertEquals("Every 2 years", RecurrenceEvaluator.recurrenceSummary(r4))
+    }
+
+    @Test
+    fun testYearlyRRule() {
+        val r = Recurrence("yearly", 2, null, null, RecurrenceEnds.On("2030-07-02"))
+        assertEquals("RRULE:FREQ=YEARLY;INTERVAL=2;UNTIL=20300702", RecurrenceEvaluator.toRRULE(r))
     }
 
     @Test

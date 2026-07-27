@@ -100,6 +100,27 @@ private fun SectionToggleChip(
     }
 }
 
+private fun List<Subtask>.toExportSubtaskRows(): List<com.mj.yata.util.export.ExportSubtaskRow> {
+    val childrenByParent = filter { it.parentSubtaskId != null }
+        .groupBy { it.parentSubtaskId }
+        .mapValues { (_, children) -> children.sortedBy { it.sortOrder } }
+    val rows = mutableListOf<com.mj.yata.util.export.ExportSubtaskRow>()
+
+    fun appendSubtree(subtask: Subtask, depth: Int) {
+        rows += com.mj.yata.util.export.ExportSubtaskRow(
+            title = subtask.title,
+            done = subtask.done,
+            depth = depth
+        )
+        childrenByParent[subtask.id].orEmpty().forEach { appendSubtree(it, depth + 1) }
+    }
+
+    filter { it.parentSubtaskId == null }
+        .sortedBy { it.sortOrder }
+        .forEach { appendSubtree(it, 0) }
+    return rows
+}
+
 sealed interface DetailSheetType {
     object None : DetailSheetType
     object ScheduleEditor : DetailSheetType
@@ -203,6 +224,7 @@ fun TaskDetailScreen(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
+    var exportInProgress by remember { mutableStateOf(false) }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsState()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsState()
@@ -1334,6 +1356,8 @@ fun TaskDetailScreen(
     exportFormatPending?.let { format ->
         val hasNotes = !task.notes.isNullOrBlank()
         val hasComments = comments.isNotEmpty()
+        val hasSubtasks = task.subtasks.isNotEmpty()
+        val hasScheduleDetails = task.recurrence != null || task.reminder != null
         val exportAccentColor = project?.let { accents.getAccent(it.color) } ?: listColor
         val exportOverdue = task.due != null && !task.done &&
             com.mj.yata.util.TaskScheduleUtils.parseDate(task.due)?.isBefore(java.time.LocalDate.now()) == true
@@ -1358,42 +1382,68 @@ fun TaskDetailScreen(
             }
         }
 
-        fun runExport(includeNotes: Boolean, includeComments: Boolean) {
+        val exportSubtasks = remember(task.subtasks) { task.subtasks.toExportSubtaskRows() }
+
+        fun runExport(options: com.mj.yata.util.export.TaskExportOptions) {
             exportFormatPending = null
             scope.launch {
-                com.mj.yata.util.export.exportTaskReport(
-                    context = context,
-                    format = format,
-                    title = task.title,
-                    done = task.done,
-                    priority = task.priority,
-                    flagged = task.flag,
-                    dueLabel = task.due?.let { com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time) },
-                    overdue = exportOverdue,
-                    completedAtLabel = if (task.done) com.mj.yata.util.TaskScheduleUtils.formatCompletedAt(task.completedAt) else null,
-                    projectName = project?.name,
-                    listName = taskList?.name,
-                    assigneeNames = taskAssignees.map { if (it.isMe) "You" else it.name },
-                    tagChips = exportTagChips,
-                    notes = task.notes,
-                    includeNotes = includeNotes,
-                    comments = exportComments,
-                    includeComments = includeComments,
-                    accentColor = exportAccentColor
-                )
+                exportInProgress = true
+                val exportResult = runCatching {
+                    com.mj.yata.util.export.exportTaskReport(
+                        context = context,
+                        format = format,
+                        title = task.title,
+                        done = task.done,
+                        priority = task.priority,
+                        flagged = task.flag,
+                        dueLabel = task.due?.let { com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time) },
+                        overdue = exportOverdue,
+                        completedAtLabel = if (task.done) com.mj.yata.util.TaskScheduleUtils.formatCompletedAt(task.completedAt) else null,
+                        projectName = project?.name,
+                        listName = taskList?.name,
+                        assigneeNames = if (options.privacyMode) emptyList() else taskAssignees.map { if (it.isMe) "You" else it.name },
+                        tagChips = if (options.privacyMode) emptyList() else exportTagChips,
+                        notes = task.notes,
+                        includeNotes = options.includeNotes,
+                        comments = exportComments,
+                        includeComments = options.includeComments,
+                        recurrenceLabel = task.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) },
+                        reminderLabel = task.reminder?.let { com.mj.yata.util.TaskScheduleUtils.formatReminder(it) },
+                        subtasks = exportSubtasks,
+                        includeSubtasks = options.includeSubtasks,
+                        includeScheduleDetails = options.includeScheduleDetails,
+                        accentColor = exportAccentColor,
+                        showMadeWithFooter = options.showMadeWithFooter,
+                        destination = options.destination,
+                        fileNameBase = options.fileNameBase,
+                        pdfPageSize = options.pdfPageSize,
+                        imageScale = options.imageScale
+                    )
+                }
+                exportInProgress = false
+                exportResult.onSuccess { outcome ->
+                    snackbarHostState.showSnackbar(outcome.userMessage())
+                }.onFailure { error ->
+                    snackbarHostState.showSnackbar(error.message ?: "Export failed.")
+                }
             }
         }
 
-        if (hasNotes || hasComments) {
-            com.mj.yata.util.export.TaskExportOptionsDialog(
-                hasNotes = hasNotes,
-                hasComments = hasComments,
-                onDismiss = { exportFormatPending = null },
-                onConfirm = { includeNotes, includeComments -> runExport(includeNotes, includeComments) }
-            )
-        } else {
-            LaunchedEffect(format) { runExport(includeNotes = false, includeComments = false) }
-        }
+        com.mj.yata.util.export.TaskExportOptionsDialog(
+            taskTitle = task.title,
+            format = format,
+            hasNotes = hasNotes,
+            hasComments = hasComments,
+            hasSubtasks = hasSubtasks,
+            hasScheduleDetails = hasScheduleDetails,
+            onDismiss = { exportFormatPending = null },
+            onConfirm = { options ->
+                runExport(options)
+            }
+        )
+    }
+    if (exportInProgress) {
+        com.mj.yata.util.export.ExportProgressDialog()
     }
 
     YataTimePickerLauncher(

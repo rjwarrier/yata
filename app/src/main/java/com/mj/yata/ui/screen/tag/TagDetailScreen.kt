@@ -82,6 +82,7 @@ fun TagDetailScreen(
     val defaultPriority by viewModel.defaultPriority.collectAsState()
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
+    var exportInProgress by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Project name takes priority over list name for the export's subheading — a task's
@@ -546,35 +547,60 @@ fun TagDetailScreen(
     exportFormatPending?.let { format ->
         com.mj.yata.util.export.ExportOptionsDialog(
             entityName = tag.name,
+            format = format,
+            itemPreviews = allTaggedTasks.map { com.mj.yata.util.export.ExportItemPreview(it.done, it.completedAt) },
             onDismiss = { exportFormatPending = null },
-            onConfirm = { includeCompleted, excludeOlderThanDays, exportLayoutDensity, strikeThroughCompleted, showTags, showAssignees ->
+            onConfirm = { options ->
                 exportFormatPending = null
-                val cutoffMillis = excludeOlderThanDays?.takeIf { it > 0 }?.let {
+                val cutoffMillis = options.excludeCompletedOlderThanDays?.takeIf { it > 0 }?.let {
                     System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
                 }
                 val exportTasks = allTaggedTasks.filter { task ->
                     if (!task.done) return@filter true
-                    if (!includeCompleted) return@filter false
+                    if (!options.includeCompleted) return@filter false
                     cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)
                 }
                 scope.launch {
-                    com.mj.yata.util.export.exportEntityReport(
-                        context = exportContext,
-                        format = format,
-                        entityKind = "Tag",
-                        entityName = tag.name,
-                        accentColor = tagColor,
-                        doneCount = exportTasks.count { it.done },
-                        totalCount = exportTasks.size,
-                        overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
-                        tasks = exportTasks.map { it.toExportRow(exportGroupLabel(it), exportTagChips(it), exportAssigneeNames(it)) },
-                        layoutDensity = exportLayoutDensity,
-                        strikeThroughCompleted = strikeThroughCompleted,
-                        showTags = showTags,
-                        showAssignees = showAssignees
-                    )
+                    exportInProgress = true
+                    val exportResult = runCatching {
+                        com.mj.yata.util.export.exportEntityReport(
+                            context = exportContext,
+                            format = format,
+                            entityKind = "Tag",
+                            entityName = tag.name,
+                            accentColor = tagColor,
+                            doneCount = exportTasks.count { it.done },
+                            totalCount = exportTasks.size,
+                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                            tasks = exportTasks.map { task ->
+                                task.toExportRow(
+                                    exportGroupLabel(task),
+                                    if (options.showTags) exportTagChips(task) else emptyList(),
+                                    if (options.showAssignees) exportAssigneeNames(task) else emptyList()
+                                )
+                            },
+                            layoutDensity = options.density,
+                            strikeThroughCompleted = options.strikeThroughCompleted,
+                            showTags = options.showTags,
+                            showAssignees = options.showAssignees,
+                            showMadeWithFooter = options.showMadeWithFooter,
+                            destination = options.destination,
+                            fileNameBase = options.fileNameBase,
+                            pdfPageSize = options.pdfPageSize,
+                            imageScale = options.imageScale
+                        )
+                    }
+                    exportInProgress = false
+                    exportResult.onSuccess { outcome ->
+                        snackbarHostState.showSnackbar(outcome.userMessage())
+                    }.onFailure { error ->
+                        snackbarHostState.showSnackbar(error.message ?: "Export failed.")
+                    }
                 }
             }
         )
+    }
+    if (exportInProgress) {
+        com.mj.yata.util.export.ExportProgressDialog()
     }
 }

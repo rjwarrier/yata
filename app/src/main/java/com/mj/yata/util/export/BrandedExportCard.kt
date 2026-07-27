@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
@@ -33,6 +34,7 @@ import com.mj.yata.ui.theme.LightColors
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.Shapes
 import com.mj.yata.ui.theme.createTypography
+import com.mj.yata.util.RecurrenceEvaluator
 import com.mj.yata.util.TaskScheduleUtils
 import java.time.LocalDate
 
@@ -47,7 +49,10 @@ data class ExportTaskRow(
     /** Project or list name this task belongs to; blank when it has neither. */
     val groupLabel: String = "",
     val tagChips: List<ExportTagChip> = emptyList(),
-    val assigneeNames: List<String> = emptyList()
+    val assigneeNames: List<String> = emptyList(),
+    val recurrenceLabel: String? = null,
+    val reminderLabel: String? = null,
+    val subtaskProgressLabel: String? = null
 )
 
 fun Task.toExportRow(
@@ -59,12 +64,17 @@ fun Task.toExportRow(
     return ExportTaskRow(
         title = title,
         done = done,
-        dueLabel = due?.let { TaskScheduleUtils.formatDueDate(it) },
+        dueLabel = due?.let { TaskScheduleUtils.formatDueDateTime(due, time) },
         overdue = overdue,
         completedAtLabel = if (done) completedAt?.let { TaskScheduleUtils.formatCompletedAt(it) } else null,
         groupLabel = groupLabel,
         tagChips = tagChips,
-        assigneeNames = assigneeNames
+        assigneeNames = assigneeNames,
+        recurrenceLabel = recurrence?.let { RecurrenceEvaluator.recurrenceSummary(it) },
+        reminderLabel = reminder?.let { TaskScheduleUtils.formatReminder(it) },
+        subtaskProgressLabel = subtasks.takeIf { it.isNotEmpty() }?.let { rows ->
+            "${rows.count { it.done }}/${rows.size} subtasks"
+        }
     )
 }
 
@@ -128,6 +138,8 @@ fun BrandedExportCard(
     strikeThroughCompleted: Boolean = false,
     showTags: Boolean = true,
     showAssignees: Boolean = true,
+    showMadeWithFooter: Boolean = true,
+    cardWidth: Dp = CardWidth,
     onRowBoundary: (Float) -> Unit = {}
 ) {
     val spacing = spacingFor(density)
@@ -138,7 +150,7 @@ fun BrandedExportCard(
             shapes = Shapes
         ) {
         Surface(color = Color.White) {
-            Column(modifier = Modifier.width(CardWidth)) {
+            Column(modifier = Modifier.width(cardWidth)) {
                 // Letterhead stripe
                 Box(
                     modifier = Modifier
@@ -330,37 +342,39 @@ fun BrandedExportCard(
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 28.dp)
-                        .height(1.dp)
-                        .background(HairlineColor)
-                )
+                if (showMadeWithFooter) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 28.dp)
+                            .height(1.dp)
+                            .background(HairlineColor)
+                    )
 
                 // Footer — centered, small subtext. Also reports its own bottom edge as a
                 // break candidate so PDF pagination can't land inside it (it's the last
                 // content, but a page's budget could otherwise run out a few px into it).
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onGloballyPositioned { coordinates ->
-                            onRowBoundary(coordinates.boundsInRoot().bottom)
-                        }
-                        .padding(horizontal = 28.dp, vertical = spacing.footerVerticalPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Made with YATA",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Generated $generatedOn",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onGloballyPositioned { coordinates ->
+                                onRowBoundary(coordinates.boundsInRoot().bottom)
+                            }
+                            .padding(horizontal = 28.dp, vertical = spacing.footerVerticalPadding),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Made with YATA",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Generated $generatedOn",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
         }
@@ -460,29 +474,28 @@ private fun ExportTaskLine(
             }
             if (showTags && row.tagChips.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    row.tagChips.take(4).forEach { chip ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(chip.color.copy(alpha = 0.14f))
-                                .padding(horizontal = 5.dp, vertical = 1.dp)
-                        ) {
-                            Text(
-                                text = chip.name,
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                                color = chip.color
-                            )
-                        }
-                    }
-                }
+                ExportTagPills(chips = row.tagChips, maxItems = 4)
             }
             if (showAssignees && row.assigneeNames.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(3.dp))
-                Text(
-                    text = "Assigned to: ${row.assigneeNames.joinToString(", ")}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                ExportNamePills(
+                    names = row.assigneeNames,
+                    maxItems = 4,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+            val schedulePills = listOfNotNull(
+                row.recurrenceLabel,
+                row.reminderLabel?.let { "Reminder: $it" },
+                row.subtaskProgressLabel
+            )
+            if (schedulePills.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(3.dp))
+                ExportNamePills(
+                    names = schedulePills,
+                    maxItems = 3,
+                    color = MaterialTheme.colorScheme.secondary,
+                    prefix = ""
                 )
             }
         }

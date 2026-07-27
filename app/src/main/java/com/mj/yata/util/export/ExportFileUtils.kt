@@ -3,13 +3,18 @@ package com.mj.yata.util.export
 import com.mj.yata.R
 import android.content.Context
 import android.content.Intent
+import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfDocument
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDDocumentInformation
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Calendar
 
@@ -49,12 +54,13 @@ fun saveBitmapAsPdf(
     context: Context,
     bitmap: Bitmap,
     fileName: String,
-    rowBreaks: List<Float> = emptyList()
+    rowBreaks: List<Float> = emptyList(),
+    pageSize: ExportPdfPageSize = ExportPdfPageSize.A4
 ): File {
     val density = context.resources.displayMetrics.density
     val margin = (32 * density).toInt().coerceAtLeast(1)
     val pageWidth = bitmap.width + margin * 2
-    val pageHeight = (pageWidth * 1.414f).toInt().coerceAtLeast(margin * 4)
+    val pageHeight = (pageWidth * pageSize.ratio).toInt().coerceAtLeast(margin * 4)
     val contentBudget = (pageHeight - margin * 2).coerceAtLeast(1)
     val candidates = rowBreaks.map { it.toInt() }.filter { it in 1 until bitmap.height }.sorted()
 
@@ -98,6 +104,7 @@ fun saveBitmapAsPdf(
 
         val bitmapSlice = Bitmap.createBitmap(bitmap, 0, slice.startY, bitmap.width, slice.height)
         canvas.drawBitmap(bitmapSlice, margin.toFloat(), margin.toFloat(), null)
+        bitmapSlice.recycle()
         canvas.drawText(
             context.getString(R.string.export_page_of, index + 1, slices.size),
             pageWidth / 2f,
@@ -154,4 +161,55 @@ fun shareExportedFile(context: Context, file: File, mimeType: String, chooserTit
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, chooserTitle))
+}
+
+fun deliverExportedFile(
+    context: Context,
+    file: File,
+    mimeType: String,
+    chooserTitle: String,
+    destination: ExportDestination
+): ExportOutcome {
+    if (destination == ExportDestination.SHARE) {
+        shareExportedFile(context, file, mimeType, chooserTitle)
+        return ExportOutcome(file = file, destination = destination, pageCount = if (mimeType == "application/pdf") countPdfPages(context, file) else 1)
+    }
+    val saved = copyExportToDownloads(context, file, mimeType)
+    return ExportOutcome(file = saved, destination = destination, pageCount = if (mimeType == "application/pdf") countPdfPages(context, saved) else 1)
+}
+
+private fun copyExportToDownloads(context: Context, file: File, mimeType: String): File {
+    val resolver = context.contentResolver
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, file.name)
+            put(MediaStore.Downloads.MIME_TYPE, mimeType)
+            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: throw IllegalStateException("Could not create Downloads file")
+        resolver.openOutputStream(uri)?.use { out ->
+            FileInputStream(file).use { input -> input.copyTo(out) }
+        } ?: throw IllegalStateException("Could not open Downloads file")
+        values.clear()
+        values.put(MediaStore.Downloads.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        return file
+    }
+
+    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+    downloadsDir.mkdirs()
+    val saved = File(downloadsDir, file.name)
+    FileInputStream(file).use { input ->
+        FileOutputStream(saved).use { out -> input.copyTo(out) }
+    }
+    return saved
+}
+
+private fun countPdfPages(context: Context, file: File): Int {
+    PDFBoxResourceLoader.init(context.applicationContext)
+    return runCatching {
+        PDDocument.load(file).use { it.numberOfPages }
+    }.getOrDefault(1)
 }

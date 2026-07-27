@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -20,6 +23,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
@@ -36,6 +40,12 @@ data class ExportCommentRow(
     val authorLabel: String?,
     val timestampLabel: String,
     val body: String
+)
+
+data class ExportSubtaskRow(
+    val title: String,
+    val done: Boolean,
+    val depth: Int = 0
 )
 
 private val CardWidth = 420.dp
@@ -75,12 +85,21 @@ fun TaskExportCard(
     includeNotes: Boolean,
     comments: List<ExportCommentRow>,
     includeComments: Boolean,
+    recurrenceLabel: String? = null,
+    reminderLabel: String? = null,
+    subtasks: List<ExportSubtaskRow> = emptyList(),
+    includeSubtasks: Boolean = true,
+    includeScheduleDetails: Boolean = true,
     accentColor: Color,
     generatedOn: String,
+    showMadeWithFooter: Boolean = true,
+    cardWidth: Dp = CardWidth,
     onRowBoundary: (Float) -> Unit = {}
 ) {
     val showNotes = includeNotes && !notes.isNullOrBlank()
     val showComments = includeComments && comments.isNotEmpty()
+    val showSubtasks = includeSubtasks && subtasks.isNotEmpty()
+    val showScheduleDetails = includeScheduleDetails && (recurrenceLabel != null || reminderLabel != null)
 
     CompositionLocalProvider(LocalYataAccents provides LightAccents) {
         MaterialTheme(
@@ -89,7 +108,7 @@ fun TaskExportCard(
             shapes = Shapes
         ) {
         Surface(color = Color.White) {
-            Column(modifier = Modifier.width(CardWidth)) {
+            Column(modifier = Modifier.width(cardWidth)) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -173,7 +192,11 @@ fun TaskExportCard(
                         )
                     }
 
-                    val hasMeta = projectName != null || listName != null || assigneeNames.isNotEmpty() || tagChips.isNotEmpty()
+                    val hasMeta = projectName != null ||
+                        listName != null ||
+                        assigneeNames.isNotEmpty() ||
+                        tagChips.isNotEmpty() ||
+                        showScheduleDetails
                     if (hasMeta) {
                         Spacer(modifier = Modifier.height(14.dp))
                         Box(
@@ -185,26 +208,95 @@ fun TaskExportCard(
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        projectName?.let { ExportMetaLine(label = "Project", value = it) }
-                        listName?.let { ExportMetaLine(label = "List", value = it) }
+                        projectName?.let {
+                            ExportLabeledPills(label = "Project") {
+                                ExportPill(text = it, color = accentColor, fontSize = 10.sp)
+                            }
+                        }
+                        listName?.let {
+                            ExportLabeledPills(label = "List") {
+                                ExportPill(
+                                    text = it,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
                         if (assigneeNames.isNotEmpty()) {
-                            ExportMetaLine(label = "Assigned to", value = assigneeNames.joinToString(", "))
+                            ExportLabeledPills(label = "Assigned to") {
+                                assigneeNames.forEach { name ->
+                                    ExportPill(
+                                        text = "@$name",
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
                         }
                         if (tagChips.isNotEmpty()) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            ExportLabeledPills(label = "Tags") {
                                 tagChips.forEach { chip ->
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(chip.color.copy(alpha = 0.14f))
-                                            .padding(horizontal = 7.dp, vertical = 3.dp)
-                                    ) {
-                                        Text(
-                                            text = chip.name,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = chip.color
-                                        )
-                                    }
+                                    ExportPill(text = chip.name, color = chip.color, fontSize = 10.sp)
+                                }
+                            }
+                        }
+                        if (showScheduleDetails) {
+                            ExportLabeledPills(label = "Schedule") {
+                                recurrenceLabel?.let {
+                                    ExportPill(
+                                        text = it,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                                reminderLabel?.let {
+                                    ExportPill(
+                                        text = "Reminder: $it",
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (showSubtasks) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 28.dp, vertical = 20.dp)
+                            .onGloballyPositioned { onRowBoundary(it.boundsInRoot().bottom) }
+                    ) {
+                        val doneSubtasks = subtasks.count { it.done }
+                        Text(
+                            text = "SUBTASKS ($doneSubtasks/${subtasks.size})",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            subtasks.forEach { subtask ->
+                                Row(verticalAlignment = Alignment.Top) {
+                                    Spacer(modifier = Modifier.width((subtask.depth * 14).dp))
+                                    Icon(
+                                        imageVector = if (subtask.done) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
+                                        contentDescription = null,
+                                        tint = if (subtask.done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = subtask.title,
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            textDecoration = if (subtask.done) TextDecoration.LineThrough else TextDecoration.None
+                                        ),
+                                        color = if (subtask.done) {
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -278,32 +370,34 @@ fun TaskExportCard(
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 28.dp)
-                        .height(1.dp)
-                        .background(HairlineColor)
-                )
+                if (showMadeWithFooter) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 28.dp)
+                            .height(1.dp)
+                            .background(HairlineColor)
+                    )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onGloballyPositioned { onRowBoundary(it.boundsInRoot().bottom) }
-                        .padding(horizontal = 28.dp, vertical = 18.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Made with YATA",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Generated $generatedOn",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onGloballyPositioned { onRowBoundary(it.boundsInRoot().bottom) }
+                            .padding(horizontal = 28.dp, vertical = 18.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Made with YATA",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Generated $generatedOn",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
         }
@@ -323,22 +417,6 @@ private fun ExportBadge(text: String, color: Color) {
             text = text,
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp, fontSize = 10.sp),
             color = Color.White
-        )
-    }
-}
-
-@Composable
-private fun ExportMetaLine(label: String, value: String) {
-    Row {
-        Text(
-            text = "$label: ",
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
