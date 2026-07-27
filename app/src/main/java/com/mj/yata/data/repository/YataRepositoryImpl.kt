@@ -25,7 +25,8 @@ import javax.inject.Singleton
 class YataRepositoryImpl @Inject constructor(
     private val db: AppDatabase,
     private val reminderScheduler: TaskReminderScheduler,
-    private val widgetUpdater: WidgetUpdater
+    private val widgetUpdater: WidgetUpdater,
+    private val userPreferences: com.mj.yata.data.local.datastore.UserPreferences
 ) : YataRepository {
 
     private val repositoryScope = kotlinx.coroutines.CoroutineScope(
@@ -373,8 +374,12 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun purgeOldTrash() {
-        val thirtyDaysAgo = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
-        db.taskDao().purgeTrashOlderThan(thirtyDaysAgo)
+        // 0 means "keep forever" — skip the purge entirely rather than treating a zero-day
+        // cutoff as "delete everything currently in Trash".
+        val retentionDays = userPreferences.trashRetentionDaysFlow.first()
+        if (retentionDays <= 0) return
+        val cutoff = System.currentTimeMillis() - retentionDays.toLong() * 24 * 60 * 60 * 1000
+        db.taskDao().purgeTrashOlderThan(cutoff)
     }
 
     override fun getCommentsForTask(taskId: String): Flow<List<TaskComment>> {

@@ -70,6 +70,8 @@ fun ListDetailScreen(
     val list = remember(lists, listId) { lists.find { it.id == listId } }
     val accents = LocalYataAccents.current
     val scope = rememberCoroutineScope()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsState()
+    val defaultPriority by viewModel.defaultPriority.collectAsState()
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
 
@@ -536,7 +538,9 @@ fun ListDetailScreen(
                 onDismiss = { isNewTaskSheetOpen = false },
                 projectsEnabled = projectsFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
-                peopleEnabled = peopleFeatureEnabled
+                peopleEnabled = peopleFeatureEnabled,
+                defaultDueDate = defaultDueDate,
+                defaultPriority = defaultPriority
             )
         }
     }

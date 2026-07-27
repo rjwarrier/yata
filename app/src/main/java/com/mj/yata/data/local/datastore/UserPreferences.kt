@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.mj.yata.domain.model.AppFont
+import com.mj.yata.domain.model.DefaultDueDate
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.util.decodeSalt
 import com.mj.yata.util.encodeSalt
@@ -122,6 +123,11 @@ class UserPreferences @Inject constructor(
         val SORT_MODE_PROJECT     = stringPreferencesKey("sort_mode_project")
         val SORT_MODE_LIST        = stringPreferencesKey("sort_mode_list")
         val SORT_MODE_PERSON      = stringPreferencesKey("sort_mode_person")
+        val DEFAULT_DUE_DATE      = stringPreferencesKey("default_due_date")
+        val DEFAULT_PRIORITY      = stringPreferencesKey("default_priority")
+        // Days a soft-deleted task stays in Trash before purgeOldTrash removes it. 0 = keep
+        // forever; the purge is skipped entirely rather than treating 0 as "delete immediately".
+        val TRASH_RETENTION_DAYS  = intPreferencesKey("trash_retention_days")
         val SORT_MODE_TAG_DETAIL  = stringPreferencesKey("sort_mode_tag_detail")
         val SORT_MODE_TAGS_TAB    = stringPreferencesKey("sort_mode_tags_tab")
         val SORT_MODE_PEOPLE_TAB  = stringPreferencesKey("sort_mode_people_tab")
@@ -224,6 +230,15 @@ class UserPreferences @Inject constructor(
     val sortModeProjectFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_PROJECT]) }
     val sortModeListFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_LIST]) }
     val sortModePersonFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_PERSON]) }
+    /** Defaults applied to a newly created task. TODAY preserves the previous hardcoded behavior. */
+    val defaultDueDateFlow: Flow<DefaultDueDate> = dataStore.data.map { prefs ->
+        DefaultDueDate.entries.firstOrNull { it.name == prefs[DEFAULT_DUE_DATE] } ?: DefaultDueDate.TODAY
+    }
+    /** One of Task.priority's values: "none" | "low" | "med" | "high". */
+    val defaultPriorityFlow: Flow<String> = dataStore.data.map { prefs ->
+        prefs[DEFAULT_PRIORITY]?.takeIf { it in setOf("none", "low", "med", "high") } ?: "none"
+    }
+    val trashRetentionDaysFlow: Flow<Int> = dataStore.data.map { it[TRASH_RETENTION_DAYS] ?: 30 }
     val sortModeTagDetailFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
     val sortModeTagsTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
     val sortModePeopleTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
@@ -330,6 +345,18 @@ class UserPreferences @Inject constructor(
 
     suspend fun setSortModePerson(mode: TaskSortMode) {
         dataStore.edit { it[SORT_MODE_PERSON] = mode.name }
+    }
+
+    suspend fun setDefaultDueDate(mode: DefaultDueDate) {
+        dataStore.edit { it[DEFAULT_DUE_DATE] = mode.name }
+    }
+
+    suspend fun setDefaultPriority(priority: String) {
+        dataStore.edit { it[DEFAULT_PRIORITY] = priority }
+    }
+
+    suspend fun setTrashRetentionDays(days: Int) {
+        dataStore.edit { it[TRASH_RETENTION_DAYS] = days }
     }
 
     suspend fun setSortModeTagDetail(mode: TaskSortMode) {

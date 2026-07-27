@@ -169,12 +169,14 @@ fun NewTaskSheet(
     projectsEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
-    voiceLanguage: String = "default"
+    voiceLanguage: String = "default",
+    defaultDueDate: com.mj.yata.domain.model.DefaultDueDate = com.mj.yata.domain.model.DefaultDueDate.TODAY,
+    defaultPriority: String = "none"
 ) {
     var title by remember { mutableStateOf(TextFieldValue("")) }
     var selectedListId by remember { mutableStateOf(initialListId) }
     var selectedProjectId by remember { mutableStateOf(initialProjectId) }
-    var selectedPriority by remember { mutableStateOf("none") }
+    var selectedPriority by remember { mutableStateOf(defaultPriority) }
     // No manual toggle exists for this yet (unlike due/time/priority below) — quick-add is
     // currently the only way to flag a task before it's created, so there's no "manually set"
     // state to protect it from being overwritten.
@@ -182,15 +184,16 @@ fun NewTaskSheet(
     var selectedSection by remember { mutableStateOf("Afternoon") }
 
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
-    // otherwise fall back to the pre-selected project's due date, otherwise today.
-    val initialDueDate = remember(projects, initialProjectId, initialDueDateOverride) {
+    // otherwise the pre-selected project's due date, otherwise the user's configured default
+    // (which is TODAY unless changed, preserving the previous hardcoded behavior).
+    val initialDueDate = remember(projects, initialProjectId, initialDueDateOverride, defaultDueDate) {
         if (initialDueDateOverride != null) {
             initialDueDateOverride
         } else if (initialProjectId != null) {
             val projectObj = projects.find { it.id == initialProjectId }
             projectObj?.due
         } else {
-            LocalDate.now().toString()
+            defaultDueDate.resolve()
         }
     }
     var selectedDueDate by remember { mutableStateOf<String?>(initialDueDate) }

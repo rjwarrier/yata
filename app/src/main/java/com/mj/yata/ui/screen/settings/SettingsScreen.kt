@@ -36,6 +36,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -47,6 +48,7 @@ import com.mj.yata.R
 import com.mj.yata.data.cloud.CloudBackupError
 import com.mj.yata.data.cloud.isCloudBackupStale
 import com.mj.yata.domain.model.AppFont
+import com.mj.yata.domain.model.DefaultDueDate
 import com.mj.yata.domain.model.FabPosition
 import com.mj.yata.domain.model.TaskRowDensity
 import com.mj.yata.domain.model.ThemeMode
@@ -122,6 +124,9 @@ fun SettingsScreen(
     val fabPosition = uiState.fabPosition
     val uiScale = uiState.uiScale
     val dynamicColorEnabled = uiState.dynamicColorEnabled
+    val trashRetentionDays by viewModel.trashRetentionDays.collectAsState()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsState()
+    val defaultPriority by viewModel.defaultPriority.collectAsState()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
@@ -138,6 +143,7 @@ fun SettingsScreen(
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
     var showDefaultListMenu by remember { mutableStateOf(false) }
+    var showTrashRetentionMenu by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
     var editingName by remember { mutableStateOf(false) }
@@ -717,6 +723,61 @@ fun SettingsScreen(
             // conventions the app assumes. Previously buried at the end of PREFERENCES.
             SettingsSectionHeader(stringResource(R.string.settings_section_task_defaults))
             SettingsSectionCard {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_default_due_date),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_default_due_date_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val dueTodayLabel = stringResource(R.string.settings_due_today)
+                    val dueTomorrowLabel = stringResource(R.string.settings_due_tomorrow)
+                    val dueNoneLabel = stringResource(R.string.settings_due_none)
+                    SegmentedControl(
+                        items = listOf(DefaultDueDate.TODAY, DefaultDueDate.TOMORROW, DefaultDueDate.NONE),
+                        selectedItem = defaultDueDate,
+                        onItemSelected = { viewModel.setDefaultDueDate(it) },
+                        labelProvider = {
+                            when (it) {
+                                DefaultDueDate.TODAY -> dueTodayLabel
+                                DefaultDueDate.TOMORROW -> dueTomorrowLabel
+                                DefaultDueDate.NONE -> dueNoneLabel
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_default_priority),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    val prioNone = stringResource(R.string.settings_priority_none)
+                    val prioLow = stringResource(R.string.settings_priority_low)
+                    val prioMed = stringResource(R.string.settings_priority_med)
+                    val prioHigh = stringResource(R.string.settings_priority_high)
+                    SegmentedControl(
+                        items = listOf("none", "low", "med", "high"),
+                        selectedItem = defaultPriority,
+                        onItemSelected = { viewModel.setDefaultPriority(it) },
+                        labelProvider = {
+                            when (it) {
+                                "low" -> prioLow
+                                "med" -> prioMed
+                                "high" -> prioHigh
+                                else -> prioNone
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                 Box {
                     SettingsRow(
                         label = stringResource(R.string.settings_default_list),
@@ -1258,14 +1319,65 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Trash",
+                                text = stringResource(R.string.trash_title),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Deleted tasks are kept here for 30 days.",
+                                // Reflects the configured retention rather than claiming a fixed
+                                // 30 days, which stopped being true once this became a setting.
+                                text = if (trashRetentionDays <= 0) {
+                                    stringResource(R.string.settings_trash_kept_forever)
+                                } else {
+                                    pluralStringResource(
+                                        R.plurals.settings_trash_kept_days,
+                                        trashRetentionDays,
+                                        trashRetentionDays
+                                    )
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Box {
+                        val retentionOptions = listOf(7, 30, 90, 0)
+                        SettingsRow(
+                            label = stringResource(R.string.settings_trash_retention),
+                            value = if (trashRetentionDays <= 0) {
+                                stringResource(R.string.settings_trash_forever)
+                            } else {
+                                pluralStringResource(
+                                    R.plurals.settings_trash_days_value,
+                                    trashRetentionDays,
+                                    trashRetentionDays
+                                )
+                            },
+                            onClick = { showTrashRetentionMenu = true }
+                        )
+                        DropdownMenu(
+                            expanded = showTrashRetentionMenu,
+                            onDismissRequest = { showTrashRetentionMenu = false }
+                        ) {
+                            retentionOptions.forEach { days ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (days <= 0) {
+                                                stringResource(R.string.settings_trash_forever)
+                                            } else {
+                                                pluralStringResource(R.plurals.settings_trash_days_value, days, days)
+                                            }
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.setTrashRetentionDays(days)
+                                        showTrashRetentionMenu = false
+                                    }
+                                )
+                            }
                         }
                     }
 

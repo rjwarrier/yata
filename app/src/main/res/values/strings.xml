@@ -118,6 +118,31 @@
     <string name="settings_voice_system_default">System Default (Auto)</string>
     <string name="settings_none">None</string>
 
+    <!-- New-task defaults -->
+    <string name="settings_default_due_date">Default due date</string>
+    <string name="settings_default_due_date_desc">What a new task is due when you don\'t pick a date yourself.</string>
+    <string name="settings_due_today">Today</string>
+    <string name="settings_due_tomorrow">Tomorrow</string>
+    <string name="settings_due_none">No date</string>
+    <string name="settings_default_priority">Default priority</string>
+    <string name="settings_priority_none">None</string>
+    <string name="settings_priority_low">Low</string>
+    <string name="settings_priority_med">Medium</string>
+    <string name="settings_priority_high">High</string>
+
+    <!-- Trash retention -->
+    <string name="settings_trash_retention">Keep deleted tasks for</string>
+    <string name="settings_trash_forever">Forever</string>
+    <string name="settings_trash_kept_forever">Deleted tasks are kept here until you remove them.</string>
+    <plurals name="settings_trash_kept_days">
+        <item quantity="one">Deleted tasks are kept here for %1$d day.</item>
+        <item quantity="other">Deleted tasks are kept here for %1$d days.</item>
+    </plurals>
+    <plurals name="settings_trash_days_value">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+
     <!-- Shared actions -->
     <string name="action_cancel">Cancel</string>
     <string name="action_save">Save</string>

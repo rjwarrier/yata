@@ -76,6 +76,8 @@ fun TagDetailScreen(
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsState()
+    val defaultPriority by viewModel.defaultPriority.collectAsState()
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -479,7 +481,9 @@ fun TagDetailScreen(
                 onDismiss = { isNewTaskSheetOpen = false },
                 projectsEnabled = projectsFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
-                peopleEnabled = peopleFeatureEnabled
+                peopleEnabled = peopleFeatureEnabled,
+                defaultDueDate = defaultDueDate,
+                defaultPriority = defaultPriority
             )
         }
     }

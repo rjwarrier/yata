@@ -74,6 +74,8 @@ fun ProjectDetailScreen(
     val accents = LocalYataAccents.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsState()
+    val defaultPriority by viewModel.defaultPriority.collectAsState()
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
 
     // A project's tasks are already scoped to this one project, so the export's subheading
@@ -662,7 +664,9 @@ fun ProjectDetailScreen(
                 onDismiss = { isNewTaskSheetOpen = false },
                 projectsEnabled = projectsFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
-                peopleEnabled = peopleFeatureEnabled
+                peopleEnabled = peopleFeatureEnabled,
+                defaultDueDate = defaultDueDate,
+                defaultPriority = defaultPriority
             )
         }
     }

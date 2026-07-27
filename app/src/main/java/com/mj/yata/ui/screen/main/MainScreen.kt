@@ -91,6 +91,8 @@ fun MainScreen(
     initialQuickAddListId: String? = null
 ) {
     val scope = rememberCoroutineScope()
+    val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
+    val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -886,7 +888,9 @@ fun MainScreen(
                     projectsEnabled = projectsFeatureEnabled,
                     tagsEnabled = tagsFeatureEnabled,
                     peopleEnabled = peopleFeatureEnabled,
-                    voiceLanguage = voiceLanguage
+                    voiceLanguage = voiceLanguage,
+                    defaultDueDate = defaultDueDate,
+                    defaultPriority = defaultPriority
                 )
             }
         } else {

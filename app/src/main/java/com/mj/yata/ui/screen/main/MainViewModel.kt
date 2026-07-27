@@ -595,6 +595,28 @@ private data class MainNavigationState(
     val dynamicColorEnabled: StateFlow<Boolean> = userPreferences.dynamicColorEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    // New-task defaults, applied by NewTaskSheet when nothing more specific overrides them.
+    val defaultDueDate: StateFlow<com.mj.yata.domain.model.DefaultDueDate> = userPreferences.defaultDueDateFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.DefaultDueDate.TODAY)
+
+    val defaultPriority: StateFlow<String> = userPreferences.defaultPriorityFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "none")
+
+    val trashRetentionDays: StateFlow<Int> = userPreferences.trashRetentionDaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 30)
+
+    fun setDefaultDueDate(mode: com.mj.yata.domain.model.DefaultDueDate) {
+        viewModelScope.launch { userPreferences.setDefaultDueDate(mode) }
+    }
+
+    fun setDefaultPriority(priority: String) {
+        viewModelScope.launch { userPreferences.setDefaultPriority(priority) }
+    }
+
+    fun setTrashRetentionDays(days: Int) {
+        viewModelScope.launch { userPreferences.setTrashRetentionDays(days) }
+    }
+
     val customThemeSeedColor: StateFlow<Int?> = userPreferences.customThemeSeedColorFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
