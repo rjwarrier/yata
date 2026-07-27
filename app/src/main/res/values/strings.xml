@@ -150,7 +150,7 @@
     <string name="settings_app_language_desc">Choose the language YATA is displayed in.</string>
 
     <!-- Archive -->
-    <string name="settings_archive_desc">Shelved tasks, kept indefinitely and hidden from your lists.</string>
+    <string name="settings_archive_desc">Shelve tasks without deleting them. Archived tasks are hidden from lists, kept indefinitely, and can be unarchived.</string>
     <string name="settings_auto_archive">Auto-archive completed after</string>
     <string name="settings_auto_archive_off">Off</string>
     <plurals name="settings_auto_archive_value">
@@ -184,8 +184,12 @@
 
     <!-- Trash -->
     <string name="trash_title">Trash</string>
-    <string name="trash_empty_state">Trash is empty.</string>
-    <string name="trash_retention_notice">Deleted tasks are kept for 30 days, then removed automatically.</string>
+    <string name="trash_empty_state">Trash is empty. Deleted tasks will appear here before they are permanently removed.</string>
+    <string name="trash_retention_notice_forever">Deleted tasks stay in Trash until you restore them or delete them forever.</string>
+    <plurals name="trash_retention_notice_days">
+        <item quantity="one">Deleted tasks stay in Trash for %1$d day, then are permanently removed.</item>
+        <item quantity="other">Deleted tasks stay in Trash for %1$d days, then are permanently removed.</item>
+    </plurals>
     <string name="trash_empty_confirm_title">Empty trash?</string>
     <string name="trash_empty_confirm_action">Empty Trash</string>
     <plurals name="trash_empty_confirm_body">
@@ -201,8 +205,8 @@
 
     <!-- Archive -->
     <string name="archive_title">Archive</string>
-    <string name="archive_empty_state">No archived tasks.</string>
-    <string name="archive_notice">Archived tasks are kept indefinitely and hidden from your lists. Unarchive to bring one back.</string>
+    <string name="archive_empty_state">No shelved tasks in Archive.</string>
+    <string name="archive_notice">Archive shelves tasks without deleting them. They stay hidden from normal lists, never expire, and can be unarchived anytime.</string>
     <string name="cd_archive_unarchive">Unarchive task</string>
 
     <!-- Bulk selection toolbar -->

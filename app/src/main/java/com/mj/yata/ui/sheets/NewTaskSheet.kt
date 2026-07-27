@@ -51,6 +51,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -204,6 +205,7 @@ fun NewTaskSheet(
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
+    var showRecurrenceSheet by remember { mutableStateOf(false) }
 
     // Quick-add: typing a date/time phrase in the title (e.g. "tomorrow 3pm") prefills these
     // chips. Once the user picks a due date/time manually, their choice always wins over
@@ -348,6 +350,8 @@ fun NewTaskSheet(
                 title = TextFieldValue(properTitle, TextRange(properTitle.length))
                 if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
                 if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
+                if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
+                if (parsed.reminder != null) { selectedReminder = parsed.reminder; reminderManuallySet = true }
                 if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
                 if (parsed.flag) selectedFlag = true
                 if (parsed.projectName != null) {
@@ -680,39 +684,72 @@ fun NewTaskSheet(
                     )
                 }
             } else if (quickAddMatched) {
-                val detectedLabel = listOfNotNull(
-                    quickAdd.due?.let { TaskScheduleUtils.formatDueDate(it) },
-                    quickAdd.time,
-                    quickAdd.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) },
-                    quickAdd.reminder?.let { "remind $it" },
+                val detectedItems = listOfNotNull(
+                    quickAdd.due?.let { "Due ${TaskScheduleUtils.formatDueDate(it)}" },
+                    quickAdd.time?.let { "Time $it" },
+                    quickAdd.recurrence?.let { "Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}" },
+                    quickAdd.reminder?.let { "Remind $it" },
                     quickAdd.priority?.let { "${it.uppercase()} priority" },
-                    "Flagged".takeIf { quickAdd.flag }
-                ).joinToString(" · ")
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    "Flagged".takeIf { quickAdd.flag },
+                    quickAdd.projectName?.let { "Project $it" },
+                    quickAdd.listName?.let { "List $it" },
+                    quickAdd.tagNames.takeIf { it.isNotEmpty() }?.joinToString(", ") { "#$it" }?.let { "Tags $it" },
+                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() }?.joinToString(", ") { "@$it" }?.let { "People $it" }
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Today,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Today,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "Smart add understood this task as:",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.new_task_ignore_detected_date_time),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .clickable { quickAddDismissed = true }
+                        )
+                    }
                     Text(
-                        text = "Detected: $detectedLabel",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
+                        text = "Title: ${quickAdd.title.toProperCase()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = stringResource(R.string.new_task_ignore_detected_date_time),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clip(CircleShape)
-                            .clickable { quickAddDismissed = true }
-                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        detectedItems.forEach { item ->
+                            YataSelectChip(
+                                label = item,
+                                selected = true,
+                                onClick = {},
+                                tint = MaterialTheme.colorScheme.primary,
+                                showCheck = false,
+                                height = 30.dp
+                            )
+                        }
+                    }
                 }
             }
 
@@ -879,7 +916,11 @@ fun NewTaskSheet(
                         )
                         "Repeat" -> RepeatPanel(
                             selectedRecurrence = selectedRecurrence,
-                            onSelect = { setRecurrence(it) }
+                            onSelect = { setRecurrence(it) },
+                            onCustom = {
+                                activePanel = null
+                                showRecurrenceSheet = true
+                            }
                         )
                     }
                 }
@@ -1104,6 +1145,21 @@ fun NewTaskSheet(
         }
     )
 
+    if (showRecurrenceSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showRecurrenceSheet = false }
+        ) {
+            RecurrenceSheet(
+                initialRecurrence = selectedRecurrence,
+                onSave = {
+                    setRecurrence(it)
+                    showRecurrenceSheet = false
+                },
+                onDismiss = { showRecurrenceSheet = false }
+            )
+        }
+    }
+
     if (isVoiceOverlayOpen) {
         com.mj.yata.ui.widgets.VoiceTaskOverlay(
             isOpen = isVoiceOverlayOpen,
@@ -1114,6 +1170,8 @@ fun NewTaskSheet(
                 title = TextFieldValue(properTitle, TextRange(properTitle.length))
                 if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
                 if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
+                if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
+                if (parsed.reminder != null) { selectedReminder = parsed.reminder; reminderManuallySet = true }
                 if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
                 if (parsed.flag) selectedFlag = true
                 if (parsed.projectName != null) {
@@ -1417,7 +1475,8 @@ private fun TagsPanel(
 @Composable
 private fun RepeatPanel(
     selectedRecurrence: Recurrence?,
-    onSelect: (Recurrence?) -> Unit
+    onSelect: (Recurrence?) -> Unit,
+    onCustom: () -> Unit
 ) {
     Column {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1426,7 +1485,8 @@ private fun RepeatPanel(
                 "Daily" to Recurrence("daily", 1, null, null, RecurrenceEnds.Never),
                 "Weekdays" to Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never),
                 "Weekly" to Recurrence("weekly", 1, listOf("TH"), null, RecurrenceEnds.Never),
-                "Monthly" to Recurrence("monthly", 1, null, 16, RecurrenceEnds.Never)
+                "Monthly" to Recurrence("monthly", 1, null, 16, RecurrenceEnds.Never),
+                "Yearly" to Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
             )
             presets.forEach { (label, rec) ->
                 val isSelected = if (rec == null) selectedRecurrence == null
@@ -1439,10 +1499,14 @@ private fun RepeatPanel(
                     showCheck = false
                 )
             }
+            YataDashedAddChip(
+                label = "Custom…",
+                onClick = onCustom
+            )
         }
         Spacer(modifier = Modifier.size(8.dp))
         Text(
-            text = "For custom rules, open a task → Repeats.",
+            text = "Custom rules support intervals, weekdays, monthly dates, yearly repeats, and end dates.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

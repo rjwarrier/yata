@@ -46,6 +46,7 @@ fun TrashScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsState()
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsState()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsState()
+    val trashRetentionDays by viewModel.trashRetentionDays.collectAsState()
 
     var showEmptyTrashDialog by remember { mutableStateOf(false) }
     var pendingPermanentDelete by remember { mutableStateOf<Task?>(null) }
@@ -118,7 +119,15 @@ fun TrashScreen(
             ) {
                 item {
                     Text(
-                        text = stringResource(R.string.trash_retention_notice),
+                        text = if (trashRetentionDays <= 0) {
+                            stringResource(R.string.trash_retention_notice_forever)
+                        } else {
+                            pluralStringResource(
+                                R.plurals.trash_retention_notice_days,
+                                trashRetentionDays,
+                                trashRetentionDays
+                            )
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp)
@@ -127,6 +136,7 @@ fun TrashScreen(
                 items(deletedTasks, key = { it.id }) { task ->
                     TrashTaskRow(
                         task = task,
+                        retentionDays = trashRetentionDays,
                         onRestore = { viewModel.restoreTask(task.id) },
                         onDeleteForever = { pendingPermanentDelete = task },
                         modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
@@ -183,6 +193,7 @@ fun TrashScreen(
 @Composable
 private fun TrashTaskRow(
     task: Task,
+    retentionDays: Int,
     onRestore: () -> Unit,
     onDeleteForever: () -> Unit,
     modifier: Modifier = Modifier
@@ -206,7 +217,7 @@ private fun TrashTaskRow(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = deletedLabel(task.deletedAt),
+                    text = deletedLabel(task.deletedAt, retentionDays),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -229,16 +240,17 @@ private fun TrashTaskRow(
     }
 }
 
-private fun deletedLabel(deletedAt: Long?): String {
+private fun deletedLabel(deletedAt: Long?, retentionDays: Int): String {
     if (deletedAt == null) return "Deleted"
     val deletedDate = Instant.ofEpochMilli(deletedAt).atZone(ZoneId.systemDefault()).toLocalDate()
     val today = java.time.LocalDate.now()
     val daysAgo = ChronoUnit.DAYS.between(deletedDate, today)
-    val daysLeft = (30 - daysAgo).coerceAtLeast(0)
     val whenText = when (daysAgo) {
         0L -> "today"
         1L -> "yesterday"
         else -> "on " + deletedDate.format(DateTimeFormatter.ofPattern("MMM d"))
     }
+    if (retentionDays <= 0) return "Deleted $whenText · kept until removed"
+    val daysLeft = (retentionDays - daysAgo).coerceAtLeast(0)
     return "Deleted $whenText · $daysLeft days left"
 }

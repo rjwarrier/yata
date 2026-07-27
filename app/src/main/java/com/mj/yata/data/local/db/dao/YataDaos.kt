@@ -201,7 +201,7 @@ interface TaskDao {
             OR p.name LIKE '%' || :rawQuery || '%'
             OR tag.name LIKE '%' || :rawQuery || '%'
             OR s.title LIKE '%' || :rawQuery || '%'
-        ) AND t.deletedAt IS NULL
+        ) AND t.deletedAt IS NULL AND t.archived = 0
     """)
     fun searchTasksWithRelations(searchQuery: String, rawQuery: String): Flow<List<TaskWithRelations>>
 
