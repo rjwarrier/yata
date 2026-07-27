@@ -415,8 +415,7 @@ fun MainScreen(
                                 icon = Icons.Default.Layers,
                                 selected = false,
                                 accentColor = accents.getAccent(project.color),
-                                modifier = Modifier.animateItemPlacement(
-                                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                                 )
                             ) {
                                 onNavigateToProjectDetail(project.id)
@@ -429,8 +428,7 @@ fun MainScreen(
                                 icon = Icons.Default.Folder,
                                 selected = false,
                                 accentColor = accents.getAccent(list.color),
-                                modifier = Modifier.animateItemPlacement(
-                                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                                 )
                             ) {
                                 onNavigateToListDetail(list.id)
@@ -444,8 +442,7 @@ fun MainScreen(
                                 icon = Icons.AutoMirrored.Filled.Label,
                                 selected = false,
                                 accentColor = tagColor,
-                                modifier = Modifier.animateItemPlacement(
-                                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                                 )
                             ) {
                                 onNavigateToTagDetail(tag.id)
@@ -457,8 +454,7 @@ fun MainScreen(
                                 label = person.name,
                                 icon = Icons.Default.Person,
                                 selected = false,
-                                modifier = Modifier.animateItemPlacement(
-                                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                                 )
                             ) {
                                 onNavigateToPersonDetail(person.id)

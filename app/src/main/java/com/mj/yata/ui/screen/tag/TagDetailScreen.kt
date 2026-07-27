@@ -429,8 +429,7 @@ fun TagDetailScreen(
                 items(displayedPendingTaggedTasks, key = { "pending_" + it.id }, contentType = { "task" }) { task ->
                     taskRowFor(
                         task = task,
-                        modifier = Modifier.animateItemPlacement(
-                            animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                        modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                         )
                     )
                 }
@@ -439,8 +438,7 @@ fun TagDetailScreen(
                     items(completedTaggedTasks, key = { "completed_" + it.id }, contentType = { "task" }) { task ->
                         taskRowFor(
                             task = task,
-                            modifier = Modifier.animateItemPlacement(
-                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                             )
                         )
                     }

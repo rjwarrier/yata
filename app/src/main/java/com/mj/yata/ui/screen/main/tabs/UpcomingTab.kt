@@ -476,7 +476,7 @@ fun UpcomingTab(
                                 density = taskRowDensity,
                                 onSwipeToDelete = { onSwipeToDelete(task.id) },
                                 swipeEnabled = !selectionMode,
-                                modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
+                                modifier = Modifier.animateItem(placementSpec = tween(YataDur.sheet, easing = YataEase.emphasized))
                             )
                         }
                     }

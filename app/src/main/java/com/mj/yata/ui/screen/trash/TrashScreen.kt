@@ -129,8 +129,7 @@ fun TrashScreen(
                         task = task,
                         onRestore = { viewModel.restoreTask(task.id) },
                         onDeleteForever = { pendingPermanentDelete = task },
-                        modifier = Modifier.animateItemPlacement(
-                            animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                        modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                         )
                     )
                 }

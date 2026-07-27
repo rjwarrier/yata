@@ -113,8 +113,7 @@ fun ArchiveScreen(
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .animateItemPlacement(
-                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            .animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                             )
                     ) {
                         Row(

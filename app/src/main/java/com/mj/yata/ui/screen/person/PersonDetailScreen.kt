@@ -500,8 +500,7 @@ fun PersonDetailScreen(
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
-                            modifier = Modifier.animateItemPlacement(
-                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                             ),
                             onCommentClick = { pendingCommentTask = task },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
@@ -591,8 +590,7 @@ fun PersonDetailScreen(
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
-                            modifier = Modifier.animateItemPlacement(
-                                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                             ),
                             onCommentClick = { pendingCommentTask = task },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },

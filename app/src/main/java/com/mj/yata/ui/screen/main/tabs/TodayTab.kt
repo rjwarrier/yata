@@ -395,7 +395,7 @@ fun TodayTab(
                         swipeEnabled = !selectionMode,
                         horizontalPadding = 12.dp,
                         showDueDate = true,
-                        modifier = Modifier.animateItemPlacement(tween(YataDur.sheet, easing = YataEase.emphasized))
+                        modifier = Modifier.animateItem(placementSpec = tween(YataDur.sheet, easing = YataEase.emphasized))
                     )
                 }
 

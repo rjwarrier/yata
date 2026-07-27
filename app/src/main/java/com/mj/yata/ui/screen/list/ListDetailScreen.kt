@@ -461,8 +461,7 @@ fun ListDetailScreen(
                             items(completedListTasks, key = { "completed_" + it.id }) { task ->
                                 taskRowFor(
                                     task = task,
-                                    modifier = Modifier.animateItemPlacement(
-                                        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                    modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                                     )
                                 )
                             }

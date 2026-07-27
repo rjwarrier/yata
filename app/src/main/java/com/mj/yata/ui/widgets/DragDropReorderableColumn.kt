@@ -114,8 +114,7 @@ fun <T> DragDropReorderableColumn(
             val animModifier = if (isDragging) {
                 Modifier
             } else {
-                Modifier.animateItemPlacement(
-                    animationSpec = tween(
+                Modifier.animateItem(placementSpec = tween(
                         durationMillis = YataDur.sheet,
                         easing = YataEase.emphasized
                     )

@@ -644,8 +644,7 @@ private fun SearchResultsList(
                     selectionMode = selectionMode,
                     selected = selectedIds.contains(task.id),
                     onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
-                    modifier = Modifier.animateItemPlacement(
-                        animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                    modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
                     ),
                     onCommentClick = { pendingCommentTask = task },
                     onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
