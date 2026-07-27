@@ -255,6 +255,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val uiScale by userPreferences.uiScaleFlow.collectAsState(initial = 1.0f)
             val textScale by userPreferences.textScaleFlow.collectAsState(initial = 1.0f)
             val dynamicColorEnabled by userPreferences.dynamicColorEnabledFlow.collectAsState(initial = true)
+            val undoWindowSeconds by userPreferences.undoWindowSecondsFlow.collectAsState(initial = 4)
             val customThemeSeedColorArgb by userPreferences.customThemeSeedColorFlow.collectAsState(initial = null)
             val appFont by userPreferences.appFontFlow.collectAsState(initial = com.mj.yata.domain.model.AppFont.INTER)
             val enhancedM3ThemingEnabled by userPreferences.enhancedM3ThemingEnabledFlow.collectAsState(initial = false)
@@ -287,6 +288,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             CompositionLocalProvider(
                 LocalDensity provides scaledDensity,
                 com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled,
+                com.mj.yata.ui.widgets.LocalUndoWindowSeconds provides undoWindowSeconds,
                 com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled
             ) {
                 YataTheme(

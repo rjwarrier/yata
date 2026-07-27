@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.R
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.Subtask
@@ -198,6 +199,7 @@ fun TaskDetailScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
@@ -212,7 +214,7 @@ fun TaskDetailScreen(
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
-                if (data.visuals.actionLabel == "Undo") {
+                if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
                     DeleteUndoSnackbar(data)
                 } else {
                     Snackbar(data)
@@ -258,12 +260,8 @@ fun TaskDetailScreen(
                     if (task.recurrence != null && !task.done) {
                         IconButton(onClick = {
                             scope.launch {
-                                val result = snackbarHostState.showSnackbar(
-                                    message = "Occurrence skipped",
-                                    actionLabel = "Undo",
-                                    duration = SnackbarDuration.Short
-                                )
-                                if (result == SnackbarResult.Dismissed) {
+                                val result = showUndoSnackbar(snackbarHostState, "Occurrence skipped", undoWindowSeconds)
+                                if (!result) {
                                     viewModel.skipTaskOccurrence(task.id)
                                 }
                             }
@@ -349,12 +347,8 @@ fun TaskDetailScreen(
                     // back only once the delete actually happens).
                     IconButton(onClick = {
                         scope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                message = "Task deleted",
-                                actionLabel = "Undo",
-                                duration = SnackbarDuration.Short
-                            )
-                            if (result == SnackbarResult.Dismissed) {
+                            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+                            if (!result) {
                                 viewModel.deleteTask(task)
                                 onNavigateBack()
                             }

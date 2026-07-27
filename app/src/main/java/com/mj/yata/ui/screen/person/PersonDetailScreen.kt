@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
@@ -82,6 +83,7 @@ fun PersonDetailScreen(
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val defaultDueDate by viewModel.defaultDueDate.collectAsState()
     val defaultPriority by viewModel.defaultPriority.collectAsState()
     val exportContext = androidx.compose.ui.platform.LocalContext.current
@@ -110,12 +112,8 @@ fun PersonDetailScreen(
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = "Task deleted",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.Dismissed) {
+            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+            if (!result) {
                 viewModel.deleteTask(task)
             }
         }
@@ -164,7 +162,7 @@ fun PersonDetailScreen(
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
-                if (data.visuals.actionLabel == "Undo") {
+                if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
                     com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
                 } else {
                     Snackbar(data)

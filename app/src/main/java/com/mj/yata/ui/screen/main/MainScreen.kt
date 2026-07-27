@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -91,6 +92,7 @@ fun MainScreen(
     initialQuickAddListId: String? = null
 ) {
     val scope = rememberCoroutineScope()
+    val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -101,12 +103,8 @@ fun MainScreen(
     fun bulkDeleteWithUndo(ids: List<String>) {
         if (ids.isEmpty()) return
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.Dismissed) {
+            val result = showUndoSnackbar(snackbarHostState, if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted", undoWindowSeconds)
+            if (!result) {
                 viewModel.bulkDeleteTasks(ids)
             }
         }
@@ -180,12 +178,8 @@ fun MainScreen(
         val previous = tasks.find { it.id == id } ?: return
         viewModel.toggleTaskDone(id) { if (!previous.done) celebrateTrigger++ }
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = if (previous.done) "Task marked open" else "Task completed",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.ActionPerformed) {
+            val result = showUndoSnackbar(snackbarHostState, if (previous.done) "Task marked open" else "Task completed", undoWindowSeconds)
+            if (result) {
                 viewModel.restoreTasks(listOf(previous))
             }
         }
@@ -196,12 +190,8 @@ fun MainScreen(
         if (previous.isEmpty()) return
         viewModel.bulkCompleteTasks(ids)
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = "${previous.size} task(s) completed",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.ActionPerformed) {
+            val result = showUndoSnackbar(snackbarHostState, "${previous.size} task(s) completed", undoWindowSeconds)
+            if (result) {
                 viewModel.restoreTasks(previous)
             }
         }
@@ -546,7 +536,7 @@ fun MainScreen(
         Scaffold(
             snackbarHost = {
                 SnackbarHost(snackbarHostState) { data ->
-                    if (data.visuals.actionLabel == "Undo") {
+                    if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
                         com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
                     } else {
                         Snackbar(data)

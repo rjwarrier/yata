@@ -137,6 +137,8 @@ class UserPreferences @Inject constructor(
         val DAILY_AGENDA_HOUR     = intPreferencesKey("daily_agenda_hour")
         val DAILY_AGENDA_MINUTE   = intPreferencesKey("daily_agenda_minute")
         val OVERDUE_NUDGES_ENABLED = booleanPreferencesKey("overdue_nudges_enabled")
+        // Seconds an undo stays available after a delete. 4 matches the old SnackbarDuration.Short.
+        val UNDO_WINDOW_SECONDS   = intPreferencesKey("undo_window_seconds")
         val SORT_MODE_TAG_DETAIL  = stringPreferencesKey("sort_mode_tag_detail")
         val SORT_MODE_TAGS_TAB    = stringPreferencesKey("sort_mode_tags_tab")
         val SORT_MODE_PEOPLE_TAB  = stringPreferencesKey("sort_mode_people_tab")
@@ -253,6 +255,7 @@ class UserPreferences @Inject constructor(
     val dailyAgendaHourFlow: Flow<Int> = dataStore.data.map { it[DAILY_AGENDA_HOUR] ?: 7 }
     val dailyAgendaMinuteFlow: Flow<Int> = dataStore.data.map { it[DAILY_AGENDA_MINUTE] ?: 30 }
     val overdueNudgesEnabledFlow: Flow<Boolean> = dataStore.data.map { it[OVERDUE_NUDGES_ENABLED] ?: true }
+    val undoWindowSecondsFlow: Flow<Int> = dataStore.data.map { it[UNDO_WINDOW_SECONDS] ?: 4 }
     val sortModeTagDetailFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
     val sortModeTagsTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
     val sortModePeopleTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
@@ -375,6 +378,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setDailyAgendaTime(hour: Int, minute: Int) {
         dataStore.edit { it[DAILY_AGENDA_HOUR] = hour; it[DAILY_AGENDA_MINUTE] = minute }
+    }
+
+    suspend fun setUndoWindowSeconds(seconds: Int) {
+        dataStore.edit { it[UNDO_WINDOW_SECONDS] = seconds }
     }
 
     suspend fun setOverdueNudgesEnabled(enabled: Boolean) {

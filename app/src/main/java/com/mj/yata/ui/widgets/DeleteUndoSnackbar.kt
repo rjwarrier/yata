@@ -16,9 +16,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 
-/** Matches the SnackbarDuration.Short used by delete-undo snackbars, so the visible countdown
- * lands on zero right as the snackbar actually auto-dismisses. */
-const val DELETE_UNDO_SECONDS = 4
+// The countdown length now comes from LocalUndoWindowSeconds (see UndoSnackbar.kt) rather than a
+// constant, so it always matches the window showUndoSnackbar actually enforces. Hardcoding it
+// meant the visible countdown and the real deadline could disagree once the window was made
+// configurable — the worst failure here, since the number is a promise about when delete happens.
 
 /** Custom rendering for a delete-undo snackbar — ticks a live countdown next to the Undo action
  * so it's clear the delete is about to become permanent, instead of a static label.
@@ -29,7 +30,8 @@ const val DELETE_UNDO_SECONDS = 4
  * invisible against the inverted background, so it's pinned to inversePrimary instead. */
 @Composable
 fun DeleteUndoSnackbar(data: SnackbarData) {
-    var remaining by remember(data) { mutableIntStateOf(DELETE_UNDO_SECONDS) }
+    val windowSeconds = LocalUndoWindowSeconds.current
+    var remaining by remember(data, windowSeconds) { mutableIntStateOf(windowSeconds) }
     LaunchedEffect(data) {
         while (remaining > 0) {
             kotlinx.coroutines.delay(1000)

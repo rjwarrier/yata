@@ -621,6 +621,13 @@ private data class MainNavigationState(
     val overdueNudgesEnabled: StateFlow<Boolean> = userPreferences.overdueNudgesEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val undoWindowSeconds: StateFlow<Int> = userPreferences.undoWindowSecondsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
+
+    fun setUndoWindowSeconds(seconds: Int) {
+        viewModelScope.launch { userPreferences.setUndoWindowSeconds(seconds) }
+    }
+
     fun setDailyAgendaEnabled(enabled: Boolean) {
         viewModelScope.launch { userPreferences.setDailyAgendaEnabled(enabled) }
     }

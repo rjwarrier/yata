@@ -130,6 +130,14 @@
     <string name="settings_priority_med">Medium</string>
     <string name="settings_priority_high">High</string>
 
+    <!-- Undo window -->
+    <string name="settings_undo_window">Undo window</string>
+    <string name="settings_undo_window_desc">How long you get to undo a delete before it goes through.</string>
+    <plurals name="settings_undo_window_value">
+        <item quantity="one">%1$ds</item>
+        <item quantity="other">%1$ds</item>
+    </plurals>
+
     <!-- Notification controls -->
     <string name="settings_daily_agenda">Daily agenda</string>
     <string name="settings_daily_agenda_desc">A morning summary of what\'s due today.</string>

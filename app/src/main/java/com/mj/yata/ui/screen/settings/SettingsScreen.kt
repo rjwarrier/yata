@@ -132,6 +132,7 @@ fun SettingsScreen(
     val dailyAgendaHour by viewModel.dailyAgendaHour.collectAsState()
     val dailyAgendaMinute by viewModel.dailyAgendaMinute.collectAsState()
     val overdueNudgesEnabled by viewModel.overdueNudgesEnabled.collectAsState()
+    val undoWindowSeconds by viewModel.undoWindowSeconds.collectAsState()
     val defaultDueDate by viewModel.defaultDueDate.collectAsState()
     val defaultPriority by viewModel.defaultPriority.collectAsState()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
@@ -768,6 +769,36 @@ fun SettingsScreen(
                     checked = taskSwipeActionsEnabled,
                     onCheckedChange = { viewModel.setTaskSwipeActionsEnabled(it) }
                 )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_undo_window),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_undo_window_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Resolved outside the lambda: labelProvider is not a composable scope.
+                    val undoShort = pluralStringResource(R.plurals.settings_undo_window_value, 4, 4)
+                    val undoMedium = pluralStringResource(R.plurals.settings_undo_window_value, 8, 8)
+                    val undoLong = pluralStringResource(R.plurals.settings_undo_window_value, 15, 15)
+                    SegmentedControl(
+                        items = listOf(4, 8, 15),
+                        selectedItem = undoWindowSeconds,
+                        onItemSelected = { viewModel.setUndoWindowSeconds(it) },
+                        labelProvider = { secs ->
+                            when (secs) {
+                                4 -> undoShort
+                                8 -> undoMedium
+                                else -> undoLong
+                            }
+                        }
+                    )
+                }
             }
         }
 

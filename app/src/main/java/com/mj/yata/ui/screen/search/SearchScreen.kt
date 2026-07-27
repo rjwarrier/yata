@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
@@ -164,18 +165,15 @@ fun SearchScreen(
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Swipe-to-delete on a single task reuses the same deferred-Undo-snackbar pattern as the
     // bulk-delete dialog below, just for one id at a time.
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = "Task deleted",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.Dismissed) {
+            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+            if (!result) {
                 viewModel.deleteTask(task)
             }
         }
@@ -215,12 +213,8 @@ fun SearchScreen(
     fun toggleTaskWithUndo(task: Task) {
         viewModel.toggleTaskDone(task.id) {}
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = if (task.done) "Task marked open" else "Task completed",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.ActionPerformed) {
+            val result = showUndoSnackbar(snackbarHostState, if (task.done) "Task marked open" else "Task completed", undoWindowSeconds)
+            if (result) {
                 viewModel.restoreTasks(listOf(task))
             }
         }
@@ -232,12 +226,8 @@ fun SearchScreen(
         viewModel.bulkCompleteTasks(selectedIds.toList())
         selectedIds.clear()
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = "${previous.size} task(s) completed",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short
-            )
-            if (result == SnackbarResult.ActionPerformed) {
+            val result = showUndoSnackbar(snackbarHostState, "${previous.size} task(s) completed", undoWindowSeconds)
+            if (result) {
                 viewModel.restoreTasks(previous)
             }
         }
@@ -248,7 +238,7 @@ fun SearchScreen(
         Scaffold(
             snackbarHost = {
                 SnackbarHost(snackbarHostState) { data ->
-                    if (data.visuals.actionLabel == "Undo") {
+                    if (data.visuals.actionLabel == com.mj.yata.ui.widgets.UNDO_ACTION_LABEL) {
                         com.mj.yata.ui.widgets.DeleteUndoSnackbar(data)
                     } else {
                         Snackbar(data)
@@ -471,12 +461,8 @@ fun SearchScreen(
                     selectedIds.clear()
                     showBulkDeleteDialog = false
                     scope.launch {
-                        val result = snackbarHostState.showSnackbar(
-                            message = if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted",
-                            actionLabel = "Undo",
-                            duration = SnackbarDuration.Short
-                        )
-                        if (result == SnackbarResult.Dismissed) {
+                        val result = showUndoSnackbar(snackbarHostState, if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted", undoWindowSeconds)
+                        if (!result) {
                             viewModel.bulkDeleteTasks(ids)
                         }
                     }
