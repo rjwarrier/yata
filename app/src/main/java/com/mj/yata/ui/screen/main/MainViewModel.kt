@@ -609,6 +609,30 @@ private data class MainNavigationState(
     val autoArchiveDays: StateFlow<Int> = userPreferences.autoArchiveDaysFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
+    val dailyAgendaEnabled: StateFlow<Boolean> = userPreferences.dailyAgendaEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val dailyAgendaHour: StateFlow<Int> = userPreferences.dailyAgendaHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 7)
+
+    val dailyAgendaMinute: StateFlow<Int> = userPreferences.dailyAgendaMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 30)
+
+    val overdueNudgesEnabled: StateFlow<Boolean> = userPreferences.overdueNudgesEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setDailyAgendaEnabled(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setDailyAgendaEnabled(enabled) }
+    }
+
+    fun setDailyAgendaTime(hour: Int, minute: Int) {
+        viewModelScope.launch { userPreferences.setDailyAgendaTime(hour, minute) }
+    }
+
+    fun setOverdueNudgesEnabled(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setOverdueNudgesEnabled(enabled) }
+    }
+
     fun setAutoArchiveDays(days: Int) {
         viewModelScope.launch { userPreferences.setAutoArchiveDays(days) }
     }

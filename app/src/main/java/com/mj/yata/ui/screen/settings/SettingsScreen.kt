@@ -57,6 +57,8 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.theme.THEME_PRESETS
 import com.mj.yata.ui.theme.colorSchemeFromSeed
+import com.mj.yata.notification.DailyAgendaWorker
+import com.mj.yata.notification.OverdueEscalationWorker
 import com.mj.yata.notification.NotificationPermissionUtils
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -126,6 +128,10 @@ fun SettingsScreen(
     val dynamicColorEnabled = uiState.dynamicColorEnabled
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsState()
     val autoArchiveDays by viewModel.autoArchiveDays.collectAsState()
+    val dailyAgendaEnabled by viewModel.dailyAgendaEnabled.collectAsState()
+    val dailyAgendaHour by viewModel.dailyAgendaHour.collectAsState()
+    val dailyAgendaMinute by viewModel.dailyAgendaMinute.collectAsState()
+    val overdueNudgesEnabled by viewModel.overdueNudgesEnabled.collectAsState()
     val defaultDueDate by viewModel.defaultDueDate.collectAsState()
     val defaultPriority by viewModel.defaultPriority.collectAsState()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
@@ -146,6 +152,7 @@ fun SettingsScreen(
     var showDefaultListMenu by remember { mutableStateOf(false) }
     var showTrashRetentionMenu by remember { mutableStateOf(false) }
     var showAutoArchiveMenu by remember { mutableStateOf(false) }
+    var showAgendaTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
     var editingName by remember { mutableStateOf(false) }
@@ -431,6 +438,50 @@ fun SettingsScreen(
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Per-app language picker, Android 13+ only — below that the system has no
+                    // such screen and the intent would resolve to nothing. Deep-links into
+                    // system settings rather than reimplementing a language list, so it always
+                    // matches whichever locales the installed APK actually ships.
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        val languageContext = LocalContext.current
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    runCatching {
+                                        languageContext.startActivity(
+                                            android.content.Intent(
+                                                android.provider.Settings.ACTION_APP_LOCALE_SETTINGS,
+                                                android.net.Uri.fromParts("package", languageContext.packageName, null)
+                                            )
+                                        )
+                                    }
+                                }
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.settings_app_language),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = stringResource(R.string.settings_app_language_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    }
 
                     // Font sits after the color controls: theme mode, Material You and the seed
                     // picker are one continuous "what color is the app" decision, and the font
@@ -903,6 +954,49 @@ fun SettingsScreen(
                         grantedSubtitle = "Battery optimization won't block reminders.",
                         deniedSubtitle = "Battery optimization may delay or drop reminders — tap to fix.",
                         onClick = { NotificationPermissionUtils.requestIgnoreBatteryOptimizations(context) }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // These two workers previously ran unconditionally with no way to silence
+                    // them. Rescheduling happens here rather than only in YataApplication so a
+                    // change applies now instead of at next launch.
+                    SettingsToggleRow(
+                        title = stringResource(R.string.settings_daily_agenda),
+                        subtitle = stringResource(R.string.settings_daily_agenda_desc),
+                        checked = dailyAgendaEnabled,
+                        onCheckedChange = { enabled ->
+                            viewModel.setDailyAgendaEnabled(enabled)
+                            if (enabled) {
+                                DailyAgendaWorker.schedule(context, dailyAgendaHour, dailyAgendaMinute)
+                            } else {
+                                DailyAgendaWorker.cancel(context)
+                            }
+                        }
+                    )
+
+                    AnimatedVisibility(visible = dailyAgendaEnabled) {
+                        SettingsRow(
+                            label = stringResource(R.string.settings_daily_agenda_time),
+                            value = TaskScheduleUtils.formatTime(dailyAgendaHour, dailyAgendaMinute),
+                            onClick = { showAgendaTimePicker = true }
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    SettingsToggleRow(
+                        title = stringResource(R.string.settings_overdue_nudges),
+                        subtitle = stringResource(R.string.settings_overdue_nudges_desc),
+                        checked = overdueNudgesEnabled,
+                        onCheckedChange = { enabled ->
+                            viewModel.setOverdueNudgesEnabled(enabled)
+                            if (enabled) {
+                                OverdueEscalationWorker.schedule(context)
+                            } else {
+                                OverdueEscalationWorker.cancel(context)
+                            }
+                        }
                     )
                 }
             }
@@ -2225,6 +2319,21 @@ fun SettingsScreen(
             }
         )
     }
+
+    YataTimePickerLauncher(
+        show = showAgendaTimePicker,
+        initialTime = TaskScheduleUtils.formatTime(dailyAgendaHour, dailyAgendaMinute),
+        onDismiss = { showAgendaTimePicker = false },
+        onConfirm = { formatted ->
+            val parsed = TaskScheduleUtils.parseTime(formatted)
+            if (parsed != null) {
+                viewModel.setDailyAgendaTime(parsed.hour, parsed.minute)
+                // Reschedule immediately; the worker uses UPDATE so this replaces the pending run.
+                DailyAgendaWorker.schedule(context, parsed.hour, parsed.minute)
+            }
+            showAgendaTimePicker = false
+        }
+    )
 
     YataTimePickerLauncher(
         show = showReminderTimePicker,

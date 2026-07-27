@@ -130,6 +130,17 @@
     <string name="settings_priority_med">Medium</string>
     <string name="settings_priority_high">High</string>
 
+    <!-- Notification controls -->
+    <string name="settings_daily_agenda">Daily agenda</string>
+    <string name="settings_daily_agenda_desc">A morning summary of what\'s due today.</string>
+    <string name="settings_daily_agenda_time">Agenda time</string>
+    <string name="settings_overdue_nudges">Overdue reminders</string>
+    <string name="settings_overdue_nudges_desc">Follow-up notifications for tasks left overdue.</string>
+
+    <!-- App language (Android 13+ per-app language picker) -->
+    <string name="settings_app_language">App language</string>
+    <string name="settings_app_language_desc">Choose the language YATA is displayed in.</string>
+
     <!-- Archive -->
     <string name="settings_archive_desc">Shelved tasks, kept indefinitely and hidden from your lists.</string>
     <string name="settings_auto_archive">Auto-archive completed after</string>

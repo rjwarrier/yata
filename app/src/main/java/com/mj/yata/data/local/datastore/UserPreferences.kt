@@ -131,6 +131,12 @@ class UserPreferences @Inject constructor(
         // Days after completion before a task is auto-archived. 0 = off (default),
         // so this never shelves anything unless the user opts in.
         val AUTO_ARCHIVE_DAYS     = intPreferencesKey("auto_archive_days")
+        // Background notification controls. Both default to on, matching the behaviour before
+        // they were configurable — these workers previously ran unconditionally.
+        val DAILY_AGENDA_ENABLED  = booleanPreferencesKey("daily_agenda_enabled")
+        val DAILY_AGENDA_HOUR     = intPreferencesKey("daily_agenda_hour")
+        val DAILY_AGENDA_MINUTE   = intPreferencesKey("daily_agenda_minute")
+        val OVERDUE_NUDGES_ENABLED = booleanPreferencesKey("overdue_nudges_enabled")
         val SORT_MODE_TAG_DETAIL  = stringPreferencesKey("sort_mode_tag_detail")
         val SORT_MODE_TAGS_TAB    = stringPreferencesKey("sort_mode_tags_tab")
         val SORT_MODE_PEOPLE_TAB  = stringPreferencesKey("sort_mode_people_tab")
@@ -243,6 +249,10 @@ class UserPreferences @Inject constructor(
     }
     val trashRetentionDaysFlow: Flow<Int> = dataStore.data.map { it[TRASH_RETENTION_DAYS] ?: 30 }
     val autoArchiveDaysFlow: Flow<Int> = dataStore.data.map { it[AUTO_ARCHIVE_DAYS] ?: 0 }
+    val dailyAgendaEnabledFlow: Flow<Boolean> = dataStore.data.map { it[DAILY_AGENDA_ENABLED] ?: true }
+    val dailyAgendaHourFlow: Flow<Int> = dataStore.data.map { it[DAILY_AGENDA_HOUR] ?: 7 }
+    val dailyAgendaMinuteFlow: Flow<Int> = dataStore.data.map { it[DAILY_AGENDA_MINUTE] ?: 30 }
+    val overdueNudgesEnabledFlow: Flow<Boolean> = dataStore.data.map { it[OVERDUE_NUDGES_ENABLED] ?: true }
     val sortModeTagDetailFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
     val sortModeTagsTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
     val sortModePeopleTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
@@ -357,6 +367,18 @@ class UserPreferences @Inject constructor(
 
     suspend fun setDefaultPriority(priority: String) {
         dataStore.edit { it[DEFAULT_PRIORITY] = priority }
+    }
+
+    suspend fun setDailyAgendaEnabled(enabled: Boolean) {
+        dataStore.edit { it[DAILY_AGENDA_ENABLED] = enabled }
+    }
+
+    suspend fun setDailyAgendaTime(hour: Int, minute: Int) {
+        dataStore.edit { it[DAILY_AGENDA_HOUR] = hour; it[DAILY_AGENDA_MINUTE] = minute }
+    }
+
+    suspend fun setOverdueNudgesEnabled(enabled: Boolean) {
+        dataStore.edit { it[OVERDUE_NUDGES_ENABLED] = enabled }
     }
 
     suspend fun setAutoArchiveDays(days: Int) {

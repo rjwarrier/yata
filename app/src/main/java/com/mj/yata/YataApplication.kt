@@ -48,8 +48,25 @@ class YataApplication : Application(), Configuration.Provider {
 
             val localInterval = userPreferences.localBackupIntervalMinutesFlow.first()
             LocalBackupWorker.schedule(this@YataApplication, localInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
+
+            // Both notification workers are now user-controllable. Reconciled on every launch so
+            // a preference change applies from the next start even though these are scheduled
+            // here rather than at the moment the switch is flipped.
+            if (userPreferences.overdueNudgesEnabledFlow.first()) {
+                OverdueEscalationWorker.schedule(this@YataApplication)
+            } else {
+                OverdueEscalationWorker.cancel(this@YataApplication)
+            }
+
+            if (userPreferences.dailyAgendaEnabledFlow.first()) {
+                DailyAgendaWorker.schedule(
+                    this@YataApplication,
+                    userPreferences.dailyAgendaHourFlow.first(),
+                    userPreferences.dailyAgendaMinuteFlow.first()
+                )
+            } else {
+                DailyAgendaWorker.cancel(this@YataApplication)
+            }
         }
-        OverdueEscalationWorker.schedule(this)
-        DailyAgendaWorker.schedule(this)
     }
 }

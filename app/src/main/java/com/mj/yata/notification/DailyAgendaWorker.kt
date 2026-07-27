@@ -61,11 +61,15 @@ class DailyAgendaWorker @AssistedInject constructor(
 
     companion object {
         private const val WORK_NAME = "daily_agenda"
-        private val TARGET_TIME: LocalTime = LocalTime.of(7, 30)
 
-        fun schedule(context: Context) {
+        /**
+         * [hour]/[minute] come from the user's setting (7:30 by default, the time this was
+         * previously hardcoded to). UPDATE rather than KEEP: with KEEP an already-enqueued job
+         * wins, so changing the time in Settings would silently never take effect.
+         */
+        fun schedule(context: Context, hour: Int = 7, minute: Int = 30) {
             val now = LocalDateTime.now()
-            var nextRun = LocalDateTime.of(now.toLocalDate(), TARGET_TIME)
+            var nextRun = LocalDateTime.of(now.toLocalDate(), LocalTime.of(hour, minute))
             if (!nextRun.isAfter(now)) nextRun = nextRun.plusDays(1)
             val initialDelay = Duration.between(now, nextRun)
 
@@ -74,7 +78,7 @@ class DailyAgendaWorker @AssistedInject constructor(
                 .setInitialDelay(initialDelay.toMillis(), TimeUnit.MILLISECONDS)
                 .build()
             WorkManager.getInstance(context)
-                .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+                .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
         }
 
         fun cancel(context: Context) {
