@@ -1,6 +1,7 @@
 package com.mj.yata.data.local.datastore
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
@@ -15,8 +16,10 @@ import com.mj.yata.util.generateSalt
 import com.mj.yata.util.hashPin
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,7 +45,25 @@ class UserPreferences @Inject constructor(
 
     private val dataStore = context.dataStore
 
-    val snapshotFlow: Flow<UserPreferencesSnapshot> = dataStore.data.map { prefs ->
+    /**
+     * Every read below goes through this rather than `dataStore.data` directly. DataStore
+     * surfaces a corrupted or unreadable prefs file as an IOException thrown *into the
+     * collector*, which — since these flows back the theme, the feature flags and most of
+     * Settings — would crash the UI on collection with no way for the user to recover. Falling
+     * back to an empty Preferences means every `?:` default below applies instead, so a corrupt
+     * file degrades to first-launch settings rather than an unopenable app. Only reads are
+     * wrapped: a failing write should still surface to its caller.
+     */
+    private val prefsFlow: Flow<Preferences> = dataStore.data.catch { e ->
+        if (e is IOException) {
+            Log.e("UserPreferences", "Could not read preferences; falling back to defaults", e)
+            emit(emptyPreferences())
+        } else {
+            throw e
+        }
+    }
+
+    val snapshotFlow: Flow<UserPreferencesSnapshot> = prefsFlow.map { prefs ->
         UserPreferencesSnapshot(
             themeMode = when (prefs[THEME_MODE]) {
                 ThemeMode.LIGHT.name     -> ThemeMode.LIGHT
@@ -156,7 +177,7 @@ class UserPreferences @Inject constructor(
     private fun entitySortModeOf(raw: String?): EntitySortMode =
         EntitySortMode.entries.firstOrNull { it.name == raw } ?: EntitySortMode.NAME_ASC
 
-    val themeModeFlow: Flow<ThemeMode> = dataStore.data.map { prefs ->
+    val themeModeFlow: Flow<ThemeMode> = prefsFlow.map { prefs ->
         when (prefs[THEME_MODE]) {
             ThemeMode.LIGHT.name     -> ThemeMode.LIGHT
             ThemeMode.DARK.name      -> ThemeMode.DARK
@@ -166,38 +187,38 @@ class UserPreferences @Inject constructor(
     }
 
     // Dark from 9pm to 7am by default.
-    val themeScheduleStartHourFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_START_HOUR] ?: 21 }
-    val themeScheduleStartMinuteFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_START_MINUTE] ?: 0 }
-    val themeScheduleEndHourFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_END_HOUR] ?: 7 }
-    val themeScheduleEndMinuteFlow: Flow<Int> = dataStore.data.map { it[THEME_SCHEDULE_END_MINUTE] ?: 0 }
+    val themeScheduleStartHourFlow: Flow<Int> = prefsFlow.map { it[THEME_SCHEDULE_START_HOUR] ?: 21 }
+    val themeScheduleStartMinuteFlow: Flow<Int> = prefsFlow.map { it[THEME_SCHEDULE_START_MINUTE] ?: 0 }
+    val themeScheduleEndHourFlow: Flow<Int> = prefsFlow.map { it[THEME_SCHEDULE_END_HOUR] ?: 7 }
+    val themeScheduleEndMinuteFlow: Flow<Int> = prefsFlow.map { it[THEME_SCHEDULE_END_MINUTE] ?: 0 }
 
-    val reduceMotionEnabledFlow: Flow<Boolean> = dataStore.data.map { it[REDUCE_MOTION_ENABLED] ?: false }
-    val enhancedM3ThemingEnabledFlow: Flow<Boolean> = dataStore.data.map { it[ENHANCED_M3_THEMING_ENABLED] ?: false }
-    val floatingBottomNavEnabledFlow: Flow<Boolean> = dataStore.data.map { it[FLOATING_BOTTOM_NAV_ENABLED] ?: false }
-    val bottomNavLabelsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[BOTTOM_NAV_LABELS_ENABLED] ?: true }
-    val demoModeEnabledFlow: Flow<Boolean> = dataStore.data.map { it[DEMO_MODE_ENABLED] ?: false }
+    val reduceMotionEnabledFlow: Flow<Boolean> = prefsFlow.map { it[REDUCE_MOTION_ENABLED] ?: false }
+    val enhancedM3ThemingEnabledFlow: Flow<Boolean> = prefsFlow.map { it[ENHANCED_M3_THEMING_ENABLED] ?: false }
+    val floatingBottomNavEnabledFlow: Flow<Boolean> = prefsFlow.map { it[FLOATING_BOTTOM_NAV_ENABLED] ?: false }
+    val bottomNavLabelsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[BOTTOM_NAV_LABELS_ENABLED] ?: true }
+    val demoModeEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DEMO_MODE_ENABLED] ?: false }
 
     /** Non-null means a seed-color theme (preset or custom) is active; null means the app's
      * default warm coral palette. Ignored entirely when Material You dynamic color is on. */
-    val customThemeSeedColorFlow: Flow<Int?> = dataStore.data.map { it[CUSTOM_THEME_SEED_COLOR] }
-    val completionSoundEnabledFlow: Flow<Boolean> = dataStore.data.map { it[COMPLETION_SOUND_ENABLED] ?: true }
-    val voiceRecognitionLanguageFlow: Flow<String> = dataStore.data.map { it[VOICE_RECOGNITION_LANGUAGE] ?: "default" }
-    val textScaleFlow: Flow<Float> = dataStore.data.map { it[TEXT_SCALE] ?: 1.0f }
-    val taskRowDensityFlow: Flow<com.mj.yata.domain.model.TaskRowDensity> = dataStore.data.map { prefs ->
+    val customThemeSeedColorFlow: Flow<Int?> = prefsFlow.map { it[CUSTOM_THEME_SEED_COLOR] }
+    val completionSoundEnabledFlow: Flow<Boolean> = prefsFlow.map { it[COMPLETION_SOUND_ENABLED] ?: true }
+    val voiceRecognitionLanguageFlow: Flow<String> = prefsFlow.map { it[VOICE_RECOGNITION_LANGUAGE] ?: "default" }
+    val textScaleFlow: Flow<Float> = prefsFlow.map { it[TEXT_SCALE] ?: 1.0f }
+    val taskRowDensityFlow: Flow<com.mj.yata.domain.model.TaskRowDensity> = prefsFlow.map { prefs ->
         when (prefs[TASK_ROW_DENSITY]) {
             com.mj.yata.domain.model.TaskRowDensity.COMPACT.name -> com.mj.yata.domain.model.TaskRowDensity.COMPACT
             com.mj.yata.domain.model.TaskRowDensity.SPACIOUS.name -> com.mj.yata.domain.model.TaskRowDensity.SPACIOUS
             else -> com.mj.yata.domain.model.TaskRowDensity.COMFORTABLE
         }
     }
-    val hapticsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[HAPTICS_ENABLED] ?: true }
-    val taskSwipeActionsEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
-    val appLockEnabledFlow: Flow<Boolean> = dataStore.data.map { it[APP_LOCK_ENABLED] ?: false }
-    val appLockPinSetFlow: Flow<Boolean> = dataStore.data.map { !it[APP_LOCK_PIN_HASH].isNullOrBlank() }
-    val appLockTimeoutMinutesFlow: Flow<Int> = dataStore.data.map { it[APP_LOCK_TIMEOUT_MINUTES] ?: 0 }
-    val todayTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TODAY_TAB_ENABLED] ?: true }
-    val upcomingTabEnabledFlow: Flow<Boolean> = dataStore.data.map { it[UPCOMING_TAB_ENABLED] ?: true }
-    val fabPositionFlow: Flow<com.mj.yata.domain.model.FabPosition> = dataStore.data.map { prefs ->
+    val hapticsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[HAPTICS_ENABLED] ?: true }
+    val taskSwipeActionsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
+    val appLockEnabledFlow: Flow<Boolean> = prefsFlow.map { it[APP_LOCK_ENABLED] ?: false }
+    val appLockPinSetFlow: Flow<Boolean> = prefsFlow.map { !it[APP_LOCK_PIN_HASH].isNullOrBlank() }
+    val appLockTimeoutMinutesFlow: Flow<Int> = prefsFlow.map { it[APP_LOCK_TIMEOUT_MINUTES] ?: 0 }
+    val todayTabEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TODAY_TAB_ENABLED] ?: true }
+    val upcomingTabEnabledFlow: Flow<Boolean> = prefsFlow.map { it[UPCOMING_TAB_ENABLED] ?: true }
+    val fabPositionFlow: Flow<com.mj.yata.domain.model.FabPosition> = prefsFlow.map { prefs ->
         when (prefs[FAB_POSITION]) {
             com.mj.yata.domain.model.FabPosition.LEFT.name -> com.mj.yata.domain.model.FabPosition.LEFT
             com.mj.yata.domain.model.FabPosition.HIDDEN.name -> com.mj.yata.domain.model.FabPosition.HIDDEN
@@ -205,79 +226,79 @@ class UserPreferences @Inject constructor(
         }
     }
 
-    val appFontFlow: Flow<AppFont> = dataStore.data.map { prefs ->
+    val appFontFlow: Flow<AppFont> = prefsFlow.map { prefs ->
         when (prefs[APP_FONT]) {
             AppFont.JETBRAINS_MONO.name -> AppFont.JETBRAINS_MONO
             else                        -> AppFont.INTER
         }
     }
 
-    val userNameFlow: Flow<String> = dataStore.data.map { it[USER_NAME] ?: "" }
-    val userEmailFlow: Flow<String> = dataStore.data.map { it[USER_EMAIL] ?: "" }
-    val userPhotoUriFlow: Flow<String?> = dataStore.data.map { it[USER_PHOTO_URI] }
+    val userNameFlow: Flow<String> = prefsFlow.map { it[USER_NAME] ?: "" }
+    val userEmailFlow: Flow<String> = prefsFlow.map { it[USER_EMAIL] ?: "" }
+    val userPhotoUriFlow: Flow<String?> = prefsFlow.map { it[USER_PHOTO_URI] }
 
-    override val defaultListIdFlow: Flow<String> = dataStore.data.map { it[DEFAULT_LIST_ID] ?: "" }
+    override val defaultListIdFlow: Flow<String> = prefsFlow.map { it[DEFAULT_LIST_ID] ?: "" }
 
-    val startOfWeekSundayFlow: Flow<Boolean> = dataStore.data.map { it[START_OF_WEEK_SUNDAY] ?: true }
-    val defaultReminderHourFlow: Flow<Int> = dataStore.data.map { it[DEFAULT_REMINDER_HOUR] ?: 9 }
-    val defaultReminderMinuteFlow: Flow<Int> = dataStore.data.map { it[DEFAULT_REMINDER_MINUTE] ?: 0 }
-    val uiScaleFlow: Flow<Float> = dataStore.data.map { it[UI_SCALE] ?: 1.0f }
-    val dynamicColorEnabledFlow: Flow<Boolean> = dataStore.data.map { it[DYNAMIC_COLOR_ENABLED] ?: true }
-    val peopleFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[PEOPLE_FEATURE_ENABLED] ?: true }
-    val tagsFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[TAGS_FEATURE_ENABLED] ?: true }
-    val projectsFeatureEnabledFlow: Flow<Boolean> = dataStore.data.map { it[PROJECTS_FEATURE_ENABLED] ?: true }
-    val cloudBackupEnabledFlow: Flow<Boolean> = dataStore.data.map { it[CLOUD_BACKUP_ENABLED] ?: false }
-    val cloudBackupAccountEmailFlow: Flow<String?> = dataStore.data.map { it[CLOUD_BACKUP_ACCOUNT] }
-    val cloudBackupLastAtFlow: Flow<Long?> = dataStore.data.map { it[CLOUD_BACKUP_LAST_AT] }
-    val cloudBackupWifiOnlyFlow: Flow<Boolean> = dataStore.data.map { it[CLOUD_BACKUP_WIFI_ONLY] ?: true }
+    val startOfWeekSundayFlow: Flow<Boolean> = prefsFlow.map { it[START_OF_WEEK_SUNDAY] ?: true }
+    val defaultReminderHourFlow: Flow<Int> = prefsFlow.map { it[DEFAULT_REMINDER_HOUR] ?: 9 }
+    val defaultReminderMinuteFlow: Flow<Int> = prefsFlow.map { it[DEFAULT_REMINDER_MINUTE] ?: 0 }
+    val uiScaleFlow: Flow<Float> = prefsFlow.map { it[UI_SCALE] ?: 1.0f }
+    val dynamicColorEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DYNAMIC_COLOR_ENABLED] ?: true }
+    val peopleFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[PEOPLE_FEATURE_ENABLED] ?: true }
+    val tagsFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TAGS_FEATURE_ENABLED] ?: true }
+    val projectsFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[PROJECTS_FEATURE_ENABLED] ?: true }
+    val cloudBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[CLOUD_BACKUP_ENABLED] ?: false }
+    val cloudBackupAccountEmailFlow: Flow<String?> = prefsFlow.map { it[CLOUD_BACKUP_ACCOUNT] }
+    val cloudBackupLastAtFlow: Flow<Long?> = prefsFlow.map { it[CLOUD_BACKUP_LAST_AT] }
+    val cloudBackupWifiOnlyFlow: Flow<Boolean> = prefsFlow.map { it[CLOUD_BACKUP_WIFI_ONLY] ?: true }
     // Default matches CloudBackupWorker's default schedule (1 day) — WorkManager enforces a
     // 15-minute floor on periodic work, so this is clamped the same way on write.
-    val cloudBackupIntervalMinutesFlow: Flow<Long> = dataStore.data.map { it[CLOUD_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
-    val cloudBackupArchiveMonthsFlow: Flow<Int> = dataStore.data.map { it[CLOUD_BACKUP_ARCHIVE_MONTHS] ?: 6 }
-    val localBackupEnabledFlow: Flow<Boolean> = dataStore.data.map { it[LOCAL_BACKUP_ENABLED] ?: false }
-    val localBackupLastAtFlow: Flow<Long?> = dataStore.data.map { it[LOCAL_BACKUP_LAST_AT] }
-    val localBackupIntervalMinutesFlow: Flow<Long> = dataStore.data.map { it[LOCAL_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
-    val hideCompletedTodayFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_TODAY] ?: false }
-    val hideCompletedProjectFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PROJECT] ?: false }
-    val hideCompletedListFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_LIST] ?: false }
-    val hideCompletedPersonFlow: Flow<Boolean> = dataStore.data.map { it[HIDE_COMPLETED_PERSON] ?: false }
-    val sortModeTodayFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TODAY]) }
-    val sortModeProjectFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_PROJECT]) }
-    val sortModeListFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_LIST]) }
-    val sortModePersonFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_PERSON]) }
+    val cloudBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[CLOUD_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
+    val cloudBackupArchiveMonthsFlow: Flow<Int> = prefsFlow.map { it[CLOUD_BACKUP_ARCHIVE_MONTHS] ?: 6 }
+    val localBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[LOCAL_BACKUP_ENABLED] ?: false }
+    val localBackupLastAtFlow: Flow<Long?> = prefsFlow.map { it[LOCAL_BACKUP_LAST_AT] }
+    val localBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[LOCAL_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
+    val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_TODAY] ?: false }
+    val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PROJECT] ?: false }
+    val hideCompletedListFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_LIST] ?: false }
+    val hideCompletedPersonFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PERSON] ?: false }
+    val sortModeTodayFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_TODAY]) }
+    val sortModeProjectFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_PROJECT]) }
+    val sortModeListFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_LIST]) }
+    val sortModePersonFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_PERSON]) }
     /** Defaults applied to a newly created task. TODAY preserves the previous hardcoded behavior. */
-    val defaultDueDateFlow: Flow<DefaultDueDate> = dataStore.data.map { prefs ->
+    val defaultDueDateFlow: Flow<DefaultDueDate> = prefsFlow.map { prefs ->
         DefaultDueDate.entries.firstOrNull { it.name == prefs[DEFAULT_DUE_DATE] } ?: DefaultDueDate.TODAY
     }
     /** One of Task.priority's values: "none" | "low" | "med" | "high". */
-    val defaultPriorityFlow: Flow<String> = dataStore.data.map { prefs ->
+    val defaultPriorityFlow: Flow<String> = prefsFlow.map { prefs ->
         prefs[DEFAULT_PRIORITY]?.takeIf { it in setOf("none", "low", "med", "high") } ?: "none"
     }
-    val trashRetentionDaysFlow: Flow<Int> = dataStore.data.map { it[TRASH_RETENTION_DAYS] ?: 30 }
-    val autoArchiveDaysFlow: Flow<Int> = dataStore.data.map { it[AUTO_ARCHIVE_DAYS] ?: 0 }
-    val dailyAgendaEnabledFlow: Flow<Boolean> = dataStore.data.map { it[DAILY_AGENDA_ENABLED] ?: true }
-    val dailyAgendaHourFlow: Flow<Int> = dataStore.data.map { it[DAILY_AGENDA_HOUR] ?: 7 }
-    val dailyAgendaMinuteFlow: Flow<Int> = dataStore.data.map { it[DAILY_AGENDA_MINUTE] ?: 30 }
-    val overdueNudgesEnabledFlow: Flow<Boolean> = dataStore.data.map { it[OVERDUE_NUDGES_ENABLED] ?: true }
-    val undoWindowSecondsFlow: Flow<Int> = dataStore.data.map { it[UNDO_WINDOW_SECONDS] ?: 4 }
-    val snoozeTonightHourFlow: Flow<Int> = dataStore.data.map { it[SNOOZE_TONIGHT_HOUR] ?: 18 }
-    val snoozeTonightMinuteFlow: Flow<Int> = dataStore.data.map { it[SNOOZE_TONIGHT_MINUTE] ?: 0 }
-    val snoozeTomorrowHourFlow: Flow<Int> = dataStore.data.map { it[SNOOZE_TOMORROW_HOUR] ?: 9 }
-    val snoozeTomorrowMinuteFlow: Flow<Int> = dataStore.data.map { it[SNOOZE_TOMORROW_MINUTE] ?: 0 }
-    val sortModeTagDetailFlow: Flow<TaskSortMode> = dataStore.data.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
-    val sortModeTagsTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
-    val sortModePeopleTabFlow: Flow<EntitySortMode> = dataStore.data.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
-    val lastHomeTabFlow: Flow<Int> = dataStore.data.map { (it[LAST_HOME_TAB] ?: 0).coerceIn(0, 4) }
-    val hasSeenWelcomeFlow: Flow<Boolean> = dataStore.data.map { it[HAS_SEEN_WELCOME] ?: false }
-    val savedSmartFilterSetsFlow: Flow<Set<String>> = dataStore.data.map { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
-    val recentTaskIdsFlow: Flow<List<String>> = dataStore.data.map { prefs ->
+    val trashRetentionDaysFlow: Flow<Int> = prefsFlow.map { it[TRASH_RETENTION_DAYS] ?: 30 }
+    val autoArchiveDaysFlow: Flow<Int> = prefsFlow.map { it[AUTO_ARCHIVE_DAYS] ?: 0 }
+    val dailyAgendaEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DAILY_AGENDA_ENABLED] ?: true }
+    val dailyAgendaHourFlow: Flow<Int> = prefsFlow.map { it[DAILY_AGENDA_HOUR] ?: 7 }
+    val dailyAgendaMinuteFlow: Flow<Int> = prefsFlow.map { it[DAILY_AGENDA_MINUTE] ?: 30 }
+    val overdueNudgesEnabledFlow: Flow<Boolean> = prefsFlow.map { it[OVERDUE_NUDGES_ENABLED] ?: true }
+    val undoWindowSecondsFlow: Flow<Int> = prefsFlow.map { it[UNDO_WINDOW_SECONDS] ?: 4 }
+    val snoozeTonightHourFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TONIGHT_HOUR] ?: 18 }
+    val snoozeTonightMinuteFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TONIGHT_MINUTE] ?: 0 }
+    val snoozeTomorrowHourFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TOMORROW_HOUR] ?: 9 }
+    val snoozeTomorrowMinuteFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TOMORROW_MINUTE] ?: 0 }
+    val sortModeTagDetailFlow: Flow<TaskSortMode> = prefsFlow.map { taskSortModeOf(it[SORT_MODE_TAG_DETAIL]) }
+    val sortModeTagsTabFlow: Flow<EntitySortMode> = prefsFlow.map { entitySortModeOf(it[SORT_MODE_TAGS_TAB]) }
+    val sortModePeopleTabFlow: Flow<EntitySortMode> = prefsFlow.map { entitySortModeOf(it[SORT_MODE_PEOPLE_TAB]) }
+    val lastHomeTabFlow: Flow<Int> = prefsFlow.map { (it[LAST_HOME_TAB] ?: 0).coerceIn(0, 4) }
+    val hasSeenWelcomeFlow: Flow<Boolean> = prefsFlow.map { it[HAS_SEEN_WELCOME] ?: false }
+    val savedSmartFilterSetsFlow: Flow<Set<String>> = prefsFlow.map { it[SAVED_SMART_FILTER_SETS] ?: emptySet() }
+    val recentTaskIdsFlow: Flow<List<String>> = prefsFlow.map { prefs ->
         prefs[RECENT_TASK_IDS]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
     }
     /** Last `MaterialTheme.colorScheme.primary` actually rendered by the foreground Activity —
      * background notification/widget code reads this instead of re-deriving dynamic color in a
      * receiver/worker context, where it can resolve differently than in the live Activity. Null
      * (no cached value yet) until the app has been opened at least once. */
-    val lastPrimaryArgbFlow: Flow<Int?> = dataStore.data.map { it[LAST_PRIMARY_ARGB] }
+    val lastPrimaryArgbFlow: Flow<Int?> = prefsFlow.map { it[LAST_PRIMARY_ARGB] }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[THEME_MODE] = mode.name }
@@ -572,7 +593,7 @@ class UserPreferences @Inject constructor(
     }
 
     suspend fun verifyAppLockPin(pin: String): Boolean {
-        val prefs = dataStore.data.first()
+        val prefs = prefsFlow.first()
         val saltEncoded = prefs[APP_LOCK_PIN_SALT] ?: return false
         val storedHash = prefs[APP_LOCK_PIN_HASH] ?: return false
         return hashPin(pin, decodeSalt(saltEncoded)) == storedHash

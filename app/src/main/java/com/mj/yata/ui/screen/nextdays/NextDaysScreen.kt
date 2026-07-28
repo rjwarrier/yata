@@ -81,7 +81,10 @@ fun NextDaysScreen(
     val groupedByDate = remember(upcomingTasks) { upcomingTasks.groupBy { it.due!! } }
 
     fun dateLabel(dateStr: String): String {
-        val date = LocalDate.parse(dateStr)
+        // The window filter above is a lexicographic string compare, so a malformed due date
+        // (restored from a hand-edited backup, say) can pass it and still fail to parse. Falling
+        // back to the raw string keeps one bad row from taking down the whole screen.
+        val date = runCatching { LocalDate.parse(dateStr) }.getOrNull() ?: return dateStr
         return when (date) {
             today -> "Today"
             today.plusDays(1) -> "Tomorrow"

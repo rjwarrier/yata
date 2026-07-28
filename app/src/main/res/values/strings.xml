@@ -641,4 +641,10 @@
     <string name="help_demo_mode_on">Demo mode on - showing sample data for screenshots</string>
     <string name="help_demo_mode_off">Demo mode off - showing your real data</string>
     <string name="help_demo_mode_active">DEMO MODE - tap logo to switch back</string>
+
+    <!-- Shown when a save or update fails at the database layer. Deliberately vague: the
+         underlying causes (disk full, failing storage, a row deleted concurrently) are not
+         things the user can act on differently, and what matters is that the change did not
+         stick and can be retried. -->
+    <string name="error_action_failed">Something went wrong - your change wasn\'t saved</string>
 </resources>

@@ -1,7 +1,9 @@
 package com.mj.yata.ui.screen.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mj.yata.R
 import com.mj.yata.data.cloud.CloudBackupEntry
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.*
@@ -11,8 +13,10 @@ import com.mj.yata.domain.usecase.TaskOperations
 import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.AnalyticsUiState
 import com.mj.yata.util.AnalyticsUtils
+import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.util.NaturalLanguageParser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,11 +30,37 @@ class MainViewModel @Inject constructor(
     private val repository: YataRepository,
     private val userPreferences: UserPreferences,
     private val taskOperations: TaskOperations,
-    private val backupOperations: BackupOperations
+    private val backupOperations: BackupOperations,
+    private val errorBus: AppErrorBus
 ) : ViewModel() {
 
-    init {
+    /**
+     * Every write path below runs through this instead of `viewModelScope.launch` directly.
+     * These coroutines all end in a Room call, and Room throws for reasons that are not bugs and
+     * not preventable from here — a foreign-key violation from a row deleted on another thread,
+     * a full disk, `SQLiteDiskIOException` on failing storage. Uncaught in a bare `launch`, each
+     * of those reaches the thread's uncaught handler and kills the app, turning a failed save
+     * into a crash on the most common actions in the app (add task, add person).
+     *
+     * Caught, the operation is simply lost and the user is told so, which is recoverable — they
+     * can retry. CancellationException is rethrown so normal scope teardown still cancels
+     * children rather than being reported as a failure.
+     */
+    private fun safeLaunch(block: suspend () -> Unit) {
         viewModelScope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                Log.e("MainViewModel", "Operation failed", t)
+                errorBus.emit(R.string.error_action_failed)
+            }
+        }
+    }
+
+    init {
+        safeLaunch {
             repository.seedInitialDataIfNeeded()
             repository.purgeOldTrash()
             repository.autoArchiveOldCompleted()
@@ -253,7 +283,7 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "default")
 
     fun setVoiceRecognitionLanguage(lang: String) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setVoiceRecognitionLanguage(lang)
         }
     }
@@ -634,47 +664,47 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     fun setUndoWindowSeconds(seconds: Int) {
-        viewModelScope.launch { userPreferences.setUndoWindowSeconds(seconds) }
+        safeLaunch { userPreferences.setUndoWindowSeconds(seconds) }
     }
 
     fun setSnoozeTonightTime(hour: Int, minute: Int) {
-        viewModelScope.launch { userPreferences.setSnoozeTonightTime(hour, minute) }
+        safeLaunch { userPreferences.setSnoozeTonightTime(hour, minute) }
     }
 
     fun setSnoozeTomorrowTime(hour: Int, minute: Int) {
-        viewModelScope.launch { userPreferences.setSnoozeTomorrowTime(hour, minute) }
+        safeLaunch { userPreferences.setSnoozeTomorrowTime(hour, minute) }
     }
 
     fun setDailyAgendaEnabled(enabled: Boolean) {
-        viewModelScope.launch { userPreferences.setDailyAgendaEnabled(enabled) }
+        safeLaunch { userPreferences.setDailyAgendaEnabled(enabled) }
     }
 
     fun setDailyAgendaTime(hour: Int, minute: Int) {
-        viewModelScope.launch { userPreferences.setDailyAgendaTime(hour, minute) }
+        safeLaunch { userPreferences.setDailyAgendaTime(hour, minute) }
     }
 
     fun setOverdueNudgesEnabled(enabled: Boolean) {
-        viewModelScope.launch { userPreferences.setOverdueNudgesEnabled(enabled) }
+        safeLaunch { userPreferences.setOverdueNudgesEnabled(enabled) }
     }
 
     fun setAutoArchiveDays(days: Int) {
-        viewModelScope.launch { userPreferences.setAutoArchiveDays(days) }
+        safeLaunch { userPreferences.setAutoArchiveDays(days) }
     }
 
     fun setDefaultDueDate(mode: com.mj.yata.domain.model.DefaultDueDate) {
-        viewModelScope.launch { userPreferences.setDefaultDueDate(mode) }
+        safeLaunch { userPreferences.setDefaultDueDate(mode) }
     }
 
     fun setDefaultPriority(priority: String) {
-        viewModelScope.launch { userPreferences.setDefaultPriority(priority) }
+        safeLaunch { userPreferences.setDefaultPriority(priority) }
     }
 
     fun setTrashRetentionDays(days: Int) {
-        viewModelScope.launch { userPreferences.setTrashRetentionDays(days) }
+        safeLaunch { userPreferences.setTrashRetentionDays(days) }
     }
 
     fun resetAppSettings() {
-        viewModelScope.launch { userPreferences.resetAppSettings() }
+        safeLaunch { userPreferences.resetAppSettings() }
     }
 
     val customThemeSeedColor: StateFlow<Int?> = userPreferences.customThemeSeedColorFlow
@@ -796,7 +826,7 @@ private data class MainNavigationState(
 
     // Actions
     fun toggleTaskDone(id: String, onDoneCallback: () -> Unit) {
-        viewModelScope.launch {
+        safeLaunch {
             val task = tasks.value.find { it.id == id }
             val wasDone = task?.done ?: false
             repository.toggleTaskDone(id)
@@ -807,7 +837,7 @@ private data class MainNavigationState(
     }
 
     fun skipTaskOccurrence(id: String) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.skipTaskOccurrence(id)
         }
     }
@@ -815,55 +845,55 @@ private data class MainNavigationState(
     // Multi-task orchestration lives in TaskOperations (domain/usecase) — these wrappers only
     // supply the coroutine scope, so screens keep their existing entry points.
     fun bulkCompleteTasks(ids: List<String>) {
-        viewModelScope.launch { taskOperations.bulkComplete(ids) }
+        safeLaunch { taskOperations.bulkComplete(ids) }
     }
 
     fun bulkDeleteTasks(ids: List<String>) {
-        viewModelScope.launch { taskOperations.bulkDelete(ids) }
+        safeLaunch { taskOperations.bulkDelete(ids) }
     }
 
     fun restoreTasks(previousTasks: List<Task>) {
         if (previousTasks.isEmpty()) return
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertTasks(previousTasks, notify = true, resyncReminder = true)
         }
     }
 
     fun bulkAddTag(ids: List<String>, tagId: String) {
-        viewModelScope.launch { taskOperations.bulkAddTag(ids, tagId) }
+        safeLaunch { taskOperations.bulkAddTag(ids, tagId) }
     }
 
     fun bulkSetProject(ids: List<String>, projectId: String?) {
-        viewModelScope.launch { taskOperations.bulkSetProject(ids, projectId) }
+        safeLaunch { taskOperations.bulkSetProject(ids, projectId) }
     }
 
     fun bulkSetList(ids: List<String>, listId: String?) {
-        viewModelScope.launch { taskOperations.bulkSetList(ids, listId) }
+        safeLaunch { taskOperations.bulkSetList(ids, listId) }
     }
 
     fun duplicateTask(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
-        viewModelScope.launch { taskOperations.duplicate(taskId, dueAdjustment) }
+        safeLaunch { taskOperations.duplicate(taskId, dueAdjustment) }
     }
 
     fun rolloverProjectTasks(projectId: String) {
-        viewModelScope.launch { taskOperations.rolloverProjectTasks(projectId) }
+        safeLaunch { taskOperations.rolloverProjectTasks(projectId) }
     }
 
     fun rolloverOverdueProjectTasks(projectId: String) {
-        viewModelScope.launch { taskOperations.rolloverOverdueProjectTasks(projectId) }
+        safeLaunch { taskOperations.rolloverOverdueProjectTasks(projectId) }
     }
 
     fun bulkDuplicateTasks(ids: List<String>) {
-        viewModelScope.launch { taskOperations.bulkDuplicate(ids) }
+        safeLaunch { taskOperations.bulkDuplicate(ids) }
     }
 
     fun commitTaskOrder(orderedTasks: List<Task>) {
-        viewModelScope.launch { taskOperations.commitTaskOrder(orderedTasks) }
+        safeLaunch { taskOperations.commitTaskOrder(orderedTasks) }
     }
 
     /** Persists a drag-and-drop reorder of the whole Projects tab (a single flat list). */
     fun commitProjectOrder(orderedProjects: List<Project>) {
-        viewModelScope.launch {
+        safeLaunch {
             orderedProjects.forEachIndexed { index, project ->
                 if (project.sortOrder != index) {
                     repository.upsertProject(project.copy(sortOrder = index))
@@ -874,7 +904,7 @@ private data class MainNavigationState(
 
     /** Persists a drag-and-drop reorder of the nav drawer's Lists section (a single flat list). */
     fun commitListOrder(orderedLists: List<YataList>) {
-        viewModelScope.launch {
+        safeLaunch {
             orderedLists.forEachIndexed { index, list ->
                 if (list.sortOrder != index) {
                     repository.upsertList(list.copy(sortOrder = index))
@@ -884,23 +914,23 @@ private data class MainNavigationState(
     }
 
     fun moveTaskToList(taskId: String, targetListId: String?, targetProjectId: String? = null) {
-        viewModelScope.launch { taskOperations.moveTaskToList(taskId, targetListId, targetProjectId) }
+        safeLaunch { taskOperations.moveTaskToList(taskId, targetListId, targetProjectId) }
     }
 
     fun bulkAssignPerson(ids: List<String>, personId: String) {
-        viewModelScope.launch { taskOperations.bulkAssignPerson(ids, personId) }
+        safeLaunch { taskOperations.bulkAssignPerson(ids, personId) }
     }
 
     fun toggleTaskFlag(id: String) {
-        viewModelScope.launch {
-            val task = tasks.value.find { it.id == id } ?: return@launch
+        safeLaunch {
+            val task = tasks.value.find { it.id == id } ?: return@safeLaunch
             repository.setTaskFlag(id, !task.flag)
         }
     }
 
     fun cycleTaskPriority(id: String) {
-        viewModelScope.launch {
-            val task = tasks.value.find { it.id == id } ?: return@launch
+        safeLaunch {
+            val task = tasks.value.find { it.id == id } ?: return@safeLaunch
             val nextPriority = when (task.priority) {
                 "none" -> "low"
                 "low" -> "med"
@@ -928,7 +958,7 @@ private data class MainNavigationState(
         subtasks: List<Subtask> = emptyList(),
         flag: Boolean = false
     ) {
-        viewModelScope.launch {
+        safeLaunch {
             val newTask = Task(
                 id = "t_" + UUID.randomUUID().toString(),
                 title = title,
@@ -952,7 +982,7 @@ private data class MainNavigationState(
     }
 
     fun upsertTask(task: Task) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertTask(task)
         }
     }
@@ -960,8 +990,8 @@ private data class MainNavigationState(
     fun renameTask(id: String, title: String) {
         val trimmed = title.trim()
         if (trimmed.isBlank()) return
-        viewModelScope.launch {
-            val task = tasks.value.find { it.id == id } ?: return@launch
+        safeLaunch {
+            val task = tasks.value.find { it.id == id } ?: return@safeLaunch
             val parsed = NaturalLanguageParser.parse(trimmed)
             val parsedTitle = parsed.title.ifBlank { trimmed }
             repository.upsertTask(
@@ -980,33 +1010,33 @@ private data class MainNavigationState(
     }
 
     fun setLastHomeTab(tab: Int) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setLastHomeTab(tab)
         }
     }
 
     fun recordTaskViewed(id: String) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.recordRecentTask(id)
         }
     }
 
     fun quickSnoozeTask(id: String, preset: QuickSnoozePreset) {
-        viewModelScope.launch {
+        safeLaunch {
             taskOperations.quickSnooze(id, preset)
             userPreferences.recordRecentTask(id)
         }
     }
 
     fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset) {
-        viewModelScope.launch {
+        safeLaunch {
             taskOperations.bulkReschedule(ids, preset)
             ids.take(8).forEach { userPreferences.recordRecentTask(it) }
         }
     }
 
     fun deleteTask(task: Task) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deleteTask(task)
         }
     }
@@ -1016,7 +1046,7 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun restoreTask(id: String) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.restoreTask(id)
         }
     }
@@ -1026,25 +1056,25 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setTaskArchived(id: String, archived: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.setTaskArchived(id, archived)
         }
     }
 
     fun bulkArchiveTasks(ids: List<String>, archived: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             ids.forEach { repository.setTaskArchived(it, archived) }
         }
     }
 
     fun permanentlyDeleteTask(task: Task) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.permanentlyDeleteTask(task)
         }
     }
 
     fun emptyTrash() {
-        viewModelScope.launch {
+        safeLaunch {
             repository.emptyTrash()
         }
     }
@@ -1060,20 +1090,20 @@ private data class MainNavigationState(
         }
 
     fun addComment(taskId: String, body: String) {
-        viewModelScope.launch {
+        safeLaunch {
             val authorId = people.value.find { it.isMe }?.id
             repository.addComment(taskId, body, authorId)
         }
     }
 
     fun deleteComment(comment: TaskComment) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deleteComment(comment)
         }
     }
 
     fun addProject(name: String, color: String, icon: String = "layers", due: String? = null, commonTagIds: List<String> = emptyList(), defaultReminder: String? = null, description: String? = null, excludeFromToday: Boolean = false) {
-        viewModelScope.launch {
+        safeLaunch {
             val pid = "pr_" + UUID.randomUUID().toString()
             val project = Project(
                 id = pid,
@@ -1091,32 +1121,32 @@ private data class MainNavigationState(
     }
 
     fun upsertProject(project: Project) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertProject(project)
         }
     }
 
     fun toggleProjectStarred(id: String) {
-        viewModelScope.launch {
-            val project = projects.value.find { it.id == id } ?: return@launch
+        safeLaunch {
+            val project = projects.value.find { it.id == id } ?: return@safeLaunch
             repository.upsertProject(project.copy(starred = !project.starred))
         }
     }
 
     fun deleteProject(project: Project) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deleteProject(project)
         }
     }
 
     fun deleteProjectOnly(project: Project) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deleteProjectOnly(project)
         }
     }
 
     fun bulkDeleteProjects(ids: List<String>) {
-        viewModelScope.launch {
+        safeLaunch {
             val byId = projects.value.associateBy { it.id }
             ids.forEach { id -> byId[id]?.let { repository.deleteProject(it) } }
         }
@@ -1124,25 +1154,25 @@ private data class MainNavigationState(
 
     /** Archiving hides a project from active project surfaces while keeping its tasks linked. */
     fun setProjectArchived(project: Project, archived: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertProject(project.copy(archived = archived))
         }
     }
 
     fun bulkArchiveProjects(ids: List<String>) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.setProjectsArchived(ids, true)
         }
     }
 
     fun bulkRestoreProjects(ids: List<String>) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.setProjectsArchived(ids, false)
         }
     }
 
     fun addPerson(name: String, color: String, groupId: String? = null, photoUri: String? = null) {
-        viewModelScope.launch {
+        safeLaunch {
             val initials = name.split(" ")
                 .mapNotNull { it.firstOrNull()?.toString() }
                 .take(2)
@@ -1163,13 +1193,13 @@ private data class MainNavigationState(
     }
 
     fun upsertPerson(person: Person) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertPerson(person)
         }
     }
 
     fun deletePerson(person: Person) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deletePerson(person)
         }
     }
@@ -1177,20 +1207,20 @@ private data class MainNavigationState(
     /** Archiving (rather than deleting) a person keeps their historical assigned-task stats
      * intact in Analytics/PersonDetail — used when a team member leaves. */
     fun setPersonArchived(person: Person, archived: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertPerson(person.copy(archived = archived))
         }
     }
 
     fun togglePersonStarred(id: String) {
-        viewModelScope.launch {
-            val person = people.value.find { it.id == id } ?: return@launch
+        safeLaunch {
+            val person = people.value.find { it.id == id } ?: return@safeLaunch
             repository.upsertPerson(person.copy(starred = !person.starred))
         }
     }
 
     fun setPeopleGroup(personIds: List<String>, groupId: String?) {
-        viewModelScope.launch {
+        safeLaunch {
             val byId = people.value.associateBy { it.id }
             personIds.forEach { id ->
                 byId[id]?.let { repository.upsertPerson(it.copy(groupId = groupId)) }
@@ -1199,25 +1229,25 @@ private data class MainNavigationState(
     }
 
     fun addPersonGroup(name: String, color: String) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertPersonGroup(PersonGroup(id = "pg_" + UUID.randomUUID().toString(), name = name, color = color))
         }
     }
 
     fun upsertPersonGroup(group: PersonGroup) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertPersonGroup(group)
         }
     }
 
     fun deletePersonGroup(group: PersonGroup) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deletePersonGroup(group)
         }
     }
 
     fun addTag(name: String, color: String, groupId: String? = null, hideCompletedByDefault: Boolean = false) {
-        viewModelScope.launch {
+        safeLaunch {
             val tag = Tag(
                 id = "tag_" + UUID.randomUUID().toString(),
                 name = name.lowercase().trim(),
@@ -1230,51 +1260,51 @@ private data class MainNavigationState(
     }
 
     fun upsertTag(tag: Tag) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertTag(tag)
         }
     }
 
     fun deleteTag(tag: Tag) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deleteTag(tag)
         }
     }
 
     fun bulkDeleteTags(ids: List<String>) {
-        viewModelScope.launch {
+        safeLaunch {
             val byId = tags.value.associateBy { it.id }
             ids.forEach { id -> byId[id]?.let { repository.deleteTag(it) } }
         }
     }
 
     fun toggleTagStarred(id: String) {
-        viewModelScope.launch {
-            val tag = tags.value.find { it.id == id } ?: return@launch
+        safeLaunch {
+            val tag = tags.value.find { it.id == id } ?: return@safeLaunch
             repository.upsertTag(tag.copy(starred = !tag.starred))
         }
     }
 
     fun addTagGroup(name: String, color: String) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertTagGroup(TagGroup(id = "tg_" + UUID.randomUUID().toString(), name = name, color = color))
         }
     }
 
     fun upsertTagGroup(group: TagGroup) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertTagGroup(group)
         }
     }
 
     fun deleteTagGroup(group: TagGroup) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deleteTagGroup(group)
         }
     }
 
     fun addList(name: String, color: String, icon: String, excludeFromToday: Boolean = false) {
-        viewModelScope.launch {
+        safeLaunch {
             val yataList = YataList(
                 id = "l_" + UUID.randomUUID().toString(),
                 name = name,
@@ -1287,50 +1317,50 @@ private data class MainNavigationState(
     }
 
     fun upsertList(list: YataList) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.upsertList(list)
         }
     }
 
     fun toggleListStarred(id: String) {
-        viewModelScope.launch {
-            val list = lists.value.find { it.id == id } ?: return@launch
+        safeLaunch {
+            val list = lists.value.find { it.id == id } ?: return@safeLaunch
             repository.upsertList(list.copy(starred = !list.starred))
         }
     }
 
     fun deleteList(list: YataList) {
-        viewModelScope.launch {
+        safeLaunch {
             repository.deleteList(list)
         }
     }
 
     fun setThemeMode(mode: ThemeMode) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setThemeMode(mode)
         }
     }
 
     fun setThemeSchedule(startHour: Int, startMinute: Int, endHour: Int, endMinute: Int) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setThemeSchedule(startHour, startMinute, endHour, endMinute)
         }
     }
 
     fun setAppFont(font: AppFont) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setAppFont(font)
         }
     }
 
     fun setReduceMotionEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setReduceMotionEnabled(enabled)
         }
     }
 
     fun setEnhancedM3ThemingEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setEnhancedM3ThemingEnabled(enabled)
         }
     }
@@ -1338,19 +1368,19 @@ private data class MainNavigationState(
     /** Pass null to clear back to the app's default warm coral palette. Only takes visual effect
      * while Material You dynamic color is off. */
     fun setCustomThemeSeedColor(argb: Int?) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setCustomThemeSeedColor(argb)
         }
     }
 
     fun setFloatingBottomNavEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setFloatingBottomNavEnabled(enabled)
         }
     }
 
     fun setBottomNavLabelsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setBottomNavLabelsEnabled(enabled)
         }
     }
@@ -1359,279 +1389,279 @@ private data class MainNavigationState(
      * data source to an in-memory sample dataset (see RoutingYataRepository) for taking store
      * screenshots — the real database is never read from or written to while it's active. */
     fun toggleDemoMode() {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setDemoModeEnabled(!demoModeEnabled.value)
         }
     }
 
     fun setTextScale(scale: Float) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setTextScale(scale)
         }
     }
 
     fun setTaskRowDensity(density: com.mj.yata.domain.model.TaskRowDensity) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setTaskRowDensity(density)
         }
     }
 
     fun setHapticsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setHapticsEnabled(enabled)
         }
     }
 
     fun setTaskSwipeActionsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setTaskSwipeActionsEnabled(enabled)
         }
     }
 
     fun setCompletionSoundEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setCompletionSoundEnabled(enabled)
         }
     }
 
     fun setAppLockEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setAppLockEnabled(enabled)
         }
     }
 
     fun setAppLockPin(pin: String?) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setAppLockPin(pin)
         }
     }
 
     fun setAppLockTimeoutMinutes(minutes: Int) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setAppLockTimeoutMinutes(minutes)
         }
     }
 
     fun setTodayTabEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setTodayTabEnabled(enabled)
         }
     }
 
     fun setUpcomingTabEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setUpcomingTabEnabled(enabled)
         }
     }
 
     fun setFabPosition(position: com.mj.yata.domain.model.FabPosition) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setFabPosition(position)
         }
     }
 
     fun backupThenDeleteAllData(onResult: (backupFilename: String?) -> Unit) {
-        viewModelScope.launch { onResult(backupOperations.backupThenDeleteAllData()) }
+        safeLaunch { onResult(backupOperations.backupThenDeleteAllData()) }
     }
 
     fun setUserName(name: String) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setUserName(name)
         }
     }
 
     fun setUserEmail(email: String) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setUserEmail(email)
         }
     }
 
     fun setUserPhotoUri(uri: String?) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setUserPhotoUri(uri)
         }
     }
 
     fun setDefaultListId(id: String) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setDefaultListId(id)
         }
     }
 
     fun setStartOfWeekSunday(sunday: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setStartOfWeekSunday(sunday)
         }
     }
 
     fun setDefaultReminderTime(hour: Int, minute: Int) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setDefaultReminderTime(hour, minute)
         }
     }
 
     fun setUiScale(scale: Float) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setUiScale(scale)
         }
     }
 
     fun setDynamicColorEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setDynamicColorEnabled(enabled)
         }
     }
 
     fun setHideCompletedToday(hide: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setHideCompletedToday(hide)
         }
     }
 
     fun setHideCompletedProject(hide: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setHideCompletedProject(hide)
         }
     }
 
     fun setHideCompletedList(hide: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setHideCompletedList(hide)
         }
     }
 
     fun setHideCompletedPerson(hide: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setHideCompletedPerson(hide)
         }
     }
 
     fun setSortModeToday(mode: com.mj.yata.util.TaskSortMode) {
-        viewModelScope.launch { userPreferences.setSortModeToday(mode) }
+        safeLaunch { userPreferences.setSortModeToday(mode) }
     }
 
     fun setSortModeProject(mode: com.mj.yata.util.TaskSortMode) {
-        viewModelScope.launch { userPreferences.setSortModeProject(mode) }
+        safeLaunch { userPreferences.setSortModeProject(mode) }
     }
 
     fun setSortModeList(mode: com.mj.yata.util.TaskSortMode) {
-        viewModelScope.launch { userPreferences.setSortModeList(mode) }
+        safeLaunch { userPreferences.setSortModeList(mode) }
     }
 
     fun setSortModePerson(mode: com.mj.yata.util.TaskSortMode) {
-        viewModelScope.launch { userPreferences.setSortModePerson(mode) }
+        safeLaunch { userPreferences.setSortModePerson(mode) }
     }
 
     fun setSortModeTagDetail(mode: com.mj.yata.util.TaskSortMode) {
-        viewModelScope.launch { userPreferences.setSortModeTagDetail(mode) }
+        safeLaunch { userPreferences.setSortModeTagDetail(mode) }
     }
 
     fun setSortModeTagsTab(mode: com.mj.yata.util.EntitySortMode) {
-        viewModelScope.launch { userPreferences.setSortModeTagsTab(mode) }
+        safeLaunch { userPreferences.setSortModeTagsTab(mode) }
     }
 
     fun setSortModePeopleTab(mode: com.mj.yata.util.EntitySortMode) {
-        viewModelScope.launch { userPreferences.setSortModePeopleTab(mode) }
+        safeLaunch { userPreferences.setSortModePeopleTab(mode) }
     }
 
     fun setHasSeenWelcome() {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setHasSeenWelcome(true)
         }
     }
 
     fun setPeopleFeatureEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setPeopleFeatureEnabled(enabled)
         }
     }
 
     fun setTagsFeatureEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setTagsFeatureEnabled(enabled)
         }
     }
 
     fun setProjectsFeatureEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setProjectsFeatureEnabled(enabled)
         }
     }
 
     fun saveSmartFilterSet(encodedFilters: String) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.addSavedSmartFilterSet(encodedFilters)
         }
     }
 
     fun removeSmartFilterSet(encodedFilters: String) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.removeSavedSmartFilterSet(encodedFilters)
         }
     }
 
     fun cloudSignOut() {
-        viewModelScope.launch { backupOperations.cloudSignOut() }
+        safeLaunch { backupOperations.cloudSignOut() }
     }
 
     fun setCloudBackupEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setCloudBackupEnabled(enabled)
         }
     }
 
     fun setLocalBackupEnabled(enabled: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setLocalBackupEnabled(enabled)
         }
     }
 
     fun backupLocalNow() {
-        viewModelScope.launch { backupOperations.backupLocalNow() }
+        safeLaunch { backupOperations.backupLocalNow() }
     }
 
     fun restoreLocalBackup(onResult: (Boolean) -> Unit) {
-        viewModelScope.launch { onResult(backupOperations.restoreLatestLocalBackup()) }
+        safeLaunch { onResult(backupOperations.restoreLatestLocalBackup()) }
     }
 
     fun streakForTask(taskId: String, onResult: (Int) -> Unit) {
-        viewModelScope.launch {
+        safeLaunch {
             onResult(repository.getTaskStreak(taskId))
         }
     }
 
     fun setCloudBackupWifiOnly(wifiOnly: Boolean) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setCloudBackupWifiOnly(wifiOnly)
         }
     }
 
     fun setCloudBackupIntervalMinutes(minutes: Long) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setCloudBackupIntervalMinutes(minutes)
         }
         backupOperations.updateCloudBackupInterval(minutes)
     }
 
     fun setCloudBackupArchiveMonths(months: Int) {
-        viewModelScope.launch {
+        safeLaunch {
             userPreferences.setCloudBackupArchiveMonths(months)
         }
     }
 
     fun cloudBackupNow(onResult: (Result<Unit>) -> Unit) {
-        viewModelScope.launch { onResult(backupOperations.cloudBackupNow()) }
+        safeLaunch { onResult(backupOperations.cloudBackupNow()) }
     }
 
     fun listCloudBackups(onResult: (Result<List<CloudBackupEntry>>) -> Unit) {
-        viewModelScope.launch { onResult(backupOperations.listCloudBackups()) }
+        safeLaunch { onResult(backupOperations.listCloudBackups()) }
     }
 
     fun restoreCloudBackup(fileId: String, onResult: (Result<Unit>) -> Unit) {
-        viewModelScope.launch { onResult(backupOperations.restoreCloudBackup(fileId)) }
+        safeLaunch { onResult(backupOperations.restoreCloudBackup(fileId)) }
     }
 
     fun compareWithLastBackup(onResult: (Result<com.mj.yata.data.cloud.CloudBackupDiff>) -> Unit) {
-        viewModelScope.launch { onResult(backupOperations.compareWithLastBackup(tasks.value)) }
+        safeLaunch { onResult(backupOperations.compareWithLastBackup(tasks.value)) }
     }
 }

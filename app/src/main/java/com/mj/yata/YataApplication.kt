@@ -41,32 +41,45 @@ class YataApplication : Application(), Configuration.Provider {
             defaultHandler?.uncaughtException(thread, throwable)
         }
 
+        // Background-job reconciliation is best-effort: it reads DataStore (which throws IOException
+        // on a corrupted prefs file) and enqueues WorkManager jobs (which throws if the process is
+        // being shut down mid-enqueue). Uncaught, either would kill the app during onCreate on
+        // *every* launch, with no way back short of clearing app data — and none of this work is
+        // needed for the app to be usable. Log and carry on; the next start retries all of it.
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-            val wifiOnly = userPreferences.cloudBackupWifiOnlyFlow.first()
-            val interval = userPreferences.cloudBackupIntervalMinutesFlow.first()
-            CloudBackupWorker.schedule(this@YataApplication, interval, androidx.work.ExistingPeriodicWorkPolicy.KEEP, wifiOnly)
-
-            val localInterval = userPreferences.localBackupIntervalMinutesFlow.first()
-            LocalBackupWorker.schedule(this@YataApplication, localInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
-
-            // Both notification workers are now user-controllable. Reconciled on every launch so
-            // a preference change applies from the next start even though these are scheduled
-            // here rather than at the moment the switch is flipped.
-            if (userPreferences.overdueNudgesEnabledFlow.first()) {
-                OverdueEscalationWorker.schedule(this@YataApplication)
-            } else {
-                OverdueEscalationWorker.cancel(this@YataApplication)
+            try {
+                reconcileBackgroundJobs()
+            } catch (t: Throwable) {
+                Log.e("YataApplication", "Failed to reconcile background jobs on startup", t)
             }
+        }
+    }
 
-            if (userPreferences.dailyAgendaEnabledFlow.first()) {
-                DailyAgendaWorker.schedule(
-                    this@YataApplication,
-                    userPreferences.dailyAgendaHourFlow.first(),
-                    userPreferences.dailyAgendaMinuteFlow.first()
-                )
-            } else {
-                DailyAgendaWorker.cancel(this@YataApplication)
-            }
+    private suspend fun reconcileBackgroundJobs() {
+        val wifiOnly = userPreferences.cloudBackupWifiOnlyFlow.first()
+        val interval = userPreferences.cloudBackupIntervalMinutesFlow.first()
+        CloudBackupWorker.schedule(this, interval, androidx.work.ExistingPeriodicWorkPolicy.KEEP, wifiOnly)
+
+        val localInterval = userPreferences.localBackupIntervalMinutesFlow.first()
+        LocalBackupWorker.schedule(this, localInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
+
+        // Both notification workers are now user-controllable. Reconciled on every launch so
+        // a preference change applies from the next start even though these are scheduled
+        // here rather than at the moment the switch is flipped.
+        if (userPreferences.overdueNudgesEnabledFlow.first()) {
+            OverdueEscalationWorker.schedule(this)
+        } else {
+            OverdueEscalationWorker.cancel(this)
+        }
+
+        if (userPreferences.dailyAgendaEnabledFlow.first()) {
+            DailyAgendaWorker.schedule(
+                this,
+                userPreferences.dailyAgendaHourFlow.first(),
+                userPreferences.dailyAgendaMinuteFlow.first()
+            )
+        } else {
+            DailyAgendaWorker.cancel(this)
         }
     }
 }

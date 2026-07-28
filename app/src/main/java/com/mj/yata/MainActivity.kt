@@ -14,9 +14,13 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,6 +61,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     @Inject lateinit var plainTextImporter: PlainTextImporter
     @Inject lateinit var userPreferences: UserPreferences
     @Inject lateinit var cloudBackupManager: CloudBackupManager
+    @Inject lateinit var errorBus: com.mj.yata.ui.error.AppErrorBus
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -388,15 +393,32 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                             }
                         }
 
-                        AppNavigation(
-                            navController      = navController,
-                            onExportRequested  = { exportLauncher.launch("yata_backup.json") },
-                            onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
-                            onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
-                            onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
-                            onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
-                            onCloudSignInRequested = { cloudSignInLauncher.launch(cloudBackupManager.signInIntent()) }
-                        )
+                        // Failures reported by background work (see MainViewModel.safeLaunch)
+                        // surface here rather than on any one screen: the write that failed can
+                        // have been started from any destination, and this sits above the whole
+                        // NavHost so the message lands wherever the user currently is.
+                        val errorHostState = remember { SnackbarHostState() }
+                        LaunchedEffect(Unit) {
+                            errorBus.messages.collect { messageRes ->
+                                errorHostState.showSnackbar(getString(messageRes))
+                            }
+                        }
+
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            AppNavigation(
+                                navController      = navController,
+                                onExportRequested  = { exportLauncher.launch("yata_backup.json") },
+                                onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
+                                onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
+                                onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
+                                onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
+                                onCloudSignInRequested = { cloudSignInLauncher.launch(cloudBackupManager.signInIntent()) }
+                            )
+                            SnackbarHost(
+                                hostState = errorHostState,
+                                modifier = Modifier.align(Alignment.BottomCenter)
+                            ) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
+                        }
                     }
                 }
             }

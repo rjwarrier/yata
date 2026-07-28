@@ -1,12 +1,14 @@
 package com.mj.yata.notification
 
 import android.app.AlarmManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 
 /**
@@ -36,20 +38,48 @@ object NotificationPermissionUtils {
         val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
             data = Uri.parse("package:${context.packageName}")
         }
-        context.startActivity(intent)
+        startOrFallBackToAppSettings(context, intent)
     }
 
     fun requestIgnoreBatteryOptimizations(context: Context) {
         val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
             data = Uri.parse("package:${context.packageName}")
         }
-        context.startActivity(intent)
+        startOrFallBackToAppSettings(context, intent)
     }
 
     fun openNotificationSettings(context: Context) {
         val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
             putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         }
-        context.startActivity(intent)
+        startOrFallBackToAppSettings(context, intent)
     }
+
+    /**
+     * None of the three deep-links above is guaranteed to resolve: the exact-alarm and
+     * battery-optimization screens are absent on Android Go and on OEM ROMs that strip them, and
+     * an unresolved implicit intent throws [ActivityNotFoundException] rather than no-opping. The
+     * app-details screen is part of the platform on every device and reaches the same settings in
+     * two more taps, so it's the fallback; if even that fails there's nowhere left to send the
+     * user, and crashing over an informational deep-link would be worse than doing nothing.
+     */
+    private fun startOrFallBackToAppSettings(context: Context, intent: Intent) {
+        try {
+            context.startActivity(intent)
+            return
+        } catch (e: ActivityNotFoundException) {
+            Log.w(TAG, "No activity for ${intent.action}; falling back to app details", e)
+        }
+        try {
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                }
+            )
+        } catch (e: ActivityNotFoundException) {
+            Log.w(TAG, "No activity for app details settings either", e)
+        }
+    }
+
+    private const val TAG = "NotificationPermissionUtils"
 }
