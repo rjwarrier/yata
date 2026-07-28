@@ -18,6 +18,8 @@ val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) load(FileInputStream(keystorePropertiesFile))
 }
 
+val debugKeystoreFile = rootProject.file("debug.keystore")
+
 android {
     namespace = "com.mj.yata"
     compileSdk = 35
@@ -36,6 +38,20 @@ android {
     }
 
     signingConfigs {
+        // Debug signing pinned to a keystore shared across this project's dev machines, so a
+        // debug build from any of them installs over the others without an uninstall first.
+        // Deliberately not ~/.android/debug.keystore: that one is the machine-wide default every
+        // other Android project on the box signs with, and swapping it there would force an
+        // uninstall on all of them instead. Gitignored (*.keystore) — copy it between machines by
+        // hand. Absent, the debug build falls back to the default key rather than failing.
+        if (debugKeystoreFile.exists()) {
+            getByName("debug") {
+                storeFile = debugKeystoreFile
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
         if (keystorePropertiesFile.exists()) {
             create("release") {
                 storeFile = file(keystoreProperties["storeFile"] as String)
