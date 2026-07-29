@@ -708,4 +708,57 @@
          things the user can act on differently, and what matters is that the change did not
          stick and can be retried. -->
     <string name="error_action_failed">Something went wrong - your change wasn\'t saved</string>
+
+    <!-- Settings: Privacy -->
+    <string name="settings_app_lock">App Lock</string>
+    <string name="settings_pin_code">PIN code</string>
+    <string name="settings_auto_lock">Auto-lock</string>
+
+    <!-- Settings: Backup &amp; Data -->
+    <string name="settings_backup_to_file">Backup YATA to File</string>
+    <string name="settings_backup_to_file_summary">Exports all tasks, lists, and settings to a JSON file.</string>
+    <string name="settings_restore_from_file">Restore YATA from File</string>
+    <string name="settings_restore_from_file_summary">Restore tasks and configuration from a previous backup file.</string>
+    <string name="settings_import_csv">Import CSV/text</string>
+    <string name="settings_import_csv_summary">Add tasks from a CSV file (title,due,priority,list,notes) or a plain-text list, one title per line.</string>
+    <string name="settings_export_csv_summary">Saves all tasks to a CSV file (title,due,priority,list,notes) - a human-editable spreadsheet, not a full backup.</string>
+    <string name="settings_export_calendar">Export to Calendar</string>
+    <string name="settings_export_calendar_summary">Saves a .ics file of due tasks for any calendar app.</string>
+    <string name="settings_show_welcome_tour_summary">Replay the intro explaining YATA\'s terms and features.</string>
+    <string name="settings_delete_all_data_summary">Backs up to Downloads automatically, then erases everything on this device.</string>
+    <string name="settings_data_kept_when_hidden">Your data is kept even when hidden.</string>
+
+    <!-- Settings: Cloud backup -->
+    <string name="settings_cloud_backup">Cloud Backup</string>
+    <string name="settings_wifi_only">Wi-Fi only</string>
+    <string name="settings_wifi_only_summary">Skip backups on mobile data.</string>
+    <string name="settings_archive_old_completed">Archive old completed tasks</string>
+    <string name="settings_sign_out">Sign out</string>
+    <string name="settings_backup_frequency_minimum">Minimum 15 minutes - Android won\'t run background backups more often than that.</string>
+    <string name="settings_cloud_archive_explainer">Completed tasks older than this move out of the main cloud backup into a separate archive file, so the backup that uploads every time doesn\'t keep growing. Nothing is deleted from the app.</string>
+    <!-- %1$s is a relative time ("2 hours ago"), optionally followed by an absolute one. -->
+    <string name="settings_last_backed_up">Last backed up: %1$s</string>
+    <string name="settings_last_local_backup">Last local backup: %1$s</string>
+
+    <!-- Settings: Local backup -->
+    <string name="settings_local_backup">Encrypted local backup</string>
+    <string name="settings_local_backup_summary">Automatically back up to this device, encrypted, no account needed.</string>
+    <string name="settings_restore_local_backup">Restore latest local backup</string>
+
+    <!-- Settings: Help, Appearance -->
+    <string name="settings_help_about_title">Help &amp; About</string>
+    <string name="settings_help_about_summary">Feature guide, version, and app identity.</string>
+    <string name="settings_theme_color">App theme color</string>
+    <string name="settings_theme_color_summary">Pick a seed color to theme the app with - used instead of Material You while it\'s off.</string>
+    <string name="settings_seed_default">Default</string>
+    <string name="settings_seed_custom">Custom</string>
+    <!-- Font-size preview swatch. Translatable on purpose: a script with no Latin letters wants
+         its own two-character sample rather than "Aa". -->
+    <string name="settings_font_sample">Aa</string>
+
+    <!-- Backup diff summary. %1$s is a category label, %2$d the number of items in it. -->
+    <string name="settings_diff_category">%1$s (%2$d)</string>
+    <string name="settings_diff_item">• %1$s</string>
+    <string name="settings_diff_more">+%1$d more</string>
+
 </resources>

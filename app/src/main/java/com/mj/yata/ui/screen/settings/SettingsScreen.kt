@@ -728,7 +728,7 @@ fun SettingsScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Aa",
+                            text = stringResource(R.string.settings_font_sample),
                             fontSize = (28 * sliderPosition).sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -786,7 +786,7 @@ fun SettingsScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Aa",
+                            text = stringResource(R.string.settings_font_sample),
                             fontSize = (28 * textSliderPosition).sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -1374,7 +1374,7 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "App Lock",
+                                text = stringResource(R.string.settings_app_lock),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
@@ -1403,7 +1403,7 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "PIN code",
+                                    text = stringResource(R.string.settings_pin_code),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                 )
                                 Text(
@@ -1429,7 +1429,7 @@ fun SettingsScreen(
 
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                text = "Auto-lock",
+                                text = stringResource(R.string.settings_auto_lock),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             SegmentedControl(
@@ -1488,11 +1488,11 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Backup YATA to File",
+                                text = stringResource(R.string.settings_backup_to_file),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Exports all tasks, lists, and settings to a JSON file.",
+                                text = stringResource(R.string.settings_backup_to_file_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1535,11 +1535,11 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Restore YATA from File",
+                                text = stringResource(R.string.settings_restore_from_file),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Restore tasks and configuration from a previous backup file.",
+                                text = stringResource(R.string.settings_restore_from_file_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1563,11 +1563,11 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Import CSV/text",
+                                text = stringResource(R.string.settings_import_csv),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Add tasks from a CSV file (title,due,priority,list,notes) or a plain-text list, one title per line.",
+                                text = stringResource(R.string.settings_import_csv_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1591,11 +1591,11 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Export CSV",
+                                text = stringResource(R.string.settings_export_csv),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Saves all tasks to a CSV file (title,due,priority,list,notes) — a human-editable spreadsheet, not a full backup.",
+                                text = stringResource(R.string.settings_export_csv_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1619,11 +1619,11 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Export to Calendar",
+                                text = stringResource(R.string.settings_export_calendar),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Saves a .ics file of due tasks for any calendar app.",
+                                text = stringResource(R.string.settings_export_calendar_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1647,11 +1647,11 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Show Welcome Tour",
+                                text = stringResource(R.string.settings_show_welcome_tour),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = "Replay the intro explaining YATA's terms and features.",
+                                text = stringResource(R.string.settings_show_welcome_tour_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1825,12 +1825,12 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Delete All Data",
+                                text = stringResource(R.string.settings_delete_all_data),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.error
                             )
                             Text(
-                                text = "Backs up to Downloads automatically, then erases everything on this device.",
+                                text = stringResource(R.string.settings_delete_all_data_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1868,7 +1868,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Cloud Backup",
+                                text = stringResource(R.string.settings_cloud_backup),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
@@ -1951,13 +1951,16 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Back up now",
+                                    text = stringResource(R.string.settings_back_up_now),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                     color = if (cloudBackupEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                 )
                                 Text(
-                                    text = "Last backed up: " + formatRelativeBackupTime(cloudBackupLastAt) +
-                                        (formatAbsoluteBackupTime(cloudBackupLastAt)?.let { " · $it" } ?: ""),
+                                    text = stringResource(
+                                        R.string.settings_last_backed_up,
+                                        formatRelativeBackupTime(cloudBackupLastAt) +
+                                            (formatAbsoluteBackupTime(cloudBackupLastAt)?.let { " · $it" } ?: "")
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1999,7 +2002,7 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                             Text(
-                                text = "Compare with Backup",
+                                text = stringResource(R.string.settings_compare_with_backup),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                         }
@@ -2013,11 +2016,11 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Wi-Fi only",
+                                    text = stringResource(R.string.settings_wifi_only),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                 )
                                 Text(
-                                    text = "Skip backups on mobile data.",
+                                    text = stringResource(R.string.settings_wifi_only_summary),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -2044,7 +2047,7 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Backup frequency",
+                                    text = stringResource(R.string.settings_backup_frequency),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                 )
                                 Text(
@@ -2071,7 +2074,7 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Archive old completed tasks",
+                                    text = stringResource(R.string.settings_archive_old_completed),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                 )
                                 Text(
@@ -2120,7 +2123,7 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                             Text(
-                                text = "Restore from Cloud Backup",
+                                text = stringResource(R.string.settings_restore_from_cloud),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                             )
                         }
@@ -2138,7 +2141,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Sign out",
+                                text = stringResource(R.string.settings_sign_out),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -2167,11 +2170,11 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Encrypted local backup",
+                                text = stringResource(R.string.settings_local_backup),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
-                                text = "Automatically back up to this device, encrypted, no account needed.",
+                                text = stringResource(R.string.settings_local_backup_summary),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2191,7 +2194,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Last local backup: " + formatRelativeBackupTime(localBackupLastAt),
+                                text = stringResource(R.string.settings_last_local_backup, formatRelativeBackupTime(localBackupLastAt)),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2213,7 +2216,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Restore latest local backup",
+                                text = stringResource(R.string.settings_restore_local_backup),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -2248,11 +2251,11 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Help & About",
+                            text = stringResource(R.string.settings_help_about_title),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = "Feature guide, version, and app identity.",
+                            text = stringResource(R.string.settings_help_about_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -2479,7 +2482,7 @@ fun SettingsScreen(
                         onItemSelected = { freqUnit = it }
                     )
                     Text(
-                        text = "Minimum 15 minutes — Android won't run background backups more often than that.",
+                        text = stringResource(R.string.settings_backup_frequency_minimum),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -2507,7 +2510,7 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Completed tasks older than this move out of the main cloud backup into a separate archive file, so the backup that uploads every time doesn't keep growing. Nothing is deleted from the app.",
+                        text = stringResource(R.string.settings_cloud_archive_explainer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -2771,13 +2774,13 @@ private fun BackupDiffTaskSection(label: String, titles: List<String>, totalCoun
     if (totalCount == 0) return
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            text = "$label ($totalCount)",
+            text = stringResource(R.string.settings_diff_category, label, totalCount),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         titles.forEach { title ->
             Text(
-                text = "• $title",
+                text = stringResource(R.string.settings_diff_item, title),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -2786,7 +2789,7 @@ private fun BackupDiffTaskSection(label: String, titles: List<String>, totalCoun
         }
         if (totalCount > titles.size) {
             Text(
-                text = "+${totalCount - titles.size} more",
+                text = stringResource(R.string.settings_diff_more, totalCount - titles.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
@@ -2870,7 +2873,7 @@ private fun FeatureToggleRow(
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
             )
             Text(
-                text = "Your data is kept even when hidden.",
+                text = stringResource(R.string.settings_data_kept_when_hidden),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -3115,11 +3118,11 @@ private fun ThemeColorPicker(selectedSeedArgb: Int?, onSelect: (Int?) -> Unit) {
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = "App theme color",
+            text = stringResource(R.string.settings_theme_color),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
         )
         Text(
-            text = "Pick a seed color to theme the app with — used instead of Material You while it's off.",
+            text = stringResource(R.string.settings_theme_color_summary),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -3130,7 +3133,7 @@ private fun ThemeColorPicker(selectedSeedArgb: Int?, onSelect: (Int?) -> Unit) {
             item {
                 ThemeSwatch(
                     color = com.mj.yata.ui.theme.LightColors.primary,
-                    label = "Default",
+                    label = stringResource(R.string.settings_seed_default),
                     selected = selectedSeedArgb == null,
                     onClick = { onSelect(null) }
                 )
@@ -3146,7 +3149,7 @@ private fun ThemeColorPicker(selectedSeedArgb: Int?, onSelect: (Int?) -> Unit) {
             item {
                 ThemeSwatch(
                     color = if (isCustomActive) Color(selectedSeedArgb!!) else MaterialTheme.colorScheme.surfaceContainerHighest,
-                    label = "Custom",
+                    label = stringResource(R.string.settings_seed_custom),
                     selected = isCustomActive,
                     showAddIcon = !isCustomActive,
                     onClick = { showCustomPicker = true }
