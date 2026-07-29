@@ -1023,8 +1023,12 @@ fun TaskDetailScreen(
                                 notesBuffer = it
                                 viewModel.upsertTask(task.copy(notes = it))
                             },
-                            placeholder = { Text(stringResource(R.string.task_detail_tap_to_add_notes_supports_markdown)) },
+                            placeholder = { Text(stringResource(R.string.task_detail_notes_placeholder)) },
+                            supportingText = { Text(stringResource(R.string.task_detail_notes_supporting)) },
                             minLines = 3,
+                            // Bounded so a long note scrolls inside the field instead of pushing
+                            // the comments section and everything below it off the screen.
+                            maxLines = 12,
                             modifier = Modifier.fillMaxWidth()
                                 .focusRequester(notesFocusRequester)
                                 .onFocusChanged {
@@ -1077,27 +1081,32 @@ fun TaskDetailScreen(
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = newComment,
-                            onValueChange = { newComment = it },
-                            placeholder = { Text(stringResource(R.string.task_detail_add_a_comment)) },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
-                            onClick = {
-                                if (newComment.isNotBlank()) {
-                                    viewModel.addComment(task.id, newComment.trim())
-                                    newComment = ""
-                                }
-                            },
-                            enabled = newComment.isNotBlank()
-                        ) {
-                            Icon(Icons.AutoMirrored.Default.Send, contentDescription = stringResource(R.string.task_detail_post_comment))
+                    // Send lives in the field's trailingIcon slot rather than as a sibling button
+                    // outside it. That's the M3 pattern for a field's own submit action, and it
+                    // also fixes the alignment: as a sibling, the button centred against a
+                    // growing multi-line field and drifted away from the text baseline.
+                    val postComment = {
+                        if (newComment.isNotBlank()) {
+                            viewModel.addComment(task.id, newComment.trim())
+                            newComment = ""
                         }
                     }
+                    OutlinedTextField(
+                        value = newComment,
+                        onValueChange = { newComment = it },
+                        placeholder = { Text(stringResource(R.string.task_detail_add_a_comment)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        maxLines = 6,
+                        trailingIcon = {
+                            IconButton(onClick = postComment, enabled = newComment.isNotBlank()) {
+                                Icon(
+                                    Icons.AutoMirrored.Default.Send,
+                                    contentDescription = stringResource(R.string.task_detail_post_comment)
+                                )
+                            }
+                        }
+                    )
                     comments.forEach { comment ->
                         val author = comment.authorId?.let { peopleById[it] }
                         Surface(

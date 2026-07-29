@@ -522,6 +522,11 @@
     <string name="task_detail_skip_this_occurrence">Skip this occurrence</string>
     <string name="task_detail_tag">Tag...</string>
     <string name="task_detail_tap_to_add_notes_supports_markdown">Tap to add notes... (supports markdown)</string>
+    <!-- The markdown hint belongs in the field's supportingText slot, not crammed into the
+         placeholder: a placeholder disappears the moment you start typing, which is exactly when
+         knowing markdown is accepted becomes useful. -->
+    <string name="task_detail_notes_placeholder">Add notes...</string>
+    <string name="task_detail_notes_supporting">Supports markdown</string>
     <string name="task_sort_menu_button_sort_tasks">Sort tasks</string>
     <string name="today_next_10_days">Next 10 days</string>
     <string name="today_search_tasks">Search tasks</string>

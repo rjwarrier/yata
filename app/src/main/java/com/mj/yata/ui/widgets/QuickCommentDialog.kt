@@ -48,6 +48,8 @@ fun QuickCommentDialog(
                     onValueChange = { body = it },
                     placeholder = { Text(stringResource(R.string.quick_comment_write_a_comment)) },
                     minLines = 3,
+                    maxLines = 8,
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

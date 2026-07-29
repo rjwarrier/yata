@@ -1270,6 +1270,10 @@ fun NewTaskSheet(
                     onValueChange = { notes = it },
                     placeholder = { Text(stringResource(R.string.new_task_add_notes)) },
                     minLines = 2,
+                    // Same shape and bound as the notes field on TaskDetailScreen — the two were
+                    // 4dp and 12dp respectively, for the same field on two screens.
+                    maxLines = 8,
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
