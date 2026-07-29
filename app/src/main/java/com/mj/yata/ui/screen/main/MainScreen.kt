@@ -244,10 +244,22 @@ fun MainScreen(
                 ) {
                     item {
                         // Profile Header
+                        // Tapping the header goes to Settings, where these are edited. Until a
+                        // name/email is set both fields render as placeholders rather than empty
+                        // strings — an unset profile otherwise showed as a bare avatar with a
+                        // blank column beside it, giving no hint the fields exist at all.
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    scope.launch { drawerState.close() }
+                                    onNavigateToSettings()
+                                }
+                                .padding(vertical = 4.dp)
+                                .padding(bottom = 12.dp)
                         ) {
                             PersonAvatar(
                                 initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
@@ -257,11 +269,13 @@ fun MainScreen(
                             )
                             Column {
                                 Text(
-                                    text = userName,
-                                    style = MaterialTheme.typography.titleMedium
+                                    text = userName.ifBlank { stringResource(R.string.profile_add_name) },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = if (userName.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant
+                                            else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = userEmail,
+                                    text = userEmail.ifBlank { stringResource(R.string.profile_add_email) },
                                     style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 )
                             }

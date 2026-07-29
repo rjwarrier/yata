@@ -440,9 +440,10 @@ fun SettingsScreen(
                             )
                         } else {
                             Text(
-                                text = userName,
+                                text = userName.ifBlank { stringResource(R.string.profile_add_name) },
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = if (userName.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant
+                                        else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.clickable {
                                     tempName = userName
                                     editingName = true
@@ -468,7 +469,7 @@ fun SettingsScreen(
                             )
                         } else {
                             Text(
-                                text = userEmail,
+                                text = userEmail.ifBlank { stringResource(R.string.profile_add_email) },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.clickable {
