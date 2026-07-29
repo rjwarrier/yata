@@ -229,12 +229,6 @@ fun TodayTab(
                         }
                     }
                 }
-                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSearchClick) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.today_search_tasks)
-                    )
-                }
                 com.mj.yata.ui.widgets.TaskSortMenuButton(
                     current = sortMode,
                     onSelect = onSortModeChange,
@@ -259,6 +253,13 @@ fun TodayTab(
                     Icon(
                         imageVector = Icons.Default.DateRange,
                         contentDescription = stringResource(R.string.today_next_10_days)
+                    )
+                }
+                // Search is the last action before the avatar, which keeps the corner.
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSearchClick) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(R.string.today_search_tasks)
                     )
                 }
                 // Wrapped in an IconButton so the avatar gets the same 48dp touch target and
