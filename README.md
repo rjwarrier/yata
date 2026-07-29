@@ -1,4 +1,4 @@
-# YATA — Yet Another Task App
+# YATA — Yet Another To-Do App
 
 A Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt.
 <img width="1080" height="1920" alt="yata-status-v5" src="https://github.com/user-attachments/assets/f23751e7-6288-424b-bddd-628c8d037061" />
