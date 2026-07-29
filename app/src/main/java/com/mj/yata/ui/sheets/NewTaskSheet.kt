@@ -32,6 +32,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
@@ -735,7 +738,23 @@ fun NewTaskSheet(
                         }
                         title = newValue
                     },
-                    singleLine = true,
+                    // Wraps instead of scrolling horizontally. As a single line, a long or pasted
+                    // title ran off the right edge with the cursor pinned to the end and no
+                    // practical way to get back to the start to edit it. Wrapping shows the whole
+                    // thing; past four lines the field scrolls vertically rather than pushing the
+                    // chips and Add button off the sheet.
+                    //
+                    // Newlines still reach the value either way — they're what bulk mode splits
+                    // on (see bulkTaskLines) — so multi-line paste behaves as before, except the
+                    // lines are now actually visible.
+                    maxLines = 4,
+                    // Enter still submits, as it did when this was singleLine. Without this the
+                    // IME action key turns into a newline key, and typing Enter would silently
+                    // put the sheet into bulk ("create one task per line") mode instead of
+                    // creating the task. Pasted newlines still reach the value and still trigger
+                    // bulk mode — that path is unchanged.
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { submit() }),
                     textStyle = TextStyle(
                         fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
                         fontWeight = FontWeight.Medium,

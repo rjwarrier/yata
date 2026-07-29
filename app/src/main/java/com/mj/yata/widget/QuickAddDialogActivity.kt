@@ -312,7 +312,10 @@ private fun QuickAddDialogContent(
                     value = title,
                     onValueChange = { title = it },
                     placeholder = { Text(stringResource(R.string.quick_add_dialog_what_needs_doing)) },
-                    singleLine = true,
+                    // Wraps rather than scrolling off to the right — same reason as the title
+                    // field in NewTaskSheet. ImeAction.Done still submits, so the action key
+                    // behaves as before and never inserts a newline.
+                    maxLines = 4,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
                         onDone = { if (title.isNotBlank()) onSubmit(title.trim()) }

@@ -468,7 +468,11 @@ fun TaskDetailScreen(
                                     if (newValue.text.isNotBlank()) viewModel.upsertTask(task.copy(title = newValue.text))
                                 },
                                 textStyle = titleStyle,
-                                singleLine = true,
+                                // Wraps rather than scrolling off to the right. This is the field
+                                // for editing an *existing* title, so it's the one most likely to
+                                // already hold text longer than the line — as a single line the
+                                // start of it was unreachable.
+                                maxLines = 4,
                                 cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
                                 modifier = Modifier
                                     .weight(1f)
