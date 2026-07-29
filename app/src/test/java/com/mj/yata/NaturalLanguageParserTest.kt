@@ -708,4 +708,57 @@ class NaturalLanguageParserTest {
         assertEquals(2, result.recurrence?.interval)
         assertEquals("eye exam", result.title)
     }
+
+    // --- Start date ("not before") ---
+
+    @Test
+    fun parsesStartsWeekday() {
+        val result = NaturalLanguageParser.parse("draft proposal starts monday", ref)
+        assertEquals("2026-07-06", result.startDate)
+        assertEquals("draft proposal", result.title)
+        // The weekday belongs to the start phrase and must not also become a due date.
+        assertNull(result.due)
+    }
+
+    @Test
+    fun parsesNotBefore() {
+        val result = NaturalLanguageParser.parse("chase invoice not before next week", ref)
+        assertEquals("2026-07-11", result.startDate)
+        assertEquals("chase invoice", result.title)
+    }
+
+    @Test
+    fun parsesDeferUntil() {
+        val result = NaturalLanguageParser.parse("book flights defer until tomorrow", ref)
+        assertEquals("2026-07-05", result.startDate)
+        assertEquals("book flights", result.title)
+    }
+
+    @Test
+    fun parsesStartAndDueTogether() {
+        // The two are independent: the start phrase is claimed first, leaving "due friday" to the
+        // due rules. Getting this wrong in either direction silently swaps the dates.
+        val result = NaturalLanguageParser.parse("tax return starts monday due friday", ref)
+        assertEquals("2026-07-06", result.startDate)
+        assertEquals("2026-07-10", result.due)
+        // "due" survives in the title — the date rules claim the date word, not the "due" before
+        // it (prepositionRegex covers for/on/at/by but deliberately not "due"). Pre-existing and
+        // asserted by parsesBareOrdinalDayOfMonth ("rent due the 20th" -> "rent due").
+        assertEquals("tax return due", result.title)
+    }
+
+    @Test
+    fun doesNotTreatStartVerbAsStartDate() {
+        // "start the report" is a title. Nothing date-like follows the keyword, so the rule must
+        // decline rather than claim the words after it.
+        val result = NaturalLanguageParser.parse("start the report", ref)
+        assertNull(result.startDate)
+        assertEquals("start the report", result.title)
+    }
+
+    @Test
+    fun noStartDateWhenUnstated() {
+        val result = NaturalLanguageParser.parse("buy milk tomorrow", ref)
+        assertNull(result.startDate)
+    }
 }

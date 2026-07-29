@@ -301,6 +301,7 @@ class JsonExporter @Inject constructor(
             o.put("projectId", t.projectId ?: JSONObject.NULL)
             o.put("section", t.section)
             o.put("due", t.due)
+            o.put("startDate", t.startDate)
             o.put("time", t.time)
             o.put("reminder", t.reminder)
             o.put("priority", t.priority)
@@ -698,6 +699,9 @@ class JsonExporter @Inject constructor(
                                 projectId = if (o.isNull("projectId")) null else o.optString("projectId", null),
                                 section = o.getString("section"),
                                 due = if (o.isNull("due")) null else o.optString("due"),
+                                // Absent in any backup written before start dates existed, which
+                                // reads as null — "available now", the behaviour those tasks had.
+                                startDate = if (o.isNull("startDate")) null else o.optString("startDate", null),
                                 time = if (o.isNull("time")) null else o.optString("time"),
                                 reminder = if (o.isNull("reminder")) null else o.optString("reminder"),
                                 priority = o.getString("priority"),

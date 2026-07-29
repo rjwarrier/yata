@@ -34,6 +34,11 @@ data class TaskEntity(
     val projectId: String?,
     val section: String, // "Morning" | "Afternoon"
     val dueDate: String?, // "YYYY-MM-DD"
+    // The date this becomes actionable — "not before", the mirror of dueDate's "not after". Null
+    // means available immediately, which is every task that existed before this column. A task
+    // whose startDate is in the future is *deferred*: still live, still in its project/list, just
+    // filtered out of Today so the day only shows what can actually be worked on.
+    val startDate: String? = null, // "YYYY-MM-DD"
     val dueTime: String?, // "2:00 PM"
     val reminder: String?, // "15 min before"
     val priority: String, // "none" | "low" | "med" | "high"

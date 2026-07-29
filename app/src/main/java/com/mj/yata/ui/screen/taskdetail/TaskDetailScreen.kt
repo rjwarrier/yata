@@ -158,6 +158,7 @@ fun TaskDetailScreen(
     // Subtask input state
     var newSubtaskTitle by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showStartDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
 
@@ -567,6 +568,19 @@ fun TaskDetailScreen(
                                 )
                             },
                             showCheck = false
+                        )
+                    }
+
+                    // Only shown once a start date exists. An always-present "No start date" row
+                    // would put a field most tasks never use above Reminder and Repeat, which
+                    // nearly all of them do — it's set from the schedule editor instead.
+                    if (task.startDate != null) {
+                        MetaRowItem(
+                            icon = Icons.Default.EventAvailable,
+                            label = stringResource(R.string.task_start_date),
+                            value = com.mj.yata.util.TaskScheduleUtils.formatDueDate(task.startDate),
+                            accentColor = MaterialTheme.colorScheme.secondary,
+                            onClick = { activeSheet = DetailSheetType.ScheduleEditor }
                         )
                     }
 
@@ -1157,6 +1171,38 @@ fun TaskDetailScreen(
                             }
                         }
 
+                        // Start date — its own row rather than mixed in with the due-date chips
+                        // above, since the two mean opposite ends of the same window and sharing
+                        // a row invites setting one when you meant the other.
+                        Text(
+                            text = stringResource(R.string.task_start_date),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            LocalScheduleChip("Tomorrow", task.startDate == java.time.LocalDate.now().plusDays(1).toString()) {
+                                viewModel.upsertTask(task.copy(startDate = java.time.LocalDate.now().plusDays(1).toString()))
+                            }
+                            LocalScheduleChip("Next week", task.startDate == java.time.LocalDate.now().plusWeeks(1).toString()) {
+                                viewModel.upsertTask(task.copy(startDate = java.time.LocalDate.now().plusWeeks(1).toString()))
+                            }
+                            LocalScheduleChip("Next month", task.startDate == java.time.LocalDate.now().plusMonths(1).toString()) {
+                                viewModel.upsertTask(task.copy(startDate = java.time.LocalDate.now().plusMonths(1).toString()))
+                            }
+                            LocalScheduleChip(stringResource(R.string.task_start_date_none), task.startDate == null) {
+                                viewModel.upsertTask(task.copy(startDate = null))
+                            }
+                            LocalScheduleChip("Pick date", false) {
+                                showStartDatePicker = true
+                            }
+                        }
+                        LocalPanelHint(stringResource(R.string.task_start_date_hint))
+
                         if (task.due == null) {
                             LocalPanelHint("Pick a due date to unlock time and reminder options.")
                         } else {
@@ -1361,6 +1407,17 @@ fun TaskDetailScreen(
             onConfirm = {
                 viewModel.upsertTask(task.copy(due = it))
                 showDatePicker = false
+            }
+        )
+    }
+
+    if (showStartDatePicker) {
+        YataDatePickerDialog(
+            initialDate = task.startDate,
+            onDismiss = { showStartDatePicker = false },
+            onConfirm = {
+                viewModel.upsertTask(task.copy(startDate = it))
+                showStartDatePicker = false
             }
         )
     }

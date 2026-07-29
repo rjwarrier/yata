@@ -129,6 +129,11 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 // (here, one parsed from shared text) wins, otherwise the preset
                                 // project's own due date, otherwise today.
                                 due = due,
+                                // No preset/today fallback, unlike due: a start date only exists
+                                // if the text actually said so. Defaulting one would defer every
+                                // widget-created task out of Today, which is the opposite of what
+                                // a quick-add is for.
+                                startDate = parsedTyped.startDate ?: parsedShared?.startDate,
                                 time = parsedTyped.time ?: parsedShared?.time,
                                 reminder = parsedTyped.reminder ?: parsedShared?.reminder,
                                 priority = parsedTyped.priority ?: "none",

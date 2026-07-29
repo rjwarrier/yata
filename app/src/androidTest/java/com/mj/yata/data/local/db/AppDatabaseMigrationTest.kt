@@ -491,6 +491,43 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate25To26_addsStartDateColumn_defaultingToNull_preservingExistingRows() {
+        context.deleteDatabase(TEST_DB)
+        createVersion18TasksTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`completedAt`,`deletedAt`,`notes`,`recurrenceJson`,`sortOrder`) " +
+                    "VALUES ('t1','File taxes',NULL,NULL,'Morning','2026-04-15',NULL,NULL,'high',0,0,NULL,NULL,NULL,NULL,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(26) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_23_24.migrate(db)
+                    AppDatabase.MIGRATION_24_25.migrate(db)
+                    AppDatabase.MIGRATION_25_26.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `title`, `dueDate`, `startDate` FROM `tasks` WHERE `id` = 't1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("File taxes", cursor.getString(cursor.getColumnIndexOrThrow("title")))
+                // Existing rows must read as null, i.e. "available now". A non-null default would
+                // defer every task in the database on upgrade and empty out Today.
+                assertTrue(cursor.isNull(cursor.getColumnIndexOrThrow("startDate")))
+                // The neighbouring date column must be untouched by the ALTER.
+                assertEquals("2026-04-15", cursor.getString(cursor.getColumnIndexOrThrow("dueDate")))
+            }
+            close()
+        }
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)

@@ -14,6 +14,7 @@ import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.AnalyticsUiState
 import com.mj.yata.util.AnalyticsUtils
 import com.mj.yata.ui.error.AppErrorBus
+import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -942,6 +943,26 @@ private data class MainNavigationState(
         }
     }
 
+    /** Creates the task a [NewTaskDraft] describes. The one place the sheet's collected fields are
+     * mapped onto the domain model, so a new field on the draft lands here and nowhere else. */
+    fun addTask(draft: NewTaskDraft) = addTask(
+        title = draft.title,
+        listId = draft.listId,
+        priority = draft.priority,
+        assigneeIds = draft.assigneeIds,
+        tagIds = draft.tagIds,
+        recurrence = draft.recurrence,
+        notes = draft.notes,
+        due = draft.due,
+        startDate = draft.startDate,
+        time = draft.time,
+        reminder = draft.reminder,
+        section = draft.section,
+        projectId = draft.projectId,
+        subtasks = draft.subtasks,
+        flag = draft.flag
+    )
+
     fun addTask(
         title: String,
         listId: String?,
@@ -951,6 +972,7 @@ private data class MainNavigationState(
         recurrence: Recurrence?,
         notes: String? = null,
         due: String? = LocalDate.now().toString(),
+        startDate: String? = null,
         time: String? = null,
         reminder: String? = null,
         section: String = "Afternoon",
@@ -966,6 +988,7 @@ private data class MainNavigationState(
                 projectId = projectId,
                 section = section,
                 due = due,
+                startDate = startDate,
                 time = time,
                 reminder = reminder,
                 priority = priority,

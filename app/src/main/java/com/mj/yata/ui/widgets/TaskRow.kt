@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.QuickSnoozePreset
+import com.mj.yata.domain.model.isDeferredOn
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.TaskRowDensity
@@ -246,6 +247,12 @@ fun TaskRow(
             // rather than only the manual-order List/Project detail screens.
             val today = remember { LocalDate.now() }
             val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(today) == true
+            // A deferred task is filtered out of Today, but still listed in its project/list and
+            // in search. Without a marker it reads as an ordinary task that Today is inexplicably
+            // ignoring, so it gets a badge naming the date it becomes actionable. Takes precedence
+            // over "Overdue": a task that is both is waiting, not late — the start date is the
+            // reason it hasn't been done, and showing red here would be blaming the user for it.
+            val deferred = remember(task, today) { task.isDeferredOn(today.toString()) }
             val healthBadges = remember(task, overdue, today) {
                 buildList {
                     if (!task.done && task.due == today.toString()) add("Due today")
@@ -256,7 +263,7 @@ fun TaskRow(
             }
 
             // Meta row below
-            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
+            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -269,6 +276,25 @@ fun TaskRow(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
                         )
+                    } else if (deferred) {
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    R.string.task_starts_on,
+                                    task.startDate?.let { TaskScheduleUtils.formatDueDate(it) }.orEmpty()
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                        }
                     } else if (overdue) {
                         Row(
                             modifier = Modifier

@@ -427,6 +427,15 @@
          so an unset name could never be set. -->
     <string name="profile_add_name">Add your name</string>
     <string name="profile_add_email">Add your email</string>
+
+    <!-- Start date ("not actionable before"). %1$s is an already-formatted date. -->
+    <string name="task_starts_on">Starts %1$s</string>
+    <string name="task_start_date">Start date</string>
+    <string name="task_start_date_none">No start date</string>
+    <string name="cd_pick_start_date">Pick start date</string>
+    <string name="cd_clear_start_date">Clear start date</string>
+    <string name="task_start_date_hint">Hidden from Today until this date</string>
+    <string name="smart_add_starts">Starts %1$s</string>
     <string name="settings_set_pin">Set PIN</string>
     <string name="settings_settings">Settings</string>
     <string name="settings_show_welcome_tour">Show welcome tour</string>
@@ -608,6 +617,7 @@
     <string name="date_today">Today</string>
     <string name="date_tomorrow">Tomorrow</string>
     <string name="date_next_week">Next week</string>
+    <string name="date_next_month">Next month</string>
     <string name="date_no_due">No due date</string>
     <string name="date_pick">Pick date</string>
     <string name="time_requires_due_date">Add a due date first so the time has something to attach to.</string>

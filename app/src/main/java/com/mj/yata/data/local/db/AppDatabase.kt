@@ -24,7 +24,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 25,
+    version = 26,
     // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
     // purely-additive future changes use Room auto-migrations instead of hand-written ones.
     exportSchema = true
@@ -308,6 +308,14 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_24_25 = object : Migration(24, 25) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE tasks ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        /** Adds tasks.startDate — the "not actionable before" date. Nullable with no default, so
+         * every pre-existing task reads as available immediately, which is what it was. */
+        val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN startDate TEXT DEFAULT NULL")
             }
         }
     }

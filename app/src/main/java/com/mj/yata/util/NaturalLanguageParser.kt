@@ -12,6 +12,7 @@ import java.util.Locale
 data class ParsedQuickAdd(
     val title: String,
     val due: String?, // "YYYY-MM-DD", null if nothing matched
+    val startDate: String? = null, // "YYYY-MM-DD" — "starts monday"/"not before the 3rd"
     val time: String?, // "h:mm a", null if nothing matched
     val recurrence: Recurrence?, // null if nothing matched
     val reminder: String? = null, // one of TaskScheduleUtils.reminderOptions, or a literal "h:mm a" clock time
@@ -167,6 +168,22 @@ object NaturalLanguageParser {
     private fun countOrOne(token: String): Long = token.toLongOrNull() ?: 1L
     private val dayAfterTomorrowRegex = Regex("\\bday\\s+after\\s+tomorrow\\b", RegexOption.IGNORE_CASE)
     private val fortnightRegex = Regex("\\b(?:in\\s+)?(?:a\\s+)?fortnight\\b", RegexOption.IGNORE_CASE)
+    /**
+     * Start-date phrases: a "not before" keyword plus the date phrase it governs, which group 2
+     * captures for [NaturalLanguageParser.parse] to resolve on its own.
+     *
+     * "start"/"starts"/"starting" needs the trailing anchor to be careful — "start the report"
+     * is a title, not a start date. Group 2 therefore only accepts a date-ish lead-in
+     * (a digit, or one of the words that can begin a date phrase), and the whole rule no-ops when
+     * the resolver can't make a date out of what follows. "not before" and "defer (to|until)"
+     * are unambiguous enough to take anything.
+     */
+    private val startDateRegex = Regex(
+        "\\b(starts?|starting|begins?|beginning|not\\s+before|defer(?:red)?(?:\\s+(?:to|until|till))?|available|from)\\s+" +
+            "((?:\\d|next\\b|this\\b|tomorrow\\b|today\\b|the\\b|in\\b|mon|tue|wed|thu|fri|sat|sun|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[A-Za-z0-9,/\\-\\s]*?)" +
+            "(?=\\s+(?:due|at|every|assign|@|#|!|p[1-3]|for\\b|in\\s+(?:list|project))|$)",
+        RegexOption.IGNORE_CASE
+    )
     private val fromNowRegex = Regex("\\b(a|an|\\d+)\\s+(day|week|month)s?\\s+from\\s+(?:now|today)\\b", RegexOption.IGNORE_CASE)
     // "the 20th" / "on the 20th" with no month named — nearest upcoming month that has that day.
     private val ordinalDayOfMonthRegex = Regex("\\b(?:on\\s+)?the\\s+(\\d{1,2})(?:st|nd|rd|th)\\b", RegexOption.IGNORE_CASE)
@@ -574,6 +591,29 @@ object NaturalLanguageParser {
             }
         }
 
+        // 2.5 Start date — "starts monday", "from next week", "defer to the 15th". Must run
+        // before section 3, or the bare date inside the phrase gets claimed as the *due* date and
+        // "starts monday" silently means the opposite of what it says.
+        //
+        // The date phrase itself is resolved by recursing into parse() on just the captured text,
+        // rather than duplicating the ~160 lines of date rules below. The recursion terminates at
+        // depth 1: the captured group can't contain another start keyword, since the keyword is
+        // what delimits it. Only the resolved date is taken from the nested result — its title,
+        // priority and everything else are discarded.
+        var startDate: LocalDate? = null
+        firstFreeMatch(startDateRegex)?.let { m ->
+            val phrase = m.groupValues[2].trim()
+            if (phrase.isNotEmpty()) {
+                NaturalLanguageParser.parse(phrase, referenceDate, referenceTime).due?.let { resolved ->
+                    startDate = runCatching { LocalDate.parse(resolved) }.getOrNull()
+                    // Claim the whole "starts <phrase>" span, not just the keyword, so the date
+                    // words inside it are off-limits to every rule below and get stripped from
+                    // the saved title along with the keyword.
+                    if (startDate != null) claim(m.range)
+                }
+            }
+        }
+
         // 3. Relative dates
         var dueRange: IntRange? = null
         firstFreeWord("tonight")?.let { m ->
@@ -887,6 +927,7 @@ object NaturalLanguageParser {
         val result = ParsedQuickAdd(
             title = title,
             due = due?.toString(),
+            startDate = startDate?.toString(),
             time = time,
             recurrence = recurrence,
             reminder = reminder,

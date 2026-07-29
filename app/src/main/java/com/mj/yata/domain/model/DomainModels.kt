@@ -129,6 +129,10 @@ data class Task(
     val projectId: String?,
     val section: String, // "Morning" | "Afternoon"
     val due: String?, // "YYYY-MM-DD"
+    // "Not before" — the mirror of [due]'s "not after". Null means available now. A task whose
+    // startDate is still in the future is deferred: live and untouched everywhere else, but kept
+    // out of Today so the day lists only what can actually be started. See [isDeferredOn].
+    val startDate: String? = null, // "YYYY-MM-DD"
     val time: String?, // "2:00 PM"
     val reminder: String?, // "15 min before"
     val priority: String, // "none" | "low" | "med" | "high"
@@ -147,6 +151,21 @@ data class Task(
     // [deletedAt]/Trash; mirrors the same flag on Project/Person/YataList.
     val archived: Boolean = false
 )
+
+/**
+ * True when this task's start date hasn't arrived yet, i.e. it is not actionable on [today].
+ *
+ * Compared as strings on purpose: dates are stored ISO ("YYYY-MM-DD"), which sorts
+ * lexicographically the same way it sorts chronologically, so this stays allocation-free in the
+ * list filters that call it per row per recomposition. A malformed value can't throw here the way
+ * LocalDate.parse would — it just compares as some other string and the task stays visible, which
+ * is the safe direction to fail: a task wrongly shown is a nuisance, one wrongly hidden is lost.
+ *
+ * Completed tasks are never deferred — a done task with a future start date is history, not
+ * something waiting to become actionable, and hiding it would break the Completed sections.
+ */
+fun Task.isDeferredOn(today: String): Boolean =
+    !done && startDate != null && startDate > today
 
 /**
  * Tag IDs this task carries, including tag IDs its project live-syncs to every task

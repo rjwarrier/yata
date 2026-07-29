@@ -533,8 +533,8 @@ fun ListDetailScreen(
                 tags = tags,
                 tasks = allTasks,
                 initialListId = list.id,
-                onAddTask = { title, listId, priority, assignees, taskTags, rec, due, time, reminder, section, taskProjectId, notes, subtasks, flag ->
-                    viewModel.addTask(title, listId, priority, assignees, taskTags, rec, notes = notes, due = due, time = time, reminder = reminder, section = section, projectId = taskProjectId, subtasks = subtasks, flag = flag)
+                onAddTask = { draft ->
+                    viewModel.addTask(draft)
                     isNewTaskSheetOpen = false
                 },
                 onGoToExistingTask = { id ->
