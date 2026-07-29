@@ -32,6 +32,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
@@ -197,11 +199,13 @@ fun UpcomingTab(
                     .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                IconButton(onClick = onMenuClick, modifier = Modifier.align(Alignment.CenterStart)) {
+                com.mj.yata.ui.widgets.YataTopBarIconButton(
+                    onClick = onMenuClick,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
-                        contentDescription = stringResource(R.string.cd_open_drawer),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        contentDescription = stringResource(R.string.cd_open_drawer)
                     )
                 }
                 Row(
@@ -241,14 +245,17 @@ fun UpcomingTab(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.align(Alignment.CenterEnd)
                 ) {
-                    IconButton(onClick = onSearchClick) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSearchClick) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = stringResource(R.string.cd_search),
-                            tint = MaterialTheme.colorScheme.onSurface
+                            contentDescription = stringResource(R.string.cd_search)
                         )
                     }
-                    Box(modifier = Modifier.clickable { onProfileClick() }) {
+                    val profileLabel = stringResource(R.string.cd_open_profile)
+                    IconButton(
+                        onClick = onProfileClick,
+                        modifier = Modifier.semantics { contentDescription = profileLabel }
+                    ) {
                         PersonAvatar(
                             initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
                             accentKey = "accentC",

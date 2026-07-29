@@ -27,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
@@ -103,7 +105,7 @@ fun ProjectsTab(
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
                     }
                     Text(
-                        text = "${selectedIds.size} selected",
+                        text = pluralStringResource(R.plurals.selection_count, selectedIds.size, selectedIds.size),
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
@@ -122,11 +124,10 @@ fun ProjectsTab(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onMenuClick) {
+            com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = stringResource(R.string.cd_open_drawer),
-                    tint = MaterialTheme.colorScheme.onSurface
+                    contentDescription = stringResource(R.string.cd_open_drawer)
                 )
             }
             Text(
@@ -143,21 +144,23 @@ fun ProjectsTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                IconButton(onClick = { selectModeOn = true }) {
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { selectModeOn = true }) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(R.string.projects_select_projects),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        contentDescription = stringResource(R.string.projects_select_projects)
                     )
                 }
-                IconButton(onClick = onSearchClick) {
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSearchClick) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.cd_search),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        contentDescription = stringResource(R.string.cd_search)
                     )
                 }
-                Box(modifier = Modifier.clickable { onProfileClick() }) {
+                val profileLabel = stringResource(R.string.cd_open_profile)
+                IconButton(
+                    onClick = onProfileClick,
+                    modifier = Modifier.semantics { contentDescription = profileLabel }
+                ) {
                     PersonAvatar(
                         initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
                         accentKey = "accentC",

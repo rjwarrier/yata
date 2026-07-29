@@ -31,15 +31,24 @@ fun EntitySortMenuButton(
     current: EntitySortMode,
     onSelect: (EntitySortMode) -> Unit,
     contentDescription: String = "Sort",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Draws the shared circular top-bar container — see TaskSortMenuButton for why it's opt-in. */
+    filledContainer: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
-    IconButton(onClick = { expanded = true }, modifier = modifier) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.Sort,
-            contentDescription = contentDescription,
-            tint = if (current != EntitySortMode.NAME_ASC) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-        )
+    val active = current != EntitySortMode.NAME_ASC
+    if (filledContainer) {
+        YataTopBarIconButton(onClick = { expanded = true }, modifier = modifier, tinted = active) {
+            Icon(imageVector = Icons.AutoMirrored.Filled.Sort, contentDescription = contentDescription)
+        }
+    } else {
+        IconButton(onClick = { expanded = true }, modifier = modifier) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Sort,
+                contentDescription = contentDescription,
+                tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
         EntitySortMode.entries.forEach { mode ->

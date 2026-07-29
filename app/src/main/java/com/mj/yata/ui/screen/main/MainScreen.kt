@@ -92,6 +92,29 @@ fun MainScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Manual cloud sync from the Today top bar. Lives here rather than in TodayTab because the
+    // SnackbarHostState that reports the result belongs to this Scaffold, and because `syncing`
+    // has to survive the tab switching underneath it.
+    val cloudBackupEnabled by viewModel.cloudBackupEnabled.collectAsStateWithLifecycle()
+    var syncing by remember { mutableStateOf(false) }
+    val syncSuccessMessage = stringResource(R.string.sync_success)
+    val syncFailedMessage = stringResource(R.string.sync_failed)
+
+    fun runManualSync() {
+        // Guarded rather than queued: repeated taps during a slow upload should do nothing, not
+        // stack up duplicate backups of the same data.
+        if (syncing) return
+        syncing = true
+        viewModel.cloudBackupNow { result ->
+            syncing = false
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    if (result.isSuccess) syncSuccessMessage else syncFailedMessage
+                )
+            }
+        }
+    }
+
     // Bulk delete is deferred until the Undo snackbar times out, mirroring the single-task
     // delete flow on TaskDetailScreen — the coroutine outlives the confirm dialog that triggered it.
     fun bulkDeleteWithUndo(ids: List<String>) {
@@ -702,7 +725,10 @@ fun MainScreen(
                             hideCompleted = hideCompletedToday,
                             onHideCompletedChange = { viewModel.setHideCompletedToday(it) },
                             sortMode = sortModeToday,
-                            onSortModeChange = { viewModel.setSortModeToday(it) }
+                            onSortModeChange = { viewModel.setSortModeToday(it) },
+                            cloudSyncEnabled = cloudBackupEnabled,
+                            syncing = syncing,
+                            onSyncClick = { runManualSync() }
                         )
                         1 -> ProjectsTab(
                             projects = projects,

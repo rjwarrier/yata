@@ -12,10 +12,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -78,6 +81,10 @@ fun TodayTab(
     taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
     hideCompleted: Boolean = false,
     onHideCompletedChange: (Boolean) -> Unit = {},
+    /** Gates the manual sync button — there is nothing to sync to until cloud backup is set up. */
+    cloudSyncEnabled: Boolean = false,
+    syncing: Boolean = false,
+    onSyncClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -188,44 +195,80 @@ fun TodayTab(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onMenuClick) {
+            // Gets the container too — it's the same class of control in the same bar, and
+            // leaving it flat would make the one button on the left look unfinished next to the
+            // filled cluster on the right.
+            com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = stringResource(R.string.cd_open_drawer),
-                    tint = MaterialTheme.colorScheme.onSurface
+                    contentDescription = stringResource(R.string.cd_open_drawer)
                 )
             }
+            // Icon colours come from IconButtonDefaults via LocalContentColor rather than a
+            // hardcoded `tint` on each Icon, so these follow the theme (including the disabled
+            // state) instead of being pinned to onSurface in every case.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                IconButton(onClick = onSearchClick) {
+                if (cloudSyncEnabled) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSyncClick, enabled = !syncing) {
+                        if (syncing) {
+                            // Replaces the icon in place rather than sitting next to it, so the
+                            // row doesn't reflow mid-sync. Sized to the icon, not the button.
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.CloudSync,
+                                contentDescription = stringResource(R.string.cd_sync_now)
+                            )
+                        }
+                    }
+                }
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSearchClick) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = stringResource(R.string.today_search_tasks),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        contentDescription = stringResource(R.string.today_search_tasks)
                     )
                 }
                 com.mj.yata.ui.widgets.TaskSortMenuButton(
                     current = sortMode,
-                    onSelect = onSortModeChange
+                    onSelect = onSortModeChange,
+                    filledContainer = true
                 )
-                IconButton(onClick = { onHideCompletedChange(!hideCompleted) }) {
+                // A toggle, so it gets the M3 toggle component: checked state is carried by the
+                // filled container, not by swapping the icon alone. As a plain IconButton the
+                // only cue that completed tasks were hidden was an eye icon with a slash through
+                // it, which reads as an action ("hide") rather than a state ("hidden").
+                com.mj.yata.ui.widgets.YataTopBarIconToggleButton(
+                    checked = hideCompleted,
+                    onCheckedChange = onHideCompletedChange
+                ) {
                     Icon(
                         imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        contentDescription = stringResource(
+                            if (hideCompleted) R.string.today_show_completed else R.string.today_hide_completed
+                        )
                     )
                 }
-                IconButton(onClick = onNextDaysClick) {
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onNextDaysClick) {
                     Icon(
                         imageVector = Icons.Default.DateRange,
-                        contentDescription = stringResource(R.string.today_next_10_days),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        contentDescription = stringResource(R.string.today_next_10_days)
                     )
                 }
-                // Profile avatar triggers Settings
-                Box(modifier = Modifier.clickable { onProfileClick() }) {
+                // Wrapped in an IconButton so the avatar gets the same 48dp touch target and
+                // circular ripple as its neighbours — as a bare clickable Box it was a 32dp
+                // target with no ripple and nothing for TalkBack to announce.
+                val profileLabel = stringResource(R.string.cd_open_profile)
+                IconButton(
+                    onClick = onProfileClick,
+                    modifier = Modifier.semantics { contentDescription = profileLabel }
+                ) {
                     PersonAvatar(
                         initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
                         accentKey = "accentC",
