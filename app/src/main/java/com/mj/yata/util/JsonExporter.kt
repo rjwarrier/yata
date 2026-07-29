@@ -88,7 +88,11 @@ class JsonExporter @Inject constructor(
         val tasks: List<Task>,
         val comments: List<TaskComment>,
         /** The user's own avatar, base64-encoded. Null when none is set or the file is gone. */
-        val profilePhoto: String?
+        val profilePhoto: String?,
+        /** The user's own name and email. Like the avatar these live in DataStore, not the
+         * database, so they are not part of any entity list. Blank when never set. */
+        val profileName: String,
+        val profileEmail: String
     )
 
     private suspend fun loadBackupData(): BackupData = BackupData(
@@ -104,7 +108,9 @@ class JsonExporter @Inject constructor(
         // backup that never contained them. Trash (deletedAt) is still deliberately excluded.
         tasks = repository.getTasks().first() + repository.getArchivedTasks().first(),
         comments = repository.getAllComments().first(),
-        profilePhoto = encodePhoto(userPreferences.userPhotoUriFlow.first())
+        profilePhoto = encodePhoto(userPreferences.userPhotoUriFlow.first()),
+        profileName = userPreferences.userNameFlow.first(),
+        profileEmail = userPreferences.userEmailFlow.first()
     )
 
     suspend fun exportData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
@@ -176,9 +182,13 @@ class JsonExporter @Inject constructor(
 
             val root = JSONObject()
             root.put("version", 4)
-            // The user's own avatar. Lives in DataStore rather than the database, so it is not
-            // part of any entity list and has to be carried at the root.
+            // The user's own profile — avatar, name, email. All three live in DataStore rather
+            // than the database, so they are not part of any entity list and have to be carried
+            // at the root. Blank name/email are omitted rather than written as "", so restoring a
+            // backup taken before the profile was filled in can't blank out a name set since.
             data.profilePhoto?.let { root.put("profilePhoto", it) }
+            data.profileName.takeIf { it.isNotBlank() }?.let { root.put("profileName", it) }
+            data.profileEmail.takeIf { it.isNotBlank() }?.let { root.put("profileEmail", it) }
 
             // People
             val peopleArr = JSONArray()
@@ -461,13 +471,20 @@ class JsonExporter @Inject constructor(
                 }
             }
 
-            // 0. The user's own avatar, written back to filesDir and re-pointed in DataStore.
-            // Only overwrites when the backup actually carries one, so restoring an older
-            // backup can't wipe a photo set since it was taken.
+            // 0. The user's own profile. The avatar is written back to filesDir and re-pointed in
+            // DataStore; name and email go straight to DataStore. Each only overwrites when the
+            // backup actually carries it, so restoring an older backup — one written before these
+            // fields existed, or before the user filled them in — can't wipe a value set since.
             root.optString("profilePhoto", null)?.let { encoded ->
                 decodeProfilePhoto(encoded)?.let { uri ->
                     userPreferences.setUserPhotoUri(uri.toString())
                 }
+            }
+            root.optString("profileName", null)?.takeIf { it.isNotBlank() }?.let {
+                userPreferences.setUserName(it)
+            }
+            root.optString("profileEmail", null)?.takeIf { it.isNotBlank() }?.let {
+                userPreferences.setUserEmail(it)
             }
 
             // 1. Import Person groups (must exist before people reference them)

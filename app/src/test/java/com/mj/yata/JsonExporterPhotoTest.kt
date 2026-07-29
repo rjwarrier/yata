@@ -47,4 +47,36 @@ class JsonExporterPhotoTest {
         val person = JSONObject().apply { put("photoUri", JSONObject.NULL) }
         assertTrue(person.isNull("photoUri"))
     }
+
+    @Test
+    fun profileNameAndEmail_roundTripThroughJson() {
+        val root = JSONObject().apply {
+            put("profileName", "Ada Lovelace")
+            put("profileEmail", "ada@example.com")
+        }
+        assertEquals("Ada Lovelace", root.optString("profileName", null))
+        assertEquals("ada@example.com", root.optString("profileEmail", null))
+    }
+
+    @Test
+    fun backupWrittenBeforeProfileFieldsExisted_readsThemAsNull() {
+        // An older backup carries neither key. Both must read as null so the importer skips them
+        // and leaves a name/email set since that backup was taken intact, rather than blanking
+        // them out with "".
+        val root = JSONObject().apply { put("version", 4) }
+        assertNull(root.optString("profileName", null))
+        assertNull(root.optString("profileEmail", null))
+    }
+
+    @Test
+    fun blankProfileFields_areSkippedByTheImportGuard() {
+        // The exporter omits blank values, but a hand-edited or third-party file could still carry
+        // them; the importer's isNotBlank() guard is what stops those from wiping a set profile.
+        val root = JSONObject().apply {
+            put("profileName", "")
+            put("profileEmail", "   ")
+        }
+        assertNull(root.optString("profileName", null)?.takeIf { it.isNotBlank() })
+        assertNull(root.optString("profileEmail", null)?.takeIf { it.isNotBlank() })
+    }
 }
