@@ -242,7 +242,17 @@ fun AppNavigation(
                 onNavigateToTrash = { navController.navigate(Screen.Trash.route) },
                 onNavigateToArchive = { navController.navigate(Screen.Archive.route) },
                 onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
-                onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) }
+                onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
+                onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) }
+            )
+        }
+
+        // -- Crash logs ------------------------------------------------------
+        composable(Screen.CrashLog.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            com.mj.yata.ui.screen.crashlog.CrashLogScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

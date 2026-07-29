@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mj.yata.R
 import com.mj.yata.data.cloud.CloudBackupEntry
+import com.mj.yata.data.local.crash.CrashLogEntry
+import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
@@ -32,7 +34,8 @@ class MainViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val taskOperations: TaskOperations,
     private val backupOperations: BackupOperations,
-    private val errorBus: AppErrorBus
+    private val errorBus: AppErrorBus,
+    private val crashLogStore: CrashLogStore
 ) : ViewModel() {
 
     /**
@@ -55,8 +58,47 @@ class MainViewModel @Inject constructor(
                 throw e
             } catch (t: Throwable) {
                 Log.e("MainViewModel", "Operation failed", t)
+                // Recorded as non-fatal. These used to take the app down; now that they don't,
+                // the stack trace would otherwise exist only in logcat — i.e. be gone by the time
+                // anyone noticed the save silently failed. Written on the IO dispatcher, unlike
+                // the uncaught-handler path which has to be synchronous: safeLaunch runs on the
+                // main thread and this is still a file write, rare error path or not.
+                val failedOn = Thread.currentThread().name
+                withContext(Dispatchers.IO) { crashLogStore.record(t, failedOn, fatal = false) }
                 errorBus.emit(R.string.error_action_failed)
             }
+        }
+    }
+
+    /**
+     * Crash history for `Screen.CrashLog`. Backed by files rather than Room or DataStore, so there
+     * is nothing to observe — the screen calls [refreshCrashLogs] when it opens and after each
+     * mutation instead of this updating itself.
+     */
+    private val _crashLogs = MutableStateFlow<List<CrashLogEntry>>(emptyList())
+    val crashLogs: StateFlow<List<CrashLogEntry>> = _crashLogs.asStateFlow()
+
+    fun refreshCrashLogs() {
+        safeLaunch {
+            val entries = withContext(Dispatchers.IO) { crashLogStore.list() }
+            _crashLogs.value = entries
+        }
+    }
+
+    /** Full report text for one entry, read off the main thread. */
+    suspend fun readCrashLog(id: String): String = withContext(Dispatchers.IO) { crashLogStore.read(id) }
+
+    fun deleteCrashLog(id: String) {
+        safeLaunch {
+            withContext(Dispatchers.IO) { crashLogStore.delete(id) }
+            refreshCrashLogs()
+        }
+    }
+
+    fun clearCrashLogs() {
+        safeLaunch {
+            withContext(Dispatchers.IO) { crashLogStore.clear() }
+            refreshCrashLogs()
         }
     }
 

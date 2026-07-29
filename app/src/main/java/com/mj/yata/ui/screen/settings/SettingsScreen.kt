@@ -13,7 +13,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -21,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -106,6 +112,7 @@ fun SettingsScreen(
     onNavigateToArchive: () -> Unit,
     onNavigateToWelcome: () -> Unit,
     onNavigateToHelpAbout: () -> Unit,
+    onNavigateToCrashLog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
@@ -320,21 +327,53 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item(key = "settings_search") {
-                OutlinedTextField(
+                // Styled to the M3 search-field spec rather than as a general text field: pill
+                // shape, tonal surfaceContainerHigh container, no indicator line, and a
+                // placeholder instead of a floating label — search fields don't take one, and the
+                // label animating up over a magnifier icon was the least M3 thing on the screen.
+                //
+                // Deliberately not the M3 SearchBar/DockedSearchBar composable: those own an
+                // expanding full-screen surface and render their own results, which fights this
+                // screen — the results here are a card inline in the settings list, and the field
+                // scrolls away with it. Same visual language, without hijacking the interaction.
+                val searchLabel = stringResource(R.string.settings_search_label)
+                val focusManager = LocalFocusManager.current
+                TextField(
                     value = settingsSearchQuery,
                     onValueChange = { settingsSearchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .semantics { contentDescription = searchLabel },
                     singleLine = true,
+                    shape = CircleShape,
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     trailingIcon = {
+                        // Only present with text to clear, so the field isn't permanently carrying
+                        // a control that would do nothing.
                         if (settingsSearchQuery.isNotEmpty()) {
                             IconButton(onClick = { settingsSearchQuery = "" }) {
                                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                             }
                         }
                     },
-                    label = { Text(stringResource(R.string.settings_search_label)) },
-                    placeholder = { Text(stringResource(R.string.settings_search_placeholder)) }
+                    placeholder = { Text(stringResource(R.string.settings_search_placeholder)) },
+                    // Filtering is live, so the IME action has nothing to submit — it just gets
+                    // the keyboard out of the way of the results.
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
             if (settingsSearchQuery.isNotBlank()) {
@@ -2214,6 +2253,44 @@ fun SettingsScreen(
                         )
                         Text(
                             text = "Feature guide, version, and app identity.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                }
+            }
+        }
+        item {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToCrashLog() }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BugReport,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_crash_logs),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_crash_logs_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

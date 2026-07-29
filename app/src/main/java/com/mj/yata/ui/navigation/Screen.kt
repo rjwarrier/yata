@@ -58,4 +58,5 @@ sealed class Screen(val route: String) {
     object Trash : Screen("trash")
     object Archive : Screen("archive")
     object NextDays : Screen("next_days")
+    object CrashLog : Screen("crash_log")
 }

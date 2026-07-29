@@ -428,6 +428,52 @@
     <string name="profile_add_name">Add your name</string>
     <string name="profile_add_email">Add your email</string>
 
+    <!-- Multi-select bars. One plural shared by every tab and the bulk task action bar — the
+         count was previously built by concatenation ("$n selected") in four separate places. -->
+    <plurals name="selection_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="bulk_move_title">Move selected tasks</string>
+    <string name="bulk_section_project">PROJECT</string>
+    <string name="bulk_section_list">LIST</string>
+    <string name="bulk_add_tag_title">Add tag to selected tasks</string>
+    <string name="bulk_no_tags">No tags yet - create one from the Tags tab first.</string>
+    <string name="bulk_assign_title">Assign selected tasks to</string>
+    <string name="bulk_no_people">No people yet - add one from the People tab first.</string>
+
+    <!-- Today top bar -->
+    <string name="today_show_completed">Show completed tasks</string>
+    <string name="today_hide_completed">Hide completed tasks</string>
+    <string name="cd_open_profile">Open profile and settings</string>
+
+    <!-- Manual cloud sync from the Today top bar -->
+    <string name="cd_sync_now">Sync now</string>
+    <string name="sync_in_progress">Syncing…</string>
+    <string name="sync_success">Synced to cloud</string>
+    <string name="sync_failed">Sync failed - check your connection and try again</string>
+
+    <!-- Crash logs -->
+    <string name="crash_log_title">Crash Logs</string>
+    <string name="settings_crash_logs">Crash Logs</string>
+    <string name="settings_crash_logs_summary">Reports saved automatically when something goes wrong.</string>
+    <string name="crash_log_empty_title">No crash reports</string>
+    <string name="crash_log_empty_body">Nothing has gone wrong since the last time these were cleared. Reports show up here on their own — there is nothing to turn on.</string>
+    <string name="crash_log_fatal">Crash</string>
+    <string name="crash_log_handled">Handled</string>
+    <string name="crash_log_clear_all">Clear all</string>
+    <string name="crash_log_clear_confirm_title">Clear all reports?</string>
+    <string name="crash_log_clear_confirm_body">Deletes every saved report. This can\'t be undone, and reports aren\'t backed up.</string>
+    <string name="crash_log_copy">Copy</string>
+    <string name="crash_log_share">Share</string>
+    <string name="crash_log_copied">Report copied</string>
+    <string name="crash_log_share_subject">YATA crash report</string>
+    <string name="cd_delete_crash_log">Delete this report</string>
+    <plurals name="crash_log_count">
+        <item quantity="one">%1$d report</item>
+        <item quantity="other">%1$d reports</item>
+    </plurals>
+
     <!-- Start date ("not actionable before"). %1$s is an already-formatted date. -->
     <string name="task_starts_on">Starts %1$s</string>
     <string name="task_start_date">Start date</string>

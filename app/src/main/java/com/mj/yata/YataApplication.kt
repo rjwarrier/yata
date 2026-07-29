@@ -22,6 +22,7 @@ class YataApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var userPreferences: com.mj.yata.data.local.datastore.UserPreferences
+    @Inject lateinit var crashLogStore: com.mj.yata.data.local.crash.CrashLogStore
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -34,7 +35,10 @@ class YataApplication : Application(), Configuration.Provider {
                 val sw = StringWriter()
                 throwable.printStackTrace(PrintWriter(sw))
                 Log.e("YataCrash", "Uncaught exception on ${thread.name}:\n$sw")
-                File(filesDir, "last_crash.txt").writeText(sw.toString())
+                // Kept as history rather than a single overwritten file, and readable in-app from
+                // Settings → Crash Logs. The process is already going down here, so the store
+                // writes synchronously and swallows its own errors.
+                crashLogStore.record(throwable, thread.name, fatal = true)
             } catch (_: Throwable) {
                 // Never let crash logging itself throw during a crash.
             }
