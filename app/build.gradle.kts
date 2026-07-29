@@ -140,7 +140,20 @@ tasks.register("lintHardcodedStrings") {
     description = "Counts hardcoded UI strings still needing extraction to strings.xml."
     val sourceDir = file("src/main/java")
     doLast {
-        val pattern = Regex("""(Text\(\s*"[^"]{2,}"|contentDescription\s*=\s*"[^"]{2,}")""")
+        // `text = "..."` is the big one: it's how a literal is written inside any multi-line
+        // Text( ) call, which is most of them in this codebase. The original pattern only matched
+        // the single-line Text("...") form, so it reported 3 while ~155 sat one line lower and
+        // the count read as "essentially done" for months.
+        //
+        // label/placeholder/title cover the text-carrying slot parameters. All of these can
+        // false-positive on a non-UI `text =` assignment; that's the right trade for an advisory
+        // count — an over-report gets checked and dismissed, an under-report never gets looked at.
+        val pattern = Regex(
+            """(Text\(\s*"[^"]{2,}"""" +
+                """|text\s*=\s*"[^"]{2,}"""" +
+                """|contentDescription\s*=\s*"[^"]{2,}"""" +
+                """|(?:label|placeholder|title)\s*=\s*"[^"]{2,}")"""
+        )
         var total = 0
         val perFile = sortedMapOf<String, Int>()
         sourceDir.walkTopDown().filter { it.extension == "kt" }.forEach { f ->

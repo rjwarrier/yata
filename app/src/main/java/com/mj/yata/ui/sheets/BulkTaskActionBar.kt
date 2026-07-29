@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -63,7 +64,7 @@ fun TaskSelectionTopBar(
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
             }
             Text(
-                text = "$selectedCount selected",
+                text = pluralStringResource(R.plurals.selection_count, selectedCount, selectedCount),
                 style = MaterialTheme.typography.titleMedium
             )
         }
@@ -156,14 +157,14 @@ fun TaskBulkMoveSheet(
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Text(
-            text = "Move selected tasks",
+            text = stringResource(R.string.bulk_move_title),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)
         )
 
         if (projectsEnabled) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "PROJECT",
+                    text = stringResource(R.string.bulk_section_project),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -197,7 +198,7 @@ fun TaskBulkMoveSheet(
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "LIST",
+                text = stringResource(R.string.bulk_section_list),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -247,13 +248,13 @@ fun TaskBulkTagPickerSheet(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "Add tag to selected tasks",
+            text = stringResource(R.string.bulk_add_tag_title),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
             modifier = Modifier.padding(bottom = 12.dp)
         )
         if (tags.isEmpty()) {
             Text(
-                text = "No tags yet — create one from the Tags tab first.",
+                text = stringResource(R.string.bulk_no_tags),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -293,13 +294,13 @@ fun TaskBulkAssignPersonSheet(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "Assign selected tasks to",
+            text = stringResource(R.string.bulk_assign_title),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
             modifier = Modifier.padding(bottom = 12.dp)
         )
         if (activePeople.isEmpty()) {
             Text(
-                text = "No people yet — add one from the People tab first.",
+                text = stringResource(R.string.bulk_no_people),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
