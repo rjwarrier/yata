@@ -9,6 +9,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,6 +50,8 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Mic
 import com.mj.yata.R
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PressableScaleBox
 import com.mj.yata.util.findBestEntityMatch
 import com.mj.yata.util.toProperCase
@@ -59,6 +63,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Switch
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
@@ -100,6 +105,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
@@ -283,6 +289,8 @@ fun NewTaskSheet(
     projectsEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
+    /** When false, a new task starts unassigned instead of assigned to the user. */
+    autoAssignToMe: Boolean = true,
     voiceLanguage: String = "default",
     defaultDueDate: com.mj.yata.domain.model.DefaultDueDate = com.mj.yata.domain.model.DefaultDueDate.TODAY,
     defaultPriority: String = "none",
@@ -319,6 +327,7 @@ fun NewTaskSheet(
     var selectedRecurrence by rememberSaveable(stateSaver = recurrenceSaver) { mutableStateOf<Recurrence?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartDatePicker by remember { mutableStateOf(false) }
+    var titleFocused by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
     var reminderValidationMessage by rememberSaveable { mutableStateOf<String?>(null) }
@@ -346,9 +355,13 @@ fun NewTaskSheet(
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
     val selectedAssigneeIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf<String>() }
 
-    LaunchedEffect(initialAssigneeId, myId, peopleEnabled) {
-        if (peopleEnabled && selectedAssigneeIds.isEmpty()) {
-            selectedAssigneeIds.add(initialAssigneeId ?: myId)
+    // initialAssigneeId still wins regardless of the setting: it's only non-null when the sheet
+    // was opened from a specific person's screen, which is an explicit choice of assignee, not a
+    // default. The setting governs only the fallback to the user themselves.
+    val initialAssignee = initialAssigneeId ?: myId.takeIf { autoAssignToMe }
+    LaunchedEffect(initialAssignee, peopleEnabled) {
+        if (peopleEnabled && selectedAssigneeIds.isEmpty() && initialAssignee != null) {
+            selectedAssigneeIds.add(initialAssignee)
         }
     }
 
@@ -382,7 +395,7 @@ fun NewTaskSheet(
         selectedPriority != defaultPriority || selectedFlag || selectedTime != null ||
         selectedReminder != null || selectedRecurrence != null ||
         selectedTagIds.any { it != initialTagId } ||
-        selectedAssigneeIds.any { it != (initialAssigneeId ?: myId) }
+        selectedAssigneeIds.any { it != initialAssignee }
     LaunchedEffect(hasMeaningfulDraft) { onDraftStateChanged(hasMeaningfulDraft) }
 
     // Pasting/typing several newline-separated lines offers to create one task per line
@@ -728,9 +741,30 @@ fun NewTaskSheet(
                 }
             }
 
-            // Big borderless title input with primary underline, plus a mic button that
-            // dictates straight into it (same field the NL quick-add parser already reads).
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // The title is the one field that must be obvious the instant the sheet opens, and a
+            // 2dp underline didn't carry that — it read as the least emphasised control on a
+            // screen full of filled chips. It's now a tonal container in the Expressive idiom,
+            // ranked above the secondary fields by shape and size rather than by colour: a 28dp
+            // corner against their 20dp, and the largest type on the sheet.
+            //
+            // Focus is shown by a primary ring that animates in, which is also the only state cue
+            // left now that the underline is gone.
+            val titleBorder by animateColorAsState(
+                targetValue = if (titleFocused) MaterialTheme.colorScheme.primary
+                              else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                // YataDur.micro rather than a literal, so the ring honours Reduce Motion.
+                animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphDecel),
+                label = "titleFieldBorder"
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .border(2.dp, titleBorder, RoundedCornerShape(28.dp))
+                    .padding(start = 20.dp, end = 8.dp, top = 6.dp, bottom = 6.dp)
+            ) {
                 BasicTextField(
                     value = title,
                     onValueChange = { newValue ->
@@ -769,11 +803,8 @@ fun NewTaskSheet(
                     modifier = Modifier
                         .weight(1f)
                         .focusRequester(focusRequester)
-                        .border(
-                            androidx.compose.foundation.BorderStroke(0.dp, Color.Transparent)
-                        )
-                        .padding(vertical = 10.dp)
-                        .drawBottomBorder(MaterialTheme.colorScheme.primary)
+                        .onFocusChanged { titleFocused = it.isFocused }
+                        .padding(vertical = 14.dp)
                         .testTag("new_task_title_input"),
                     decorationBox = { inner ->
                         if (title.text.isEmpty()) {
@@ -790,13 +821,21 @@ fun NewTaskSheet(
                         inner()
                     }
                 )
+                // Stays inside the field, as its trailing action — dictation fills *this* field,
+                // and a text field's own action belongs in its trailing slot. Beside the field it
+                // read as a separate control of equal weight, and it drifted off the text baseline
+                // as the field grew towards its four-line limit.
+                //
+                // But no longer a filled circle: that weight existed to hold its own against a
+                // bare 2dp underline, and against a tonal container it became the loudest thing in
+                // the field, competing with the text it exists to enter. A plain primary-tinted
+                // icon is the convention for a mic in a filled field, keeps the 44dp target, and
+                // matches how QuickAddDialogActivity already draws the same action.
                 PressableScaleBox(
                     onClick = startVoiceInput,
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), CircleShape)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -805,7 +844,7 @@ fun NewTaskSheet(
                         Icon(
                             imageVector = Icons.Default.Mic,
                             contentDescription = stringResource(R.string.cd_add_task_by_voice),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -958,7 +997,14 @@ fun NewTaskSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
+                            // Solid, not primaryContainer at 45% alpha. That alpha was the whole
+                            // legibility problem: blending the container down over the sheet
+                            // background produces a colour that is neither primaryContainer nor
+                            // surface, so `onPrimaryContainer` — which is only guaranteed to
+                            // contrast against the *solid* container — stopped being the right
+                            // pair for it, and the text washed out. M3 colour roles come in pairs;
+                            // putting alpha on one half of a pair breaks the guarantee.
+                            .background(MaterialTheme.colorScheme.primaryContainer)
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -969,19 +1015,19 @@ fun NewTaskSheet(
                         Icon(
                             Icons.Default.Today,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
                             text = stringResource(R.string.new_task_smart_add_summary),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.weight(1f)
                         )
                         Icon(
                             Icons.Default.Close,
                             contentDescription = stringResource(R.string.new_task_ignore_detected_date_time),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier
                                 .size(16.dp)
                                 .clip(CircleShape)
@@ -990,7 +1036,7 @@ fun NewTaskSheet(
                     }
                     Text(
                         text = stringResource(R.string.new_task_detected_title, quickAdd.title.toProperCase()),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     FlowRow(
@@ -1002,10 +1048,19 @@ fun NewTaskSheet(
                                 selected = true,
                                 onClick = onItemClick,
                                 label = { Text(item) },
+                                // Explicit colours: the default selected chip is
+                                // secondaryContainer, which against a primaryContainer card is
+                                // blue on blue. `surface` lifts the chips off the card and keeps
+                                // onSurface as a guaranteed contrast pair for the label.
+                                colors = InputChipDefaults.inputChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.surface,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
                                 trailingIcon = {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = "Ignore $item",
+                                        contentDescription = stringResource(R.string.new_task_ignore_field, item),
                                         modifier = Modifier
                                             .size(16.dp)
                                             .clickable { onDismissItem() }
@@ -1023,7 +1078,9 @@ fun NewTaskSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f))
+                        // Solid for the same reason as the smart-add card above: alpha on one
+                        // half of a colour pair breaks the contrast its other half guarantees.
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -1558,19 +1615,6 @@ fun NewTaskSheet(
     }
 }
 
-private fun Modifier.drawBottomBorder(color: Color): Modifier = this.then(
-    drawWithCache {
-        val strokeWidth = 2.dp.toPx()
-        onDrawBehind {
-            drawLine(
-                color = color,
-                start = Offset(0f, size.height),
-                end = Offset(size.width, size.height),
-                strokeWidth = strokeWidth
-            )
-        }
-    }
-)
 
 @Composable
 private fun priorityChipColor(priority: String, accents: com.mj.yata.ui.theme.YataAccents) = when (priority) {

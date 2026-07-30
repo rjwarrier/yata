@@ -65,6 +65,7 @@ fun ListDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val projects by viewModel.projects.collectAsStateWithLifecycle()
     val listTasks by remember(listId) { viewModel.getTasksForList(listId) }.collectAsStateWithLifecycle(initialValue = emptyList())
     val people by viewModel.people.collectAsStateWithLifecycle()
@@ -541,6 +542,7 @@ fun ListDetailScreen(
                     isNewTaskSheetOpen = false
                     onNavigateToTaskDetail(id)
                 },
+                autoAssignToMe = autoAssignToMe,
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(com.mj.yata.domain.model.Tag(id = id, name = name, color = color))
                 },

@@ -64,6 +64,7 @@ fun TagDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val lists by viewModel.lists.collectAsStateWithLifecycle()
     val projects by viewModel.projects.collectAsStateWithLifecycle()
@@ -475,6 +476,7 @@ fun TagDetailScreen(
                     isNewTaskSheetOpen = false
                     onNavigateToTaskDetail(id)
                 },
+                autoAssignToMe = autoAssignToMe,
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(Tag(id = id, name = name, color = color))
                 },

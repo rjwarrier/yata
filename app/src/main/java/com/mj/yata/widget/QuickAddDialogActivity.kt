@@ -75,6 +75,7 @@ import javax.inject.Inject
 class QuickAddDialogActivity : ComponentActivity() {
 
     @Inject lateinit var repository: YataRepository
+    @Inject lateinit var userPreferences: com.mj.yata.data.local.datastore.UserPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,6 +119,11 @@ class QuickAddDialogActivity : ComponentActivity() {
                         } else null
                         val projectStillExists = presetProject != null
                         val due = parsedTyped.due ?: parsedShared?.due ?: presetProject?.due ?: LocalDate.now().toString()
+                        // Honours the same Auto-assign setting the New Task sheet does — a task
+                        // added from the widget shouldn't differ from one added in the app.
+                        val assigneeIds = if (userPreferences.autoAssignToMeFlow.first()) {
+                            listOfNotNull(repository.getPeople().first().find { it.isMe }?.id)
+                        } else emptyList()
                         repository.upsertTask(
                             Task(
                                 id = "t_" + UUID.randomUUID().toString(),
@@ -139,7 +145,7 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 priority = parsedTyped.priority ?: "none",
                                 flag = parsedTyped.flag || (parsedShared?.flag == true),
                                 done = false,
-                                assigneeIds = emptyList(),
+                                assigneeIds = assigneeIds,
                                 tagIds = emptyList(),
                                 recurrence = parsedTyped.recurrence ?: parsedShared?.recurrence,
                                 subtasks = emptyList(),

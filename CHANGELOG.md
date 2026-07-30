@@ -15,8 +15,23 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+
+- **Auto-assign new tasks to you** (Settings → Task Defaults). New tasks were always assigned to
+  you with no way to change it; turn this off and they start unassigned instead. You can still pick
+  an assignee on any task either way. Applies to the widget's quick-add as well as the app, and
+  adding a task from someone's own screen still assigns it to them regardless.
+- Backups now include your settings — theme, feature flags, task defaults, notification
+  preferences, sort orders and the rest. Previously a restore rebuilt every task and left you on
+  defaults, which was most obvious after reinstalling. The app-lock PIN and the cloud account are
+  deliberately excluded: a backup file is no place for a credential, and the cloud grant is
+  per-device.
+
 ### Changed
 
+- The task title in the New Task sheet is now the clear focal point of the screen: a tonal
+  container with the largest rounding and type on the sheet, and a focus ring, instead of a thin
+  underline that read as the least important control there. The mic button sits inside it.
 - Notes, comment and subtask fields are filled tonal surfaces with generous rounding instead of
   outlined boxes, which sat oddly against the tonal cards around them. The project, list, tag and
   person editor sheets now match.

@@ -160,6 +160,7 @@ fun SettingsScreen(
     val snoozeTomorrowMinute by viewModel.snoozeTomorrowMinute.collectAsStateWithLifecycle()
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
+    val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
@@ -208,7 +209,7 @@ fun SettingsScreen(
         SettingsSearchTarget(stringResource(R.string.settings_section_display), stringResource(R.string.settings_search_display_summary), "scale text density compact spacious", 3),
         SettingsSearchTarget(stringResource(R.string.settings_section_navigation), stringResource(R.string.settings_search_navigation_summary), "bottom navigation labels fab quick add", 4),
         SettingsSearchTarget(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", 5),
-        SettingsSearchTarget(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice", 6),
+        SettingsSearchTarget(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me", 6),
         SettingsSearchTarget(stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", 7),
         SettingsSearchTarget(stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", 8),
         SettingsSearchTarget(stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", 9),
@@ -963,6 +964,18 @@ fun SettingsScreen(
             // conventions the app assumes. Previously buried at the end of PREFERENCES.
             SettingsSectionHeader(stringResource(R.string.settings_section_task_defaults))
             SettingsSectionCard {
+                // Hidden when the People feature is off: with no people there is nobody to assign
+                // to, so the row would toggle something with no observable effect.
+                if (peopleFeatureEnabled) {
+                    SettingsToggleRow(
+                        title = stringResource(R.string.settings_auto_assign),
+                        subtitle = stringResource(R.string.settings_auto_assign_desc),
+                        checked = autoAssignToMe,
+                        onCheckedChange = { viewModel.setAutoAssignToMe(it) }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                }
+
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = stringResource(R.string.settings_default_due_date),

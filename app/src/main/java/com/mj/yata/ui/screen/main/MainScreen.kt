@@ -88,6 +88,7 @@ fun MainScreen(
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
+    val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
@@ -899,7 +900,8 @@ fun MainScreen(
                         activeSheet = MainSheetType.None
                         onNavigateToTaskDetail(id)
                     },
-                    onCreateTag = { id, name, color ->
+                    autoAssignToMe = autoAssignToMe,
+                onCreateTag = { id, name, color ->
                         viewModel.upsertTag(Tag(id = id, name = name, color = color))
                     },
                     onCreatePerson = { id, name, color ->

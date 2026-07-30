@@ -68,6 +68,7 @@ fun ProjectDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val projects by viewModel.projects.collectAsStateWithLifecycle()
+    val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val lists by viewModel.lists.collectAsStateWithLifecycle()
     val projectTasks by remember(projectId) { viewModel.getTasksForProject(projectId) }.collectAsStateWithLifecycle(initialValue = emptyList())
     val people by viewModel.people.collectAsStateWithLifecycle()
@@ -692,6 +693,7 @@ fun ProjectDetailScreen(
                     isNewTaskSheetOpen = false
                     onNavigateToTaskDetail(id)
                 },
+                autoAssignToMe = autoAssignToMe,
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(com.mj.yata.domain.model.Tag(id = id, name = name, color = color))
                 },

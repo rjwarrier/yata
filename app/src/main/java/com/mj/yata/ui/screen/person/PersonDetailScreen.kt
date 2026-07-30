@@ -67,6 +67,7 @@ fun PersonDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val people by viewModel.people.collectAsStateWithLifecycle()
+    val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val assignedTasks by remember(personId) { viewModel.getTasksForPerson(personId) }.collectAsStateWithLifecycle(initialValue = emptyList())
     val lists by viewModel.lists.collectAsStateWithLifecycle()
     val projects by viewModel.projects.collectAsStateWithLifecycle()
@@ -635,6 +636,7 @@ fun PersonDetailScreen(
                     isNewTaskSheetOpen = false
                     onNavigateToTaskDetail(id)
                 },
+                autoAssignToMe = autoAssignToMe,
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(Tag(id = id, name = name, color = color))
                 },

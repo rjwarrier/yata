@@ -835,6 +835,13 @@ private data class MainNavigationState(
     val fabPosition: StateFlow<com.mj.yata.domain.model.FabPosition> = userPreferences.fabPositionFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.FabPosition.RIGHT)
 
+    val autoAssignToMe: StateFlow<Boolean> = userPreferences.autoAssignToMeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    fun setAutoAssignToMe(enabled: Boolean) {
+        safeLaunch { userPreferences.setAutoAssignToMe(enabled) }
+    }
+
     val cloudBackupEnabled: StateFlow<Boolean> = userPreferences.cloudBackupEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 

@@ -119,6 +119,8 @@
     <string name="settings_none">None</string>
 
     <!-- New-task defaults -->
+    <string name="settings_auto_assign">Auto-assign new tasks to you</string>
+    <string name="settings_auto_assign_desc">New tasks start assigned to you. Turn this off to have them start unassigned - you can still pick an assignee on any task.</string>
     <string name="settings_default_due_date">Default due date</string>
     <string name="settings_default_due_date_desc">What a new task is due when you don\'t pick a date yourself.</string>
     <string name="settings_due_today">Today</string>
@@ -482,6 +484,8 @@
     <string name="cd_clear_start_date">Clear start date</string>
     <string name="task_start_date_hint">Hidden from Today until this date</string>
     <string name="smart_add_starts">Starts %1$s</string>
+    <!-- %1$s is a detected field label, e.g. "Due Tomorrow". -->
+    <string name="new_task_ignore_field">Ignore %1$s</string>
     <string name="settings_set_pin">Set PIN</string>
     <string name="settings_settings">Settings</string>
     <string name="settings_show_welcome_tour">Show welcome tour</string>
