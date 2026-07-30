@@ -9,13 +9,12 @@ package com.mj.yata.domain.model
  * own range. [NORMAL] is exactly 1f and is therefore a genuine no-op, which is what makes it a safe
  * default for anyone upgrading — nothing about their theme changes until they move the slider.
  *
- * The upward stops are modest numbers because chroma is perceptual: a factor that would have been
- * unremarkable as an HSL multiplier pushes a mid-lightness accent straight out of sRGB, and the
- * clipping that follows distorts the hue rather than intensifying it.
+ * The upward stops stay modest numbers because chroma is perceptual — these are multiples of a
+ * distance from grey, not of an HSL percentage, so 1.8x is already a large move.
  */
 enum class ColorIntensity(val chromaFactor: Float) {
     MUTED(0.5f),
     NORMAL(1f),
-    VIVID(1.3f),
-    POP(1.6f)
+    VIVID(1.35f),
+    POP(1.8f)
 }

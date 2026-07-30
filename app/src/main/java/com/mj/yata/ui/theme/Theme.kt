@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -17,6 +18,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import kotlin.math.abs
 import kotlin.math.hypot
 
 val LocalEnhancedM3Theming = staticCompositionLocalOf { false }
@@ -83,46 +85,35 @@ private fun ColorScheme.toSofterDark(amount: Float = 0.045f): ColorScheme = copy
 )
 
 /**
- * The chroma given to a color that has none of its own, at a factor of 1. Small enough that [SOFT]
- * leaves a white card looking white, large enough that [DEEP] reaches an obvious tint.
+ * LAB lightness a color may be moved by, per 1.0 of chroma factor above 1x, when its own lightness
+ * leaves no room to get more colorful.
  */
-private const val NEUTRAL_TINT_CHROMA = 2.0
+private const val CHROMA_LIGHTNESS_BUDGET = 13.0
+
+/** How close to the requested chroma counts as reaching it, in LAB units — 8-bit round-trip noise. */
+private const val CHROMA_TOLERANCE = 1.0
 
 /**
- * Lightness above which a hueless color is allowed to borrow one. Below it the LAB inverse's
- * linear branch turns a borrowed hue into a large relative shift — pushing AMOLED's #000000 to a
- * visible #190000 at the top stop — and a dark neutral surface is neutral on purpose anyway.
+ * Chroma below which a color counts as having no hue of its own to scale.
+ *
+ * Comfortably above conversion noise rather than at it: pure white comes back from LAB as
+ * C = 0.012 pointing an arbitrary direction, and an 8-bit grey like AMOLED's `#0F0F0F` is no
+ * better. Treating that as a hue and scaling it turned white cards blue and AMOLED containers
+ * purple. Well under any deliberate surface tint, which starts around C 3.
  */
-private const val NEUTRAL_TINT_MIN_LIGHTNESS = 50.0
+private const val NEUTRAL_CHROMA = 1.0
 
-/**
- * Scales a color's LAB chroma — its perceptual distance from grey — holding lightness and hue.
- *
- * Deliberately not HSL saturation, which was the original implementation and the reason the
- * sliders did nothing: for the near-white surfaces M3 uses (`#FFF8F6`, `#FFDAD1`, `#FFB4A2`) HSL
- * reports S = 1.0 already, since *any* color with a channel at 0xFF is fully saturated by that
- * definition. Every upward factor clamped straight back to 1.0. Chroma is the quantity the
- * sliders actually claim to move and it stays meaningful at both ends of the lightness range.
- *
- * [fallbackDirection] covers colors carrying no hue at all — `surfaceContainerLowest` is pure
- * white in light mode — where scaling zero chroma stays zero however large the factor. Those tiers
- * borrow the scheme's own hue instead, so cards move in step with the page behind them. It applies
- * only above [NEUTRAL_TINT_MIN_LIGHTNESS], which is what keeps AMOLED black at every stop.
- */
-private fun Color.scaleChroma(factor: Float, fallbackDirection: Pair<Double, Double>? = null): Color {
+/** LAB lightness a surface may be darkened by, at most, to find room for the tint it was asked for. */
+private const val TINT_LIGHTNESS_BUDGET = 8.0
+
+/** Headroom considered enough to tint at, so lightness is only spent when there is really none. */
+private const val TINT_MIN_HEADROOM = 8.0
+
+/** This color's LAB chroma, its perceptual distance from grey. */
+private fun Color.chroma(): Double {
     val lab = DoubleArray(3)
     androidx.core.graphics.ColorUtils.colorToLAB(toArgb(), lab)
-    val chroma = hypot(lab[1], lab[2])
-    val borrowsHue = chroma < NEUTRAL_TINT_CHROMA &&
-        lab[0] >= NEUTRAL_TINT_MIN_LIGHTNESS &&
-        fallbackDirection != null
-    val (a, b) = if (borrowsHue && fallbackDirection != null) {
-        fallbackDirection.first * NEUTRAL_TINT_CHROMA * factor to
-            fallbackDirection.second * NEUTRAL_TINT_CHROMA * factor
-    } else {
-        lab[1] * factor to lab[2] * factor
-    }
-    return Color(androidx.core.graphics.ColorUtils.LABToColor(lab[0], a, b))
+    return hypot(lab[1], lab[2])
 }
 
 /** This color's hue as a unit vector in the LAB a/b plane, or null if it is neutral grey. */
@@ -130,27 +121,185 @@ private fun Color.chromaDirection(): Pair<Double, Double>? {
     val lab = DoubleArray(3)
     androidx.core.graphics.ColorUtils.colorToLAB(toArgb(), lab)
     val chroma = hypot(lab[1], lab[2])
-    return if (chroma < 0.001) null else lab[1] / chroma to lab[2] / chroma
+    return if (chroma < NEUTRAL_CHROMA) null else lab[1] / chroma to lab[2] / chroma
+}
+
+private fun labColor(l: Double, unitA: Double, unitB: Double, chroma: Double): Color =
+    Color(androidx.core.graphics.ColorUtils.LABToColor(l, unitA * chroma, unitB * chroma))
+
+/**
+ * The most chroma sRGB can actually show at lightness [l] along one hue.
+ *
+ * Everything here is built on this rather than on multiply-and-let-it-clip, because clipping is
+ * not a gentle no-op: it pins a channel and drags the other two with it, so the color that lands
+ * on screen is both a different hue and a different lightness from the one asked for. That is
+ * precisely what made Clean look like the odd stop out — Clean is exact, while Rich and Deep were
+ * both clamped onto the same gamut wall at a lightness 3 LAB units brighter than the surface they
+ * were supposed to be tinting.
+ *
+ * Binary search over a round-trip through sRGB, rather than a hand-rolled gamut boundary: the
+ * conversion is the same one the result will go through, so the answer is exact by construction,
+ * and 8-bit quantisation is the only error term ([CHROMA_TOLERANCE]). It also answers ~0 at L 0,
+ * which is what keeps AMOLED black at every stop with no special case.
+ *
+ * The fit is checked as a distance in the a/b plane and on lightness, not as a chroma magnitude:
+ * a clamped color can measure plenty of chroma while sitting at a completely different hue, so
+ * comparing magnitudes alone accepts exactly the results this is meant to reject.
+ */
+private fun maxChromaAt(l: Double, unitA: Double, unitB: Double): Double {
+    var lo = 0.0
+    var hi = 150.0
+    repeat(12) {
+        val mid = (lo + hi) / 2
+        if (fitsInGamut(l, unitA, unitB, mid)) lo = mid else hi = mid
+    }
+    return lo
+}
+
+/** Whether sRGB can render exactly this lightness, hue and chroma, within [CHROMA_TOLERANCE]. */
+private fun fitsInGamut(l: Double, unitA: Double, unitB: Double, chroma: Double): Boolean {
+    val lab = DoubleArray(3)
+    androidx.core.graphics.ColorUtils.colorToLAB(labColor(l, unitA, unitB, chroma).toArgb(), lab)
+    return hypot(lab[1] - unitA * chroma, lab[2] - unitB * chroma) <= CHROMA_TOLERANCE &&
+        abs(lab[0] - l) <= CHROMA_TOLERANCE
+}
+
+/** Scales a color's chroma toward grey. Always inside the gamut, so lightness and hue are exact. */
+private fun Color.scaleChroma(factor: Float): Color {
+    val lab = DoubleArray(3)
+    androidx.core.graphics.ColorUtils.colorToLAB(toArgb(), lab)
+    val chroma = hypot(lab[1], lab[2])
+    if (chroma < NEUTRAL_CHROMA) return this
+    return labColor(lab[0], lab[1] / chroma, lab[2] / chroma, chroma * factor)
+}
+
+/**
+ * Multiplies a color's chroma, moving its lightness toward the hue's more colorful range when sRGB
+ * has no room at the lightness it currently sits at.
+ *
+ * Scaling chroma alone is enough in light mode, where accents sit near L 40 with headroom to
+ * spare. It is not enough in dark mode, and that is why the intensity slider still looked inert
+ * after the move off HSL: dark accents are M3 tone 80-90, up at the top of the cone where the
+ * gamut has almost nothing left. `#FFB4A2` sits at C 32 and cannot exceed C 34 at its own
+ * lightness however large the factor. Four LAB units lower the same hue reaches C 42, and sixteen
+ * lower, C 71.
+ *
+ * So lightness is spent, but only as much as needed and only when the request would otherwise be
+ * unreachable: the no-shift candidate is tried first and returned whenever it satisfies the
+ * target, which is what keeps light mode's behaviour exactly as it was. The budget scales with how
+ * far past 1x the stop is, capping POP at roughly 10 LAB units — enough to matter, small enough
+ * that every `on*` role stays comfortably legible against its container.
+ *
+ * Where even the full budget cannot reach the target, the result is the most colorful *in-gamut*
+ * point found rather than an out-of-range request left for the conversion to clamp, so the hue
+ * asked for is always the hue delivered.
+ */
+private fun Color.boostChroma(factor: Float): Color {
+    val lab = DoubleArray(3)
+    androidx.core.graphics.ColorUtils.colorToLAB(toArgb(), lab)
+    val chroma = hypot(lab[1], lab[2])
+    if (chroma < NEUTRAL_CHROMA) return this
+    val target = chroma * factor
+    val unitA = lab[1] / chroma
+    val unitB = lab[2] / chroma
+    val budget = (factor - 1f) * CHROMA_LIGHTNESS_BUDGET
+    var bestL = lab[0]
+    var bestChroma = chroma
+    // Ascending shift, so the smallest lightness change that satisfies the target is the one taken.
+    for (step in 0..4) {
+        val shift = budget * step / 4.0
+        val signs = if (step == 0) intArrayOf(-1) else intArrayOf(-1, 1)
+        for (sign in signs) {
+            val l = (lab[0] + sign * shift).coerceIn(0.0, 100.0)
+            val ceiling = maxChromaAt(l, unitA, unitB)
+            if (ceiling >= target - CHROMA_TOLERANCE) return labColor(l, unitA, unitB, target)
+            if (ceiling > bestChroma) {
+                bestChroma = ceiling
+                bestL = l
+            }
+        }
+    }
+    return labColor(bestL, unitA, unitB, bestChroma)
+}
+
+/**
+ * Moves a surface's chroma along a fixed lightness: toward grey for a negative [level], and a
+ * fraction of the way to the gamut ceiling for a positive one.
+ *
+ * A fraction of the available headroom, not a multiple of the current chroma, because a surface
+ * has so little headroom to spend. A dark page sits around L 13, where this hue tops out at
+ * C 21.5; the old 3x and 6x stops both asked for well past that and were clamped onto the same
+ * wall, which is why Rich and Deep looked alike and why the clamped lightness made Clean look like
+ * a different color rather than the same surface with the color taken out. Expressed as headroom,
+ * every stop is reachable by construction, in any scheme, at any lightness — and lightness never
+ * moves, so raising the tint cannot brighten the page.
+ *
+ * [fallbackDirection] covers surfaces with no hue to scale — `surfaceContainerLowest` is pure
+ * white in light mode — which borrow the scheme's own hue so cards move in step with the page
+ * behind them. There is no lightness guard on that: at AMOLED's L 0 the ceiling is itself 0, so
+ * black stays black however deep the tint.
+ *
+ * Lightness holds still except in the one case where holding it means no tint at all: a near-white
+ * page at L 98 has room for about C 3 and no more, so the top stops would be indistinguishable
+ * from the bottom. There a surface may be *darkened* within [TINT_LIGHTNESS_BUDGET] to reach
+ * [TINT_MIN_HEADROOM] — a tinted page reading slightly deeper is what a tinted page looks like.
+ * Never brightened, which is both the wrong direction for a background and the thing that keeps
+ * near-black AMOLED surfaces where they are.
+ */
+private fun Color.tintBy(level: Float, fallbackDirection: Pair<Double, Double>?): Color {
+    if (level == 0f) return this
+    val lab = DoubleArray(3)
+    androidx.core.graphics.ColorUtils.colorToLAB(toArgb(), lab)
+    val chroma = hypot(lab[1], lab[2])
+    val direction = if (chroma < NEUTRAL_CHROMA) fallbackDirection else lab[1] / chroma to lab[2] / chroma
+    val (unitA, unitB) = direction ?: return this
+    if (level < 0f) return labColor(lab[0], unitA, unitB, (chroma * (1f + level)).coerceAtLeast(0.0))
+
+    var lightness = lab[0]
+    var headroom = maxChromaAt(lightness, unitA, unitB)
+    if (headroom < TINT_MIN_HEADROOM) {
+        for (step in 1..4) {
+            val candidate = (lab[0] - TINT_LIGHTNESS_BUDGET * level * step / 4.0).coerceAtLeast(0.0)
+            val candidateHeadroom = maxChromaAt(candidate, unitA, unitB)
+            if (candidateHeadroom > headroom) {
+                headroom = candidateHeadroom
+                lightness = candidate
+            }
+            if (headroom >= TINT_MIN_HEADROOM) break
+        }
+    }
+    // Never below where the surface already is. A measured ceiling is a lower bound — the search
+    // stops within CHROMA_TOLERANCE of the boundary and 8-bit quantisation costs another unit — so
+    // a surface sitting on the gamut wall can measure a ceiling under its own chroma. Interpolating
+    // toward that runs the ladder backwards, and Rich comes out flatter than Soft: a real dynamic
+    // dark surface at C 21.6 measured a ceiling of 20.8.
+    val reachable = headroom.coerceAtLeast(chroma)
+    return labColor(lightness, unitA, unitB, (chroma + (reachable - chroma) * level).coerceAtLeast(0.0))
 }
 
 /**
  * Applies [ColorIntensity] to the accent roles.
  *
  * `error` is deliberately excluded along with every `on*` role: an overdue badge and a delete
- * action have to stay the same reliable red at every setting, and holding lightness fixed while
- * only saturation moves is what keeps the `on*` pairings legible without recomputing them.
+ * action have to stay the same reliable red at every setting, and leaving the `on*` tones fixed
+ * while their partners move only within [boostChroma]'s bounded lightness budget is what keeps the
+ * pairings legible without recomputing them.
+ *
+ * Muting is plain chroma scaling — toward grey is always inside the gamut. Only the upward stops
+ * need [boostChroma].
  */
 private fun ColorScheme.withColorIntensity(intensity: com.mj.yata.domain.model.ColorIntensity): ColorScheme {
     val f = intensity.chromaFactor
     if (f == 1f) return this
+    val adjust: (Color) -> Color = if (f < 1f) { c -> c.scaleChroma(f) } else { c -> c.boostChroma(f) }
     return copy(
-        primary = primary.scaleChroma(f),
-        primaryContainer = primaryContainer.scaleChroma(f),
-        inversePrimary = inversePrimary.scaleChroma(f),
-        secondary = secondary.scaleChroma(f),
-        secondaryContainer = secondaryContainer.scaleChroma(f),
-        tertiary = tertiary.scaleChroma(f),
-        tertiaryContainer = tertiaryContainer.scaleChroma(f)
+        primary = adjust(primary),
+        primaryContainer = adjust(primaryContainer),
+        inversePrimary = adjust(inversePrimary),
+        secondary = adjust(secondary),
+        secondaryContainer = adjust(secondaryContainer),
+        tertiary = adjust(tertiary),
+        tertiaryContainer = adjust(tertiaryContainer)
     )
 }
 
@@ -160,22 +309,22 @@ private fun ColorScheme.withColorIntensity(intensity: com.mj.yata.domain.model.C
  * picking up a tint the mode exists to avoid.
  */
 private fun ColorScheme.withBackgroundTint(tint: com.mj.yata.domain.model.BackgroundTint): ColorScheme {
-    val f = tint.chromaFactor
-    if (f == 1f) return this
+    val level = tint.level
+    if (level == 0f) return this
     // The hue the neutral tiers borrow. Taken from primary rather than from background, since
     // background is itself one of the colors that can be neutral.
     val hue = primary.chromaDirection()
     return copy(
-        background = background.scaleChroma(f, hue),
-        surface = surface.scaleChroma(f, hue),
-        surfaceVariant = surfaceVariant.scaleChroma(f, hue),
-        surfaceDim = surfaceDim.scaleChroma(f, hue),
-        surfaceBright = surfaceBright.scaleChroma(f, hue),
-        surfaceContainerLowest = surfaceContainerLowest.scaleChroma(f, hue),
-        surfaceContainerLow = surfaceContainerLow.scaleChroma(f, hue),
-        surfaceContainer = surfaceContainer.scaleChroma(f, hue),
-        surfaceContainerHigh = surfaceContainerHigh.scaleChroma(f, hue),
-        surfaceContainerHighest = surfaceContainerHighest.scaleChroma(f, hue)
+        background = background.tintBy(level, hue),
+        surface = surface.tintBy(level, hue),
+        surfaceVariant = surfaceVariant.tintBy(level, hue),
+        surfaceDim = surfaceDim.tintBy(level, hue),
+        surfaceBright = surfaceBright.tintBy(level, hue),
+        surfaceContainerLowest = surfaceContainerLowest.tintBy(level, hue),
+        surfaceContainerLow = surfaceContainerLow.tintBy(level, hue),
+        surfaceContainer = surfaceContainer.tintBy(level, hue),
+        surfaceContainerHigh = surfaceContainerHigh.tintBy(level, hue),
+        surfaceContainerHighest = surfaceContainerHighest.tintBy(level, hue)
     )
 }
 
@@ -197,24 +346,39 @@ fun YataTheme(
 ) {
     val context = LocalContext.current
     val supportsDynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val baseColorScheme = when {
-        useDynamicColor && supportsDynamicColor && darkTheme -> dynamicDarkColorScheme(context)
-        useDynamicColor && supportsDynamicColor -> dynamicLightColorScheme(context)
-        !useDynamicColor && customThemeSeedColor != null -> colorSchemeFromSeed(customThemeSeedColor, darkTheme)
-        darkTheme -> DarkColors
-        else -> LightColors
+    // Memoised as one unit, keyed on the inputs rather than on the resolved scheme: the intensity
+    // and tint transforms binary-search the sRGB gamut per colour role, which at the top stops is
+    // a few thousand LAB conversions, and this composable is not skippable — its content lambda
+    // captures fresh values every pass, so the body re-ran on any recomposition of the Activity's
+    // setContent block (any of ~25 collected preferences, or the app-lock state).
+    //
+    // The keys have to be the primitives. ColorScheme does not override equals, and
+    // dynamic*ColorScheme() hands back a new instance on every call, so keying on the resolved
+    // scheme would compare by identity and never hit. `context` is a key because that is what
+    // changes when a configuration change makes the wallpaper palette change.
+    val colorScheme = remember(
+        context, darkTheme, useDynamicColor, supportsDynamicColor,
+        amoledMode, customThemeSeedColor, colorIntensity, backgroundTint
+    ) {
+        val baseColorScheme = when {
+            useDynamicColor && supportsDynamicColor && darkTheme -> dynamicDarkColorScheme(context)
+            useDynamicColor && supportsDynamicColor -> dynamicLightColorScheme(context)
+            !useDynamicColor && customThemeSeedColor != null -> colorSchemeFromSeed(customThemeSeedColor, darkTheme)
+            darkTheme -> DarkColors
+            else -> LightColors
+        }
+        // AMOLED is a dark-theme modifier, never a theme of its own — leaving it applied in light
+        // mode would produce black surfaces under dark-on-light text. The two dark treatments are
+        // mutually exclusive: AMOLED exists to reach true black, so softening it would defeat it.
+        val darkAdjusted = when {
+            darkTheme && amoledMode -> baseColorScheme.toAmoled()
+            darkTheme -> baseColorScheme.toSofterDark()
+            else -> baseColorScheme
+        }
+        darkAdjusted
+            .withColorIntensity(colorIntensity)
+            .withBackgroundTint(backgroundTint)
     }
-    // AMOLED is a dark-theme modifier, never a theme of its own — leaving it applied in light
-    // mode would produce black surfaces under dark-on-light text. The two dark treatments are
-    // mutually exclusive: AMOLED exists to reach true black, so softening it would defeat it.
-    val darkAdjusted = when {
-        darkTheme && amoledMode -> baseColorScheme.toAmoled()
-        darkTheme -> baseColorScheme.toSofterDark()
-        else -> baseColorScheme
-    }
-    val colorScheme = darkAdjusted
-        .withColorIntensity(colorIntensity)
-        .withBackgroundTint(backgroundTint)
     // Entity accent swatches (task/tag/person colors) stay fixed regardless of dynamic color —
     // only MaterialTheme.colorScheme (chrome, surfaces, primary/secondary) follows the wallpaper.
     val accents = if (darkTheme) DarkAccents else LightAccents
