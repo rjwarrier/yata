@@ -11,6 +11,15 @@ val LocalHapticsEnabled = staticCompositionLocalOf { true }
  * while this controls the user's default everywhere TaskRow is used. */
 val LocalTaskSwipeActionsEnabled = staticCompositionLocalOf { true }
 
+/**
+ * The Reduce Motion setting, for animations that should be skipped outright rather than shortened.
+ *
+ * [YataDur.applyReduceMotion] covers the ordinary case by dividing every duration by three, which
+ * is right for transitions that still have to communicate something. It is not right for motion
+ * that is purely decorative — that should not play at all — and there was no way to ask.
+ */
+val LocalReduceMotion = staticCompositionLocalOf { false }
+
 /** Whether each task draws as its own raised card rather than a flat row. Read by TaskRow itself
  * so every list — Today, Upcoming, Project, List, Tag, Person, Search, Next Days — picks it up
  * from one place, instead of each screen passing a styling flag down. */

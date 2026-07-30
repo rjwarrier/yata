@@ -51,6 +51,8 @@ import com.mj.yata.util.export.toExportRow
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.yataItemFade
+import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 import androidx.compose.ui.draw.rotate
 import androidx.compose.animation.core.animateFloatAsState
@@ -521,7 +523,7 @@ fun PersonDetailScreen(
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
-                            modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                             ),
                             onCommentClick = { pendingCommentTask = task },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
@@ -611,7 +613,7 @@ fun PersonDetailScreen(
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
-                            modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                             ),
                             onCommentClick = { pendingCommentTask = task },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },

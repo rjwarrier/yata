@@ -32,6 +32,8 @@ import java.time.LocalDate
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.yataItemFade
+import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -683,7 +685,7 @@ private fun SearchResultsList(
                 }
 
                 Column(
-                    modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized))
+                    modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                 ) {
                     val lifecycleBadges = listOfNotNull(
                         "In Trash".takeIf { task.id in deletedTaskIds || task.deletedAt != null },

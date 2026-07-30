@@ -52,6 +52,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.yataItemFade
+import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -495,7 +497,7 @@ fun ListDetailScreen(
                             items(completedListTasks, key = { "completed_" + it.id }) { task ->
                                 taskRowFor(
                                     task = task,
-                                    modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                    modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                                     )
                                 )
                             }

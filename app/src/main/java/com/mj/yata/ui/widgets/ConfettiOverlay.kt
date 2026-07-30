@@ -35,6 +35,11 @@ fun ConfettiOverlay(
 ) {
     if (trigger == 0) return
 
+    // Purely decorative, so it is skipped outright on either signal rather than shortened: the
+    // system animator scale, and the app's own Reduce Motion setting — which until now this could
+    // not see, so someone who had turned motion down in the app would still have got confetti.
+    if (com.mj.yata.ui.theme.LocalReduceMotion.current) return
+
     val context = LocalContext.current
     val isReducedMotion = remember(context) {
         val scale = Settings.Global.getFloat(

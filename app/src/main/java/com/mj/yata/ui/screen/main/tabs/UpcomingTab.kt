@@ -47,6 +47,8 @@ import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.yataItemFade
+import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.SegmentedControl
@@ -483,7 +485,7 @@ fun UpcomingTab(
                                 density = taskRowDensity,
                                 onSwipeToDelete = { onSwipeToDelete(task.id) },
                                 swipeEnabled = !selectionMode,
-                                modifier = Modifier.animateItem(placementSpec = tween(YataDur.sheet, easing = YataEase.emphasized))
+                                modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                             )
                         }
                     }

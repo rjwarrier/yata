@@ -17,6 +17,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Confetti when you clear the day.** Finishing the last open task on Today gets a brief
+  celebration. Only for actually finishing it — deleting the last one doesn't count — and only for
+  clearing the whole day, not a filtered slice of it. Skipped entirely if Reduce Motion is on, in
+  the app or system-wide.
+- Task rows now dip slightly when pressed, the same feedback the buttons and chips already gave.
 - **Task cards** (Settings → Display). Off by default. Turn it on and every task draws as its own
   rounded card instead of a flat row, everywhere tasks are listed — Today, Upcoming, Project, List,
   Tag, Person, Search and Next 10 Days. Works with all three row densities and with the priority

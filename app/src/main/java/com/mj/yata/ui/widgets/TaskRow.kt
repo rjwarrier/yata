@@ -32,6 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -135,10 +138,30 @@ fun TaskRow(
     val cardBackground = com.mj.yata.ui.theme.LocalTaskCardBackground.current
     val contentHorizontalPadding = if (cardBackground) 14.dp else horizontalPadding
 
+    // Press feedback. Deliberately not PressableScaleBox, which every other pressable surface in
+    // the app uses: that wraps `clickable`, so it would drop this row's long-press (selection,
+    // drag, rename), swap the ripple for nothing, and fire a haptic on every tap of the most
+    // tapped thing in the app. Sharing the interaction source with the existing combinedClickable
+    // gets the same scale while leaving all of that intact.
+    //
+    // Small on purpose — the row is full width, so what reads as a gentle press on a 56dp card is
+    // a lot of travel at the screen edges. Tokenised rather than sprung so Reduce Motion applies.
+    val pressSource = remember { MutableInteractionSource() }
+    val pressed by pressSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) 0.985f else 1f,
+        animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
+        label = "taskRowPressScale"
+    )
+
     val rowContent: @Composable (Modifier) -> Unit = { rowModifier ->
         Box(
             modifier = rowModifier
                 .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = pressScale
+                    scaleY = pressScale
+                }
                 .then(
                     if (cardBackground) {
                         Modifier
@@ -177,7 +200,12 @@ fun TaskRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = onTaskClick, onLongClick = onLongClick)
+                .combinedClickable(
+                    interactionSource = pressSource,
+                    indication = LocalIndication.current,
+                    onClick = onTaskClick,
+                    onLongClick = onLongClick
+                )
                 .padding(horizontal = contentHorizontalPadding, vertical = density.verticalPadding()),
             verticalAlignment = Alignment.CenterVertically
         ) {

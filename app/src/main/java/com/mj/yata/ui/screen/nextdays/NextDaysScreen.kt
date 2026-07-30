@@ -24,6 +24,8 @@ import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.yataItemFade
+import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.TaskRow
 import kotlinx.coroutines.launch
@@ -193,7 +195,7 @@ fun NextDaysScreen(
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                             onRenameTask = { viewModel.renameTask(task.id, it) },
                             density = taskRowDensity,
-                            modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                            modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                             )
                         )
                     }

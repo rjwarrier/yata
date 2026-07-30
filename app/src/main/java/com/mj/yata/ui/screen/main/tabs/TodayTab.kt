@@ -35,6 +35,8 @@ import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.yataItemFade
+import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
@@ -165,8 +167,27 @@ fun TodayTab(
         if (hideCompleted) emptyList() else filteredTasks.filter { it.done }
     }
 
+    // Fires when today's last open task is ticked off. Keyed on remainingCount rather than the
+    // pendingTasks list below it, because that one is narrowed by the stat-filter chips — picking
+    // "High priority" and clearing those is not clearing the day.
+    var confettiTrigger by remember { mutableIntStateOf(0) }
+    var lastRemaining by remember { mutableIntStateOf(-1) }
+    var lastDone by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(remainingCount, doneCount) {
+        val previousRemaining = lastRemaining
+        val previousDone = lastDone
+        lastRemaining = remainingCount
+        lastDone = doneCount
+        // previousRemaining > 0 skips the first pass and skips arriving on an already-clear day;
+        // doneCount having gone up is what separates finishing the last task from deleting it.
+        if (previousRemaining > 0 && remainingCount == 0 && doneCount > previousDone) {
+            confettiTrigger++
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
@@ -442,7 +463,7 @@ fun TodayTab(
                         swipeEnabled = !selectionMode,
                         horizontalPadding = 12.dp,
                         showDueDate = true,
-                        modifier = Modifier.animateItem(placementSpec = tween(YataDur.sheet, easing = YataEase.emphasized))
+                        modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                     )
                 }
 
@@ -462,6 +483,8 @@ fun TodayTab(
                 }
             }
         }
+    }
+        com.mj.yata.ui.widgets.ConfettiOverlay(trigger = confettiTrigger)
     }
 
     if (showBulkTagSheet) {

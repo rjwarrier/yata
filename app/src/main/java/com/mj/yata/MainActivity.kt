@@ -298,7 +298,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled,
                 com.mj.yata.ui.widgets.LocalUndoWindowSeconds provides undoWindowSeconds,
                 com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled,
-                com.mj.yata.ui.theme.LocalTaskCardBackground provides taskCardBackground
+                com.mj.yata.ui.theme.LocalTaskCardBackground provides taskCardBackground,
+                com.mj.yata.ui.theme.LocalReduceMotion provides reduceMotionEnabled
             ) {
                 YataTheme(
                     darkTheme = useDarkTheme,

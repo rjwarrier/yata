@@ -57,8 +57,9 @@ import com.mj.yata.ui.navigation.Screen
 import com.mj.yata.ui.screen.main.tabs.*
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.yataItemFade
+import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
-import com.mj.yata.ui.widgets.ConfettiOverlay
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.PressableScaleBox
 import com.mj.yata.ui.sheets.*
@@ -439,7 +440,7 @@ fun MainScreen(
                                 icon = Icons.Default.Layers,
                                 selected = false,
                                 accentColor = accents.getAccent(project.color),
-                                modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                                 )
                             ) {
                                 onNavigateToProjectDetail(project.id)
@@ -452,7 +453,7 @@ fun MainScreen(
                                 icon = Icons.Default.Folder,
                                 selected = false,
                                 accentColor = accents.getAccent(list.color),
-                                modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                                 )
                             ) {
                                 onNavigateToListDetail(list.id)
@@ -466,7 +467,7 @@ fun MainScreen(
                                 icon = Icons.AutoMirrored.Filled.Label,
                                 selected = false,
                                 accentColor = tagColor,
-                                modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                                 )
                             ) {
                                 onNavigateToTagDetail(tag.id)
@@ -478,7 +479,7 @@ fun MainScreen(
                                 label = person.name,
                                 icon = Icons.Default.Person,
                                 selected = false,
-                                modifier = Modifier.animateItem(placementSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                                modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                                 )
                             ) {
                                 onNavigateToPersonDetail(person.id)
