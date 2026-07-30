@@ -121,10 +121,26 @@ fun TaskRow(
         label = "taskRowTitleColor"
     )
 
+    // Card mode turns the screen's edge inset into the card's outer margin and gives the content
+    // its own smaller inset, so the text sits a sensible distance inside the card rather than the
+    // two paddings stacking. Flat mode keeps the caller's padding exactly as it was.
+    val cardBackground = com.mj.yata.ui.theme.LocalTaskCardBackground.current
+    val contentHorizontalPadding = if (cardBackground) 14.dp else horizontalPadding
+
     val rowContent: @Composable (Modifier) -> Unit = { rowModifier ->
         Box(
             modifier = rowModifier
                 .fillMaxWidth()
+                .then(
+                    if (cardBackground) {
+                        Modifier
+                            .padding(horizontal = horizontalPadding, vertical = 4.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                    } else {
+                        Modifier
+                    }
+                )
                 .height(IntrinsicSize.Min)
         ) {
         // Priority color stripe, flush with the row's true left edge (outside the content
@@ -154,7 +170,7 @@ fun TaskRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(onClick = onTaskClick, onLongClick = onLongClick)
-                .padding(horizontal = horizontalPadding, vertical = density.verticalPadding()),
+                .padding(horizontal = contentHorizontalPadding, vertical = density.verticalPadding()),
             verticalAlignment = Alignment.CenterVertically
         ) {
         if (selectionMode) {

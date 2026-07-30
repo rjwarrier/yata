@@ -638,6 +638,9 @@ private data class MainNavigationState(
     val backgroundTint: StateFlow<com.mj.yata.domain.model.BackgroundTint> = userPreferences.backgroundTintFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.BackgroundTint.SOFT)
 
+    val taskCardBackground: StateFlow<Boolean> = userPreferences.taskCardBackgroundFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val userName: StateFlow<String> = userPreferences.userNameFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
@@ -1433,6 +1436,10 @@ private data class MainNavigationState(
 
     fun setBackgroundTint(tint: com.mj.yata.domain.model.BackgroundTint) {
         safeLaunch { userPreferences.setBackgroundTint(tint) }
+    }
+
+    fun setTaskCardBackground(enabled: Boolean) {
+        safeLaunch { userPreferences.setTaskCardBackground(enabled) }
     }
 
     fun setAppFont(font: AppFont) {

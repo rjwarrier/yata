@@ -271,6 +271,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val completionSoundEnabled by userPreferences.completionSoundEnabledFlow.collectAsState(initial = true)
             val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
             val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
+            val taskCardBackground by userPreferences.taskCardBackgroundFlow.collectAsState(initial = false)
 
             val appLockEnabledPref by userPreferences.appLockEnabledFlow.collectAsState(initial = false)
             LaunchedEffect(appLockEnabledPref) { AppLockState.appLockEnabled = appLockEnabledPref }
@@ -296,7 +297,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 LocalDensity provides scaledDensity,
                 com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled,
                 com.mj.yata.ui.widgets.LocalUndoWindowSeconds provides undoWindowSeconds,
-                com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled
+                com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled,
+                com.mj.yata.ui.theme.LocalTaskCardBackground provides taskCardBackground
             ) {
                 YataTheme(
                     darkTheme = useDarkTheme,

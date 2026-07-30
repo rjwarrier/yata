@@ -154,6 +154,7 @@ class UserPreferences @Inject constructor(
         val TASK_ROW_DENSITY        = stringPreferencesKey("task_row_density")
         val HAPTICS_ENABLED         = booleanPreferencesKey("haptics_enabled")
         val TASK_SWIPE_ACTIONS_ENABLED = booleanPreferencesKey("task_swipe_actions_enabled")
+        val TASK_CARD_BACKGROUND    = booleanPreferencesKey("task_card_background")
         val APP_LOCK_ENABLED        = booleanPreferencesKey("app_lock_enabled")
         val APP_LOCK_PIN_SALT       = stringPreferencesKey("app_lock_pin_salt")
         val APP_LOCK_PIN_HASH       = stringPreferencesKey("app_lock_pin_hash")
@@ -245,6 +246,10 @@ class UserPreferences @Inject constructor(
     }
     val hapticsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[HAPTICS_ENABLED] ?: true }
     val taskSwipeActionsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
+
+    // Off by default: the flat list is the app's existing look, and this changes every task list
+    // at once, so it has to be something a user opts into rather than finds applied after update.
+    val taskCardBackgroundFlow: Flow<Boolean> = prefsFlow.map { it[TASK_CARD_BACKGROUND] ?: false }
     val appLockEnabledFlow: Flow<Boolean> = prefsFlow.map { it[APP_LOCK_ENABLED] ?: false }
     val appLockPinSetFlow: Flow<Boolean> = prefsFlow.map { !it[APP_LOCK_PIN_HASH].isNullOrBlank() }
     val appLockTimeoutMinutesFlow: Flow<Int> = prefsFlow.map { it[APP_LOCK_TIMEOUT_MINUTES] ?: 0 }
@@ -684,6 +689,10 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[TASK_SWIPE_ACTIONS_ENABLED] = enabled }
     }
 
+    suspend fun setTaskCardBackground(enabled: Boolean) {
+        dataStore.edit { it[TASK_CARD_BACKGROUND] = enabled }
+    }
+
     suspend fun setAppLockEnabled(enabled: Boolean) {
         dataStore.edit { it[APP_LOCK_ENABLED] = enabled }
     }
@@ -748,6 +757,7 @@ class UserPreferences @Inject constructor(
             prefs.remove(CUSTOM_THEME_SEED_COLOR); prefs.remove(REDUCE_MOTION_ENABLED); prefs.remove(ENHANCED_M3_THEMING_ENABLED)
             prefs.remove(FLOATING_BOTTOM_NAV_ENABLED); prefs.remove(BOTTOM_NAV_LABELS_ENABLED); prefs.remove(COMPLETION_SOUND_ENABLED)
             prefs.remove(HAPTICS_ENABLED); prefs.remove(TASK_SWIPE_ACTIONS_ENABLED); prefs.remove(TASK_ROW_DENSITY)
+            prefs.remove(TASK_CARD_BACKGROUND)
             prefs.remove(TODAY_TAB_ENABLED); prefs.remove(UPCOMING_TAB_ENABLED); prefs.remove(FAB_POSITION)
             prefs.remove(DEFAULT_DUE_DATE); prefs.remove(DEFAULT_PRIORITY); prefs.remove(DAILY_AGENDA_ENABLED)
             prefs.remove(DAILY_AGENDA_HOUR); prefs.remove(DAILY_AGENDA_MINUTE); prefs.remove(OVERDUE_NUDGES_ENABLED)

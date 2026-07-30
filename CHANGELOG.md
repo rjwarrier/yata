@@ -17,6 +17,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Task cards** (Settings → Display). Off by default. Turn it on and every task draws as its own
+  rounded card instead of a flat row, everywhere tasks are listed — Today, Upcoming, Project, List,
+  Tag, Person, Search and Next 10 Days. Works with all three row densities and with the priority
+  colour stripe, which follows the card's rounded left edge.
+
 - **Color intensity and Background tint sliders** (Settings → Appearance). Four stops each — Muted
   to Pop for how saturated the accent colors are, Clean to Deep for how much of the theme color
   carries into page and card backgrounds. Both scale whatever scheme you already have rather than

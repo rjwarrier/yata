@@ -152,6 +152,7 @@ fun SettingsScreen(
     val dynamicColorEnabled = uiState.dynamicColorEnabled
     val colorIntensity by viewModel.colorIntensity.collectAsStateWithLifecycle()
     val backgroundTint by viewModel.backgroundTint.collectAsStateWithLifecycle()
+    val taskCardBackground by viewModel.taskCardBackground.collectAsStateWithLifecycle()
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
     val autoArchiveDays by viewModel.autoArchiveDays.collectAsStateWithLifecycle()
     val dailyAgendaEnabled by viewModel.dailyAgendaEnabled.collectAsStateWithLifecycle()
@@ -884,6 +885,17 @@ fun SettingsScreen(
                         RowDensityPreview(taskRowDensity)
                     }
 
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Sits with density rather than under Appearance: both are about the shape of
+                    // a task list rather than the app's colours, and they interact — a card at
+                    // Compact is a very different thing from a card at Spacious.
+                    SettingsToggleRow(
+                        title = stringResource(R.string.settings_task_cards),
+                        subtitle = stringResource(R.string.settings_task_cards_desc),
+                        checked = taskCardBackground,
+                        onCheckedChange = { viewModel.setTaskCardBackground(it) }
+                    )
                 }
             }
         }

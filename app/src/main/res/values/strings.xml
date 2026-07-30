@@ -720,6 +720,8 @@
     <string name="settings_reduce_motion">Reduce motion</string>
     <string name="settings_reduce_motion_desc">Shortens navigation, sheet, and fade animations.</string>
     <string name="settings_task_row_density">Task row density</string>
+    <string name="settings_task_cards">Task cards</string>
+    <string name="settings_task_cards_desc">Give every task its own card instead of a flat row.</string>
     <string name="settings_today_tab">Today tab</string>
     <string name="settings_upcoming_tab">Upcoming tab</string>
     <string name="settings_projects">Projects</string>
