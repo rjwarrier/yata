@@ -42,6 +42,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 - The "Create another" label and its box behaved as two separate controls, and screen readers
   announced them separately.
+- The FAB on the five main tabs sat too far above the bottom navigation bar, most noticeably with
+  the floating panel. It was counting the system navigation inset twice — worth about 24dp on
+  gesture navigation and 48dp with the three-button bar.
 - Three buttons were too small to reliably tap — the group-delete buttons on the People and Tags
   tabs, and the dismiss on the New Task reminder warning. All three now meet the 48dp minimum
   while the icons stay the same size.

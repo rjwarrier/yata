@@ -609,9 +609,15 @@ fun MainScreen(
                         onClick = {
                             activeSheet = sheetType
                         },
+                        // No navigationBarsPadding here. CustomBottomNav already consumes the
+                        // system navigation inset in both modes — the floating variant on its
+                        // outer Box, the docked variant on its inner one — and Scaffold positions
+                        // the FAB relative to the bottomBar's *outer* height. Applying the inset
+                        // again added the full nav-bar height a second time, which is why the FAB
+                        // floated well clear of the panel: ~24dp on gesture nav, ~48dp with the
+                        // three-button bar. Scaffold's own 16dp FAB-to-bottomBar spacing is the
+                        // only gap needed, and it's the M3 default.
                         modifier = Modifier
-                            .navigationBarsPadding()
-                            .padding(bottom = 6.dp)
                     ) {
                         Surface(
                             color = MaterialTheme.colorScheme.primary,
