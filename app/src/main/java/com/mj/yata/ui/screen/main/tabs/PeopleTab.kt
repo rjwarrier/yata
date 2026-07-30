@@ -186,7 +186,8 @@ fun PeopleTab(
             sortMode,
             name = { it.name },
             starred = { it.starred },
-            taskCount = { tasksByPerson[it.id]?.size ?: 0 }
+            taskCount = { tasksByPerson[it.id]?.size ?: 0 },
+            openTaskCount = { tasksByPerson[it.id]?.count { task -> !task.done } ?: 0 }
         )
         val ungrouped = activePeople.filter { it.groupId == null || it.groupId !in groupedIds }.sorted()
         val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }

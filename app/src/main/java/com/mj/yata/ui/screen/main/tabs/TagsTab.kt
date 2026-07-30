@@ -223,7 +223,8 @@ fun TagsTab(
                 sortMode,
                 name = { it.name },
                 starred = { it.starred },
-                taskCount = { tagTaskCounts[it.id]?.first ?: 0 }
+                taskCount = { tagTaskCounts[it.id]?.first ?: 0 },
+                openTaskCount = { tagTaskCounts[it.id]?.let { (total, done) -> total - done } ?: 0 }
             )
             tagGroups.forEach { group ->
                 val groupTags = tags.filter { it.groupId == group.id }.sorted()

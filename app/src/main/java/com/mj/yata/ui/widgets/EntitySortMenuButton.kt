@@ -14,13 +14,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.mj.yata.R
 import com.mj.yata.util.EntitySortMode
 
+@Composable
 private fun EntitySortMode.label() = when (this) {
     EntitySortMode.NAME_ASC -> "Name (A-Z)"
     EntitySortMode.NAME_DESC -> "Name (Z-A)"
     EntitySortMode.TASK_COUNT_DESC -> "Most tasks"
     EntitySortMode.TASK_COUNT_ASC -> "Fewest tasks"
+    EntitySortMode.OPEN_TASK_COUNT_DESC -> stringResource(R.string.sort_most_open_tasks)
     EntitySortMode.STARRED_FIRST -> "Starred first"
 }
 
