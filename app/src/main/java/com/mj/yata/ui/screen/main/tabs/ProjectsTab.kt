@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,11 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -195,7 +190,6 @@ fun ProjectsTab(
                 }
             } else null,
             footer = {
-                item { NewProjectDashedCard(onClick = onNewProjectClick) }
                 if (archivedProjects.isNotEmpty()) {
                     item {
                         Text(
@@ -380,51 +374,6 @@ fun ProjectCard(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun NewProjectDashedCard(
-    onClick: () -> Unit
-) {
-    val outlineColor = MaterialTheme.colorScheme.outlineVariant
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() }
-            .drawBehind {
-                val stroke = Stroke(
-                    width = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
-                )
-                drawRoundRect(
-                    color = outlineColor,
-                    style = stroke,
-                    cornerRadius = CornerRadius(16.dp.toPx())
-                )
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = stringResource(R.string.projects_add_project),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "New project",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
         }
     }
 }

@@ -190,7 +190,10 @@ fun PeopleTab(
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Single source of spacing between cards. The rows used to carry a 12dp bottom padding
+            // of their own on top of this, so every gap was really 24dp — twice what either value
+            // suggested when read on its own. 10dp matches the tag rows on the Tags tab.
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (people.isEmpty()) {
                 item {
@@ -271,8 +274,7 @@ fun PeopleTab(
                             totalTasks = 0,
                             doneTasks = 0,
                             progress = 0f,
-                            onClick = { onPersonClick(person.id) },
-                            modifier = Modifier.padding(bottom = 12.dp)
+                            onClick = { onPersonClick(person.id) }
                         )
                     }
                 }
@@ -338,8 +340,7 @@ private fun PersonListRow(
                 onPersonClick(person.id)
             }
         },
-        onToggleStar = { onToggleStar(person.id) },
-        modifier = Modifier.padding(bottom = 12.dp)
+        onToggleStar = { onToggleStar(person.id) }
     )
 }
 
@@ -392,20 +393,12 @@ fun PersonRow(
             }
 
             val openTasks = totalTasks - doneTasks
-            BadgedBox(
-                badge = {
-                    if (openTasks > 0) {
-                        Badge { Text(if (openTasks > 99) "99+" else openTasks.toString()) }
-                    }
-                }
-            ) {
-                PersonAvatar(
-                    initials = person.initials,
-                    accentKey = person.color,
-                    photoUri = person.photoUri,
-                    size = 44.dp
-                )
-            }
+            PersonAvatar(
+                initials = person.initials,
+                accentKey = person.color,
+                photoUri = person.photoUri,
+                size = 44.dp
+            )
 
             Spacer(modifier = Modifier.width(14.dp))
 
@@ -477,12 +470,19 @@ fun PersonRow(
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                // Progress indicator
+                // Progress indicator, with the open-task count in the middle — it used to be a
+                // badge clipped to the corner of the avatar, which put the number furthest from
+                // the "N assigned · M done" line it belongs with.
                 ProgressRing(
                     progress = progress,
                     size = 32.dp,
                     strokeWidth = 3.dp,
-                    activeColor = accentColor
+                    activeColor = accentColor,
+                    centerLabel = when {
+                        openTasks <= 0 -> null
+                        openTasks > 99 -> "99+"
+                        else -> openTasks.toString()
+                    }
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -513,7 +513,11 @@ private fun GroupHeader(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        // Extra air above the heading so a group break still reads as one now that the cards
+        // themselves sit closer together — otherwise the header is just another 10dp row.
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

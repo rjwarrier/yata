@@ -57,11 +57,14 @@ import com.mj.yata.R
 import com.mj.yata.data.cloud.CloudBackupError
 import com.mj.yata.data.cloud.isCloudBackupStale
 import com.mj.yata.domain.model.AppFont
+import com.mj.yata.domain.model.BackgroundTint
+import com.mj.yata.domain.model.ColorIntensity
 import com.mj.yata.domain.model.DefaultDueDate
 import com.mj.yata.domain.model.FabPosition
 import com.mj.yata.domain.model.TaskRowDensity
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
+import kotlin.math.roundToInt
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.theme.THEME_PRESETS
@@ -147,6 +150,8 @@ fun SettingsScreen(
     val fabPosition = uiState.fabPosition
     val uiScale = uiState.uiScale
     val dynamicColorEnabled = uiState.dynamicColorEnabled
+    val colorIntensity by viewModel.colorIntensity.collectAsStateWithLifecycle()
+    val backgroundTint by viewModel.backgroundTint.collectAsStateWithLifecycle()
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
     val autoArchiveDays by viewModel.autoArchiveDays.collectAsStateWithLifecycle()
     val dailyAgendaEnabled by viewModel.dailyAgendaEnabled.collectAsStateWithLifecycle()
@@ -594,6 +599,29 @@ fun SettingsScreen(
                             )
                         }
                     }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // Both apply on top of whatever scheme is in play — Material You, a custom
+                    // seed, or the built-in palette — so they stay useful regardless of the
+                    // toggles above them.
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_color_intensity),
+                        description = stringResource(R.string.settings_color_intensity_desc),
+                        stopLabels = colorIntensityLabels(),
+                        selectedIndex = colorIntensity.ordinal,
+                        onSelect = { viewModel.setColorIntensity(ColorIntensity.entries[it]) }
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_background_tint),
+                        description = stringResource(R.string.settings_background_tint_desc),
+                        stopLabels = backgroundTintLabels(),
+                        selectedIndex = backgroundTint.ordinal,
+                        onSelect = { viewModel.setBackgroundTint(BackgroundTint.entries[it]) }
+                    )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -3114,6 +3142,87 @@ private fun NotificationPermissionRow(
  * app's fixed warm coral palette), 11 curated presets, and a "Custom" slot that opens a free-form
  * color picker. All of them (including presets) feed the same [colorSchemeFromSeed] generator, so
  * picking one is just choosing which seed color to theme from. */
+@Composable
+private fun colorIntensityLabels(): List<String> = listOf(
+    stringResource(R.string.settings_intensity_muted),
+    stringResource(R.string.settings_intensity_normal),
+    stringResource(R.string.settings_intensity_vivid),
+    stringResource(R.string.settings_intensity_pop)
+)
+
+@Composable
+private fun backgroundTintLabels(): List<String> = listOf(
+    stringResource(R.string.settings_tint_clean),
+    stringResource(R.string.settings_tint_soft),
+    stringResource(R.string.settings_tint_rich),
+    stringResource(R.string.settings_tint_deep)
+)
+
+/**
+ * A slider that snaps to a fixed set of named stops, with the current stop's name shown beside the
+ * title and every stop labelled underneath.
+ *
+ * Unlike the UI-size and text-size sliders above, this commits on every change rather than on
+ * `onValueChangeFinished`: those two rescale the entire UI (including this screen) on each frame,
+ * so they defer the write until the finger lifts. These only recolour, which is exactly the
+ * feedback someone dragging a colour slider is looking for.
+ */
+@Composable
+private fun StopSliderSetting(
+    title: String,
+    description: String,
+    stopLabels: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit
+) {
+    val lastStop = (stopLabels.size - 1).coerceAtLeast(1)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = stopLabels.getOrElse(selectedIndex) { "" },
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Slider(
+            value = selectedIndex.toFloat(),
+            onValueChange = { onSelect(it.roundToInt().coerceIn(0, lastStop)) },
+            valueRange = 0f..lastStop.toFloat(),
+            steps = (stopLabels.size - 2).coerceAtLeast(0)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            stopLabels.forEachIndexed { index, label ->
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (index == selectedIndex) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun ThemeColorPicker(selectedSeedArgb: Int?, onSelect: (Int?) -> Unit) {
     var showCustomPicker by remember { mutableStateOf(false) }

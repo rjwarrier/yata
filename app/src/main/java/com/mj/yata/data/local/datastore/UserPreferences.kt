@@ -6,6 +6,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.mj.yata.domain.model.AppFont
+import com.mj.yata.domain.model.BackgroundTint
+import com.mj.yata.domain.model.ColorIntensity
 import com.mj.yata.domain.model.DefaultDueDate
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.util.decodeSalt
@@ -110,6 +112,8 @@ class UserPreferences @Inject constructor(
         val AUTO_ASSIGN_TO_ME       = booleanPreferencesKey("auto_assign_to_me")
         val THEME_MODE              = stringPreferencesKey("theme_mode")
         val APP_FONT                = stringPreferencesKey("app_font")
+        val COLOR_INTENSITY         = stringPreferencesKey("color_intensity")
+        val BACKGROUND_TINT         = stringPreferencesKey("background_tint")
         val USER_NAME               = stringPreferencesKey("user_name")
         val USER_EMAIL              = stringPreferencesKey("user_email")
         val USER_PHOTO_URI          = stringPreferencesKey("user_photo_uri")
@@ -261,6 +265,17 @@ class UserPreferences @Inject constructor(
         }
     }
 
+    // Both default to their no-op stop, so an existing install looks identical until the slider
+    // is actually moved. Unknown names fall back the same way every other enum preference here
+    // does, rather than throwing on a value written by a newer build.
+    val colorIntensityFlow: Flow<ColorIntensity> = prefsFlow.map { prefs ->
+        ColorIntensity.entries.firstOrNull { it.name == prefs[COLOR_INTENSITY] } ?: ColorIntensity.NORMAL
+    }
+
+    val backgroundTintFlow: Flow<BackgroundTint> = prefsFlow.map { prefs ->
+        BackgroundTint.entries.firstOrNull { it.name == prefs[BACKGROUND_TINT] } ?: BackgroundTint.SOFT
+    }
+
     val userNameFlow: Flow<String> = prefsFlow.map { it[USER_NAME] ?: "" }
     val userEmailFlow: Flow<String> = prefsFlow.map { it[USER_EMAIL] ?: "" }
     val userPhotoUriFlow: Flow<String?> = prefsFlow.map { it[USER_PHOTO_URI] }
@@ -334,6 +349,14 @@ class UserPreferences @Inject constructor(
 
     suspend fun setAppFont(font: AppFont) {
         dataStore.edit { it[APP_FONT] = font.name }
+    }
+
+    suspend fun setColorIntensity(intensity: ColorIntensity) {
+        dataStore.edit { it[COLOR_INTENSITY] = intensity.name }
+    }
+
+    suspend fun setBackgroundTint(tint: BackgroundTint) {
+        dataStore.edit { it[BACKGROUND_TINT] = tint.name }
     }
 
     /**
@@ -719,6 +742,7 @@ class UserPreferences @Inject constructor(
     suspend fun resetAppSettings() {
         dataStore.edit { prefs ->
             prefs.remove(THEME_MODE); prefs.remove(APP_FONT); prefs.remove(DEFAULT_LIST_ID)
+            prefs.remove(COLOR_INTENSITY); prefs.remove(BACKGROUND_TINT)
             prefs.remove(START_OF_WEEK_SUNDAY); prefs.remove(DEFAULT_REMINDER_HOUR); prefs.remove(DEFAULT_REMINDER_MINUTE)
             prefs.remove(UI_SCALE); prefs.remove(TEXT_SCALE); prefs.remove(DYNAMIC_COLOR_ENABLED)
             prefs.remove(CUSTOM_THEME_SEED_COLOR); prefs.remove(REDUCE_MOTION_ENABLED); prefs.remove(ENHANCED_M3_THEMING_ENABLED)

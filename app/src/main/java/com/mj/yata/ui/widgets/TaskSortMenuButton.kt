@@ -33,10 +33,10 @@ fun TaskSortMenuButton(
     onSelect: (TaskSortMode) -> Unit,
     modifier: Modifier = Modifier,
     /**
-     * Draws the shared circular top-bar container behind the icon. Opt-in rather than the default
-     * because it has to match whatever the rest of its top bar does — filling only this button in
-     * a bar of plain icon buttons singles it out. Today, Person detail and Tag detail pass true;
-     * Project and List detail have not been converted yet and pass false.
+     * Draws the shared circular top-bar container behind the icon. Still opt-in, and still
+     * defaulting to false, even though every caller now passes true: it has to match whatever the
+     * rest of its top bar does, so a future screen with plain icon buttons should get the plain
+     * variant rather than inherit a container that singles this one button out.
      */
     filledContainer: Boolean = false
 ) {

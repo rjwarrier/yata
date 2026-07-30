@@ -44,7 +44,14 @@ fun ProgressRing(
     strokeWidth: Dp = 4.dp,
     activeColor: Color = MaterialTheme.colorScheme.primary,
     inactiveColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-    showLabel: Boolean = true
+    showLabel: Boolean = true,
+    /**
+     * Replaces the percentage in the middle of the ring. Set it where the count matters more than
+     * the completion figure — the People tab shows each person's open-task count here. Unlike the
+     * percentage this is drawn at any ring size: a caller passing it has decided the text is the
+     * point, and it is typically one or two characters where a percentage is two or three.
+     */
+    centerLabel: String? = null
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
@@ -107,10 +114,14 @@ fun ProgressRing(
             }
         }
 
-        if (showLabel && size >= 36.dp) {
-            val pct = (progress.coerceIn(0f, 1f) * 100).toInt()
+        val label = centerLabel ?: if (showLabel && size >= 36.dp) {
+            "${(progress.coerceIn(0f, 1f) * 100).toInt()}"
+        } else {
+            null
+        }
+        if (label != null) {
             Text(
-                text = "$pct",
+                text = label,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = when {
@@ -119,7 +130,8 @@ fun ProgressRing(
                         else -> 10.sp
                     }
                 ),
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
             )
         }
     }

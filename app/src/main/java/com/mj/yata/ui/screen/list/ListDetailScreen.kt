@@ -200,7 +200,7 @@ fun ListDetailScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = {
                         if (searchActive) {
                             searchActive = false
                             searchQuery = ""
@@ -212,35 +212,51 @@ fun ListDetailScreen(
                     }
                 },
                 actions = {
+                    // Wrapped so the circular containers get the same 8dp gap they have on the
+                    // main tabs — the actions slot packs its children flush, which reads as one
+                    // long pill once the buttons are filled rather than plain.
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
                     if (searchActive) {
                         if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
+                            com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { searchQuery = "" }) {
                                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
                             }
                         }
                     } else {
-                        IconButton(onClick = { searchActive = true }) {
+                        com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.list_detail_search_in_list))
                         }
-                        IconButton(onClick = { viewModel.toggleListStarred(list.id) }) {
+                        // Left as an action button rather than the toggle variant: the star already
+                        // signals its state through the accent colour, and a filled container
+                        // behind a gold star would be two state signals fighting each other.
+                        com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { viewModel.toggleListStarred(list.id) }) {
                             Icon(
                                 imageVector = if (list.starred) Icons.Filled.Star else Icons.Outlined.StarOutline,
                                 contentDescription = if (list.starred) "Unstar list" else "Star list",
-                                tint = if (list.starred) accents.accentD else MaterialTheme.colorScheme.onSurface
+                                tint = if (list.starred) accents.accentD else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,
-                            onSelect = { viewModel.setSortModeList(it) }
+                            onSelect = { viewModel.setSortModeList(it) },
+                            filledContainer = true
                         )
-                        IconButton(onClick = { viewModel.setHideCompletedList(!hideCompleted) }) {
+                        com.mj.yata.ui.widgets.YataTopBarIconToggleButton(
+                            checked = hideCompleted,
+                            onCheckedChange = { viewModel.setHideCompletedList(it) }
+                        ) {
                             Icon(
                                 imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = if (hideCompleted) "Show completed tasks" else "Hide completed tasks"
                             )
                         }
                         var showMenu by remember { mutableStateOf(false) }
-                        IconButton(onClick = { showMenu = true }) {
+                        Box {
+                        com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
                         DropdownMenu(
@@ -280,6 +296,8 @@ fun ListDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                             )
                         }
+                        }
+                    }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

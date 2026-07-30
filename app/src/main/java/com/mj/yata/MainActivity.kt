@@ -263,6 +263,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val undoWindowSeconds by userPreferences.undoWindowSecondsFlow.collectAsState(initial = 4)
             val customThemeSeedColorArgb by userPreferences.customThemeSeedColorFlow.collectAsState(initial = null)
             val appFont by userPreferences.appFontFlow.collectAsState(initial = com.mj.yata.domain.model.AppFont.INTER)
+            val colorIntensity by userPreferences.colorIntensityFlow.collectAsState(initial = com.mj.yata.domain.model.ColorIntensity.NORMAL)
+            val backgroundTint by userPreferences.backgroundTintFlow.collectAsState(initial = com.mj.yata.domain.model.BackgroundTint.SOFT)
             val enhancedM3ThemingEnabled by userPreferences.enhancedM3ThemingEnabledFlow.collectAsState(initial = false)
             val floatingBottomNavEnabled by userPreferences.floatingBottomNavEnabledFlow.collectAsState(initial = false)
             val bottomNavLabelsEnabled by userPreferences.bottomNavLabelsEnabledFlow.collectAsState(initial = true)
@@ -300,6 +302,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                     darkTheme = useDarkTheme,
                     useDynamicColor = dynamicColorEnabled,
                     amoledMode = themeMode == ThemeMode.AMOLED,
+                    colorIntensity = colorIntensity,
+                    backgroundTint = backgroundTint,
                     customThemeSeedColor = customThemeSeedColorArgb?.let { androidx.compose.ui.graphics.Color(it) },
                     appFont = appFont,
                     enhancedM3Theming = enhancedM3ThemingEnabled,

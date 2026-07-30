@@ -17,6 +17,12 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Color intensity and Background tint sliders** (Settings → Appearance). Four stops each — Muted
+  to Pop for how saturated the accent colors are, Clean to Deep for how much of the theme color
+  carries into page and card backgrounds. Both scale whatever scheme you already have rather than
+  replacing it, so they work on top of Material You, a custom seed colour, or the built-in palette,
+  and your wallpaper's hue survives at every stop. The defaults change nothing about an existing
+  theme until you move a slider.
 - **Sort people and tags by open work.** A "Most open tasks" option on the People and Tags tabs,
   ranking by how many tasks are still unfinished. The existing "Most tasks" counts everything ever
   associated with someone, so whoever has the longest history came out on top regardless of what
@@ -45,15 +51,23 @@ test-only changes belong in the commit message, not here, unless they change beh
   person editor sheets now match.
 - "Create another" in the New Task sheet is a switch rather than a checkbox, and the whole row is
   one target: it's a mode that takes effect immediately, not something submitted with the task.
-- The top bar buttons on a person's and a tag's own screen now sit in the same circular containers
-  as the ones on the main tabs, and hide-completed fills in while it's on rather than only swapping
-  its icon. Project and List detail still use the older plain buttons.
+- The top bar buttons on the person, tag, project and list screens now sit in the same circular
+  containers as the ones on the main tabs, and hide-completed fills in while it's on rather than
+  only swapping its icon. Every task list in the app has a consistent top bar again.
+- **Dark mode is a few points lighter**, off the near-black it used to sit at. AMOLED is untouched
+  and remains the true-black option, so the two now divide cleanly into a comfortable dark and a
+  panel-off black.
+- **People tab is tighter.** The gap between cards was being applied twice and came out at 24dp;
+  it is now 10dp, so roughly two more people fit on screen.
+- Each person's open-task count moved from a badge clipped to the corner of their photo into the
+  middle of the progress ring on the right, next to the "N assigned · M done" line it belongs with.
 
 ### Removed
 
-- The dashed "New tag" and "Add person" rows at the bottom of the Tags and People tabs. Each
-  duplicated the button already floating over the same screen. Note that if you have the quick-add
-  button set to Hidden, these two tabs no longer offer any way to create a tag or a person.
+- The dashed "New tag", "Add person" and "New project" rows on the Tags, People and Projects tabs.
+  Each duplicated the button already floating over the same screen. Note that if you have the
+  quick-add button set to Hidden, these three tabs no longer offer any way to create a tag, a
+  person or a project.
 
 ### Fixed
 

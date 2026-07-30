@@ -630,6 +630,14 @@ private data class MainNavigationState(
     val appFont: StateFlow<AppFont> = userPreferences.appFontFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppFont.INTER)
 
+    // Standalone rather than folded into SettingsUiState: that state is assembled by a combine of
+    // combines that is already at arity, and these are only read by the two sliders.
+    val colorIntensity: StateFlow<com.mj.yata.domain.model.ColorIntensity> = userPreferences.colorIntensityFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.ColorIntensity.NORMAL)
+
+    val backgroundTint: StateFlow<com.mj.yata.domain.model.BackgroundTint> = userPreferences.backgroundTintFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.BackgroundTint.SOFT)
+
     val userName: StateFlow<String> = userPreferences.userNameFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
@@ -1417,6 +1425,14 @@ private data class MainNavigationState(
         safeLaunch {
             userPreferences.setThemeSchedule(startHour, startMinute, endHour, endMinute)
         }
+    }
+
+    fun setColorIntensity(intensity: com.mj.yata.domain.model.ColorIntensity) {
+        safeLaunch { userPreferences.setColorIntensity(intensity) }
+    }
+
+    fun setBackgroundTint(tint: com.mj.yata.domain.model.BackgroundTint) {
+        safeLaunch { userPreferences.setBackgroundTint(tint) }
     }
 
     fun setAppFont(font: AppFont) {

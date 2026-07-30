@@ -49,11 +49,96 @@ private fun ColorScheme.toAmoled(): ColorScheme = copy(
     surfaceDim = Color.Black
 )
 
+/** Raises a color's HSL lightness, leaving hue and saturation exactly as they were. */
+private fun Color.lightenBy(amount: Float): Color {
+    val hsl = FloatArray(3)
+    androidx.core.graphics.ColorUtils.colorToHSL(toArgb(), hsl)
+    hsl[2] = (hsl[2] + amount).coerceIn(0f, 1f)
+    return Color(androidx.core.graphics.ColorUtils.HSLToColor(hsl))
+}
+
+/**
+ * Lifts a dark scheme's backgrounds and container tiers a few points off black. M3's dark
+ * background sits around 7% lightness, which on a phone at night reads as a hole rather than a
+ * surface; this makes the ordinary dark theme a comfortable dark instead of a near-black one, and
+ * leaves AMOLED as the option for people who actually want the panel switched off.
+ *
+ * Like [toAmoled] this is a transform over the resolved scheme rather than a hand-written palette,
+ * so it applies equally to Material You, a custom seed, and [DarkColors]. Lightness is raised in
+ * HSL so a wallpaper-derived hue survives intact — blending toward white would have washed a
+ * saturated dynamic scheme out. Every tier moves by the same amount, so the separation between
+ * page, card and sheet is unchanged, and no `on*` role is touched.
+ */
+private fun ColorScheme.toSofterDark(amount: Float = 0.045f): ColorScheme = copy(
+    background = background.lightenBy(amount),
+    surface = surface.lightenBy(amount),
+    surfaceDim = surfaceDim.lightenBy(amount),
+    surfaceBright = surfaceBright.lightenBy(amount),
+    surfaceContainerLowest = surfaceContainerLowest.lightenBy(amount),
+    surfaceContainerLow = surfaceContainerLow.lightenBy(amount),
+    surfaceContainer = surfaceContainer.lightenBy(amount),
+    surfaceContainerHigh = surfaceContainerHigh.lightenBy(amount),
+    surfaceContainerHighest = surfaceContainerHighest.lightenBy(amount)
+)
+
+/** Scales a color's HSL saturation, leaving hue and lightness exactly as they were. */
+private fun Color.scaleSaturation(factor: Float): Color {
+    val hsl = FloatArray(3)
+    androidx.core.graphics.ColorUtils.colorToHSL(toArgb(), hsl)
+    hsl[1] = (hsl[1] * factor).coerceIn(0f, 1f)
+    return Color(androidx.core.graphics.ColorUtils.HSLToColor(hsl))
+}
+
+/**
+ * Applies [ColorIntensity] to the accent roles.
+ *
+ * `error` is deliberately excluded along with every `on*` role: an overdue badge and a delete
+ * action have to stay the same reliable red at every setting, and holding lightness fixed while
+ * only saturation moves is what keeps the `on*` pairings legible without recomputing them.
+ */
+private fun ColorScheme.withColorIntensity(intensity: com.mj.yata.domain.model.ColorIntensity): ColorScheme {
+    val f = intensity.saturationFactor
+    if (f == 1f) return this
+    return copy(
+        primary = primary.scaleSaturation(f),
+        primaryContainer = primaryContainer.scaleSaturation(f),
+        inversePrimary = inversePrimary.scaleSaturation(f),
+        secondary = secondary.scaleSaturation(f),
+        secondaryContainer = secondaryContainer.scaleSaturation(f),
+        tertiary = tertiary.scaleSaturation(f),
+        tertiaryContainer = tertiaryContainer.scaleSaturation(f)
+    )
+}
+
+/**
+ * Applies [BackgroundTint] to the page and container surfaces. Runs after [toAmoled], so the
+ * AMOLED palette — already fully desaturated — comes through black at every setting rather than
+ * picking up a tint the mode exists to avoid.
+ */
+private fun ColorScheme.withBackgroundTint(tint: com.mj.yata.domain.model.BackgroundTint): ColorScheme {
+    val f = tint.saturationFactor
+    if (f == 1f) return this
+    return copy(
+        background = background.scaleSaturation(f),
+        surface = surface.scaleSaturation(f),
+        surfaceVariant = surfaceVariant.scaleSaturation(f),
+        surfaceDim = surfaceDim.scaleSaturation(f),
+        surfaceBright = surfaceBright.scaleSaturation(f),
+        surfaceContainerLowest = surfaceContainerLowest.scaleSaturation(f),
+        surfaceContainerLow = surfaceContainerLow.scaleSaturation(f),
+        surfaceContainer = surfaceContainer.scaleSaturation(f),
+        surfaceContainerHigh = surfaceContainerHigh.scaleSaturation(f),
+        surfaceContainerHighest = surfaceContainerHighest.scaleSaturation(f)
+    )
+}
+
 @Composable
 fun YataTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     useDynamicColor: Boolean = true,
     amoledMode: Boolean = false,
+    colorIntensity: com.mj.yata.domain.model.ColorIntensity = com.mj.yata.domain.model.ColorIntensity.NORMAL,
+    backgroundTint: com.mj.yata.domain.model.BackgroundTint = com.mj.yata.domain.model.BackgroundTint.SOFT,
     customThemeSeedColor: Color? = null,
     appFont: com.mj.yata.domain.model.AppFont = com.mj.yata.domain.model.AppFont.INTER,
     enhancedM3Theming: Boolean = false,
@@ -73,8 +158,16 @@ fun YataTheme(
         else -> LightColors
     }
     // AMOLED is a dark-theme modifier, never a theme of its own — leaving it applied in light
-    // mode would produce black surfaces under dark-on-light text.
-    val colorScheme = if (darkTheme && amoledMode) baseColorScheme.toAmoled() else baseColorScheme
+    // mode would produce black surfaces under dark-on-light text. The two dark treatments are
+    // mutually exclusive: AMOLED exists to reach true black, so softening it would defeat it.
+    val darkAdjusted = when {
+        darkTheme && amoledMode -> baseColorScheme.toAmoled()
+        darkTheme -> baseColorScheme.toSofterDark()
+        else -> baseColorScheme
+    }
+    val colorScheme = darkAdjusted
+        .withColorIntensity(colorIntensity)
+        .withBackgroundTint(backgroundTint)
     // Entity accent swatches (task/tag/person colors) stay fixed regardless of dynamic color —
     // only MaterialTheme.colorScheme (chrome, surfaces, primary/secondary) follows the wallpaper.
     val accents = if (darkTheme) DarkAccents else LightAccents
