@@ -915,13 +915,14 @@ fun TaskDetailScreen(
                                         .fillMaxWidth()
                                         .padding(start = 32.dp, top = 2.dp, bottom = 2.dp)
                                 ) {
-                                    OutlinedTextField(
+                                    TextField(
                                         value = childTitle,
                                         onValueChange = { childTitle = it },
                                         placeholder = { Text(stringResource(R.string.task_detail_add_a_sub_item)) },
                                         singleLine = true,
                                         modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp)
+                                        shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                                        colors = com.mj.yata.ui.widgets.yataFieldColors()
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     IconButton(
@@ -955,13 +956,14 @@ fun TaskDetailScreen(
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
                         ) {
-                            OutlinedTextField(
+                            TextField(
                                 value = newSubtaskTitle,
                                 onValueChange = { newSubtaskTitle = it },
                                 placeholder = { Text(stringResource(R.string.action_add_a_subtask)) },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                                colors = com.mj.yata.ui.widgets.yataFieldColors()
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
@@ -1017,7 +1019,7 @@ fun TaskDetailScreen(
                                 notesFocusRequester.requestFocus()
                             }
                         }
-                        OutlinedTextField(
+                        TextField(
                             value = notesBuffer,
                             onValueChange = {
                                 notesBuffer = it
@@ -1029,6 +1031,7 @@ fun TaskDetailScreen(
                             // Bounded so a long note scrolls inside the field instead of pushing
                             // the comments section and everything below it off the screen.
                             maxLines = 12,
+                            colors = com.mj.yata.ui.widgets.yataFieldColors(),
                             modifier = Modifier.fillMaxWidth()
                                 .focusRequester(notesFocusRequester)
                                 .onFocusChanged {
@@ -1048,7 +1051,7 @@ fun TaskDetailScreen(
                                         isEditingNotes = false
                                     }
                                 },
-                            shape = RoundedCornerShape(12.dp)
+                            shape = com.mj.yata.ui.widgets.YataFieldShape
                         )
                     } else {
                         MarkdownText(
@@ -1091,12 +1094,13 @@ fun TaskDetailScreen(
                             newComment = ""
                         }
                     }
-                    OutlinedTextField(
+                    TextField(
                         value = newComment,
                         onValueChange = { newComment = it },
                         placeholder = { Text(stringResource(R.string.task_detail_add_a_comment)) },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
+                        shape = com.mj.yata.ui.widgets.YataFieldShape,
+                        colors = com.mj.yata.ui.widgets.yataFieldColors(),
                         maxLines = 6,
                         trailingIcon = {
                             IconButton(onClick = postComment, enabled = newComment.isNotBlank()) {

@@ -41,6 +41,18 @@ All commands run from the repo root using the Gradle wrapper (`./gradlew` on Bas
 
 After changing anything under `app/src/main/java`, the fast loop is `compileDebugKotlin` to catch errors, then `installDebug` before manually verifying in the UI. `MainScreenSmokeTest` covers only the core add/complete/delete paths, so anything beyond those still needs a manual pass on-device.
 
+## Changelog
+
+`CHANGELOG.md` is maintained by hand, newest first, in Keep a Changelog format. **Any change a user
+would notice goes under `[Unreleased]` in the same commit that makes it** — not batched up at
+release time. Internal refactors, build plumbing and test-only work stay in the commit message
+unless they change behaviour.
+
+Releasing: rename `[Unreleased]` to the new version with a date and `versionCode`, open a fresh
+empty `[Unreleased]` above it, add the compare/tag links at the bottom, then use that section
+verbatim as the GitHub release notes (`gh release create <tag> <apk> --notes-file …`). The release
+notes and the changelog should never be written twice.
+
 ## Architecture
 
 **Layering:** `domain/model` (plain data classes, no Android/Room deps) → `data/local/db` (Room entities/DAOs) → `data/mapper` (Entity ⇄ domain model conversion) → `data/repository/YataRepositoryImpl` (implements `domain/repository/YataRepository`, exposes `Flow`s) → `ui/screen/main/MainViewModel` (single large ViewModel backing the whole app, exposes `StateFlow`s and imperative methods like `deleteTask`, `bulkDeleteTasks`, `toggleTaskDone`) → Compose screens under `ui/screen/*`. Screens read from `MainViewModel` (obtained via `hiltViewModel()`) rather than each having their own ViewModel — there is one ViewModel per app, not per screen. Heavier multi-step logic is injected into it as `domain/usecase/TaskOperations` and `domain/usecase/BackupOperations` rather than living inline.

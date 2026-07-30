@@ -56,7 +56,8 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,6 +67,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -91,6 +93,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
@@ -1265,15 +1268,14 @@ fun NewTaskSheet(
             // (List, Priority, Repeat, etc.) never pushes these below the fold or reflows them.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionLabel(stringResource(R.string.new_task_notes))
-                OutlinedTextField(
+                TextField(
                     value = notes,
                     onValueChange = { notes = it },
                     placeholder = { Text(stringResource(R.string.new_task_add_notes)) },
                     minLines = 2,
-                    // Same shape and bound as the notes field on TaskDetailScreen — the two were
-                    // 4dp and 12dp respectively, for the same field on two screens.
                     maxLines = 8,
-                    shape = MaterialTheme.shapes.medium,
+                    shape = com.mj.yata.ui.widgets.YataFieldShape,
+                    colors = com.mj.yata.ui.widgets.yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1300,11 +1302,13 @@ fun NewTaskSheet(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedTextField(
+                    TextField(
                         value = newSubtaskTitle,
                         onValueChange = { newSubtaskTitle = it },
                         placeholder = { Text(stringResource(R.string.action_add_a_subtask)) },
                         singleLine = true,
+                        shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                        colors = com.mj.yata.ui.widgets.yataFieldColors(),
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = {
@@ -1350,18 +1354,27 @@ fun NewTaskSheet(
         // Footer submit bar
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         if (onAddTaskAndContinue != null) {
+            // A Switch, not a Checkbox: this is a standalone setting that takes effect
+            // immediately, which is what M3 gives a switch. A checkbox means "selected within a
+            // set" — there is no set here, and it read as something to be submitted with the
+            // task rather than a mode already in force.
+            //
+            // The whole row is one `toggleable` target with role = Switch, and the control itself
+            // takes onCheckedChange = null so it's decoration. Previously the Row was clickable
+            // *and* the Checkbox handled its own changes: two nested targets, announced
+            // separately by TalkBack, with the label and the box behaving as different controls.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { keepAdding = !keepAdding }
+                    .toggleable(
+                        value = keepAdding,
+                        onValueChange = { keepAdding = it },
+                        role = Role.Switch
+                    )
                     .padding(horizontal = 20.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Checkbox(
-                    checked = keepAdding,
-                    onCheckedChange = { keepAdding = it }
-                )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.new_task_create_another),
@@ -1373,6 +1386,11 @@ fun NewTaskSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                // Trailing, following the convention every toggle row in Settings already uses.
+                Switch(
+                    checked = keepAdding,
+                    onCheckedChange = null
+                )
             }
         }
         Row(

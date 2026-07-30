@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,13 +43,14 @@ fun QuickCommentDialog(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
+                TextField(
                     value = body,
                     onValueChange = { body = it },
                     placeholder = { Text(stringResource(R.string.quick_comment_write_a_comment)) },
                     minLines = 3,
                     maxLines = 8,
-                    shape = MaterialTheme.shapes.medium,
+                    shape = YataFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

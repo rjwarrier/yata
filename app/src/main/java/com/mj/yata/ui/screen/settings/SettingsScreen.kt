@@ -362,18 +362,9 @@ fun SettingsScreen(
                     // the keyboard out of the way of the results.
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    // Same tonal treatment as the notes/comment/subtask fields — one definition
+                    // in YataInputField rather than a second copy of the colour list here.
+                    colors = com.mj.yata.ui.widgets.yataFieldColors()
                 )
             }
             if (settingsSearchQuery.isNotBlank()) {
