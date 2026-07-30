@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import kotlin.math.hypot
 
 val LocalEnhancedM3Theming = staticCompositionLocalOf { false }
 val LocalFloatingBottomNav = staticCompositionLocalOf { false }
@@ -81,12 +82,55 @@ private fun ColorScheme.toSofterDark(amount: Float = 0.045f): ColorScheme = copy
     surfaceContainerHighest = surfaceContainerHighest.lightenBy(amount)
 )
 
-/** Scales a color's HSL saturation, leaving hue and lightness exactly as they were. */
-private fun Color.scaleSaturation(factor: Float): Color {
-    val hsl = FloatArray(3)
-    androidx.core.graphics.ColorUtils.colorToHSL(toArgb(), hsl)
-    hsl[1] = (hsl[1] * factor).coerceIn(0f, 1f)
-    return Color(androidx.core.graphics.ColorUtils.HSLToColor(hsl))
+/**
+ * The chroma given to a color that has none of its own, at a factor of 1. Small enough that [SOFT]
+ * leaves a white card looking white, large enough that [DEEP] reaches an obvious tint.
+ */
+private const val NEUTRAL_TINT_CHROMA = 2.0
+
+/**
+ * Lightness above which a hueless color is allowed to borrow one. Below it the LAB inverse's
+ * linear branch turns a borrowed hue into a large relative shift — pushing AMOLED's #000000 to a
+ * visible #190000 at the top stop — and a dark neutral surface is neutral on purpose anyway.
+ */
+private const val NEUTRAL_TINT_MIN_LIGHTNESS = 50.0
+
+/**
+ * Scales a color's LAB chroma — its perceptual distance from grey — holding lightness and hue.
+ *
+ * Deliberately not HSL saturation, which was the original implementation and the reason the
+ * sliders did nothing: for the near-white surfaces M3 uses (`#FFF8F6`, `#FFDAD1`, `#FFB4A2`) HSL
+ * reports S = 1.0 already, since *any* color with a channel at 0xFF is fully saturated by that
+ * definition. Every upward factor clamped straight back to 1.0. Chroma is the quantity the
+ * sliders actually claim to move and it stays meaningful at both ends of the lightness range.
+ *
+ * [fallbackDirection] covers colors carrying no hue at all — `surfaceContainerLowest` is pure
+ * white in light mode — where scaling zero chroma stays zero however large the factor. Those tiers
+ * borrow the scheme's own hue instead, so cards move in step with the page behind them. It applies
+ * only above [NEUTRAL_TINT_MIN_LIGHTNESS], which is what keeps AMOLED black at every stop.
+ */
+private fun Color.scaleChroma(factor: Float, fallbackDirection: Pair<Double, Double>? = null): Color {
+    val lab = DoubleArray(3)
+    androidx.core.graphics.ColorUtils.colorToLAB(toArgb(), lab)
+    val chroma = hypot(lab[1], lab[2])
+    val borrowsHue = chroma < NEUTRAL_TINT_CHROMA &&
+        lab[0] >= NEUTRAL_TINT_MIN_LIGHTNESS &&
+        fallbackDirection != null
+    val (a, b) = if (borrowsHue && fallbackDirection != null) {
+        fallbackDirection.first * NEUTRAL_TINT_CHROMA * factor to
+            fallbackDirection.second * NEUTRAL_TINT_CHROMA * factor
+    } else {
+        lab[1] * factor to lab[2] * factor
+    }
+    return Color(androidx.core.graphics.ColorUtils.LABToColor(lab[0], a, b))
+}
+
+/** This color's hue as a unit vector in the LAB a/b plane, or null if it is neutral grey. */
+private fun Color.chromaDirection(): Pair<Double, Double>? {
+    val lab = DoubleArray(3)
+    androidx.core.graphics.ColorUtils.colorToLAB(toArgb(), lab)
+    val chroma = hypot(lab[1], lab[2])
+    return if (chroma < 0.001) null else lab[1] / chroma to lab[2] / chroma
 }
 
 /**
@@ -97,16 +141,16 @@ private fun Color.scaleSaturation(factor: Float): Color {
  * only saturation moves is what keeps the `on*` pairings legible without recomputing them.
  */
 private fun ColorScheme.withColorIntensity(intensity: com.mj.yata.domain.model.ColorIntensity): ColorScheme {
-    val f = intensity.saturationFactor
+    val f = intensity.chromaFactor
     if (f == 1f) return this
     return copy(
-        primary = primary.scaleSaturation(f),
-        primaryContainer = primaryContainer.scaleSaturation(f),
-        inversePrimary = inversePrimary.scaleSaturation(f),
-        secondary = secondary.scaleSaturation(f),
-        secondaryContainer = secondaryContainer.scaleSaturation(f),
-        tertiary = tertiary.scaleSaturation(f),
-        tertiaryContainer = tertiaryContainer.scaleSaturation(f)
+        primary = primary.scaleChroma(f),
+        primaryContainer = primaryContainer.scaleChroma(f),
+        inversePrimary = inversePrimary.scaleChroma(f),
+        secondary = secondary.scaleChroma(f),
+        secondaryContainer = secondaryContainer.scaleChroma(f),
+        tertiary = tertiary.scaleChroma(f),
+        tertiaryContainer = tertiaryContainer.scaleChroma(f)
     )
 }
 
@@ -116,19 +160,22 @@ private fun ColorScheme.withColorIntensity(intensity: com.mj.yata.domain.model.C
  * picking up a tint the mode exists to avoid.
  */
 private fun ColorScheme.withBackgroundTint(tint: com.mj.yata.domain.model.BackgroundTint): ColorScheme {
-    val f = tint.saturationFactor
+    val f = tint.chromaFactor
     if (f == 1f) return this
+    // The hue the neutral tiers borrow. Taken from primary rather than from background, since
+    // background is itself one of the colors that can be neutral.
+    val hue = primary.chromaDirection()
     return copy(
-        background = background.scaleSaturation(f),
-        surface = surface.scaleSaturation(f),
-        surfaceVariant = surfaceVariant.scaleSaturation(f),
-        surfaceDim = surfaceDim.scaleSaturation(f),
-        surfaceBright = surfaceBright.scaleSaturation(f),
-        surfaceContainerLowest = surfaceContainerLowest.scaleSaturation(f),
-        surfaceContainerLow = surfaceContainerLow.scaleSaturation(f),
-        surfaceContainer = surfaceContainer.scaleSaturation(f),
-        surfaceContainerHigh = surfaceContainerHigh.scaleSaturation(f),
-        surfaceContainerHighest = surfaceContainerHighest.scaleSaturation(f)
+        background = background.scaleChroma(f, hue),
+        surface = surface.scaleChroma(f, hue),
+        surfaceVariant = surfaceVariant.scaleChroma(f, hue),
+        surfaceDim = surfaceDim.scaleChroma(f, hue),
+        surfaceBright = surfaceBright.scaleChroma(f, hue),
+        surfaceContainerLowest = surfaceContainerLowest.scaleChroma(f, hue),
+        surfaceContainerLow = surfaceContainerLow.scaleChroma(f, hue),
+        surfaceContainer = surfaceContainer.scaleChroma(f, hue),
+        surfaceContainerHigh = surfaceContainerHigh.scaleChroma(f, hue),
+        surfaceContainerHighest = surfaceContainerHighest.scaleChroma(f, hue)
     )
 }
 
