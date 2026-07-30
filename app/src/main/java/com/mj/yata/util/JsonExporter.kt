@@ -92,7 +92,9 @@ class JsonExporter @Inject constructor(
         /** The user's own name and email. Like the avatar these live in DataStore, not the
          * database, so they are not part of any entity list. Blank when never set. */
         val profileName: String,
-        val profileEmail: String
+        val profileEmail: String,
+        /** App settings from DataStore — theme, feature flags, task defaults, notification prefs. */
+        val settings: List<com.mj.yata.data.local.datastore.PortableSetting>
     )
 
     private suspend fun loadBackupData(): BackupData = BackupData(
@@ -110,7 +112,8 @@ class JsonExporter @Inject constructor(
         comments = repository.getAllComments().first(),
         profilePhoto = encodePhoto(userPreferences.userPhotoUriFlow.first()),
         profileName = userPreferences.userNameFlow.first(),
-        profileEmail = userPreferences.userEmailFlow.first()
+        profileEmail = userPreferences.userEmailFlow.first(),
+        settings = userPreferences.exportPortableSettings()
     )
 
     suspend fun exportData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
@@ -189,6 +192,24 @@ class JsonExporter @Inject constructor(
             data.profilePhoto?.let { root.put("profilePhoto", it) }
             data.profileName.takeIf { it.isNotBlank() }?.let { root.put("profileName", it) }
             data.profileEmail.takeIf { it.isNotBlank() }?.let { root.put("profileEmail", it) }
+
+            // Settings live in DataStore, not the database, so like the profile they have to be
+            // carried explicitly. Without this a restore rebuilt every task and left the user on
+            // default theme, default task settings and every feature flag back on.
+            if (data.settings.isNotEmpty()) {
+                val settingsArr = JSONArray()
+                data.settings.forEach { setting ->
+                    settingsArr.put(JSONObject().apply {
+                        put("name", setting.name)
+                        put("type", setting.type)
+                        put("value", when (val v = setting.value) {
+                            is Set<*> -> JSONArray().also { arr -> v.forEach { arr.put(it) } }
+                            else -> v
+                        })
+                    })
+                }
+                root.put("settings", settingsArr)
+            }
 
             // People
             val peopleArr = JSONArray()
@@ -486,6 +507,31 @@ class JsonExporter @Inject constructor(
             }
             root.optString("profileEmail", null)?.takeIf { it.isNotBlank() }?.let {
                 userPreferences.setUserEmail(it)
+            }
+
+            // Settings, applied before the entity rows below so that anything reading a preference
+            // during the restore (feature flags, defaults) already sees the restored value.
+            // Absent in any backup written before this existed, which simply leaves the current
+            // settings alone.
+            root.optJSONArray("settings")?.let { arr ->
+                val restored = mutableListOf<com.mj.yata.data.local.datastore.PortableSetting>()
+                for (i in 0 until arr.length()) {
+                    // Per-row guard, matching importRow: one malformed setting must not cost the
+                    // other seventy-odd.
+                    try {
+                        val o = arr.getJSONObject(i)
+                        val name = o.getString("name")
+                        val type = o.getString("type")
+                        val raw = o.get("value")
+                        val value: Any = if (raw is JSONArray) {
+                            (0 until raw.length()).mapNotNull { raw.optString(it, null) }.toSet()
+                        } else raw
+                        restored.add(com.mj.yata.data.local.datastore.PortableSetting(name, type, value))
+                    } catch (e: Exception) {
+                        Log.w("JsonExporter", "importData: skipping malformed setting row $i", e)
+                    }
+                }
+                userPreferences.importPortableSettings(restored)
             }
 
             // 1. Import Person groups (must exist before people reference them)

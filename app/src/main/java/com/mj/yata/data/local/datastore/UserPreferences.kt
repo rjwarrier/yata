@@ -38,6 +38,13 @@ data class UserPreferencesSnapshot(
     val themeScheduleEndMinute: Int
 )
 
+/**
+ * One preference, in a form a backup file can carry. The type tag travels with the value because
+ * DataStore keys are typed: rebuilding `booleanPreferencesKey("x")` vs `intPreferencesKey("x")` on
+ * restore needs to know which, and JSON alone can't distinguish Int from Long from Float.
+ */
+data class PortableSetting(val name: String, val type: String, val value: Any)
+
 @Singleton
 class UserPreferences @Inject constructor(
     @ApplicationContext context: Context
@@ -80,6 +87,27 @@ class UserPreferences @Inject constructor(
     }
 
     companion object {
+        /**
+         * Preferences deliberately left out of a backup, by key name.
+         *
+         * - The app-lock PIN hash and its salt: a backup file is not the place for an
+         *   authentication credential, and it travels off-device to Drive. Restoring leaves app
+         *   lock off, to be set again.
+         * - The cloud account email: the OAuth grant that makes it meaningful is per-device, so a
+         *   restored value would name an account the install can't actually use.
+         * - The cached primary colour: derived from the live theme on every start.
+         * - The profile photo Uri: an absolute path into *this* install's filesDir, meaningless in
+         *   another. `JsonExporter` carries the photo bytes and rewrites the Uri itself.
+         */
+        val NON_PORTABLE_KEYS = setOf(
+            "app_lock_pin_hash",
+            "app_lock_pin_salt",
+            "cloud_backup_account_email",
+            "last_primary_argb",
+            "user_photo_uri"
+        )
+
+        val AUTO_ASSIGN_TO_ME       = booleanPreferencesKey("auto_assign_to_me")
         val THEME_MODE              = stringPreferencesKey("theme_mode")
         val APP_FONT                = stringPreferencesKey("app_font")
         val USER_NAME               = stringPreferencesKey("user_name")
@@ -306,6 +334,72 @@ class UserPreferences @Inject constructor(
 
     suspend fun setAppFont(font: AppFont) {
         dataStore.edit { it[APP_FONT] = font.name }
+    }
+
+    /**
+     * Every preference worth carrying to another install, read straight off the DataStore map
+     * rather than from a hand-written list of the 74 keys. A per-key list would be correct today
+     * and silently incomplete the first time someone adds a setting without remembering to add it
+     * here — the whole point being that a restore shouldn't quietly drop half the user's config.
+     *
+     * See [NON_PORTABLE_KEYS] for the deliberate omissions.
+     */
+    suspend fun exportPortableSettings(): List<PortableSetting> {
+        val prefs = prefsFlow.first()
+        return prefs.asMap().mapNotNull { (key, value) ->
+            if (key.name in NON_PORTABLE_KEYS) return@mapNotNull null
+            val type = when (value) {
+                is Boolean -> "bool"
+                is Int -> "int"
+                is Long -> "long"
+                is Float -> "float"
+                is Double -> "double"
+                is String -> "string"
+                is Set<*> -> "stringSet"
+                else -> return@mapNotNull null
+            }
+            PortableSetting(key.name, type, value)
+        }.sortedBy { it.name }
+    }
+
+    /**
+     * Applies settings from a backup. Unknown names are written anyway — a key retired in a later
+     * version costs nothing sitting unread in DataStore, whereas skipping unknown names would mean
+     * a backup taken on a *newer* build silently loses settings when restored on an older one.
+     *
+     * Numbers are coerced through [Number] because JSON parsing collapses integral types: a Long
+     * written as 1440 reads back as an Int, and a typed key would reject it.
+     */
+    suspend fun importPortableSettings(settings: List<PortableSetting>) {
+        if (settings.isEmpty()) return
+        dataStore.edit { prefs ->
+            settings.forEach { setting ->
+                if (setting.name in NON_PORTABLE_KEYS) return@forEach
+                val v = setting.value
+                when (setting.type) {
+                    "bool" -> (v as? Boolean)?.let { prefs[booleanPreferencesKey(setting.name)] = it }
+                    "int" -> (v as? Number)?.let { prefs[intPreferencesKey(setting.name)] = it.toInt() }
+                    "long" -> (v as? Number)?.let { prefs[longPreferencesKey(setting.name)] = it.toLong() }
+                    "float" -> (v as? Number)?.let { prefs[floatPreferencesKey(setting.name)] = it.toFloat() }
+                    "double" -> (v as? Number)?.let { prefs[doublePreferencesKey(setting.name)] = it.toDouble() }
+                    "string" -> (v as? String)?.let { prefs[stringPreferencesKey(setting.name)] = it }
+                    "stringSet" -> {
+                        @Suppress("UNCHECKED_CAST")
+                        (v as? Collection<*>)?.let { raw ->
+                            prefs[stringSetPreferencesKey(setting.name)] = raw.filterIsInstance<String>().toSet()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /** Default true: new tasks were unconditionally assigned to the user before this existed, so
+     * anything else would silently change behaviour for everyone on upgrade. */
+    val autoAssignToMeFlow: Flow<Boolean> = prefsFlow.map { it[AUTO_ASSIGN_TO_ME] ?: true }
+
+    suspend fun setAutoAssignToMe(enabled: Boolean) {
+        dataStore.edit { it[AUTO_ASSIGN_TO_ME] = enabled }
     }
 
     suspend fun setUserName(name: String) {

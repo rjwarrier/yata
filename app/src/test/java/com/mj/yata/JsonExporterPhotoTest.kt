@@ -69,6 +69,45 @@ class JsonExporterPhotoTest {
     }
 
     @Test
+    fun settingsRoundTripThroughJson_carryingTheirTypeTag() {
+        val arr = org.json.JSONArray()
+        arr.put(JSONObject().apply { put("name", "theme_mode"); put("type", "string"); put("value", "AMOLED") })
+        arr.put(JSONObject().apply { put("name", "haptics_enabled"); put("type", "bool"); put("value", false) })
+        arr.put(JSONObject().apply { put("name", "cloud_interval"); put("type", "long"); put("value", 1440L) })
+        val root = JSONObject().apply { put("settings", arr) }
+
+        // Serialised and re-parsed, because that is what a backup file actually does — and it is
+        // where the type information is lost. In memory org.json keeps a Long as a Long; only
+        // after a text round trip does 1440 come back as an Integer.
+        val read = JSONObject(root.toString()).getJSONArray("settings")
+        assertEquals(3, read.length())
+        assertEquals("AMOLED", read.getJSONObject(0).getString("value"))
+        assertEquals(false, read.getJSONObject(1).getBoolean("value"))
+        // The reason the type tag exists: rebuilding a longPreferencesKey from this would reject
+        // an Integer, so importPortableSettings coerces through Number using the tag.
+        assertEquals("long", read.getJSONObject(2).getString("type"))
+        assertTrue(read.getJSONObject(2).get("value") is Int)
+        assertEquals(1440L, (read.getJSONObject(2).get("value") as Number).toLong())
+    }
+
+    @Test
+    fun stringSetSetting_survivesAsAJsonArray() {
+        val values = org.json.JSONArray().apply { put("a"); put("b") }
+        val entry = JSONObject().apply { put("name", "saved_filters"); put("type", "stringSet"); put("value", values) }
+        val raw = entry.get("value")
+        assertTrue(raw is org.json.JSONArray)
+        val decoded = (0 until (raw as org.json.JSONArray).length()).mapNotNull { raw.optString(it, null) }.toSet()
+        assertEquals(setOf("a", "b"), decoded)
+    }
+
+    @Test
+    fun backupWithoutSettings_leavesCurrentSettingsAlone() {
+        // An older backup has no settings array; the importer must skip rather than clear.
+        val root = JSONObject().apply { put("version", 4) }
+        assertNull(root.optJSONArray("settings"))
+    }
+
+    @Test
     fun blankProfileFields_areSkippedByTheImportGuard() {
         // The exporter omits blank values, but a hand-edited or third-party file could still carry
         // them; the importer's isNotBlank() guard is what stops those from wiping a set profile.
