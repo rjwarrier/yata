@@ -1344,7 +1344,7 @@ fun NewTaskSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(message, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { reminderValidationMessage = null }, modifier = Modifier.size(32.dp)) {
+                    IconButton(onClick = { reminderValidationMessage = null }) {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_close), modifier = Modifier.size(18.dp))
                     }
                 }

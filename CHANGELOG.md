@@ -26,6 +26,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 - The "Create another" label and its box behaved as two separate controls, and screen readers
   announced them separately.
+- Three buttons were too small to reliably tap — the group-delete buttons on the People and Tags
+  tabs, and the dismiss on the New Task reminder warning. All three now meet the 48dp minimum
+  while the icons stay the same size.
 
 ## [0.85 beta] - 2026-07-30
 

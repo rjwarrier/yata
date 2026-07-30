@@ -540,7 +540,7 @@ private fun GroupHeader(
             )
         }
         if (onDelete != null) {
-            IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(28.dp)) {
+            IconButton(onClick = { showDeleteDialog = true }) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = stringResource(R.string.cd_delete_group),
