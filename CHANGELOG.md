@@ -18,7 +18,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 ### Changed
 
 - Notes, comment and subtask fields are filled tonal surfaces with generous rounding instead of
-  outlined boxes, which sat oddly against the tonal cards around them.
+  outlined boxes, which sat oddly against the tonal cards around them. The project, list, tag and
+  person editor sheets now match.
 - "Create another" in the New Task sheet is a switch rather than a checkbox, and the whole row is
   one target: it's a mode that takes effect immediately, not something submitted with the task.
 

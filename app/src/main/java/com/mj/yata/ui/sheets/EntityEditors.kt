@@ -98,11 +98,13 @@ fun <G> GroupAssignSheet(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
+                TextField(
                     value = newGroupName,
                     onValueChange = { newGroupName = it },
                     placeholder = { Text(stringResource(R.string.entity_editors_group_name)) },
                     singleLine = true,
+                    shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                    colors = com.mj.yata.ui.widgets.yataFieldColors(),
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -213,22 +215,27 @@ fun ProjectEditorSheet(
             )
         )
 
-        OutlinedTextField(
+        TextField(
             value = name,
             onValueChange = { if (it.length <= NAME_LIMIT) name = it },
             label = { Text(stringResource(R.string.entity_editors_project_name)) },
             placeholder = { Text(stringResource(R.string.entity_editors_e_g_work_list)) },
             singleLine = true,
+            shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
 
-        OutlinedTextField(
+        TextField(
             value = description,
             onValueChange = { if (it.length <= descriptionLimit) description = it },
             label = { Text(stringResource(R.string.entity_editors_description)) },
             placeholder = { Text(stringResource(R.string.entity_editors_what_s_this_project_about)) },
             supportingText = { Text(stringResource(R.string.editor_char_counter, description.length, descriptionLimit)) },
             minLines = 2,
+            maxLines = 6,
+            shape = com.mj.yata.ui.widgets.YataFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -440,11 +447,13 @@ private fun <G> GroupPickerSection(
                 )
             }
             if (showNewGroupField) {
-                OutlinedTextField(
+                TextField(
                     value = newGroupName,
                     onValueChange = { newGroupName = it },
                     placeholder = { Text(stringResource(R.string.entity_editors_group_name)) },
                     singleLine = true,
+                    shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                    colors = com.mj.yata.ui.widgets.yataFieldColors(),
                     trailingIcon = {
                         IconButton(onClick = {
                             if (newGroupName.isNotBlank()) {
@@ -549,7 +558,7 @@ fun PersonEditorSheet(
             )
         )
 
-        OutlinedTextField(
+        TextField(
             value = name,
             onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
             label = { Text(stringResource(R.string.entity_editors_person_s_name)) },
@@ -558,6 +567,8 @@ fun PersonEditorSheet(
                 { Text(stringResource(R.string.entity_editors_separate_multiple_names_with_commas_to_add)) }
             } else null,
             singleLine = true,
+            shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -685,7 +696,7 @@ fun TagEditorSheet(
             )
         )
 
-        OutlinedTextField(
+        TextField(
             value = name,
             onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
             label = { Text(stringResource(R.string.entity_editors_tag_label)) },
@@ -694,6 +705,8 @@ fun TagEditorSheet(
                 { Text(stringResource(R.string.entity_editors_separate_multiple_tags_with_commas_to_crea)) }
             } else null,
             singleLine = true,
+            shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -804,12 +817,14 @@ fun ListEditorSheet(
             )
         )
 
-        OutlinedTextField(
+        TextField(
             value = name,
             onValueChange = { if (it.length <= NAME_LIMIT) name = it },
             label = { Text(stringResource(R.string.entity_editors_list_name)) },
             placeholder = { Text(stringResource(R.string.entity_editors_e_g_personal)) },
             singleLine = true,
+            shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
 
