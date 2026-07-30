@@ -53,6 +53,9 @@ import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.util.TaskScheduleUtils
 import java.time.LocalDate
 
+/** Inset from the screen edge to a task card, when card mode is on. Same on every list screen. */
+private val TASK_CARD_MARGIN = 12.dp
+
 private fun TaskRowDensity.verticalPadding() = when (this) {
     TaskRowDensity.COMPACT -> 6.dp
     TaskRowDensity.COMFORTABLE -> 11.dp
@@ -121,9 +124,14 @@ fun TaskRow(
         label = "taskRowTitleColor"
     )
 
-    // Card mode turns the screen's edge inset into the card's outer margin and gives the content
-    // its own smaller inset, so the text sits a sensible distance inside the card rather than the
-    // two paddings stacking. Flat mode keeps the caller's padding exactly as it was.
+    // Card mode gives the card a fixed outer margin and the content its own smaller inset, so the
+    // two paddings don't stack. The margin is deliberately *not* the caller's `horizontalPadding`:
+    // that is a content inset chosen per screen (Today passes 12dp where everything else takes the
+    // 20dp default), and borrowing it made cards different widths from one screen to the next.
+    // Flat mode keeps the caller's padding exactly as it was.
+    //
+    // The gap between cards is not part of the tap target — the card is the thing you press, which
+    // is why the margin is kept narrow rather than matching the old full-width row.
     val cardBackground = com.mj.yata.ui.theme.LocalTaskCardBackground.current
     val contentHorizontalPadding = if (cardBackground) 14.dp else horizontalPadding
 
@@ -134,7 +142,7 @@ fun TaskRow(
                 .then(
                     if (cardBackground) {
                         Modifier
-                            .padding(horizontal = horizontalPadding, vertical = 4.dp)
+                            .padding(horizontal = TASK_CARD_MARGIN, vertical = 4.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surfaceContainer)
                     } else {

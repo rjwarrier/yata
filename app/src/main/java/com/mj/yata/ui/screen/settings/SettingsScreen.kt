@@ -211,8 +211,8 @@ fun SettingsScreen(
 
     val settingsSearchTargets = listOf(
         SettingsSearchTarget(stringResource(R.string.settings_section_profile), stringResource(R.string.settings_search_profile_summary), "name email photo account", 1),
-        SettingsSearchTarget(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_search_appearance_summary), "theme dark light amoled color font language motion", 2),
-        SettingsSearchTarget(stringResource(R.string.settings_section_display), stringResource(R.string.settings_search_display_summary), "scale text density compact spacious", 3),
+        SettingsSearchTarget(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_search_appearance_summary), "theme dark light amoled color font language motion intensity tint saturation vivid muted background", 2),
+        SettingsSearchTarget(stringResource(R.string.settings_section_display), stringResource(R.string.settings_search_display_summary), "scale text density compact spacious card cards row", 3),
         SettingsSearchTarget(stringResource(R.string.settings_section_navigation), stringResource(R.string.settings_search_navigation_summary), "bottom navigation labels fab quick add", 4),
         SettingsSearchTarget(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", 5),
         SettingsSearchTarget(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me", 6),

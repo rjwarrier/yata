@@ -296,6 +296,11 @@ private fun ColorScheme.withColorIntensity(intensity: com.mj.yata.domain.model.C
         primary = adjust(primary),
         primaryContainer = adjust(primaryContainer),
         inversePrimary = adjust(inversePrimary),
+        // Defaults to primary and is composited over any Surface left at the default `surface`
+        // colour with a tonal elevation, so leaving it behind gives those the old accent over the
+        // new one. None of this app's own tonalElevation call sites take that path — they all pass
+        // an explicit colour — but M3's own components can.
+        surfaceTint = adjust(surfaceTint),
         secondary = adjust(secondary),
         secondaryContainer = adjust(secondaryContainer),
         tertiary = adjust(tertiary),

@@ -9,6 +9,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -120,18 +122,27 @@ fun ProgressRing(
             null
         }
         if (label != null) {
+            val baseFontSize = when {
+                size >= 70.dp -> 15.sp
+                size >= 50.dp -> 12.sp
+                else -> 10.sp
+            }
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = when {
-                        size >= 70.dp -> 15.sp
-                        size >= 50.dp -> 12.sp
-                        else -> 10.sp
-                    }
+                    // A three-character label ("99+", or "100" at full progress) is half again as
+                    // wide as the two-character case these sizes were picked for, and the ring it
+                    // sits in can be as small as 32dp. Step it down rather than let it draw over
+                    // the stroke — more so because the app's own UI-scale and text-scale settings
+                    // multiply on top of the system font scale.
+                    fontSize = if (label.length >= 3) baseFontSize * 0.8f else baseFontSize
                 ),
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.padding(horizontal = 2.dp)
             )
         }
     }

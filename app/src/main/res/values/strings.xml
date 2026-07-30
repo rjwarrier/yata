@@ -537,6 +537,11 @@
     <string name="task_detail_notes_supporting">Supports markdown</string>
     <string name="task_sort_menu_button_sort_tasks">Sort tasks</string>
     <string name="sort_most_open_tasks">Most open tasks</string>
+    <string name="sort_name_asc">Name (A-Z)</string>
+    <string name="sort_name_desc">Name (Z-A)</string>
+    <string name="sort_most_tasks">Most tasks</string>
+    <string name="sort_fewest_tasks">Fewest tasks</string>
+    <string name="sort_starred_first">Starred first</string>
     <string name="today_next_10_days">Next 10 days</string>
     <string name="today_search_tasks">Search tasks</string>
     <string name="upcoming_next_month">Next month</string>

@@ -20,12 +20,12 @@ import com.mj.yata.util.EntitySortMode
 
 @Composable
 private fun EntitySortMode.label() = when (this) {
-    EntitySortMode.NAME_ASC -> "Name (A-Z)"
-    EntitySortMode.NAME_DESC -> "Name (Z-A)"
-    EntitySortMode.TASK_COUNT_DESC -> "Most tasks"
-    EntitySortMode.TASK_COUNT_ASC -> "Fewest tasks"
+    EntitySortMode.NAME_ASC -> stringResource(R.string.sort_name_asc)
+    EntitySortMode.NAME_DESC -> stringResource(R.string.sort_name_desc)
+    EntitySortMode.TASK_COUNT_DESC -> stringResource(R.string.sort_most_tasks)
+    EntitySortMode.TASK_COUNT_ASC -> stringResource(R.string.sort_fewest_tasks)
     EntitySortMode.OPEN_TASK_COUNT_DESC -> stringResource(R.string.sort_most_open_tasks)
-    EntitySortMode.STARRED_FIRST -> "Starred first"
+    EntitySortMode.STARRED_FIRST -> stringResource(R.string.sort_starred_first)
 }
 
 /** Sort-mode picker for the People/Tags tabs — a tap target that opens a dropdown of
