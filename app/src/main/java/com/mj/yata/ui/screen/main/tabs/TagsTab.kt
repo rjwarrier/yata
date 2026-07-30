@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -36,14 +35,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -210,6 +206,24 @@ fun TagsTab(
                     onTagClick(id)
                 }
             }
+            fun List<Tag>.sorted() = sortedByEntityMode(
+                sortMode,
+                name = { it.name },
+                starred = { it.starred },
+                taskCount = { tagTaskCounts[it.id]?.first ?: 0 },
+                openTaskCount = { tagTaskCounts[it.id]?.let { (total, done) -> total - done } ?: 0 }
+            )
+            // A tag is "open" while any task carrying it is still not done — the same number the
+            // rows print as "N open". Tags whose work is all finished (and tags nothing points at
+            // any more) fall into Closed, which stays collapsed so they don't crowd out live ones.
+            fun Tag.openTaskCount() = tagTaskCounts[id]?.let { (total, done) -> total - done } ?: 0
+            val openTags = tags.filter { it.openTaskCount() > 0 }
+            val closedTags = remember(tags, tagTaskCounts, sortMode) {
+                tags.filter { it.openTaskCount() == 0 }.sorted()
+            }
+            var openExpanded by rememberSaveable { mutableStateOf(true) }
+            var closedExpanded by rememberSaveable { mutableStateOf(false) }
+
             if (tags.isEmpty()) {
                 com.mj.yata.ui.widgets.TabEmptyState(
                     icon = Icons.AutoMirrored.Filled.Label,
@@ -218,44 +232,69 @@ fun TagsTab(
                     actionLabel = "New tag",
                     onAction = onNewTagClick
                 )
-            }
-            fun List<Tag>.sorted() = sortedByEntityMode(
-                sortMode,
-                name = { it.name },
-                starred = { it.starred },
-                taskCount = { tagTaskCounts[it.id]?.first ?: 0 },
-                openTaskCount = { tagTaskCounts[it.id]?.let { (total, done) -> total - done } ?: 0 }
-            )
-            tagGroups.forEach { group ->
-                val groupTags = tags.filter { it.groupId == group.id }.sorted()
-                if (groupTags.isNotEmpty()) {
-                    TagGroupSection(
-                        title = group.name,
-                        tags = groupTags,
-                        taskCounts = tagTaskCounts,
-                        onTagClick = ::onTagTap,
-                        onToggleStar = onToggleStar,
-                        selectionMode = selectionMode,
-                        selectedIds = selectedIds,
-                        expanded = expandedGroups[group.id] ?: true,
-                        onToggle = { expandedGroups[group.id] = !(expandedGroups[group.id] ?: true) },
-                        onDelete = { onDeleteGroup(group) }
-                    )
+            } else {
+                CollapsibleTagSection(
+                    title = stringResource(R.string.tags_section_open),
+                    count = openTags.size,
+                    expanded = openExpanded,
+                    onToggle = { openExpanded = !openExpanded }
+                ) {
+                    // Groups keep their own subsections inside Open, so grouping and the
+                    // open/closed split compose rather than one replacing the other.
+                    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                        tagGroups.forEach { group ->
+                            val groupTags = openTags.filter { it.groupId == group.id }.sorted()
+                            if (groupTags.isNotEmpty()) {
+                                TagGroupSection(
+                                    title = group.name,
+                                    tags = groupTags,
+                                    taskCounts = tagTaskCounts,
+                                    onTagClick = ::onTagTap,
+                                    onToggleStar = onToggleStar,
+                                    selectionMode = selectionMode,
+                                    selectedIds = selectedIds,
+                                    expanded = expandedGroups[group.id] ?: true,
+                                    onToggle = { expandedGroups[group.id] = !(expandedGroups[group.id] ?: true) },
+                                    onDelete = { onDeleteGroup(group) }
+                                )
+                            }
+                        }
+                        val ungrouped = openTags.filter { it.groupId == null || it.groupId !in groupedIds }.sorted()
+                        TagGroupSection(
+                            title = if (tagGroups.isEmpty()) null else "Ungrouped",
+                            tags = ungrouped,
+                            taskCounts = tagTaskCounts,
+                            onTagClick = ::onTagTap,
+                            onToggleStar = onToggleStar,
+                            selectionMode = selectionMode,
+                            selectedIds = selectedIds,
+                            expanded = expandedGroups["ungrouped"] ?: true,
+                            onToggle = { expandedGroups["ungrouped"] = !(expandedGroups["ungrouped"] ?: true) }
+                        )
+                    }
+                }
+
+                if (closedTags.isNotEmpty()) {
+                    CollapsibleTagSection(
+                        title = stringResource(R.string.tags_section_closed),
+                        count = closedTags.size,
+                        expanded = closedExpanded,
+                        onToggle = { closedExpanded = !closedExpanded }
+                    ) {
+                        // Flat regardless of grouping: these are inactive, so a second level of
+                        // group headers would be structure nobody needs to navigate.
+                        TagGroupSection(
+                            title = null,
+                            tags = closedTags,
+                            taskCounts = tagTaskCounts,
+                            onTagClick = ::onTagTap,
+                            onToggleStar = onToggleStar,
+                            selectionMode = selectionMode,
+                            selectedIds = selectedIds
+                        )
+                    }
                 }
             }
-            val ungrouped = tags.filter { it.groupId == null || it.groupId !in groupedIds }.sorted()
-            TagGroupSection(
-                title = if (tagGroups.isEmpty()) null else "Ungrouped",
-                tags = ungrouped,
-                taskCounts = tagTaskCounts,
-                onTagClick = ::onTagTap,
-                onToggleStar = onToggleStar,
-                selectionMode = selectionMode,
-                selectedIds = selectedIds,
-                trailing = { NewTagDashedRow(onNewTagClick) },
-                expanded = expandedGroups["ungrouped"] ?: true,
-                onToggle = { expandedGroups["ungrouped"] = !(expandedGroups["ungrouped"] ?: true) }
-            )
         }
     }
 
@@ -281,6 +320,56 @@ fun TagsTab(
     }
 }
 
+/**
+ * Top-level Open/Closed divider for the tag list. Deliberately styled a step heavier than
+ * [TagGroupSection]'s header — group headers can render nested inside this one, and two
+ * identical-looking headers stacked would read as siblings rather than parent and child.
+ */
+@Composable
+private fun CollapsibleTagSection(
+    title: String,
+    count: Int,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (expanded) 90f else 0f,
+        animationSpec = tween(YataDur.micro, easing = YataEase.emphasized),
+        label = "tagSectionChevron"
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onToggle() },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.tags_section_header_count, title, count),
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = if (expanded) "Collapse section" else "Expand section",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(18.dp)
+                    .rotate(rotation)
+            )
+        }
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(tween(YataDur.sheet, easing = YataEase.emphDecel)) + fadeIn(tween(YataDur.fade)),
+            exit = shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphAccel)) + fadeOut(tween(YataDur.fade))
+        ) {
+            content()
+        }
+    }
+}
+
 @Composable
 private fun TagGroupSection(
     title: String?,
@@ -288,14 +377,13 @@ private fun TagGroupSection(
     taskCounts: Map<String, Pair<Int, Int>>,
     onTagClick: (String) -> Unit,
     onToggleStar: (String) -> Unit = {},
-    trailing: (@Composable () -> Unit)? = null,
     expanded: Boolean = true,
     onToggle: () -> Unit = {},
     onDelete: (() -> Unit)? = null,
     selectionMode: Boolean = false,
     selectedIds: List<String> = emptyList()
 ) {
-    if (tags.isEmpty() && trailing == null) return
+    if (tags.isEmpty()) return
     var showDeleteDialog by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (title != null) {
@@ -361,7 +449,6 @@ private fun TagGroupSection(
                         selected = selectedIds.contains(tag.id)
                     )
                 }
-                trailing?.invoke()
             }
         }
     }
@@ -473,49 +560,6 @@ private fun TagRow(
                     activeColor = tagColor
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun NewTagDashedRow(onClick: () -> Unit) {
-    val outlineColor = MaterialTheme.colorScheme.outlineVariant
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() }
-            .drawBehind {
-                val stroke = Stroke(
-                    width = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                )
-                drawRoundRect(
-                    color = outlineColor,
-                    style = stroke,
-                    cornerRadius = CornerRadius(16.dp.toPx())
-                )
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = stringResource(R.string.tags_new_tag),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "New tag",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
         }
     }
 }

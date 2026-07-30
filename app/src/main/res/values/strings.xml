@@ -503,6 +503,10 @@
     <string name="tags_delete_selected">Delete selected</string>
     <string name="tags_new_tag">New tag</string>
     <string name="tags_sort_tags">Sort tags</string>
+    <string name="tags_section_open">Open</string>
+    <string name="tags_section_closed">Closed</string>
+    <!-- Section title followed by how many tags it holds, e.g. "Closed · 12". -->
+    <string name="tags_section_header_count">%1$s · %2$d</string>
     <string name="tags_tag">Tag</string>
     <string name="tags_tasks_keep_their_other_tags_this_can_t_be">Tasks keep their other tags. This can\'t be undone.</string>
     <string name="task_detail_add_a_comment">Add a comment...</string>

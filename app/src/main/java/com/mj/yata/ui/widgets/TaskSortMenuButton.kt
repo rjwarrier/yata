@@ -34,8 +34,9 @@ fun TaskSortMenuButton(
     modifier: Modifier = Modifier,
     /**
      * Draws the shared circular top-bar container behind the icon. Opt-in rather than the default
-     * because four of the five screens using this button sit in top bars whose other actions are
-     * still plain icon buttons — filling only this one there would single it out.
+     * because it has to match whatever the rest of its top bar does — filling only this button in
+     * a bar of plain icon buttons singles it out. Today, Person detail and Tag detail pass true;
+     * Project and List detail have not been converted yet and pass false.
      */
     filledContainer: Boolean = false
 ) {

@@ -17,6 +17,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Sort people and tags by open work.** A "Most open tasks" option on the People and Tags tabs,
+  ranking by how many tasks are still unfinished. The existing "Most tasks" counts everything ever
+  associated with someone, so whoever has the longest history came out on top regardless of what
+  they currently have left — and on the Tags tab it disagreed with the "N open" figure printed on
+  every row. Both original task-count options are unchanged.
+- **Open and Closed sections on the Tags tab.** Tags with unfinished work sit under Open; tags whose
+  tasks are all done, and tags nothing points at any more, collapse into Closed, shut by default.
+  Groups still work as before inside Open.
 - **Auto-assign new tasks to you** (Settings → Task Defaults). New tasks were always assigned to
   you with no way to change it; turn this off and they start unassigned instead. You can still pick
   an assignee on any task either way. Applies to the widget's quick-add as well as the app, and
@@ -37,9 +45,24 @@ test-only changes belong in the commit message, not here, unless they change beh
   person editor sheets now match.
 - "Create another" in the New Task sheet is a switch rather than a checkbox, and the whole row is
   one target: it's a mode that takes effect immediately, not something submitted with the task.
+- The top bar buttons on a person's and a tag's own screen now sit in the same circular containers
+  as the ones on the main tabs, and hide-completed fills in while it's on rather than only swapping
+  its icon. Project and List detail still use the older plain buttons.
+
+### Removed
+
+- The dashed "New tag" and "Add person" rows at the bottom of the Tags and People tabs. Each
+  duplicated the button already floating over the same screen. Note that if you have the quick-add
+  button set to Hidden, these two tabs no longer offer any way to create a tag or a person.
 
 ### Fixed
 
+- The list name under a task could render one letter per line — "Work" as a vertical `W o r k`.
+  When a row carried enough detail to run out of width, everything after that point was squeezed
+  to nothing and wrapped per character. The details now wrap onto a second line instead. Affected
+  Today, Upcoming, Next 10 Days, Search, and the project, list, tag and person screens.
+- A long person name on the People tab could squeeze the "YOU" badge beside it into the same
+  one-letter-per-line state.
 - The "Create another" label and its box behaved as two separate controls, and screen readers
   announced them separately.
 - The FAB on the five main tabs sat too far above the bottom navigation bar, most noticeably with

@@ -79,7 +79,7 @@ private fun TaskHealthBadge(label: String) {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TaskRow(
     task: Task,
@@ -265,9 +265,19 @@ fun TaskRow(
             // Meta row below
             if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                // FlowRow, not Row: the number of things in here varies (completed-at or due date,
+                // time, list, recurrence, up to two health badges, up to two tags) and a plain Row
+                // hands whatever is left of the width to each child in order. Once the width ran
+                // out, later children were measured at ~0dp and their text wrapped one character
+                // per line — the list name rendered as a vertical "W o r k". Anything that doesn't
+                // fit now moves to the next line at its natural width instead.
+                FlowRow(
+                    itemVerticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    // Two lines covers every realistic combination; beyond that the row would
+                    // dominate the list, so the tail is dropped rather than allowed to grow.
+                    maxLines = 2,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (task.done && task.completedAt != null) {
@@ -345,7 +355,11 @@ fun TaskRow(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 11.sp
-                                )
+                                ),
+                                // A list name long enough to fill a whole line ellipsizes rather
+                                // than breaking across two.
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

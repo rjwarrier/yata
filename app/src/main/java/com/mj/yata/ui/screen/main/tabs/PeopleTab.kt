@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
@@ -31,12 +30,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -282,11 +277,6 @@ fun PeopleTab(
                     }
                 }
             }
-
-            item {
-                Spacer(modifier = Modifier.height(4.dp))
-                AddPersonDashedRow(onClick = onAddPersonClick)
-            }
         }
     }
 
@@ -428,7 +418,13 @@ fun PersonRow(
                         text = person.name,
                         style = MaterialTheme.typography.titleMedium.copy(
                             color = MaterialTheme.colorScheme.onSurface
-                        )
+                        ),
+                        // Without the weight, a long name claims the whole row and leaves the
+                        // "YOU" badge beside it 0dp to lay out in, which wraps it one letter per
+                        // line. Same failure the task meta row had.
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
 
                     if (person.isMe) {
@@ -559,50 +555,5 @@ private fun GroupHeader(
             onConfirm = { showDeleteDialog = false; onDelete() },
             onDismiss = { showDeleteDialog = false }
         )
-    }
-}
-
-@Composable
-fun AddPersonDashedRow(
-    onClick: () -> Unit
-) {
-    val outlineColor = MaterialTheme.colorScheme.outlineVariant
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .drawBehind {
-                val stroke = Stroke(
-                    width = 1.5.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-                )
-                drawRoundRect(
-                    color = outlineColor,
-                    style = stroke,
-                    cornerRadius = CornerRadius(12.dp.toPx())
-                )
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = stringResource(R.string.people_add_person),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Add person",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        }
     }
 }
