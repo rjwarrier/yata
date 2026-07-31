@@ -1,6 +1,8 @@
 package com.mj.yata.util.export
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -75,103 +77,113 @@ fun TaskExportOptionsDialog(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
+        // Outer column pins the action row; the options scroll above it. Without the split the
+        // options were measured first and the button row got whatever height was left over — on a
+        // short screen that was a few dp of squashed button.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(horizontal = 24.dp, vertical = 8.dp)
         ) {
-            val shareLabel = stringResource(R.string.action_share)
-            val saveLabel = stringResource(R.string.action_save)
-            Text(
-                text = stringResource(R.string.export_task_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            )
-            Text(
-                text = if (format == ExportFormat.PDF) {
-                    "${contentParts.joinToString()} - about 1 page"
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val shareLabel = stringResource(R.string.action_share)
+                val saveLabel = stringResource(R.string.action_save)
+                Text(
+                    text = stringResource(R.string.export_task_title),
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = if (format == ExportFormat.PDF) {
+                        "${contentParts.joinToString()} - about 1 page"
+                    } else {
+                        "${contentParts.joinToString()} - ${imageScale.label.lowercase()} image"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                SectionLabel(stringResource(R.string.export_section_file))
+                OutlinedTextField(
+                    value = fileNameText,
+                    onValueChange = { fileNameText = it.take(64) },
+                    label = { Text(stringResource(R.string.export_filename)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                SegmentedControl(
+                    items = listOf(ExportDestination.SHARE, ExportDestination.SAVE_TO_DOWNLOADS),
+                    selectedItem = destination,
+                    onItemSelected = { destination = it },
+                    labelProvider = { if (it == ExportDestination.SHARE) shareLabel else saveLabel }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                SectionLabel(stringResource(R.string.export_section_content))
+                ToggleRow(title = stringResource(R.string.export_privacy_mode), checked = privacyMode, onCheckedChange = { privacyMode = it })
+                if (hasScheduleDetails) {
+                    ToggleRow(
+                        title = stringResource(R.string.export_include_schedule),
+                        checked = includeScheduleDetails,
+                        onCheckedChange = { includeScheduleDetails = it }
+                    )
+                }
+                if (hasSubtasks) {
+                    ToggleRow(title = stringResource(R.string.export_include_subtasks), checked = includeSubtasks, onCheckedChange = { includeSubtasks = it })
+                }
+                if (hasNotes) {
+                    ToggleRow(
+                        title = stringResource(R.string.export_include_notes),
+                        checked = privateNotes,
+                        enabled = !privacyMode,
+                        onCheckedChange = { includeNotes = it }
+                    )
+                }
+                if (hasComments) {
+                    ToggleRow(
+                        title = stringResource(R.string.export_include_comments),
+                        checked = privateComments,
+                        enabled = !privacyMode,
+                        onCheckedChange = { includeComments = it }
+                    )
+                }
+                ToggleRow(
+                    title = stringResource(R.string.export_show_footer),
+                    checked = showMadeWithFooter,
+                    onCheckedChange = { showMadeWithFooter = it }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                SectionLabel(stringResource(R.string.export_section_format))
+                if (format == ExportFormat.PDF) {
+                    SegmentedControl(
+                        items = listOf(ExportPdfPageSize.A4, ExportPdfPageSize.LETTER),
+                        selectedItem = pdfPageSize,
+                        onItemSelected = { pdfPageSize = it },
+                        labelProvider = { it.label }
+                    )
                 } else {
-                    "${contentParts.joinToString()} - ${imageScale.label.lowercase()} image"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            SectionLabel(stringResource(R.string.export_section_file))
-            OutlinedTextField(
-                value = fileNameText,
-                onValueChange = { fileNameText = it.take(64) },
-                label = { Text(stringResource(R.string.export_filename)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            SegmentedControl(
-                items = listOf(ExportDestination.SHARE, ExportDestination.SAVE_TO_DOWNLOADS),
-                selectedItem = destination,
-                onItemSelected = { destination = it },
-                labelProvider = { if (it == ExportDestination.SHARE) shareLabel else saveLabel }
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SectionLabel(stringResource(R.string.export_section_content))
-            ToggleRow(title = stringResource(R.string.export_privacy_mode), checked = privacyMode, onCheckedChange = { privacyMode = it })
-            if (hasScheduleDetails) {
-                ToggleRow(
-                    title = stringResource(R.string.export_include_schedule),
-                    checked = includeScheduleDetails,
-                    onCheckedChange = { includeScheduleDetails = it }
-                )
-            }
-            if (hasSubtasks) {
-                ToggleRow(title = stringResource(R.string.export_include_subtasks), checked = includeSubtasks, onCheckedChange = { includeSubtasks = it })
-            }
-            if (hasNotes) {
-                ToggleRow(
-                    title = stringResource(R.string.export_include_notes),
-                    checked = privateNotes,
-                    enabled = !privacyMode,
-                    onCheckedChange = { includeNotes = it }
-                )
-            }
-            if (hasComments) {
-                ToggleRow(
-                    title = stringResource(R.string.export_include_comments),
-                    checked = privateComments,
-                    enabled = !privacyMode,
-                    onCheckedChange = { includeComments = it }
-                )
-            }
-            ToggleRow(
-                title = stringResource(R.string.export_show_footer),
-                checked = showMadeWithFooter,
-                onCheckedChange = { showMadeWithFooter = it }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SectionLabel(stringResource(R.string.export_section_format))
-            if (format == ExportFormat.PDF) {
-                SegmentedControl(
-                    items = listOf(ExportPdfPageSize.A4, ExportPdfPageSize.LETTER),
-                    selectedItem = pdfPageSize,
-                    onItemSelected = { pdfPageSize = it },
-                    labelProvider = { it.label }
-                )
-            } else {
-                SegmentedControl(
-                    items = listOf(ExportImageScale.STANDARD, ExportImageScale.LARGE),
-                    selectedItem = imageScale,
-                    onItemSelected = { imageScale = it },
-                    labelProvider = { it.label }
-                )
+                    SegmentedControl(
+                        items = listOf(ExportImageScale.STANDARD, ExportImageScale.LARGE),
+                        selectedItem = imageScale,
+                        onItemSelected = { imageScale = it },
+                        labelProvider = { it.label }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))

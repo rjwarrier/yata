@@ -102,6 +102,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- The Export button in the image and PDF export sheets was squashed flat. The options above it
+  were laid out first and the buttons got whatever height was left, so on a shorter screen — or
+  with the PDF page-size options showing — there was barely any. The options scroll now and the
+  Cancel/Export row stays put at the bottom at full size.
 - **Smart add read some phrases as the opposite of what they said.** "a week today" resolved to
   today, "every week until dec 20" put the *end* of the repeat in the due date and then swallowed
   the rest of the title, "wednesday next week" ignored the Wednesday, "beginning of next month"

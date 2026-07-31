@@ -1,6 +1,8 @@
 package com.mj.yata.util.export
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -71,140 +73,151 @@ fun ExportOptionsDialog(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
+        // Outer column pins the action row; the options scroll above it. Without the split the
+        // options were measured first and the button row got whatever height was left over — on a
+        // short screen, or with the PDF section expanded, that was a few dp of squashed button.
+        // weight(fill = false) keeps a short sheet wrapping its content instead of stretching.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(horizontal = 24.dp, vertical = 8.dp)
         ) {
-            val shareLabel = stringResource(R.string.action_share)
-            val saveLabel = stringResource(R.string.action_save)
-            val relaxedLabel = stringResource(R.string.export_density_relaxed)
-            val compactLabel = stringResource(R.string.export_density_compact)
-            Text(
-                text = stringResource(R.string.export_entity_title, entityName),
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            )
-            Text(
-                text = if (format == ExportFormat.PDF) {
-                    "$selectedCount task(s), about $estimatedPages page(s)"
-                } else {
-                    "$selectedCount task(s), ${imageScale.label.lowercase()} image"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            SectionLabel(stringResource(R.string.export_section_file))
-            OutlinedTextField(
-                value = fileNameText,
-                onValueChange = { fileNameText = it.take(64) },
-                label = { Text(stringResource(R.string.export_filename)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            SegmentedControl(
-                items = listOf(ExportDestination.SHARE, ExportDestination.SAVE_TO_DOWNLOADS),
-                selectedItem = destination,
-                onItemSelected = { destination = it },
-                labelProvider = { if (it == ExportDestination.SHARE) shareLabel else saveLabel }
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SectionLabel(stringResource(R.string.export_section_completed_tasks))
-            ToggleRow(
-                title = stringResource(R.string.export_include_completed),
-                checked = includeCompleted,
-                onCheckedChange = { includeCompleted = it }
-            )
-            if (includeCompleted) {
-                Spacer(modifier = Modifier.height(4.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val shareLabel = stringResource(R.string.action_share)
+                val saveLabel = stringResource(R.string.action_save)
+                val relaxedLabel = stringResource(R.string.export_density_relaxed)
+                val compactLabel = stringResource(R.string.export_density_compact)
                 Text(
-                    text = stringResource(R.string.export_exclude_completed_older_than),
+                    text = stringResource(R.string.export_entity_title, entityName),
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = if (format == ExportFormat.PDF) {
+                        "$selectedCount task(s), about $estimatedPages page(s)"
+                    } else {
+                        "$selectedCount task(s), ${imageScale.label.lowercase()} image"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                SectionLabel(stringResource(R.string.export_section_file))
                 OutlinedTextField(
-                    value = daysText,
-                    onValueChange = { value -> if (value.all { it.isDigit() } && value.length <= 4) daysText = value },
-                    placeholder = { Text(stringResource(R.string.export_options_no_limit)) },
+                    value = fileNameText,
+                    onValueChange = { fileNameText = it.take(64) },
+                    label = { Text(stringResource(R.string.export_filename)) },
                     singleLine = true,
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                SegmentedControl(
+                    items = listOf(ExportDestination.SHARE, ExportDestination.SAVE_TO_DOWNLOADS),
+                    selectedItem = destination,
+                    onItemSelected = { destination = it },
+                    labelProvider = { if (it == ExportDestination.SHARE) shareLabel else saveLabel }
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                SectionLabel(stringResource(R.string.export_section_completed_tasks))
                 ToggleRow(
-                    title = stringResource(R.string.export_strike_completed),
-                    checked = strikeThroughCompleted,
-                    onCheckedChange = { strikeThroughCompleted = it }
+                    title = stringResource(R.string.export_include_completed),
+                    checked = includeCompleted,
+                    onCheckedChange = { includeCompleted = it }
                 )
-            }
-            if (doneCount > 0) {
-                Text(
-                    text = "$doneCount completed task(s) available before filters.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                if (includeCompleted) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.export_exclude_completed_older_than),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = daysText,
+                        onValueChange = { value -> if (value.all { it.isDigit() } && value.length <= 4) daysText = value },
+                        placeholder = { Text(stringResource(R.string.export_options_no_limit)) },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    ToggleRow(
+                        title = stringResource(R.string.export_strike_completed),
+                        checked = strikeThroughCompleted,
+                        onCheckedChange = { strikeThroughCompleted = it }
+                    )
+                }
+                if (doneCount > 0) {
+                    Text(
+                        text = "$doneCount completed task(s) available before filters.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                SectionLabel(stringResource(R.string.export_section_display))
+                ToggleRow(title = stringResource(R.string.export_privacy_mode), checked = privacyMode, onCheckedChange = { privacyMode = it })
+                ToggleRow(
+                    title = stringResource(R.string.export_show_tags),
+                    checked = privacyTags,
+                    enabled = !privacyMode,
+                    onCheckedChange = { showTags = it }
                 )
-            }
+                ToggleRow(
+                    title = stringResource(R.string.export_show_assignees),
+                    checked = privacyAssignees,
+                    enabled = !privacyMode,
+                    onCheckedChange = { showAssignees = it }
+                )
+                ToggleRow(
+                    title = stringResource(R.string.export_show_footer),
+                    checked = showMadeWithFooter,
+                    onCheckedChange = { showMadeWithFooter = it }
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            SectionLabel(stringResource(R.string.export_section_display))
-            ToggleRow(title = stringResource(R.string.export_privacy_mode), checked = privacyMode, onCheckedChange = { privacyMode = it })
-            ToggleRow(
-                title = stringResource(R.string.export_show_tags),
-                checked = privacyTags,
-                enabled = !privacyMode,
-                onCheckedChange = { showTags = it }
-            )
-            ToggleRow(
-                title = stringResource(R.string.export_show_assignees),
-                checked = privacyAssignees,
-                enabled = !privacyMode,
-                onCheckedChange = { showAssignees = it }
-            )
-            ToggleRow(
-                title = stringResource(R.string.export_show_footer),
-                checked = showMadeWithFooter,
-                onCheckedChange = { showMadeWithFooter = it }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SectionLabel(stringResource(R.string.export_section_format))
-            if (format == ExportFormat.PDF) {
+                SectionLabel(stringResource(R.string.export_section_format))
+                if (format == ExportFormat.PDF) {
+                    SegmentedControl(
+                        items = listOf(ExportPdfPageSize.A4, ExportPdfPageSize.LETTER),
+                        selectedItem = pdfPageSize,
+                        onItemSelected = { pdfPageSize = it },
+                        labelProvider = { it.label }
+                    )
+                } else {
+                    SegmentedControl(
+                        items = listOf(ExportImageScale.STANDARD, ExportImageScale.LARGE),
+                        selectedItem = imageScale,
+                        onItemSelected = { imageScale = it },
+                        labelProvider = { it.label }
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 SegmentedControl(
-                    items = listOf(ExportPdfPageSize.A4, ExportPdfPageSize.LETTER),
-                    selectedItem = pdfPageSize,
-                    onItemSelected = { pdfPageSize = it },
-                    labelProvider = { it.label }
-                )
-            } else {
-                SegmentedControl(
-                    items = listOf(ExportImageScale.STANDARD, ExportImageScale.LARGE),
-                    selectedItem = imageScale,
-                    onItemSelected = { imageScale = it },
-                    labelProvider = { it.label }
+                    items = listOf(ExportDensity.RELAXED, ExportDensity.COMPACT),
+                    selectedItem = density,
+                    onItemSelected = { density = it },
+                    labelProvider = { if (it == ExportDensity.RELAXED) relaxedLabel else compactLabel }
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            SegmentedControl(
-                items = listOf(ExportDensity.RELAXED, ExportDensity.COMPACT),
-                selectedItem = density,
-                onItemSelected = { density = it },
-                labelProvider = { if (it == ExportDensity.RELAXED) relaxedLabel else compactLabel }
-            )
 
             Spacer(modifier = Modifier.height(20.dp))
             Row(
