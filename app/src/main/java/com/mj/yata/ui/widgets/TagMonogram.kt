@@ -23,15 +23,8 @@ import androidx.compose.ui.unit.sp
  * generic label icon every tag used to share. Two initials for a multi-word name, one otherwise —
  * a truncated pair reads worse than a single letter at these sizes.
  */
-fun tagMonogramFor(name: String): String {
-    val words = name.trim().split(' ', '-', '_', '/').filter { it.isNotBlank() }
-    if (words.isEmpty()) return "#"
-    // Take whole code points, not Chars: a tag named with an emoji or any character outside the
-    // BMP would otherwise render half a surrogate pair as tofu.
-    return words.take(if (words.size >= 2) 2 else 1)
-        .joinToString("") { String(Character.toChars(it.codePointAt(0))) }
-        .uppercase()
-}
+fun tagMonogramFor(name: String): String =
+    com.mj.yata.util.initialsFor(name).takeIf { it != "?" } ?: "#"
 
 @Composable
 fun TagMonogram(

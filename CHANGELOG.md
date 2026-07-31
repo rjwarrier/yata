@@ -147,6 +147,13 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- **A person's photo now shows everywhere their avatar appears.** Five places drew initials on a
+  coloured circle instead of the avatar, so someone with a profile photo showed their face on a
+  task row and their initials in the assignee chips beside it — on the task detail screen, in the
+  new-task sheet and in the @-mention picker.
+- **More of the app is translatable.** The tab titles, drawer section headers, empty-state text on
+  Projects, People, Tags, Upcoming and Search, and the "YOU" badge were all still hardcoded
+  English and would have stayed English in any other language.
 - **White text on light accent colours was hard to read** — worst on the yellow, lime and green
   ones, where initials on a person's avatar all but disappeared. The ink is now chosen per colour
   by measuring which of light or dark actually reads better against it, so twelve of the sixteen

@@ -95,12 +95,43 @@
     <string name="settings_startup_tab">Open on</string>
     <string name="settings_startup_tab_desc">Which tab the app starts on. A tab that\'s switched off in Features falls back to Today.</string>
     <string name="settings_startup_last_used">Last used</string>
-    <!-- Tab names, for the startup-tab picker. The bottom bar itself still uses literals. -->
-    <string name="settings_tab_today">Today</string>
-    <string name="settings_tab_projects">Projects</string>
-    <string name="settings_tab_people">People</string>
-    <string name="settings_tab_tags">Tags</string>
-    <string name="settings_tab_upcoming">Upcoming</string>
+    <!-- Tab names. Used by the tab headers themselves and by the startup-tab picker. -->
+    <string name="tab_today">Today</string>
+    <string name="tab_projects">Projects</string>
+    <string name="tab_people">People</string>
+    <string name="tab_tags">Tags</string>
+    <string name="tab_upcoming">Upcoming</string>
+    <!-- Drawer section headers -->
+    <string name="drawer_tools">Tools</string>
+    <string name="drawer_custom_views">CUSTOM VIEWS</string>
+    <string name="drawer_starred">STARRED</string>
+    <string name="drawer_lists">LISTS</string>
+    <!-- Empty states -->
+    <string name="people_empty_title">No people yet</string>
+    <string name="people_empty_subtitle">Add people to assign tasks and track who\'s doing what.</string>
+    <string name="people_ungrouped">Ungrouped</string>
+    <string name="people_archived">Archived</string>
+    <string name="people_you_badge">YOU</string>
+    <plurals name="people_add_to_group_title">
+        <item quantity="one">Add %1$d person to group</item>
+        <item quantity="other">Add %1$d people to group</item>
+    </plurals>
+    <string name="projects_empty_title">No projects yet</string>
+    <string name="projects_empty_subtitle">Group related tasks into a project to track progress together.</string>
+    <string name="projects_new_project">New project</string>
+    <string name="projects_archived_header">ARCHIVED</string>
+    <string name="tags_empty_title">No tags yet</string>
+    <string name="tags_empty_subtitle">Tag tasks to group them by topic, client, or anything you like.</string>
+    <string name="today_stat_overdue">Overdue</string>
+    <string name="today_stat_high_priority">High priority</string>
+    <string name="today_stat_due_today">Due today</string>
+    <string name="today_all_caught_up">All caught up</string>
+    <string name="upcoming_clear_day">Clear day</string>
+    <string name="upcoming_nothing_scheduled">Nothing scheduled.</string>
+    <string name="search_prompt_empty">Type something to search, or pick a filter above.</string>
+    <string name="search_no_matches">No matches</string>
+    <string name="search_no_matches_subtitle">Try a different query or loosen the active filters.</string>
+    <string name="search_clear">Clear search</string>
     <!-- Swipe actions -->
     <string name="settings_swipe_right_action">Swipe right does</string>
     <string name="settings_swipe_left_action">Swipe left does</string>

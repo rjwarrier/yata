@@ -659,7 +659,7 @@ private fun SearchResultsList(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Type something to search, or pick a filter above.",
+                        text = stringResource(R.string.search_prompt_empty),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
@@ -668,9 +668,9 @@ private fun SearchResultsList(
             item {
                 com.mj.yata.ui.widgets.TabEmptyState(
                     icon = Icons.Default.Search,
-                    title = "No matches",
-                    subtitle = "Try a different query or loosen the active filters.",
-                    actionLabel = "Clear search",
+                    title = stringResource(R.string.search_no_matches),
+                    subtitle = stringResource(R.string.search_no_matches_subtitle),
+                    actionLabel = stringResource(R.string.search_clear),
                     onAction = onClearSearchFilters
                 )
             }

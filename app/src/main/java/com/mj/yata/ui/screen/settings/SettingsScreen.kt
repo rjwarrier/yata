@@ -459,7 +459,7 @@ fun SettingsScreen(
                         }
                     ) {
                         com.mj.yata.ui.widgets.PersonAvatar(
-                            initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                            initials = com.mj.yata.util.initialsFor(userName),
                             accentKey = "accentC",
                             size = 48.dp,
                             photoUri = userPhotoUri
@@ -1020,11 +1020,11 @@ fun SettingsScreen(
                 val startupLastUsed = stringResource(R.string.settings_startup_last_used)
                 val startupLabels = mapOf(
                     StartupTab.LAST_USED to startupLastUsed,
-                    StartupTab.TODAY to stringResource(R.string.settings_tab_today),
-                    StartupTab.PROJECTS to stringResource(R.string.settings_tab_projects),
-                    StartupTab.PEOPLE to stringResource(R.string.settings_tab_people),
-                    StartupTab.TAGS to stringResource(R.string.settings_tab_tags),
-                    StartupTab.UPCOMING to stringResource(R.string.settings_tab_upcoming)
+                    StartupTab.TODAY to stringResource(R.string.tab_today),
+                    StartupTab.PROJECTS to stringResource(R.string.tab_projects),
+                    StartupTab.PEOPLE to stringResource(R.string.tab_people),
+                    StartupTab.TAGS to stringResource(R.string.tab_tags),
+                    StartupTab.UPCOMING to stringResource(R.string.tab_upcoming)
                 )
                 Box {
                     SettingsRow(

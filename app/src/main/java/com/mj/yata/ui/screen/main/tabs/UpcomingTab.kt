@@ -259,7 +259,7 @@ fun UpcomingTab(
                         modifier = Modifier.semantics { contentDescription = profileLabel }
                     ) {
                         PersonAvatar(
-                            initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                            initials = com.mj.yata.util.initialsFor(userName),
                             accentKey = "accentC",
                             size = 32.dp,
                             photoUri = userPhotoUri
@@ -761,8 +761,8 @@ private fun DayDots(dotColors: List<Color>, overrideColor: Color?, modifier: Mod
 private fun UpcomingEmptyState(modifier: Modifier = Modifier) {
     com.mj.yata.ui.widgets.TabEmptyState(
         icon = Icons.Outlined.EventAvailable,
-        title = "Clear day",
-        subtitle = "Nothing scheduled.",
+        title = stringResource(R.string.upcoming_clear_day),
+        subtitle = stringResource(R.string.upcoming_nothing_scheduled),
         modifier = modifier
     )
 }

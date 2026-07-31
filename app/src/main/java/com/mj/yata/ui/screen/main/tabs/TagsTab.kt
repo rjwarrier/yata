@@ -85,57 +85,21 @@ fun TagsTab(
     ) {
         // 1. Top bar — swaps to a selection bar once tags are selected.
         if (selectionMode) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            com.mj.yata.ui.widgets.TabSelectionTopBar(
+                selectedCount = selectedIds.size,
+                onCancel = { selectedIds.clear(); selectModeOn = false }
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Text(
-                        text = pluralStringResource(R.plurals.selection_count, selectedIds.size, selectedIds.size),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
                 IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.tags_delete_selected), tint = MaterialTheme.colorScheme.error)
                 }
             }
         } else {
-        // Title lives in the same row as the icons instead of a separate
-        // stacked header, so this tab doesn't burn an extra ~50dp of vertical space.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = stringResource(R.string.cd_open_menu)
-                )
-            }
-            Text(
-                text = "Tags",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier.weight(1f).padding(start = 4.dp)
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            com.mj.yata.ui.widgets.TabTopBar(
+                title = stringResource(R.string.tab_tags),
+                onMenuClick = onMenuClick,
+                userName = userName,
+                userPhotoUri = userPhotoUri,
+                onProfileClick = onProfileClick
             ) {
                 com.mj.yata.ui.widgets.EntitySortMenuButton(
                     current = sortMode,
@@ -155,20 +119,7 @@ fun TagsTab(
                         contentDescription = stringResource(R.string.cd_search)
                     )
                 }
-                val profileLabel = stringResource(R.string.cd_open_profile)
-                IconButton(
-                    onClick = onProfileClick,
-                    modifier = Modifier.semantics { contentDescription = profileLabel }
-                ) {
-                    PersonAvatar(
-                        initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
-                        accentKey = "accentC",
-                        size = 32.dp,
-                        photoUri = userPhotoUri
-                    )
-                }
             }
-        }
         }
 
         // 3. Scrollable, grouped tag cloud
@@ -227,9 +178,9 @@ fun TagsTab(
             if (tags.isEmpty()) {
                 com.mj.yata.ui.widgets.TabEmptyState(
                     icon = Icons.AutoMirrored.Filled.Label,
-                    title = "No tags yet",
-                    subtitle = "Tag tasks to group them by topic, client, or anything you like.",
-                    actionLabel = "New tag",
+                    title = stringResource(R.string.tags_empty_title),
+                    subtitle = stringResource(R.string.tags_empty_subtitle),
+                    actionLabel = stringResource(R.string.tags_new_tag),
                     onAction = onNewTagClick
                 )
             } else {

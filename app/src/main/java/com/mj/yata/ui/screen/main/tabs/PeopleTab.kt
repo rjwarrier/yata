@@ -87,88 +87,39 @@ fun PeopleTab(
     ) {
         // 1. Top bar — swaps to a selection bar once people are selected.
         if (selectionMode) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            com.mj.yata.ui.widgets.TabSelectionTopBar(
+                selectedCount = selectedIds.size,
+                onCancel = { selectedIds.clear(); selectModeOn = false }
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Text(
-                        text = pluralStringResource(R.plurals.selection_count, selectedIds.size, selectedIds.size),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
                 TextButton(onClick = { showGroupPicker = true }) {
                     Text(stringResource(R.string.people_add_to_group))
                 }
             }
         } else {
-            // Title lives in the same row as the icons instead of a separate stacked
-            // header, so this tab doesn't burn an extra ~50dp of vertical space.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            com.mj.yata.ui.widgets.TabTopBar(
+                title = stringResource(R.string.tab_people),
+                onMenuClick = onMenuClick,
+                userName = userName,
+                userPhotoUri = userPhotoUri,
+                onProfileClick = onProfileClick
             ) {
-                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
+                com.mj.yata.ui.widgets.EntitySortMenuButton(
+                    current = sortMode,
+                    onSelect = onSortModeChange,
+                    contentDescription = stringResource(R.string.people_sort_people),
+                    filledContainer = true
+                )
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { selectModeOn = true }) {
                     Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = stringResource(R.string.cd_open_menu)
+                        imageVector = Icons.Default.Check,
+                        contentDescription = stringResource(R.string.people_select_people)
                     )
                 }
-                Text(
-                    text = "People",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier.weight(1f).padding(start = 4.dp)
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    com.mj.yata.ui.widgets.EntitySortMenuButton(
-                        current = sortMode,
-                        onSelect = onSortModeChange,
-                        contentDescription = stringResource(R.string.people_sort_people),
-                        filledContainer = true
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSearchClick) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(R.string.cd_search)
                     )
-                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { selectModeOn = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = stringResource(R.string.people_select_people)
-                        )
-                    }
-                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSearchClick) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = stringResource(R.string.cd_search)
-                        )
-                    }
-                    val profileLabel = stringResource(R.string.cd_open_profile)
-                    IconButton(
-                        onClick = onProfileClick,
-                        modifier = Modifier.semantics { contentDescription = profileLabel }
-                    ) {
-                        PersonAvatar(
-                            initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
-                            accentKey = "accentC",
-                            size = 32.dp,
-                            photoUri = userPhotoUri
-                        )
-                    }
                 }
             }
         }
@@ -199,9 +150,9 @@ fun PeopleTab(
                 item {
                     com.mj.yata.ui.widgets.TabEmptyState(
                         icon = Icons.Default.Groups,
-                        title = "No people yet",
-                        subtitle = "Add people to assign tasks and track who's doing what.",
-                        actionLabel = "Add person",
+                        title = stringResource(R.string.people_empty_title),
+                        subtitle = stringResource(R.string.people_empty_subtitle),
+                        actionLabel = stringResource(R.string.people_add_person),
                         onAction = onAddPersonClick
                     )
                 }
@@ -238,7 +189,7 @@ fun PeopleTab(
                 if (personGroups.isNotEmpty()) {
                     item(key = "header_ungrouped") {
                         GroupHeader(
-                            title = "Ungrouped",
+                            title = stringResource(R.string.people_ungrouped),
                             expanded = ungroupedExpanded,
                             onToggle = { expandedGroups["ungrouped"] = !ungroupedExpanded }
                         )
@@ -262,7 +213,7 @@ fun PeopleTab(
                 val archivedExpanded = expandedGroups["archived"] ?: false
                 item(key = "header_archived") {
                     GroupHeader(
-                        title = "Archived",
+                        title = stringResource(R.string.people_archived),
                         expanded = archivedExpanded,
                         onToggle = { expandedGroups["archived"] = !archivedExpanded }
                     )
@@ -289,7 +240,7 @@ fun PeopleTab(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             GroupAssignSheet(
-                title = "Add ${selectedIds.size} people to group",
+                title = pluralStringResource(R.plurals.people_add_to_group_title, selectedIds.size, selectedIds.size),
                 groups = personGroups,
                 groupId = { it.id },
                 groupName = { it.name },
@@ -426,7 +377,7 @@ fun PersonRow(
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                text = "YOU",
+                                text = stringResource(R.string.people_you_badge),
                                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Black,

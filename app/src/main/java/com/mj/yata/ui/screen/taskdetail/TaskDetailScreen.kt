@@ -709,19 +709,12 @@ fun TaskDetailScreen(
                                 onClick = { activeSheet = DetailSheetType.AssigneePicker },
                                 label = { Text(person.name) },
                                 leadingIcon = {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .background(accents.getAccent(person.color), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            person.initials,
-                                            fontSize = 11.sp,
-                                            color = accents.onAccentFor(person.color),
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
+                                    com.mj.yata.ui.widgets.PersonAvatar(
+                                        initials = person.initials,
+                                        accentKey = person.color,
+                                        size = 20.dp,
+                                        photoUri = person.photoUri
+                                    )
                                 }
                             )
                         }
@@ -1382,12 +1375,12 @@ fun TaskDetailScreen(
                                     },
                                     tint = MaterialTheme.colorScheme.tertiary,
                                     leading = {
-                                        Box(
-                                            modifier = Modifier.size(22.dp).background(accents.getAccent(person.color), CircleShape),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(person.initials, fontSize = 12.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
-                                        }
+                                        com.mj.yata.ui.widgets.PersonAvatar(
+                                            initials = person.initials,
+                                            accentKey = person.color,
+                                            size = 22.dp,
+                                            photoUri = person.photoUri
+                                        )
                                     },
                                     height = 38.dp
                                 )

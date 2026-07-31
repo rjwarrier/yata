@@ -293,7 +293,7 @@ fun TodayTab(
                     modifier = Modifier.semantics { contentDescription = profileLabel }
                 ) {
                     PersonAvatar(
-                        initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                        initials = com.mj.yata.util.initialsFor(userName),
                         accentKey = "accentC",
                         size = 32.dp,
                         photoUri = userPhotoUri
@@ -347,7 +347,7 @@ fun TodayTab(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             com.mj.yata.ui.widgets.HeroStatCell(
-                label = "Overdue",
+                label = stringResource(R.string.today_stat_overdue),
                 value = overdueCount,
                 accentColor = MaterialTheme.colorScheme.primary,
                 valueColor = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
@@ -356,7 +356,7 @@ fun TodayTab(
                 modifier = Modifier.weight(1f)
             )
             com.mj.yata.ui.widgets.HeroStatCell(
-                label = "High priority",
+                label = stringResource(R.string.today_stat_high_priority),
                 value = highPriorityCount,
                 accentColor = MaterialTheme.colorScheme.primary,
                 active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY,
@@ -364,7 +364,7 @@ fun TodayTab(
                 modifier = Modifier.weight(1f)
             )
             com.mj.yata.ui.widgets.HeroStatCell(
-                label = "Due today",
+                label = stringResource(R.string.today_stat_due_today),
                 value = dueTodayCount,
                 accentColor = MaterialTheme.colorScheme.primary,
                 active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY,
@@ -418,7 +418,7 @@ fun TodayTab(
                     val filtered = selectedFilter != "All" || activeStatFilter != null
                     com.mj.yata.ui.widgets.TabEmptyState(
                         icon = Icons.Default.TaskAlt,
-                        title = "All caught up",
+                        title = stringResource(R.string.today_all_caught_up),
                         subtitle = if (!filtered) "No tasks for today." else "No tasks match this filter.",
                         actionLabel = if (!filtered) "Add task" else "Show all",
                         onAction = {

@@ -1648,12 +1648,12 @@ private fun AssignedPersonChip(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Box(
-            modifier = Modifier.size(24.dp).background(accents.getAccent(person.color), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(person.initials, fontSize = 12.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
-        }
+        com.mj.yata.ui.widgets.PersonAvatar(
+            initials = person.initials,
+            accentKey = person.color,
+            size = 24.dp,
+            photoUri = person.photoUri
+        )
         Text(
             text = if (person.isMe) "You" else person.name,
             style = MaterialTheme.typography.labelMedium,
@@ -1863,14 +1863,12 @@ private fun PeoplePanel(
                 },
                 tint = MaterialTheme.colorScheme.tertiary,
                 leading = {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .background(accents.getAccent(person.color), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(person.initials, fontSize = 12.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
-                    }
+                    com.mj.yata.ui.widgets.PersonAvatar(
+                        initials = person.initials,
+                        accentKey = person.color,
+                        size = 20.dp,
+                        photoUri = person.photoUri
+                    )
                 },
                 height = 36.dp
             )

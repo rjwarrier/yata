@@ -85,57 +85,21 @@ fun ProjectsTab(
     ) {
         // 1. Top bar — swaps to a selection bar once projects are selected.
         if (selectionMode) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            com.mj.yata.ui.widgets.TabSelectionTopBar(
+                selectedCount = selectedIds.size,
+                onCancel = { selectedIds.clear(); selectModeOn = false }
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { selectedIds.clear(); selectModeOn = false }) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_bulk_cancel_selection), tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Text(
-                        text = pluralStringResource(R.plurals.selection_count, selectedIds.size, selectedIds.size),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
                 IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.projects_archive_selected), tint = MaterialTheme.colorScheme.error)
                 }
             }
         } else {
-        // Title lives in the same row as the icons instead of a separate
-        // stacked header, so this tab doesn't burn an extra ~50dp of vertical space.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
-                Icon(
-                    imageVector = Icons.Default.Menu,
-                    contentDescription = stringResource(R.string.cd_open_drawer)
-                )
-            }
-            Text(
-                text = "Projects",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier.weight(1f).padding(start = 4.dp)
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            com.mj.yata.ui.widgets.TabTopBar(
+                title = stringResource(R.string.tab_projects),
+                onMenuClick = onMenuClick,
+                userName = userName,
+                userPhotoUri = userPhotoUri,
+                onProfileClick = onProfileClick
             ) {
                 com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { selectModeOn = true }) {
                     Icon(
@@ -149,20 +113,7 @@ fun ProjectsTab(
                         contentDescription = stringResource(R.string.cd_search)
                     )
                 }
-                val profileLabel = stringResource(R.string.cd_open_profile)
-                IconButton(
-                    onClick = onProfileClick,
-                    modifier = Modifier.semantics { contentDescription = profileLabel }
-                ) {
-                    PersonAvatar(
-                        initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
-                        accentKey = "accentC",
-                        size = 32.dp,
-                        photoUri = userPhotoUri
-                    )
-                }
             }
-        }
         }
 
         // 2. List of Projects — long-press drag to reorder.
@@ -179,9 +130,9 @@ fun ProjectsTab(
                     item {
                         com.mj.yata.ui.widgets.TabEmptyState(
                             icon = Icons.Default.Layers,
-                            title = "No projects yet",
-                            subtitle = "Group related tasks into a project to track progress together.",
-                            actionLabel = "New project",
+                            title = stringResource(R.string.projects_empty_title),
+                            subtitle = stringResource(R.string.projects_empty_subtitle),
+                            actionLabel = stringResource(R.string.projects_new_project),
                             onAction = onNewProjectClick
                         )
                     }
@@ -191,7 +142,7 @@ fun ProjectsTab(
                 if (archivedProjects.isNotEmpty()) {
                     item {
                         Text(
-                            text = "ARCHIVED",
+                            text = stringResource(R.string.projects_archived_header),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)

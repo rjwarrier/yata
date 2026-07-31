@@ -386,7 +386,7 @@ fun AnalyticsScreen(
                         subtitle = insightSubtitle(stat),
                         leading = {
                             PersonAvatar(
-                                initials = stat.name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                                initials = com.mj.yata.util.initialsFor(stat.name),
                                 accentKey = stat.colorKey,
                                 size = 28.dp
                             )
@@ -609,7 +609,7 @@ private fun WorkloadShareRow(share: com.mj.yata.util.WorkloadShare, color: Color
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         PersonAvatar(
-            initials = share.person.name.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+            initials = com.mj.yata.util.initialsFor(share.person.name),
             accentKey = share.person.color,
             size = 28.dp
         )

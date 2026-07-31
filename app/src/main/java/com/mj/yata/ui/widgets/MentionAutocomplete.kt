@@ -113,12 +113,12 @@ internal fun MentionSuggestions(
                         label = if (person.isMe) "You" else person.name,
                         onClick = { onSelectPerson(person) },
                         leading = {
-                            Box(
-                                modifier = Modifier.size(20.dp).background(accents.getAccent(person.color), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(person.initials, fontSize = 12.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
-                            }
+                            com.mj.yata.ui.widgets.PersonAvatar(
+                                initials = person.initials,
+                                accentKey = person.color,
+                                size = 20.dp,
+                                photoUri = person.photoUri
+                            )
                         }
                     )
                 }

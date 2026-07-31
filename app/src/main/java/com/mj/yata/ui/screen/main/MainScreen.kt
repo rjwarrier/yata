@@ -303,7 +303,7 @@ fun MainScreen(
                                 .padding(bottom = 12.dp)
                         ) {
                             PersonAvatar(
-                                initials = userName.split(" ").mapNotNull { it.firstOrNull()?.toString() }.take(2).joinToString("").uppercase(),
+                                initials = com.mj.yata.util.initialsFor(userName),
                                 accentKey = "accentC",
                                 size = 44.dp,
                                 photoUri = userPhotoUri
@@ -367,7 +367,7 @@ fun MainScreen(
                     item {
                         Spacer(modifier = Modifier.height(8.dp))
                         DrawerSectionToggle(
-                            label = "Tools",
+                            label = stringResource(R.string.drawer_tools),
                             expanded = toolsExpanded,
                             onToggle = { toolsExpanded = !toolsExpanded }
                         )
@@ -417,7 +417,7 @@ fun MainScreen(
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "CUSTOM VIEWS",
+                                text = stringResource(R.string.drawer_custom_views),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -442,7 +442,7 @@ fun MainScreen(
                         item {
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "STARRED",
+                                text = stringResource(R.string.drawer_starred),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -515,7 +515,7 @@ fun MainScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "LISTS",
+                                text = stringResource(R.string.drawer_lists),
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
