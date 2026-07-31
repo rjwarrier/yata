@@ -102,7 +102,6 @@
     <string name="tab_tags">Tags</string>
     <string name="tab_upcoming">Upcoming</string>
     <!-- Drawer section headers -->
-    <string name="drawer_tools">Tools</string>
     <string name="drawer_custom_views">CUSTOM VIEWS</string>
     <string name="drawer_starred">STARRED</string>
     <string name="drawer_lists">LISTS</string>

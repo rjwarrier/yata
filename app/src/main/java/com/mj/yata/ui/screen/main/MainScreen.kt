@@ -266,11 +266,6 @@ fun MainScreen(
                 val visibleStarredTags = if (tagsFeatureEnabled) starredTags else emptyList()
                 val visibleStarredPeople = if (peopleFeatureEnabled) starredPeople else emptyList()
 
-                // The reviews/modes/palette block is collapsed by default so the drawer stays
-                // compact; rememberSaveable keeps the user's choice across drawer open/close and
-                // process death.
-                var toolsExpanded by rememberSaveable { mutableStateOf(false) }
-
                 // Main content scrolls in its own weighted region so it never pushes Analytics/
                 // Settings off-screen — that footer is a fixed sibling below, not a LazyColumn
                 // item, so it sits flush at the bottom when content is short (nothing to scroll)
@@ -364,52 +359,17 @@ fun MainScreen(
                             scope.launch { drawerState.close() }
                         }
                     }
+                    // One entry rather than the old collapsible "Tools" section, which put eight
+                    // items behind a header and made the drawer the longest surface in the app.
+                    // Everything that lived there is in the palette itself now — including the six
+                    // saved searches (My Work, Focus Mode, the two Reviews, Stale Nudges, Task
+                    // Health), which are searchable there instead of needing to be memorised as
+                    // menu positions. Next 10 Days is also on Today's top bar, so it lost nothing.
                     item {
                         Spacer(modifier = Modifier.height(8.dp))
-                        DrawerSectionToggle(
-                            label = stringResource(R.string.drawer_tools),
-                            expanded = toolsExpanded,
-                            onToggle = { toolsExpanded = !toolsExpanded }
-                        )
-                    }
-                    item(key = "tools_section") {
-                        androidx.compose.animation.AnimatedVisibility(visible = toolsExpanded) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                DrawerItem("Next 10 Days", Icons.Default.DateRange, false) {
-                                    onNavigateToNextDays()
-                                    scope.launch { drawerState.close() }
-                                }
-                                DrawerItem("Command palette", Icons.Default.Bolt, false) {
-                                    showCommandPalette = true
-                                    scope.launch { drawerState.close() }
-                                }
-                                if (peopleFeatureEnabled) {
-                                    DrawerItem("My Work", Icons.Default.AssignmentInd, false) {
-                                        onNavigateToSavedSearch("ASSIGNED_TO_ME")
-                                        scope.launch { drawerState.close() }
-                                    }
-                                }
-                                DrawerItem("Focus Mode", Icons.Default.CenterFocusStrong, false) {
-                                    onNavigateToSavedSearch("FOCUS")
-                                    scope.launch { drawerState.close() }
-                                }
-                                DrawerItem("Morning Review", Icons.Default.WbSunny, false) {
-                                    onNavigateToSavedSearch("MORNING_REVIEW")
-                                    scope.launch { drawerState.close() }
-                                }
-                                DrawerItem("Evening Review", Icons.Default.NightsStay, false) {
-                                    onNavigateToSavedSearch("EVENING_REVIEW")
-                                    scope.launch { drawerState.close() }
-                                }
-                                DrawerItem("Stale Nudges", Icons.Default.HourglassEmpty, false) {
-                                    onNavigateToSavedSearch("STALE_TASKS")
-                                    scope.launch { drawerState.close() }
-                                }
-                                DrawerItem("Task Health", Icons.Default.HealthAndSafety, false) {
-                                    onNavigateToSavedSearch("AT_RISK")
-                                    scope.launch { drawerState.close() }
-                                }
-                            }
+                        DrawerItem("Command palette", Icons.Default.Bolt, false) {
+                            showCommandPalette = true
+                            scope.launch { drawerState.close() }
                         }
                     }
 
@@ -880,6 +840,10 @@ fun MainScreen(
                 showCommandPalette = false
                 onNavigateToNextDays()
             },
+            onSavedSearch = { filters ->
+                showCommandPalette = false
+                onNavigateToSavedSearch(filters)
+            },
             onSelectTab = { tab ->
                 selectedTab = tab
                 showCommandPalette = false
@@ -1070,6 +1034,7 @@ private fun CommandPaletteDialog(
     onSettings: () -> Unit,
     onAnalytics: () -> Unit,
     onNextDays: () -> Unit,
+    onSavedSearch: (String) -> Unit,
     onSelectTab: (Int) -> Unit,
     onOpenTask: (String) -> Unit
 ) {
@@ -1083,6 +1048,15 @@ private fun CommandPaletteDialog(
         if (tagsEnabled) PaletteEntry("Tags", "Open tags", Icons.AutoMirrored.Filled.Label) { onSelectTab(3) } else null,
         PaletteEntry("Upcoming", "Open calendar and agenda", Icons.Default.CalendarViewWeek) { onSelectTab(4) },
         PaletteEntry("Next 10 Days", "Open the focused date list", Icons.Default.DateRange, onNextDays),
+        // Formerly the drawer's "Tools" section. They're preset searches, so the palette — which
+        // already filters by title and subtitle — is a better home than eight fixed menu rows:
+        // typing "over" or "stale" reaches them without knowing where they sit.
+        if (peopleEnabled) PaletteEntry("My Work", "Tasks assigned to you", Icons.Default.AssignmentInd) { onSavedSearch("ASSIGNED_TO_ME") } else null,
+        PaletteEntry("Focus Mode", "High-priority and flagged work", Icons.Default.CenterFocusStrong) { onSavedSearch("FOCUS") },
+        PaletteEntry("Morning Review", "Plan what's due today", Icons.Default.WbSunny) { onSavedSearch("MORNING_REVIEW") },
+        PaletteEntry("Evening Review", "Wrap up and reschedule", Icons.Default.NightsStay) { onSavedSearch("EVENING_REVIEW") },
+        PaletteEntry("Stale Nudges", "Tasks untouched for a while", Icons.Default.HourglassEmpty) { onSavedSearch("STALE_TASKS") },
+        PaletteEntry("Task Health", "Overdue and at-risk tasks", Icons.Default.HealthAndSafety) { onSavedSearch("AT_RISK") },
         PaletteEntry("Analytics", "Open productivity insights", Icons.Default.Analytics, onAnalytics),
         PaletteEntry("Settings", "Open preferences", Icons.Default.Settings, onSettings)
     )
@@ -1220,43 +1194,6 @@ fun DrawerItem(
     }
 }
 
-/** Clickable drawer section header (uppercase label + chevron) that expands/collapses a group
- * of drawer items, styled to match the static STARRED/LISTS section labels. */
-@Composable
-private fun DrawerSectionToggle(
-    label: String,
-    expanded: Boolean,
-    onToggle: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onToggle() },
-        color = Color.Transparent,
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = label.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-            Icon(
-                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = if (expanded) "Collapse $label" else "Expand $label",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
-}
 
 private data class NavIcon(val id: Int, val label: String, val outlined: ImageVector, val filled: ImageVector)
 

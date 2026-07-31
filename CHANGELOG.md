@@ -15,6 +15,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Changed
+
+- **The drawer's "Tools" section is gone**, and with it a collapsible header hiding eight more
+  rows. The six views that lived there — My Work, Focus Mode, Morning Review, Evening Review,
+  Stale Nudges and Task Health — are now in the command palette, where you can type "stale" or
+  "overdue" to reach them instead of remembering where they sat in a menu. Next 10 Days was
+  already on Today's top bar. The drawer now ends at a single Command palette entry.
+
 ### Fixed
 
 - **Changing what a swipe does could keep performing the old action.** Setting a direction to
