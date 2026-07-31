@@ -117,7 +117,7 @@ internal fun MentionSuggestions(
                                 modifier = Modifier.size(20.dp).background(accents.getAccent(person.color), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(person.initials, fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                Text(person.initials, fontSize = 11.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
                             }
                         }
                     )

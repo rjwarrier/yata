@@ -334,7 +334,7 @@ fun PersonDetailScreen(
                 FloatingActionButton(
                     onClick = { isNewTaskSheetOpen = true },
                     containerColor = personColor,
-                    contentColor = Color.White
+                    contentColor = accents.onAccentFor(personColor)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task_for_person, person.name))
                 }

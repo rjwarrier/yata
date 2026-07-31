@@ -69,7 +69,7 @@ fun ColorPicker(
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = stringResource(R.string.cd_task_selected),
-                        tint = if (color.luminance() > 0.5f) Color.Black else Color.White,
+                        tint = accents.onAccentFor(color),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -95,7 +95,7 @@ fun ColorPicker(
                 imageVector = if (isCustom) Icons.Default.Check else Icons.Default.Colorize,
                 contentDescription = stringResource(R.string.action_custom_color),
                 tint = if (isCustom) {
-                    if (accents.getAccent(selectedColorKey).luminance() > 0.5f) Color.Black else Color.White
+                    accents.onAccentFor(selectedColorKey)
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },

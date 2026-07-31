@@ -313,7 +313,7 @@ fun ListDetailScreen(
             ) {
                 Surface(
                     color = listColor,
-                    contentColor = Color.White,
+                    contentColor = accents.onAccentFor(listColor),
                     shape = RoundedCornerShape(16.dp),
                     tonalElevation = 6.dp,
                     shadowElevation = 6.dp

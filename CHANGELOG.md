@@ -147,6 +147,16 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- **White text on light accent colours was hard to read** — worst on the yellow, lime and green
+  ones, where initials on a person's avatar all but disappeared. The ink is now chosen per colour
+  by measuring which of light or dark actually reads better against it, so twelve of the sixteen
+  light-theme accents switched to dark text. This covers people's initials everywhere they appear
+  (avatars, assignee stacks, the mention picker, the new-task sheet), the add button on the
+  project, list, tag and person screens, and custom accent colours picked by hex, which no fixed
+  choice of ink could ever have suited. Dark theme is unchanged — its accents are pastels that
+  were already taking dark text.
+- **Initials on profile circles are bigger** — around 40% of the circle's width at every size,
+  where they were closer to a quarter and left a lot of empty space around a small letter.
 - The Export button in the image and PDF export sheets was squashed flat. The options above it
   were laid out first and the buttons got whatever height was left, so on a shorter screen — or
   with the PDF page-size options showing — there was barely any. The options scroll now and the

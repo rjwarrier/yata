@@ -1652,7 +1652,7 @@ private fun AssignedPersonChip(
             modifier = Modifier.size(24.dp).background(accents.getAccent(person.color), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(person.initials, fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+            Text(person.initials, fontSize = 12.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
         }
         Text(
             text = if (person.isMe) "You" else person.name,
@@ -1869,7 +1869,7 @@ private fun PeoplePanel(
                             .background(accents.getAccent(person.color), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(person.initials, fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(person.initials, fontSize = 11.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
                     }
                 },
                 height = 36.dp

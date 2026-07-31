@@ -5,6 +5,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 val LightColors = lightColorScheme(
     primary = Color(0xFF8E4A3B),
@@ -76,6 +77,25 @@ val DarkColors = darkColorScheme(
     surfaceContainerHighest = Color(0xFF392F2E)
 )
 
+/** The two inks [YataAccents.onAccentFor] chooses between. Not pure black — the dark one matches
+ * the palette's own near-black surface, so an icon on a pale accent still reads as part of the
+ * theme rather than as a hole punched in it. */
+val AccentInkLight = Color(0xFFFFFFFF)
+val AccentInkDark = Color(0xFF1A1110)
+
+/**
+ * WCAG relative-contrast ratio, 1.0 for identical colours up to 21.0 for black on white.
+ *
+ * Both inks are measured for real rather than either being assumed to be pure black or white —
+ * [AccentInkDark] is a near-black with a small but non-zero luminance, and treating it as 0
+ * overstated its contrast enough to pick it over white on one of the mid-tone accents.
+ */
+fun contrastRatio(a: Color, b: Color): Float {
+    val la = a.luminance()
+    val lb = b.luminance()
+    return (maxOf(la, lb) + 0.05f) / (minOf(la, lb) + 0.05f)
+}
+
 @Immutable
 data class YataAccents(
     val accentA: Color,
@@ -96,6 +116,25 @@ data class YataAccents(
     val accentP: Color,
     val onAccent: Color
 ) {
+    /**
+     * A readable ink for text or an icon drawn *on* [background].
+     *
+     * [onAccent] is one colour for the whole palette, which can't be right for all sixteen: the
+     * accents span from a deep blue to a bright yellow, and white set on the yellow one is barely
+     * visible. This picks per colour instead, by measuring rather than guessing — whichever of the
+     * light and dark inks has the better contrast ratio against that particular background wins.
+     *
+     * It also covers the custom accent colours [getAccent] accepts as raw hex, which no fixed
+     * palette ink could ever have accounted for.
+     */
+    fun onAccentFor(background: Color): Color {
+        val withLight = contrastRatio(background, AccentInkLight)
+        val withDark = contrastRatio(background, AccentInkDark)
+        return if (withDark >= withLight) AccentInkDark else AccentInkLight
+    }
+
+    fun onAccentFor(key: String): Color = onAccentFor(getAccent(key))
+
     fun getAccent(key: String): Color {
         if (key.startsWith("#")) {
             return try {

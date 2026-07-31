@@ -40,7 +40,9 @@ fun PersonAvatar(
 ) {
     val accents = LocalYataAccents.current
     val bgColor = accents.getAccent(accentKey)
-    val textColor = accents.onAccent
+    // Per accent rather than one ink for the whole palette — white initials on the yellow and
+    // lime accents were all but invisible.
+    val textColor = accents.onAccentFor(bgColor)
 
     val context = LocalContext.current
     val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photoUri) {
@@ -92,11 +94,13 @@ fun PersonAvatar(
                 color = textColor,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
+                    // Roughly 40% of the avatar's diameter at every size. The old ratios were
+                    // nearer a quarter, which left a lot of empty circle around a small letter.
                     fontSize = when {
-                        size >= 64.dp -> 20.sp
-                        size >= 40.dp -> 14.sp
-                        size >= 30.dp -> 11.sp
-                        else -> 9.sp
+                        size >= 64.dp -> 26.sp
+                        size >= 40.dp -> 18.sp
+                        size >= 30.dp -> 14.sp
+                        else -> 11.sp
                     }
                 )
             )

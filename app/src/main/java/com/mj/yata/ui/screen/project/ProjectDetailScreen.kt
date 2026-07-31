@@ -384,7 +384,7 @@ fun ProjectDetailScreen(
                 ) {
                     Surface(
                         color = projectColor,
-                        contentColor = Color.White,
+                        contentColor = accents.onAccentFor(projectColor),
                         shape = RoundedCornerShape(16.dp),
                         tonalElevation = 6.dp,
                         shadowElevation = 6.dp

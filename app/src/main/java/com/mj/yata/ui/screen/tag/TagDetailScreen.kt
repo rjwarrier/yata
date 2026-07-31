@@ -196,7 +196,7 @@ fun TagDetailScreen(
             ) {
                 Surface(
                     color = tagColor,
-                    contentColor = Color.White,
+                    contentColor = accents.onAccentFor(tagColor),
                     shape = RoundedCornerShape(16.dp),
                     tonalElevation = 6.dp,
                     shadowElevation = 6.dp
