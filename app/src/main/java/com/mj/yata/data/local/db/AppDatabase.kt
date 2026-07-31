@@ -24,7 +24,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 26,
+    version = 27,
     // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
     // purely-additive future changes use Room auto-migrations instead of hand-written ones.
     exportSchema = true
@@ -316,6 +316,18 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_25_26 = object : Migration(25, 26) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE tasks ADD COLUMN startDate TEXT DEFAULT NULL")
+            }
+        }
+
+        // createdAt backs the age/turnaround metrics on the Analytics screen (how long a task has
+        // been open, how long it took from creation to completion). Deliberately left NULL for
+        // existing rows rather than backfilled with the migration timestamp: that would date every
+        // task in the database to the day of the upgrade, making a two-year-old backlog read as
+        // created today and every age metric wrong in the same direction. Null means "unknown" and
+        // those rows are excluded from age metrics instead of being guessed at.
+        val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN createdAt INTEGER DEFAULT NULL")
             }
         }
     }

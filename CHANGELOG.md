@@ -17,12 +17,35 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Analytics rebuilt around delegated work.** A new Delegation card shows how open work splits
+  between people you've handed it to, your own, and nothing assigned yet — plus median turnaround,
+  the age of your oldest open task, and how much open work has no due date at all. A Per Assignee
+  section ranks everyone by what's late rather than by volume, showing what each person holds, how
+  much they finished this period, their on-time rate and how fast work typically moves through
+  them. Unlike the existing By Person breakdown it doesn't hide someone whose work all falls
+  outside the selected period — a teammate sitting on old undated tasks is exactly who you need
+  to see.
+- **Insight callouts at the top of Analytics** — at most four, worst first: who has the most
+  overdue, anyone carrying well above the team median, how much is unassigned, the least-finished
+  group across projects *and* tags *and* lists, and anything open for more than 30 days.
+- **A By List breakdown in Analytics.** Lists were the one organising axis with no analytics at
+  all, despite sitting beside projects and tags everywhere else.
+- **Task age and turnaround.** Tasks now record when they were created, so Analytics can show how
+  long work takes from creation to completion and how long open work has been sitting. Tasks that
+  existed before this update have no creation date and are left out of those figures rather than
+  being counted as new.
 - **Subtask progress on task rows.** A task with a checklist now shows "3/5" wherever it's listed
   — Today, Upcoming, Project, List, Tag, Person, Search and Next 10 Days — and the count turns the
   list's colour once everything is ticked. Tasks without subtasks look exactly as before.
 
 ### Changed
 
+- **Analytics periods now mean "what happened", not "what was due".** 7 Days and 30 Days used to
+  keep only tasks whose *due date* landed in the window, so a task with no due date appeared under
+  All Time and nowhere else, and work finished this week but due last month didn't register as
+  work done. They now cover anything completed, due or created in the window, plus everything
+  still open. Expect the figures to read higher than before — the previous ones were leaving out
+  most undated work.
 - **Changing month in the calendar is smoother.** The grid used to empty and refill one cell at a
   time, and going back a month looked identical to going forward. The whole grid now slides as one
   piece in the direction you're travelling, and the card resizes with it instead of snapping when

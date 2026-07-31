@@ -584,9 +584,17 @@ private data class MainNavigationState(
     /** Every Analytics-screen metric, computed off the UI thread in [AnalyticsUtils.computeUiState]
      * whenever the underlying data or the selected period changes — the screen only renders this. */
     val analyticsUiState: StateFlow<AnalyticsUiState> = combine(
-        tasks, projects, people, tags, analyticsPeriodFlow
-    ) { taskList, projectList, personList, tagList, period ->
-        AnalyticsUtils.computeUiState(taskList, projectList, personList, tagList, period)
+        tasks, projects, people, tags, lists, analyticsPeriodFlow
+    ) { values ->
+        @Suppress("UNCHECKED_CAST")
+        AnalyticsUtils.computeUiState(
+            tasks = values[0] as List<Task>,
+            projects = values[1] as List<Project>,
+            people = values[2] as List<Person>,
+            tags = values[3] as List<Tag>,
+            lists = values[4] as List<YataList>,
+            period = values[5] as AnalyticsPeriod
+        )
     }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AnalyticsUiState())
 

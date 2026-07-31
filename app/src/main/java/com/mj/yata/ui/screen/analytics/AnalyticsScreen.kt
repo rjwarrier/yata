@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.WarningAmber
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
@@ -81,6 +83,10 @@ fun AnalyticsScreen(
     val projectStats = stats.projectStats
     val personStats = stats.personStats
     val tagStats = stats.tagStats
+    val listStats = stats.listStats
+    val delegationStats = stats.delegationStats
+    val delegationSummary = stats.delegationSummary
+    val insights = stats.insights
 
     Scaffold(
         bottomBar = {
@@ -155,6 +161,15 @@ fun AnalyticsScreen(
                 onItemSelected = { viewModel.setAnalyticsPeriod(it) },
                 labelProvider = { it.label() }
             )
+
+            // Ranked callouts, above the tables. The breakdowns below say what the numbers are;
+            // these say which of them is worth looking at, which is otherwise a scan across
+            // several sections once there are more than a handful of projects/tags/people.
+            if (insights.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    insights.forEach { insight -> InsightBanner(insight) }
+                }
+            }
 
             // Streak & overdue — always "right now", independent of the period filter above.
             Row(
@@ -342,6 +357,94 @@ fun AnalyticsScreen(
                 }
             }
 
+            // Where open work sits relative to you — the question the rest of the screen never
+            // answered, since every other breakdown is per-entity rather than "how much have I
+            // actually handed off".
+            if (peopleFeatureEnabled && delegationSummary.totalOpen > 0) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "DELEGATION",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            DelegationSplitBar(delegationSummary)
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                MiniStat(
+                                    modifier = Modifier.weight(1f),
+                                    value = "${delegationSummary.delegatedOpen}",
+                                    label = "delegated"
+                                )
+                                MiniStat(
+                                    modifier = Modifier.weight(1f),
+                                    value = "${delegationSummary.selfOpen}",
+                                    label = "yours"
+                                )
+                                MiniStat(
+                                    modifier = Modifier.weight(1f),
+                                    value = "${delegationSummary.unassignedOpen}",
+                                    label = "unassigned",
+                                    emphasise = delegationSummary.unassignedOpen > 0
+                                )
+                            }
+                            if (stats.medianTurnaroundDays != null || stats.oldestOpenAgeDays != null) {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    stats.medianTurnaroundDays?.let {
+                                        MiniStat(modifier = Modifier.weight(1f), value = "${it}d", label = "median turnaround")
+                                    }
+                                    stats.oldestOpenAgeDays?.let {
+                                        MiniStat(modifier = Modifier.weight(1f), value = "${it}d", label = "oldest open")
+                                    }
+                                    if (stats.openWithoutDueDate > 0) {
+                                        MiniStat(
+                                            modifier = Modifier.weight(1f),
+                                            value = "${stats.openWithoutDueDate}",
+                                            label = "open, no date"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Per-assignee health. Deliberately separate from "By Person" below, which is a
+            // progress breakdown scoped to the period — this one is about whether delegated work
+            // is actually moving, and includes people whose work all sits outside the window.
+            if (peopleFeatureEnabled && delegationStats.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "PER ASSIGNEE",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                            delegationStats.forEachIndexed { index, stat ->
+                                DelegationStatRow(stat)
+                                if (index != delegationStats.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                        modifier = Modifier.padding(horizontal = 16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (peopleFeatureEnabled && workloadShares.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
@@ -401,6 +504,13 @@ fun AnalyticsScreen(
                     val color = if (stat.colorKey == "error") MaterialTheme.colorScheme.error else accents.getAccent(stat.colorKey)
                     EntityStatRow(stat = stat, color = color, subtitle = insightSubtitle(stat))
                 }
+            }
+
+            // Lists had no breakdown at all, despite being one of the three organising axes
+            // alongside projects and tags. Not feature-flagged — lists can't be switched off.
+            AnalyticsSection(title = "By List", stats = listStats) { stat ->
+                val accents = LocalYataAccents.current
+                EntityStatRow(stat = stat, color = accents.getAccent(stat.colorKey))
             }
 
             Spacer(modifier = Modifier.height(72.dp))
@@ -753,5 +863,176 @@ private fun EntityStatRow(
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+/** One ranked callout from [com.mj.yata.util.AnalyticsUtils.buildInsights]. Styled by severity so
+ * the thing that needs attention reads differently from the thing that's merely true. */
+@Composable
+private fun InsightBanner(insight: com.mj.yata.util.AnalyticsInsight) {
+    val accents = LocalYataAccents.current
+    val accent = when (insight.severity) {
+        com.mj.yata.util.InsightSeverity.WARN -> MaterialTheme.colorScheme.error
+        com.mj.yata.util.InsightSeverity.GOOD -> accents.accentE
+        com.mj.yata.util.InsightSeverity.NEUTRAL -> MaterialTheme.colorScheme.primary
+    }
+    Surface(
+        color = accent.copy(alpha = 0.10f),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // A 3dp bar rather than an icon: four of these can stack, and four icons in a column
+            // reads as a toolbar rather than a list of statements.
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(30.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(accent)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = insight.headline,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = insight.detail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/** Delegated / yours / unassigned as one proportional bar, so the split reads at a glance rather
+ * than as three numbers to compare mentally. */
+@Composable
+private fun DelegationSplitBar(summary: com.mj.yata.util.DelegationSummary) {
+    val accents = LocalYataAccents.current
+    val total = summary.totalOpen.coerceAtLeast(1)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(10.dp)
+            .clip(RoundedCornerShape(5.dp))
+    ) {
+        // weight(fill = false) with a zero weight is an error, so each segment is only emitted
+        // when it actually has tasks in it.
+        if (summary.delegatedOpen > 0) {
+            Box(
+                modifier = Modifier
+                    .weight(summary.delegatedOpen.toFloat() / total)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+        }
+        if (summary.selfOpen > 0) {
+            Box(
+                modifier = Modifier
+                    .weight(summary.selfOpen.toFloat() / total)
+                    .fillMaxHeight()
+                    .background(accents.accentE)
+            )
+        }
+        if (summary.unassignedOpen > 0) {
+            Box(
+                modifier = Modifier
+                    .weight(summary.unassignedOpen.toFloat() / total)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+            )
+        }
+    }
+}
+
+/** Compact number + caption, for the stat clusters inside the delegation card. */
+@Composable
+private fun MiniStat(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    emphasise: Boolean = false
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = if (emphasise) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2
+        )
+    }
+}
+
+/** One assignee's delegation health: how much they hold, how much is late, how fast it moves. */
+@Composable
+private fun DelegationStatRow(stat: com.mj.yata.util.DelegationStat) {
+    val accents = LocalYataAccents.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        PersonAvatar(
+            initials = com.mj.yata.util.initialsFor(stat.person.name),
+            accentKey = stat.person.color,
+            size = 32.dp
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stat.person.name,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            // Only the facts that exist for this person — an assignee with no completions yet
+            // shouldn't get a row of em-dashes.
+            val parts = buildList {
+                add("${stat.openCount} open")
+                if (stat.completedInPeriod > 0) add("${stat.completedInPeriod} done")
+                stat.onTimeRate?.let { add("${(it * 100).roundToInt()}% on time") }
+                stat.medianTurnaroundDays?.let { add("~${it}d turnaround") }
+            }
+            Text(
+                text = parts.joinToString(" · "),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2
+            )
+        }
+        if (stat.overdueCount > 0) {
+            Surface(
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "${stat.overdueCount} late",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+        } else if (stat.openCount > 0) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = accents.accentE,
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }

@@ -125,9 +125,18 @@ class YataRepositoryImpl @Inject constructor(
                 .groupBy({ it.taskId }, { it.tagId })
             val existingSubtasksByTask = db.subtaskDao().getSubtasksForTasksDirect(taskIds)
                 .groupBy { it.taskId }
+            // `insert` is an @Upsert and can't distinguish a create from an update, so an edit to
+            // an existing task would otherwise restamp createdAt with the time of the edit. Take
+            // the stored value where there is one; fall back to the incoming task's (a restore
+            // from backup carries its own); only then treat it as newly created.
+            val existingCreatedAt = db.taskDao().getCreatedAtForTasks(taskIds)
+                .associate { it.id to it.createdAt }
+            val now = System.currentTimeMillis()
 
             tasks.forEach { task ->
-                val entity = task.toEntity()
+                val entity = task.toEntity().let {
+                    it.copy(createdAt = existingCreatedAt[task.id] ?: it.createdAt ?: now)
+                }
                 db.taskDao().insert(entity)
 
                 // Sync many-to-many assignees (only if changed!)

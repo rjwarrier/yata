@@ -217,6 +217,12 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE done = 0 AND dueDate IS NOT NULL AND deletedAt IS NULL")
     fun getActiveReminderTasksDirect(): List<TaskEntity>
 
+    /** Existing creation timestamps for an upsert batch. `insert` is an @Upsert, so it can't tell
+     * a create from an update — this lets the repository keep the original createdAt on an update
+     * instead of overwriting it with the time of the edit. */
+    @Query("SELECT id, createdAt FROM tasks WHERE id IN (:taskIds)")
+    suspend fun getCreatedAtForTasks(taskIds: List<String>): List<TaskCreatedAt>
+
     @Upsert
     suspend fun insert(task: TaskEntity)
 

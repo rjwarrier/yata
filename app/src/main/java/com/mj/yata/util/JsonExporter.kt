@@ -329,6 +329,7 @@ class JsonExporter @Inject constructor(
             o.put("flag", t.flag)
             o.put("done", t.done)
             o.put("completedAt", t.completedAt ?: JSONObject.NULL)
+            o.put("createdAt", t.createdAt ?: JSONObject.NULL)
             o.put("notes", t.notes)
             o.put("sortOrder", t.sortOrder)
             o.put("archived", t.archived)
@@ -754,6 +755,9 @@ class JsonExporter @Inject constructor(
                                 flag = o.optBoolean("flag", false),
                                 done = o.optBoolean("done", false),
                                 completedAt = if (o.isNull("completedAt")) null else o.optLong("completedAt"),
+                                // Absent in backups written before DB 27 — stays null there, and
+                                // the upsert then treats the restored task as created now.
+                                createdAt = if (o.isNull("createdAt")) null else o.optLong("createdAt"),
                                 assigneeIds = assigneeIds,
                                 tagIds = tagIds,
                                 recurrence = recurrence,

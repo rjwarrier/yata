@@ -4,6 +4,12 @@ import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
 
+/** Two-column projection for [com.mj.yata.data.local.db.dao.TaskDao.getCreatedAtForTasks]. */
+data class TaskCreatedAt(
+    val id: String,
+    val createdAt: Long?
+)
+
 data class TaskWithRelations(
     @Embedded val task: TaskEntity,
     @Relation(

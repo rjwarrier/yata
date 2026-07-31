@@ -45,6 +45,11 @@ data class TaskEntity(
     val flag: Boolean,
     val done: Boolean,
     val completedAt: Long? = null,
+    // When the task was first created. Null for every row that predates this column — there is no
+    // honest way to backfill it, and guessing (e.g. treating them as created "now") would make
+    // every pre-existing task look brand new and skew age/turnaround metrics badly. Analytics
+    // excludes null rows from those metrics rather than assuming a value.
+    val createdAt: Long? = null,
     val deletedAt: Long? = null,
     val notes: String?,
     val recurrenceJson: String?, // JSON representation of Recurrence
