@@ -15,6 +15,12 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+
+- **Subtask progress on task rows.** A task with a checklist now shows "3/5" wherever it's listed
+  — Today, Upcoming, Project, List, Tag, Person, Search and Next 10 Days — and the count turns the
+  list's colour once everything is ticked. Tasks without subtasks look exactly as before.
+
 ### Changed
 
 - **The drawer's "Tools" section is gone**, and with it a collapsible header hiding eight more
@@ -42,6 +48,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 - **Reduce Motion now removes large-displacement motion instead of only shortening it** — screen
   transitions and the Upcoming calendar's day-by-day reveal cross-fade in place of sliding, and the
   calendar no longer staggers each cell in one after another.
+- **Searching by subtask title missed archived and trashed tasks.** It worked everywhere else, so
+  a search that should have found a shelved task quietly returned nothing — matching on the task's
+  own title, notes, people and tags but never its checklist.
 
 ## [0.86 beta] - 2026-07-31
 

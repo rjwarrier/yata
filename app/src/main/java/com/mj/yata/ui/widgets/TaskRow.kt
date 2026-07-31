@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
@@ -320,7 +321,7 @@ fun TaskRow(
             }
 
             // Meta row below
-            if (task.time != null || (showList && list != null) || task.recurrence != null || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
+            if (task.time != null || (showList && list != null) || task.recurrence != null || task.subtasks.isNotEmpty() || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
                 Spacer(modifier = Modifier.height(4.dp))
                 // FlowRow, not Row: the number of things in here varies (completed-at or due date,
                 // time, list, recurrence, up to two health badges, up to two tags) and a plain Row
@@ -424,6 +425,32 @@ fun TaskRow(
 
                     task.recurrence?.let {
                         RecurrenceBadge(recurrence = it, compact = true)
+                    }
+
+                    // Subtask progress. Only worth the space once there is actually a checklist
+                    // to track, so a task with no subtasks shows nothing rather than "0/0".
+                    if (task.subtasks.isNotEmpty()) {
+                        val doneSubtasks = task.subtasks.count { it.done }
+                        val allDone = doneSubtasks == task.subtasks.size
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Checklist,
+                                contentDescription = null,
+                                tint = if (allDone) listColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = "$doneSubtasks/${task.subtasks.size}",
+                                color = if (allDone) listColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 11.sp
+                                )
+                            )
+                        }
                     }
 
                     healthBadges.forEach { badge ->
