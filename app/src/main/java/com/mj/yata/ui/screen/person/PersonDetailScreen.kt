@@ -158,7 +158,7 @@ fun PersonDetailScreen(
     )
     val sortMode by viewModel.sortModePerson.collectAsStateWithLifecycle()
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
-    val today = remember { java.time.LocalDate.now() }
+    val today = com.mj.yata.util.AppClock.today
     // Unfiltered-by-stat count, used by the hero's own primary text/progress so those always
     // reflect the true totals — only the rendered list below is narrowed by activeStatFilter.
     val openTasks = remember(assignedTasks, searchQuery, sortMode) {
@@ -371,7 +371,7 @@ fun PersonDetailScreen(
                 val highPriorityCount = remember(assignedTasks) {
                     assignedTasks.count { !it.done && it.priority == "high" }
                 }
-                val todayStr = remember { java.time.LocalDate.now().toString() }
+                val todayStr = com.mj.yata.util.AppClock.todayString
                 val dueTodayCount = remember(assignedTasks, todayStr) {
                     assignedTasks.count { !it.done && it.due == todayStr }
                 }

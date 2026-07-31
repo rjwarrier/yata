@@ -113,7 +113,8 @@ fun UpcomingTab(
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
     var viewMode by remember { mutableStateOf(ScheduleViewMode.WEEK) }
-    val today = remember { LocalDate.now() }
+    val today = com.mj.yata.util.AppClock.today
+    val reduceMotion = com.mj.yata.ui.theme.LocalReduceMotion.current
 
     // Week mode: 7 days starting from today (not a fixed calendar week)
     val days = remember(today) {
@@ -283,9 +284,13 @@ fun UpcomingTab(
         AnimatedContent(
             targetState = viewMode,
             transitionSpec = {
-                (slideInVertically(animationSpec = tween(SLIDE_UP_MS, easing = YataEase.emphDecel)) { it / 6 } +
-                    fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel)))
-                    .togetherWith(fadeOut(tween(YataDur.fade)))
+                val enter = if (reduceMotion) {
+                    fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel))
+                } else {
+                    slideInVertically(animationSpec = tween(SLIDE_UP_MS, easing = YataEase.emphDecel)) { it / 6 } +
+                        fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel))
+                }
+                enter.togetherWith(fadeOut(tween(YataDur.fade)))
             },
             label = "scheduleMode"
         ) { mode ->
@@ -339,15 +344,26 @@ fun UpcomingTab(
                         ) {
                             itemsIndexed(gridDays, key = { _, d -> d.toString() }) { index, day ->
                                 val inMonth = YearMonth.from(day) == selectedMonth
-                                var visible by remember(selectedMonth) { mutableStateOf(false) }
-                                LaunchedEffect(selectedMonth, day) {
+                                // Reduce Motion skips both the per-cell slide and the cascade
+                                // delay that stages up to 42 cells in — a shortened stagger is
+                                // still a stagger, and the whole point here is decorative.
+                                var visible by remember(selectedMonth) { mutableStateOf(reduceMotion) }
+                                LaunchedEffect(selectedMonth, day, reduceMotion) {
+                                    if (reduceMotion) {
+                                        visible = true
+                                        return@LaunchedEffect
+                                    }
                                     delay(minOf(index * CASCADE_STEP_MS, CASCADE_CAP_MS).toLong())
                                     visible = true
                                 }
                                 AnimatedVisibility(
                                     visible = visible,
-                                    enter = slideInVertically(animationSpec = tween(SLIDE_UP_MS, easing = YataEase.emphDecel)) { it / 3 } +
+                                    enter = if (reduceMotion) {
                                         fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel))
+                                    } else {
+                                        slideInVertically(animationSpec = tween(SLIDE_UP_MS, easing = YataEase.emphDecel)) { it / 3 } +
+                                            fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel))
+                                    }
                                 ) {
                                     MonthDayCell(
                                         day = day,

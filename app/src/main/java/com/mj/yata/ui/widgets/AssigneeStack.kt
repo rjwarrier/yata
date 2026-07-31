@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,7 +27,22 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
 import com.mj.yata.ui.theme.LocalYataAccents
 
-private val avatarCache = android.util.LruCache<String, android.graphics.Bitmap>(30)
+// Sized by decoded bytes, not entry count. Bitmaps here are sampled to maxDimension = 200, up to
+// ~160KB each, so a flat 30-entry cap could hold anywhere from under 1MB to ~5MB depending on how
+// many decoded smaller than that ceiling. It also compounds with profile-photo changes: the app's
+// own avatar gets a cache-busting `?t=` query param on every save (see ProfilePhotoUtils), which
+// mints a new cache key each time rather than replacing the old one, so old entries only left via
+// count-based eviction rather than being superseded. Budgeting by KB keeps memory bounded either
+// way. onTrimMemory below hands back everything under real memory pressure.
+private val avatarCache = object : android.util.LruCache<String, android.graphics.Bitmap>(6 * 1024) {
+    override fun sizeOf(key: String, value: android.graphics.Bitmap): Int = value.byteCount / 1024
+}
+
+/** Called from [com.mj.yata.YataApplication]'s `onTrimMemory` — evicts the whole avatar cache
+ * under real memory pressure rather than waiting for LRU turnover to get there naturally. */
+fun trimAvatarCache() {
+    avatarCache.evictAll()
+}
 
 @Composable
 fun PersonAvatar(
@@ -82,8 +98,9 @@ fun PersonAvatar(
     ) {
         val loadedBitmap = bitmap
         if (loadedBitmap != null) {
+            val imageBitmap = remember(loadedBitmap) { loadedBitmap.asImageBitmap() }
             Image(
-                bitmap = loadedBitmap.asImageBitmap(),
+                bitmap = imageBitmap,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(size)

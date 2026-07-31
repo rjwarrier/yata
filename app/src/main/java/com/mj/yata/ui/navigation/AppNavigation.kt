@@ -51,14 +51,32 @@ fun AppNavigation(
             launchSingleTop = true
         }
     }
+    // Reduce Motion shortens these via YataDur.nav (see Motion.kt) but a full-width slide is the
+    // largest-displacement motion in the app, and a shortened slide is still a slide — the
+    // vestibular-sensitivity case this setting exists for wants the horizontal movement gone
+    // entirely, not sped up. Cross-fade in its place rather than cutting instantly: it still cues
+    // "a new screen arrived" without the displacement.
+    val reduceMotion = com.mj.yata.ui.theme.LocalReduceMotion.current
     NavHost(
         navController    = navController,
         startDestination = Screen.Main.route,
         // Push: incoming slides 100%->0; outgoing shifts to -28% + fades to 0.5 (handoff m3-widgets.jsx nav motion)
-        enterTransition  = { slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel)) },
-        exitTransition   = { slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeOut(targetAlpha = 0.5f, animationSpec = tween(YataDur.nav)) },
-        popEnterTransition  = { slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel)) },
-        popExitTransition   = { slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade)) }
+        enterTransition  = {
+            if (reduceMotion) fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
+            else slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
+        },
+        exitTransition   = {
+            if (reduceMotion) fadeOut(tween(YataDur.nav))
+            else slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeOut(targetAlpha = 0.5f, animationSpec = tween(YataDur.nav))
+        },
+        popEnterTransition  = {
+            if (reduceMotion) fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
+            else slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
+        },
+        popExitTransition   = {
+            if (reduceMotion) fadeOut(tween(YataDur.fade))
+            else slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade))
+        }
     ) {
         // ── Main Shell (5-tab navigation) ───────────────────────────────────
         composable(

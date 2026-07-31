@@ -72,9 +72,9 @@ fun NextDaysScreen(
         }
     }
 
-    val today = remember { LocalDate.now() }
-    val todayStr = remember { today.toString() }
-    val endStr = remember { today.plusDays((WINDOW_DAYS - 1).toLong()).toString() }
+    val today = com.mj.yata.util.AppClock.today
+    val todayStr = remember(today) { today.toString() }
+    val endStr = remember(today) { today.plusDays((WINDOW_DAYS - 1).toLong()).toString() }
 
     val upcomingTasks = remember(tasks, todayStr, endStr) {
         tasks.filter { it.due != null && it.due >= todayStr && it.due <= endStr }

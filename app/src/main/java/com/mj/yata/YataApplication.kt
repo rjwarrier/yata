@@ -14,10 +14,14 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import javax.inject.Inject
 
+import com.mj.yata.util.AppClock
 import com.mj.yata.util.AppFormats
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.LocalDateTime
 
 @HiltAndroidApp
 class YataApplication : Application(), Configuration.Provider {
@@ -77,6 +81,32 @@ class YataApplication : Application(), Configuration.Provider {
             } catch (t: Throwable) {
                 Log.e("YataApplication", "Failed to observe date/time format preferences", t)
             }
+        }
+
+        // The single writer for AppClock.today — see that object's KDoc for why every screen
+        // reading LocalDate.now() into a keyless `remember` needed one. Sleeping until the next
+        // local midnight and looping (rather than a fixed-interval poll) is what catches the
+        // rollover even if the app is never backgrounded across it; MainActivity's onStart refresh
+        // is the belt for the case where the process wasn't alive to run this loop at all.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+            while (true) {
+                val now = LocalDateTime.now()
+                val untilMidnight = Duration.between(now, now.toLocalDate().plusDays(1).atStartOfDay())
+                delay(untilMidnight.toMillis().coerceAtLeast(1000L))
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    AppClock.refresh()
+                }
+            }
+        }
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // UI_HIDDEN and above means the app has nothing on screen — the avatar cache exists to
+        // save re-decoding bitmaps between recompositions of a visible screen, which isn't a
+        // benefit for a process the system may be about to reclaim memory from anyway.
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+            com.mj.yata.ui.widgets.trimAvatarCache()
         }
     }
 

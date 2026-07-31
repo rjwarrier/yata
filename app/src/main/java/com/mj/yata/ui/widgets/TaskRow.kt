@@ -302,7 +302,7 @@ fun TaskRow(
             // Overdue is independent of showDueDate — it's a warning, not a date display
             // preference, so it surfaces on every screen (Today, Upcoming, Tag, Person, Search)
             // rather than only the manual-order List/Project detail screens.
-            val today = remember { LocalDate.now() }
+            val today = com.mj.yata.util.AppClock.today
             val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(today) == true
             // A deferred task is filtered out of Today, but still listed in its project/list and
             // in search. Without a marker it reads as an ordinary task that Today is inexplicably

@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -63,16 +64,32 @@ fun ProgressRing(
         )
     )
 
-    val infiniteTransition = rememberInfiniteTransition(label = "progressRingWave")
-    val wavePhase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * PI).toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "wavePhase"
-    )
+    // The wave is purely decorative — a smooth arc reads identically at rest — so it's the one
+    // thing here Reduce Motion should stop outright rather than shorten, per LocalReduceMotion's
+    // own contract. It's also invisible at the small sizes this composable is called at in list
+    // rows (People/Tags/Projects pass 32-46dp): below ~40dp the amplitude is sub-pixel, so those
+    // callers were paying for an infinite per-frame transition, a fresh Path allocation and up to
+    // 180 sin/cos calls every frame for an effect nobody could see. Skipping it there removes
+    // nearly all of this composable's per-row animation cost.
+    val reduceMotion = com.mj.yata.ui.theme.LocalReduceMotion.current
+    val showWave = !reduceMotion && size >= 40.dp
+    val wavePhase = if (showWave) {
+        val infiniteTransition = rememberInfiniteTransition(label = "progressRingWave")
+        val phase by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = (2 * PI).toFloat(),
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 3200, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "wavePhase"
+        )
+        phase
+    } else 0f
+
+    // Reused rather than allocated fresh in the draw scope every frame — DrawScope runs on every
+    // frame the wave animates, and Path() was one of the allocations happening there ~60 times/sec.
+    val path = remember { Path() }
 
     Box(
         modifier = modifier.size(size),
@@ -89,30 +106,45 @@ fun ProgressRing(
 
             if (animatedProgress > 0f) {
                 val sweepDegrees = animatedProgress * 360f
-                val circumference = 2 * PI.toFloat() * radius
-                val wavelengthPx = 14.dp.toPx()
-                val waveCount = max(3, (circumference / wavelengthPx).roundToInt())
-                val amplitude = strokePx * 0.55f
 
-                val path = Path()
-                val angleStepDeg = 2f
-                var angleDeg = 0f
-                var first = true
-                while (angleDeg <= sweepDegrees) {
-                    val angleRad = Math.toRadians((-90.0 + angleDeg))
-                    val wave = amplitude * sin(waveCount * Math.toRadians(angleDeg.toDouble()) + wavePhase)
-                    val r = radius + wave
-                    val x = center.x + (r * cos(angleRad)).toFloat()
-                    val y = center.y + (r * sin(angleRad)).toFloat()
-                    if (first) {
-                        path.moveTo(x, y)
-                        first = false
-                    } else {
-                        path.lineTo(x, y)
+                if (!showWave) {
+                    // Reduce Motion, or a ring too small for the wave to read: a plain smooth arc,
+                    // the M3 non-wavy-indicator convention, with no per-frame path building.
+                    drawArc(
+                        color = activeColor,
+                        startAngle = -90f,
+                        sweepAngle = sweepDegrees,
+                        useCenter = false,
+                        style = stroke
+                    )
+                } else {
+                    val circumference = 2 * PI.toFloat() * radius
+                    val wavelengthPx = 14.dp.toPx()
+                    val waveCount = max(3, (circumference / wavelengthPx).roundToInt())
+                    val amplitude = strokePx * 0.55f
+
+                    path.reset()
+                    // 4° steps rather than 2° halves the per-frame trig calls; at the ring sizes
+                    // this draws at (40dp+) the difference is imperceptible.
+                    val angleStepDeg = 4f
+                    var angleDeg = 0f
+                    var first = true
+                    while (angleDeg <= sweepDegrees) {
+                        val angleRad = Math.toRadians((-90.0 + angleDeg))
+                        val wave = amplitude * sin(waveCount * Math.toRadians(angleDeg.toDouble()) + wavePhase)
+                        val r = radius + wave
+                        val x = center.x + (r * cos(angleRad)).toFloat()
+                        val y = center.y + (r * sin(angleRad)).toFloat()
+                        if (first) {
+                            path.moveTo(x, y)
+                            first = false
+                        } else {
+                            path.lineTo(x, y)
+                        }
+                        angleDeg += angleStepDeg
                     }
-                    angleDeg += angleStepDeg
+                    drawPath(path, color = activeColor, style = stroke)
                 }
-                drawPath(path, color = activeColor, style = stroke)
             }
         }
 

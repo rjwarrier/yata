@@ -99,10 +99,10 @@ fun TodayTab(
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
-    val today = remember { LocalDate.now() }
-    val todayStr = remember { today.toString() }
-    val todayDateLabel = remember(com.mj.yata.util.AppFormats.dateFormat) {
-        LocalDate.now().format(com.mj.yata.util.AppFormats.headerDateFormatter()).uppercase()
+    val today = com.mj.yata.util.AppClock.today
+    val todayStr = com.mj.yata.util.AppClock.todayString
+    val todayDateLabel = remember(today, com.mj.yata.util.AppFormats.dateFormat) {
+        today.format(com.mj.yata.util.AppFormats.headerDateFormatter()).uppercase()
     }
 
     // Projects/lists marked "Exclude from Today" hide their tasks from this screen entirely,

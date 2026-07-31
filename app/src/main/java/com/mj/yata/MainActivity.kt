@@ -292,6 +292,9 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                     com.mj.yata.util.AppFormats.updateSystemClock(
                         android.text.format.DateFormat.is24HourFormat(this@MainActivity)
                     )
+                    // Belt to YataApplication's midnight-loop braces: catches a day (or timezone)
+                    // change that happened while the process wasn't alive to observe it.
+                    com.mj.yata.util.AppClock.refresh()
                     val backgroundedAt = AppLockState.backgroundedAtMillis ?: return
                     AppLockState.backgroundedAtMillis = null
                     if (!AppLockState.appLockEnabled) return

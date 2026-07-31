@@ -151,13 +151,13 @@ fun TagDetailScreen(
     val progress = if (allTaggedTasks.isNotEmpty()) doneTasks.toFloat() / allTaggedTasks.size else 0f
     val overdueCount = remember(allTaggedTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(allTaggedTasks) }
     val highPriorityCount = remember(allTaggedTasks) { allTaggedTasks.count { !it.done && it.priority == "high" } }
-    val todayStr = remember { java.time.LocalDate.now().toString() }
+    val todayStr = com.mj.yata.util.AppClock.todayString
     val dueTodayCount = remember(allTaggedTasks, todayStr) { allTaggedTasks.count { !it.done && it.due == todayStr } }
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
     val sortMode by viewModel.sortModeTagDetail.collectAsStateWithLifecycle()
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
-    val heroToday = remember { java.time.LocalDate.now() }
+    val heroToday = com.mj.yata.util.AppClock.today
     val pendingTaggedTasks = remember(allTaggedTasks, searchQuery, sortMode) {
         allTaggedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
     }

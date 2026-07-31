@@ -141,7 +141,7 @@ fun ListDetailScreen(
         if (searchQuery.isBlank()) emptyList() else listTasks.filter { taskMatchesQuery(it, searchQuery) }
     }
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
-    val heroToday = remember { java.time.LocalDate.now() }
+    val heroToday = com.mj.yata.util.AppClock.today
     val statFilteredTasks = remember(listTasks, activeStatFilter, heroToday) {
         val filter = activeStatFilter ?: return@remember emptyList()
         listTasks.filter { filter.matches(it, heroToday) }
@@ -332,7 +332,7 @@ fun ListDetailScreen(
         val progress = if (listTasks.isNotEmpty()) doneTasks.toFloat() / listTasks.size else 0f
         val overdueCount = remember(listTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(listTasks) }
         val highPriorityCount = remember(listTasks) { listTasks.count { !it.done && it.priority == "high" } }
-        val todayStr = remember { java.time.LocalDate.now().toString() }
+        val todayStr = com.mj.yata.util.AppClock.todayString
         val dueTodayCount = remember(listTasks, todayStr) { listTasks.count { !it.done && it.due == todayStr } }
 
         Column(

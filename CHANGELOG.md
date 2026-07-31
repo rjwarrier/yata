@@ -27,6 +27,13 @@ test-only changes belong in the commit message, not here, unless they change beh
   rather than only affecting animations that start afterward.
 - Project and List detail's drag-to-reorder rows now fade in and out consistently with every other
   task list in the app, instead of popping in and out abruptly.
+- **Today and every other task list could show the wrong day.** They read the date once when
+  first opened and never again, so leaving the app open (or merely backgrounded — the process
+  keeps running) across midnight left Today showing yesterday's tasks, overdue badges wrong, and
+  deferred tasks not yet un-deferred, until the app was force-closed and relaunched.
+- **Reduce Motion now removes large-displacement motion instead of only shortening it** — screen
+  transitions and the Upcoming calendar's day-by-day reveal cross-fade in place of sliding, and the
+  calendar no longer staggers each cell in one after another.
 
 ## [0.86 beta] - 2026-07-31
 
