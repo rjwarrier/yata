@@ -155,8 +155,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   project, list, tag and person screens, and custom accent colours picked by hex, which no fixed
   choice of ink could ever have suited. Dark theme is unchanged — its accents are pastels that
   were already taking dark text.
-- **Initials on profile circles are bigger** — around 40% of the circle's width at every size,
-  where they were closer to a quarter and left a lot of empty space around a small letter.
+- **Initials on profile circles are bigger**, and now scale with the circle instead of stepping
+  between four fixed sizes. The same initials used to look a different weight from one screen to
+  the next — a 56dp avatar took the same text size as a 40dp one — and the small assignee circles
+  on task rows were the worst affected. Applies everywhere a person appears: task rows, the task
+  detail screen, the new-task sheet, the mention picker and the People tab.
 - The Export button in the image and PDF export sheets was squashed flat. The options above it
   were laid out first and the buttons got whatever height was left, so on a shorter screen — or
   with the PDF page-size options showing — there was barely any. The options scroll now and the

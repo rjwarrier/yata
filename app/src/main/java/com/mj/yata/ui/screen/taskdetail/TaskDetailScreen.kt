@@ -717,7 +717,7 @@ fun TaskDetailScreen(
                                     ) {
                                         Text(
                                             person.initials,
-                                            fontSize = 9.sp,
+                                            fontSize = 11.sp,
                                             color = accents.onAccentFor(person.color),
                                             fontWeight = FontWeight.Bold
                                         )
@@ -1386,7 +1386,7 @@ fun TaskDetailScreen(
                                             modifier = Modifier.size(22.dp).background(accents.getAccent(person.color), CircleShape),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text(person.initials, fontSize = 11.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
+                                            Text(person.initials, fontSize = 12.sp, color = accents.onAccentFor(person.color), fontWeight = FontWeight.Bold)
                                         }
                                     },
                                     height = 38.dp

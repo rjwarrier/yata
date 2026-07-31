@@ -94,14 +94,13 @@ fun PersonAvatar(
                 color = textColor,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    // Roughly 40% of the avatar's diameter at every size. The old ratios were
-                    // nearer a quarter, which left a lot of empty circle around a small letter.
-                    fontSize = when {
-                        size >= 64.dp -> 26.sp
-                        size >= 40.dp -> 18.sp
-                        size >= 30.dp -> 14.sp
-                        else -> 11.sp
-                    }
+                    // Proportional rather than tiered. The tiers had cliffs — a 56dp avatar took
+                    // the same 18sp as a 40dp one and then 64dp jumped to 26sp — so the same
+                    // initials looked a different weight depending on which screen you were on.
+                    // 46% of the diameter leaves room for two bold letters (about 1.3em wide
+                    // together) inside the circle. The floor keeps the 24dp avatars in the task
+                    // rows legible, which is the smallest this is used at and the most common.
+                    fontSize = maxOf(12f, size.value * 0.46f).sp
                 )
             )
         }
