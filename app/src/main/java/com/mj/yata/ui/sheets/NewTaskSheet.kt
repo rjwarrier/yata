@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -773,6 +774,14 @@ fun NewTaskSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
+                    // The box has no content of its own height — it's exactly as tall as
+                    // whatever's inside (the typed text, or the placeholder when empty). Shrinking
+                    // the placeholder's font shrank the whole box with it, which is the part being
+                    // undone here: 92dp reserves two lines of the field's own 22sp type, the same
+                    // footprint the box had when the old hint happened to also be set at 22sp and
+                    // wrap to two lines. The box now holds that shape regardless of how long the
+                    // hint is or what size it's drawn at.
+                    .heightIn(min = 92.dp)
                     .clip(RoundedCornerShape(28.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(2.dp, titleBorder, RoundedCornerShape(28.dp))
