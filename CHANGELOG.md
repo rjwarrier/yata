@@ -89,11 +89,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 ### Changed
 
 - **The app lock screen is a real lock screen now.** The keypad is on screen from the start rather
-  than behind a "use PIN instead" button, the keys are proper 72dp circles with haptics, the dots
-  show how long your PIN is and fill as you type, and a wrong PIN shakes them instead of printing a
-  line of small red text. It unlocks as soon as the last digit lands — no confirm button. The
-  fingerprint prompt still comes up first, with the fingerprint key sitting bottom-left on the pad
-  to call it back.
+  than behind a "use PIN instead" button, the keys are 76dp circles that dip as you press them, the
+  dots show how long your PIN is and swell as they fill, and a wrong PIN shakes them — with a
+  double buzz that's deliberately unlike the tick of a keypress — instead of printing a line of
+  small red text. It unlocks as soon as the last digit lands, with no confirm button. The screen
+  itself rises into place when it appears, the message under the dots crossfades rather than
+  jumping, and the whole layout is spread out: header in the upper third, keypad low enough to
+  reach with a thumb. The fingerprint prompt still comes up first, with a fingerprint key at the
+  bottom-left of the pad to call it back. Every animation is skipped when Reduce Motion is on.
 - **Settings section headings are easier to find.** Each of the fourteen headings now carries an
   icon for what it covers and is set in title-sized text rather than the same small caption size
   used for the description under a toggle, so a long scroll has landmarks to scan by.
