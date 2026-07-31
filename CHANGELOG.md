@@ -23,6 +23,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Changed
 
+- **Changing month in the calendar is smoother.** The grid used to empty and refill one cell at a
+  time, and going back a month looked identical to going forward. The whole grid now slides as one
+  piece in the direction you're travelling, and the card resizes with it instead of snapping when
+  a month needs a different number of rows.
 - **The drawer's "Tools" section is gone**, and with it a collapsible header hiding eight more
   rows. The six views that lived there — My Work, Focus Mode, Morning Review, Evening Review,
   Stale Nudges and Task Health — are now in the command palette, where you can type "stale" or

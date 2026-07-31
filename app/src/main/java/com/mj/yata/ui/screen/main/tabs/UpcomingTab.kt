@@ -1,13 +1,15 @@
 package com.mj.yata.ui.screen.main.tabs
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,9 +17,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,7 +52,6 @@ import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.TaskRow
-import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -64,8 +62,11 @@ private enum class ScheduleViewMode { WEEK, MONTH }
 
 /** yataSlideUp equivalent: 260ms emphasized-decelerate slide + fade, per handoff. */
 private const val SLIDE_UP_MS = 260
-private const val CASCADE_STEP_MS = 10
-private const val CASCADE_CAP_MS = 260
+
+/** Month-to-month slide. Slightly longer than [SLIDE_UP_MS] because it moves the whole grid and
+ * resizes the card with it — at 260ms a six-row-to-four-row change reads as a snap rather than a
+ * settle. Not tokenised in [YataDur] since it's specific to this one transition. */
+private const val MONTH_SLIDE_MS = 320
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -125,13 +126,16 @@ fun UpcomingTab(
     var selectedMonth by remember(selectedDay) { mutableStateOf(YearMonth.from(selectedDay)) }
     val weekStart = if (startOfWeekSunday) DayOfWeek.SUNDAY else DayOfWeek.MONDAY
     val weekdayLabels = remember(weekStart) { (0..6).map { offset -> weekStart.plus(offset.toLong()) } }
-    val gridDays = remember(selectedMonth, weekStart) {
-        val firstOfMonth = selectedMonth.atDay(1)
+    // Takes the month as a parameter rather than closing over selectedMonth, because the grid is
+    // animated with AnimatedContent — during a transition both the outgoing and incoming months
+    // are composed at once, and each needs its own days.
+    fun gridDaysFor(month: YearMonth): List<LocalDate> {
+        val firstOfMonth = month.atDay(1)
         val leadingBlank = ((firstOfMonth.dayOfWeek.value - weekStart.value) + 7) % 7
-        val daysInMonth = selectedMonth.lengthOfMonth()
+        val daysInMonth = month.lengthOfMonth()
         val gridStart = firstOfMonth.minusDays(leadingBlank.toLong())
         val totalCells = ((leadingBlank + daysInMonth + 6) / 7) * 7
-        List(totalCells) { gridStart.plusDays(it.toLong()) }
+        return List(totalCells) { gridStart.plusDays(it.toLong()) }
     }
 
     val listsById = remember(lists) { lists.associateBy { it.id } }
@@ -337,42 +341,68 @@ fun UpcomingTab(
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(7),
-                            modifier = Modifier.fillMaxWidth(),
-                            userScrollEnabled = false
-                        ) {
-                            itemsIndexed(gridDays, key = { _, d -> d.toString() }) { index, day ->
-                                val inMonth = YearMonth.from(day) == selectedMonth
-                                // Reduce Motion skips both the per-cell slide and the cascade
-                                // delay that stages up to 42 cells in — a shortened stagger is
-                                // still a stagger, and the whole point here is decorative.
-                                var visible by remember(selectedMonth) { mutableStateOf(reduceMotion) }
-                                LaunchedEffect(selectedMonth, day, reduceMotion) {
-                                    if (reduceMotion) {
-                                        visible = true
-                                        return@LaunchedEffect
-                                    }
-                                    delay(minOf(index * CASCADE_STEP_MS, CASCADE_CAP_MS).toLong())
-                                    visible = true
+                        // One transition for the whole grid, rather than 42 independent ones.
+                        // Each cell used to reset its own `visible` flag on a month change and
+                        // re-enter on a staggered delay, so switching months tore the entire
+                        // calendar down and rebuilt it cell by cell — the grid visibly emptied
+                        // before it refilled, and every cell's key changed at the same time, so
+                        // the LazyVerticalGrid disposed and recreated all of them underneath that.
+                        // Sliding the grid as a single unit in the direction of travel is both
+                        // cheaper and reads as the month moving rather than the calendar
+                        // reassembling itself.
+                        AnimatedContent(
+                            targetState = selectedMonth,
+                            transitionSpec = {
+                                val forward = targetState > initialState
+                                val enter = if (reduceMotion) {
+                                    fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel))
+                                } else {
+                                    // A quarter-width offset, not a full one: the grid stays
+                                    // partly in place so the eye tracks it instead of re-reading
+                                    // a panel that flew in from off-screen.
+                                    slideInHorizontally(
+                                        animationSpec = tween(MONTH_SLIDE_MS, easing = YataEase.emphDecel)
+                                    ) { width -> if (forward) width / 4 else -width / 4 } +
+                                        fadeIn(tween(MONTH_SLIDE_MS, easing = YataEase.emphDecel))
                                 }
-                                AnimatedVisibility(
-                                    visible = visible,
-                                    enter = if (reduceMotion) {
-                                        fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel))
-                                    } else {
-                                        slideInVertically(animationSpec = tween(SLIDE_UP_MS, easing = YataEase.emphDecel)) { it / 3 } +
-                                            fadeIn(tween(SLIDE_UP_MS, easing = YataEase.emphDecel))
+                                val exit = if (reduceMotion) {
+                                    fadeOut(tween(YataDur.fade))
+                                } else {
+                                    slideOutHorizontally(
+                                        animationSpec = tween(MONTH_SLIDE_MS, easing = YataEase.emphAccel)
+                                    ) { width -> if (forward) -width / 4 else width / 4 } +
+                                        fadeOut(tween(MONTH_SLIDE_MS / 2))
+                                }
+                                // Months are 4, 5 or 6 rows tall, so without this the card's
+                                // height jumps the instant the new month is measured. clip = false
+                                // keeps the outgoing grid from being cut off mid-slide.
+                                enter.togetherWith(exit).using(
+                                    SizeTransform(clip = false) { _, _ ->
+                                        tween(MONTH_SLIDE_MS, easing = YataEase.emphasized)
                                     }
-                                ) {
-                                    MonthDayCell(
-                                        day = day,
-                                        selected = day == selectedDay,
-                                        isToday = day == today,
-                                        inMonth = inMonth,
-                                        dotColors = dotColorsForDate(day),
-                                        onClick = { onSelectedDayChange(day) }
-                                    )
+                                )
+                            },
+                            label = "monthGrid"
+                        ) { month ->
+                            // Plain rows rather than a LazyVerticalGrid: at most 42 non-scrolling
+                            // cells, so laziness bought nothing, and a lazy container inside an
+                            // animating one measures awkwardly during the transition.
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                gridDaysFor(month).chunked(7).forEach { week ->
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        week.forEach { day ->
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                MonthDayCell(
+                                                    day = day,
+                                                    selected = day == selectedDay,
+                                                    isToday = day == today,
+                                                    inMonth = YearMonth.from(day) == month,
+                                                    dotColors = dotColorsForDate(day),
+                                                    onClick = { onSelectedDayChange(day) }
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
