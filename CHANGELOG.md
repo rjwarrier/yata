@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.86 beta] - 2026-07-31
+
+`versionCode 8`. Upgrades in place over 0.85 beta.
+
 ### Added
 
 - **`+project` and `=list` while typing a task**, alongside the `#tag` and `@person` that already
@@ -296,7 +300,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.85-beta...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.86-beta...HEAD
+[0.86 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.86-beta
 [0.85 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.85-beta
 [0.7 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.7-beta
 [0.6 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.6-beta
