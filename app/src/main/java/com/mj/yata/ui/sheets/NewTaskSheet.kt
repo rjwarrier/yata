@@ -137,6 +137,10 @@ import com.mj.yata.ui.widgets.PriorityBars
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.consumeMentionToken
 import com.mj.yata.ui.widgets.detectMentionToken
+import com.mj.yata.ui.widgets.TRIGGER_LIST
+import com.mj.yata.ui.widgets.TRIGGER_PERSON
+import com.mj.yata.ui.widgets.TRIGGER_PROJECT
+import com.mj.yata.ui.widgets.TRIGGER_TAG
 import com.mj.yata.ui.widgets.TagChip
 import com.mj.yata.ui.widgets.YataDashedAddChip
 import com.mj.yata.ui.widgets.YataDatePickerDialog
@@ -407,9 +411,18 @@ fun NewTaskSheet(
     }
     val isBulkTasks = !bulkModeDismissed && bulkTaskLines.size > 1
 
-    val mention = remember(title, tagsEnabled, peopleEnabled) {
-        detectMentionToken(title.text, title.selection.end)
-            ?.takeIf { (it.trigger == '#' && tagsEnabled) || (it.trigger == '@' && peopleEnabled) }
+    // Lists have no feature flag — they are always available — so `=` needs no gate, unlike the
+    // other three whose entity types can each be switched off in Settings.
+    val mention = remember(title, tagsEnabled, peopleEnabled, projectsEnabled) {
+        detectMentionToken(title.text, title.selection.end)?.takeIf {
+            when (it.trigger) {
+                TRIGGER_TAG -> tagsEnabled
+                TRIGGER_PERSON -> peopleEnabled
+                TRIGGER_PROJECT -> projectsEnabled
+                TRIGGER_LIST -> true
+                else -> false
+            }
+        }
     }
 
     // Skipped entirely in bulk mode — parsing the whole multi-line blob as one task would
@@ -874,6 +887,20 @@ fun NewTaskSheet(
                         val id = "p_" + java.util.UUID.randomUUID().toString()
                         onCreatePerson(id, name, pickAccentFor(name))
                         selectedAssigneeIds.add(id)
+                        title = consumeMentionToken(title, mention)
+                    },
+                    projects = projects,
+                    lists = lists,
+                    onSelectProject = { project ->
+                        // A task belongs to a project or a list, never both, so choosing one has
+                        // to clear the other — the same rule the chip pickers below enforce.
+                        selectedProjectId = project.id
+                        selectedListId = null
+                        title = consumeMentionToken(title, mention)
+                    },
+                    onSelectList = { list ->
+                        selectedListId = list.id
+                        selectedProjectId = null
                         title = consumeMentionToken(title, mention)
                     }
                 )

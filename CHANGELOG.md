@@ -17,6 +17,12 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **`+project` and `=list` while typing a task**, alongside the `#tag` and `@person` that already
+  worked. All four now pop the same picker as you type, so a project or a list no longer needs the
+  longhand "project Foo" phrasing with nothing on screen to confirm it was understood. Picking a
+  project clears the list and vice versa, since a task can only be in one. There's no "create new"
+  option on these two — a project or list is more than a name, so it's better made properly than
+  conjured mid-sentence.
 - **Export a tag or a person as Markdown**, from the ⋮ menu on their screen — the same option
   projects already had. Copies a checklist of the open tasks to the clipboard and opens the share
   sheet.

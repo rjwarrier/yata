@@ -28,23 +28,52 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
+import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
+import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activeLists
+import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.theme.LocalYataAccents
 
 /**
- * Shared `#tag` / `@person` inline-mention autocomplete — originally built for NewTaskSheet's
- * title field, extracted here so any other free-text task-title field (e.g. TaskDetailScreen's
- * rename-in-place field) can offer the same convention instead of silently ignoring `#`/`@`.
+ * Shared inline-mention autocomplete — originally built for NewTaskSheet's title field, extracted
+ * here so any other free-text task-title field (e.g. TaskDetailScreen's rename-in-place field) can
+ * offer the same convention instead of silently ignoring the triggers.
+ *
+ * Four entity types, one trigger each:
+ *
+ * | trigger | entity  |
+ * |---------|---------|
+ * | `#`     | tag     |
+ * | `@`     | person  |
+ * | `+`     | project |
+ * | `=`     | list    |
+ *
+ * Projects and lists were reachable only through the natural-language parser's `project Foo` /
+ * `list Bar` phrasing, which has no autocomplete and no feedback until the parse lands — so two of
+ * the four entity types had a fast path and two did not.
+ *
+ * The characters are picked to stay clear of everything [com.mj.yata.util.NaturalLanguageParser]
+ * already claims: `/` is a date separator, `!` is priority. `+` appears in that parser only as a
+ * mid-phrase weekday separator ("every mon + wed"), never leading a word, and `=` is unused there
+ * entirely.
  */
 internal data class MentionToken(val trigger: Char, val query: String, val startIndex: Int)
 
-/** Finds an in-progress `#tag` or `@person` token ending at the cursor, if any. */
+internal const val TRIGGER_TAG = '#'
+internal const val TRIGGER_PERSON = '@'
+internal const val TRIGGER_PROJECT = '+'
+internal const val TRIGGER_LIST = '='
+
+private val MENTION_TRIGGERS = charArrayOf(TRIGGER_TAG, TRIGGER_PERSON, TRIGGER_PROJECT, TRIGGER_LIST)
+
+/** Finds an in-progress mention token ending at the cursor, if any. */
 internal fun detectMentionToken(text: String, cursor: Int): MentionToken? {
     if (cursor <= 0 || cursor > text.length) return null
     var i = cursor - 1
     while (i >= 0) {
         val c = text[i]
-        if (c == '#' || c == '@') {
+        if (c in MENTION_TRIGGERS) {
             val precededByBoundary = i == 0 || text[i - 1].isWhitespace()
             if (!precededByBoundary) return null
             val query = text.substring(i + 1, cursor)
@@ -72,17 +101,82 @@ internal fun MentionSuggestions(
     onSelectTag: (Tag) -> Unit,
     onSelectPerson: (Person) -> Unit,
     onCreateTag: (String) -> Unit,
-    onCreatePerson: (String) -> Unit
+    onCreatePerson: (String) -> Unit,
+    // Optional so a caller that only wants #/@ — the rename field on Task Detail, which has no
+    // project or list picker to put the result in — needs no changes and simply shows nothing for
+    // the other two triggers.
+    projects: List<Project> = emptyList(),
+    lists: List<YataList> = emptyList(),
+    onSelectProject: ((Project) -> Unit)? = null,
+    onSelectList: ((YataList) -> Unit)? = null
 ) {
     val accents = LocalYataAccents.current
     val query = mention.query
+    // Nothing to offer and nowhere to put a choice: drawing an empty panel over the keyboard would
+    // be worse than leaving the typed character as plain text, which is what happens anyway.
+    if (mention.trigger == TRIGGER_PROJECT && onSelectProject == null) return
+    if (mention.trigger == TRIGGER_LIST && onSelectList == null) return
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
-            if (mention.trigger == '#') {
+            if (mention.trigger == TRIGGER_PROJECT) {
+                val matches = projects.activeProjects()
+                    .filter { it.name.contains(query, ignoreCase = true) }
+                    .sortedBy { it.name.lowercase() }
+                if (matches.isEmpty() && query.isBlank()) {
+                    MentionPanelHint("Type to search projects")
+                }
+                matches.take(5).forEach { project ->
+                    val color = accents.getAccent(project.color)
+                    MentionRow(
+                        label = project.name,
+                        onClick = { onSelectProject?.invoke(project) },
+                        leading = {
+                            Icon(
+                                imageVector = iconVectorFor(project.icon),
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    )
+                }
+                if (matches.isEmpty() && query.isNotBlank()) {
+                    // No "create" row, unlike tags and people. A project is a heavier thing —
+                    // colour, icon, description, common tags — and conjuring one from a name typed
+                    // mid-sentence would make a half-configured project too easy to create by
+                    // accident. The editor sheet is one tap away on the chip row.
+                    MentionPanelHint("No project matches \"$query\"")
+                }
+            } else if (mention.trigger == TRIGGER_LIST) {
+                val matches = lists.activeLists()
+                    .filter { it.name.contains(query, ignoreCase = true) }
+                    .sortedBy { it.name.lowercase() }
+                if (matches.isEmpty() && query.isBlank()) {
+                    MentionPanelHint("Type to search lists")
+                }
+                matches.take(5).forEach { list ->
+                    val color = accents.getAccent(list.color)
+                    MentionRow(
+                        label = list.name,
+                        onClick = { onSelectList?.invoke(list) },
+                        leading = {
+                            Icon(
+                                imageVector = iconVectorFor(list.icon),
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    )
+                }
+                if (matches.isEmpty() && query.isNotBlank()) {
+                    MentionPanelHint("No list matches \"$query\"")
+                }
+            } else if (mention.trigger == TRIGGER_TAG) {
                 val matches = tags.filter { it.name.contains(query, ignoreCase = true) }.sortedBy { it.name.lowercase() }
                 if (matches.isEmpty() && query.isBlank()) {
                     MentionPanelHint("Type to search or create a tag")
