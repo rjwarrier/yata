@@ -79,6 +79,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   quick-add button set to Hidden, these three tabs no longer offer any way to create a tag, a
   person or a project.
 
+### Changed
+
+- **Tags now show their own initial** instead of the same generic label icon on every one. The Tags
+  tab and each tag's own screen draw the first letter of the tag's name — two letters if the name
+  has more than one word — in the tag's colour. Nothing to set up; it follows the name.
+
 ### Fixed
 
 - The Projects tab showed the same generic layers icon on every project, ignoring the icon picked

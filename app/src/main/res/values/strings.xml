@@ -225,6 +225,8 @@
 
     <!-- Task row -->
     <string name="task_row_edit_title">Edit task</string>
+    <!-- Read out for a tag's monogram tile, e.g. "Tag: urgent". -->
+    <string name="cd_tag_named">Tag: %1$s</string>
     <string name="cd_task_selected">Selected</string>
     <string name="cd_task_flagged">Flagged</string>
     <string name="cd_task_add_comment">Add comment</string>

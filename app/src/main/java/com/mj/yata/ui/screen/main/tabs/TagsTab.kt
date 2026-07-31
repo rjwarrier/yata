@@ -509,20 +509,13 @@ private fun TagRow(
                 Spacer(modifier = Modifier.width(14.dp))
             }
 
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(tagColor.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Label,
-                    contentDescription = stringResource(R.string.tags_tag),
-                    tint = tagColor,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            val tagLabel = stringResource(R.string.cd_tag_named, tag.name)
+            com.mj.yata.ui.widgets.TagMonogram(
+                name = tag.name,
+                tagColor = tagColor,
+                size = 40.dp,
+                modifier = Modifier.semantics { contentDescription = tagLabel }
+            )
 
             Spacer(modifier = Modifier.width(14.dp))
 

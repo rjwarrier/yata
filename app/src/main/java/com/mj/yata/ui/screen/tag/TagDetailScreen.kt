@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -361,20 +360,12 @@ fun TagDetailScreen(
                     highPriorityCount = highPriorityCount,
                     dueTodayCount = dueTodayCount,
                     leadingContent = {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(tagColor.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Label,
-                                contentDescription = null,
-                                tint = tagColor,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
+                        com.mj.yata.ui.widgets.TagMonogram(
+                            name = tag.name,
+                            tagColor = tagColor,
+                            size = 44.dp,
+                            shape = RoundedCornerShape(14.dp)
+                        )
                     },
                     activeFilter = activeStatFilter,
                     onStatClick = { activeStatFilter = if (activeStatFilter == it) null else it }
