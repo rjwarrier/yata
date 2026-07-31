@@ -19,9 +19,27 @@ package com.mj.yata.domain.model
  * or lighter, and it composes with AMOLED for free — at zero lightness the headroom is itself
  * zero, so those surfaces stay black at every stop.
  */
+/*
+ * Ten stops rather than the original four. The four are unchanged — same names, same levels — so
+ * an existing setting keeps rendering exactly as it did; the six additions only fill the gaps
+ * between them and extend the top end to the full headroom the maths already supported.
+ *
+ * The enum's declaration order is the slider's order: the setting reads `.ordinal` and writes back
+ * `entries[index]`. It is stored by name, so these may be reordered only if the stored value's
+ * meaning is preserved — which is the other reason the original four keep their positions relative
+ * to one another.
+ */
 enum class BackgroundTint(val level: Float) {
     CLEAN(-1f),
+    PALE(-0.5f),
     SOFT(0f),
+    MILD(0.12f),
+    MEDIUM(0.22f),
     RICH(0.35f),
-    DEEP(0.7f)
+    FULL(0.5f),
+    DEEP(0.7f),
+    BOLD(0.85f),
+    // Full headroom: the most chroma sRGB can show at that surface's lightness. Reachable rather
+    // than clamped, which is what the fraction-of-headroom scheme buys over a plain multiplier.
+    MAX(1f)
 }

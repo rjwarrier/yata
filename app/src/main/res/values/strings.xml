@@ -790,10 +790,17 @@
     <string name="settings_intensity_pop">Pop</string>
     <string name="settings_background_tint">Background tint</string>
     <string name="settings_background_tint_desc">How much of the theme color carries into page and card backgrounds.</string>
+    <!-- Background tint stops, in slider order from neutral grey to fully saturated. -->
     <string name="settings_tint_clean">Clean</string>
+    <string name="settings_tint_pale">Pale</string>
     <string name="settings_tint_soft">Soft</string>
+    <string name="settings_tint_mild">Mild</string>
+    <string name="settings_tint_medium">Medium</string>
     <string name="settings_tint_rich">Rich</string>
+    <string name="settings_tint_full">Full</string>
     <string name="settings_tint_deep">Deep</string>
+    <string name="settings_tint_bold">Bold</string>
+    <string name="settings_tint_max">Max</string>
     <string name="settings_material_you_colors">Material You colors</string>
     <string name="settings_material_you_colors_desc">Theme the app from your wallpaper colors instead of the fixed accent theme.</string>
     <string name="settings_enhanced_theming">Enable enhanced M3 theming</string>

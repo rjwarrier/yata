@@ -48,12 +48,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   Tag, Person, Search and Next 10 Days. Works with all three row densities and with the priority
   colour stripe, which follows the card's rounded left edge.
 
-- **Color intensity and Background tint sliders** (Settings → Appearance). Four stops each — Muted
-  to Pop for how saturated the accent colors are, Clean to Deep for how much of the theme color
-  carries into page and card backgrounds. Both scale whatever scheme you already have rather than
-  replacing it, so they work on top of Material You, a custom seed colour, or the built-in palette,
-  and your wallpaper's hue survives at every stop. The defaults change nothing about an existing
-  theme until you move a slider.
+- **Color intensity and Background tint sliders** (Settings → Appearance). Muted to Pop for how
+  saturated the accent colors are, over four stops; Clean to Max for how much of the theme color
+  carries into page and card backgrounds, over ten. Both scale whatever scheme you already have
+  rather than replacing it, so they work on top of Material You, a custom seed colour, or the
+  built-in palette, and your wallpaper's hue survives at every stop. The defaults change nothing
+  about an existing theme until you move a slider.
 - **Sort people and tags by open work.** A "Most open tasks" option on the People and Tags tabs,
   ranking by how many tasks are still unfinished. The existing "Most tasks" counts everything ever
   associated with someone, so whoever has the longest history came out on top regardless of what

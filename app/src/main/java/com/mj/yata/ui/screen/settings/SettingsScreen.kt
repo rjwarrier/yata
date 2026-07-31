@@ -3349,14 +3349,24 @@ private fun colorIntensityLabels(): List<String> = listOf(
 @Composable
 private fun backgroundTintLabels(): List<String> = listOf(
     stringResource(R.string.settings_tint_clean),
+    stringResource(R.string.settings_tint_pale),
     stringResource(R.string.settings_tint_soft),
+    stringResource(R.string.settings_tint_mild),
+    stringResource(R.string.settings_tint_medium),
     stringResource(R.string.settings_tint_rich),
-    stringResource(R.string.settings_tint_deep)
+    stringResource(R.string.settings_tint_full),
+    stringResource(R.string.settings_tint_deep),
+    stringResource(R.string.settings_tint_bold),
+    stringResource(R.string.settings_tint_max)
 )
+
+/** Above this many stops, only the first and last are labelled under the slider. */
+private const val MAX_INLINE_STOP_LABELS = 5
 
 /**
  * A slider that snaps to a fixed set of named stops, with the current stop's name shown beside the
- * title and every stop labelled underneath.
+ * title and the stops labelled underneath — all of them when there are few enough to fit, the two
+ * ends only when there are not.
  *
  * Unlike the UI-size and text-size sliders above, this commits on every change rather than on
  * `onValueChangeFinished`: those two rescale the entire UI (including this screen) on each frame,
@@ -3400,13 +3410,21 @@ private fun StopSliderSetting(
             valueRange = 0f..lastStop.toFloat(),
             steps = (stopLabels.size - 2).coerceAtLeast(0)
         )
+        // Past a handful of stops the labels stop fitting across a phone and start colliding, so
+        // only the two ends are drawn. Nothing is lost: the current stop is named beside the
+        // title, which is the only one whose name is actually being read.
+        val labelledStops = if (stopLabels.size <= MAX_INLINE_STOP_LABELS) {
+            stopLabels.indices.toList()
+        } else {
+            listOf(0, stopLabels.lastIndex)
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            stopLabels.forEachIndexed { index, label ->
+            labelledStops.forEach { index ->
                 Text(
-                    text = label,
+                    text = stopLabels[index],
                     style = MaterialTheme.typography.labelSmall,
                     color = if (index == selectedIndex) {
                         MaterialTheme.colorScheme.primary
