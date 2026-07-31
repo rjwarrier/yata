@@ -290,12 +290,12 @@ fun TodayTab(
                 val profileLabel = stringResource(R.string.cd_open_profile)
                 IconButton(
                     onClick = onProfileClick,
-                    modifier = Modifier.semantics { contentDescription = profileLabel }
+                    modifier = Modifier.size(40.dp).semantics { contentDescription = profileLabel }
                 ) {
                     PersonAvatar(
                         initials = com.mj.yata.util.initialsFor(userName),
                         accentKey = "accentC",
-                        size = 32.dp,
+                        size = 40.dp,
                         photoUri = userPhotoUri
                     )
                 }

@@ -97,6 +97,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   jumping, and the whole layout is spread out: header in the upper third, keypad low enough to
   reach with a thumb. The fingerprint prompt still comes up first, with a fingerprint key at the
   bottom-left of the pad to call it back. Every animation is skipped when Reduce Motion is on.
+- **The profile picture in the top bar matches the buttons beside it.** It was drawn smaller than
+  the search and select buttons it sits next to, so the row of circles stepped down at the end.
 - **Settings section headings are easier to find.** Each of the fourteen headings now carries an
   icon for what it covers and is set in title-sized text rather than the same small caption size
   used for the description under a toggle, so a long scroll has landmarks to scan by.

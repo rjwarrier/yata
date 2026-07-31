@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -77,14 +78,20 @@ fun TabTopBar(
         ) {
             actions()
             val profileLabel = stringResource(R.string.cd_open_profile)
+            // Sized to match the FilledIconButtons beside it, which take Material's 40dp default
+            // container — an IconButton left at its own 48dp default would centre the avatar in a
+            // wider box and open a visibly bigger gap on that one control. Both still get a 48dp
+            // touch target from minimumInteractiveComponentSize.
             IconButton(
                 onClick = onProfileClick,
-                modifier = Modifier.semantics { contentDescription = profileLabel }
+                modifier = Modifier
+                    .size(40.dp)
+                    .semantics { contentDescription = profileLabel }
             ) {
                 PersonAvatar(
                     initials = initialsFor(userName),
                     accentKey = "accentC",
-                    size = 32.dp,
+                    size = 40.dp,
                     photoUri = userPhotoUri
                 )
             }
