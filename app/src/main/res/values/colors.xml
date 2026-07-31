@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The launch background, used both by the splash screen and as the plain window background
+        behind it. Matches the adaptive launcher icon's own background (#EFD7CD) so the icon sits
+        on the same colour it does on the home screen, and so the hand-off from launcher to app
+        has nothing to jump between.
+
+        Deliberately a resource rather than a literal: the -night variant is the whole point, and
+        the compose theme can't help here because none of it exists yet at this moment.
+    -->
+    <color name="splash_background">#EFD7CD</color>
+</resources>

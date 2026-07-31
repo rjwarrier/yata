@@ -152,6 +152,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- **No more white flash when the app opens.** Launching showed a blank white screen before the
+  first frame — the platform default, which was especially jarring on the dark and AMOLED themes.
+  There's a proper splash screen now, on a background that matches the app icon and follows your
+  system's light or dark setting, and it holds just long enough for your saved theme to load so
+  the app no longer opens in the wrong one for a moment.
 - **A person's photo now shows everywhere their avatar appears.** Five places drew initials on a
   coloured circle instead of the avatar, so someone with a profile photo showed their face on a
   task row and their initials in the assignee chips beside it — on the task detail screen, in the

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The dark counterpart, matching the app's own darkest surface rather than pure black: the
+        theme's AMOLED mode is the one that goes true black, and launching every dark-mode user
+        into black would misrepresent the comfortable dark they actually chose.
+
+        This is keyed on the *system* dark setting, which is the only thing available before the
+        app's own preference has been read from DataStore. Someone running the app in Light while
+        their system is Dark gets a dark launch background for a frame — a far smaller mismatch
+        than the white flash this replaces, and unavoidable without blocking startup on a disk read.
+    -->
+    <color name="splash_background">#1A1110</color>
+</resources>

@@ -52,10 +52,12 @@
                 tools:node="remove" />
         </provider>
 
+        <!-- Launches under the splash theme; installSplashScreen() swaps it for Theme.Yata via
+             postSplashScreenTheme once the Activity is up. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Yata">
+            android:theme="@style/Theme.Yata.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

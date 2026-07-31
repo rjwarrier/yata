@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Density
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.mj.yata.data.cloud.CloudBackupManager
@@ -51,7 +52,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
+
+/** Upper bound on how long the splash waits for the stored theme before giving up on it. */
+private const val SPLASH_MAX_WAIT_MS = 1200L
 
 @AndroidEntryPoint
 class MainActivity : androidx.fragment.app.FragmentActivity() {
@@ -167,6 +172,9 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     // triggers the same routing effect as a cold start — `intent` alone isn't observable state.
     private var currentIntent by mutableStateOf<Intent?>(null)
 
+    /** Cleared once the persisted theme is known — see the splash setup in [onCreate]. */
+    private var themePrefLoaded = false
+
     // Deep-link intents (yata://task/<id>) delivered while the Activity is already alive. A cold
     // start is handled for free — NavController.setGraph() inspects the launching intent — but
     // that never re-runs for onNewIntent, so those would otherwise be silently dropped. Set only
@@ -242,6 +250,21 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Before super.onCreate, which is where the library requires it: it has to replace the
+        // launch theme with postSplashScreenTheme before the window is created.
+        val splash = installSplashScreen()
+        // Hold the splash until the theme preference has actually been read. Without this the
+        // first frame renders with the SYSTEM default that collectAsState is seeded with, then
+        // repaints once DataStore emits — visible as a flash of the wrong theme for anyone whose
+        // choice differs from their system setting. The flag is set from a short timeout as well
+        // as from the read, so a slow or failed DataStore delays startup briefly instead of
+        // holding the app on the splash forever.
+        splash.setKeepOnScreenCondition { !themePrefLoaded }
+        lifecycleScope.launch {
+            withTimeoutOrNull(SPLASH_MAX_WAIT_MS) { userPreferences.themeModeFlow.first() }
+            themePrefLoaded = true
+        }
+
         super.onCreate(savedInstanceState)
         currentIntent = intent
 

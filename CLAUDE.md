@@ -41,6 +41,8 @@ All commands run from the repo root using the Gradle wrapper (`./gradlew` on Bas
 
 After changing anything under `app/src/main/java`, the fast loop is `compileDebugKotlin` to catch errors, then `installDebug` before manually verifying in the UI. `MainScreenSmokeTest` covers only the core add/complete/delete paths, so anything beyond those still needs a manual pass on-device.
 
+**Never drive the device to take screenshots.** Do not use `adb shell screencap`, `uiautomator dump`, `adb shell input tap/swipe/keyevent`, or any other means of navigating the running app to look at it. Build, install, and describe what changed — visual verification is the user's, and they will send a screenshot when they want one. This applies even when a UI change would obviously benefit from being seen.
+
 ## Changelog
 
 `CHANGELOG.md` is maintained by hand, newest first, in Keep a Changelog format. **Any change a user
