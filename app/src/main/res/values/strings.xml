@@ -386,6 +386,15 @@
     <string name="lock_unlock">Unlock</string>
     <string name="lock_use_biometric_instead">Use biometric instead</string>
     <string name="lock_use_pin_instead">Use PIN instead</string>
+    <string name="lock_title">YATA is locked</string>
+    <string name="lock_enter_pin">Enter your PIN</string>
+    <string name="lock_incorrect_pin">Wrong PIN. Try again.</string>
+    <!-- Cooldown after repeated wrong PINs. %1$d is the whole seconds left. -->
+    <string name="lock_too_many_attempts">Too many attempts. Try again in %1$ds.</string>
+    <!-- Biometric prompt -->
+    <string name="lock_biometric_title">Unlock YATA</string>
+    <string name="lock_biometric_subtitle">Confirm it\'s you to open your tasks.</string>
+    <string name="lock_biometric_negative">Use PIN</string>
     <string name="main_command_palette">Command palette</string>
     <string name="main_new_list">New list</string>
     <string name="main_search_actions_or_tasks">Search actions or tasks</string>

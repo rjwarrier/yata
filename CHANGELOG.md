@@ -88,6 +88,12 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Changed
 
+- **The app lock screen is a real lock screen now.** The keypad is on screen from the start rather
+  than behind a "use PIN instead" button, the keys are proper 72dp circles with haptics, the dots
+  show how long your PIN is and fill as you type, and a wrong PIN shakes them instead of printing a
+  line of small red text. It unlocks as soon as the last digit lands — no confirm button. The
+  fingerprint prompt still comes up first, with the fingerprint key sitting bottom-left on the pad
+  to call it back.
 - **Settings section headings are easier to find.** Each of the fourteen headings now carries an
   icon for what it covers and is set in title-sized text rather than the same small caption size
   used for the description under a toggle, so a long scroll has landmarks to scan by.
@@ -120,6 +126,21 @@ test-only changes belong in the commit message, not here, unless they change beh
   Each duplicated the button already floating over the same screen. Note that if you have the
   quick-add button set to Hidden, these three tabs no longer offer any way to create a tag, a
   person or a project.
+
+### Security
+
+- **The app-lock PIN is hashed properly.** It was a single round of salted SHA-256, which for a
+  4-digit PIN means the entire range of possibilities could be checked in well under a second by
+  anyone who got hold of the preferences file. It now uses PBKDF2 with 120,000 iterations, and the
+  check is constant-time. Your existing PIN keeps working and is upgraded silently the next time
+  you unlock — nothing to re-enter.
+- **Repeated wrong PINs now back off**, pausing entry for 30 seconds after five wrong tries and
+  longer after that. The count survives closing the app, so force-stopping doesn't reset it.
+- The biometric prompt reports real failures. Previously anything other than success was swallowed,
+  so a prompt that failed for any reason simply vanished with no explanation.
+- App Lock no longer strands you if you remove every biometric and screen lock from the device
+  after switching it on and never set a PIN. Previously that combination left no way in short of
+  clearing app data.
 
 ### Fixed
 

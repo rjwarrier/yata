@@ -173,11 +173,28 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     // from onNewIntent and cleared once consumed, so cold starts don't navigate twice.
     private var pendingDeepLinkIntent by mutableStateOf<Intent?>(null)
 
+    /**
+     * Which authenticators this device can actually offer.
+     *
+     * Device credential can only be combined with a biometric class from API 30; on 28-29 the
+     * combination is rejected at build time, and this app supports back to 26. So the combined set
+     * is only requested where it works, and older devices fall back to biometrics alone — with the
+     * app's own PIN as the backstop, which is why that exists.
+     */
+    private fun allowedAuthenticators(): Int =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) BIOMETRIC_WEAK or DEVICE_CREDENTIAL else BIOMETRIC_WEAK
+
     private fun canAuthenticate(): Boolean =
-        BiometricManager.from(this).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL) ==
+        BiometricManager.from(this).canAuthenticate(allowedAuthenticators()) ==
             BiometricManager.BIOMETRIC_SUCCESS
 
-    private fun showBiometricPrompt() {
+    /**
+     * @param pinAvailable whether to offer a negative button. Without a PIN there is nothing to
+     *   fall back to, so offering "Use PIN" would dead-end the only way into the app. A device
+     *   credential can't be combined with a negative button either — the platform forbids it,
+     *   since the credential screen is itself the fallback.
+     */
+    private fun showBiometricPrompt(pinAvailable: Boolean) {
         val prompt = BiometricPrompt(
             this,
             ContextCompat.getMainExecutor(this),
@@ -185,11 +202,30 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     AppLockState.isLocked = false
                 }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    // Cancellation is the user choosing the PIN instead, which the lock screen is
+                    // already showing — surfacing it as an error would be nagging. A real error
+                    // (hardware unavailable, too many attempts) has to be said out loud, or the
+                    // prompt just vanishes and nothing explains why.
+                    val userDismissed = errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
+                        errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
+                        errorCode == BiometricPrompt.ERROR_CANCELED
+                    if (!userDismissed) {
+                        Toast.makeText(this@MainActivity, errString, Toast.LENGTH_LONG).show()
+                    }
+                }
             }
         )
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Unlock YATA")
-            .setAllowedAuthenticators(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)
+            .setTitle(getString(R.string.lock_biometric_title))
+            .setSubtitle(getString(R.string.lock_biometric_subtitle))
+            .setAllowedAuthenticators(allowedAuthenticators())
+            .apply {
+                if (pinAvailable && allowedAuthenticators() and DEVICE_CREDENTIAL == 0) {
+                    setNegativeButtonText(getString(R.string.lock_biometric_negative))
+                }
+            }
             .build()
         prompt.authenticate(promptInfo)
     }
@@ -340,10 +376,28 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                     ) {
                         if (AppLockState.isLocked) {
                             val pinSet by userPreferences.appLockPinSetFlow.collectAsState(initial = false)
+                            val pinLength by userPreferences.appLockPinLengthFlow.collectAsState(initial = 0)
+                            val lockedUntil by userPreferences.appLockLockedUntilFlow.collectAsState(initial = 0L)
+                            val biometricAvailable = remember { canAuthenticate() }
+
+                            // App Lock can only be switched on while a device credential exists, but
+                            // the user can remove every biometric and screen lock afterwards. With
+                            // no credential and no PIN there is then no way in at all, and the only
+                            // recovery would be clearing app data — every task gone, to protect a
+                            // lock whose own precondition has been deleted. Opening is the lesser
+                            // failure, so the lock stands down instead of stranding its owner.
+                            LaunchedEffect(biometricAvailable, pinSet) {
+                                if (!biometricAvailable && !pinSet) AppLockState.isLocked = false
+                            }
+
                             LockScreen(
-                                onUnlockClick = { showBiometricPrompt() },
+                                onUnlockClick = { showBiometricPrompt(pinAvailable = pinSet) },
                                 pinAvailable = pinSet,
+                                biometricAvailable = biometricAvailable,
+                                pinLength = pinLength,
+                                lockedUntilMillis = lockedUntil,
                                 onVerifyPin = { pin -> userPreferences.verifyAppLockPin(pin) },
+                                onPinFailed = { userPreferences.registerFailedAppLockAttempt() },
                                 onPinUnlocked = { AppLockState.isLocked = false }
                             )
                             return@Surface

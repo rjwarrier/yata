@@ -16,6 +16,8 @@ import com.mj.yata.util.EntitySortMode
 import com.mj.yata.util.TaskSortMode
 import com.mj.yata.util.generateSalt
 import com.mj.yata.util.hashPin
+import com.mj.yata.util.needsRehash
+import com.mj.yata.util.verifyPin
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -155,6 +157,9 @@ class UserPreferences @Inject constructor(
         val APP_LOCK_PIN_SALT       = stringPreferencesKey("app_lock_pin_salt")
         val APP_LOCK_PIN_HASH       = stringPreferencesKey("app_lock_pin_hash")
         val APP_LOCK_TIMEOUT_MINUTES = intPreferencesKey("app_lock_timeout_minutes")
+        val APP_LOCK_PIN_LENGTH     = intPreferencesKey("app_lock_pin_length")
+        val APP_LOCK_FAILED_ATTEMPTS = intPreferencesKey("app_lock_failed_attempts")
+        val APP_LOCK_LOCKED_UNTIL   = longPreferencesKey("app_lock_locked_until")
         val TODAY_TAB_ENABLED       = booleanPreferencesKey("today_tab_enabled")
         val UPCOMING_TAB_ENABLED    = booleanPreferencesKey("upcoming_tab_enabled")
         val FAB_POSITION            = stringPreferencesKey("fab_position")
@@ -748,22 +753,88 @@ class UserPreferences @Inject constructor(
             dataStore.edit {
                 it.remove(APP_LOCK_PIN_SALT)
                 it.remove(APP_LOCK_PIN_HASH)
+                it.remove(APP_LOCK_PIN_LENGTH)
+                it.remove(APP_LOCK_FAILED_ATTEMPTS)
+                it.remove(APP_LOCK_LOCKED_UNTIL)
             }
         } else {
             val salt = generateSalt()
+            val hashed = hashPin(pin, salt)
             dataStore.edit {
                 it[APP_LOCK_PIN_SALT] = encodeSalt(salt)
-                it[APP_LOCK_PIN_HASH] = hashPin(pin, salt)
+                it[APP_LOCK_PIN_HASH] = hashed
+                // Stored so the lock screen knows when the PIN is complete and can verify without
+                // a confirm key. A dot count gives the length away on any lock screen anyway.
+                it[APP_LOCK_PIN_LENGTH] = pin.length
+                it.remove(APP_LOCK_FAILED_ATTEMPTS)
+                it.remove(APP_LOCK_LOCKED_UNTIL)
             }
         }
     }
 
+    /**
+     * Checks [pin], and on success clears the failure count and quietly upgrades a legacy hash.
+     *
+     * The re-hash happens here rather than at set-time because this is the only moment the plain
+     * PIN is known for an already-configured lock. It runs after the match, so a wrong guess never
+     * touches what's stored.
+     */
     suspend fun verifyAppLockPin(pin: String): Boolean {
         val prefs = prefsFlow.first()
         val saltEncoded = prefs[APP_LOCK_PIN_SALT] ?: return false
         val storedHash = prefs[APP_LOCK_PIN_HASH] ?: return false
-        return hashPin(pin, decodeSalt(saltEncoded)) == storedHash
+        val matches = verifyPin(pin, storedHash, decodeSalt(saltEncoded))
+        if (matches) {
+            val upgraded = if (needsRehash(storedHash)) {
+                val salt = generateSalt()
+                encodeSalt(salt) to hashPin(pin, salt)
+            } else null
+            dataStore.edit {
+                it.remove(APP_LOCK_FAILED_ATTEMPTS)
+                it.remove(APP_LOCK_LOCKED_UNTIL)
+                if (upgraded != null) {
+                    it[APP_LOCK_PIN_SALT] = upgraded.first
+                    it[APP_LOCK_PIN_HASH] = upgraded.second
+                }
+                // Backfills the length for a PIN set before it was recorded.
+                if (it[APP_LOCK_PIN_LENGTH] == null) it[APP_LOCK_PIN_LENGTH] = pin.length
+            }
+        }
+        return matches
     }
+
+    /**
+     * Records a wrong PIN and returns when entry unlocks again (epoch millis), or null if it's
+     * still open.
+     *
+     * The backoff is persisted rather than held in memory because in-memory state resets when the
+     * process dies — and force-stopping the app is neither difficult nor unusual, which would make
+     * an in-memory limit no limit at all. The first few attempts are free: a mistyped digit is far
+     * more common than an attack, and punishing it immediately would only annoy the owner.
+     */
+    suspend fun registerFailedAppLockAttempt(): Long? {
+        var lockedUntil: Long? = null
+        dataStore.edit { prefs ->
+            val attempts = (prefs[APP_LOCK_FAILED_ATTEMPTS] ?: 0) + 1
+            prefs[APP_LOCK_FAILED_ATTEMPTS] = attempts
+            val delaySeconds = when {
+                attempts < 5 -> 0L
+                attempts < 8 -> 30L
+                attempts < 11 -> 60L
+                else -> 300L
+            }
+            if (delaySeconds > 0) {
+                val until = System.currentTimeMillis() + delaySeconds * 1000L
+                prefs[APP_LOCK_LOCKED_UNTIL] = until
+                lockedUntil = until
+            }
+        }
+        return lockedUntil
+    }
+
+    val appLockPinLengthFlow: Flow<Int> = prefsFlow.map { it[APP_LOCK_PIN_LENGTH] ?: 0 }
+    val appLockLockedUntilFlow: Flow<Long> = prefsFlow.map { it[APP_LOCK_LOCKED_UNTIL] ?: 0L }
+    val appLockFailedAttemptsFlow: Flow<Int> = prefsFlow.map { it[APP_LOCK_FAILED_ATTEMPTS] ?: 0 }
 
     suspend fun setTodayTabEnabled(enabled: Boolean) {
         dataStore.edit { it[TODAY_TAB_ENABLED] = enabled }
