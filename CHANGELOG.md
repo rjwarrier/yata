@@ -88,6 +88,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Changed
 
+- **Settings section headings are easier to find.** Each of the fourteen headings now carries an
+  icon for what it covers and is set in title-sized text rather than the same small caption size
+  used for the description under a toggle, so a long scroll has landmarks to scan by.
 - **Tags now show their own initial** instead of the same generic label icon on every one. The Tags
   tab and each tag's own screen draw the first letter of the tag's name — two letters if the name
   has more than one word — in the tag's colour. Nothing to set up; it follows the name.

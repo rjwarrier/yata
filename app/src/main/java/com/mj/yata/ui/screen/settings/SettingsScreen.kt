@@ -25,6 +25,21 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+// Section-heading icons.
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
@@ -49,6 +64,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -422,11 +438,7 @@ fun SettingsScreen(
             }
             item {
             // 1. Profile Section
-            Text(
-                text = stringResource(R.string.settings_section_profile),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_profile), Icons.Default.Person)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(20.dp),
@@ -532,11 +544,7 @@ fun SettingsScreen(
         }
         item {
             // 2. Preferences Section
-            Text(
-                text = stringResource(R.string.settings_section_appearance),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_appearance), Icons.Default.Palette)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -727,11 +735,7 @@ fun SettingsScreen(
 
         item {
             // 3. Display Section
-            Text(
-                text = stringResource(R.string.settings_section_display),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_display), Icons.Default.Tune)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -975,7 +979,7 @@ fun SettingsScreen(
         item {
             // Navigation — everything that changes the bottom nav's shape or contents. Split out
             // of the old PREFERENCES catch-all, which mixed these with theming and task defaults.
-            SettingsSectionHeader(stringResource(R.string.settings_section_navigation))
+            SettingsSectionHeader(stringResource(R.string.settings_section_navigation), Icons.Default.Navigation)
             SettingsSectionCard {
                 SettingsToggleRow(
                     title = stringResource(R.string.settings_floating_bottom_panel),
@@ -1050,7 +1054,7 @@ fun SettingsScreen(
 
         item {
             // Sound & feedback — the app's response to an action, as opposed to its layout.
-            SettingsSectionHeader(stringResource(R.string.settings_section_sound_feedback))
+            SettingsSectionHeader(stringResource(R.string.settings_section_sound_feedback), Icons.Default.VolumeUp)
             SettingsSectionCard {
                 SettingsToggleRow(
                     title = stringResource(R.string.settings_completion_sound),
@@ -1166,7 +1170,7 @@ fun SettingsScreen(
         item {
             // Task defaults — what a newly created task inherits, plus the calendar/voice
             // conventions the app assumes. Previously buried at the end of PREFERENCES.
-            SettingsSectionHeader(stringResource(R.string.settings_section_task_defaults))
+            SettingsSectionHeader(stringResource(R.string.settings_section_task_defaults), Icons.Default.TaskAlt)
             SettingsSectionCard {
                 // Hidden when the People feature is off: with no people there is nobody to assign
                 // to, so the row would toggle something with no observable effect.
@@ -1314,11 +1318,7 @@ fun SettingsScreen(
             // reminders to a fuzzy ~1hr-late delivery window, or kills them outright in Doze,
             // unless these two OS-level permissions are granted. Neither is requestable at
             // runtime like POST_NOTIFICATIONS — the user has to grant them from system settings.
-            Text(
-                text = stringResource(R.string.settings_section_notifications),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_notifications), Icons.Default.Notifications)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -1469,11 +1469,7 @@ fun SettingsScreen(
         item {
             // Features Section — hides the entire tab/pickers/chips for a feature, but never
             // touches stored data, so re-enabling shows everything exactly as it was.
-            Text(
-                text = stringResource(R.string.settings_section_features),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_features), Icons.Default.Extension)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -1536,11 +1532,7 @@ fun SettingsScreen(
                     shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
             ) {
                 Column {
-                    Text(
-                        text = stringResource(R.string.settings_section_manage),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    SettingsSectionHeader(stringResource(R.string.settings_section_manage), Icons.Default.Build)
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                         shape = RoundedCornerShape(16.dp),
@@ -1580,11 +1572,7 @@ fun SettingsScreen(
             }
             var showPinDialog by remember { mutableStateOf(false) }
 
-            Text(
-                text = stringResource(R.string.settings_section_privacy),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_privacy), Icons.Default.Lock)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -1686,11 +1674,7 @@ fun SettingsScreen(
         }
         item {
             // 5. Backup/Data Section
-            Text(
-                text = stringResource(R.string.settings_section_backup),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_backup), Icons.Default.Storage)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -2069,11 +2053,7 @@ fun SettingsScreen(
         }
         item {
             // 4. Cloud Backup Section
-            Text(
-                text = stringResource(R.string.settings_section_cloud_backup),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_cloud_backup), Icons.Default.CloudSync)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -2376,11 +2356,7 @@ fun SettingsScreen(
         }
         item {
             // Local Backup Section — encrypted, on-device, no account needed.
-            Text(
-                text = stringResource(R.string.settings_section_local_backup),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_local_backup), Icons.Default.Save)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -2450,11 +2426,7 @@ fun SettingsScreen(
             }
         }
         item {
-            Text(
-                text = stringResource(R.string.settings_section_help_about),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
+            SettingsSectionHeader(stringResource(R.string.settings_section_help_about), Icons.AutoMirrored.Filled.HelpOutline)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -3149,12 +3121,44 @@ private fun AnimatedDivider(visible: Boolean) {
 
 /** The primary-colored caps label above each settings group. */
 @Composable
-private fun SettingsSectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.primary
-    )
+private fun SettingsSectionHeader(text: String, icon: ImageVector? = null) {
+    // The old heading was labelSmall — the same size as the caption under a toggle — which left a
+    // long scroll with no landmarks to scan by. Title-sized text in a tinted pill gives each
+    // section an anchor the eye can find without reading, and the icon carries the section's
+    // subject so it's recognisable before the word is.
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        if (icon != null) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null, // the heading text beside it already says this
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
+                letterSpacing = 0.6.sp
+            ),
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
 }
 
 /** The rounded card every settings group sits in. Was copy-pasted per section. */
