@@ -10,12 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +39,7 @@ import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
+import com.mj.yata.ui.widgets.iconVectorFor
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 
@@ -281,11 +279,7 @@ fun ProjectCard(
     val accents = LocalYataAccents.current
     val projectColor = accents.getAccent(project.color)
 
-    val iconVector = when (project.icon) {
-        "home" -> Icons.Default.Home
-        "star" -> Icons.Default.Star
-        else -> Icons.Default.Layers
-    }
+    val iconVector = iconVectorFor(project.icon)
 
     Card(
         modifier = modifier

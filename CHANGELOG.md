@@ -81,6 +81,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- The Projects tab showed the same generic layers icon on every project, ignoring the icon picked
+  for it. Projects now show their own icon in the list, as the project screen already did.
 - The list name under a task could render one letter per line — "Work" as a vertical `W o r k`.
   When a row carried enough detail to run out of width, everything after that point was squeezed
   to nothing and wrapped per character. The details now wrap onto a second line instead. Affected
