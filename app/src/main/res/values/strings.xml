@@ -733,7 +733,8 @@
     <string name="snooze_next_weekday">Next weekday</string>
     <string name="bulk_reschedule_selected">Reschedule selected tasks</string>
     <string name="new_task_title">New task</string>
-    <string name="new_task_title_hint">What needs doing? Try # for tags, @ for people</string>
+    <!-- The four mention triggers. Kept terse because it sits inside the input field. -->
+    <string name="new_task_title_hint">What needs doing? Try # tag, @ person, + project, = list</string>
     <string name="new_task_smart_add_summary">Smart add understood this task as:</string>
     <string name="new_task_detected_title">Title: %1$s</string>
     <string name="new_task_heads_up">Heads up</string>

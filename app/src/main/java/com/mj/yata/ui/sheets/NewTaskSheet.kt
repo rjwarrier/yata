@@ -821,12 +821,17 @@ fun NewTaskSheet(
                         .testTag("new_task_title_input"),
                     decorationBox = { inner ->
                         if (title.text.isEmpty()) {
+                            // Deliberately smaller than the 22sp `textStyle` above, which stays as
+                            // it is — this is a hint listing four shortcuts, not a preview of what
+                            // you are about to type, and at matching size it filled the field and
+                            // wrapped onto a second line.
                             Text(
                                 text = stringResource(R.string.new_task_title_hint),
                                 style = TextStyle(
                                     fontFamily = MaterialTheme.typography.displaySmall.fontFamily,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = 22.sp,
+                                    fontSize = 14.sp,
+                                    lineHeight = 19.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                             )
