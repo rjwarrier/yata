@@ -123,22 +123,31 @@ class NaturalLanguageParserTest {
 
     @Test
     fun parsesSlashDateUsOrder() {
-        val result = NaturalLanguageParser.parse("pay taxes 7/20", ref)
+        // dayFirst is passed explicitly throughout these: its default comes from the user's
+        // date-order setting, which resolves against the machine's locale, and a test that
+        // depended on that would pass or fail according to where it was run.
+        val result = NaturalLanguageParser.parse("pay taxes 7/20", ref, dayFirst = false)
         assertEquals("2026-07-20", result.due)
         assertEquals("pay taxes", result.title)
     }
 
     @Test
     fun parsesSlashDateSwapsWhenFirstNumberInvalidMonth() {
-        // 20/7 can't be month 20, so day/month is inferred instead of US month/day.
-        val result = NaturalLanguageParser.parse("pay taxes 20/7", ref)
-        assertEquals("2026-07-20", result.due)
-        assertEquals("pay taxes", result.title)
+        // 20/7 can't be month 20, so day/month is inferred whichever order is preferred.
+        assertEquals("2026-07-20", NaturalLanguageParser.parse("pay taxes 20/7", ref, dayFirst = false).due)
+        assertEquals("2026-07-20", NaturalLanguageParser.parse("pay taxes 20/7", ref, dayFirst = true).due)
+    }
+
+    @Test
+    fun ambiguousSlashDateFollowsDateOrder() {
+        // "3/4" is the only genuinely ambiguous shape — both numbers are valid months.
+        assertEquals("2027-03-04", NaturalLanguageParser.parse("call bank 3/4", ref, dayFirst = false).due)
+        assertEquals("2027-04-03", NaturalLanguageParser.parse("call bank 3/4", ref, dayFirst = true).due)
     }
 
     @Test
     fun parsesSlashDateWithFourDigitYear() {
-        val result = NaturalLanguageParser.parse("renewal 1/5/2027", ref)
+        val result = NaturalLanguageParser.parse("renewal 1/5/2027", ref, dayFirst = false)
         assertEquals("2027-01-05", result.due)
         assertEquals("renewal", result.title)
     }

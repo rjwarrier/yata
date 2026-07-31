@@ -17,6 +17,24 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Time format** (Settings → Display). Follow the device, or force 12-hour or 24-hour. Times were
+  hardcoded to 12-hour everywhere, so a phone set to a 24-hour clock still read "5:00 PM" and got a
+  12-hour time picker. Changing this never rewrites a task — the stored value is untouched, only
+  how it's drawn changes.
+- **Date format** (Settings → Display). Follow the device's language, or pick day-first
+  ("4 Jul"), month-first ("Jul 4") or ISO ("2026-07-04"). Dates were hardcoded to month-first;
+  setting the phone to English (UK) or English (India) translated the month's *name* but still
+  wrote the fields in US order. This also decides how smart add reads an ambiguous typed date, so
+  "3/4" means the 3rd of April on a day-first setting and the 4th of March on a month-first one.
+- **Choose what a swipe does** (Settings → Sound & Feedback). Each direction can be set to
+  complete, delete, snooze to tomorrow, edit the title, or nothing at all. Right-to-complete and
+  left-to-delete stay the defaults.
+- **Open on a fixed tab** (Settings → Navigation). The app can start on a tab of your choosing
+  instead of wherever you were last. A tab that's switched off in Features falls back to Today.
+- **Confetti can be turned off on its own** (Settings → Sound & Feedback). Previously the only way
+  to stop it was Reduce Motion, which costs you every other animation too.
+- A **Sound & vibration** row (Settings → Notifications) opening Android's own notification
+  settings for YATA, where tone and vibration are set per notification type.
 - **Confetti when you clear the day.** Finishing the last open task on Today gets a brief
   celebration. Only for actually finishing it — deleting the last one doesn't count — and only for
   clearing the whole day, not a filtered slice of it. Skipped entirely if Reduce Motion is on, in

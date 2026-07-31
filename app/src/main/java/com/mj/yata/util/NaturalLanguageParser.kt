@@ -53,6 +53,9 @@ fun String.toProperCase(): String {
 
 object NaturalLanguageParser {
 
+    // Deliberately fixed at 12-hour, and not routed through the user's clock preference: what this
+    // produces is written to `Task.time`, which is the storage format (see
+    // TaskScheduleUtils.storageTimeFormatter). The preference is applied when the time is shown.
     private val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
 
     private val weekdayNames = mapOf(
@@ -450,9 +453,12 @@ object NaturalLanguageParser {
         null
     }
 
-    private fun resolveSlashDate(n1: Int, n2: Int, yearRaw: String?, ref: LocalDate): LocalDate? {
+    private fun resolveSlashDate(n1: Int, n2: Int, yearRaw: String?, ref: LocalDate, dayFirst: Boolean): LocalDate? {
         val (month, day) = when {
-            n1 in 1..12 && n2 in 1..12 -> n1 to n2
+            // Only this first case is genuinely ambiguous — "3/4" is either. Which way it reads
+            // follows the date-order preference, so it agrees with how the app writes dates back
+            // out. The other two are decided by arithmetic: 20 can't be a month.
+            n1 in 1..12 && n2 in 1..12 -> if (dayFirst) n2 to n1 else n1 to n2
             n1 in 1..12 && n2 in 13..31 -> n1 to n2
             n1 in 13..31 && n2 in 1..12 -> n2 to n1
             else -> return null
@@ -596,11 +602,20 @@ object NaturalLanguageParser {
         }
     }
 
-    fun parse(rawInput: String, referenceDate: LocalDate = LocalDate.now(), referenceTime: LocalTime = LocalTime.now()): ParsedQuickAdd {
+    /**
+     * @param dayFirst how to read an ambiguous numeric date like "3/4". Defaults to whatever the
+     *   user's date-order setting resolves to, so typing a date and reading one back agree.
+     */
+    fun parse(
+        rawInput: String,
+        referenceDate: LocalDate = LocalDate.now(),
+        referenceTime: LocalTime = LocalTime.now(),
+        dayFirst: Boolean = AppFormats.dayFirstDates()
+    ): ParsedQuickAdd {
         // The reference *time* belongs in the key as well as the date: "in 30 minutes" resolves
         // against it, so keying on the date alone served a stale clock time to every later call
         // with the same text. Truncated to the minute, which is the resolution the result has.
-        val cacheKey = "$rawInput|$referenceDate|${referenceTime.hour}:${referenceTime.minute}"
+        val cacheKey = "$rawInput|$referenceDate|${referenceTime.hour}:${referenceTime.minute}|$dayFirst"
         synchronized(cacheLock) {
             parseCache[cacheKey]?.let { return it }
         }
@@ -729,7 +744,7 @@ object NaturalLanguageParser {
             firstFreeMatch(recurrenceUntilRegex)?.let { m ->
                 val phrase = m.groupValues[1]
                 if (phrase.isNotBlank()) {
-                    val nested = parse(phrase, referenceDate, referenceTime)
+                    val nested = parse(phrase, referenceDate, referenceTime, dayFirst)
                     nested.due?.let { endDate ->
                         recurrence = recurrence!!.copy(ends = RecurrenceEnds.On(endDate))
                         claim(m.range.first..claimEndFor(m, 1, nested))
@@ -946,7 +961,7 @@ object NaturalLanguageParser {
         firstFreeMatch(startDateRegex)?.let { m ->
             val phrase = m.groupValues[2]
             if (phrase.isNotBlank()) {
-                val nested = NaturalLanguageParser.parse(phrase, referenceDate, referenceTime)
+                val nested = NaturalLanguageParser.parse(phrase, referenceDate, referenceTime, dayFirst)
                 nested.due?.let { resolved ->
                     startDate = runCatching { LocalDate.parse(resolved) }.getOrNull()
                     // Claim the keyword *and* the date words it governs, so they're off-limits to
@@ -1015,7 +1030,7 @@ object NaturalLanguageParser {
                 val n2 = m.groupValues[2].toIntOrNull()
                 val yearRaw = m.groupValues[3].ifEmpty { null }
                 if (n1 != null && n2 != null) {
-                    resolveSlashDate(n1, n2, yearRaw, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveSlashDate(n1, n2, yearRaw, referenceDate, dayFirst)?.let { d -> due = d; claim(m.range); dueRange = m.range }
                 }
             }
         }
@@ -1026,7 +1041,7 @@ object NaturalLanguageParser {
                 val n2 = m.groupValues[2].toIntOrNull()
                 val yearRaw = m.groupValues[3].ifEmpty { null }
                 if (n1 != null && n2 != null) {
-                    resolveSlashDate(n1, n2, yearRaw, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveSlashDate(n1, n2, yearRaw, referenceDate, dayFirst)?.let { d -> due = d; claim(m.range); dueRange = m.range }
                 }
             }
         }

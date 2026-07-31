@@ -170,7 +170,7 @@ fun UpcomingTab(
 
     val isSelectedToday = selectedDay == today
     val agendaLabel = remember(selectedDay) {
-        selectedDay.format(DateTimeFormatter.ofPattern("EEEE, MMMM d"))
+        selectedDay.format(com.mj.yata.util.AppFormats.headerDateFormatter())
     }
 
     Column(

@@ -269,7 +269,7 @@ private fun deletedLabel(deletedAt: Long?, retentionDays: Int): String {
     val whenText = when (daysAgo) {
         0L -> "today"
         1L -> "yesterday"
-        else -> "on " + deletedDate.format(DateTimeFormatter.ofPattern("MMM d"))
+        else -> "on " + deletedDate.format(com.mj.yata.util.AppFormats.dayMonthFormatter())
     }
     if (retentionDays <= 0) return "Deleted $whenText · kept until removed"
     val daysLeft = (retentionDays - daysAgo).coerceAtLeast(0)

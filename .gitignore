@@ -20,6 +20,9 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+# Signing-key archives — same reason as the keystores themselves
+sign.7z
+*.7z
 
 # Scratch/debug dumps
 .codex_tmp/

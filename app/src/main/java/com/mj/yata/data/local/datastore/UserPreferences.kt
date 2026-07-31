@@ -33,11 +33,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "us
 
 data class UserPreferencesSnapshot(
     val themeMode: ThemeMode,
-    val dynamicColorEnabled: Boolean,
-    val themeScheduleStartHour: Int,
-    val themeScheduleStartMinute: Int,
-    val themeScheduleEndHour: Int,
-    val themeScheduleEndMinute: Int
+    val dynamicColorEnabled: Boolean
 )
 
 /**
@@ -80,11 +76,7 @@ class UserPreferences @Inject constructor(
                 ThemeMode.AMOLED.name    -> ThemeMode.AMOLED
                 else                     -> ThemeMode.SYSTEM
             },
-            dynamicColorEnabled = prefs[DYNAMIC_COLOR_ENABLED] ?: true,
-            themeScheduleStartHour = prefs[THEME_SCHEDULE_START_HOUR] ?: 21,
-            themeScheduleStartMinute = prefs[THEME_SCHEDULE_START_MINUTE] ?: 0,
-            themeScheduleEndHour = prefs[THEME_SCHEDULE_END_HOUR] ?: 7,
-            themeScheduleEndMinute = prefs[THEME_SCHEDULE_END_MINUTE] ?: 0
+            dynamicColorEnabled = prefs[DYNAMIC_COLOR_ENABLED] ?: true
         )
     }
 
@@ -138,10 +130,8 @@ class UserPreferences @Inject constructor(
         val LOCAL_BACKUP_ENABLED    = booleanPreferencesKey("local_backup_enabled")
         val LOCAL_BACKUP_LAST_AT    = longPreferencesKey("local_backup_last_at")
         val LOCAL_BACKUP_INTERVAL_MINUTES = longPreferencesKey("local_backup_interval_minutes")
-        val THEME_SCHEDULE_START_HOUR   = intPreferencesKey("theme_schedule_start_hour")
-        val THEME_SCHEDULE_START_MINUTE = intPreferencesKey("theme_schedule_start_minute")
-        val THEME_SCHEDULE_END_HOUR     = intPreferencesKey("theme_schedule_end_hour")
-        val THEME_SCHEDULE_END_MINUTE   = intPreferencesKey("theme_schedule_end_minute")
+        // The theme_schedule_* keys that lived here went with the SCHEDULED theme mode. Any values
+        // already written stay in the file harmlessly — nothing reads that name any more.
         val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
         val ENHANCED_M3_THEMING_ENABLED = booleanPreferencesKey("enhanced_m3_theming_enabled")
         val FLOATING_BOTTOM_NAV_ENABLED = booleanPreferencesKey("floating_bottom_nav_enabled")
@@ -154,6 +144,12 @@ class UserPreferences @Inject constructor(
         val TASK_ROW_DENSITY        = stringPreferencesKey("task_row_density")
         val HAPTICS_ENABLED         = booleanPreferencesKey("haptics_enabled")
         val TASK_SWIPE_ACTIONS_ENABLED = booleanPreferencesKey("task_swipe_actions_enabled")
+        val SWIPE_RIGHT_ACTION      = stringPreferencesKey("swipe_right_action")
+        val SWIPE_LEFT_ACTION       = stringPreferencesKey("swipe_left_action")
+        val STARTUP_TAB             = stringPreferencesKey("startup_tab")
+        val CONFETTI_ENABLED        = booleanPreferencesKey("confetti_enabled")
+        val TIME_FORMAT             = stringPreferencesKey("time_format")
+        val DATE_FORMAT             = stringPreferencesKey("date_format")
         val TASK_CARD_BACKGROUND    = booleanPreferencesKey("task_card_background")
         val APP_LOCK_ENABLED        = booleanPreferencesKey("app_lock_enabled")
         val APP_LOCK_PIN_SALT       = stringPreferencesKey("app_lock_pin_salt")
@@ -220,10 +216,6 @@ class UserPreferences @Inject constructor(
     }
 
     // Dark from 9pm to 7am by default.
-    val themeScheduleStartHourFlow: Flow<Int> = prefsFlow.map { it[THEME_SCHEDULE_START_HOUR] ?: 21 }
-    val themeScheduleStartMinuteFlow: Flow<Int> = prefsFlow.map { it[THEME_SCHEDULE_START_MINUTE] ?: 0 }
-    val themeScheduleEndHourFlow: Flow<Int> = prefsFlow.map { it[THEME_SCHEDULE_END_HOUR] ?: 7 }
-    val themeScheduleEndMinuteFlow: Flow<Int> = prefsFlow.map { it[THEME_SCHEDULE_END_MINUTE] ?: 0 }
 
     val reduceMotionEnabledFlow: Flow<Boolean> = prefsFlow.map { it[REDUCE_MOTION_ENABLED] ?: false }
     val enhancedM3ThemingEnabledFlow: Flow<Boolean> = prefsFlow.map { it[ENHANCED_M3_THEMING_ENABLED] ?: false }
@@ -246,6 +238,30 @@ class UserPreferences @Inject constructor(
     }
     val hapticsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[HAPTICS_ENABLED] ?: true }
     val taskSwipeActionsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TASK_SWIPE_ACTIONS_ENABLED] ?: true }
+    // Defaults reproduce the behaviour from before the directions were configurable.
+    val swipeRightActionFlow: Flow<com.mj.yata.domain.model.SwipeAction> = prefsFlow.map { prefs ->
+        com.mj.yata.domain.model.SwipeAction.entries.firstOrNull { it.name == prefs[SWIPE_RIGHT_ACTION] }
+            ?: com.mj.yata.domain.model.SwipeAction.COMPLETE
+    }
+    val swipeLeftActionFlow: Flow<com.mj.yata.domain.model.SwipeAction> = prefsFlow.map { prefs ->
+        com.mj.yata.domain.model.SwipeAction.entries.firstOrNull { it.name == prefs[SWIPE_LEFT_ACTION] }
+            ?: com.mj.yata.domain.model.SwipeAction.DELETE
+    }
+    val startupTabFlow: Flow<com.mj.yata.domain.model.StartupTab> = prefsFlow.map { prefs ->
+        com.mj.yata.domain.model.StartupTab.entries.firstOrNull { it.name == prefs[STARTUP_TAB] }
+            ?: com.mj.yata.domain.model.StartupTab.LAST_USED
+    }
+    // Separate from Reduce Motion on purpose: turning the confetti off shouldn't cost you every
+    // other animation in the app, which is the only way it could be done before.
+    val confettiEnabledFlow: Flow<Boolean> = prefsFlow.map { it[CONFETTI_ENABLED] ?: true }
+    val timeFormatFlow: Flow<com.mj.yata.domain.model.TimeFormat> = prefsFlow.map { prefs ->
+        com.mj.yata.domain.model.TimeFormat.entries.firstOrNull { it.name == prefs[TIME_FORMAT] }
+            ?: com.mj.yata.domain.model.TimeFormat.SYSTEM
+    }
+    val dateFormatFlow: Flow<com.mj.yata.domain.model.DateFormat> = prefsFlow.map { prefs ->
+        com.mj.yata.domain.model.DateFormat.entries.firstOrNull { it.name == prefs[DATE_FORMAT] }
+            ?: com.mj.yata.domain.model.DateFormat.SYSTEM
+    }
 
     // Off by default: the flat list is the app's existing look, and this changes every task list
     // at once, so it has to be something a user opts into rather than finds applied after update.
@@ -689,6 +705,30 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[TASK_SWIPE_ACTIONS_ENABLED] = enabled }
     }
 
+    suspend fun setSwipeRightAction(action: com.mj.yata.domain.model.SwipeAction) {
+        dataStore.edit { it[SWIPE_RIGHT_ACTION] = action.name }
+    }
+
+    suspend fun setSwipeLeftAction(action: com.mj.yata.domain.model.SwipeAction) {
+        dataStore.edit { it[SWIPE_LEFT_ACTION] = action.name }
+    }
+
+    suspend fun setStartupTab(tab: com.mj.yata.domain.model.StartupTab) {
+        dataStore.edit { it[STARTUP_TAB] = tab.name }
+    }
+
+    suspend fun setConfettiEnabled(enabled: Boolean) {
+        dataStore.edit { it[CONFETTI_ENABLED] = enabled }
+    }
+
+    suspend fun setTimeFormat(format: com.mj.yata.domain.model.TimeFormat) {
+        dataStore.edit { it[TIME_FORMAT] = format.name }
+    }
+
+    suspend fun setDateFormat(format: com.mj.yata.domain.model.DateFormat) {
+        dataStore.edit { it[DATE_FORMAT] = format.name }
+    }
+
     suspend fun setTaskCardBackground(enabled: Boolean) {
         dataStore.edit { it[TASK_CARD_BACKGROUND] = enabled }
     }
@@ -737,15 +777,6 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[FAB_POSITION] = position.name }
     }
 
-    suspend fun setThemeSchedule(startHour: Int, startMinute: Int, endHour: Int, endMinute: Int) {
-        dataStore.edit {
-            it[THEME_SCHEDULE_START_HOUR] = startHour
-            it[THEME_SCHEDULE_START_MINUTE] = startMinute
-            it[THEME_SCHEDULE_END_HOUR] = endHour
-            it[THEME_SCHEDULE_END_MINUTE] = endMinute
-        }
-    }
-
     /** Restores user-facing behavior defaults while preserving profile identity, app-lock
      * credentials, backup accounts/history, saved searches, and all task data. */
     suspend fun resetAppSettings() {
@@ -764,8 +795,8 @@ class UserPreferences @Inject constructor(
             prefs.remove(UNDO_WINDOW_SECONDS); prefs.remove(TRASH_RETENTION_DAYS); prefs.remove(AUTO_ARCHIVE_DAYS)
             prefs.remove(SNOOZE_TONIGHT_HOUR); prefs.remove(SNOOZE_TONIGHT_MINUTE)
             prefs.remove(SNOOZE_TOMORROW_HOUR); prefs.remove(SNOOZE_TOMORROW_MINUTE)
-            prefs.remove(THEME_SCHEDULE_START_HOUR); prefs.remove(THEME_SCHEDULE_START_MINUTE)
-            prefs.remove(THEME_SCHEDULE_END_HOUR); prefs.remove(THEME_SCHEDULE_END_MINUTE)
+            prefs.remove(SWIPE_RIGHT_ACTION); prefs.remove(SWIPE_LEFT_ACTION); prefs.remove(STARTUP_TAB)
+            prefs.remove(CONFETTI_ENABLED); prefs.remove(TIME_FORMAT); prefs.remove(DATE_FORMAT)
             prefs.remove(VOICE_RECOGNITION_LANGUAGE)
         }
     }

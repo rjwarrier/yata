@@ -24,3 +24,12 @@ val LocalReduceMotion = staticCompositionLocalOf { false }
  * so every list — Today, Upcoming, Project, List, Tag, Person, Search, Next Days — picks it up
  * from one place, instead of each screen passing a styling flag down. */
 val LocalTaskCardBackground = staticCompositionLocalOf { false }
+
+/**
+ * What a swipe in each direction does. Read by TaskRow for the same reason as
+ * [LocalTaskSwipeActionsEnabled] — one provider at the root rather than two more parameters on
+ * every list screen's row call. The defaults match the behaviour from before they were
+ * configurable, so an install that never opens the setting behaves exactly as it did.
+ */
+val LocalSwipeRightAction = staticCompositionLocalOf { com.mj.yata.domain.model.SwipeAction.COMPLETE }
+val LocalSwipeLeftAction = staticCompositionLocalOf { com.mj.yata.domain.model.SwipeAction.DELETE }

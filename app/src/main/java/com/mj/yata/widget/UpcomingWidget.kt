@@ -232,7 +232,7 @@ private fun upcomingAgendaDays(allTasks: List<Task>, today: LocalDate): List<Age
         val label = when {
             date == today.plusDays(1) -> "Tomorrow"
             date.isBefore(today.plusDays(7)) -> date.format(DateTimeFormatter.ofPattern("EEEE"))
-            else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
+            else -> date.format(com.mj.yata.util.AppFormats.dayMonthFormatter())
         }
         days += AgendaDay(label, byDate[date.toString()].orEmpty())
     }

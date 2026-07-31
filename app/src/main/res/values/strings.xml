@@ -91,6 +91,41 @@
     <string name="settings_section_local_backup">LOCAL BACKUP</string>
     <string name="settings_section_help_about">HELP &amp; ABOUT</string>
     <string name="settings_section_navigation">NAVIGATION</string>
+    <!-- Startup tab -->
+    <string name="settings_startup_tab">Open on</string>
+    <string name="settings_startup_tab_desc">Which tab the app starts on. A tab that\'s switched off in Features falls back to Today.</string>
+    <string name="settings_startup_last_used">Last used</string>
+    <!-- Tab names, for the startup-tab picker. The bottom bar itself still uses literals. -->
+    <string name="settings_tab_today">Today</string>
+    <string name="settings_tab_projects">Projects</string>
+    <string name="settings_tab_people">People</string>
+    <string name="settings_tab_tags">Tags</string>
+    <string name="settings_tab_upcoming">Upcoming</string>
+    <!-- Swipe actions -->
+    <string name="settings_swipe_right_action">Swipe right does</string>
+    <string name="settings_swipe_left_action">Swipe left does</string>
+    <string name="settings_swipe_action_none">Nothing</string>
+    <string name="settings_swipe_action_complete">Complete</string>
+    <string name="settings_swipe_action_delete">Delete</string>
+    <string name="settings_swipe_action_snooze">Snooze to tomorrow</string>
+    <string name="settings_swipe_action_edit">Edit title</string>
+    <!-- Confetti -->
+    <string name="settings_confetti">Confetti</string>
+    <string name="settings_confetti_desc">Celebrate finishing the last task of the day.</string>
+    <!-- Date and time formats -->
+    <string name="settings_time_format">Time format</string>
+    <string name="settings_time_format_system">Follow system</string>
+    <string name="settings_time_format_12h">12-hour (5:00 PM)</string>
+    <string name="settings_time_format_24h">24-hour (17:00)</string>
+    <string name="settings_date_format">Date format</string>
+    <string name="settings_date_format_system">Follow language</string>
+    <string name="settings_date_format_day_first">Day first (4 Jul)</string>
+    <string name="settings_date_format_month_first">Month first (Jul 4)</string>
+    <string name="settings_date_format_iso">ISO (2026-07-04)</string>
+    <string name="settings_date_format_desc">Also decides how a typed date like 3/4 is read when adding a task.</string>
+    <!-- System notification settings -->
+    <string name="settings_system_notifications">Sound &amp; vibration</string>
+    <string name="settings_system_notifications_desc">Opens Android\'s own notification settings for YATA.</string>
     <string name="settings_section_sound_feedback">SOUND &amp; FEEDBACK</string>
     <string name="settings_section_task_defaults">TASK DEFAULTS</string>
 

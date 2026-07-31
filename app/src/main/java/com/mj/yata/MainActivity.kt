@@ -222,6 +222,11 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 }
 
                 override fun onStart(owner: LifecycleOwner) {
+                    // The device's 12/24-hour setting can be changed while we're backgrounded, and
+                    // nothing broadcasts it to us — re-read it whenever we come back to the front.
+                    com.mj.yata.util.AppFormats.updateSystemClock(
+                        android.text.format.DateFormat.is24HourFormat(this@MainActivity)
+                    )
                     val backgroundedAt = AppLockState.backgroundedAtMillis ?: return
                     AppLockState.backgroundedAtMillis = null
                     if (!AppLockState.appLockEnabled) return
@@ -272,6 +277,10 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
             val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
             val taskCardBackground by userPreferences.taskCardBackgroundFlow.collectAsState(initial = false)
+            val swipeRightAction by userPreferences.swipeRightActionFlow
+                .collectAsState(initial = com.mj.yata.domain.model.SwipeAction.COMPLETE)
+            val swipeLeftAction by userPreferences.swipeLeftActionFlow
+                .collectAsState(initial = com.mj.yata.domain.model.SwipeAction.DELETE)
 
             val appLockEnabledPref by userPreferences.appLockEnabledFlow.collectAsState(initial = false)
             LaunchedEffect(appLockEnabledPref) { AppLockState.appLockEnabled = appLockEnabledPref }
@@ -299,6 +308,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 com.mj.yata.ui.widgets.LocalUndoWindowSeconds provides undoWindowSeconds,
                 com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled,
                 com.mj.yata.ui.theme.LocalTaskCardBackground provides taskCardBackground,
+                com.mj.yata.ui.theme.LocalSwipeRightAction provides swipeRightAction,
+                com.mj.yata.ui.theme.LocalSwipeLeftAction provides swipeLeftAction,
                 com.mj.yata.ui.theme.LocalReduceMotion provides reduceMotionEnabled
             ) {
                 YataTheme(

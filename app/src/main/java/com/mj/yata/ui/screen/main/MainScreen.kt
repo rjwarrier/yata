@@ -184,9 +184,25 @@ fun MainScreen(
     val savedSmartFilterSets by viewModel.savedSmartFilterSets.collectAsStateWithLifecycle()
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
 
-    LaunchedEffect(lastHomeTab, restoredHomeTab) {
+    val startupTab by viewModel.startupTab.collectAsStateWithLifecycle()
+    val confettiEnabled by viewModel.confettiEnabled.collectAsStateWithLifecycle()
+
+    fun isTabAvailable(tabId: Int): Boolean = when (tabId) {
+        0 -> todayTabEnabled
+        1 -> projectsFeatureEnabled
+        2 -> peopleFeatureEnabled
+        3 -> tagsFeatureEnabled
+        4 -> upcomingTabEnabled
+        else -> false
+    }
+
+    LaunchedEffect(lastHomeTab, startupTab, restoredHomeTab) {
         if (!restoredHomeTab) {
-            selectedTab = lastHomeTab
+            // A fixed startup tab wins over the remembered one. It's still validated against the
+            // feature flags: tab ids are fixed regardless of which tabs are hidden, so a startup
+            // tab pointing at a disabled one would otherwise open a tab that isn't there.
+            val requested = if (startupTab == StartupTab.LAST_USED) lastHomeTab else startupTab.tabId
+            selectedTab = if (isTabAvailable(requested)) requested else 0
             restoredHomeTab = true
         }
     }
@@ -735,6 +751,7 @@ fun MainScreen(
                             sortMode = sortModeToday,
                             onSortModeChange = { viewModel.setSortModeToday(it) },
                             cloudSyncEnabled = cloudBackupEnabled,
+                            confettiEnabled = confettiEnabled,
                             syncing = syncing,
                             onSyncClick = { runManualSync() }
                         )

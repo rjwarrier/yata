@@ -171,7 +171,7 @@ fun WidgetTaskRow(task: Task, tintColor: Color, onSurface: Color, assignees: Lis
                 }
                 Spacer(modifier = GlanceModifier.width(4.dp))
             }
-            val time = task.time
+            val time = com.mj.yata.util.TaskScheduleUtils.displayTime(task.time)
             if (!time.isNullOrBlank()) {
                 Text(
                     text = time,

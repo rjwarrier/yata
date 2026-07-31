@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.QuickSnoozePreset
+import com.mj.yata.domain.model.SwipeAction
 import com.mj.yata.domain.model.isDeferredOn
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
@@ -118,6 +120,8 @@ fun TaskRow(
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
     val taskSwipeActionsEnabled = com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled.current
+    val swipeRightAction = com.mj.yata.ui.theme.LocalSwipeRightAction.current
+    val swipeLeftAction = com.mj.yata.ui.theme.LocalSwipeLeftAction.current
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     var showRenameDialog by remember { mutableStateOf(false) }
 
@@ -385,7 +389,8 @@ fun TaskRow(
 
                     task.time?.let { time ->
                         Text(
-                            text = time,
+                            // Stored 12-hour, shown however the clock preference asks for.
+                            text = com.mj.yata.util.TaskScheduleUtils.displayTime(time) ?: time,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
                         )
@@ -503,7 +508,21 @@ fun TaskRow(
         }
     }
 
-    if (onSwipeToDelete != null && swipeEnabled && taskSwipeActionsEnabled) {
+    // Which of the configured actions this particular row can actually carry out. Delete and
+    // snooze depend on callbacks the caller may not have passed, and an action whose callback is
+    // missing has to fall back to doing nothing rather than silently mapping to something else.
+    fun resolveAction(action: SwipeAction): (() -> Unit)? = when (action) {
+        SwipeAction.NONE -> null
+        SwipeAction.COMPLETE -> onToggleDone
+        SwipeAction.DELETE -> onSwipeToDelete
+        SwipeAction.SNOOZE_TOMORROW -> onQuickSnooze?.let { snooze -> { snooze(QuickSnoozePreset.TOMORROW_MORNING) } }
+        SwipeAction.EDIT_TITLE -> onRenameTask?.let { { showRenameDialog = true } }
+    }
+
+    val rightHandler = resolveAction(swipeRightAction)
+    val leftHandler = resolveAction(swipeLeftAction)
+
+    if ((rightHandler != null || leftHandler != null) && swipeEnabled && taskSwipeActionsEnabled) {
         // Both directions snap back immediately (confirmValueChange always returns false) —
         // the row never gets removed by the swipe box itself. Delete goes through the same
         // deferred-Undo-snackbar flow as everywhere else in the app (task data isn't touched
@@ -515,29 +534,50 @@ fun TaskRow(
             // scrolling with a thumb that grazes a row) settle back instead of registering.
             positionalThreshold = { totalDistance -> totalDistance * 0.75f },
             confirmValueChange = { value ->
-                when (value) {
-                    SwipeToDismissBoxValue.EndToStart -> {
-                        if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        onSwipeToDelete()
-                    }
-                    SwipeToDismissBoxValue.StartToEnd -> {
-                        if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        onToggleDone()
-                    }
-                    SwipeToDismissBoxValue.Settled -> {}
+                val handler = when (value) {
+                    SwipeToDismissBoxValue.EndToStart -> leftHandler
+                    SwipeToDismissBoxValue.StartToEnd -> rightHandler
+                    SwipeToDismissBoxValue.Settled -> null
+                }
+                if (handler != null) {
+                    if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    handler()
                 }
                 false
             }
         )
         SwipeToDismissBox(
             state = dismissState,
+            // A direction with no action must not swipe at all, or the row slides open onto a
+            // blank background and springs back having done nothing.
+            enableDismissFromStartToEnd = rightHandler != null,
+            enableDismissFromEndToStart = leftHandler != null,
             modifier = modifier,
             backgroundContent = {
                 val direction = dismissState.dismissDirection
-                val (color, icon, alignment) = when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> Triple(MaterialTheme.colorScheme.primaryContainer, Icons.Default.Check, Alignment.CenterStart)
-                    SwipeToDismissBoxValue.EndToStart -> Triple(MaterialTheme.colorScheme.errorContainer, Icons.Default.Delete, Alignment.CenterEnd)
-                    SwipeToDismissBoxValue.Settled -> Triple(Color.Transparent, null, Alignment.Center)
+                val action = when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> swipeRightAction
+                    SwipeToDismissBoxValue.EndToStart -> swipeLeftAction
+                    SwipeToDismissBoxValue.Settled -> SwipeAction.NONE
+                }
+                // Destructive actions get the error colour, the rest the primary container, so the
+                // backdrop still reads as a warning when it should and only when it should.
+                val isDestructive = action == SwipeAction.DELETE
+                val color = when {
+                    action == SwipeAction.NONE -> Color.Transparent
+                    isDestructive -> MaterialTheme.colorScheme.errorContainer
+                    else -> MaterialTheme.colorScheme.primaryContainer
+                }
+                val icon = when (action) {
+                    SwipeAction.NONE -> null
+                    SwipeAction.COMPLETE -> Icons.Default.Check
+                    SwipeAction.DELETE -> Icons.Default.Delete
+                    SwipeAction.SNOOZE_TOMORROW -> Icons.Default.Snooze
+                    SwipeAction.EDIT_TITLE -> Icons.Default.Edit
+                }
+                val alignment = when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                    else -> Alignment.CenterEnd
                 }
                 Box(
                     modifier = Modifier
@@ -550,10 +590,10 @@ fun TaskRow(
                         Icon(
                             imageVector = it,
                             contentDescription = null,
-                            tint = if (direction == SwipeToDismissBoxValue.StartToEnd) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
+                            tint = if (isDestructive) {
                                 MaterialTheme.colorScheme.onErrorContainer
+                            } else {
+                                MaterialTheme.colorScheme.onPrimaryContainer
                             }
                         )
                     }

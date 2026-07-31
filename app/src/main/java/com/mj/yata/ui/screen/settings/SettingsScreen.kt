@@ -59,9 +59,13 @@ import com.mj.yata.data.cloud.isCloudBackupStale
 import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
+import com.mj.yata.domain.model.DateFormat
 import com.mj.yata.domain.model.DefaultDueDate
 import com.mj.yata.domain.model.FabPosition
+import com.mj.yata.domain.model.StartupTab
+import com.mj.yata.domain.model.SwipeAction
 import com.mj.yata.domain.model.TaskRowDensity
+import com.mj.yata.domain.model.TimeFormat
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
 import kotlin.math.roundToInt
@@ -129,10 +133,6 @@ fun SettingsScreen(
     val startOfWeekSunday = uiState.startOfWeekSunday
     val defaultReminderHour = uiState.defaultReminderHour
     val defaultReminderMinute = uiState.defaultReminderMinute
-    val themeScheduleStartHour = uiState.themeScheduleStartHour
-    val themeScheduleStartMinute = uiState.themeScheduleStartMinute
-    val themeScheduleEndHour = uiState.themeScheduleEndHour
-    val themeScheduleEndMinute = uiState.themeScheduleEndMinute
     val reduceMotionEnabled = uiState.reduceMotionEnabled
     val enhancedM3ThemingEnabled = uiState.enhancedM3ThemingEnabled
     val floatingBottomNavEnabled = uiState.floatingBottomNavEnabled
@@ -183,6 +183,17 @@ fun SettingsScreen(
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
     var showDefaultListMenu by remember { mutableStateOf(false) }
+    var showStartupTabMenu by remember { mutableStateOf(false) }
+    var showSwipeRightMenu by remember { mutableStateOf(false) }
+    var showSwipeLeftMenu by remember { mutableStateOf(false) }
+    var showTimeFormatMenu by remember { mutableStateOf(false) }
+    var showDateFormatMenu by remember { mutableStateOf(false) }
+    val startupTab by viewModel.startupTab.collectAsStateWithLifecycle()
+    val swipeRightAction by viewModel.swipeRightAction.collectAsStateWithLifecycle()
+    val swipeLeftAction by viewModel.swipeLeftAction.collectAsStateWithLifecycle()
+    val confettiEnabled by viewModel.confettiEnabled.collectAsStateWithLifecycle()
+    val timeFormat by viewModel.timeFormat.collectAsStateWithLifecycle()
+    val dateFormat by viewModel.dateFormat.collectAsStateWithLifecycle()
     var showTrashRetentionMenu by remember { mutableStateOf(false) }
     var showAutoArchiveMenu by remember { mutableStateOf(false) }
     var showAgendaTimePicker by remember { mutableStateOf(false) }
@@ -896,6 +907,68 @@ fun SettingsScreen(
                         checked = taskCardBackground,
                         onCheckedChange = { viewModel.setTaskCardBackground(it) }
                     )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    // How dates and times are written. Both default to following the device, which
+                    // is what the app should have done from the start — the old hardcoded patterns
+                    // showed a 24-hour-clock user "5:00 PM" and wrote "Jul 4" in locales that say
+                    // "4 Jul". These change display only; stored values are untouched.
+                    val timeFormatLabels = mapOf(
+                        TimeFormat.SYSTEM to stringResource(R.string.settings_time_format_system),
+                        TimeFormat.TWELVE_HOUR to stringResource(R.string.settings_time_format_12h),
+                        TimeFormat.TWENTY_FOUR_HOUR to stringResource(R.string.settings_time_format_24h)
+                    )
+                    Box {
+                        SettingsRow(
+                            label = stringResource(R.string.settings_time_format),
+                            value = timeFormatLabels[timeFormat].orEmpty(),
+                            onClick = { showTimeFormatMenu = true }
+                        )
+                        DropdownMenu(expanded = showTimeFormatMenu, onDismissRequest = { showTimeFormatMenu = false }) {
+                            TimeFormat.entries.forEach { format ->
+                                DropdownMenuItem(
+                                    text = { Text(timeFormatLabels[format].orEmpty()) },
+                                    onClick = {
+                                        viewModel.setTimeFormat(format)
+                                        showTimeFormatMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    val dateFormatLabels = mapOf(
+                        DateFormat.SYSTEM to stringResource(R.string.settings_date_format_system),
+                        DateFormat.DAY_FIRST to stringResource(R.string.settings_date_format_day_first),
+                        DateFormat.MONTH_FIRST to stringResource(R.string.settings_date_format_month_first),
+                        DateFormat.ISO to stringResource(R.string.settings_date_format_iso)
+                    )
+                    Box {
+                        SettingsRow(
+                            label = stringResource(R.string.settings_date_format),
+                            value = dateFormatLabels[dateFormat].orEmpty(),
+                            onClick = { showDateFormatMenu = true }
+                        )
+                        DropdownMenu(expanded = showDateFormatMenu, onDismissRequest = { showDateFormatMenu = false }) {
+                            DateFormat.entries.forEach { format ->
+                                DropdownMenuItem(
+                                    text = { Text(dateFormatLabels[format].orEmpty()) },
+                                    onClick = {
+                                        viewModel.setDateFormat(format)
+                                        showDateFormatMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        text = stringResource(R.string.settings_date_format_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -939,6 +1012,39 @@ fun SettingsScreen(
                         }
                     )
                 }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                val startupLastUsed = stringResource(R.string.settings_startup_last_used)
+                val startupLabels = mapOf(
+                    StartupTab.LAST_USED to startupLastUsed,
+                    StartupTab.TODAY to stringResource(R.string.settings_tab_today),
+                    StartupTab.PROJECTS to stringResource(R.string.settings_tab_projects),
+                    StartupTab.PEOPLE to stringResource(R.string.settings_tab_people),
+                    StartupTab.TAGS to stringResource(R.string.settings_tab_tags),
+                    StartupTab.UPCOMING to stringResource(R.string.settings_tab_upcoming)
+                )
+                Box {
+                    SettingsRow(
+                        label = stringResource(R.string.settings_startup_tab),
+                        value = startupLabels[startupTab] ?: startupLastUsed,
+                        onClick = { showStartupTabMenu = true }
+                    )
+                    DropdownMenu(expanded = showStartupTabMenu, onDismissRequest = { showStartupTabMenu = false }) {
+                        StartupTab.entries.forEach { tab ->
+                            DropdownMenuItem(
+                                text = { Text(startupLabels[tab] ?: tab.name) },
+                                onClick = {
+                                    viewModel.setStartupTab(tab)
+                                    showStartupTabMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = stringResource(R.string.settings_startup_tab_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -965,6 +1071,64 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_swipe_actions_desc),
                     checked = taskSwipeActionsEnabled,
                     onCheckedChange = { viewModel.setTaskSwipeActionsEnabled(it) }
+                )
+
+                // Only worth showing when swiping is on at all — otherwise these two configure
+                // something that can't happen.
+                if (taskSwipeActionsEnabled) {
+                    val swipeActionLabels = mapOf(
+                        SwipeAction.NONE to stringResource(R.string.settings_swipe_action_none),
+                        SwipeAction.COMPLETE to stringResource(R.string.settings_swipe_action_complete),
+                        SwipeAction.DELETE to stringResource(R.string.settings_swipe_action_delete),
+                        SwipeAction.SNOOZE_TOMORROW to stringResource(R.string.settings_swipe_action_snooze),
+                        SwipeAction.EDIT_TITLE to stringResource(R.string.settings_swipe_action_edit)
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    Box {
+                        SettingsRow(
+                            label = stringResource(R.string.settings_swipe_right_action),
+                            value = swipeActionLabels[swipeRightAction].orEmpty(),
+                            onClick = { showSwipeRightMenu = true }
+                        )
+                        DropdownMenu(expanded = showSwipeRightMenu, onDismissRequest = { showSwipeRightMenu = false }) {
+                            SwipeAction.entries.forEach { action ->
+                                DropdownMenuItem(
+                                    text = { Text(swipeActionLabels[action].orEmpty()) },
+                                    onClick = {
+                                        viewModel.setSwipeRightAction(action)
+                                        showSwipeRightMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    Box {
+                        SettingsRow(
+                            label = stringResource(R.string.settings_swipe_left_action),
+                            value = swipeActionLabels[swipeLeftAction].orEmpty(),
+                            onClick = { showSwipeLeftMenu = true }
+                        )
+                        DropdownMenu(expanded = showSwipeLeftMenu, onDismissRequest = { showSwipeLeftMenu = false }) {
+                            SwipeAction.entries.forEach { action ->
+                                DropdownMenuItem(
+                                    text = { Text(swipeActionLabels[action].orEmpty()) },
+                                    onClick = {
+                                        viewModel.setSwipeLeftAction(action)
+                                        showSwipeLeftMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_confetti),
+                    subtitle = stringResource(R.string.settings_confetti_desc),
+                    checked = confettiEnabled,
+                    onCheckedChange = { viewModel.setConfettiEnabled(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -1094,7 +1258,7 @@ fun SettingsScreen(
 
                 SettingsRow(
                     label = stringResource(R.string.settings_default_reminder_time),
-                    value = TaskScheduleUtils.formatTime(defaultReminderHour, defaultReminderMinute),
+                    value = TaskScheduleUtils.displayTime(defaultReminderHour, defaultReminderMinute),
                     onClick = { showReminderTimePicker = true }
                 )
 
@@ -1244,7 +1408,7 @@ fun SettingsScreen(
                     AnimatedVisibility(visible = dailyAgendaEnabled) {
                         SettingsRow(
                             label = stringResource(R.string.settings_daily_agenda_time),
-                            value = TaskScheduleUtils.formatTime(dailyAgendaHour, dailyAgendaMinute),
+                            value = TaskScheduleUtils.displayTime(dailyAgendaHour, dailyAgendaMinute),
                             onClick = { showAgendaTimePicker = true }
                         )
                     }
@@ -1267,6 +1431,22 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                    // Sound and vibration are per-channel and belong to Android, not to us —
+                    // reimplementing a tone picker here would only fight the system UI, which
+                    // already does it per notification type. This just points at it.
+                    SettingsRow(
+                        label = stringResource(R.string.settings_system_notifications),
+                        value = "",
+                        onClick = { NotificationPermissionUtils.openNotificationSettings(context) }
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_system_notifications_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                     Text(stringResource(R.string.settings_quick_snooze_times), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                     Text(
                         stringResource(R.string.settings_quick_snooze_times_desc),
@@ -1275,12 +1455,12 @@ fun SettingsScreen(
                     )
                     SettingsRow(
                         label = stringResource(R.string.settings_snooze_tonight),
-                        value = TaskScheduleUtils.formatTime(snoozeTonightHour, snoozeTonightMinute),
+                        value = TaskScheduleUtils.displayTime(snoozeTonightHour, snoozeTonightMinute),
                         onClick = { showSnoozeTonightPicker = true }
                     )
                     SettingsRow(
                         label = stringResource(R.string.settings_snooze_tomorrow),
-                        value = TaskScheduleUtils.formatTime(snoozeTomorrowHour, snoozeTomorrowMinute),
+                        value = TaskScheduleUtils.displayTime(snoozeTomorrowHour, snoozeTomorrowMinute),
                         onClick = { showSnoozeTomorrowPicker = true }
                     )
                 }

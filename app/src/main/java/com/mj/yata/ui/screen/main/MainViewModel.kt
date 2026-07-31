@@ -120,10 +120,6 @@ data class SettingsUiState(
     val startOfWeekSunday: Boolean = true,
     val defaultReminderHour: Int = 9,
     val defaultReminderMinute: Int = 0,
-    val themeScheduleStartHour: Int = 21,
-    val themeScheduleStartMinute: Int = 0,
-    val themeScheduleEndHour: Int = 7,
-    val themeScheduleEndMinute: Int = 0,
     val reduceMotionEnabled: Boolean = false,
     val enhancedM3ThemingEnabled: Boolean = false,
     val floatingBottomNavEnabled: Boolean = false,
@@ -193,22 +189,14 @@ private data class SettingsReminderState(
     val defaultListId: String,
     val startOfWeekSunday: Boolean,
     val defaultReminderHour: Int,
-    val defaultReminderMinute: Int,
-    val themeScheduleStartHour: Int
+    val defaultReminderMinute: Int
 )
 
-private data class SettingsDisplayFlags(
-    val reduceMotionEnabled: Boolean,
-    val enhancedM3ThemingEnabled: Boolean,
-    val floatingBottomNavEnabled: Boolean,
-    val bottomNavLabelsEnabled: Boolean,
-    val textScale: Float
-)
-
+// The theme-schedule times that used to pad these two out went with the SCHEDULED theme mode when
+// it was replaced by AMOLED — they were still being read from DataStore and carried all the way
+// into the settings state, where nothing had looked at them since. Dropping them collapses the
+// nested combine that only existed to fit them within combine's five-flow limit.
 private data class SettingsDisplayState(
-    val themeScheduleStartMinute: Int,
-    val themeScheduleEndHour: Int,
-    val themeScheduleEndMinute: Int,
     val reduceMotionEnabled: Boolean,
     val enhancedM3ThemingEnabled: Boolean,
     val floatingBottomNavEnabled: Boolean,
@@ -355,35 +343,18 @@ private data class MainNavigationState(
             userPreferences.defaultListIdFlow,
             userPreferences.startOfWeekSundayFlow,
             userPreferences.defaultReminderHourFlow,
-            userPreferences.defaultReminderMinuteFlow,
-            userPreferences.themeScheduleStartHourFlow
-        ) { defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute, themeScheduleStartHour ->
-            SettingsReminderState(defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute, themeScheduleStartHour)
+            userPreferences.defaultReminderMinuteFlow
+        ) { defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute ->
+            SettingsReminderState(defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute)
         },
         combine(
-            userPreferences.themeScheduleStartMinuteFlow,
-            userPreferences.themeScheduleEndHourFlow,
-            userPreferences.themeScheduleEndMinuteFlow,
-            combine(
-                userPreferences.reduceMotionEnabledFlow,
-                userPreferences.enhancedM3ThemingEnabledFlow,
-                userPreferences.floatingBottomNavEnabledFlow,
-                userPreferences.bottomNavLabelsEnabledFlow,
-                userPreferences.textScaleFlow
-            ) { reduceMotion, enhancedM3, floatingNav, bottomNavLabels, textScale ->
-                SettingsDisplayFlags(reduceMotion, enhancedM3, floatingNav, bottomNavLabels, textScale)
-            }
-        ) { themeScheduleStartMinute, themeScheduleEndHour, themeScheduleEndMinute, flags ->
-            SettingsDisplayState(
-                themeScheduleStartMinute,
-                themeScheduleEndHour,
-                themeScheduleEndMinute,
-                flags.reduceMotionEnabled,
-                flags.enhancedM3ThemingEnabled,
-                flags.floatingBottomNavEnabled,
-                flags.bottomNavLabelsEnabled,
-                flags.textScale
-            )
+            userPreferences.reduceMotionEnabledFlow,
+            userPreferences.enhancedM3ThemingEnabledFlow,
+            userPreferences.floatingBottomNavEnabledFlow,
+            userPreferences.bottomNavLabelsEnabledFlow,
+            userPreferences.textScaleFlow
+        ) { reduceMotion, enhancedM3, floatingNav, bottomNavLabels, textScale ->
+            SettingsDisplayState(reduceMotion, enhancedM3, floatingNav, bottomNavLabels, textScale)
         },
         combine(
             userPreferences.taskRowDensityFlow,
@@ -469,10 +440,6 @@ private data class MainNavigationState(
             startOfWeekSunday = core.reminder.startOfWeekSunday,
             defaultReminderHour = core.reminder.defaultReminderHour,
             defaultReminderMinute = core.reminder.defaultReminderMinute,
-            themeScheduleStartHour = core.reminder.themeScheduleStartHour,
-            themeScheduleStartMinute = core.display.themeScheduleStartMinute,
-            themeScheduleEndHour = core.display.themeScheduleEndHour,
-            themeScheduleEndMinute = core.display.themeScheduleEndMinute,
             reduceMotionEnabled = core.display.reduceMotionEnabled,
             enhancedM3ThemingEnabled = core.display.enhancedM3ThemingEnabled,
             floatingBottomNavEnabled = core.display.floatingBottomNavEnabled,
@@ -662,18 +629,6 @@ private data class MainNavigationState(
     val defaultReminderMinute: StateFlow<Int> = userPreferences.defaultReminderMinuteFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    val themeScheduleStartHour: StateFlow<Int> = userPreferences.themeScheduleStartHourFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 21)
-
-    val themeScheduleStartMinute: StateFlow<Int> = userPreferences.themeScheduleStartMinuteFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
-
-    val themeScheduleEndHour: StateFlow<Int> = userPreferences.themeScheduleEndHourFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 7)
-
-    val themeScheduleEndMinute: StateFlow<Int> = userPreferences.themeScheduleEndMinuteFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
-
     val uiScale: StateFlow<Float> = userPreferences.uiScaleFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
 
@@ -716,6 +671,43 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 9)
     val snoozeTomorrowMinute: StateFlow<Int> = userPreferences.snoozeTomorrowMinuteFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val swipeRightAction: StateFlow<com.mj.yata.domain.model.SwipeAction> = userPreferences.swipeRightActionFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.SwipeAction.COMPLETE)
+    val swipeLeftAction: StateFlow<com.mj.yata.domain.model.SwipeAction> = userPreferences.swipeLeftActionFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.SwipeAction.DELETE)
+    val startupTab: StateFlow<com.mj.yata.domain.model.StartupTab> = userPreferences.startupTabFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.StartupTab.LAST_USED)
+    val confettiEnabled: StateFlow<Boolean> = userPreferences.confettiEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val timeFormat: StateFlow<com.mj.yata.domain.model.TimeFormat> = userPreferences.timeFormatFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.TimeFormat.SYSTEM)
+    val dateFormat: StateFlow<com.mj.yata.domain.model.DateFormat> = userPreferences.dateFormatFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.DateFormat.SYSTEM)
+
+    fun setSwipeRightAction(action: com.mj.yata.domain.model.SwipeAction) {
+        safeLaunch { userPreferences.setSwipeRightAction(action) }
+    }
+
+    fun setSwipeLeftAction(action: com.mj.yata.domain.model.SwipeAction) {
+        safeLaunch { userPreferences.setSwipeLeftAction(action) }
+    }
+
+    fun setStartupTab(tab: com.mj.yata.domain.model.StartupTab) {
+        safeLaunch { userPreferences.setStartupTab(tab) }
+    }
+
+    fun setConfettiEnabled(enabled: Boolean) {
+        safeLaunch { userPreferences.setConfettiEnabled(enabled) }
+    }
+
+    fun setTimeFormat(format: com.mj.yata.domain.model.TimeFormat) {
+        safeLaunch { userPreferences.setTimeFormat(format) }
+    }
+
+    fun setDateFormat(format: com.mj.yata.domain.model.DateFormat) {
+        safeLaunch { userPreferences.setDateFormat(format) }
+    }
 
     fun setUndoWindowSeconds(seconds: Int) {
         safeLaunch { userPreferences.setUndoWindowSeconds(seconds) }
@@ -1421,12 +1413,6 @@ private data class MainNavigationState(
     fun setThemeMode(mode: ThemeMode) {
         safeLaunch {
             userPreferences.setThemeMode(mode)
-        }
-    }
-
-    fun setThemeSchedule(startHour: Int, startMinute: Int, endHour: Int, endMinute: Int) {
-        safeLaunch {
-            userPreferences.setThemeSchedule(startHour, startMinute, endHour, endMinute)
         }
     }
 

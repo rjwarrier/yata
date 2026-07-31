@@ -85,6 +85,7 @@ fun TodayTab(
     onHideCompletedChange: (Boolean) -> Unit = {},
     /** Gates the manual sync button — there is nothing to sync to until cloud backup is set up. */
     cloudSyncEnabled: Boolean = false,
+    confettiEnabled: Boolean = true,
     syncing: Boolean = false,
     onSyncClick: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -101,7 +102,7 @@ fun TodayTab(
     val today = remember { LocalDate.now() }
     val todayStr = remember { today.toString() }
     val todayDateLabel = remember {
-        LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")).uppercase()
+        LocalDate.now().format(com.mj.yata.util.AppFormats.headerDateFormatter()).uppercase()
     }
 
     // Projects/lists marked "Exclude from Today" hide their tasks from this screen entirely,
@@ -180,7 +181,7 @@ fun TodayTab(
         lastDone = doneCount
         // previousRemaining > 0 skips the first pass and skips arriving on an already-clear day;
         // doneCount having gone up is what separates finishing the last task from deleting it.
-        if (previousRemaining > 0 && remainingCount == 0 && doneCount > previousDone) {
+        if (confettiEnabled && previousRemaining > 0 && remainingCount == 0 && doneCount > previousDone) {
             confettiTrigger++
         }
     }

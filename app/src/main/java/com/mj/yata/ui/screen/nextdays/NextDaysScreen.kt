@@ -90,7 +90,7 @@ fun NextDaysScreen(
         return when (date) {
             today -> "Today"
             today.plusDays(1) -> "Tomorrow"
-            else -> date.format(DateTimeFormatter.ofPattern("EEEE, MMM d"))
+            else -> date.format(com.mj.yata.util.AppFormats.headerDateFormatter())
         }
     }
 

@@ -64,7 +64,9 @@ fun YataTimePickerLauncher(
     val timePickerState = rememberTimePickerState(
         initialHour = initial?.hour ?: 9,
         initialMinute = initial?.minute ?: 0,
-        is24Hour = false
+        // Follows the clock preference. What onConfirm writes back is unaffected — the picker
+        // hands back hour and minute, and formatTime always stores the 12-hour form.
+        is24Hour = com.mj.yata.util.AppFormats.uses24Hour()
     )
 
     AlertDialog(

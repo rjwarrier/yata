@@ -14,6 +14,8 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import javax.inject.Inject
 
+import com.mj.yata.util.AppFormats
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -55,6 +57,25 @@ class YataApplication : Application(), Configuration.Provider {
                 reconcileBackgroundJobs()
             } catch (t: Throwable) {
                 Log.e("YataApplication", "Failed to reconcile background jobs on startup", t)
+            }
+        }
+
+        // The single writer for AppFormats. It lives here rather than in an Activity because
+        // widgets, notification receivers and workers format dates too, and they run with no
+        // Activity alive. Writes are on the main thread since the values are Compose state.
+        // Best-effort for the same reason as above: a corrupt prefs file must not kill startup,
+        // and the formats simply stay at their system-following defaults if it does.
+        AppFormats.updateSystemClock(android.text.format.DateFormat.is24HourFormat(this))
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+            try {
+                combine(
+                    userPreferences.timeFormatFlow,
+                    userPreferences.dateFormatFlow
+                ) { time, date -> time to date }.collect { (time, date) ->
+                    AppFormats.update(time, date)
+                }
+            } catch (t: Throwable) {
+                Log.e("YataApplication", "Failed to observe date/time format preferences", t)
             }
         }
     }

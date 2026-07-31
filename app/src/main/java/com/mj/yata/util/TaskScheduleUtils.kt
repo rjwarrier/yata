@@ -12,9 +12,17 @@ import java.util.Locale
 
 object TaskScheduleUtils {
     private val isoDateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-    private val displayTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
-    private val shortDateFormatter = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault())
-    private val longDateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
+
+    /**
+     * The format times are *stored* in. `Task.time` is a display-shaped string in the database, so
+     * this has to stay fixed no matter what the user's clock preference is: every task written
+     * before the preference existed is in this form, and the 24-hour setting must never rewrite
+     * them. [displayTime] converts on the way to the screen instead.
+     */
+    private val storageTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+
+    private fun shortDateFormatter() = AppFormats.shortDateFormatter()
+    private fun longDateFormatter() = AppFormats.longDateFormatter()
 
     val reminderOptions = listOf(
         "At time",
@@ -33,7 +41,7 @@ object TaskScheduleUtils {
             1L -> "Tomorrow"
             -1L -> "Yesterday"
             else -> {
-                if (date.year == today.year) shortDateFormatter.format(date) else longDateFormatter.format(date)
+                if (date.year == today.year) shortDateFormatter().format(date) else longDateFormatter().format(date)
             }
         }
     }
@@ -41,8 +49,23 @@ object TaskScheduleUtils {
     fun formatDueDateTime(dateString: String?, timeString: String?): String {
         val dueDate = formatDueDate(dateString)
         if (dateString == null || timeString.isNullOrBlank()) return dueDate
-        return "$dueDate at $timeString"
+        return "$dueDate at ${displayTime(timeString)}"
     }
+
+    /**
+     * A stored time string rendered the way the user asked for it. Falls back to the stored text
+     * when it can't be parsed, so an unexpected value degrades to showing something rather than
+     * blanking the time out.
+     */
+    fun displayTime(storedTime: String?): String? {
+        if (storedTime.isNullOrBlank()) return storedTime
+        val parsed = parseTime(storedTime) ?: return storedTime
+        return parsed.format(AppFormats.timeFormatter())
+    }
+
+    /** As [formatTime], but for showing rather than storing. */
+    fun displayTime(hour: Int, minute: Int): String =
+        LocalTime.of(hour, minute).format(AppFormats.timeFormatter())
 
     fun formatReminder(reminder: String?): String = reminder ?: "None"
 
@@ -51,11 +74,11 @@ object TaskScheduleUtils {
         val dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(completedAt), ZoneId.systemDefault())
         val date = dateTime.toLocalDate()
         val today = LocalDate.now()
-        val time = displayTimeFormatter.format(dateTime)
+        val time = AppFormats.timeFormatter().format(dateTime)
         val dayLabel = when (ChronoUnit.DAYS.between(today, date)) {
             0L -> return "Completed today at $time"
             -1L -> "yesterday"
-            else -> if (date.year == today.year) shortDateFormatter.format(date) else longDateFormatter.format(date)
+            else -> if (date.year == today.year) shortDateFormatter().format(date) else longDateFormatter().format(date)
         }
         return "Completed $dayLabel at $time"
     }
@@ -69,21 +92,27 @@ object TaskScheduleUtils {
         }
     }
 
+    /**
+     * Accepts both the ISO form and the stored 12-hour form. Both are tried regardless of the
+     * user's clock preference: the database holds 12-hour strings, and a task saved before the
+     * preference existed has to keep parsing after it's switched to 24-hour.
+     */
     fun parseTime(timeString: String?): LocalTime? {
         if (timeString.isNullOrBlank()) return null
         return try {
             LocalTime.parse(timeString)
         } catch (_: DateTimeParseException) {
             try {
-                LocalTime.parse(timeString, displayTimeFormatter)
+                LocalTime.parse(timeString, storageTimeFormatter)
             } catch (_: DateTimeParseException) {
                 null
             }
         }
     }
 
+    /** The canonical string written to `Task.time`. See [storageTimeFormatter]. */
     fun formatTime(hour: Int, minute: Int): String {
-        return LocalTime.of(hour, minute).format(displayTimeFormatter)
+        return LocalTime.of(hour, minute).format(storageTimeFormatter)
     }
 
     fun dateToPickerMillis(dateString: String?): Long? {

@@ -1234,9 +1234,15 @@ fun TaskDetailScreen(
                                     .horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                LocalScheduleChip("9:00 AM", task.time == "9:00 AM") { viewModel.upsertTask(task.copy(time = "9:00 AM")) }
-                                LocalScheduleChip("12:00 PM", task.time == "12:00 PM") { viewModel.upsertTask(task.copy(time = "12:00 PM")) }
-                                LocalScheduleChip("6:00 PM", task.time == "6:00 PM") { viewModel.upsertTask(task.copy(time = "6:00 PM")) }
+                                // The string written to the task stays canonical 12-hour; only the
+                                // chip's label follows the clock preference. Comparing against the
+                                // canonical value is what keeps the selected state right in both.
+                                listOf("9:00 AM", "12:00 PM", "6:00 PM").forEach { canonical ->
+                                    val label = com.mj.yata.util.TaskScheduleUtils.displayTime(canonical) ?: canonical
+                                    LocalScheduleChip(label, task.time == canonical) {
+                                        viewModel.upsertTask(task.copy(time = canonical))
+                                    }
+                                }
                                 LocalScheduleChip("Custom time", false) { showTimePicker = true }
                                 LocalScheduleChip("Clear", task.time == null) { viewModel.upsertTask(task.copy(time = null)) }
                             }
