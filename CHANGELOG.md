@@ -15,6 +15,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.87 beta] - 2026-08-01
+
+`versionCode 9`. Upgrades in place over 0.86 beta; the database migrates from 26 to 27 with
+existing tasks preserved.
+
 ### Added
 
 - **Analytics rebuilt around delegated work.** A new Delegation card shows how open work splits
@@ -55,6 +60,16 @@ test-only changes belong in the commit message, not here, unless they change beh
   Stale Nudges and Task Health — are now in the command palette, where you can type "stale" or
   "overdue" to reach them instead of remembering where they sat in a menu. Next 10 Days was
   already on Today's top bar. The drawer now ends at a single Command palette entry.
+- **Task lists redraw less.** Ticking one task off used to cause every task visible on screen to be
+  rebuilt, not just the one that changed; the progress rings on the People, Tags and Projects tabs
+  also animated a decorative wave continuously, at sizes too small for it to be visible, rebuilding
+  their shape from scratch on every frame. Both are fixed, so long lists scroll better and the app
+  is easier on the battery when left open.
+- **The app holds on to less memory.** Profile photos were cached by count rather than by size, so
+  up to about five megabytes of images could sit in memory for as long as the app was running, and
+  nothing released them when the system came under pressure. The cache is now measured in actual
+  memory used and is emptied when you leave the app — which also makes Android less likely to close
+  it in the background and lose where you were.
 
 ### Fixed
 
@@ -64,17 +79,17 @@ test-only changes belong in the commit message, not here, unless they change beh
   scrolled off and back. Newly-appearing rows were unaffected.
 - **The Today header ignored the Date format setting** once drawn — it read correctly on the first
   frame but didn't update if you changed Day-first/Month-first/ISO while the tab was already open.
-- Reduce Motion now actually reduces motion for anything already on screen when it's toggled,
-  rather than only affecting animations that start afterward.
+- **Reduce Motion was only ever shortening animations, never removing them.** It now takes effect
+  on anything already on screen the moment you toggle it, rather than only on animations that
+  start afterwards, and large movements are replaced rather than sped up — screen transitions and
+  the Upcoming calendar cross-fade instead of sliding, the calendar no longer staggers its cells in
+  one after another, and the decorative wave on progress rings stops entirely.
 - Project and List detail's drag-to-reorder rows now fade in and out consistently with every other
   task list in the app, instead of popping in and out abruptly.
 - **Today and every other task list could show the wrong day.** They read the date once when
   first opened and never again, so leaving the app open (or merely backgrounded — the process
   keeps running) across midnight left Today showing yesterday's tasks, overdue badges wrong, and
   deferred tasks not yet un-deferred, until the app was force-closed and relaunched.
-- **Reduce Motion now removes large-displacement motion instead of only shortening it** — screen
-  transitions and the Upcoming calendar's day-by-day reveal cross-fade in place of sliding, and the
-  calendar no longer staggers each cell in one after another.
 - **Searching by subtask title missed archived and trashed tasks.** It worked everywhere else, so
   a search that should have found a shelved task quietly returned nothing — matching on the task's
   own title, notes, people and tags but never its checklist.
@@ -364,7 +379,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.86-beta...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.87-beta...HEAD
+[0.87 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.87-beta
 [0.86 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.86-beta
 [0.85 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.85-beta
 [0.7 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.7-beta
