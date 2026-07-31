@@ -50,8 +50,29 @@ test-only changes belong in the commit message, not here, unless they change beh
   defaults, which was most obvious after reinstalling. The app-lock PIN and the cloud account are
   deliberately excluded: a backup file is no place for a credential, and the cloud grant is
   per-device.
+- **Smart add understands a lot more.** Typing a new task now picks up:
+  - **Repeats** — "every weekday", "every weekend", "every monday and wednesday", "every mon, wed,
+    fri", "each monday" (`each` works anywhere `every` does), "every month on the 15th", "every 1st
+    of the month", "every last day of the month".
+  - **When a repeat stops** — "every 3 days until august 15", "daily standup for 10 times".
+  - **More dates** — "next year", "end of year", "next quarter", "end of quarter", "in 2 years",
+    "a week today", "wednesday next week", "beginning of next month", "later this week", "over the
+    weekend", "mid january", "in a couple of days", "in a few weeks", "in 3 business days" (skips
+    the weekend), "on the first"/"the twenty-first" spelled out, and dates written "20.07.2026" or
+    "20-07-2026".
+  - **More times** — "this morning", "this afternoon", "this evening", "later today", "5ish",
+    "noon-ish", "first thing", "cob", and mealtimes behind a preposition ("call the bank at lunch").
+  - **More priorities** — "not urgent", "backburner", "when i can", "nice to have", "eventually",
+    "drop everything", and the "prio" short forms.
+- **60 more icons to choose from** for projects and lists — food and drink, sport and outdoors,
+  more travel and transport, health, media, and work icons like handshake, campaign and inventory.
+  The picker also shows more of them at once before you have to scroll.
 
 ### Changed
+
+- **Tags now show their own initial** instead of the same generic label icon on every one. The Tags
+  tab and each tag's own screen draw the first letter of the tag's name — two letters if the name
+  has more than one word — in the tag's colour. Nothing to set up; it follows the name.
 
 - The task title in the New Task sheet is now the clear focal point of the screen: a tonal
   container with the largest rounding and type on the sheet, and a focus ring, instead of a thin
@@ -79,20 +100,13 @@ test-only changes belong in the commit message, not here, unless they change beh
   quick-add button set to Hidden, these three tabs no longer offer any way to create a tag, a
   person or a project.
 
-### Added
-
-- **60 more icons to choose from** for projects and lists — food and drink, sport and outdoors,
-  more travel and transport, health, media, and work icons like handshake, campaign and inventory.
-  The picker also shows more of them at once before you have to scroll.
-
-### Changed
-
-- **Tags now show their own initial** instead of the same generic label icon on every one. The Tags
-  tab and each tag's own screen draw the first letter of the tag's name — two letters if the name
-  has more than one word — in the tag's colour. Nothing to set up; it follows the name.
-
 ### Fixed
 
+- **Smart add read some phrases as the opposite of what they said.** "a week today" resolved to
+  today, "every week until dec 20" put the *end* of the repeat in the due date and then swallowed
+  the rest of the title, "wednesday next week" ignored the Wednesday, "beginning of next month"
+  landed on today's date a month out, "not important" flagged the task as important, and
+  "eod friday" meant today rather than Friday.
 - The Projects tab showed the same generic layers icon on every project, ignoring the icon picked
   for it. Projects now show their own icon in the list, as the project screen already did.
 - The list name under a task could render one letter per line — "Work" as a vertical `W o r k`.

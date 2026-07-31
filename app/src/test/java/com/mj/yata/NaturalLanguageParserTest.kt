@@ -1,5 +1,6 @@
 package com.mj.yata
 
+import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.util.NaturalLanguageParser
 import org.junit.Assert.*
 import org.junit.Test
@@ -760,5 +761,297 @@ class NaturalLanguageParserTest {
     fun noStartDateWhenUnstated() {
         val result = NaturalLanguageParser.parse("buy milk tomorrow", ref)
         assertNull(result.startDate)
+    }
+
+    // ── Recurrence ────────────────────────────────────────────────────────
+
+    @Test
+    fun parsesEverySingularWeekdayAndWeekend() {
+        // "every weekday" used to match nothing at all: the bare-word list only had the plurals.
+        val weekdays = NaturalLanguageParser.parse("every weekday standup", ref)
+        assertEquals(listOf("MO", "TU", "WE", "TH", "FR"), weekdays.recurrence?.byday)
+        assertEquals("standup", weekdays.title)
+
+        val weekend = NaturalLanguageParser.parse("every weekend chores", ref)
+        assertEquals(listOf("SA", "SU"), weekend.recurrence?.byday)
+        assertEquals("chores", weekend.title)
+    }
+
+    @Test
+    fun parsesEachAsSynonymForEvery() {
+        val result = NaturalLanguageParser.parse("each monday review", ref)
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(listOf("MO"), result.recurrence?.byday)
+        // Without the synonym this fell through to the bare-weekday rule and became a one-off
+        // due date on the next Monday instead of a repeat.
+        assertNull(result.due)
+        assertEquals("review", result.title)
+    }
+
+    @Test
+    fun parsesMultipleWeekdaysInOneRecurrence() {
+        val andForm = NaturalLanguageParser.parse("every monday and wednesday gym", ref)
+        assertEquals(listOf("MO", "WE"), andForm.recurrence?.byday)
+        assertNull(andForm.due)
+        assertEquals("gym", andForm.title)
+
+        val commaForm = NaturalLanguageParser.parse("every mon, wed, fri gym", ref)
+        assertEquals(listOf("MO", "WE", "FR"), commaForm.recurrence?.byday)
+        assertEquals("gym", commaForm.title)
+    }
+
+    @Test
+    fun multiWeekdayDaysComeOutInWeekOrderAndDeduped() {
+        val result = NaturalLanguageParser.parse("every friday, monday and monday standup", ref)
+        assertEquals(listOf("MO", "FR"), result.recurrence?.byday)
+    }
+
+    @Test
+    fun parsesMonthlyPinnedToADate() {
+        val onThe = NaturalLanguageParser.parse("every month on the 15th rent", ref)
+        assertEquals("monthly", onThe.recurrence?.freq)
+        assertEquals(15, onThe.recurrence?.bymonthday)
+        // The series says which day; the first one is still ahead, so it also seeds the due date.
+        assertEquals("2026-07-15", onThe.due)
+        assertEquals("rent", onThe.title)
+
+        val ordinalFirst = NaturalLanguageParser.parse("every 1st of the month rent", ref)
+        assertEquals(1, ordinalFirst.recurrence?.bymonthday)
+        assertEquals("2026-08-01", ordinalFirst.due)
+        assertEquals("rent", ordinalFirst.title)
+    }
+
+    @Test
+    fun parsesLastDayOfMonthRecurrence() {
+        val result = NaturalLanguageParser.parse("every last day of the month reconcile", ref)
+        assertEquals("monthly", result.recurrence?.freq)
+        assertEquals(-1, result.recurrence?.bymonthday) // the model's "last day, whatever it is"
+        assertEquals("2026-07-31", result.due)
+        assertEquals("reconcile", result.title)
+    }
+
+    @Test
+    fun parsesRecurrenceEndDate() {
+        val result = NaturalLanguageParser.parse("water plants every 3 days until august 15", ref)
+        assertEquals("daily", result.recurrence?.freq)
+        assertEquals(3, result.recurrence?.interval)
+        assertEquals(RecurrenceEnds.On("2026-08-15"), result.recurrence?.ends)
+        // The end date must not leak out as the due date — that's the first occurrence, not the last.
+        assertNull(result.due)
+        assertEquals("water plants", result.title)
+    }
+
+    @Test
+    fun recurrenceEndDateDoesNotSwallowTrailingTitle() {
+        // The captured phrase is lazy and stops only at end-of-input when nothing date-like
+        // follows, so the claim has to end where the date does or the title is eaten whole.
+        val result = NaturalLanguageParser.parse("every week until dec 20 sync", ref)
+        assertEquals(RecurrenceEnds.On("2026-12-20"), result.recurrence?.ends)
+        assertEquals("sync", result.title)
+    }
+
+    @Test
+    fun parsesRecurrenceOccurrenceCount() {
+        val result = NaturalLanguageParser.parse("daily standup for 10 times", ref)
+        assertEquals(RecurrenceEnds.After(10), result.recurrence?.ends)
+        assertEquals("standup", result.title)
+    }
+
+    @Test
+    fun occurrenceCountIgnoredWithoutRecurrence() {
+        // "10 times" on its own is part of the title, not an end condition for a series that
+        // doesn't exist.
+        val result = NaturalLanguageParser.parse("read it 10 times", ref)
+        assertNull(result.recurrence)
+        assertEquals("read it 10 times", result.title)
+    }
+
+    // ── Dates ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun parsesAWeekTodayWithoutMatchingTodayInside() {
+        // "today" sits inside the phrase; matching it first resolved this to the exact opposite.
+        val result = NaturalLanguageParser.parse("a week today review", ref)
+        assertEquals("2026-07-11", result.due)
+        assertEquals("review", result.title)
+    }
+
+    @Test
+    fun parsesTimeOfDayPhrasesAsTodayPlusClock() {
+        val morning = NaturalLanguageParser.parse("this morning coffee", ref)
+        assertEquals("2026-07-04", morning.due)
+        assertEquals("9:00 AM", morning.time)
+        assertEquals("coffee", morning.title)
+
+        val afternoon = NaturalLanguageParser.parse("this afternoon call bob", ref)
+        assertEquals("2026-07-04", afternoon.due)
+        assertEquals("3:00 PM", afternoon.time)
+    }
+
+    @Test
+    fun explicitTimeBeatsTimeOfDayPhrase() {
+        val result = NaturalLanguageParser.parse("this morning at 7:30am gym", ref)
+        assertEquals("2026-07-04", result.due)
+        assertEquals("7:30 AM", result.time)
+    }
+
+    @Test
+    fun parsesWeekdayNextWeek() {
+        // Said back to front. "next week" alone used to claim its half and strand the weekday.
+        val result = NaturalLanguageParser.parse("wednesday next week sync", ref)
+        assertEquals("2026-07-08", result.due)
+        assertEquals("sync", result.title)
+    }
+
+    @Test
+    fun parsesBeginningOfNextMonth() {
+        // Listed ahead of "next month", which would otherwise win and give the same day a month on.
+        val result = NaturalLanguageParser.parse("beginning of next month rent", ref)
+        assertEquals("2026-08-01", result.due)
+        assertEquals("rent", result.title)
+    }
+
+    @Test
+    fun parsesYearAndQuarterPhrases() {
+        assertEquals("2027-07-04", NaturalLanguageParser.parse("next year plan", ref).due)
+        assertEquals("2026-12-31", NaturalLanguageParser.parse("end of year review", ref).due)
+        assertEquals("2026-10-01", NaturalLanguageParser.parse("next quarter planning", ref).due)
+        assertEquals("2026-09-30", NaturalLanguageParser.parse("end of quarter close books", ref).due)
+        assertEquals("2028-07-04", NaturalLanguageParser.parse("in 2 years renew passport", ref).due)
+    }
+
+    @Test
+    fun parsesVagueCounts() {
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("in a couple of days follow up", ref).due)
+        assertEquals("2026-07-25", NaturalLanguageParser.parse("in a few weeks checkup", ref).due)
+        // "a" must not match inside "a few" and collapse the count back to 1.
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("in a day follow up", ref).due)
+    }
+
+    @Test
+    fun parsesBusinessDaysSkippingTheWeekend() {
+        // Saturday + 3 business days = Wednesday, not Tuesday.
+        val result = NaturalLanguageParser.parse("in 3 business days ship it", ref)
+        assertEquals("2026-07-08", result.due)
+        assertEquals("ship it", result.title)
+    }
+
+    @Test
+    fun parsesWordOrdinals() {
+        assertEquals("2026-08-01", NaturalLanguageParser.parse("on the first pay rent", ref).due)
+        assertEquals("2026-07-21", NaturalLanguageParser.parse("on the twenty first party", ref).due)
+        assertEquals("2026-07-31", NaturalLanguageParser.parse("the thirty-first invoice", ref).due)
+    }
+
+    @Test
+    fun bareOrdinalWordIsNotADate() {
+        // Only ever behind "the" — "first draft" is a title, not the 1st of the month.
+        val result = NaturalLanguageParser.parse("first draft of the proposal", ref)
+        assertNull(result.due)
+        assertEquals("first draft of the proposal", result.title)
+    }
+
+    @Test
+    fun parsesDottedAndDashedDates() {
+        assertEquals("2026-07-20", NaturalLanguageParser.parse("20.07.2026 dentist", ref).due)
+        assertEquals("2026-07-20", NaturalLanguageParser.parse("20-07-2026 dentist", ref).due)
+    }
+
+    @Test
+    fun twoPartDottedNumberIsNotADate() {
+        // "1.5" is a version far more often than it is the 5th of January, so the year is required.
+        val result = NaturalLanguageParser.parse("upgrade to 1.5 release", ref)
+        assertNull(result.due)
+        assertEquals("upgrade to 1.5 release", result.title)
+    }
+
+    @Test
+    fun parsesMidMonth() {
+        val result = NaturalLanguageParser.parse("mid january planning", ref)
+        assertEquals("2027-01-15", result.due) // January has already passed this year
+        assertEquals("planning", result.title)
+    }
+
+    @Test
+    fun parsesWeekendPhrases() {
+        assertEquals("2026-07-04", NaturalLanguageParser.parse("over the weekend garden", ref).due)
+        assertEquals("2026-07-10", NaturalLanguageParser.parse("later this week report", ref).due)
+    }
+
+    @Test
+    fun endOfDayDefersToAnExplicitDay() {
+        // "eod"/"cob" say when in the day, not which day — so a named day has to win.
+        val withDay = NaturalLanguageParser.parse("cob friday report", ref)
+        assertEquals("2026-07-10", withDay.due)
+        assertEquals("5:00 PM", withDay.time)
+        assertEquals("report", withDay.title)
+
+        val alone = NaturalLanguageParser.parse("eod send invoice", ref)
+        assertEquals("2026-07-04", alone.due)
+        assertEquals("6:00 PM", alone.time)
+    }
+
+    // ── Times ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun parsesIshTimes() {
+        // Same hour convention as every other bare-hour rule here: 1..7 reads as PM, 8..12 as AM.
+        assertEquals("5:00 PM", NaturalLanguageParser.parse("5ish drinks", ref).time)
+        assertEquals("8:00 AM", NaturalLanguageParser.parse("8ish coffee", ref).time)
+        val noonish = NaturalLanguageParser.parse("noon-ish lunch", ref)
+        assertEquals("12:00 PM", noonish.time)
+        assertEquals("lunch", noonish.title) // the "ish" goes with the word it qualifies
+    }
+
+    @Test
+    fun parsesFirstThingAsATimeNotADate() {
+        // Time only, so a day named alongside it still gets to set the date.
+        val result = NaturalLanguageParser.parse("first thing monday standup", ref)
+        assertEquals("9:00 AM", result.time)
+        assertEquals("2026-07-06", result.due)
+        assertEquals("standup", result.title)
+    }
+
+    @Test
+    fun parsesMealTimesOnlyBehindAPreposition() {
+        val withPreposition = NaturalLanguageParser.parse("call the bank at lunch", ref)
+        assertEquals("12:30 PM", withPreposition.time)
+        assertEquals("call the bank", withPreposition.title)
+
+        // Bare "lunch" is the task itself — claiming it would set a time and eat the word.
+        val bare = NaturalLanguageParser.parse("lunch with sam", ref)
+        assertNull(bare.time)
+        assertEquals("lunch with sam", bare.title)
+    }
+
+    // ── Priority ──────────────────────────────────────────────────────────
+
+    @Test
+    fun parsesNegatedPriorityAsLow() {
+        // "not urgent" contains "urgent"; whichever is listed first wins, so this asserts the
+        // negations are ahead of the words they negate.
+        assertEquals("low", NaturalLanguageParser.parse("not urgent fix typo", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("backburner idea", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("when i can sort photos", ref).priority)
+    }
+
+    @Test
+    fun negatedImportantDoesNotAlsoFlag() {
+        // Priority claims the phrase first, so the flag rule never sees a bare "important".
+        val result = NaturalLanguageParser.parse("not important tidy desk", ref)
+        assertEquals("low", result.priority)
+        assertFalse(result.flag)
+    }
+
+    // ── Caching ───────────────────────────────────────────────────────────
+
+    @Test
+    fun cacheKeyIncludesReferenceTime() {
+        // Same text, same day, different clock — "in 30 minutes" has to re-resolve rather than
+        // serve the first answer back.
+        val first = NaturalLanguageParser.parse("in 30 minutes call", ref, LocalTime.of(10, 0))
+        val second = NaturalLanguageParser.parse("in 30 minutes call", ref, LocalTime.of(14, 0))
+        assertEquals("10:30 AM", first.time)
+        assertEquals("2:30 PM", second.time)
     }
 }
