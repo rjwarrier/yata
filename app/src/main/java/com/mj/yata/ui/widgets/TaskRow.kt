@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -528,24 +529,32 @@ fun TaskRow(
         // deferred-Undo-snackbar flow as everywhere else in the app (task data isn't touched
         // until the caller's snackbar times out, so Undo still works and the row disappears
         // naturally once the Flow re-emits without it, not via a dismiss animation here).
-        val dismissState = rememberSwipeToDismissBoxState(
-            // Default threshold is 50% of row width, which a quick flick can cross well
-            // before it looks "intentional" — bumped to 75% so accidental swipes (e.g.
-            // scrolling with a thumb that grazes a row) settle back instead of registering.
-            positionalThreshold = { totalDistance -> totalDistance * 0.75f },
-            confirmValueChange = { value ->
-                val handler = when (value) {
-                    SwipeToDismissBoxValue.EndToStart -> leftHandler
-                    SwipeToDismissBoxValue.StartToEnd -> rightHandler
-                    SwipeToDismissBoxValue.Settled -> null
+        // rememberSwipeToDismissBoxState bakes confirmValueChange into the returned state via a
+        // keyless rememberSaveable, so it would otherwise keep running the handlers captured at
+        // first composition forever — the background icon updates live (read fresh below), but
+        // the swipe would keep performing whatever action was configured when the row first
+        // composed. Keying on the two actions forces a fresh state (and fresh handlers) exactly
+        // when the setting actually changes.
+        val dismissState = key(swipeRightAction, swipeLeftAction) {
+            rememberSwipeToDismissBoxState(
+                // Default threshold is 50% of row width, which a quick flick can cross well
+                // before it looks "intentional" — bumped to 75% so accidental swipes (e.g.
+                // scrolling with a thumb that grazes a row) settle back instead of registering.
+                positionalThreshold = { totalDistance -> totalDistance * 0.75f },
+                confirmValueChange = { value ->
+                    val handler = when (value) {
+                        SwipeToDismissBoxValue.EndToStart -> leftHandler
+                        SwipeToDismissBoxValue.StartToEnd -> rightHandler
+                        SwipeToDismissBoxValue.Settled -> null
+                    }
+                    if (handler != null) {
+                        if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        handler()
+                    }
+                    false
                 }
-                if (handler != null) {
-                    if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    handler()
-                }
-                false
-            }
-        )
+            )
+        }
         SwipeToDismissBox(
             state = dismissState,
             // A direction with no action must not swipe at all, or the row slides open onto a

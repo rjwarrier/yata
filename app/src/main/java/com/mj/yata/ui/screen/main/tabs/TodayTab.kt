@@ -101,7 +101,7 @@ fun TodayTab(
 
     val today = remember { LocalDate.now() }
     val todayStr = remember { today.toString() }
-    val todayDateLabel = remember {
+    val todayDateLabel = remember(com.mj.yata.util.AppFormats.dateFormat) {
         LocalDate.now().format(com.mj.yata.util.AppFormats.headerDateFormatter()).uppercase()
     }
 

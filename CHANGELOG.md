@@ -15,6 +15,19 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Fixed
+
+- **Changing what a swipe does could keep performing the old action.** Setting a direction to
+  Snooze or Delete in Settings and then swiping a row already on screen updated the icon behind it
+  but could still carry out whatever action was configured when that row first appeared, until it
+  scrolled off and back. Newly-appearing rows were unaffected.
+- **The Today header ignored the Date format setting** once drawn — it read correctly on the first
+  frame but didn't update if you changed Day-first/Month-first/ISO while the tab was already open.
+- Reduce Motion now actually reduces motion for anything already on screen when it's toggled,
+  rather than only affecting animations that start afterward.
+- Project and List detail's drag-to-reorder rows now fade in and out consistently with every other
+  task list in the app, instead of popping in and out abruptly.
+
 ## [0.86 beta] - 2026-07-31
 
 `versionCode 8`. Upgrades in place over 0.85 beta.

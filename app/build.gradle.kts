@@ -92,6 +92,17 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    // Domain models (Task, Project, ...) carry List<String> fields that make the Compose
+    // compiler infer the whole class unstable, since it can't prove the instance isn't a mutable
+    // ArrayList. With strong skipping on, an unstable parameter is compared by identity, so every
+    // Room emission (which allocates fresh Task objects) fails the check and recomposes every
+    // visible TaskRow, not just the one that changed. These classes are all immutable data
+    // classes assembled by data/mapper, so promising stability here is safe.
+    composeCompiler {
+        stabilityConfigurationFile.set(
+            rootProject.layout.projectDirectory.file("app/compose_stability.conf")
+        )
+    }
     buildFeatures {
         compose = true
         buildConfig = true
