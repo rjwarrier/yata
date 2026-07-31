@@ -87,6 +87,67 @@ import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Extension
+// Round 3 new icons
+import androidx.compose.material.icons.filled.Handshake
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.Apartment
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.DataObject
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.RocketLaunch
+import androidx.compose.material.icons.filled.Bed
+import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.Chair
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.LocalLaundryService
+import androidx.compose.material.icons.filled.Handyman
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.LocalBar
+import androidx.compose.material.icons.filled.LocalPizza
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.Icecream
+import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.Vaccines
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.SportsSoccer
+import androidx.compose.material.icons.filled.SportsBasketball
+import androidx.compose.material.icons.filled.Pool
+import androidx.compose.material.icons.filled.Hiking
+import androidx.compose.material.icons.filled.Park
+import androidx.compose.material.icons.filled.Forest
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.BeachAccess
+import androidx.compose.material.icons.filled.Umbrella
+import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.Train
+import androidx.compose.material.icons.filled.DirectionsBoat
+import androidx.compose.material.icons.filled.Luggage
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.Draw
+import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.Podcasts
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -100,6 +161,7 @@ import androidx.compose.ui.unit.dp
 
 /** Shared icon-key -> vector mapping used by projects and lists alike. */
 fun iconVectorFor(key: String): ImageVector = when (key) {
+    "layers" -> Icons.Default.Layers
     "home" -> Icons.Default.Home
     "star" -> Icons.Default.Star
     "label" -> Icons.Default.Label
@@ -187,30 +249,105 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "bug" -> Icons.Default.BugReport
     "storage" -> Icons.Default.Storage
     "extension" -> Icons.Default.Extension
+    // Round 3 — work / business
+    "handshake" -> Icons.Default.Handshake
+    "campaign" -> Icons.Default.Campaign
+    "support" -> Icons.Default.SupportAgent
+    "analytics" -> Icons.Default.Analytics
+    "inventory" -> Icons.Default.Inventory2
+    "store" -> Icons.Default.Storefront
+    "apartment" -> Icons.Default.Apartment
+    "assignment" -> Icons.Default.Assignment
+    "document" -> Icons.Default.Description
+    "badge" -> Icons.Default.Badge
+    // Tech
+    "terminal" -> Icons.Default.Terminal
+    "data" -> Icons.Default.DataObject
+    "memory" -> Icons.Default.Memory
+    "rocket" -> Icons.Default.RocketLaunch
+    // Home / chores
+    "bed" -> Icons.Default.Bed
+    "kitchen" -> Icons.Default.Kitchen
+    "furniture" -> Icons.Default.Chair
+    "clothes" -> Icons.Default.Checkroom
+    "laundry" -> Icons.Default.LocalLaundryService
+    "handyman" -> Icons.Default.Handyman
+    // Food / drink
+    "coffee" -> Icons.Default.LocalCafe
+    "bar" -> Icons.Default.LocalBar
+    "pizza" -> Icons.Default.LocalPizza
+    "fastfood" -> Icons.Default.Fastfood
+    "icecream" -> Icons.Default.Icecream
+    // Health / wellness
+    "medication" -> Icons.Default.Medication
+    "heartrate" -> Icons.Default.MonitorHeart
+    "vaccine" -> Icons.Default.Vaccines
+    "mind" -> Icons.Default.Psychology
+    "sleep" -> Icons.Default.Bedtime
+    "water" -> Icons.Default.WaterDrop
+    // Sport / outdoors
+    "soccer" -> Icons.Default.SportsSoccer
+    "basketball" -> Icons.Default.SportsBasketball
+    "swim" -> Icons.Default.Pool
+    "hiking" -> Icons.Default.Hiking
+    "park" -> Icons.Default.Park
+    "forest" -> Icons.Default.Forest
+    "sunny" -> Icons.Default.WbSunny
+    "beach" -> Icons.Default.BeachAccess
+    "umbrella" -> Icons.Default.Umbrella
+    // Travel
+    "hotel" -> Icons.Default.Hotel
+    "train" -> Icons.Default.Train
+    "boat" -> Icons.Default.DirectionsBoat
+    "luggage" -> Icons.Default.Luggage
+    "map" -> Icons.Default.Map
+    "explore" -> Icons.Default.Explore
+    // Learning / creative
+    "menubook" -> Icons.Default.MenuBook
+    "science" -> Icons.Default.Science
+    "calculate" -> Icons.Default.Calculate
+    "translate" -> Icons.Default.Translate
+    "draw" -> Icons.Default.Draw
+    // Media
+    "headphones" -> Icons.Default.Headphones
+    "podcast" -> Icons.Default.Podcasts
+    "mic" -> Icons.Default.Mic
+    "video" -> Icons.Default.Videocam
+    "tv" -> Icons.Default.Tv
+    // Goals / misc
+    "trophy" -> Icons.Default.EmojiEvents
+    "streak" -> Icons.Default.Whatshot
+    "sparkle" -> Icons.Default.AutoAwesome
+    "diamond" -> Icons.Default.Diamond
     else -> Icons.Default.Layers
 }
 
 /** Full curated set offered by the icon picker, in display order. */
 val FOLDER_ICON_KEYS = listOf(
     "folder", "layers", "inbox", "flag", "lock", "pin", "taskalt", "hourglass", "bookmark", "settings", "key", "home", "star", "label", "work", "school",
+    "assignment", "document", "badge",
     // Finance / Work
-    "bank", "wallet", "savings", "card", "receipt", "invoice", "money", "trending", "atm", "timeline", "chart", "shipping", "phone", "email", "forum",
+    "bank", "wallet", "savings", "card", "receipt", "invoice", "money", "trending", "atm", "timeline", "chart", "analytics", "shipping", "phone", "email",
+    "forum", "handshake", "campaign", "support", "inventory", "apartment",
     // Shopping / food
-    "shopping", "bag", "restaurant",
+    "shopping", "bag", "store", "restaurant", "coffee", "bar", "pizza", "fastfood", "icecream",
     // Home / chores
-    "build", "construction", "garden", "cleaning",
+    "build", "construction", "garden", "cleaning", "handyman", "bed", "kitchen", "furniture", "clothes", "laundry",
     // Travel / transport
-    "flight", "car", "bike", "bus", "backpack", "world", "location",
+    "flight", "car", "bike", "bus", "train", "boat", "backpack", "luggage", "hotel", "world", "location", "map", "explore",
     // Health / fitness / wellness
-    "fitness", "health", "spa", "meditation", "run",
+    "fitness", "health", "spa", "meditation", "run", "medication", "heartrate", "vaccine", "mind", "sleep", "water",
+    // Sport / outdoors
+    "soccer", "basketball", "swim", "hiking", "park", "forest", "sunny", "beach", "umbrella",
     // Family / social
     "family", "childcare", "pets", "heart",
     // Tech / creative / organization
-    "computer", "devices", "camera", "code", "art", "music", "book", "idea", "event", "cloud", "brush", "bug", "storage", "extension",
+    "computer", "devices", "camera", "code", "terminal", "data", "memory", "rocket", "art", "music", "book", "menubook", "idea", "event", "cloud", "brush",
+    "draw", "bug", "storage", "extension", "science", "calculate", "translate",
     // Entertainment / misc
-    "movie", "theater", "gaming", "cake", "celebration",
-    // Eco / charity / utilities
-    "eco", "charity", "energy", "gavel", "alarm"
+    "movie", "theater", "gaming", "cake", "celebration", "headphones", "podcast", "mic", "video", "tv",
+    // Goals / eco / charity / utilities
+    "trophy", "streak", "sparkle", "diamond", "eco", "charity", "energy", "gavel", "alarm"
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -225,7 +362,9 @@ fun IconPicker(
     FlowRow(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(max = 172.dp)
+            // Roomier than it looks it needs to be: the set is ~140 icons, and at 172dp only three
+            // rows were visible, which made the back half of the list a scroll nobody reaches.
+            .heightIn(max = 224.dp)
             .verticalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)

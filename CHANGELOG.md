@@ -79,6 +79,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   quick-add button set to Hidden, these three tabs no longer offer any way to create a tag, a
   person or a project.
 
+### Added
+
+- **60 more icons to choose from** for projects and lists — food and drink, sport and outdoors,
+  more travel and transport, health, media, and work icons like handshake, campaign and inventory.
+  The picker also shows more of them at once before you have to scroll.
+
 ### Changed
 
 - **Tags now show their own initial** instead of the same generic label icon on every one. The Tags
