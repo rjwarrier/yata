@@ -251,7 +251,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super.onCreate, which is where the library requires it: it has to replace the
-        // launch theme with postSplashScreenTheme before the window is created.
+        // launch theme with postSplashScreenTheme before the window is created. The condition
+        // only reads a field, so it is safe this early.
         val splash = installSplashScreen()
         // Hold the splash until the theme preference has actually been read. Without this the
         // first frame renders with the SYSTEM default that collectAsState is seeded with, then
@@ -260,12 +261,17 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         // as from the read, so a slow or failed DataStore delays startup briefly instead of
         // holding the app on the splash forever.
         splash.setKeepOnScreenCondition { !themePrefLoaded }
+
+        super.onCreate(savedInstanceState)
+
+        // Strictly after super.onCreate: that is when Hilt populates the @Inject lateinit fields,
+        // and lifecycleScope dispatches on Main.immediate — so a launch placed above would run
+        // its body synchronously, right there, and touch userPreferences before it exists.
         lifecycleScope.launch {
             withTimeoutOrNull(SPLASH_MAX_WAIT_MS) { userPreferences.themeModeFlow.first() }
             themePrefLoaded = true
         }
 
-        super.onCreate(savedInstanceState)
         currentIntent = intent
 
         // Registered once per process (not per Activity recreation) — ON_STOP here only fires

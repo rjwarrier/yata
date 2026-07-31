@@ -27,19 +27,24 @@ All commands run from the repo root using the Gradle wrapper (`./gradlew` on Bas
 ./gradlew :app:testDebugUnitTest --tests "com.mj.yata.RecurrenceEvaluatorTest"
 ./gradlew :app:testDebugUnitTest --tests "com.mj.yata.RecurrenceEvaluatorTest.testWeeklyRecurrence"
 
-# Instrumented tests (require a connected device/emulator). Note `--tests` does NOT work here —
-# that's Gradle's unit-test filter; connectedAndroidTest takes a runner argument instead.
-./gradlew :app:connectedDebugAndroidTest   # whole suite
-./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.mj.yata.data.local.db.AppDatabaseMigrationTest
+# Instrumented tests. DESTRUCTIVE — see the warning below; -PdisposableDevice is required, and the
+# build refuses to run without it. Note `--tests` does NOT work here; that is Gradle's unit-test
+# filter, and connectedAndroidTest takes a runner argument instead.
+./gradlew :app:connectedDebugAndroidTest -PdisposableDevice   # whole suite
+./gradlew :app:connectedDebugAndroidTest -PdisposableDevice -Pandroid.testInstrumentationRunnerArguments.class=com.mj.yata.data.local.db.AppDatabaseMigrationTest
 
 # Compose UI smoke suite (launch, add, complete, tab switch, delete-undo)
-./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.mj.yata.MainScreenSmokeTest
+./gradlew :app:connectedDebugAndroidTest -PdisposableDevice -Pandroid.testInstrumentationRunnerArguments.class=com.mj.yata.MainScreenSmokeTest
 
 # Regenerate the baseline profile (needs a rooted/userdebug device or emulator, API 28+)
 ./gradlew :baselineprofile:generateBaselineProfile
 ```
 
 After changing anything under `app/src/main/java`, the fast loop is `compileDebugKotlin` to catch errors, then `installDebug` before manually verifying in the UI. `MainScreenSmokeTest` covers only the core add/complete/delete paths, so anything beyond those still needs a manual pass on-device.
+
+**Never run instrumented tests against the user's phone.** `connectedAndroidTest` is not read-only: it reinstalls the app, and the tests add, complete and delete real rows in whatever database is on the device. It also used to uninstall the app on completion, wiping the Room database and DataStore — which is exactly how a real day's data was destroyed on this project. Two guards now exist: `android.injected.androidTest.leaveApksInstalledAfterRun=true` in `gradle.properties` stops the uninstall, and a `doFirst` check in `app/build.gradle.kts` refuses the task without `-PdisposableDevice`. **Do not pass that flag on the user's device**, and don't work around either guard — they exist because the failure is silent until the data is gone. Emulator or a spare device only, and ask first.
+
+More generally: confirm before any command that can remove the app or its data — `adb uninstall`, `pm clear`, `installDebug` over a different signing key, or anything that resets storage. The user's phone is their daily driver, not a test rig.
 
 **Never drive the device to take screenshots.** Do not use `adb shell screencap`, `uiautomator dump`, `adb shell input tap/swipe/keyevent`, or any other means of navigating the running app to look at it. Build, install, and describe what changed — visual verification is the user's, and they will send a screenshot when they want one. This applies even when a UI change would obviously benefit from being seen.
 

@@ -178,6 +178,37 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+/**
+ * Refuses to run instrumented tests unless the device is explicitly declared disposable.
+ *
+ * `connectedAndroidTest` is not a read-only operation. It reinstalls the app, and the tests then
+ * add, complete and delete real rows in whatever database is on the device — so pointing it at the
+ * phone someone keeps their actual tasks on corrupts or destroys them. It used to uninstall
+ * afterwards too, wiping everything; `leaveApksInstalledAfterRun` in gradle.properties stops that
+ * part, but the writes during the run remain.
+ *
+ * The opt-in is a property rather than a comment because the failure mode is silent: the command
+ * looks like every other Gradle task right up until the data is gone.
+ *
+ *   ./gradlew :app:connectedDebugAndroidTest -PdisposableDevice
+ */
+// Both values are read here, at configuration time. Touching `project` from inside doFirst is an
+// error under the configuration cache, which this build has enabled.
+val deviceIsDisposable = project.hasProperty("disposableDevice")
+tasks.matching { it.name.startsWith("connected") }.configureEach {
+    val taskPath = path
+    doFirst {
+        if (!deviceIsDisposable) {
+            throw GradleException(
+                "Refusing to run instrumented tests: they write to the database on the connected " +
+                    "device and can destroy real data.\n" +
+                    "Only run them against an emulator or a spare device, and say so explicitly:\n" +
+                    "    ./gradlew $taskPath -PdisposableDevice"
+            )
+        }
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
