@@ -17,6 +17,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Export a tag or a person as Markdown**, from the ⋮ menu on their screen — the same option
+  projects already had. Copies a checklist of the open tasks to the clipboard and opens the share
+  sheet.
 - **Time format** (Settings → Display). Follow the device, or force 12-hour or 24-hour. Times were
   hardcoded to 12-hour everywhere, so a phone set to a 24-hour clock still read "5:00 PM" and got a
   12-hour time picker. Changing this never rewrites a task — the stored value is untouched, only

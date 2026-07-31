@@ -450,8 +450,11 @@
     <string name="project_detail_delete_only_the_project_to_keep_its_tasks">Delete only the project to keep its tasks without a project, or delete the project and all tasks inside it.</string>
     <string name="project_detail_delete_project">Delete project</string>
     <string name="project_detail_edit_project">Edit project</string>
-    <string name="project_detail_export_as_markdown">Export as Markdown</string>
-    <string name="project_detail_pending_tasks">Pending tasks</string>
+    <!-- Markdown export, shared by the project, tag and person screens. -->
+    <string name="action_export_as_markdown">Export as Markdown</string>
+    <string name="export_pending_tasks">Pending tasks</string>
+    <!-- Share-sheet title. %1$s is the project, tag or person's name. -->
+    <string name="export_share_tasks_title">Share %1$s tasks</string>
     <string name="project_detail_project_only">Project only</string>
     <string name="project_detail_project_tasks">Project + tasks</string>
     <string name="project_detail_restore_project">Restore project</string>

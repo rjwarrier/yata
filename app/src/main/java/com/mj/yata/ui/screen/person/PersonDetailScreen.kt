@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
@@ -281,6 +282,14 @@ fun PersonDetailScreen(
                                     isEditSheetOpen = true
                                 },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_export_as_markdown)) },
+                                onClick = {
+                                    showMenu = false
+                                    com.mj.yata.util.shareTasksAsMarkdown(exportContext, person.name, assignedTasks)
+                                },
+                                leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_image)) },

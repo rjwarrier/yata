@@ -293,18 +293,10 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text(stringResource(R.string.project_detail_export_as_markdown)) },
+                                text = { Text(stringResource(R.string.action_export_as_markdown)) },
                                 onClick = {
                                     showMenu = false
-                                    val markdown = com.mj.yata.util.buildPendingTasksMarkdown(project, projectTasks)
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    // getString: an onClick lambda is not a composable scope.
-                                    clipboard.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.project_detail_pending_tasks), markdown))
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, markdown)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "Share ${project.name} tasks"))
+                                    com.mj.yata.util.shareTasksAsMarkdown(context, project.name, projectTasks)
                                 },
                                 leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
                             )
