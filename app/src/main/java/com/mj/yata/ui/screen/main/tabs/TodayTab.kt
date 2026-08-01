@@ -112,16 +112,13 @@ fun TodayTab(
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
 
-    // Filter tasks due today (or overdue). Deferred tasks — those whose start date hasn't
-    // arrived — drop out here too: they're due (or overdue) but not yet actionable, and the point
-    // of a start date is that Today lists only what can be worked on now. They stay visible in
-    // their project/list and reappear here on their own, the day the start date arrives. Tasks
-    // delegated to someone else with a future "waiting on" follow-up date drop out the same way
-    // (see Task.isWaitingOn) — they'll reappear once that date arrives, without a background job.
+    // Due-or-overdue, minus anything deferred or being waited on — see Task.isActionableToday,
+    // which the home-screen widgets and the daily agenda digest share so they can't drift from
+    // this screen. The container exclusions stay here since they're specific to the in-app view.
     val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds, myId) {
         val nowMillis = System.currentTimeMillis()
         tasks.filter {
-            it.due != null && it.due <= todayStr && !it.isDeferredOn(todayStr) && !it.isWaitingOn(nowMillis, myId) &&
+            it.isActionableToday(todayStr, nowMillis, myId) &&
                 it.projectId !in excludedProjectIds && it.listId !in excludedListIds
         }
     }

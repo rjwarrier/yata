@@ -197,6 +197,23 @@ fun Task.isWaitingOn(nowMillis: Long, myId: String?): Boolean {
 }
 
 /**
+ * True when this task belongs on a "your Today" surface — due or overdue as of [today], and
+ * neither deferred ([isDeferredOn]) nor snoozed waiting on someone else ([isWaitingOn]).
+ *
+ * Exists so the Today tab, the home-screen widgets and the daily agenda digest can't drift apart:
+ * they had, which is how a task hidden from Today in the app kept showing on the launcher. Date
+ * *browsing* surfaces — the Upcoming/Calendar tab, Next 10 Days, a project or list detail screen —
+ * deliberately do **not** use this: a deferred task still legitimately appears on its due date
+ * there, since the point of a start date is only to keep it out of the day view.
+ *
+ * Callers still apply their own scoping on top (excludeFromToday containers, archived projects,
+ * `wasPendingAsOf` for progress counts) — this covers the two task-level "not yet mine to do"
+ * rules alone.
+ */
+fun Task.isActionableToday(today: String, nowMillis: Long, myId: String?): Boolean =
+    due != null && due <= today && !isDeferredOn(today) && !isWaitingOn(nowMillis, myId)
+
+/**
  * Tag IDs this task carries, including tag IDs its project live-syncs to every task
  * (Project.commonTagIds). Derived, never persisted — a project's common tags always
  * reflect the project's current state without touching individual tasks.

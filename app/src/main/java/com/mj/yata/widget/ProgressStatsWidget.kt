@@ -34,6 +34,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.isActionableToday
 import com.mj.yata.domain.model.wasPendingAsOf
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
@@ -62,10 +63,12 @@ class ProgressStatsWidget : GlanceAppWidget() {
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val today = LocalDate.now()
         val todayStr = today.toString()
-        // wasPendingAsOf drops tasks done on an earlier day — otherwise they'd match
+        val myId = repository.getPeople().first().firstOrNull { it.isMe }?.id
+        // isActionableToday matches the Today tab (excludes deferred and waiting-on tasks);
+        // wasPendingAsOf then drops tasks done on an earlier day — otherwise they'd match
         // due<=today forever and permanently inflate the ring/per-list "done" counts.
         val todayTasks = repository.getTasks().first()
-            .filter { it.due != null && it.due!! <= todayStr }
+            .filter { it.isActionableToday(todayStr, System.currentTimeMillis(), myId) }
             .filter { it.wasPendingAsOf(today) }
         val lists = repository.getLists().first()
         val theme = resolveWidgetTheme(context)

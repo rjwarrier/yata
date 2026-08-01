@@ -35,6 +35,7 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.isActionableToday
 import com.mj.yata.domain.model.wasPendingAsOf
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
@@ -64,8 +65,13 @@ class YataAppWidget : GlanceAppWidget() {
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val today = LocalDate.now()
         val todayStr = today.toString()
+        val people = repository.getPeople().first()
+        val myId = people.firstOrNull { it.isMe }?.id
+        // Same predicate the Today tab uses, so a task deferred by a start date or snoozed with a
+        // "waiting on" follow-up doesn't keep sitting on the launcher after it left the app's own
+        // day view. See Task.isActionableToday.
         val todayTasks = repository.getTasks().first()
-            .filter { it.due != null && it.due!! <= todayStr }
+            .filter { it.isActionableToday(todayStr, System.currentTimeMillis(), myId) }
             .sortedWith(compareBy({ it.done }, { it.sortOrder }))
         // wasPendingAsOf drops tasks done on an earlier day from the ring/"X to go" count only —
         // the row list above still shows every today-or-overdue task, done or not.
@@ -73,7 +79,7 @@ class YataAppWidget : GlanceAppWidget() {
         val remaining = progressTasks.count { !it.done }
         val progress = if (progressTasks.isEmpty()) 0f else progressTasks.count { it.done }.toFloat() / progressTasks.size
         val listsById = repository.getLists().first().associateBy { it.id }
-        val peopleById = repository.getPeople().first().associateBy { it.id }
+        val peopleById = people.associateBy { it.id }
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 

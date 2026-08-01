@@ -9,6 +9,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.mj.yata.domain.model.isDeferredOn
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.widget.resolveNotificationAccentColor
 import dagger.assisted.Assisted
@@ -38,7 +39,11 @@ class DailyAgendaWorker @AssistedInject constructor(
         val people = repository.getPeople().first()
         val today = LocalDate.now().toString()
 
-        val dueToday = tasks.filter { !it.done && it.due == today }
+        // Deferred tasks drop out — a start date in the future means it isn't actionable yet, so
+        // it has no business in a "here's today" digest. Deliberately *not* filtered by
+        // isWaitingOn: that rule is about your own day view, and this digest is the whole-team
+        // picture, so a task you're waiting on someone for still belongs under their line.
+        val dueToday = tasks.filter { !it.done && it.due == today && !it.isDeferredOn(today) }
         if (dueToday.isEmpty()) return Result.success()
 
         val peopleById = people.associateBy { it.id }

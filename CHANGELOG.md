@@ -21,6 +21,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   0.88 beta as database fields but were never written to the backup file, so restoring a backup
   silently dropped them. Backups taken with 0.88 beta are missing this data and cannot recover it;
   backups taken from here on carry both. Older backups restore as before.
+- **Home-screen widgets no longer show tasks the app has hidden from Today.** The Today, Progress
+  and Upcoming widgets, and the daily agenda notification, ignored start dates entirely — a task
+  deferred to next week still sat on the launcher — and the same gap applied to the new "waiting
+  on" dates. The Upcoming/Calendar tab and Next 10 Days still show deferred tasks on their due
+  date, which is intended: a start date only keeps work out of the day view.
 
 ## [0.88 beta] - 2026-08-01
 
