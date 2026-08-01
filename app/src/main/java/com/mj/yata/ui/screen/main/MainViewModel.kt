@@ -304,12 +304,27 @@ private data class MainNavigationState(
      * and consumed by [settingsUiState]/[mainScreenUiState] below instead of each recomputing it
      * independently (one of those inline copies had drifted and was missing the
      * hiddenFromMainTaskProjectIds() filter the others apply). Declared early (uses the raw
-     * repository flows, not the [projects] StateFlow property, which is declared later) so it's
-     * available to both of those combine chains. */
-    val todayRemainingCount: StateFlow<Int> = combine(repository.getTasks(), repository.getProjects()) { list, projectList ->
+     * repository flows, not the [projects]/[lists] StateFlow properties, which are declared
+     * later) so it's available to both of those combine chains.
+     *
+     * Uses the same Task.isActionableToday predicate (plus both container exclusions) as the
+     * Today tab and the home-screen widgets — this one had drifted from *them* too, checking only
+     * project exclusion and neither deferral nor waiting-on, so the badge could show a count the
+     * Today screen it links to didn't actually list. */
+    val todayRemainingCount: StateFlow<Int> = combine(
+        repository.getTasks(),
+        repository.getProjects(),
+        repository.getLists(),
+        repository.getPeople()
+    ) { list, projectList, listList, peopleList ->
         val todayStr = LocalDate.now().toString()
-        val hiddenProjectIds = projectList.hiddenFromMainTaskProjectIds()
-        list.count { it.due != null && it.due <= todayStr && !it.done && it.projectId !in hiddenProjectIds }
+        val myId = peopleList.firstOrNull { it.isMe }?.id
+        val excludedProjectIds = projectList.hiddenFromMainTaskProjectIds()
+        val excludedListIds = listList.hiddenFromMainTaskListIds()
+        list.count {
+            it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
+                it.projectId !in excludedProjectIds && it.listId !in excludedListIds
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val voiceRecognitionLanguage: StateFlow<String> = userPreferences.voiceRecognitionLanguageFlow

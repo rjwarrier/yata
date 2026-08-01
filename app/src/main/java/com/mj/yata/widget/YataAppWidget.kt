@@ -35,6 +35,8 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.hiddenFromMainTaskListIds
+import com.mj.yata.domain.model.hiddenFromMainTaskProjectIds
 import com.mj.yata.domain.model.isActionableToday
 import com.mj.yata.domain.model.wasPendingAsOf
 import dagger.hilt.android.EntryPointAccessors
@@ -67,18 +69,24 @@ class YataAppWidget : GlanceAppWidget() {
         val todayStr = today.toString()
         val people = repository.getPeople().first()
         val myId = people.firstOrNull { it.isMe }?.id
-        // Same predicate the Today tab uses, so a task deferred by a start date or snoozed with a
-        // "waiting on" follow-up doesn't keep sitting on the launcher after it left the app's own
-        // day view. See Task.isActionableToday.
+        // Same exclusions as the Today tab: a project/list marked "Exclude from Today" (or an
+        // archived project) keeps its tasks off the day view entirely, on top of the per-task
+        // isActionableToday check below.
+        val excludedProjectIds = repository.getProjects().first().hiddenFromMainTaskProjectIds()
+        val lists = repository.getLists().first()
+        val excludedListIds = lists.hiddenFromMainTaskListIds()
         val todayTasks = repository.getTasks().first()
-            .filter { it.isActionableToday(todayStr, System.currentTimeMillis(), myId) }
+            .filter {
+                it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
+                    it.projectId !in excludedProjectIds && it.listId !in excludedListIds
+            }
             .sortedWith(compareBy({ it.done }, { it.sortOrder }))
         // wasPendingAsOf drops tasks done on an earlier day from the ring/"X to go" count only —
         // the row list above still shows every today-or-overdue task, done or not.
         val progressTasks = todayTasks.filter { it.wasPendingAsOf(today) }
         val remaining = progressTasks.count { !it.done }
         val progress = if (progressTasks.isEmpty()) 0f else progressTasks.count { it.done }.toFloat() / progressTasks.size
-        val listsById = repository.getLists().first().associateBy { it.id }
+        val listsById = lists.associateBy { it.id }
         val peopleById = people.associateBy { it.id }
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }

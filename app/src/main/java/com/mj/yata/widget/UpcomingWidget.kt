@@ -37,6 +37,8 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.hiddenFromMainTaskListIds
+import com.mj.yata.domain.model.hiddenFromMainTaskProjectIds
 import com.mj.yata.domain.model.isActionableToday
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
@@ -71,6 +73,11 @@ class UpcomingWidget : GlanceAppWidget() {
         val people = repository.getPeople().first()
         val peopleById = people.associateBy { it.id }
         val myId = people.firstOrNull { it.isMe }?.id
+        // Applied only to the widget's "Today" row, matching the in-app Today tab — the
+        // future-dated groups below it deliberately keep showing an excluded container's tasks
+        // on their due date, same as the Upcoming/Calendar tab does.
+        val excludedProjectIds = repository.getProjects().first().hiddenFromMainTaskProjectIds()
+        val excludedListIds = lists.hiddenFromMainTaskListIds()
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 
@@ -81,6 +88,8 @@ class UpcomingWidget : GlanceAppWidget() {
                     lists = lists,
                     peopleById = peopleById,
                     myId = myId,
+                    excludedProjectIds = excludedProjectIds,
+                    excludedListIds = excludedListIds,
                     colors = theme.colorScheme,
                     accents = theme.accents,
                     widgetBackground = theme.widgetBackground,
@@ -103,6 +112,8 @@ private fun UpcomingWidgetContent(
     lists: List<YataList>,
     peopleById: Map<String, com.mj.yata.domain.model.Person>,
     myId: String?,
+    excludedProjectIds: Set<String>,
+    excludedListIds: Set<String>,
     colors: androidx.compose.material3.ColorScheme,
     accents: com.mj.yata.ui.theme.YataAccents,
     widgetBackground: androidx.compose.ui.graphics.Color,
@@ -133,7 +144,7 @@ private fun UpcomingWidgetContent(
             Spacer(modifier = GlanceModifier.height(8.dp))
 
             if (isLarge) {
-                val days = upcomingAgendaDays(allTasks, today, myId)
+                val days = upcomingAgendaDays(allTasks, today, myId, excludedProjectIds, excludedListIds)
                 if (days.isEmpty()) {
                     Text(
                         text = "Nothing coming up.",
@@ -161,7 +172,8 @@ private fun UpcomingWidgetContent(
                 }
             } else {
                 val todayTasks = allTasks.filter {
-                    !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId)
+                    !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
+                        it.projectId !in excludedProjectIds && it.listId !in excludedListIds
                 }
                 val tomorrowStr = today.plusDays(1).toString()
                 val tomorrowTasks = allTasks.filter { !it.done && it.due == tomorrowStr }
@@ -220,18 +232,26 @@ private fun AgendaSummaryRow(
 /**
  * Up to the next 3 distinct due-dates (today or later) that actually have tasks.
  *
- * The Today bucket uses the same predicate as the Today tab, so a deferred or waiting-on task
- * doesn't show there — but the future-dated groups deliberately don't, matching the in-app
- * Upcoming/Calendar tab where a deferred task still appears on the date it's actually due.
+ * The Today bucket uses the same predicate (and the same container exclusions) as the Today tab,
+ * so a deferred/waiting-on task or one in an excluded project/list doesn't show there — but the
+ * future-dated groups deliberately don't apply either, matching the in-app Upcoming/Calendar tab
+ * where that task still appears on the date it's actually due.
  */
-private fun upcomingAgendaDays(allTasks: List<Task>, today: LocalDate, myId: String?): List<AgendaDay> {
+private fun upcomingAgendaDays(
+    allTasks: List<Task>,
+    today: LocalDate,
+    myId: String?,
+    excludedProjectIds: Set<String>,
+    excludedListIds: Set<String>
+): List<AgendaDay> {
     val todayStr = today.toString()
     val byDate = allTasks
         .filter { it.due != null && !it.done }
         .groupBy { it.due!! }
 
     val todayTasks = allTasks.filter {
-        !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId)
+        !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
+            it.projectId !in excludedProjectIds && it.listId !in excludedListIds
     }
     val futureDates = byDate.keys
         .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }

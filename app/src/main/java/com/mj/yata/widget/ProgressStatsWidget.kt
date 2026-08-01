@@ -34,6 +34,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.hiddenFromMainTaskListIds
+import com.mj.yata.domain.model.hiddenFromMainTaskProjectIds
 import com.mj.yata.domain.model.isActionableToday
 import com.mj.yata.domain.model.wasPendingAsOf
 import dagger.hilt.android.EntryPointAccessors
@@ -64,13 +66,19 @@ class ProgressStatsWidget : GlanceAppWidget() {
         val today = LocalDate.now()
         val todayStr = today.toString()
         val myId = repository.getPeople().first().firstOrNull { it.isMe }?.id
-        // isActionableToday matches the Today tab (excludes deferred and waiting-on tasks);
-        // wasPendingAsOf then drops tasks done on an earlier day — otherwise they'd match
-        // due<=today forever and permanently inflate the ring/per-list "done" counts.
-        val todayTasks = repository.getTasks().first()
-            .filter { it.isActionableToday(todayStr, System.currentTimeMillis(), myId) }
-            .filter { it.wasPendingAsOf(today) }
+        val excludedProjectIds = repository.getProjects().first().hiddenFromMainTaskProjectIds()
         val lists = repository.getLists().first()
+        val excludedListIds = lists.hiddenFromMainTaskListIds()
+        // isActionableToday matches the Today tab (excludes deferred and waiting-on tasks), same
+        // as the container exclusions above; wasPendingAsOf then drops tasks done on an earlier
+        // day — otherwise they'd match due<=today forever and permanently inflate the ring/
+        // per-list "done" counts.
+        val todayTasks = repository.getTasks().first()
+            .filter {
+                it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
+                    it.projectId !in excludedProjectIds && it.listId !in excludedListIds
+            }
+            .filter { it.wasPendingAsOf(today) }
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
 

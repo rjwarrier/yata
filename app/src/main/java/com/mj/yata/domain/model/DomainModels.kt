@@ -67,6 +67,12 @@ data class YataList(
 fun List<YataList>.activeLists(includeId: String? = null): List<YataList> =
     filter { !it.archived || it.id == includeId }
 
+/** Mirrors [List.hiddenFromMainTaskProjectIds], but archived lists are deliberately left out —
+ * that's the existing Today tab behaviour this only extracts, not a new rule; unlike projects,
+ * an archived list's tasks were never excluded from Today. */
+fun List<YataList>.hiddenFromMainTaskListIds(): Set<String> =
+    filter { it.excludeFromToday }.map { it.id }.toSet()
+
 fun List<YataList>.archivedLists(): List<YataList> =
     filter { it.archived }
 

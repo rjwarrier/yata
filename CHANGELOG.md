@@ -34,6 +34,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   deferred to next week still sat on the launcher — and the same gap applied to the new "waiting
   on" dates. The Upcoming/Calendar tab and Next 10 Days still show deferred tasks on their due
   date, which is intended: a start date only keeps work out of the day view.
+- **Widgets and the bottom-nav badge now also respect "Exclude from Today" projects and lists.**
+  They only checked excluded projects, never lists, and the badge additionally missed the deferral
+  and waiting-on fix above — so a tapped badge could open a Today screen with fewer tasks than the
+  number just shown.
 
 ## [0.88 beta] - 2026-08-01
 

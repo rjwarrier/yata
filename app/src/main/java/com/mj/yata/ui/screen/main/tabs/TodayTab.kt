@@ -108,7 +108,7 @@ fun TodayTab(
     // Projects/lists marked "Exclude from Today" hide their tasks from this screen entirely,
     // even if a task inside ends up overdue — meant for a backlog with no fixed date yet.
     val excludedProjectIds = remember(projects) { projects.hiddenFromMainTaskProjectIds() }
-    val excludedListIds = remember(lists) { lists.filter { it.excludeFromToday }.map { it.id }.toSet() }
+    val excludedListIds = remember(lists) { lists.hiddenFromMainTaskListIds() }
 
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
 
