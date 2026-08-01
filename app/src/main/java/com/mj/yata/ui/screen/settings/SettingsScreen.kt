@@ -2695,18 +2695,21 @@ fun SettingsScreen(
                                     viewModel.setCloudBackupIntervalMinutes(minutes)
                                     showFrequencyDialog = false
                                 }
-                                .padding(horizontal = 12.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // RadioButton over a plain conditional Icon — its selected/unselected
+                            // dot is a built-in animated transition (same as the Archive Months
+                            // dialog right below), instead of the checkmark just popping in/out.
+                            RadioButton(
+                                selected = cloudBackupIntervalMinutes == minutes,
+                                onClick = {
+                                    viewModel.setCloudBackupIntervalMinutes(minutes)
+                                    showFrequencyDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(text = label, style = MaterialTheme.typography.bodyLarge)
-                            if (cloudBackupIntervalMinutes == minutes) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
                         }
                     }
                 }
