@@ -228,15 +228,22 @@ fun UpcomingTab(
                             )
                         }
                     }
-                    Text(
-                        text = monthLabel,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            letterSpacing = 0.9.sp,
-                            fontSize = 13.sp
-                        ),
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(9999.dp),
                         modifier = Modifier.padding(horizontal = 4.dp)
-                    )
+                    ) {
+                        Text(
+                            text = monthLabel,
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                letterSpacing = 0.9.sp,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                        )
+                    }
                     if (viewMode == ScheduleViewMode.MONTH) {
                         IconButton(onClick = { selectedMonth = selectedMonth.plusMonths(1) }) {
                             Icon(
@@ -757,7 +764,7 @@ private fun MonthDayCell(
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(40.dp)
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale
@@ -774,7 +781,7 @@ private fun MonthDayCell(
                     text = day.dayOfMonth.toString(),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = if (isToday || selected) FontWeight.SemiBold else FontWeight.Normal,
-                        fontSize = 15.sp
+                        fontSize = 17.sp
                     ),
                     color = fg
                 )
