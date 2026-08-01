@@ -320,7 +320,7 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
-                                text = { Text("Manage sections") },
+                                text = { Text(stringResource(R.string.project_manage_sections)) },
                                 onClick = {
                                     showMenu = false
                                     isManageSectionsSheetOpen = true
@@ -628,7 +628,9 @@ fun ProjectDetailScreen(
                 ) {
                     val unsectioned = sectioned[""].orEmpty()
                     if (unsectioned.isNotEmpty()) {
-                        item(key = "section_none_header") { TaskSectionHeader("NO SECTION", unsectioned.size) }
+                        item(key = "section_none_header") {
+                            TaskSectionHeader(stringResource(R.string.section_header_no_section), unsectioned.size)
+                        }
                         items(unsectioned, key = { "sec_none_" + it.id }) { task -> taskRowFor(task) }
                     }
                     project.sectionNames.forEach { sectionName ->

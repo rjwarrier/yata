@@ -881,4 +881,32 @@
     <string name="settings_diff_item">• %1$s</string>
     <string name="settings_diff_more">+%1$d more</string>
 
+    <!-- Cloud backup retention. %1$d is how many backups are kept before the oldest is pruned. -->
+    <string name="settings_backups_to_keep">Backups to keep</string>
+    <string name="settings_backups_to_keep_summary">Keep the last %1$d cloud backups — older ones are pruned automatically.</string>
+    <!-- Shown above the backup-frequency choices, so the schedule isn't mistaken for the only
+         time a backup happens. -->
+    <string name="settings_backup_frequency_explainer">A backup also uploads a couple of minutes after any task change, regardless of this setting — this controls the periodic safety-net schedule underneath that.</string>
+    <string name="settings_sync_after_change">Right after any change in a task</string>
+    <!-- %1$d is a whole number of minutes (30, 60, 120). -->
+    <string name="settings_sync_every_minutes">Every %1$d minutes</string>
+
+    <!-- Task detail: "waiting on" follow-up, shown only for work owned by someone else. -->
+    <string name="task_waiting_on">Waiting on</string>
+    <string name="task_waiting_on_none">No follow-up</string>
+    <string name="task_waiting_on_set_hint">Hidden from Today until this date, since it\'s on someone else\'s plate.</string>
+    <string name="task_waiting_on_unset_hint">Delegated task — set a date to hide it from Today until then.</string>
+    <!-- Marks the first assignee as the task owner. %1$s is the person's name. -->
+    <string name="task_assignee_owner">%1$s · Owner</string>
+
+    <!-- Project sections: user-defined headings tasks are grouped under. -->
+    <string name="task_section">Section</string>
+    <string name="task_section_none">No section</string>
+    <string name="section_header_no_section">NO SECTION</string>
+    <string name="project_manage_sections">Manage sections</string>
+    <string name="project_manage_sections_hint">Group this project\'s tasks under headings like \"Design\" or \"Backend\". Leave empty to keep the plain Pending/Completed list.</string>
+    <string name="project_section_new">New section</string>
+    <string name="cd_section_add">Add section</string>
+    <string name="cd_section_remove">Remove section</string>
+
 </resources>

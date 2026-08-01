@@ -2293,11 +2293,11 @@ fun SettingsScreen(
                         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                             var keepCountPosition by remember(cloudBackupKeepCount) { mutableFloatStateOf(cloudBackupKeepCount.toFloat()) }
                             Text(
-                                text = "Backups to keep",
+                                text = stringResource(R.string.settings_backups_to_keep),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
-                                text = "Keep the last ${keepCountPosition.toInt()} cloud backups — older ones are pruned automatically.",
+                                text = stringResource(R.string.settings_backups_to_keep_summary, keepCountPosition.toInt()),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2681,12 +2681,13 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "A backup also uploads a couple of minutes after any task change, regardless of this setting — this controls the periodic safety-net schedule underneath that.",
+                        text = stringResource(R.string.settings_backup_frequency_explainer),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    SYNC_FREQUENCY_OPTIONS.forEach { (minutes, label) ->
+                    SYNC_FREQUENCY_MINUTES.forEach { minutes ->
+                        val label = syncFrequencyLabel(minutes)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -2970,20 +2971,25 @@ private fun minutesToIntervalDisplay(minutes: Long): Pair<Long, String> = when {
     else -> minutes to "Minutes"
 }
 
-/** The four choices in the "Backup frequency" dialog. 15 minutes is WorkManager's own floor for
- * periodic work (see UserPreferences.setCloudBackupIntervalMinutes' coerceAtLeast) — there's no
- * shorter periodic schedule to fall back to, so it doubles as the "right after any change"
- * option's stored value; the actual near-immediate upload is the always-on ~2 minute debounce in
- * CloudBackupManager.scheduleDebouncedBackup, which this dialog doesn't control either way. */
-private val SYNC_FREQUENCY_OPTIONS: List<Pair<Long, String>> = listOf(
-    15L to "Right after any change in a task",
-    30L to "Every 30 minutes",
-    60L to "Every 60 minutes",
-    120L to "Every 120 minutes"
-)
+/** WorkManager's own floor for periodic work (see UserPreferences.setCloudBackupIntervalMinutes'
+ * coerceAtLeast) — there's no shorter periodic schedule to fall back to, so it doubles as the
+ * "right after any change" option's stored value. The actual near-immediate upload is the
+ * always-on ~2 minute debounce in CloudBackupManager.scheduleDebouncedBackup, which this dialog
+ * doesn't control either way. */
+private const val SYNC_AFTER_CHANGE_MINUTES = 15L
 
-private fun syncFrequencyLabel(minutes: Long): String =
-    SYNC_FREQUENCY_OPTIONS.find { it.first == minutes }?.second ?: formatBackupInterval(minutes)
+/** The four choices in the "Backup frequency" dialog, in display order. Only the values live
+ * here — labels are resolved through [syncFrequencyLabel] so they can come from strings.xml. */
+private val SYNC_FREQUENCY_MINUTES: List<Long> = listOf(SYNC_AFTER_CHANGE_MINUTES, 30L, 60L, 120L)
+
+/** Falls back to the generic interval formatter for a value saved by an older build, which could
+ * be any number of minutes/hours/days rather than one of the four presets. */
+@Composable
+private fun syncFrequencyLabel(minutes: Long): String = when {
+    minutes == SYNC_AFTER_CHANGE_MINUTES -> stringResource(R.string.settings_sync_after_change)
+    minutes in SYNC_FREQUENCY_MINUTES -> stringResource(R.string.settings_sync_every_minutes, minutes.toInt())
+    else -> formatBackupInterval(minutes)
+}
 
 private fun signedCount(n: Int): String = if (n > 0) "+$n" else "$n"
 

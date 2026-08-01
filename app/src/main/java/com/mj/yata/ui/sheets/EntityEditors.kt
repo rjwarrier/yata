@@ -923,11 +923,11 @@ fun ManageSectionsSheet(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Manage sections",
+            text = stringResource(R.string.project_manage_sections),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)
         )
         Text(
-            text = "Group this project's tasks under headings like \"Design\" or \"Backend\". Leave empty to keep the plain Pending/Completed list.",
+            text = stringResource(R.string.project_manage_sections_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -950,7 +950,7 @@ fun ManageSectionsSheet(
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { sections = sections.toMutableList().apply { removeAt(index) } }) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove section")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_section_remove))
                     }
                 }
             }
@@ -964,7 +964,7 @@ fun ManageSectionsSheet(
                 value = newSectionName,
                 onValueChange = { newSectionName = it },
                 singleLine = true,
-                placeholder = { Text("New section") },
+                placeholder = { Text(stringResource(R.string.project_section_new)) },
                 modifier = Modifier.weight(1f)
             )
             IconButton(
@@ -975,7 +975,7 @@ fun ManageSectionsSheet(
                     }
                 }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add section")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_section_add))
             }
         }
         Row(

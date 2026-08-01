@@ -712,7 +712,15 @@ fun TaskDetailScreen(
                             InputChip(
                                 selected = true,
                                 onClick = { activeSheet = DetailSheetType.AssigneePicker },
-                                label = { Text(if (index == 0 && taskAssignees.size > 1) "${person.name} · Owner" else person.name) },
+                                label = {
+                                    Text(
+                                        if (index == 0 && taskAssignees.size > 1) {
+                                            stringResource(R.string.task_assignee_owner, person.name)
+                                        } else {
+                                            person.name
+                                        }
+                                    )
+                                },
                                 leadingIcon = {
                                     com.mj.yata.ui.widgets.PersonAvatar(
                                         initials = person.initials,
@@ -743,7 +751,7 @@ fun TaskDetailScreen(
                 if (ownerId != null && ownerId != myId) item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Waiting on",
+                            text = stringResource(R.string.task_waiting_on),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -765,16 +773,18 @@ fun TaskDetailScreen(
                                 viewModel.setTaskFollowUp(task.id, millis)
                             }
                             LocalScheduleChip("Pick date", false) { showFollowUpPicker = true }
-                            LocalScheduleChip("No follow-up", task.followUpAt == null) {
+                            LocalScheduleChip(stringResource(R.string.task_waiting_on_none), task.followUpAt == null) {
                                 viewModel.setTaskFollowUp(task.id, null)
                             }
                         }
                         LocalPanelHint(
-                            if (task.followUpAt != null) {
-                                "Hidden from Today until this date, since it's on someone else's plate."
-                            } else {
-                                "Delegated task — set a date to hide it from Today until then."
-                            }
+                            stringResource(
+                                if (task.followUpAt != null) {
+                                    R.string.task_waiting_on_set_hint
+                                } else {
+                                    R.string.task_waiting_on_unset_hint
+                                }
+                            )
                         )
                     }
                 }
@@ -786,7 +796,7 @@ fun TaskDetailScreen(
             if (project != null && project.sectionNames.isNotEmpty()) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Section",
+                        text = stringResource(R.string.task_section),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -794,7 +804,7 @@ fun TaskDetailScreen(
                         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        LocalScheduleChip("No section", task.section !in project.sectionNames) {
+                        LocalScheduleChip(stringResource(R.string.task_section_none), task.section !in project.sectionNames) {
                             viewModel.upsertTask(task.copy(section = ""))
                         }
                         project.sectionNames.forEach { sectionName ->
