@@ -259,6 +259,9 @@ class JsonExporter @Inject constructor(
                 val commonTagIdsArr = JSONArray()
                 pr.commonTagIds.forEach { commonTagIdsArr.put(it) }
                 o.put("commonTagIds", commonTagIdsArr)
+                val sectionNamesArr = JSONArray()
+                pr.sectionNames.forEach { sectionNamesArr.put(it) }
+                o.put("sectionNames", sectionNamesArr)
                 projectsArr.put(o)
             }
             root.put("projects", projectsArr)
@@ -333,6 +336,7 @@ class JsonExporter @Inject constructor(
             o.put("notes", t.notes)
             o.put("sortOrder", t.sortOrder)
             o.put("archived", t.archived)
+            o.put("followUpAt", t.followUpAt ?: JSONObject.NULL)
 
             // Assignees
             val assArr = JSONArray()
@@ -591,6 +595,15 @@ class JsonExporter @Inject constructor(
                                 commonTagIds.add(commonTagIdsArr.getString(j))
                             }
                         }
+                        // Absent in backups written before sections existed — an empty list is
+                        // exactly right there, since that project simply had no sections.
+                        val sectionNamesArr = o.optJSONArray("sectionNames")
+                        val sectionNames = mutableListOf<String>()
+                        if (sectionNamesArr != null) {
+                            for (j in 0 until sectionNamesArr.length()) {
+                                sectionNames.add(sectionNamesArr.getString(j))
+                            }
+                        }
                         repository.upsertProject(
                             Project(
                                 id = o.getString("id"),
@@ -603,7 +616,8 @@ class JsonExporter @Inject constructor(
                                 defaultReminder = if (o.isNull("defaultReminder")) null else o.optString("defaultReminder", null),
                                 description = if (o.isNull("description")) null else o.optString("description", null),
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
-                                archived = o.optBoolean("archived", false)
+                                archived = o.optBoolean("archived", false),
+                                sectionNames = sectionNames
                             )
                         )
                     }
@@ -766,7 +780,10 @@ class JsonExporter @Inject constructor(
                                 sortOrder = o.optInt("sortOrder", i),
                                 // Absent in backups written before task archiving existed —
                                 // those restore as un-archived, which is the correct reading.
-                                archived = o.optBoolean("archived", false)
+                                archived = o.optBoolean("archived", false),
+                                // Absent before waiting-on dates existed — null means "no
+                                // follow-up set", so the task stays visible in Today as it did.
+                                followUpAt = if (o.isNull("followUpAt")) null else o.optLong("followUpAt")
                             )
                         )
                     }

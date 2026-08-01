@@ -15,6 +15,13 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Fixed
+
+- **Backup and restore no longer lose "waiting on" dates or a project's sections.** Both shipped in
+  0.88 beta as database fields but were never written to the backup file, so restoring a backup
+  silently dropped them. Backups taken with 0.88 beta are missing this data and cannot recover it;
+  backups taken from here on carry both. Older backups restore as before.
+
 ## [0.88 beta] - 2026-08-01
 
 `versionCode 10`. Upgrades in place over 0.87 beta; the database migrates from 27 to 29 with
