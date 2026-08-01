@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Changed
+
+- Removed the remaining-task count badge from the bottom nav's Today icon.
+
 ### Added
 
 - **Time estimates and a planned total for the day.** Give a task an estimate from its detail

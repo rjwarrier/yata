@@ -1370,22 +1370,14 @@ fun CustomBottomNav(
                                 },
                             contentAlignment = Alignment.Center
                         ) {
-                            BadgedBox(
-                                badge = {
-                                    if (navIcon.id == 0 && todayBadgeCount > 0) {
-                                        Badge { Text(if (todayBadgeCount > 99) "99+" else todayBadgeCount.toString()) }
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = if (isSelected) navIcon.filled else navIcon.outlined,
-                                    contentDescription = navIcon.label,
-                                    tint = iconTint,
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .scale(iconScale.value)
-                                )
-                            }
+                            Icon(
+                                imageVector = if (isSelected) navIcon.filled else navIcon.outlined,
+                                contentDescription = navIcon.label,
+                                tint = iconTint,
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .scale(iconScale.value)
+                            )
                         }
                         if (showLabels) {
                             Text(
