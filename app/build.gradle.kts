@@ -1,4 +1,6 @@
 import java.io.FileInputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Properties
 
 plugins {
@@ -28,8 +30,18 @@ android {
         applicationId = "com.mj.yata"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.87 beta"
+        versionCode = 10
+        versionName = "0.88 beta"
+
+        // Stamped fresh into every build (not just release) so Help & About's "Build N.DDMMYYYYHHmm"
+        // line reflects exactly when this particular APK was assembled, not just the day — the
+        // minute resolution is what actually tells apart two same-versionCode debug builds from
+        // the same dev loop. HHmm is 24-hour (SimpleDateFormat's H, not h).
+        buildConfigField(
+            "String",
+            "BUILD_DATE",
+            "\"" + SimpleDateFormat("ddMMyyyyHHmm").format(Date()) + "\""
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

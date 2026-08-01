@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.RestoreFromTrash
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.Widgets
@@ -103,12 +104,24 @@ private val helpSections = listOf(
         icon = Icons.Default.PostAdd
     ),
     HelpSection(
+        title = "Search & Saved Views",
+        description = "Find anything fast, and jump back to a filtered view in one tap.",
+        bullets = listOf(
+            "The command palette (drawer > Command palette) reaches every screen, saved filter, and recent task by typing part of its name.",
+            "Save a combination of filters from the Search screen — saved views show up in both the drawer's Custom Views and the command palette.",
+            "One-tap presets like Focus Mode, Assigned to Me, Morning/Evening Review, and Task Health need no setup."
+        ),
+        icon = Icons.Default.Search
+    ),
+    HelpSection(
         title = "Projects & Lists",
         description = "Use projects for larger outcomes and lists for reusable buckets.",
         bullets = listOf(
             "Star important projects or lists to keep them in the drawer.",
             "Archive old containers without deleting their data.",
-            "Exclude backlog-style containers from Today when their tasks should stay out of the daily view."
+            "Exclude backlog-style containers from Today when their tasks should stay out of the daily view.",
+            "Give a project user-defined sections (⋮ menu > Manage sections) to group its tasks under headings like Design or Backend.",
+            "Long-press a task on any project, list, tag, or person screen to multiselect and bulk complete, tag, assign, move, reschedule, duplicate, or delete."
         ),
         icon = Icons.Default.ViewAgenda
     ),
@@ -118,7 +131,10 @@ private val helpSections = listOf(
         bullets = listOf(
             "Mark one person as you for assigned-to-me filtering.",
             "Person detail screens show open and completed work for that person.",
-            "Team overdue widgets summarize who needs attention."
+            "Team overdue widgets summarize who needs attention.",
+            "The first person assigned to a task is its owner — shown larger in the avatar stack and labeled on the task detail screen; everyone else is a collaborator.",
+            "Bulk-assigning shows each person's open and overdue count, so you're not delegating blind.",
+            "Delegate a task and set a \"waiting on\" follow-up date from its detail screen — it stays out of Today until that date, then reappears on its own."
         ),
         icon = Icons.Default.Groups
     ),
@@ -168,7 +184,9 @@ private val helpSections = listOf(
         bullets = listOf(
             "Cloud backup uses Google Drive app data storage when enabled.",
             "File backup and restore use JSON for the full YATA dataset.",
-            "Calendar export creates an .ics file, and Markdown export is useful for sharing."
+            "Calendar export creates an .ics file, and Markdown export is useful for sharing.",
+            "Choose how many cloud backups to keep (2–15) with the slider in Settings > Cloud.",
+            "Pick the backup schedule — right after any change in a task, or every 30, 60, or 120 minutes."
         ),
         icon = Icons.Default.Backup
     ),
@@ -330,7 +348,7 @@ fun HelpAboutScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "v${BuildConfig.VERSION_NAME} build ${BuildConfig.VERSION_CODE}",
+                            text = "v${BuildConfig.VERSION_NAME}  ·  Build ${BuildConfig.VERSION_CODE}.${BuildConfig.BUILD_DATE}",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -343,7 +361,7 @@ fun HelpAboutScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Made in India",
+                            text = "Made in 🇮🇳",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
