@@ -15,6 +15,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.88 beta] - 2026-08-01
+
+`versionCode 10`. Upgrades in place over 0.87 beta; the database migrates from 27 to 29 with
+existing tasks preserved.
+
 ### Added
 
 - **Multiselect and bulk actions on Project/List/Tag/Person detail screens.** Long-press a task to
@@ -40,6 +45,22 @@ test-only changes belong in the commit message, not here, unless they change beh
   just at a count you control instead of a fixed 5.
 - **Simplified "Backup frequency" to a 4-option picker.** Right after any change in a task, or
   every 30 / 60 / 120 minutes — replaces the old free-form number + Minutes/Hours/Days entry.
+- **New "Search & Saved Views" section in Help & About**, plus updated Projects/Lists, People and
+  Backup & Export sections covering everything above.
+- Help & About's build line now includes the exact build timestamp
+  (`Build <versionCode>.<DDMMYYYYHHmm>`), not just the version code.
+
+### Changed
+
+- The Calendar month heading is bigger, bold, and sits in a pill.
+
+### Fixed
+
+- The "yata" wordmark in Help & About now actually renders in Bodoni Moda's bold, high-contrast
+  display cut — it was silently falling back to the variable font's plain default instance since
+  nothing told it which `wght`/`opsz` axis values to use.
+- The backup-frequency picker's selection indicator is animated again (was a static checkmark that
+  just popped in and out).
 
 ## [0.87 beta] - 2026-08-01
 
@@ -405,7 +426,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.87-beta...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.88-beta...HEAD
+[0.88 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.88-beta
 [0.87 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.87-beta
 [0.86 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.86-beta
 [0.85 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.85-beta
