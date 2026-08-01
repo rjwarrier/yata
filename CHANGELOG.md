@@ -15,6 +15,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+
+- **Time estimates and a planned total for the day.** Give a task an estimate from its detail
+  screen (5m up to 4h, or none), and Today shows how much work you've actually planned — plus how
+  many open tasks still have no estimate, so the total is never mistaken for the whole day. Tasks
+  show their estimate on the row alongside subtask progress. Nothing is estimated automatically:
+  a guessed number would make the figure look more reliable than it is.
+
 ### Fixed
 
 - **Backup and restore no longer lose "waiting on" dates or a project's sections.** Both shipped in

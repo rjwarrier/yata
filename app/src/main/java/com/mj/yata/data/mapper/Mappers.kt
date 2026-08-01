@@ -165,7 +165,8 @@ fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>, subtask
     sortOrder = sortOrder,
     seriesId = seriesId,
     archived = archived,
-    followUpAt = followUpAt
+    followUpAt = followUpAt,
+    estimateMinutes = estimateMinutes
 )
 
 fun Task.toEntity() = TaskEntity(
@@ -189,7 +190,8 @@ fun Task.toEntity() = TaskEntity(
     sortOrder = sortOrder,
     seriesId = seriesId,
     archived = archived,
-    followUpAt = followUpAt
+    followUpAt = followUpAt,
+    estimateMinutes = estimateMinutes
 )
 
 fun TaskWithRelations.toDomain() = task.toDomain(

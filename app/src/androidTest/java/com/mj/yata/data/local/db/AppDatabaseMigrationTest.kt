@@ -637,6 +637,44 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate29To30_addsEstimateMinutesColumn_defaultingToNull() {
+        context.deleteDatabase(TEST_DB)
+        createVersion18TasksTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`completedAt`,`deletedAt`,`notes`,`recurrenceJson`,`sortOrder`) " +
+                    "VALUES ('t1','File taxes',NULL,NULL,'',NULL,NULL,NULL,'high',0,0,NULL,NULL,NULL,NULL,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(30) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_23_24.migrate(db)
+                    AppDatabase.MIGRATION_24_25.migrate(db)
+                    AppDatabase.MIGRATION_25_26.migrate(db)
+                    AppDatabase.MIGRATION_26_27.migrate(db)
+                    AppDatabase.MIGRATION_27_28.migrate(db)
+                    AppDatabase.MIGRATION_29_30.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `estimateMinutes` FROM `tasks` WHERE `id` = 't1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                // Null, not 0 — "unestimated" has to stay distinguishable from "estimated at zero
+                // minutes", or every pre-existing task would count as a real zero in the planned
+                // total on Today.
+                assertTrue(cursor.isNull(cursor.getColumnIndexOrThrow("estimateMinutes")))
+            }
+            close()
+        }
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)

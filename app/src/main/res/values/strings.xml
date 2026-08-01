@@ -909,4 +909,15 @@
     <string name="cd_section_add">Add section</string>
     <string name="cd_section_remove">Remove section</string>
 
+    <!-- Planned effort. The durations themselves ("45m", "2h 30m") are composed in
+         EstimateUtils.format rather than here — see the note on that function. -->
+    <string name="task_estimate">Estimate</string>
+    <string name="task_estimate_none">No estimate</string>
+    <string name="task_estimate_hint">Counts toward the planned total on Today.</string>
+    <!-- %1$s is a formatted duration, e.g. "2h 30m". -->
+    <string name="today_planned">%1$s planned</string>
+    <!-- %1$s is a formatted duration, %2$d how many open tasks carry no estimate yet. -->
+    <string name="today_planned_with_unestimated">%1$s planned · %2$d unestimated</string>
+    <string name="cd_task_estimate">Estimated %1$s</string>
+
 </resources>

@@ -78,6 +78,31 @@ class JsonExporterFieldsTest {
     }
 
     @Test
+    fun absentEstimate_readsAsNull_notZeroMinutes() {
+        // Same trap as followUpAt, with a sharper consequence: optInt returns 0 for a missing
+        // key, and 0 is a *valid* estimate. Every task from an older backup would restore as
+        // "estimated at zero minutes" and start counting toward Today's planned total.
+        val task = JSONObject().apply { put("id", "t1") }
+        assertTrue(task.isNull("estimateMinutes"))
+        assertEquals(0, task.optInt("estimateMinutes"))
+    }
+
+    @Test
+    fun explicitZeroEstimate_isDistinguishableFromAbsent() {
+        // A deliberate "this takes no time" must survive as 0 rather than collapsing to null.
+        val task = JSONObject().apply { put("estimateMinutes", 0) }
+        val read = JSONObject(task.toString())
+        assertTrue(!read.isNull("estimateMinutes"))
+        assertEquals(0, read.optInt("estimateMinutes"))
+    }
+
+    @Test
+    fun estimate_roundTrips() {
+        val task = JSONObject().apply { put("estimateMinutes", 150) }
+        assertEquals(150, JSONObject(task.toString()).optInt("estimateMinutes"))
+    }
+
+    @Test
     fun emptySectionNames_roundTripsAsAnEmptyArray_notAMissingKey() {
         // A project that had sections and then had them all removed must restore with none,
         // rather than the key vanishing and the importer having nothing to distinguish it from

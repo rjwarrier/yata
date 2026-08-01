@@ -164,7 +164,12 @@ data class Task(
     // nothing to do until this date, so a delegated task with a future follow-up drops out of
     // Today (see [isWaitingOn]) the same way a deferred task does, and reappears on its own once
     // the date arrives. Null means no follow-up is set — the normal case for your own tasks.
-    val followUpAt: Long? = null
+    val followUpAt: Long? = null,
+    // Planned effort in minutes. Null means unestimated — deliberately distinct from 0, since
+    // "no idea yet" and "this takes no time" are different answers and only the former should be
+    // excluded from a day's planned total. Never inferred or auto-filled: a guessed estimate is
+    // worse than none, because it makes the capacity figure look authoritative when it isn't.
+    val estimateMinutes: Int? = null
 )
 
 /**

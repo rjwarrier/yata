@@ -790,6 +790,35 @@ fun TaskDetailScreen(
                 }
             }
 
+            // 3.6 Estimate — planned effort, feeding Today's "X planned" capacity line. Always
+            // offered (unlike Section), since any task can carry one.
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.task_estimate),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        LocalScheduleChip(stringResource(R.string.task_estimate_none), task.estimateMinutes == null) {
+                            viewModel.setTaskEstimate(task.id, null)
+                        }
+                        com.mj.yata.util.EstimateUtils.PRESETS.forEach { minutes ->
+                            LocalScheduleChip(
+                                com.mj.yata.util.EstimateUtils.format(minutes),
+                                task.estimateMinutes == minutes
+                            ) {
+                                viewModel.setTaskEstimate(task.id, minutes)
+                            }
+                        }
+                    }
+                    LocalPanelHint(stringResource(R.string.task_estimate_hint))
+                }
+            }
+
             // 3.7 Section — only shown once the task's own project has defined sections
             // (Project.sectionNames); otherwise there's nothing meaningful to pick from and this
             // row would just be clutter. See ManageSectionsSheet for defining them.

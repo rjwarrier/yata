@@ -321,7 +321,7 @@ fun TaskRow(
             }
 
             // Meta row below
-            if (task.time != null || (showList && list != null) || task.recurrence != null || task.subtasks.isNotEmpty() || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
+            if (task.time != null || (showList && list != null) || task.recurrence != null || task.subtasks.isNotEmpty() || task.estimateMinutes != null || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
                 Spacer(modifier = Modifier.height(4.dp))
                 // FlowRow, not Row: the number of things in here varies (completed-at or due date,
                 // time, list, recurrence, up to two health badges, up to two tags) and a plain Row
@@ -445,6 +445,32 @@ fun TaskRow(
                             Text(
                                 text = "$doneSubtasks/${task.subtasks.size}",
                                 color = if (allDone) listColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 11.sp
+                                )
+                            )
+                        }
+                    }
+
+                    // Planned effort, when it's been set. Deliberately quiet — same weight as the
+                    // subtask counter beside it, since an estimate is context for the row, not a
+                    // status worth competing with the overdue/priority signals.
+                    task.estimateMinutes?.let { minutes ->
+                        val estimateLabel = com.mj.yata.util.EstimateUtils.format(minutes)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = stringResource(R.string.cd_task_estimate, estimateLabel),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = estimateLabel,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 11.sp

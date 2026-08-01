@@ -337,6 +337,7 @@ class JsonExporter @Inject constructor(
             o.put("sortOrder", t.sortOrder)
             o.put("archived", t.archived)
             o.put("followUpAt", t.followUpAt ?: JSONObject.NULL)
+            o.put("estimateMinutes", t.estimateMinutes ?: JSONObject.NULL)
 
             // Assignees
             val assArr = JSONArray()
@@ -783,7 +784,11 @@ class JsonExporter @Inject constructor(
                                 archived = o.optBoolean("archived", false),
                                 // Absent before waiting-on dates existed — null means "no
                                 // follow-up set", so the task stays visible in Today as it did.
-                                followUpAt = if (o.isNull("followUpAt")) null else o.optLong("followUpAt")
+                                followUpAt = if (o.isNull("followUpAt")) null else o.optLong("followUpAt"),
+                                // Null rather than 0 when absent: unestimated has to stay
+                                // distinguishable from "estimated at zero minutes", or every old
+                                // task would count toward a day's planned total as a real zero.
+                                estimateMinutes = if (o.isNull("estimateMinutes")) null else o.optInt("estimateMinutes")
                             )
                         )
                     }

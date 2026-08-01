@@ -150,6 +150,12 @@ fun TodayTab(
     val progress = if (totalCount > 0) doneCount.toFloat() / totalCount else 0f
     val remainingCount = totalCount - doneCount
 
+    // Scoped to what's still open, not the whole day: time already spent isn't capacity you still
+    // have to find, so a finished task shouldn't keep inflating the plan.
+    val openTodayTasks = remember(todayTasks) { todayTasks.filter { !it.done } }
+    val plannedMinutes = remember(openTodayTasks) { com.mj.yata.util.EstimateUtils.plannedMinutes(openTodayTasks) }
+    val unestimatedCount = remember(openTodayTasks) { com.mj.yata.util.EstimateUtils.unestimatedCount(openTodayTasks) }
+
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
     val overdueCount = remember(progressBaseTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(progressBaseTasks) }
     val highPriorityCount = remember(progressBaseTasks) { progressBaseTasks.count { !it.done && it.priority == "high" } }
@@ -330,6 +336,29 @@ fun TodayTab(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 )
+                // Planned effort for what's still open today. Hidden entirely when nothing today
+                // carries an estimate — a "0m planned" line on an unestimated day reads as a
+                // real figure rather than an absent one. The unestimated count rides alongside so
+                // the total is never mistaken for the whole day when it only covers part of it.
+                if (plannedMinutes != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (unestimatedCount > 0) {
+                            stringResource(
+                                R.string.today_planned_with_unestimated,
+                                com.mj.yata.util.EstimateUtils.format(plannedMinutes),
+                                unestimatedCount
+                            )
+                        } else {
+                            stringResource(
+                                R.string.today_planned,
+                                com.mj.yata.util.EstimateUtils.format(plannedMinutes)
+                            )
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             ProgressRing(
                 progress = progress,

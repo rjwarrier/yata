@@ -1105,6 +1105,14 @@ private data class MainNavigationState(
         }
     }
 
+    /** Sets or clears a task's planned effort in minutes. Pass null to clear back to unestimated. */
+    fun setTaskEstimate(id: String, estimateMinutes: Int?) {
+        safeLaunch {
+            val task = tasks.value.find { it.id == id } ?: return@safeLaunch
+            repository.upsertTask(task.copy(estimateMinutes = estimateMinutes), resyncReminder = false)
+        }
+    }
+
     fun setLastHomeTab(tab: Int) {
         safeLaunch {
             userPreferences.setLastHomeTab(tab)

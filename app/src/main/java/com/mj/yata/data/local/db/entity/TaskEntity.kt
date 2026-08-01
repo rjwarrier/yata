@@ -65,5 +65,8 @@ data class TaskEntity(
     val archived: Boolean = false,
     // epoch millis — "come back and check on this" date for a delegated task. See
     // Task.isWaitingOn in domain/model/DomainModels.kt for the filtering semantics.
-    val followUpAt: Long? = null
+    val followUpAt: Long? = null,
+    // Planned effort in minutes; null = unestimated, which is not the same as 0. See
+    // Task.estimateMinutes in domain/model/DomainModels.kt.
+    val estimateMinutes: Int? = null
 )
