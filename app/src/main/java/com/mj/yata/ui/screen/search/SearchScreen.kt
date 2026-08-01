@@ -451,6 +451,8 @@ fun SearchScreen(
         ) {
             com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
                 people = people,
+                tasks = tasks,
+                todayStr = com.mj.yata.util.AppClock.todayString,
                 onSelectPerson = { personId ->
                     viewModel.bulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()

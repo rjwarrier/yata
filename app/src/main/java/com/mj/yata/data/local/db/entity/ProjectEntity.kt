@@ -16,5 +16,9 @@ data class ProjectEntity(
     val description: String? = null, // max 100 chars, enforced in ProjectEditorSheet
     val excludeFromToday: Boolean = false,
     val sortOrder: Int = 0,
-    val archived: Boolean = false
+    val archived: Boolean = false,
+    // Section names joined with U+001E (Record Separator) rather than a comma — unlike
+    // commonTagIds these are free-typed display text, not IDs, so a comma could legitimately
+    // appear in a name.
+    val sectionNames: String = ""
 )

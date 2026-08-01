@@ -130,7 +130,7 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 title = parsedTyped.title.takeIf { it.isNotBlank() } ?: title,
                                 listId = if (listStillExists) targetId else null,
                                 projectId = if (projectStillExists) targetId else null,
-                                section = "Afternoon",
+                                section = "",
                                 // Same fallback chain NewTaskSheet uses: an explicit due date
                                 // (here, one parsed from shared text) wins, otherwise the preset
                                 // project's own due date, otherwise today.

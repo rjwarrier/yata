@@ -110,13 +110,18 @@ fun TodayTab(
     val excludedProjectIds = remember(projects) { projects.hiddenFromMainTaskProjectIds() }
     val excludedListIds = remember(lists) { lists.filter { it.excludeFromToday }.map { it.id }.toSet() }
 
+    val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
+
     // Filter tasks due today (or overdue). Deferred tasks — those whose start date hasn't
     // arrived — drop out here too: they're due (or overdue) but not yet actionable, and the point
     // of a start date is that Today lists only what can be worked on now. They stay visible in
-    // their project/list and reappear here on their own, the day the start date arrives.
-    val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds) {
+    // their project/list and reappear here on their own, the day the start date arrives. Tasks
+    // delegated to someone else with a future "waiting on" follow-up date drop out the same way
+    // (see Task.isWaitingOn) — they'll reappear once that date arrives, without a background job.
+    val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds, myId) {
+        val nowMillis = System.currentTimeMillis()
         tasks.filter {
-            it.due != null && it.due <= todayStr && !it.isDeferredOn(todayStr) &&
+            it.due != null && it.due <= todayStr && !it.isDeferredOn(todayStr) && !it.isWaitingOn(nowMillis, myId) &&
                 it.projectId !in excludedProjectIds && it.listId !in excludedListIds
         }
     }
@@ -126,8 +131,6 @@ fun TodayTab(
     LaunchedEffect(peopleEnabled) {
         if (!peopleEnabled && selectedFilter != "All" && selectedFilter != "High Priority") selectedFilter = "All"
     }
-
-    val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
 
     val filteredTasks = remember(todayTasks, selectedFilter, myId) {
         when (selectedFilter) {
@@ -514,6 +517,8 @@ fun TodayTab(
         ) {
             com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
                 people = people,
+                tasks = tasks,
+                todayStr = todayStr,
                 onSelectPerson = { personId ->
                     onBulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()

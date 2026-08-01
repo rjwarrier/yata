@@ -309,7 +309,11 @@ fun NewTaskSheet(
     // currently the only way to flag a task before it's created, so there's no "manually set"
     // state to protect it from being overwritten.
     var selectedFlag by rememberSaveable { mutableStateOf(false) }
-    var selectedSection by rememberSaveable { mutableStateOf("Afternoon") }
+    // No section chosen at creation — there's no picker here (adding one risks tipping this
+    // form's parameter count over the register-allocation limit it already hit once, see
+    // NewTaskDraft's doc comment). A new task starts in the project's implicit "No section"
+    // bucket and gets assigned to one later, from TaskDetailScreen.
+    var selectedSection by rememberSaveable { mutableStateOf("") }
 
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
     // otherwise the pre-selected project's due date, otherwise the user's configured default

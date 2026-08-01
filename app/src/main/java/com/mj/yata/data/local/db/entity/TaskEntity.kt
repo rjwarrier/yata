@@ -62,5 +62,8 @@ data class TaskEntity(
     // the Archive screen, it's just excluded from the default task listings. Mirrors the same
     // flag on Project/Person/YataList. A task can be archived without being deleted, and the two
     // states are independent — archiving does not touch deletedAt.
-    val archived: Boolean = false
+    val archived: Boolean = false,
+    // epoch millis — "come back and check on this" date for a delegated task. See
+    // Task.isWaitingOn in domain/model/DomainModels.kt for the filtering semantics.
+    val followUpAt: Long? = null
 )

@@ -24,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -175,6 +176,14 @@ fun TagDetailScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
 
+    val selectedIds = remember { mutableStateListOf<String>() }
+    val selectionMode = selectedIds.isNotEmpty()
+    var showBulkTagSheet by remember { mutableStateOf(false) }
+    var showBulkMoveSheet by remember { mutableStateOf(false) }
+    var showBulkAssignSheet by remember { mutableStateOf(false) }
+    var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkDeleteDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
@@ -212,6 +221,22 @@ fun TagDetailScreen(
             }
         },
         topBar = {
+            if (selectionMode) {
+                TaskSelectionTopBar(
+                    selectedCount = selectedIds.size,
+                    onCancel = { selectedIds.clear() },
+                    onComplete = { viewModel.bulkCompleteTasks(selectedIds.toList()); selectedIds.clear() },
+                    onAddTag = { showBulkTagSheet = true },
+                    onMove = { showBulkMoveSheet = true },
+                    onReschedule = { showBulkRescheduleSheet = true },
+                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
+                    onDelete = { showBulkDeleteDialog = true },
+                    onAssign = { showBulkAssignSheet = true },
+                    tagsEnabled = tagsFeatureEnabled,
+                    peopleEnabled = peopleFeatureEnabled,
+                    modifier = Modifier.statusBarsPadding()
+                )
+            } else {
             TopAppBar(
                 title = {
                     if (searchActive) {
@@ -346,6 +371,7 @@ fun TagDetailScreen(
                     containerColor = tagColor.copy(alpha = 0.16f)
                 )
             )
+            }
         }
     ) { innerPadding ->
         val listsById = remember(lists) { lists.associateBy { it.id } }
@@ -421,13 +447,23 @@ fun TagDetailScreen(
                         assignees = taskAssignees,
                         tags = taskTags,
                         onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                        onTaskClick = { onNavigateToTaskDetail(task.id) },
+                        onTaskClick = {
+                            if (selectionMode) {
+                                if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                            } else {
+                                onNavigateToTaskDetail(task.id)
+                            }
+                        },
+                        selectionMode = selectionMode,
+                        selected = selectedIds.contains(task.id),
+                        onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
                         modifier = modifier,
                         onCommentClick = { pendingCommentTask = task },
                         onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                         onRenameTask = { viewModel.renameTask(task.id, it) },
                         density = taskRowDensity,
-                        onSwipeToDelete = { deleteTaskWithUndo(task) },
+                        onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
+                        swipeEnabled = !selectionMode,
                         showDueDate = true
                     )
                 }
@@ -566,6 +602,106 @@ fun TagDetailScreen(
                 pendingCommentTask = null
             },
             onDismiss = { pendingCommentTask = null }
+        )
+    }
+
+    if (showBulkTagSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkTagPickerSheet(
+                tags = tags,
+                onSelectTag = { tagIdToAdd ->
+                    viewModel.bulkAddTag(selectedIds.toList(), tagIdToAdd)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
+                onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkAssignSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkAssignSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkAssignPersonSheet(
+                people = people,
+                tasks = tasks,
+                todayStr = com.mj.yata.util.AppClock.todayString,
+                onSelectPerson = { personId ->
+                    viewModel.bulkAssignPerson(selectedIds.toList(), personId)
+                    selectedIds.clear()
+                    showBulkAssignSheet = false
+                },
+                onDismiss = { showBulkAssignSheet = false }
+            )
+        }
+    }
+
+    if (showBulkMoveSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkMoveSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkMoveSheet(
+                projects = projects,
+                lists = lists,
+                onSelectProject = { targetProjectId ->
+                    viewModel.bulkSetProject(selectedIds.toList(), targetProjectId)
+                    selectedIds.clear()
+                    showBulkMoveSheet = false
+                },
+                onSelectList = { targetListId ->
+                    viewModel.bulkSetList(selectedIds.toList(), targetListId)
+                    selectedIds.clear()
+                    showBulkMoveSheet = false
+                },
+                onDismiss = { showBulkMoveSheet = false },
+                projectsEnabled = projectsFeatureEnabled
+            )
+        }
+    }
+
+    if (showBulkRescheduleSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkRescheduleSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkRescheduleSheet(
+                onSelectPreset = { preset ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                    selectedIds.clear()
+                    showBulkRescheduleSheet = false
+                },
+                onDismiss = { showBulkRescheduleSheet = false }
+            )
+        }
+    }
+
+    if (showBulkDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showBulkDeleteDialog = false },
+            title = { Text(pluralStringResource(R.plurals.confirm_delete_tasks_title, selectedIds.size, selectedIds.size)) },
+            text = { Text(stringResource(R.string.action_this_can_t_be_undone)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.bulkDeleteTasks(selectedIds.toList())
+                    selectedIds.clear()
+                    showBulkDeleteDialog = false
+                }) {
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
         )
     }
 

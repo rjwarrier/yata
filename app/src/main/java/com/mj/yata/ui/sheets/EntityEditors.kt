@@ -893,3 +893,102 @@ fun ListEditorSheet(
         }
     }
 }
+
+/**
+ * Add/rename/remove the user-defined section headings a project's tasks can be grouped under
+ * (see [com.mj.yata.domain.model.Project.sectionNames]). Order here is display order — new
+ * sections are appended, existing ones aren't reorderable from this sheet (reordering would need
+ * its own drag surface for what's usually a handful of short-lived headings; renaming/deleting
+ * covers the common edit). Deleting a name doesn't touch any task — a task whose `section` no
+ * longer matches anything just falls back into the implicit "No section" bucket.
+ */
+@Composable
+fun ManageSectionsSheet(
+    initialSections: List<String>,
+    onSave: (List<String>) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var sections by remember { mutableStateOf(initialSections) }
+    var newSectionName by remember { mutableStateOf("") }
+
+    fun commitAndClose() {
+        onSave(sections.map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase(Locale.getDefault()) })
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "Manage sections",
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp)
+        )
+        Text(
+            text = "Group this project's tasks under headings like \"Design\" or \"Backend\". Leave empty to keep the plain Pending/Completed list.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Column(
+            modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            sections.forEachIndexed { index, section ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = section,
+                        onValueChange = { updated ->
+                            sections = sections.toMutableList().apply { set(index, updated) }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { sections = sections.toMutableList().apply { removeAt(index) } }) {
+                        Icon(Icons.Default.Close, contentDescription = "Remove section")
+                    }
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = newSectionName,
+                onValueChange = { newSectionName = it },
+                singleLine = true,
+                placeholder = { Text("New section") },
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = {
+                    if (newSectionName.isNotBlank()) {
+                        sections = sections + newSectionName.trim()
+                        newSectionName = ""
+                    }
+                }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add section")
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = { commitAndClose() }) {
+                Text(stringResource(R.string.action_save))
+            }
+        }
+    }
+}

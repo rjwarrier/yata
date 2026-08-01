@@ -98,14 +98,10 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
         return if (value in setOf("none", "low", "med", "high")) value!! else "none"
     }
 
-    private fun normalizeSection(raw: String?): String {
-        val value = raw?.trim()
-        return when {
-            value.equals("morning", ignoreCase = true) -> "Morning"
-            value.equals("afternoon", ignoreCase = true) -> "Afternoon"
-            else -> "Afternoon"
-        }
-    }
+    // Section is a free-typed, project-scoped heading (see Project.sectionNames) rather than a
+    // fixed Morning/Afternoon choice, and there's no Tasker-facing field to set it — pass through
+    // whatever the caller supplied, or leave the task in the project's default "No section" bucket.
+    private fun normalizeSection(raw: String?): String = raw?.trim().orEmpty()
 
     private fun normalizeReminder(raw: String?): String? {
         val value = raw?.trim()?.takeIf { it.isNotBlank() } ?: return null

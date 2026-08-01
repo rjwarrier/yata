@@ -565,7 +565,10 @@ object AnalyticsUtils {
     }
 
     /** Counts tasks, not assignments — a task with three assignees is one delegated task, not
-     * three. "Delegated" means assigned to at least one person who isn't you. */
+     * three. "Delegated" means *owned* by someone who isn't you (assigneeIds[0] by convention —
+     * see [[com.mj.yata.ui.widgets.AssigneeStack]]), not merely carrying your name anywhere in
+     * assigneeIds — a task you own but hand a collaborator on stays "self", since you're still
+     * the one accountable for it. */
     fun delegationSummary(tasks: List<Task>, people: List<Person>): DelegationSummary {
         val myId = people.firstOrNull { it.isMe }?.id
         val open = tasks.filter { !it.done }
@@ -573,9 +576,10 @@ object AnalyticsUtils {
         var self = 0
         var unassigned = 0
         open.forEach { task ->
+            val owner = task.assigneeIds.firstOrNull()
             when {
                 task.assigneeIds.isEmpty() -> unassigned++
-                myId != null && task.assigneeIds.any { it != myId } -> delegated++
+                myId != null && owner != myId -> delegated++
                 myId != null -> self++
                 else -> delegated++
             }

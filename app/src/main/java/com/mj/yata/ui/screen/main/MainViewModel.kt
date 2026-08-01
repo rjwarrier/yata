@@ -149,6 +149,7 @@ data class SettingsUiState(
     val cloudBackupArchiveMonths: Int = 6,
     val localBackupEnabled: Boolean = false,
     val localBackupLastAt: Long? = null,
+    val cloudBackupKeepCount: Int = 5,
     val todayRemainingCount: Int = 0
 )
 
@@ -246,7 +247,8 @@ private data class SettingsCloudScheduleState(
     val cloudBackupIntervalMinutes: Long,
     val cloudBackupArchiveMonths: Int,
     val localBackupEnabled: Boolean,
-    val localBackupLastAt: Long?
+    val localBackupLastAt: Long?,
+    val cloudBackupKeepCount: Int
 )
 
 private data class SettingsCoreState(
@@ -424,9 +426,10 @@ private data class MainNavigationState(
             userPreferences.cloudBackupIntervalMinutesFlow,
             userPreferences.cloudBackupArchiveMonthsFlow,
             userPreferences.localBackupEnabledFlow,
-            userPreferences.localBackupLastAtFlow
-        ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt ->
-            SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt)
+            userPreferences.localBackupLastAtFlow,
+            userPreferences.cloudBackupKeepCountFlow
+        ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt, cloudBackupKeepCount ->
+            SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt, cloudBackupKeepCount)
         },
         todayRemainingCount
     ) { core, cloud, cloudSchedule, count ->
@@ -469,6 +472,7 @@ private data class MainNavigationState(
             cloudBackupArchiveMonths = cloudSchedule.cloudBackupArchiveMonths,
             localBackupEnabled = cloudSchedule.localBackupEnabled,
             localBackupLastAt = cloudSchedule.localBackupLastAt,
+            cloudBackupKeepCount = cloudSchedule.cloudBackupKeepCount,
             todayRemainingCount = count
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
@@ -1035,7 +1039,7 @@ private data class MainNavigationState(
         startDate: String? = null,
         time: String? = null,
         reminder: String? = null,
-        section: String = "Afternoon",
+        section: String = "",
         projectId: String? = null,
         subtasks: List<Subtask> = emptyList(),
         flag: Boolean = false
@@ -1089,6 +1093,15 @@ private data class MainNavigationState(
                 resyncReminder = parsed.due != null || parsed.time != null || parsed.reminder != null
             )
             userPreferences.recordRecentTask(id)
+        }
+    }
+
+    /** Sets or clears the "waiting on" follow-up date on a delegated task — see
+     * [com.mj.yata.domain.model.isWaitingOn] for what this does to Today. Pass null to clear. */
+    fun setTaskFollowUp(id: String, followUpAt: Long?) {
+        safeLaunch {
+            val task = tasks.value.find { it.id == id } ?: return@safeLaunch
+            repository.upsertTask(task.copy(followUpAt = followUpAt), resyncReminder = false)
         }
     }
 
@@ -1735,6 +1748,12 @@ private data class MainNavigationState(
     fun setCloudBackupArchiveMonths(months: Int) {
         safeLaunch {
             userPreferences.setCloudBackupArchiveMonths(months)
+        }
+    }
+
+    fun setCloudBackupKeepCount(count: Int) {
+        safeLaunch {
+            userPreferences.setCloudBackupKeepCount(count)
         }
     }
 

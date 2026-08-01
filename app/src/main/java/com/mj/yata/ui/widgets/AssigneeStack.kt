@@ -133,13 +133,18 @@ fun AssigneeStack(
 ) {
     val displayedPeople = people.take(maxAvatars)
     val remaining = people.size - maxAvatars
+    // Index 0 is the owner by convention (assigneeIds is built by append, so whoever was
+    // assigned first sits at index 0) — rendered a touch larger so the stack reads "one owner,
+    // N collaborators" instead of an undifferentiated pile of equal avatars.
+    val ownerSize = if (people.size > 1) avatarSize * 1.15f else avatarSize
 
     Box(modifier = modifier) {
         displayedPeople.forEachIndexed { index, person ->
+            val thisSize = if (index == 0) ownerSize else avatarSize
             PersonAvatar(
                 initials = person.initials,
                 accentKey = person.color,
-                size = avatarSize,
+                size = thisSize,
                 drawRing = index > 0,
                 ringColor = MaterialTheme.colorScheme.surface,
                 photoUri = person.photoUri,

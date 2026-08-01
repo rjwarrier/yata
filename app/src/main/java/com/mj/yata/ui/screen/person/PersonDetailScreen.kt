@@ -27,6 +27,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -72,6 +73,7 @@ fun PersonDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val assignedTasks by remember(personId) { viewModel.getTasksForPerson(personId) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
     val lists by viewModel.lists.collectAsStateWithLifecycle()
     val projects by viewModel.projects.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
@@ -176,6 +178,14 @@ fun PersonDetailScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
 
+    val selectedIds = remember { mutableStateListOf<String>() }
+    val selectionMode = selectedIds.isNotEmpty()
+    var showBulkTagSheet by remember { mutableStateOf(false) }
+    var showBulkMoveSheet by remember { mutableStateOf(false) }
+    var showBulkAssignSheet by remember { mutableStateOf(false) }
+    var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkDeleteDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
@@ -193,6 +203,22 @@ fun PersonDetailScreen(
             )
         },
         topBar = {
+            if (selectionMode) {
+                TaskSelectionTopBar(
+                    selectedCount = selectedIds.size,
+                    onCancel = { selectedIds.clear() },
+                    onComplete = { viewModel.bulkCompleteTasks(selectedIds.toList()); selectedIds.clear() },
+                    onAddTag = { showBulkTagSheet = true },
+                    onMove = { showBulkMoveSheet = true },
+                    onReschedule = { showBulkRescheduleSheet = true },
+                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
+                    onDelete = { showBulkDeleteDialog = true },
+                    onAssign = { showBulkAssignSheet = true },
+                    tagsEnabled = tagsFeatureEnabled,
+                    peopleEnabled = peopleFeatureEnabled,
+                    modifier = Modifier.statusBarsPadding()
+                )
+            } else {
             TopAppBar(
                 title = {
                     if (searchActive) {
@@ -330,6 +356,7 @@ fun PersonDetailScreen(
                     containerColor = personColor.copy(alpha = 0.16f)
                 )
             )
+            }
         },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -531,14 +558,24 @@ fun PersonDetailScreen(
                             assignees = taskAssignees,
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                            onTaskClick = { onNavigateToTaskDetail(task.id) },
+                            onTaskClick = {
+                                if (selectionMode) {
+                                    if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                                } else {
+                                    onNavigateToTaskDetail(task.id)
+                                }
+                            },
+                            selectionMode = selectionMode,
+                            selected = selectedIds.contains(task.id),
+                            onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
                             modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                             ),
                             onCommentClick = { pendingCommentTask = task },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                             onRenameTask = { viewModel.renameTask(task.id, it) },
                             density = taskRowDensity,
-                            onSwipeToDelete = { deleteTaskWithUndo(task) },
+                            onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
+                            swipeEnabled = !selectionMode,
                             showDueDate = true
                         )
                     }
@@ -621,14 +658,24 @@ fun PersonDetailScreen(
                             assignees = taskAssignees,
                             tags = taskTags,
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                            onTaskClick = { onNavigateToTaskDetail(task.id) },
+                            onTaskClick = {
+                                if (selectionMode) {
+                                    if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                                } else {
+                                    onNavigateToTaskDetail(task.id)
+                                }
+                            },
+                            selectionMode = selectionMode,
+                            selected = selectedIds.contains(task.id),
+                            onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
                             modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                             ),
                             onCommentClick = { pendingCommentTask = task },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                             onRenameTask = { viewModel.renameTask(task.id, it) },
                             density = taskRowDensity,
-                            onSwipeToDelete = { deleteTaskWithUndo(task) },
+                            onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
+                            swipeEnabled = !selectionMode,
                             showDueDate = true
                         )
                     }
@@ -639,7 +686,6 @@ fun PersonDetailScreen(
     }
 
     if (isNewTaskSheetOpen) {
-        val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
         androidx.compose.ui.window.Dialog(
             onDismissRequest = { isNewTaskSheetOpen = false },
             properties = androidx.compose.ui.window.DialogProperties(
@@ -741,6 +787,106 @@ fun PersonDetailScreen(
                 pendingCommentTask = null
             },
             onDismiss = { pendingCommentTask = null }
+        )
+    }
+
+    if (showBulkTagSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkTagPickerSheet(
+                tags = tags,
+                onSelectTag = { tagId ->
+                    viewModel.bulkAddTag(selectedIds.toList(), tagId)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
+                onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkAssignSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkAssignSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkAssignPersonSheet(
+                people = people,
+                tasks = allTasks,
+                todayStr = com.mj.yata.util.AppClock.todayString,
+                onSelectPerson = { targetPersonId ->
+                    viewModel.bulkAssignPerson(selectedIds.toList(), targetPersonId)
+                    selectedIds.clear()
+                    showBulkAssignSheet = false
+                },
+                onDismiss = { showBulkAssignSheet = false }
+            )
+        }
+    }
+
+    if (showBulkMoveSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkMoveSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkMoveSheet(
+                projects = projects,
+                lists = lists,
+                onSelectProject = { targetProjectId ->
+                    viewModel.bulkSetProject(selectedIds.toList(), targetProjectId)
+                    selectedIds.clear()
+                    showBulkMoveSheet = false
+                },
+                onSelectList = { targetListId ->
+                    viewModel.bulkSetList(selectedIds.toList(), targetListId)
+                    selectedIds.clear()
+                    showBulkMoveSheet = false
+                },
+                onDismiss = { showBulkMoveSheet = false },
+                projectsEnabled = projectsFeatureEnabled
+            )
+        }
+    }
+
+    if (showBulkRescheduleSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkRescheduleSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkRescheduleSheet(
+                onSelectPreset = { preset ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                    selectedIds.clear()
+                    showBulkRescheduleSheet = false
+                },
+                onDismiss = { showBulkRescheduleSheet = false }
+            )
+        }
+    }
+
+    if (showBulkDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showBulkDeleteDialog = false },
+            title = { Text(pluralStringResource(R.plurals.confirm_delete_tasks_title, selectedIds.size, selectedIds.size)) },
+            text = { Text(stringResource(R.string.action_this_can_t_be_undone)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.bulkDeleteTasks(selectedIds.toList())
+                    selectedIds.clear()
+                    showBulkDeleteDialog = false
+                }) {
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
         )
     }
 

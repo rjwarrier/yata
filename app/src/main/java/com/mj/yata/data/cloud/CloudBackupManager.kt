@@ -92,7 +92,6 @@ class CloudBackupManager @Inject constructor(
         private const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
         private const val DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
         private const val DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
-        private const val KEEP_BACKUPS = 5
         private const val DEBOUNCE_MILLIS = 2 * 60 * 1000L
         private const val MAX_DIFF_TITLES = 8
 
@@ -224,7 +223,7 @@ class CloudBackupManager @Inject constructor(
             }
 
             userPreferences.setCloudBackupLastAt(System.currentTimeMillis())
-            pruneOldBackups(token)
+            pruneOldBackups(token, userPreferences.cloudBackupKeepCountFlow.first())
             Result.success(Unit)
         } catch (e: IOException) {
             Log.w(TAG, "backupNow failed", e)
@@ -439,14 +438,14 @@ class CloudBackupManager @Inject constructor(
         }
     }
 
-    private fun pruneOldBackups(token: String) {
+    private fun pruneOldBackups(token: String, keepCount: Int) {
         val backups = try {
             fetchBackupList(token)
         } catch (e: IOException) {
             Log.w(TAG, "pruneOldBackups: couldn't list backups", e)
             return
         }
-        backups.drop(KEEP_BACKUPS).forEach { entry ->
+        backups.drop(keepCount).forEach { entry ->
             try {
                 val request = Request.Builder()
                     .url("$DRIVE_FILES_URL/${entry.id}")

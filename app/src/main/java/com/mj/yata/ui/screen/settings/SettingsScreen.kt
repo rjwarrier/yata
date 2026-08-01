@@ -195,6 +195,7 @@ fun SettingsScreen(
     val localBackupEnabled = uiState.localBackupEnabled
     val localBackupLastAt = uiState.localBackupLastAt
     val cloudBackupArchiveMonths = uiState.cloudBackupArchiveMonths
+    val cloudBackupKeepCount = uiState.cloudBackupKeepCount
 
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
@@ -273,8 +274,6 @@ fun SettingsScreen(
     var cloudBackupList by remember { mutableStateOf<List<com.mj.yata.data.cloud.CloudBackupEntry>>(emptyList()) }
     var isRestoringCloudBackup by remember { mutableStateOf(false) }
     var showFrequencyDialog by remember { mutableStateOf(false) }
-    var freqNumberText by remember { mutableStateOf("1") }
-    var freqUnit by remember { mutableStateOf("Days") }
     var showArchiveMonthsDialog by remember { mutableStateOf(false) }
     var showBackupDiffDialog by remember { mutableStateOf(false) }
     var isLoadingBackupDiff by remember { mutableStateOf(false) }
@@ -2240,12 +2239,7 @@ fun SettingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    val (value, unit) = minutesToIntervalDisplay(cloudBackupIntervalMinutes)
-                                    freqNumberText = value.toString()
-                                    freqUnit = unit
-                                    showFrequencyDialog = true
-                                }
+                                .clickable { showFrequencyDialog = true }
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -2255,7 +2249,7 @@ fun SettingsScreen(
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                 )
                                 Text(
-                                    text = formatBackupInterval(cloudBackupIntervalMinutes),
+                                    text = syncFrequencyLabel(cloudBackupIntervalMinutes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -2291,6 +2285,28 @@ fun SettingsScreen(
                                 imageVector = Icons.Default.ChevronRight,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            var keepCountPosition by remember(cloudBackupKeepCount) { mutableFloatStateOf(cloudBackupKeepCount.toFloat()) }
+                            Text(
+                                text = "Backups to keep",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = "Keep the last ${keepCountPosition.toInt()} cloud backups — older ones are pruned automatically.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Slider(
+                                value = keepCountPosition,
+                                onValueChange = { keepCountPosition = it },
+                                onValueChangeFinished = { viewModel.setCloudBackupKeepCount(keepCountPosition.toInt()) },
+                                valueRange = 2f..15f,
+                                steps = 12 // 14 stops total (min + 12 + max), 1 apart
                             )
                         }
 
@@ -2663,37 +2679,39 @@ fun SettingsScreen(
             onDismissRequest = { showFrequencyDialog = false },
             title = { Text(stringResource(R.string.settings_backup_frequency)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = freqNumberText,
-                        onValueChange = { new -> if (new.length <= 4 && new.all { it.isDigit() }) freqNumberText = new },
-                        label = { Text(stringResource(R.string.settings_every)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    SegmentedControl(
-                        items = listOf("Minutes", "Hours", "Days"),
-                        selectedItem = freqUnit,
-                        onItemSelected = { freqUnit = it }
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = stringResource(R.string.settings_backup_frequency_minimum),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "A backup also uploads a couple of minutes after any task change, regardless of this setting — this controls the periodic safety-net schedule underneath that.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+                    SYNC_FREQUENCY_OPTIONS.forEach { (minutes, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.setCloudBackupIntervalMinutes(minutes)
+                                    showFrequencyDialog = false
+                                }
+                                .padding(horizontal = 12.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+                            if (cloudBackupIntervalMinutes == minutes) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    val value = (freqNumberText.toLongOrNull() ?: 1L).coerceAtLeast(1L)
-                    viewModel.setCloudBackupIntervalMinutes(intervalDisplayToMinutes(value, freqUnit))
-                    showFrequencyDialog = false
-                }) {
-                    Text(stringResource(R.string.action_save))
-                }
-            },
-            dismissButton = {
                 TextButton(onClick = { showFrequencyDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
@@ -2949,11 +2967,20 @@ private fun minutesToIntervalDisplay(minutes: Long): Pair<Long, String> = when {
     else -> minutes to "Minutes"
 }
 
-private fun intervalDisplayToMinutes(value: Long, unit: String): Long = when (unit) {
-    "Days" -> value * 24 * 60
-    "Hours" -> value * 60
-    else -> value
-}
+/** The four choices in the "Backup frequency" dialog. 15 minutes is WorkManager's own floor for
+ * periodic work (see UserPreferences.setCloudBackupIntervalMinutes' coerceAtLeast) — there's no
+ * shorter periodic schedule to fall back to, so it doubles as the "right after any change"
+ * option's stored value; the actual near-immediate upload is the always-on ~2 minute debounce in
+ * CloudBackupManager.scheduleDebouncedBackup, which this dialog doesn't control either way. */
+private val SYNC_FREQUENCY_OPTIONS: List<Pair<Long, String>> = listOf(
+    15L to "Right after any change in a task",
+    30L to "Every 30 minutes",
+    60L to "Every 60 minutes",
+    120L to "Every 120 minutes"
+)
+
+private fun syncFrequencyLabel(minutes: Long): String =
+    SYNC_FREQUENCY_OPTIONS.find { it.first == minutes }?.second ?: formatBackupInterval(minutes)
 
 private fun signedCount(n: Int): String = if (n > 0) "+$n" else "$n"
 

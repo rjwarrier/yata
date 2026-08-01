@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -73,6 +74,7 @@ fun ProjectDetailScreen(
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val lists by viewModel.lists.collectAsStateWithLifecycle()
     val projectTasks by remember(projectId) { viewModel.getTasksForProject(projectId) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
@@ -107,6 +109,7 @@ fun ProjectDetailScreen(
 
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
+    var isManageSectionsSheetOpen by remember { mutableStateOf(false) }
     var showArchiveDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRolloverDialog by remember { mutableStateOf(false) }
@@ -167,6 +170,14 @@ fun ProjectDetailScreen(
     var pendingMoveTask by remember { mutableStateOf<Task?>(null) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
 
+    val selectedIds = remember { mutableStateListOf<String>() }
+    val selectionMode = selectedIds.isNotEmpty()
+    var showBulkTagSheet by remember { mutableStateOf(false) }
+    var showBulkMoveSheet by remember { mutableStateOf(false) }
+    var showBulkAssignSheet by remember { mutableStateOf(false) }
+    var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkDeleteDialog by remember { mutableStateOf(false) }
+
     val totalTasks = projectTasks.size
     val doneTasks = projectTasks.count { it.done }
     val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
@@ -202,6 +213,22 @@ fun ProjectDetailScreen(
             )
         },
         topBar = {
+            if (selectionMode) {
+                TaskSelectionTopBar(
+                    selectedCount = selectedIds.size,
+                    onCancel = { selectedIds.clear() },
+                    onComplete = { viewModel.bulkCompleteTasks(selectedIds.toList()); selectedIds.clear() },
+                    onAddTag = { showBulkTagSheet = true },
+                    onMove = { showBulkMoveSheet = true },
+                    onReschedule = { showBulkRescheduleSheet = true },
+                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
+                    onDelete = { showBulkDeleteDialog = true },
+                    onAssign = { showBulkAssignSheet = true },
+                    tagsEnabled = tagsFeatureEnabled,
+                    peopleEnabled = peopleFeatureEnabled,
+                    modifier = Modifier.statusBarsPadding()
+                )
+            } else {
             TopAppBar(
                 title = {
                     if (searchActive) {
@@ -293,6 +320,14 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
                             DropdownMenuItem(
+                                text = { Text("Manage sections") },
+                                onClick = {
+                                    showMenu = false
+                                    isManageSectionsSheetOpen = true
+                                },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_markdown)) },
                                 onClick = {
                                     showMenu = false
@@ -368,6 +403,7 @@ fun ProjectDetailScreen(
                     containerColor = projectColor.copy(alpha = 0.16f)
                 )
             )
+            }
         },
         floatingActionButton = {
             if (!project.archived) {
@@ -472,7 +508,16 @@ fun ProjectDetailScreen(
                     assignees = taskAssignees,
                     tags = taskTags,
                     onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                    onTaskClick = { onNavigateToTaskDetail(task.id) },
+                    onTaskClick = {
+                        if (selectionMode) {
+                            if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                        } else {
+                            onNavigateToTaskDetail(task.id)
+                        }
+                    },
+                    selectionMode = selectionMode,
+                    selected = selectedIds.contains(task.id),
+                    onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
                     modifier = modifier,
                     onCommentClick = { pendingCommentTask = task },
                     onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
@@ -489,7 +534,24 @@ fun ProjectDetailScreen(
                 )
             }
 
-            if (searchActive) {
+            if (selectionMode) {
+                // Selection mode falls back to a flat, non-draggable list — long-press drag
+                // reorder and long-press-to-select both claim the initial press, so they can't
+                // coexist; this mirrors the search/stat-filter fallback below for the same reason.
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 88.dp)
+                ) {
+                    if (!hideCompleted && pendingProjectTasks.isNotEmpty()) {
+                        item(key = "sel_pending_header") { TaskSectionHeader("PENDING", pendingProjectTasks.size) }
+                    }
+                    items(pendingProjectTasks, key = { "sel_pending_" + it.id }) { task -> taskRowFor(task) }
+                    if (!hideCompleted && completedProjectTasks.isNotEmpty()) {
+                        item(key = "sel_completed_header") { TaskSectionHeader("COMPLETED", completedProjectTasks.size) }
+                        items(completedProjectTasks, key = { "sel_completed_" + it.id }) { task -> taskRowFor(task) }
+                    }
+                }
+            } else if (searchActive) {
                 if (searchQuery.isBlank()) {
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
@@ -552,6 +614,34 @@ fun ProjectDetailScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
+                }
+            } else if (project.sectionNames.isNotEmpty()) {
+                // Grouped-by-section view — falls back to a flat, non-draggable list per the
+                // same reasoning as the search/stat-filter/selection branches above: reordering
+                // across a header boundary isn't something DragDropReorderableColumn's single
+                // contiguous-region drag math supports, so cross-section moves go through the
+                // "Section" picker on the task itself (TaskDetailScreen) instead of a drag.
+                val sectioned = pendingProjectTasks.groupBy { it.section.takeIf { s -> s in project.sectionNames } ?: "" }
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 88.dp)
+                ) {
+                    val unsectioned = sectioned[""].orEmpty()
+                    if (unsectioned.isNotEmpty()) {
+                        item(key = "section_none_header") { TaskSectionHeader("NO SECTION", unsectioned.size) }
+                        items(unsectioned, key = { "sec_none_" + it.id }) { task -> taskRowFor(task) }
+                    }
+                    project.sectionNames.forEach { sectionName ->
+                        val tasksInSection = sectioned[sectionName].orEmpty()
+                        if (tasksInSection.isNotEmpty()) {
+                            item(key = "section_${sectionName}_header") { TaskSectionHeader(sectionName.uppercase(), tasksInSection.size) }
+                            items(tasksInSection, key = { "sec_${sectionName}_" + it.id }) { task -> taskRowFor(task) }
+                        }
+                    }
+                    if (!hideCompleted && completedProjectTasks.isNotEmpty()) {
+                        item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedProjectTasks.size) }
+                        items(completedProjectTasks, key = { "completed_" + it.id }) { task -> taskRowFor(task) }
+                    }
                 }
             } else {
                 val showPendingHeader = !hideCompleted && pendingProjectTasks.isNotEmpty()
@@ -620,6 +710,106 @@ fun ProjectDetailScreen(
         )
     }
 
+    if (showBulkTagSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkTagSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkTagPickerSheet(
+                tags = tags,
+                onSelectTag = { tagId ->
+                    viewModel.bulkAddTag(selectedIds.toList(), tagId)
+                    selectedIds.clear()
+                    showBulkTagSheet = false
+                },
+                onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkAssignSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkAssignSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkAssignPersonSheet(
+                people = people,
+                tasks = allTasks,
+                todayStr = com.mj.yata.util.AppClock.todayString,
+                onSelectPerson = { personId ->
+                    viewModel.bulkAssignPerson(selectedIds.toList(), personId)
+                    selectedIds.clear()
+                    showBulkAssignSheet = false
+                },
+                onDismiss = { showBulkAssignSheet = false }
+            )
+        }
+    }
+
+    if (showBulkMoveSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkMoveSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkMoveSheet(
+                projects = projects,
+                lists = lists,
+                onSelectProject = { targetProjectId ->
+                    viewModel.bulkSetProject(selectedIds.toList(), targetProjectId)
+                    selectedIds.clear()
+                    showBulkMoveSheet = false
+                },
+                onSelectList = { targetListId ->
+                    viewModel.bulkSetList(selectedIds.toList(), targetListId)
+                    selectedIds.clear()
+                    showBulkMoveSheet = false
+                },
+                onDismiss = { showBulkMoveSheet = false },
+                projectsEnabled = projectsFeatureEnabled
+            )
+        }
+    }
+
+    if (showBulkRescheduleSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkRescheduleSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            TaskBulkRescheduleSheet(
+                onSelectPreset = { preset ->
+                    viewModel.bulkRescheduleTasks(selectedIds.toList(), preset)
+                    selectedIds.clear()
+                    showBulkRescheduleSheet = false
+                },
+                onDismiss = { showBulkRescheduleSheet = false }
+            )
+        }
+    }
+
+    if (showBulkDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showBulkDeleteDialog = false },
+            title = { Text(pluralStringResource(R.plurals.confirm_delete_tasks_title, selectedIds.size, selectedIds.size)) },
+            text = { Text(stringResource(R.string.action_this_can_t_be_undone)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.bulkDeleteTasks(selectedIds.toList())
+                    selectedIds.clear()
+                    showBulkDeleteDialog = false
+                }) {
+                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+
     exportFormatPending?.let { format ->
         com.mj.yata.util.export.ExportOptionsDialog(
             entityName = project.name,
@@ -681,7 +871,6 @@ fun ProjectDetailScreen(
     }
 
     if (isNewTaskSheetOpen) {
-        val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -717,6 +906,23 @@ fun ProjectDetailScreen(
                 peopleEnabled = peopleFeatureEnabled,
                 defaultDueDate = defaultDueDate,
                 defaultPriority = defaultPriority
+            )
+        }
+    }
+
+    if (isManageSectionsSheetOpen) {
+        ModalBottomSheet(
+            onDismissRequest = { isManageSectionsSheetOpen = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            ManageSectionsSheet(
+                initialSections = project.sectionNames,
+                onSave = { updated ->
+                    viewModel.upsertProject(project.copy(sectionNames = updated))
+                    isManageSectionsSheetOpen = false
+                },
+                onDismiss = { isManageSectionsSheetOpen = false }
             )
         }
     }

@@ -35,7 +35,13 @@ data class Project(
     val description: String? = null, // max 100 chars, enforced in ProjectEditorSheet
     val excludeFromToday: Boolean = false, // tasks here never show in Today, regardless of due date
     val sortOrder: Int = 0, // manual drag-and-drop order in the Projects tab
-    val archived: Boolean = false // true = kept for history, hidden from active project surfaces
+    val archived: Boolean = false, // true = kept for history, hidden from active project surfaces
+    // User-defined headings tasks can be grouped under within this project (e.g. "Design",
+    // "Backend") — order here is display order. A task whose `section` isn't in this list (blank,
+    // or left over from before a rename/delete) falls into an implicit "No section" bucket rather
+    // than being hidden. Empty means the project isn't using sections — ProjectDetailScreen then
+    // renders its old flat Pending/Completed list unchanged.
+    val sectionNames: List<String> = emptyList()
 )
 
 fun List<Project>.activeProjects(includeId: String? = null): List<Project> =
@@ -152,7 +158,13 @@ data class Task(
     val seriesId: String? = null, // links a recurring task to its historical completed instances
     // Shelved but intact — hidden from normal listings, recoverable from Archive. Independent of
     // [deletedAt]/Trash; mirrors the same flag on Project/Person/YataList.
-    val archived: Boolean = false
+    val archived: Boolean = false,
+    // epoch millis — "come back and check on this" for a task delegated to someone else. Distinct
+    // from [due]/[startDate]: it doesn't mean the work itself is scheduled, it means *you* have
+    // nothing to do until this date, so a delegated task with a future follow-up drops out of
+    // Today (see [isWaitingOn]) the same way a deferred task does, and reappears on its own once
+    // the date arrives. Null means no follow-up is set — the normal case for your own tasks.
+    val followUpAt: Long? = null
 )
 
 /**
@@ -169,6 +181,20 @@ data class Task(
  */
 fun Task.isDeferredOn(today: String): Boolean =
     !done && startDate != null && startDate > today
+
+/**
+ * True when this task is delegated (owned by someone other than [myId] — see [[AssigneeStack]]
+ * for the owner-is-assigneeIds[0] convention) and its [followUpAt] date hasn't arrived yet, i.e.
+ * you've said "nothing to do until then" and it should stay out of Today until it does. Mirrors
+ * [isDeferredOn]'s reasoning: the task itself stays live and visible everywhere else (its
+ * project/list, search, the owning person's task list) and un-snoozes itself the moment
+ * [nowMillis] passes [followUpAt], no background job required.
+ */
+fun Task.isWaitingOn(nowMillis: Long, myId: String?): Boolean {
+    if (done || followUpAt == null || followUpAt <= nowMillis) return false
+    val owner = assigneeIds.firstOrNull() ?: return false
+    return myId == null || owner != myId
+}
 
 /**
  * Tag IDs this task carries, including tag IDs its project live-syncs to every task

@@ -566,6 +566,8 @@ fun UpcomingTab(
         ) {
             com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
                 people = people,
+                tasks = tasks,
+                todayStr = com.mj.yata.util.AppClock.todayString,
                 onSelectPerson = { personId ->
                     onBulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()

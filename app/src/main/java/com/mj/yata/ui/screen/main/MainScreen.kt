@@ -819,6 +819,7 @@ fun MainScreen(
             projectsEnabled = projectsFeatureEnabled,
             peopleEnabled = peopleFeatureEnabled,
             tagsEnabled = tagsFeatureEnabled,
+            savedSmartFilterSets = savedSmartFilterSets,
             onDismiss = { showCommandPalette = false },
             onNewTask = {
                 showCommandPalette = false
@@ -1028,6 +1029,7 @@ private fun CommandPaletteDialog(
     projectsEnabled: Boolean,
     peopleEnabled: Boolean,
     tagsEnabled: Boolean,
+    savedSmartFilterSets: Set<String> = emptySet(),
     onDismiss: () -> Unit,
     onNewTask: () -> Unit,
     onSearch: () -> Unit,
@@ -1059,7 +1061,12 @@ private fun CommandPaletteDialog(
         PaletteEntry("Task Health", "Overdue and at-risk tasks", Icons.Default.HealthAndSafety) { onSavedSearch("AT_RISK") },
         PaletteEntry("Analytics", "Open productivity insights", Icons.Default.Analytics, onAnalytics),
         PaletteEntry("Settings", "Open preferences", Icons.Default.Settings, onSettings)
-    )
+    ) + savedSmartFilterSets.sorted().map { encoded ->
+        // User-saved filter combos (Search screen's "Save" chip) — reachable from here too,
+        // not just the drawer's "Custom Views" section, so typing part of the combo's label
+        // finds it the same way a built-in preset does.
+        PaletteEntry(encoded.smartFilterSetLabel(), "Saved view", Icons.Default.FilterList) { onSavedSearch(encoded) }
+    }
     val filteredCommands = commandEntries.filter {
         query.isBlank() ||
             it.title.contains(query, ignoreCase = true) ||

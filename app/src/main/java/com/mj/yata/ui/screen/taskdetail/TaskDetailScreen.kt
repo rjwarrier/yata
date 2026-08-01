@@ -161,6 +161,7 @@ fun TaskDetailScreen(
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
+    var showFollowUpPicker by remember { mutableStateOf(false) }
 
     val task = taskState
     val showMissingTask = com.mj.yata.ui.widgets.rememberMissingContentVisible(taskId, task == null)
@@ -703,11 +704,15 @@ fun TaskDetailScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        taskAssignees.forEach { person ->
+                        // The first assignee is the owner by convention (assigneeIds is built by
+                        // append, so index 0 is whoever was assigned first) — everyone else is a
+                        // collaborator. Only labeled once there's more than one, since a single
+                        // assignee's ownership is implicit.
+                        taskAssignees.forEachIndexed { index, person ->
                             InputChip(
                                 selected = true,
                                 onClick = { activeSheet = DetailSheetType.AssigneePicker },
-                                label = { Text(person.name) },
+                                label = { Text(if (index == 0 && taskAssignees.size > 1) "${person.name} · Owner" else person.name) },
                                 leadingIcon = {
                                     com.mj.yata.ui.widgets.PersonAvatar(
                                         initials = person.initials,
@@ -725,6 +730,78 @@ fun TaskDetailScreen(
                             label = { Text(stringResource(R.string.task_detail_assign)) },
                             leadingIcon = { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         )
+                    }
+                }
+            }
+
+            // 3.5 "Waiting on" follow-up — only shown for tasks owned (assigneeIds[0]) by
+            // someone other than you. Setting a future date snoozes it out of Today until then
+            // (see Task.isWaitingOn); it never touches the task's own due date.
+            if (peopleFeatureEnabled) {
+                val myId = people.find { it.isMe }?.id
+                val ownerId = task.assigneeIds.firstOrNull()
+                if (ownerId != null && ownerId != myId) item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Waiting on",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val followUpDate = task.followUpAt?.let {
+                                java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                            }
+                            LocalScheduleChip("Tomorrow", followUpDate == java.time.LocalDate.now().plusDays(1)) {
+                                val millis = java.time.LocalDate.now().plusDays(1)
+                                    .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                viewModel.setTaskFollowUp(task.id, millis)
+                            }
+                            LocalScheduleChip("Next week", followUpDate == java.time.LocalDate.now().plusWeeks(1)) {
+                                val millis = java.time.LocalDate.now().plusWeeks(1)
+                                    .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                viewModel.setTaskFollowUp(task.id, millis)
+                            }
+                            LocalScheduleChip("Pick date", false) { showFollowUpPicker = true }
+                            LocalScheduleChip("No follow-up", task.followUpAt == null) {
+                                viewModel.setTaskFollowUp(task.id, null)
+                            }
+                        }
+                        LocalPanelHint(
+                            if (task.followUpAt != null) {
+                                "Hidden from Today until this date, since it's on someone else's plate."
+                            } else {
+                                "Delegated task — set a date to hide it from Today until then."
+                            }
+                        )
+                    }
+                }
+            }
+
+            // 3.7 Section — only shown once the task's own project has defined sections
+            // (Project.sectionNames); otherwise there's nothing meaningful to pick from and this
+            // row would just be clutter. See ManageSectionsSheet for defining them.
+            if (project != null && project.sectionNames.isNotEmpty()) item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Section",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        LocalScheduleChip("No section", task.section !in project.sectionNames) {
+                            viewModel.upsertTask(task.copy(section = ""))
+                        }
+                        project.sectionNames.forEach { sectionName ->
+                            LocalScheduleChip(sectionName, task.section == sectionName) {
+                                viewModel.upsertTask(task.copy(section = sectionName))
+                            }
+                        }
                     }
                 }
             }
@@ -1434,6 +1511,22 @@ fun TaskDetailScreen(
             onConfirm = {
                 viewModel.upsertTask(task.copy(startDate = it))
                 showStartDatePicker = false
+            }
+        )
+    }
+
+    if (showFollowUpPicker) {
+        val initialFollowUpDate = task.followUpAt?.let {
+            java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
+        }
+        YataDatePickerDialog(
+            initialDate = initialFollowUpDate,
+            onDismiss = { showFollowUpPicker = false },
+            onConfirm = { dateStr ->
+                val millis = java.time.LocalDate.parse(dateStr)
+                    .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                viewModel.setTaskFollowUp(task.id, millis)
+                showFollowUpPicker = false
             }
         )
     }

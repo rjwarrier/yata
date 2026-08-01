@@ -15,6 +15,32 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+
+- **Multiselect and bulk actions on Project/List/Tag/Person detail screens.** Long-press a task to
+  select it, then complete, tag, assign, move, reschedule, duplicate or delete the whole selection
+  at once — previously only available on Today, Upcoming and Search.
+- **Workload hints when bulk-assigning.** The bulk "Assign" sheet now shows each person's open and
+  overdue count, so assigning doesn't mean guessing who's already underwater.
+- **Owner vs. collaborator on multi-assignee tasks.** The first person assigned to a task is its
+  owner (rendered larger in the assignee stack, labeled "Owner" on the task detail screen);
+  Analytics' delegation stats now key off ownership rather than mere presence in the assignee list.
+- **"Waiting on" follow-up dates.** A task delegated to someone else can be given a follow-up
+  date from its detail screen; until that date arrives it's hidden from Today (it stays fully live
+  everywhere else) and reappears on its own once it does.
+- **Saved views reachable from the command palette.** Filter combinations saved from Search (
+  previously only listed in the drawer's Custom Views section) now also show up in the command
+  palette, searchable alongside the built-in presets.
+- **User-defined sections inside a project.** Add headings like "Design" or "Backend" from a
+  project's "Manage sections" menu; tasks are grouped under them (with an implicit "No section"
+  bucket) and reassigned from the task detail screen. Projects without sections keep the existing
+  flat, drag-to-reorder Pending/Completed list.
+- **Cloud backup retention slider.** Settings → Cloud lets you choose how many cloud backups to
+  keep (2–15, default 5) — older ones are pruned automatically after each backup, same as before,
+  just at a count you control instead of a fixed 5.
+- **Simplified "Backup frequency" to a 4-option picker.** Right after any change in a task, or
+  every 30 / 60 / 120 minutes — replaces the old free-form number + Minutes/Hours/Days entry.
+
 ## [0.87 beta] - 2026-08-01
 
 `versionCode 9`. Upgrades in place over 0.86 beta; the database migrates from 26 to 27 with

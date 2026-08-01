@@ -566,6 +566,77 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate27To28_addsFollowUpAtColumn_defaultingToNull_preservingExistingRows() {
+        context.deleteDatabase(TEST_DB)
+        createVersion18TasksTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`completedAt`,`deletedAt`,`notes`,`recurrenceJson`,`sortOrder`) " +
+                    "VALUES ('t1','File taxes',NULL,NULL,'Morning','2026-04-15',NULL,NULL,'high',0,0,NULL,NULL,NULL,NULL,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(28) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_23_24.migrate(db)
+                    AppDatabase.MIGRATION_24_25.migrate(db)
+                    AppDatabase.MIGRATION_25_26.migrate(db)
+                    AppDatabase.MIGRATION_26_27.migrate(db)
+                    AppDatabase.MIGRATION_27_28.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `title`, `dueDate`, `followUpAt` FROM `tasks` WHERE `id` = 't1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("File taxes", cursor.getString(cursor.getColumnIndexOrThrow("title")))
+                // Existing rows must read as null, i.e. no follow-up snooze — a non-null default
+                // would hide every delegated task in the database from Today on upgrade.
+                assertTrue(cursor.isNull(cursor.getColumnIndexOrThrow("followUpAt")))
+                assertEquals("2026-04-15", cursor.getString(cursor.getColumnIndexOrThrow("dueDate")))
+            }
+            close()
+        }
+    }
+
+    @Test
+    fun migrate28To29_addsSectionNamesColumn_toProjects_defaultingToEmpty() {
+        context.deleteDatabase(TEST_DB)
+        createVersion9Database().apply {
+            execSQL(
+                "INSERT INTO `projects` (`id`,`name`,`color`,`icon`,`dueDate`,`starred`,`commonTagIds`,`defaultReminder`) " +
+                    "VALUES ('p1','Website',NULL,'layers',NULL,0,'',NULL)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(29) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_28_29.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `name`, `sectionNames` FROM `projects` WHERE `id` = 'p1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("Website", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                // Empty, not null — an existing project must come through with sections off
+                // (ProjectDetailScreen only groups by section once sectionNames is non-empty).
+                assertEquals("", cursor.getString(cursor.getColumnIndexOrThrow("sectionNames")))
+            }
+            close()
+        }
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)

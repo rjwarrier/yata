@@ -5,6 +5,10 @@ import org.json.JSONObject
 import com.mj.yata.domain.model.*
 import com.mj.yata.data.local.db.entity.*
 
+/** Joins Project.sectionNames — a Record Separator rather than a comma since these are
+ * free-typed names, not IDs, and a comma could legitimately appear in one. */
+private const val SECTION_NAME_DELIMITER = '\u001E'
+
 fun serializeRecurrence(r: Recurrence?): String? {
     if (r == null) return null
     val obj = JSONObject()
@@ -109,7 +113,8 @@ fun ProjectEntity.toDomain() = Project(
     description = description,
     excludeFromToday = excludeFromToday,
     sortOrder = sortOrder,
-    archived = archived
+    archived = archived,
+    sectionNames = if (sectionNames.isEmpty()) emptyList() else sectionNames.split(SECTION_NAME_DELIMITER)
 )
 fun Project.toEntity() = ProjectEntity(
     id = id,
@@ -123,7 +128,8 @@ fun Project.toEntity() = ProjectEntity(
     description = description,
     excludeFromToday = excludeFromToday,
     sortOrder = sortOrder,
-    archived = archived
+    archived = archived,
+    sectionNames = sectionNames.joinToString(SECTION_NAME_DELIMITER.toString())
 )
 
 fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)
@@ -158,7 +164,8 @@ fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>, subtask
     notes = notes,
     sortOrder = sortOrder,
     seriesId = seriesId,
-    archived = archived
+    archived = archived,
+    followUpAt = followUpAt
 )
 
 fun Task.toEntity() = TaskEntity(
@@ -181,7 +188,8 @@ fun Task.toEntity() = TaskEntity(
     recurrenceJson = serializeRecurrence(recurrence),
     sortOrder = sortOrder,
     seriesId = seriesId,
-    archived = archived
+    archived = archived,
+    followUpAt = followUpAt
 )
 
 fun TaskWithRelations.toDomain() = task.toDomain(

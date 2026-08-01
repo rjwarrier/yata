@@ -28,6 +28,7 @@ import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.QuickSnoozePreset
+import com.mj.yata.domain.model.Task
 import com.mj.yata.ui.widgets.quickSnoozeLabel
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
@@ -277,13 +278,22 @@ fun TaskBulkTagPickerSheet(
     }
 }
 
-/** Bottom sheet: assign every currently-selected task to a person (delegation). */
+/**
+ * Bottom sheet: assign every currently-selected task to a person (delegation).
+ *
+ * [tasks] is optional (defaults to empty, no load hint shown) — callers that already have the
+ * full task list on hand pass it so each row can show a "N open Â· M overdue" hint, so a bulk
+ * assign doesn't dump work on whoever happens to be first in the list without a sense of their
+ * current load.
+ */
 @Composable
 fun TaskBulkAssignPersonSheet(
     people: List<Person>,
     onSelectPerson: (String) -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tasks: List<Task> = emptyList(),
+    todayStr: String? = null
 ) {
     val activePeople = people.activePeople()
     Column(
@@ -306,6 +316,8 @@ fun TaskBulkAssignPersonSheet(
             )
         }
         activePeople.forEach { person ->
+            val openTasks = tasks.filter { !it.done && person.id in it.assigneeIds }
+            val overdueCount = todayStr?.let { today -> openTasks.count { it.due != null && it.due < today } }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -316,7 +328,25 @@ fun TaskBulkAssignPersonSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 PersonAvatar(initials = person.initials, accentKey = person.color, photoUri = person.photoUri, size = 32.dp)
-                Text(person.name, style = MaterialTheme.typography.bodyLarge)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(person.name, style = MaterialTheme.typography.bodyLarge)
+                    if (tasks.isNotEmpty()) {
+                        val hint = if (overdueCount != null && overdueCount > 0) {
+                            "${openTasks.size} open · $overdueCount overdue"
+                        } else {
+                            "${openTasks.size} open"
+                        }
+                        Text(
+                            text = hint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (overdueCount != null && overdueCount > 0) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                }
             }
         }
     }

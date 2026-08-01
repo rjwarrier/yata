@@ -114,7 +114,7 @@ class PlainTextImporter @Inject constructor(
                     title = row.title,
                     listId = listId,
                     projectId = null,
-                    section = "Afternoon",
+                    section = "",
                     due = row.due,
                     time = null,
                     reminder = null,

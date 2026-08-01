@@ -129,6 +129,9 @@ class UserPreferences @Inject constructor(
         // cloud backup into a separate archive file so the primary doesn't grow forever. 0 means
         // "never archive" (always back up everything in one file).
         val CLOUD_BACKUP_ARCHIVE_MONTHS = intPreferencesKey("cloud_backup_archive_months")
+        // How many primary cloud backups Drive keeps before pruning the oldest — see
+        // CloudBackupManager.pruneOldBackups.
+        val CLOUD_BACKUP_KEEP_COUNT = intPreferencesKey("cloud_backup_keep_count")
         val LOCAL_BACKUP_ENABLED    = booleanPreferencesKey("local_backup_enabled")
         val LOCAL_BACKUP_LAST_AT    = longPreferencesKey("local_backup_last_at")
         val LOCAL_BACKUP_INTERVAL_MINUTES = longPreferencesKey("local_backup_interval_minutes")
@@ -324,6 +327,7 @@ class UserPreferences @Inject constructor(
     // 15-minute floor on periodic work, so this is clamped the same way on write.
     val cloudBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[CLOUD_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
     val cloudBackupArchiveMonthsFlow: Flow<Int> = prefsFlow.map { it[CLOUD_BACKUP_ARCHIVE_MONTHS] ?: 6 }
+    val cloudBackupKeepCountFlow: Flow<Int> = prefsFlow.map { (it[CLOUD_BACKUP_KEEP_COUNT] ?: 5).coerceIn(2, 15) }
     val localBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[LOCAL_BACKUP_ENABLED] ?: false }
     val localBackupLastAtFlow: Flow<Long?> = prefsFlow.map { it[LOCAL_BACKUP_LAST_AT] }
     val localBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[LOCAL_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
@@ -646,6 +650,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setCloudBackupArchiveMonths(months: Int) {
         dataStore.edit { it[CLOUD_BACKUP_ARCHIVE_MONTHS] = months.coerceAtLeast(0) }
+    }
+
+    suspend fun setCloudBackupKeepCount(count: Int) {
+        dataStore.edit { it[CLOUD_BACKUP_KEEP_COUNT] = count.coerceIn(2, 15) }
     }
 
     suspend fun setLocalBackupEnabled(enabled: Boolean) {
