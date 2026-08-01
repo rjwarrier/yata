@@ -15,9 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
-### Changed
+## [0.89 beta] - 2026-08-01
 
-- Removed the remaining-task count badge from the bottom nav's Today icon.
+`versionCode 11`. Upgrades in place over 0.88 beta; the database migrates from 29 to 30 with
+existing tasks preserved.
 
 ### Added
 
@@ -26,6 +27,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   many open tasks still have no estimate, so the total is never mistaken for the whole day. Tasks
   show their estimate on the row alongside subtask progress. Nothing is estimated automatically:
   a guessed number would make the figure look more reliable than it is.
+
+### Changed
+
+- Removed the remaining-task count badge from the bottom nav's Today icon.
 
 ### Fixed
 
@@ -454,7 +459,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.88-beta...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.89-beta...HEAD
+[0.89 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.89-beta
 [0.88 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.88-beta
 [0.87 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.87-beta
 [0.86 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.86-beta
