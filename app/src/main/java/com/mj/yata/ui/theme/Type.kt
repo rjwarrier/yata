@@ -2,9 +2,11 @@ package com.mj.yata.ui.theme
 
 import com.mj.yata.R
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
@@ -31,8 +33,23 @@ val InterBodyFamily = FontFamily(
     Font(R.font.inter_variable, FontWeight.Bold),
 )
 
+// Font(resId, weight) alone doesn't move a variable font's axes — it just tags this entry for
+// FontFamily weight-matching and renders the file's default instance regardless, which for this
+// file is a plain, low-contrast Regular-ish look that doesn't read as "Bodoni Moda" at a glance.
+// Explicit FontVariation.Settings actually selects the wght/opsz instance: 700 for the bold,
+// high-contrast display cut, and 24 (this family's "24pt" named optical-size instance) since the
+// wordmark is always shown at a headline size, where Bodoni's characteristic thick/thin stroke
+// contrast is most pronounced — the same font at a small opsz looks comparatively generic.
+@OptIn(ExperimentalTextApi::class)
 val BodoniModaFamily = FontFamily(
-    Font(R.font.bodoni_moda_variable, FontWeight.Bold),
+    Font(
+        resId = R.font.bodoni_moda_variable,
+        weight = FontWeight.Bold,
+        variationSettings = FontVariation.Settings(
+            FontVariation.weight(700),
+            FontVariation.Setting("opsz", 24f)
+        )
+    ),
 )
 
 val JetBrainsMonoFamily = FontFamily(
