@@ -30,8 +30,8 @@ android {
         applicationId = "com.mj.yata"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "0.88 beta"
+        versionCode = 11
+        versionName = "0.89 beta"
 
         // Stamped fresh into every build (not just release) so Help & About's "Build N.DDMMYYYYHHmm"
         // line reflects exactly when this particular APK was assembled, not just the day — the
