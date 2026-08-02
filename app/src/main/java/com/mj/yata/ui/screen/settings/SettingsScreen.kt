@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Tune
@@ -99,6 +100,7 @@ import com.mj.yata.ui.widgets.CustomColorPickerDialog
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.ui.widgets.showSuccess
+import com.mj.yata.ui.widgets.showError
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.rotate
@@ -196,6 +198,15 @@ fun SettingsScreen(
     val localBackupLastAt = uiState.localBackupLastAt
     val cloudBackupArchiveMonths = uiState.cloudBackupArchiveMonths
     val cloudBackupKeepCount = uiState.cloudBackupKeepCount
+    val sftpBackupEnabled = uiState.sftpBackupEnabled
+    val sftpHost = uiState.sftpHost
+    val sftpPort = uiState.sftpPort
+    val sftpUsername = uiState.sftpUsername
+    val sftpAuthMethod = uiState.sftpAuthMethod
+    val sftpRemoteDir = uiState.sftpRemoteDir
+    val sftpIntervalMinutes = uiState.sftpIntervalMinutes
+    val sftpLastBackupAt = uiState.sftpLastBackupAt
+    val sftpHostKeyFingerprint = uiState.sftpHostKeyFingerprint
 
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
@@ -230,6 +241,13 @@ fun SettingsScreen(
     var showRestoreLocalDialog by remember { mutableStateOf(false) }
     var isDeletingAll by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var showSftpConfigDialog by remember { mutableStateOf(false) }
+    var showSftpRestoreDialog by remember { mutableStateOf(false) }
+    var isLoadingSftpBackups by remember { mutableStateOf(false) }
+    var sftpBackupList by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isRestoringSftpBackup by remember { mutableStateOf(false) }
+    var pendingSftpRestoreFilename by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val settingsListState = rememberLazyListState()
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
@@ -251,7 +269,8 @@ fun SettingsScreen(
         SettingsSearchTarget(stringResource(R.string.settings_section_backup), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", 11),
         SettingsSearchTarget(stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "cloud backup restore wifi frequency", 12),
         SettingsSearchTarget(stringResource(R.string.settings_section_local_backup), stringResource(R.string.settings_search_local_summary), "local backup restore", 13),
-        SettingsSearchTarget(stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide", 14)
+        SettingsSearchTarget(stringResource(R.string.settings_section_sftp_backup), stringResource(R.string.settings_search_sftp_summary), "sftp ssh server self hosted host key private", 14),
+        SettingsSearchTarget(stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide", 15)
     )
     val normalizedSettingsQuery = settingsSearchQuery.trim().lowercase()
     val filteredSettingsTargets = remember(normalizedSettingsQuery, settingsSearchTargets) {
@@ -2441,6 +2460,149 @@ fun SettingsScreen(
                 }
             }
         }
+
+        item {
+            // Self-hosted (SFTP) Backup Section — any server the user already has, no vendor
+            // account. Host key trust is TOFU: nothing is pinned until the user explicitly
+            // confirms a fingerprint from the config dialog's Test Connection button.
+            SettingsSectionHeader(stringResource(R.string.settings_section_sftp_backup), Icons.Default.Dns)
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_sftp_backup),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_sftp_backup_summary),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = sftpBackupEnabled,
+                            onCheckedChange = { viewModel.setSftpBackupEnabled(it) }
+                        )
+                    }
+
+                    if (sftpBackupEnabled) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showSftpConfigDialog = true }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.settings_sftp_configure_server),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = if (sftpHost.isBlank()) {
+                                        stringResource(R.string.settings_sftp_not_configured)
+                                    } else {
+                                        "$sftpUsername@$sftpHost:$sftpPort"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (sftpHost.isNotBlank()) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.settings_last_sftp_backup, formatRelativeBackupTime(sftpLastBackupAt)),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = stringResource(
+                                            if (sftpHostKeyFingerprint != null) {
+                                                R.string.settings_sftp_server_trusted
+                                            } else {
+                                                R.string.settings_sftp_server_not_yet_trusted
+                                            }
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (sftpHostKeyFingerprint != null) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        } else {
+                                            MaterialTheme.colorScheme.error
+                                        }
+                                    )
+                                }
+                                TextButton(onClick = {
+                                    viewModel.sftpBackupNow { result ->
+                                        scope.launch {
+                                            if (result.isSuccess) {
+                                                snackbarHostState.showSuccess(context.getString(R.string.settings_sftp_backup_started))
+                                            } else {
+                                                snackbarHostState.showError(result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed))
+                                            }
+                                        }
+                                    }
+                                }) {
+                                    Text(stringResource(R.string.settings_back_up_now))
+                                }
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        showSftpRestoreDialog = true
+                                        isLoadingSftpBackups = true
+                                        viewModel.listSftpBackups { result ->
+                                            isLoadingSftpBackups = false
+                                            sftpBackupList = result.getOrDefault(emptyList())
+                                            result.exceptionOrNull()?.let { error ->
+                                                scope.launch {
+                                                    snackbarHostState.showError(error.message ?: context.getString(R.string.export_failed))
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_restore_sftp_backup),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
         item {
             SettingsSectionHeader(stringResource(R.string.settings_section_help_about), Icons.AutoMirrored.Filled.HelpOutline)
             Surface(
@@ -2602,6 +2764,296 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRestoreLocalDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+
+    if (showSftpConfigDialog) {
+        var draftHost by remember { mutableStateOf(sftpHost) }
+        var draftPort by remember { mutableStateOf(sftpPort.toString()) }
+        var draftUsername by remember { mutableStateOf(sftpUsername) }
+        var draftRemoteDir by remember { mutableStateOf(sftpRemoteDir) }
+        var draftAuthMethod by remember { mutableStateOf(sftpAuthMethod) }
+        var draftPassword by remember { mutableStateOf("") }
+        var draftPrivateKey by remember { mutableStateOf("") }
+        var draftPassphrase by remember { mutableStateOf("") }
+        var isTestingConnection by remember { mutableStateOf(false) }
+        // null = untested this session, true/false = last test's outcome. A successful test with
+        // no fingerprint pinned yet, or a failed one where the failure is a host-key mismatch,
+        // both surface a trust prompt via pendingTrustFingerprint instead of a plain result line.
+        var testResultOk by remember { mutableStateOf<Boolean?>(null) }
+        var testResultMessage by remember { mutableStateOf<String?>(null) }
+        var pendingTrustFingerprint by remember { mutableStateOf<String?>(null) }
+        var isHostKeyMismatch by remember { mutableStateOf(false) }
+
+        fun saveNonSecretFields() {
+            viewModel.setSftpHost(draftHost)
+            draftPort.toIntOrNull()?.let { viewModel.setSftpPort(it) }
+            viewModel.setSftpUsername(draftUsername)
+            viewModel.setSftpRemoteDir(draftRemoteDir)
+            viewModel.setSftpAuthMethod(draftAuthMethod)
+            if (draftAuthMethod == "PRIVATE_KEY") {
+                if (draftPrivateKey.isNotBlank() || draftPassphrase.isNotBlank()) {
+                    viewModel.setSftpPrivateKey(draftPrivateKey, draftPassphrase)
+                }
+            } else {
+                if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showSftpConfigDialog = false },
+            title = { Text(stringResource(R.string.settings_sftp_config_title)) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = draftHost,
+                        onValueChange = { draftHost = it },
+                        label = { Text(stringResource(R.string.settings_sftp_host)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = draftPort,
+                        onValueChange = { new -> if (new.length <= 5 && new.all { it.isDigit() }) draftPort = new },
+                        label = { Text(stringResource(R.string.settings_sftp_port)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = draftUsername,
+                        onValueChange = { draftUsername = it },
+                        label = { Text(stringResource(R.string.settings_sftp_username)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = draftRemoteDir,
+                        onValueChange = { draftRemoteDir = it },
+                        label = { Text(stringResource(R.string.settings_sftp_remote_dir)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
+                    val authKeyLabel = stringResource(R.string.settings_sftp_auth_key)
+                    SegmentedControl(
+                        items = listOf("PASSWORD", "PRIVATE_KEY"),
+                        selectedItem = draftAuthMethod,
+                        onItemSelected = { draftAuthMethod = it },
+                        labelProvider = { if (it == "PASSWORD") authPasswordLabel else authKeyLabel }
+                    )
+                    if (draftAuthMethod == "PRIVATE_KEY") {
+                        OutlinedTextField(
+                            value = draftPrivateKey,
+                            onValueChange = { draftPrivateKey = it },
+                            label = { Text(stringResource(R.string.settings_sftp_private_key)) },
+                            placeholder = { Text(stringResource(R.string.settings_sftp_private_key_placeholder), style = MaterialTheme.typography.bodySmall) },
+                            minLines = 3,
+                            maxLines = 6,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = draftPassphrase,
+                            onValueChange = { draftPassphrase = it },
+                            label = { Text(stringResource(R.string.settings_sftp_passphrase)) },
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        OutlinedTextField(
+                            value = draftPassword,
+                            onValueChange = { draftPassword = it },
+                            label = { Text(stringResource(R.string.settings_sftp_password)) },
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            saveNonSecretFields()
+                            testResultOk = null
+                            testResultMessage = null
+                            pendingTrustFingerprint = null
+                            isHostKeyMismatch = false
+                            isTestingConnection = true
+                            viewModel.testSftpConnection { result ->
+                                isTestingConnection = false
+                                testResultOk = result.success
+                                if (result.success) {
+                                    if (sftpHostKeyFingerprint == null && result.fingerprint != null) {
+                                        // First-ever connection to this server -- ask before pinning.
+                                        pendingTrustFingerprint = result.fingerprint
+                                    } else {
+                                        testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
+                                    }
+                                } else {
+                                    val mismatch = sftpHostKeyFingerprint != null &&
+                                        result.fingerprint != null &&
+                                        result.fingerprint != sftpHostKeyFingerprint
+                                    if (mismatch) {
+                                        isHostKeyMismatch = true
+                                        pendingTrustFingerprint = result.fingerprint
+                                    } else {
+                                        testResultMessage = result.error?.message ?: context.getString(R.string.export_failed)
+                                    }
+                                }
+                            }
+                        },
+                        enabled = !isTestingConnection,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            if (isTestingConnection) {
+                                stringResource(R.string.settings_sftp_testing_connection)
+                            } else {
+                                stringResource(R.string.settings_sftp_test_connection)
+                            }
+                        )
+                    }
+
+                    pendingTrustFingerprint?.let { fingerprint ->
+                        Surface(
+                            color = if (isHostKeyMismatch) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = stringResource(
+                                        if (isHostKeyMismatch) R.string.settings_sftp_host_key_changed else R.string.settings_sftp_trust_prompt,
+                                        fingerprint
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isHostKeyMismatch) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Button(
+                                    onClick = {
+                                        viewModel.pinSftpHostKey(fingerprint)
+                                        testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
+                                        pendingTrustFingerprint = null
+                                        isHostKeyMismatch = false
+                                    },
+                                    colors = if (isHostKeyMismatch) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error) else ButtonDefaults.buttonColors()
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            if (isHostKeyMismatch) R.string.settings_sftp_trust_new_key else R.string.settings_sftp_trust_and_save
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    testResultMessage?.let { message ->
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (testResultOk == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    saveNonSecretFields()
+                    showSftpConfigDialog = false
+                }) {
+                    Text(stringResource(R.string.action_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSftpConfigDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+
+    if (showSftpRestoreDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isRestoringSftpBackup) showSftpRestoreDialog = false },
+            title = { Text(stringResource(R.string.settings_sftp_restore_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    when {
+                        isLoadingSftpBackups -> {
+                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                        sftpBackupList.isEmpty() -> {
+                            Text(
+                                stringResource(R.string.settings_sftp_no_backups_found),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        else -> {
+                            sftpBackupList.forEach { filename ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = !isRestoringSftpBackup) { pendingSftpRestoreFilename = filename }
+                                        .padding(vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CloudDownload,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.tertiary
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(filename, style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+                            if (isRestoringSftpBackup) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSftpRestoreDialog = false }, enabled = !isRestoringSftpBackup) {
+                    Text(stringResource(R.string.action_close))
+                }
+            }
+        )
+    }
+
+    pendingSftpRestoreFilename?.let { filename ->
+        AlertDialog(
+            onDismissRequest = { pendingSftpRestoreFilename = null },
+            title = { Text(stringResource(R.string.settings_sftp_restore_confirm_title)) },
+            text = { Text(stringResource(R.string.settings_sftp_restore_confirm_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingSftpRestoreFilename = null
+                    isRestoringSftpBackup = true
+                    viewModel.restoreSftpBackup(filename) { result ->
+                        isRestoringSftpBackup = false
+                        showSftpRestoreDialog = false
+                        scope.launch {
+                            if (result.isSuccess) {
+                                snackbarHostState.showSuccess(context.getString(R.string.settings_sftp_connection_ok))
+                            } else {
+                                snackbarHostState.showError(result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed))
+                            }
+                        }
+                    }
+                }) {
+                    Text(stringResource(R.string.cd_trash_restore), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingSftpRestoreFilename = null }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }

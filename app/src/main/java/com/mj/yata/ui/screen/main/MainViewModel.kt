@@ -8,6 +8,8 @@ import com.mj.yata.data.cloud.CloudBackupEntry
 import com.mj.yata.data.local.crash.CrashLogEntry
 import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.data.sftp.SftpCredentialsStore
+import com.mj.yata.data.sftp.SftpConnectionTestResult
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.domain.usecase.BackupOperations
@@ -35,7 +37,8 @@ class MainViewModel @Inject constructor(
     private val taskOperations: TaskOperations,
     private val backupOperations: BackupOperations,
     private val errorBus: AppErrorBus,
-    private val crashLogStore: CrashLogStore
+    private val crashLogStore: CrashLogStore,
+    private val sftpCredentialsStore: SftpCredentialsStore
 ) : ViewModel() {
 
     /**
@@ -167,6 +170,15 @@ data class SettingsUiState(
     val localBackupEnabled: Boolean = false,
     val localBackupLastAt: Long? = null,
     val cloudBackupKeepCount: Int = 5,
+    val sftpBackupEnabled: Boolean = false,
+    val sftpHost: String = "",
+    val sftpPort: Int = 22,
+    val sftpUsername: String = "",
+    val sftpAuthMethod: String = "PASSWORD",
+    val sftpRemoteDir: String = "/yata-backups",
+    val sftpIntervalMinutes: Long = 1440L,
+    val sftpLastBackupAt: Long? = null,
+    val sftpHostKeyFingerprint: String? = null,
     val todayRemainingCount: Int = 0
 )
 
@@ -266,6 +278,29 @@ private data class SettingsCloudScheduleState(
     val localBackupEnabled: Boolean,
     val localBackupLastAt: Long?,
     val cloudBackupKeepCount: Int
+)
+
+// Split across two nested groups (rather than one) purely because there are 9 SFTP fields and
+// combine's direct-lambda overload tops out at 5 — same reason SettingsCloudState/
+// SettingsCloudScheduleState are split from each other.
+private data class SftpConfigState(
+    val sftpBackupEnabled: Boolean,
+    val sftpHost: String,
+    val sftpPort: Int,
+    val sftpUsername: String,
+    val sftpAuthMethod: String
+)
+
+private data class SftpStatusState(
+    val sftpRemoteDir: String,
+    val sftpIntervalMinutes: Long,
+    val sftpLastBackupAt: Long?,
+    val sftpHostKeyFingerprint: String?
+)
+
+private data class SftpSettingsState(
+    val config: SftpConfigState,
+    val status: SftpStatusState
 )
 
 private data class SettingsCoreState(
@@ -463,8 +498,23 @@ private data class MainNavigationState(
         ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt, cloudBackupKeepCount ->
             SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt, cloudBackupKeepCount)
         },
+        combine(
+            combine(
+                userPreferences.sftpBackupEnabledFlow,
+                userPreferences.sftpHostFlow,
+                userPreferences.sftpPortFlow,
+                userPreferences.sftpUsernameFlow,
+                userPreferences.sftpAuthMethodFlow
+            ) { enabled, host, port, username, authMethod -> SftpConfigState(enabled, host, port, username, authMethod) },
+            combine(
+                userPreferences.sftpRemoteDirFlow,
+                userPreferences.sftpIntervalMinutesFlow,
+                userPreferences.sftpLastBackupAtFlow,
+                userPreferences.sftpHostKeyFingerprintFlow
+            ) { remoteDir, intervalMinutes, lastBackupAt, hostKeyFingerprint -> SftpStatusState(remoteDir, intervalMinutes, lastBackupAt, hostKeyFingerprint) }
+        ) { config, status -> SftpSettingsState(config, status) },
         todayRemainingCount
-    ) { core, cloud, cloudSchedule, count ->
+    ) { core, cloud, cloudSchedule, sftp, count ->
         SettingsUiState(
             themeMode = core.profile.themeMode,
             appFont = core.profile.appFont,
@@ -505,6 +555,15 @@ private data class MainNavigationState(
             localBackupEnabled = cloudSchedule.localBackupEnabled,
             localBackupLastAt = cloudSchedule.localBackupLastAt,
             cloudBackupKeepCount = cloudSchedule.cloudBackupKeepCount,
+            sftpBackupEnabled = sftp.config.sftpBackupEnabled,
+            sftpHost = sftp.config.sftpHost,
+            sftpPort = sftp.config.sftpPort,
+            sftpUsername = sftp.config.sftpUsername,
+            sftpAuthMethod = sftp.config.sftpAuthMethod,
+            sftpRemoteDir = sftp.status.sftpRemoteDir,
+            sftpIntervalMinutes = sftp.status.sftpIntervalMinutes,
+            sftpLastBackupAt = sftp.status.sftpLastBackupAt,
+            sftpHostKeyFingerprint = sftp.status.sftpHostKeyFingerprint,
             todayRemainingCount = count
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
@@ -1771,6 +1830,72 @@ private data class MainNavigationState(
 
     fun restoreLocalBackup(onResult: (Boolean) -> Unit) {
         safeLaunch { onResult(backupOperations.restoreLatestLocalBackup()) }
+    }
+
+    fun setSftpBackupEnabled(enabled: Boolean) {
+        safeLaunch {
+            userPreferences.setSftpBackupEnabled(enabled)
+            // Disabling clears the saved secrets rather than leaving them sitting encrypted on
+            // disk for a feature the user just turned off — matches "delete, don't just hide."
+            if (!enabled) sftpCredentialsStore.clear()
+        }
+    }
+
+    fun setSftpHost(host: String) {
+        safeLaunch { userPreferences.setSftpHost(host) }
+    }
+
+    fun setSftpPort(port: Int) {
+        safeLaunch { userPreferences.setSftpPort(port) }
+    }
+
+    fun setSftpUsername(username: String) {
+        safeLaunch { userPreferences.setSftpUsername(username) }
+    }
+
+    fun setSftpAuthMethod(method: String) {
+        safeLaunch { userPreferences.setSftpAuthMethod(method) }
+    }
+
+    fun setSftpRemoteDir(dir: String) {
+        safeLaunch { userPreferences.setSftpRemoteDir(dir) }
+    }
+
+    fun setSftpIntervalMinutes(minutes: Long) {
+        safeLaunch { userPreferences.setSftpIntervalMinutes(minutes) }
+        backupOperations.updateSftpBackupInterval(minutes)
+    }
+
+    fun setSftpPassword(password: String) {
+        sftpCredentialsStore.password = password.ifBlank { null }
+    }
+
+    fun setSftpPrivateKey(pem: String, passphrase: String) {
+        sftpCredentialsStore.privateKeyPem = pem.ifBlank { null }
+        sftpCredentialsStore.passphrase = passphrase.ifBlank { null }
+    }
+
+    /** Host key isn't pinned here — the caller (Settings) decides whether to call
+     * [pinSftpHostKey] with the returned fingerprint, since a first connection needs the user to
+     * see and confirm it, and a changed one needs an explicit "trust anyway." */
+    fun testSftpConnection(onResult: (SftpConnectionTestResult) -> Unit) {
+        safeLaunch { onResult(backupOperations.testSftpConnection()) }
+    }
+
+    fun pinSftpHostKey(fingerprint: String) {
+        safeLaunch { backupOperations.pinSftpHostKey(fingerprint) }
+    }
+
+    fun sftpBackupNow(onResult: (Result<Unit>) -> Unit) {
+        safeLaunch { onResult(backupOperations.sftpBackupNow()) }
+    }
+
+    fun listSftpBackups(onResult: (Result<List<String>>) -> Unit) {
+        safeLaunch { onResult(backupOperations.listSftpBackups()) }
+    }
+
+    fun restoreSftpBackup(filename: String, onResult: (Result<Unit>) -> Unit) {
+        safeLaunch { onResult(backupOperations.restoreSftpBackup(filename)) }
     }
 
     fun streakForTask(taskId: String, onResult: (Int) -> Unit) {

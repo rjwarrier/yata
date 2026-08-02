@@ -4,6 +4,8 @@ import com.mj.yata.data.cloud.CloudBackupDiff
 import com.mj.yata.data.cloud.CloudBackupEntry
 import com.mj.yata.data.cloud.CloudBackupManager
 import com.mj.yata.data.local.backup.LocalBackupManager
+import com.mj.yata.data.sftp.SftpBackupManager
+import com.mj.yata.data.sftp.SftpConnectionTestResult
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.JsonExporter
@@ -21,7 +23,8 @@ class BackupOperations @Inject constructor(
     private val repository: YataRepository,
     private val jsonExporter: JsonExporter,
     private val cloudBackupManager: CloudBackupManager,
-    private val localBackupManager: LocalBackupManager
+    private val localBackupManager: LocalBackupManager,
+    private val sftpBackupManager: SftpBackupManager
 ) {
 
     /**
@@ -54,4 +57,16 @@ class BackupOperations @Inject constructor(
     suspend fun backupLocalNow() = localBackupManager.backupNow()
 
     suspend fun restoreLatestLocalBackup(): Boolean = localBackupManager.restoreLatest().isSuccess
+
+    suspend fun testSftpConnection(): SftpConnectionTestResult = sftpBackupManager.testConnection()
+
+    fun updateSftpBackupInterval(minutes: Long) = sftpBackupManager.updateBackupInterval(minutes)
+
+    suspend fun pinSftpHostKey(fingerprint: String) = sftpBackupManager.pinHostKey(fingerprint)
+
+    suspend fun sftpBackupNow(): Result<Unit> = sftpBackupManager.backupNow()
+
+    suspend fun listSftpBackups(): Result<List<String>> = sftpBackupManager.listBackups()
+
+    suspend fun restoreSftpBackup(filename: String): Result<Unit> = sftpBackupManager.restoreBackup(filename)
 }

@@ -135,6 +135,20 @@ class UserPreferences @Inject constructor(
         val LOCAL_BACKUP_ENABLED    = booleanPreferencesKey("local_backup_enabled")
         val LOCAL_BACKUP_LAST_AT    = longPreferencesKey("local_backup_last_at")
         val LOCAL_BACKUP_INTERVAL_MINUTES = longPreferencesKey("local_backup_interval_minutes")
+        // SFTP (self-hosted) backup. Only non-secret config lives here -- password/private
+        // key/passphrase are in SftpCredentialsStore's EncryptedSharedPreferences instead, never
+        // in plain DataStore. hostKeyFingerprint is TOFU-pinned on first successful connection
+        // (not itself sensitive -- it's the server's public key fingerprint) and every later
+        // connection must match it exactly or the connection is refused.
+        val SFTP_BACKUP_ENABLED     = booleanPreferencesKey("sftp_backup_enabled")
+        val SFTP_HOST               = stringPreferencesKey("sftp_host")
+        val SFTP_PORT               = intPreferencesKey("sftp_port")
+        val SFTP_USERNAME           = stringPreferencesKey("sftp_username")
+        val SFTP_AUTH_METHOD        = stringPreferencesKey("sftp_auth_method")
+        val SFTP_REMOTE_DIR         = stringPreferencesKey("sftp_remote_dir")
+        val SFTP_INTERVAL_MINUTES   = longPreferencesKey("sftp_interval_minutes")
+        val SFTP_LAST_BACKUP_AT     = longPreferencesKey("sftp_last_backup_at")
+        val SFTP_HOST_KEY_FINGERPRINT = stringPreferencesKey("sftp_host_key_fingerprint")
         // The theme_schedule_* keys that lived here went with the SCHEDULED theme mode. Any values
         // already written stay in the file harmlessly — nothing reads that name any more.
         val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
@@ -331,6 +345,15 @@ class UserPreferences @Inject constructor(
     val localBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[LOCAL_BACKUP_ENABLED] ?: false }
     val localBackupLastAtFlow: Flow<Long?> = prefsFlow.map { it[LOCAL_BACKUP_LAST_AT] }
     val localBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[LOCAL_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
+    val sftpBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[SFTP_BACKUP_ENABLED] ?: false }
+    val sftpHostFlow: Flow<String> = prefsFlow.map { it[SFTP_HOST] ?: "" }
+    val sftpPortFlow: Flow<Int> = prefsFlow.map { it[SFTP_PORT] ?: 22 }
+    val sftpUsernameFlow: Flow<String> = prefsFlow.map { it[SFTP_USERNAME] ?: "" }
+    val sftpAuthMethodFlow: Flow<String> = prefsFlow.map { it[SFTP_AUTH_METHOD]?.takeIf { m -> m == "PASSWORD" || m == "PRIVATE_KEY" } ?: "PASSWORD" }
+    val sftpRemoteDirFlow: Flow<String> = prefsFlow.map { it[SFTP_REMOTE_DIR] ?: "/yata-backups" }
+    val sftpIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[SFTP_INTERVAL_MINUTES] ?: (24 * 60L) }
+    val sftpLastBackupAtFlow: Flow<Long?> = prefsFlow.map { it[SFTP_LAST_BACKUP_AT] }
+    val sftpHostKeyFingerprintFlow: Flow<String?> = prefsFlow.map { it[SFTP_HOST_KEY_FINGERPRINT] }
     val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_TODAY] ?: false }
     val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PROJECT] ?: false }
     val hideCompletedListFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_LIST] ?: false }
@@ -666,6 +689,47 @@ class UserPreferences @Inject constructor(
 
     suspend fun setLocalBackupIntervalMinutes(minutes: Long) {
         dataStore.edit { it[LOCAL_BACKUP_INTERVAL_MINUTES] = minutes.coerceAtLeast(15L) }
+    }
+
+    suspend fun setSftpBackupEnabled(enabled: Boolean) {
+        dataStore.edit { it[SFTP_BACKUP_ENABLED] = enabled }
+    }
+
+    suspend fun setSftpHost(host: String) {
+        dataStore.edit { it[SFTP_HOST] = host.trim() }
+    }
+
+    suspend fun setSftpPort(port: Int) {
+        dataStore.edit { it[SFTP_PORT] = port.coerceIn(1, 65535) }
+    }
+
+    suspend fun setSftpUsername(username: String) {
+        dataStore.edit { it[SFTP_USERNAME] = username.trim() }
+    }
+
+    suspend fun setSftpAuthMethod(method: String) {
+        dataStore.edit { it[SFTP_AUTH_METHOD] = if (method == "PRIVATE_KEY") "PRIVATE_KEY" else "PASSWORD" }
+    }
+
+    suspend fun setSftpRemoteDir(dir: String) {
+        val trimmed = dir.trim().ifBlank { "/yata-backups" }
+        dataStore.edit { it[SFTP_REMOTE_DIR] = if (trimmed.startsWith("/")) trimmed else "/$trimmed" }
+    }
+
+    suspend fun setSftpIntervalMinutes(minutes: Long) {
+        dataStore.edit { it[SFTP_INTERVAL_MINUTES] = minutes.coerceAtLeast(15L) }
+    }
+
+    suspend fun setSftpLastBackupAt(epochMillis: Long) {
+        dataStore.edit { it[SFTP_LAST_BACKUP_AT] = epochMillis }
+    }
+
+    /** Pass null to un-pin -- used when the user deliberately accepts a changed host key, or
+     * clears the SFTP configuration entirely. */
+    suspend fun setSftpHostKeyFingerprint(fingerprint: String?) {
+        dataStore.edit {
+            if (fingerprint != null) it[SFTP_HOST_KEY_FINGERPRINT] = fingerprint else it.remove(SFTP_HOST_KEY_FINGERPRINT)
+        }
     }
 
     suspend fun setReduceMotionEnabled(enabled: Boolean) {

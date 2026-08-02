@@ -387,6 +387,43 @@
     <string name="cd_search">Search</string>
     <string name="circular_image_cropper_use_photo">Use photo</string>
     <string name="circular_image_cropper_transparent_png_hint">Tip: a transparent PNG with a white shape becomes a Material You icon automatically</string>
+
+    <!-- Self-hosted (SFTP) backup -->
+    <string name="settings_section_sftp_backup">Self-Hosted Backup</string>
+    <string name="settings_sftp_backup">Self-hosted (SFTP)</string>
+    <string name="settings_sftp_backup_summary">Back up to your own server over SFTP — no account, no vendor lock-in.</string>
+    <string name="settings_sftp_configure_server">Server</string>
+    <string name="settings_sftp_not_configured">Not configured</string>
+    <!-- %1$s is a formatted relative time, e.g. "2 hours ago". -->
+    <string name="settings_last_sftp_backup">Last backup: %1$s</string>
+    <string name="settings_sftp_server_trusted">Server verified</string>
+    <string name="settings_sftp_server_not_yet_trusted">Server not yet verified — open Server to test the connection</string>
+    <string name="settings_sftp_backup_started">Backup started</string>
+    <string name="settings_restore_sftp_backup">Restore from server…</string>
+    <string name="settings_sftp_config_title">SFTP server</string>
+    <string name="settings_sftp_host">Host</string>
+    <string name="settings_sftp_port">Port</string>
+    <string name="settings_sftp_username">Username</string>
+    <string name="settings_sftp_remote_dir">Remote folder</string>
+    <string name="settings_sftp_auth_password">Password</string>
+    <string name="settings_sftp_auth_key">Private key</string>
+    <string name="settings_sftp_password">Password</string>
+    <string name="settings_sftp_private_key">Private key (PEM)</string>
+    <string name="settings_sftp_private_key_placeholder">Paste the private key, including the -----BEGIN/END----- lines</string>
+    <string name="settings_sftp_passphrase">Key passphrase (optional)</string>
+    <string name="settings_sftp_test_connection">Test connection</string>
+    <string name="settings_sftp_testing_connection">Testing connection…</string>
+    <string name="settings_sftp_connection_ok">Connected successfully.</string>
+    <!-- %1$s is the server's host key fingerprint, e.g. "SHA256:AbCdEf…". -->
+    <string name="settings_sftp_trust_prompt">First time connecting to this server. Its key fingerprint is:\n\n%1$s\n\nOnly trust this if you recognize it.</string>
+    <string name="settings_sftp_trust_and_save">Trust and save</string>
+    <!-- %1$s is the new, unrecognized fingerprint the server just presented. -->
+    <string name="settings_sftp_host_key_changed">The server\'s key fingerprint has changed since it was trusted:\n\n%1$s\n\nThis can happen after a legitimate server rebuild — or it can mean someone is intercepting the connection. Only continue if you\'re sure.</string>
+    <string name="settings_sftp_trust_new_key">Trust new key anyway</string>
+    <string name="settings_sftp_no_backups_found">No backups found on the server yet.</string>
+    <string name="settings_sftp_restore_title">Restore from server</string>
+    <string name="settings_sftp_restore_confirm_title">Restore this backup?</string>
+    <string name="settings_sftp_restore_confirm_body">This replaces everything currently in the app with the contents of this backup. This can\'t be undone.</string>
     <string name="color_picker_rrggbb">#RRGGBB</string>
     <string name="color_picker_use_color">Use color</string>
     <string name="create_task_config_create_task">Create Task</string>
@@ -670,6 +707,7 @@
     <string name="settings_search_data_summary">Import, export, archive, Trash, and deletion</string>
     <string name="settings_search_cloud_summary">Cloud schedule, status, compare, and restore</string>
     <string name="settings_search_local_summary">Local backup schedule and restore</string>
+    <string name="settings_search_sftp_summary">Self-hosted SFTP server backup and restore</string>
     <string name="settings_search_help_summary">Feature guide, version, and app information</string>
     <string name="settings_reset_settings">Reset app settings</string>
     <string name="settings_reset_dialog_title">Reset app settings?</string>

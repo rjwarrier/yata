@@ -17,6 +17,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Self-hosted backup over SFTP.** Settings → Self-Hosted Backup connects to any server you
+  already run (password or private-key auth, configurable remote folder) and schedules the same
+  JSON payload the Google Drive and on-device backups use — no vendor account, no lock-in to a
+  specific host. Host key trust is TOFU (trust-on-first-use): the server's fingerprint is shown
+  and must be explicitly confirmed on first connection, and every later connection has to present
+  that exact same key or the connection is refused outright — a changed key surfaces as a clear
+  warning to trust or reject, never a silent downgrade. Password, private key, and passphrase are
+  stored in their own encrypted keystore, separate from the app's regular settings.
 - A center crosshair guide (horizontal + vertical) in the profile/avatar crop circle, to help
   line up the shot.
 - **White/transparent logo uploads for profile and person photos now get the app-icon treatment.**

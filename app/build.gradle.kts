@@ -274,6 +274,20 @@ dependencies {
     implementation(libs.play.services.auth)
     implementation(libs.okhttp)
 
+    // Self-hosted backup: SFTP to a user's own server. sshj needs Bouncy Castle registered as a
+    // security provider (see YataApplication) for algorithms Android's stock providers don't
+    // cover (Ed25519, curve25519-sha256), which a lot of real-world OpenSSH servers default to.
+    //
+    // sshj's own transitive Bouncy Castle (bcprov/bcpkix-jdk18on) is excluded here: pdfbox-android
+    // below already pulls a different artifact for the exact same classes/packages
+    // (bcprov/bcpkix-jdk15to18), and Android's build fails at dex-merge time ("Duplicate class")
+    // when both are present, no matter which version wins. The jdk15to18 build pdfbox-android
+    // brings is functionally complete for sshj's needs -- Ed25519/X25519 support has been in
+    // Bouncy Castle since well before that artifact's baseline.
+    implementation(libs.sshj) {
+        exclude(group = "org.bouncycastle")
+    }
+
     // Cloud backup: periodic + debounced background upload
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)

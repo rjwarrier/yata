@@ -35,6 +35,17 @@ class YataApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+
+        // sshj (SFTP backup) needs Bouncy Castle for algorithms Android's stock security
+        // providers don't cover (Ed25519 keys, curve25519-sha256 key exchange), which a lot of
+        // real-world OpenSSH servers default to. Inserted rather than appended so it's actually
+        // consulted ahead of Android's own (incomplete, for this purpose) provider -- and only if
+        // it isn't already registered, since Application.onCreate can run more than once in the
+        // same process (e.g. after a config change triggers a fresh Application on some OEMs).
+        if (java.security.Security.getProvider(org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME) == null) {
+            java.security.Security.insertProviderAt(org.bouncycastle.jce.provider.BouncyCastleProvider(), 1)
+        }
+
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
@@ -117,6 +128,9 @@ class YataApplication : Application(), Configuration.Provider {
 
         val localInterval = userPreferences.localBackupIntervalMinutesFlow.first()
         LocalBackupWorker.schedule(this, localInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
+
+        val sftpInterval = userPreferences.sftpIntervalMinutesFlow.first()
+        com.mj.yata.data.sftp.SftpBackupWorker.schedule(this, sftpInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
 
         // Both notification workers are now user-controllable. Reconciled on every launch so
         // a preference change applies from the next start even though these are scheduled
