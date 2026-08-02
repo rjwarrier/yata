@@ -17,6 +17,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- **New tasks in a project with no due date no longer default to today.** Picking (or opening the
+  sheet already inside) a project with no due date of its own now leaves the new task's due date
+  empty too, matching the project — it was silently defaulting to today regardless.
 - **Your profile picture now shows on tasks assigned to you.** The "You" person used for assignee
   avatars everywhere (task rows, person detail, mentions) was seeded once with no photo and never
   kept in sync with the picture set in Settings, so it always fell back to "Y" initials. Existing

@@ -486,13 +486,16 @@ fun NewTaskSheet(
         }
     }
 
-    // Automatically sync due date/reminder to the selected project's defaults when it changes
+    // Automatically sync due date/reminder to the selected project's defaults when it changes.
+    // A project with no due date of its own means its tasks default to no due date too — not
+    // "today". This used to fall back to today, which clobbered the correct null the initial
+    // state above already computed the moment this effect ran on first composition.
     var lastLoadedProjectId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(selectedProjectId, projects) {
         val projectObj = projects.find { it.id == selectedProjectId }
         if (projectObj != null && projectObj.id != lastLoadedProjectId) {
             lastLoadedProjectId = projectObj.id
-            setDueDate(projectObj.due ?: LocalDate.now().toString())
+            setDueDate(projectObj.due)
             if (selectedReminder == null) {
                 selectedReminder = projectObj.defaultReminder
             }
