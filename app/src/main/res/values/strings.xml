@@ -386,6 +386,7 @@
     <string name="cd_open_menu">Open menu</string>
     <string name="cd_search">Search</string>
     <string name="circular_image_cropper_use_photo">Use photo</string>
+    <string name="circular_image_cropper_transparent_png_hint">Tip: a transparent PNG with a white shape becomes a Material You icon automatically</string>
     <string name="color_picker_rrggbb">#RRGGBB</string>
     <string name="color_picker_use_color">Use color</string>
     <string name="create_task_config_create_task">Create Task</string>

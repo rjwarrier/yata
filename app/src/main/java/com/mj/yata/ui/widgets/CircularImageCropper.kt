@@ -98,7 +98,16 @@ fun CircularImageCropper(
                     text = "Drag to reposition, pinch to zoom",
                     color = Color.White.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 20.dp)
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Text(
+                    text = stringResource(R.string.circular_image_cropper_transparent_png_hint),
+                    color = Color.White.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp)
+                        .padding(bottom = 20.dp)
                 )
 
                 Box(
