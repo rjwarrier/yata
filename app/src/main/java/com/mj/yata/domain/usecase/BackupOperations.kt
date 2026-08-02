@@ -3,6 +3,7 @@ package com.mj.yata.domain.usecase
 import com.mj.yata.data.cloud.CloudBackupDiff
 import com.mj.yata.data.cloud.CloudBackupEntry
 import com.mj.yata.data.cloud.CloudBackupManager
+import com.mj.yata.data.ftp.FtpBackupManager
 import com.mj.yata.data.local.backup.LocalBackupManager
 import com.mj.yata.data.sftp.SftpBackupManager
 import com.mj.yata.data.sftp.SftpConnectionTestResult
@@ -24,7 +25,8 @@ class BackupOperations @Inject constructor(
     private val jsonExporter: JsonExporter,
     private val cloudBackupManager: CloudBackupManager,
     private val localBackupManager: LocalBackupManager,
-    private val sftpBackupManager: SftpBackupManager
+    private val sftpBackupManager: SftpBackupManager,
+    private val ftpBackupManager: FtpBackupManager
 ) {
 
     /**
@@ -69,4 +71,14 @@ class BackupOperations @Inject constructor(
     suspend fun listSftpBackups(): Result<List<String>> = sftpBackupManager.listBackups()
 
     suspend fun restoreSftpBackup(filename: String): Result<Unit> = sftpBackupManager.restoreBackup(filename)
+
+    suspend fun testFtpConnection(): Result<Unit> = ftpBackupManager.testConnection()
+
+    fun updateFtpBackupInterval(minutes: Long) = ftpBackupManager.updateBackupInterval(minutes)
+
+    suspend fun ftpBackupNow(): Result<Unit> = ftpBackupManager.backupNow()
+
+    suspend fun listFtpBackups(): Result<List<String>> = ftpBackupManager.listBackups()
+
+    suspend fun restoreFtpBackup(filename: String): Result<Unit> = ftpBackupManager.restoreBackup(filename)
 }

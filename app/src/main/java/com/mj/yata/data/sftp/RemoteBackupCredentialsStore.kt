@@ -9,22 +9,27 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Holds the three actual secrets an SFTP connection needs — password, private key, key
- * passphrase — in their own [EncryptedSharedPreferences], never in the plain-text DataStore
- * [com.mj.yata.data.local.datastore.UserPreferences] uses for everything else (host, port,
- * username, remote path, TOFU host key fingerprint — none of that is sensitive the way these
- * are). Same [MasterKey] mechanism as [com.mj.yata.util.ProfilePhotoUtils]'s `EncryptedFile`,
- * just for a key-value store instead of a file.
+ * Holds the actual secrets a self-hosted backup connection needs — password, SFTP private key,
+ * SFTP key passphrase — in their own [EncryptedSharedPreferences], never in the plain-text
+ * DataStore [com.mj.yata.data.local.datastore.UserPreferences] uses for everything else (host,
+ * port, username, remote path, protocol choice, TOFU host key fingerprint — none of that is
+ * sensitive the way these are). Same [MasterKey] mechanism as [com.mj.yata.util.ProfilePhotoUtils]'s
+ * `EncryptedFile`, just for a key-value store instead of a file.
+ *
+ * Shared between [SftpBackupManager] and [com.mj.yata.data.ftp.FtpBackupManager]: [password] is
+ * the one either protocol reads, since the settings UI only ever has one of them configured at a
+ * time (the protocol picker chooses which server the shared host/port/username/remote-dir fields
+ * describe). [privateKeyPem]/[passphrase] are SFTP-only — FTP has no equivalent.
  *
  * Deliberately synchronous rather than Flow-based: these fields are write-only from the UI's
  * perspective (a password field the user types into and saves, never displayed back), so there's
  * no reactive-read use case that would justify the extra machinery a Flow wrapper adds.
  */
 @Singleton
-class SftpCredentialsStore @Inject constructor(@ApplicationContext context: Context) {
+class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext context: Context) {
 
     private companion object {
-        const val PREFS_FILE_NAME = "sftp_credentials"
+        const val PREFS_FILE_NAME = "remote_backup_credentials"
         const val KEY_PASSWORD = "password"
         const val KEY_PRIVATE_KEY_PEM = "private_key_pem"
         const val KEY_PASSPHRASE = "passphrase"
@@ -43,24 +48,26 @@ class SftpCredentialsStore @Inject constructor(@ApplicationContext context: Cont
         )
     }
 
+    /** The password for either protocol — SFTP password auth, or FTP/FTPS. */
     var password: String?
         get() = prefs.getString(KEY_PASSWORD, null)
         set(value) = prefs.edit { if (value != null) putString(KEY_PASSWORD, value) else remove(KEY_PASSWORD) }
 
     /** PEM-encoded private key text, as pasted or picked by the user — never the file's raw
      * content:// Uri, which (like a picked photo, see ProfilePhotoUtils' doc comment) is only a
-     * one-time process-scoped grant and would go dead on relaunch. */
+     * one-time process-scoped grant and would go dead on relaunch. SFTP only. */
     var privateKeyPem: String?
         get() = prefs.getString(KEY_PRIVATE_KEY_PEM, null)
         set(value) = prefs.edit { if (value != null) putString(KEY_PRIVATE_KEY_PEM, value) else remove(KEY_PRIVATE_KEY_PEM) }
 
+    /** SFTP only. */
     var passphrase: String?
         get() = prefs.getString(KEY_PASSPHRASE, null)
         set(value) = prefs.edit { if (value != null) putString(KEY_PASSPHRASE, value) else remove(KEY_PASSPHRASE) }
 
-    /** Wipes all three — called when the user disables/reconfigures SFTP backup, so switching
-     * auth method or server doesn't leave a stale credential behind that nothing references
-     * anymore but that's still sitting encrypted on disk. */
+    /** Wipes all three — called when the user disables/reconfigures self-hosted backup, so
+     * switching protocol, auth method, or server doesn't leave a stale credential behind that
+     * nothing references anymore but that's still sitting encrypted on disk. */
     fun clear() {
         prefs.edit { clear() }
     }

@@ -135,10 +135,15 @@ class UserPreferences @Inject constructor(
         val LOCAL_BACKUP_ENABLED    = booleanPreferencesKey("local_backup_enabled")
         val LOCAL_BACKUP_LAST_AT    = longPreferencesKey("local_backup_last_at")
         val LOCAL_BACKUP_INTERVAL_MINUTES = longPreferencesKey("local_backup_interval_minutes")
-        // SFTP (self-hosted) backup. Only non-secret config lives here -- password/private
-        // key/passphrase are in SftpCredentialsStore's EncryptedSharedPreferences instead, never
-        // in plain DataStore. hostKeyFingerprint is TOFU-pinned on first successful connection
-        // (not itself sensitive -- it's the server's public key fingerprint) and every later
+        // Self-hosted backup (SFTP or FTP/FTPS) -- key names keep the "sftp" prefix from when
+        // this was SFTP-only, but enabled/host/port/username/remoteDir/interval/lastBackupAt are
+        // now shared by both protocols: a self-hosted user has one server, not two, and the
+        // REMOTE_BACKUP_PROTOCOL choice below just picks which transport talks to it. authMethod
+        // and hostKeyFingerprint stay SFTP-only -- FTP has no key-based auth and no host-key
+        // concept. Only non-secret config lives here -- password/private key/passphrase are in
+        // RemoteBackupCredentialsStore's EncryptedSharedPreferences instead, never in plain
+        // DataStore. hostKeyFingerprint is TOFU-pinned on first successful SFTP connection (not
+        // itself sensitive -- it's the server's public key fingerprint) and every later
         // connection must match it exactly or the connection is refused.
         val SFTP_BACKUP_ENABLED     = booleanPreferencesKey("sftp_backup_enabled")
         val SFTP_HOST               = stringPreferencesKey("sftp_host")
@@ -149,6 +154,11 @@ class UserPreferences @Inject constructor(
         val SFTP_INTERVAL_MINUTES   = longPreferencesKey("sftp_interval_minutes")
         val SFTP_LAST_BACKUP_AT     = longPreferencesKey("sftp_last_backup_at")
         val SFTP_HOST_KEY_FINGERPRINT = stringPreferencesKey("sftp_host_key_fingerprint")
+        val REMOTE_BACKUP_PROTOCOL  = stringPreferencesKey("remote_backup_protocol")
+        // Plain FTP sends the password and the whole backup in the clear -- defaults to true
+        // (FTPS, explicit AUTH TLS) and is only ever false if the user deliberately opts out,
+        // which the config dialog makes an explicit, warned choice rather than a quiet toggle.
+        val FTP_USE_TLS             = booleanPreferencesKey("ftp_use_tls")
         // The theme_schedule_* keys that lived here went with the SCHEDULED theme mode. Any values
         // already written stay in the file harmlessly — nothing reads that name any more.
         val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
@@ -355,6 +365,13 @@ class UserPreferences @Inject constructor(
     val sftpIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[SFTP_INTERVAL_MINUTES] ?: (24 * 60L) }
     val sftpLastBackupAtFlow: Flow<Long?> = prefsFlow.map { it[SFTP_LAST_BACKUP_AT] }
     val sftpHostKeyFingerprintFlow: Flow<String?> = prefsFlow.map { it[SFTP_HOST_KEY_FINGERPRINT] }
+    val remoteBackupProtocolFlow: Flow<com.mj.yata.domain.model.RemoteBackupProtocol> = prefsFlow.map { prefs ->
+        when (prefs[REMOTE_BACKUP_PROTOCOL]) {
+            com.mj.yata.domain.model.RemoteBackupProtocol.FTP.name -> com.mj.yata.domain.model.RemoteBackupProtocol.FTP
+            else -> com.mj.yata.domain.model.RemoteBackupProtocol.SFTP
+        }
+    }
+    val ftpUseTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_USE_TLS] ?: true }
     val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_TODAY] ?: false }
     val todayShowUpcomingWhenEmptyFlow: Flow<Boolean> = prefsFlow.map { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] ?: false }
     val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PROJECT] ?: false }
@@ -736,6 +753,14 @@ class UserPreferences @Inject constructor(
         dataStore.edit {
             if (fingerprint != null) it[SFTP_HOST_KEY_FINGERPRINT] = fingerprint else it.remove(SFTP_HOST_KEY_FINGERPRINT)
         }
+    }
+
+    suspend fun setRemoteBackupProtocol(protocol: com.mj.yata.domain.model.RemoteBackupProtocol) {
+        dataStore.edit { it[REMOTE_BACKUP_PROTOCOL] = protocol.name }
+    }
+
+    suspend fun setFtpUseTls(useTls: Boolean) {
+        dataStore.edit { it[FTP_USE_TLS] = useTls }
     }
 
     suspend fun setReduceMotionEnabled(enabled: Boolean) {

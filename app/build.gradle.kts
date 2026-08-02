@@ -288,6 +288,12 @@ dependencies {
         exclude(group = "org.bouncycastle")
     }
 
+    // Self-hosted backup: FTP/FTPS to a user's own server. Apache Commons Net's FTPSClient
+    // handles TLS via the platform's own SSLContext/trust store -- no reflection-based algorithm
+    // lookup the way sshj+Bouncy Castle needs, so no ProGuard keep rules or provider registration
+    // required for this one.
+    implementation(libs.commons.net)
+
     // Cloud backup: periodic + debounced background upload
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)

@@ -8,7 +8,7 @@ import com.mj.yata.data.cloud.CloudBackupEntry
 import com.mj.yata.data.local.crash.CrashLogEntry
 import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
-import com.mj.yata.data.sftp.SftpCredentialsStore
+import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpConnectionTestResult
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
@@ -38,7 +38,7 @@ class MainViewModel @Inject constructor(
     private val backupOperations: BackupOperations,
     private val errorBus: AppErrorBus,
     private val crashLogStore: CrashLogStore,
-    private val sftpCredentialsStore: SftpCredentialsStore
+    private val remoteBackupCredentialsStore: RemoteBackupCredentialsStore
 ) : ViewModel() {
 
     /**
@@ -179,6 +179,8 @@ data class SettingsUiState(
     val sftpIntervalMinutes: Long = 1440L,
     val sftpLastBackupAt: Long? = null,
     val sftpHostKeyFingerprint: String? = null,
+    val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol = com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
+    val ftpUseTls: Boolean = true,
     val todayRemainingCount: Int = 0
 )
 
@@ -298,9 +300,15 @@ private data class SftpStatusState(
     val sftpHostKeyFingerprint: String?
 )
 
+private data class RemoteBackupProtocolState(
+    val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol,
+    val ftpUseTls: Boolean
+)
+
 private data class SftpSettingsState(
     val config: SftpConfigState,
-    val status: SftpStatusState
+    val status: SftpStatusState,
+    val protocol: RemoteBackupProtocolState
 )
 
 private data class SettingsCoreState(
@@ -511,8 +519,12 @@ private data class MainNavigationState(
                 userPreferences.sftpIntervalMinutesFlow,
                 userPreferences.sftpLastBackupAtFlow,
                 userPreferences.sftpHostKeyFingerprintFlow
-            ) { remoteDir, intervalMinutes, lastBackupAt, hostKeyFingerprint -> SftpStatusState(remoteDir, intervalMinutes, lastBackupAt, hostKeyFingerprint) }
-        ) { config, status -> SftpSettingsState(config, status) },
+            ) { remoteDir, intervalMinutes, lastBackupAt, hostKeyFingerprint -> SftpStatusState(remoteDir, intervalMinutes, lastBackupAt, hostKeyFingerprint) },
+            combine(
+                userPreferences.remoteBackupProtocolFlow,
+                userPreferences.ftpUseTlsFlow
+            ) { protocol, ftpUseTls -> RemoteBackupProtocolState(protocol, ftpUseTls) }
+        ) { config, status, protocol -> SftpSettingsState(config, status, protocol) },
         todayRemainingCount
     ) { core, cloud, cloudSchedule, sftp, count ->
         SettingsUiState(
@@ -564,6 +576,8 @@ private data class MainNavigationState(
             sftpIntervalMinutes = sftp.status.sftpIntervalMinutes,
             sftpLastBackupAt = sftp.status.sftpLastBackupAt,
             sftpHostKeyFingerprint = sftp.status.sftpHostKeyFingerprint,
+            remoteBackupProtocol = sftp.protocol.remoteBackupProtocol,
+            ftpUseTls = sftp.protocol.ftpUseTls,
             todayRemainingCount = count
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
@@ -1843,7 +1857,7 @@ private data class MainNavigationState(
             userPreferences.setSftpBackupEnabled(enabled)
             // Disabling clears the saved secrets rather than leaving them sitting encrypted on
             // disk for a feature the user just turned off — matches "delete, don't just hide."
-            if (!enabled) sftpCredentialsStore.clear()
+            if (!enabled) remoteBackupCredentialsStore.clear()
         }
     }
 
@@ -1869,16 +1883,29 @@ private data class MainNavigationState(
 
     fun setSftpIntervalMinutes(minutes: Long) {
         safeLaunch { userPreferences.setSftpIntervalMinutes(minutes) }
+        // Both protocols' periodic workers are always scheduled (each no-ops unless it's the
+        // currently-selected one, see FtpBackupWorker's doc comment) — reschedule both rather
+        // than branching on which one is "active" right now, so a later protocol switch doesn't
+        // leave the other running on a stale interval from before this call.
         backupOperations.updateSftpBackupInterval(minutes)
+        backupOperations.updateFtpBackupInterval(minutes)
+    }
+
+    fun setRemoteBackupProtocol(protocol: com.mj.yata.domain.model.RemoteBackupProtocol) {
+        safeLaunch { userPreferences.setRemoteBackupProtocol(protocol) }
+    }
+
+    fun setFtpUseTls(useTls: Boolean) {
+        safeLaunch { userPreferences.setFtpUseTls(useTls) }
     }
 
     fun setSftpPassword(password: String) {
-        sftpCredentialsStore.password = password.ifBlank { null }
+        remoteBackupCredentialsStore.password = password.ifBlank { null }
     }
 
     fun setSftpPrivateKey(pem: String, passphrase: String) {
-        sftpCredentialsStore.privateKeyPem = pem.ifBlank { null }
-        sftpCredentialsStore.passphrase = passphrase.ifBlank { null }
+        remoteBackupCredentialsStore.privateKeyPem = pem.ifBlank { null }
+        remoteBackupCredentialsStore.passphrase = passphrase.ifBlank { null }
     }
 
     /** Host key isn't pinned here — the caller (Settings) decides whether to call
@@ -1902,6 +1929,22 @@ private data class MainNavigationState(
 
     fun restoreSftpBackup(filename: String, onResult: (Result<Unit>) -> Unit) {
         safeLaunch { onResult(backupOperations.restoreSftpBackup(filename)) }
+    }
+
+    fun testFtpConnection(onResult: (Result<Unit>) -> Unit) {
+        safeLaunch { onResult(backupOperations.testFtpConnection()) }
+    }
+
+    fun ftpBackupNow(onResult: (Result<Unit>) -> Unit) {
+        safeLaunch { onResult(backupOperations.ftpBackupNow()) }
+    }
+
+    fun listFtpBackups(onResult: (Result<List<String>>) -> Unit) {
+        safeLaunch { onResult(backupOperations.listFtpBackups()) }
+    }
+
+    fun restoreFtpBackup(filename: String, onResult: (Result<Unit>) -> Unit) {
+        safeLaunch { onResult(backupOperations.restoreFtpBackup(filename)) }
     }
 
     fun streakForTask(taskId: String, onResult: (Int) -> Unit) {

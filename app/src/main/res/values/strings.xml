@@ -400,7 +400,11 @@
     <string name="settings_sftp_server_not_yet_trusted">Server not yet verified — open Server to test the connection</string>
     <string name="settings_sftp_backup_started">Backup started</string>
     <string name="settings_restore_sftp_backup">Restore from server…</string>
-    <string name="settings_sftp_config_title">SFTP server</string>
+    <string name="settings_sftp_config_title">Self-hosted server</string>
+    <string name="settings_sftp_protocol_sftp">SFTP</string>
+    <string name="settings_sftp_protocol_ftp">FTP</string>
+    <string name="settings_ftp_use_tls">Use secure connection (FTPS)</string>
+    <string name="settings_ftp_plain_warning">Plain FTP sends your password and files unencrypted. Only use this on a trusted network.</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Username</string>

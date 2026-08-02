@@ -208,6 +208,9 @@ fun SettingsScreen(
     val sftpIntervalMinutes = uiState.sftpIntervalMinutes
     val sftpLastBackupAt = uiState.sftpLastBackupAt
     val sftpHostKeyFingerprint = uiState.sftpHostKeyFingerprint
+    val remoteBackupProtocol = uiState.remoteBackupProtocol
+    val ftpUseTls = uiState.ftpUseTls
+    val isFtpProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
 
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
@@ -2523,7 +2526,12 @@ fun SettingsScreen(
                                     text = if (sftpHost.isBlank()) {
                                         stringResource(R.string.settings_sftp_not_configured)
                                     } else {
-                                        "$sftpUsername@$sftpHost:$sftpPort"
+                                        val protocolLabel = when {
+                                            isFtpProtocol && ftpUseTls -> "FTPS"
+                                            isFtpProtocol -> "FTP"
+                                            else -> "SFTP"
+                                        }
+                                        "$sftpUsername@$sftpHost:$sftpPort ($protocolLabel)"
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2550,24 +2558,30 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    Text(
-                                        text = stringResource(
-                                            if (sftpHostKeyFingerprint != null) {
-                                                R.string.settings_sftp_server_trusted
+                                    // Host-key trust is an SFTP concept only -- FTPS validates
+                                    // certificates through the platform trust store instead, with
+                                    // no separate pin/confirm step to report status on here.
+                                    if (!isFtpProtocol) {
+                                        Text(
+                                            text = stringResource(
+                                                if (sftpHostKeyFingerprint != null) {
+                                                    R.string.settings_sftp_server_trusted
+                                                } else {
+                                                    R.string.settings_sftp_server_not_yet_trusted
+                                                }
+                                            ),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (sftpHostKeyFingerprint != null) {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
                                             } else {
-                                                R.string.settings_sftp_server_not_yet_trusted
+                                                MaterialTheme.colorScheme.error
                                             }
-                                        ),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = if (sftpHostKeyFingerprint != null) {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        } else {
-                                            MaterialTheme.colorScheme.error
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
                                 TextButton(onClick = {
-                                    viewModel.sftpBackupNow { result ->
+                                    val backupNow = if (isFtpProtocol) viewModel::ftpBackupNow else viewModel::sftpBackupNow
+                                    backupNow { result ->
                                         scope.launch {
                                             if (result.isSuccess) {
                                                 snackbarHostState.showSuccess(context.getString(R.string.settings_sftp_backup_started))
@@ -2589,7 +2603,8 @@ fun SettingsScreen(
                                     .clickable {
                                         showSftpRestoreDialog = true
                                         isLoadingSftpBackups = true
-                                        viewModel.listSftpBackups { result ->
+                                        val listBackups = if (isFtpProtocol) viewModel::listFtpBackups else viewModel::listSftpBackups
+                                        listBackups { result ->
                                             isLoadingSftpBackups = false
                                             sftpBackupList = result.getOrDefault(emptyList())
                                             result.exceptionOrNull()?.let { error ->
@@ -2779,6 +2794,7 @@ fun SettingsScreen(
     }
 
     if (showSftpConfigDialog) {
+        var draftProtocol by remember { mutableStateOf(remoteBackupProtocol) }
         var draftHost by remember { mutableStateOf(sftpHost) }
         var draftPort by remember { mutableStateOf(sftpPort.toString()) }
         var draftUsername by remember { mutableStateOf(sftpUsername) }
@@ -2787,27 +2803,37 @@ fun SettingsScreen(
         var draftPassword by remember { mutableStateOf("") }
         var draftPrivateKey by remember { mutableStateOf("") }
         var draftPassphrase by remember { mutableStateOf("") }
+        var draftFtpUseTls by remember { mutableStateOf(ftpUseTls) }
         var isTestingConnection by remember { mutableStateOf(false) }
-        // null = untested this session, true/false = last test's outcome. A successful test with
-        // no fingerprint pinned yet, or a failed one where the failure is a host-key mismatch,
-        // both surface a trust prompt via pendingTrustFingerprint instead of a plain result line.
+        // null = untested this session, true/false = last test's outcome. A successful SFTP test
+        // with no fingerprint pinned yet, or a failed one where the failure is a host-key
+        // mismatch, both surface a trust prompt via pendingTrustFingerprint instead of a plain
+        // result line. FTP/FTPS has no equivalent -- pendingTrustFingerprint stays null there and
+        // every test outcome goes straight to testResultMessage.
         var testResultOk by remember { mutableStateOf<Boolean?>(null) }
         var testResultMessage by remember { mutableStateOf<String?>(null) }
         var pendingTrustFingerprint by remember { mutableStateOf<String?>(null) }
         var isHostKeyMismatch by remember { mutableStateOf(false) }
+        val draftIsFtp = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
 
         fun saveNonSecretFields() {
+            viewModel.setRemoteBackupProtocol(draftProtocol)
+            viewModel.setFtpUseTls(draftFtpUseTls)
             viewModel.setSftpHost(draftHost)
             draftPort.toIntOrNull()?.let { viewModel.setSftpPort(it) }
             viewModel.setSftpUsername(draftUsername)
             viewModel.setSftpRemoteDir(draftRemoteDir)
-            viewModel.setSftpAuthMethod(draftAuthMethod)
-            if (draftAuthMethod == "PRIVATE_KEY") {
-                if (draftPrivateKey.isNotBlank() || draftPassphrase.isNotBlank()) {
-                    viewModel.setSftpPrivateKey(draftPrivateKey, draftPassphrase)
-                }
-            } else {
+            if (draftIsFtp) {
                 if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
+            } else {
+                viewModel.setSftpAuthMethod(draftAuthMethod)
+                if (draftAuthMethod == "PRIVATE_KEY") {
+                    if (draftPrivateKey.isNotBlank() || draftPassphrase.isNotBlank()) {
+                        viewModel.setSftpPrivateKey(draftPrivateKey, draftPassphrase)
+                    }
+                } else {
+                    if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
+                }
             }
         }
 
@@ -2819,6 +2845,14 @@ fun SettingsScreen(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    val protocolSftpLabel = stringResource(R.string.settings_sftp_protocol_sftp)
+                    val protocolFtpLabel = stringResource(R.string.settings_sftp_protocol_ftp)
+                    SegmentedControl(
+                        items = listOf(com.mj.yata.domain.model.RemoteBackupProtocol.SFTP, com.mj.yata.domain.model.RemoteBackupProtocol.FTP),
+                        selectedItem = draftProtocol,
+                        onItemSelected = { draftProtocol = it },
+                        labelProvider = { if (it == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP) protocolSftpLabel else protocolFtpLabel }
+                    )
                     OutlinedTextField(
                         value = draftHost,
                         onValueChange = { draftHost = it },
@@ -2848,33 +2882,7 @@ fun SettingsScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
-                    val authKeyLabel = stringResource(R.string.settings_sftp_auth_key)
-                    SegmentedControl(
-                        items = listOf("PASSWORD", "PRIVATE_KEY"),
-                        selectedItem = draftAuthMethod,
-                        onItemSelected = { draftAuthMethod = it },
-                        labelProvider = { if (it == "PASSWORD") authPasswordLabel else authKeyLabel }
-                    )
-                    if (draftAuthMethod == "PRIVATE_KEY") {
-                        OutlinedTextField(
-                            value = draftPrivateKey,
-                            onValueChange = { draftPrivateKey = it },
-                            label = { Text(stringResource(R.string.settings_sftp_private_key)) },
-                            placeholder = { Text(stringResource(R.string.settings_sftp_private_key_placeholder), style = MaterialTheme.typography.bodySmall) },
-                            minLines = 3,
-                            maxLines = 6,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = draftPassphrase,
-                            onValueChange = { draftPassphrase = it },
-                            label = { Text(stringResource(R.string.settings_sftp_passphrase)) },
-                            singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    } else {
+                    if (draftIsFtp) {
                         OutlinedTextField(
                             value = draftPassword,
                             onValueChange = { draftPassword = it },
@@ -2883,6 +2891,69 @@ fun SettingsScreen(
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_ftp_use_tls),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(checked = draftFtpUseTls, onCheckedChange = { draftFtpUseTls = it })
+                        }
+                        if (!draftFtpUseTls) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_ftp_plain_warning),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.padding(10.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
+                        val authKeyLabel = stringResource(R.string.settings_sftp_auth_key)
+                        SegmentedControl(
+                            items = listOf("PASSWORD", "PRIVATE_KEY"),
+                            selectedItem = draftAuthMethod,
+                            onItemSelected = { draftAuthMethod = it },
+                            labelProvider = { if (it == "PASSWORD") authPasswordLabel else authKeyLabel }
+                        )
+                        if (draftAuthMethod == "PRIVATE_KEY") {
+                            OutlinedTextField(
+                                value = draftPrivateKey,
+                                onValueChange = { draftPrivateKey = it },
+                                label = { Text(stringResource(R.string.settings_sftp_private_key)) },
+                                placeholder = { Text(stringResource(R.string.settings_sftp_private_key_placeholder), style = MaterialTheme.typography.bodySmall) },
+                                minLines = 3,
+                                maxLines = 6,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = draftPassphrase,
+                                onValueChange = { draftPassphrase = it },
+                                label = { Text(stringResource(R.string.settings_sftp_passphrase)) },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            OutlinedTextField(
+                                value = draftPassword,
+                                onValueChange = { draftPassword = it },
+                                label = { Text(stringResource(R.string.settings_sftp_password)) },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
 
                     OutlinedButton(
@@ -2893,25 +2964,37 @@ fun SettingsScreen(
                             pendingTrustFingerprint = null
                             isHostKeyMismatch = false
                             isTestingConnection = true
-                            viewModel.testSftpConnection { result ->
-                                isTestingConnection = false
-                                testResultOk = result.success
-                                if (result.success) {
-                                    if (sftpHostKeyFingerprint == null && result.fingerprint != null) {
-                                        // First-ever connection to this server -- ask before pinning.
-                                        pendingTrustFingerprint = result.fingerprint
+                            if (draftIsFtp) {
+                                viewModel.testFtpConnection { result ->
+                                    isTestingConnection = false
+                                    testResultOk = result.isSuccess
+                                    testResultMessage = if (result.isSuccess) {
+                                        context.getString(R.string.settings_sftp_connection_ok)
                                     } else {
-                                        testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
+                                        result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
                                     }
-                                } else {
-                                    val mismatch = sftpHostKeyFingerprint != null &&
-                                        result.fingerprint != null &&
-                                        result.fingerprint != sftpHostKeyFingerprint
-                                    if (mismatch) {
-                                        isHostKeyMismatch = true
-                                        pendingTrustFingerprint = result.fingerprint
+                                }
+                            } else {
+                                viewModel.testSftpConnection { result ->
+                                    isTestingConnection = false
+                                    testResultOk = result.success
+                                    if (result.success) {
+                                        if (sftpHostKeyFingerprint == null && result.fingerprint != null) {
+                                            // First-ever connection to this server -- ask before pinning.
+                                            pendingTrustFingerprint = result.fingerprint
+                                        } else {
+                                            testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
+                                        }
                                     } else {
-                                        testResultMessage = result.error?.message ?: context.getString(R.string.export_failed)
+                                        val mismatch = sftpHostKeyFingerprint != null &&
+                                            result.fingerprint != null &&
+                                            result.fingerprint != sftpHostKeyFingerprint
+                                        if (mismatch) {
+                                            isHostKeyMismatch = true
+                                            pendingTrustFingerprint = result.fingerprint
+                                        } else {
+                                            testResultMessage = result.error?.message ?: context.getString(R.string.export_failed)
+                                        }
                                     }
                                 }
                             }
@@ -3047,7 +3130,8 @@ fun SettingsScreen(
                 TextButton(onClick = {
                     pendingSftpRestoreFilename = null
                     isRestoringSftpBackup = true
-                    viewModel.restoreSftpBackup(filename) { result ->
+                    val restoreBackup = if (isFtpProtocol) viewModel::restoreFtpBackup else viewModel::restoreSftpBackup
+                    restoreBackup(filename) { result ->
                         isRestoringSftpBackup = false
                         showSftpRestoreDialog = false
                         scope.launch {

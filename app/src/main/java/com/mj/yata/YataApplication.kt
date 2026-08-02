@@ -131,6 +131,7 @@ class YataApplication : Application(), Configuration.Provider {
 
         val sftpInterval = userPreferences.sftpIntervalMinutesFlow.first()
         com.mj.yata.data.sftp.SftpBackupWorker.schedule(this, sftpInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
+        com.mj.yata.data.ftp.FtpBackupWorker.schedule(this, sftpInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
 
         // Both notification workers are now user-controllable. Reconciled on every launch so
         // a preference change applies from the next start even though these are scheduled

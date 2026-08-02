@@ -53,7 +53,7 @@ class SftpBackupManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val jsonExporter: JsonExporter,
     private val userPreferences: UserPreferences,
-    private val credentialsStore: SftpCredentialsStore
+    private val credentialsStore: RemoteBackupCredentialsStore
 ) {
     companion object {
         private const val TAG = "SftpBackupManager"

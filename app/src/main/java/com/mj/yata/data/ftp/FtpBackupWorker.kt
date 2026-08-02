@@ -1,4 +1,4 @@
-package com.mj.yata.data.sftp
+package com.mj.yata.data.ftp
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
@@ -10,41 +10,35 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.data.sftp.SftpNotConfiguredException
 import com.mj.yata.domain.model.RemoteBackupProtocol
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
-/** Periodic counterpart to [com.mj.yata.data.cloud.CloudBackupWorker] and
- * [com.mj.yata.data.local.backup.LocalBackupWorker] for SFTP. A network constraint is needed
- * (unlike the on-device one) but it's always "any network," not Wi-Fi-only like cloud backup can
- * be configured for -- a self-hosted server is often reached over a local network or a VPN a
- * metered-connection check wouldn't distinguish correctly anyway.
- *
- * Scheduled unconditionally alongside [com.mj.yata.data.ftp.FtpBackupWorker] at app start -- see
- * that class's doc comment for why both run and only the currently-selected protocol's actually
- * does anything. */
+/** Periodic counterpart to [com.mj.yata.data.sftp.SftpBackupWorker] for FTP/FTPS. Both workers
+ * are scheduled unconditionally at app start (see YataApplication) and each no-ops unless its own
+ * protocol is the one currently selected -- simpler than tearing one down and standing the other
+ * up every time the user flips the protocol picker, and no less correct: an unwanted run is a
+ * single cheap DataStore read followed immediately by `Result.success()`. */
 @HiltWorker
-class SftpBackupWorker @AssistedInject constructor(
+class FtpBackupWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val sftpBackupManager: SftpBackupManager,
+    private val ftpBackupManager: FtpBackupManager,
     private val userPreferences: UserPreferences
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         if (!userPreferences.sftpBackupEnabledFlow.first()) return Result.success()
-        if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.SFTP) return Result.success()
+        if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.FTP) return Result.success()
 
-        val result = sftpBackupManager.backupNow()
+        val result = ftpBackupManager.backupNow()
         return if (result.isSuccess) {
             Result.success()
         } else {
             when (result.exceptionOrNull()) {
-                // Nothing configured, or a rejected/missing host key -- retrying on the same
-                // schedule won't fix either, and would just burn WorkManager's retry budget
-                // silently. Both are surfaced in Settings instead.
                 is SftpNotConfiguredException -> Result.success()
                 else -> Result.retry()
             }
@@ -52,7 +46,7 @@ class SftpBackupWorker @AssistedInject constructor(
     }
 
     companion object {
-        private const val WORK_NAME = "sftp_backup_periodic"
+        private const val WORK_NAME = "ftp_backup_periodic"
         const val DEFAULT_INTERVAL_MINUTES = 24 * 60L
 
         fun schedule(
@@ -63,7 +57,7 @@ class SftpBackupWorker @AssistedInject constructor(
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
-            val request = PeriodicWorkRequestBuilder<SftpBackupWorker>(
+            val request = PeriodicWorkRequestBuilder<FtpBackupWorker>(
                 intervalMinutes.coerceAtLeast(15L), TimeUnit.MINUTES
             )
                 .setConstraints(constraints)
