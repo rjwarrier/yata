@@ -1,7 +1,6 @@
 package com.mj.yata.widget
 
 import android.content.Context
-import com.mj.yata.data.cloud.CloudBackupManager
 import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +26,7 @@ interface WidgetUpdater {
 class WidgetUpdaterImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     // Lazy breaks Dagger cycles
-    private val cloudBackupManager: Lazy<CloudBackupManager>,
+    private val backupOperations: Lazy<com.mj.yata.domain.usecase.BackupOperations>,
     private val yataRepository: Lazy<YataRepository>
 ) : WidgetUpdater {
 
@@ -111,8 +110,9 @@ class WidgetUpdaterImpl @Inject constructor(
             }
         }
 
-        // Trigger backup debounce
-        cloudBackupManager.get().scheduleDebouncedBackup()
+        // Trigger backup debounce across every configured destination, not just Drive -- a task
+        // change should refresh all the copies the user asked for, not leave the others stale.
+        backupOperations.get().scheduleDebouncedBackup()
     }
 
     private fun isOverdue(task: com.mj.yata.domain.model.Task, today: java.time.LocalDate): Boolean {

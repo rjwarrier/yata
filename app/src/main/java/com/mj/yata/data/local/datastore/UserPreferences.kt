@@ -153,6 +153,8 @@ class UserPreferences @Inject constructor(
         val SFTP_REMOTE_DIR         = stringPreferencesKey("sftp_remote_dir")
         val SFTP_INTERVAL_MINUTES   = longPreferencesKey("sftp_interval_minutes")
         val SFTP_LAST_BACKUP_AT     = longPreferencesKey("sftp_last_backup_at")
+        val SFTP_KEEP_COUNT         = intPreferencesKey("sftp_keep_count")
+        val BACKUP_INTERVAL_MINUTES = longPreferencesKey("backup_interval_minutes")
         val SFTP_HOST_KEY_FINGERPRINT = stringPreferencesKey("sftp_host_key_fingerprint")
         val REMOTE_BACKUP_PROTOCOL  = stringPreferencesKey("remote_backup_protocol")
         // Plain FTP sends the password and the whole backup in the clear -- defaults to true
@@ -364,6 +366,22 @@ class UserPreferences @Inject constructor(
     val sftpRemoteDirFlow: Flow<String> = prefsFlow.map { it[SFTP_REMOTE_DIR] ?: "/yata-backups" }
     val sftpIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[SFTP_INTERVAL_MINUTES] ?: (24 * 60L) }
     val sftpLastBackupAtFlow: Flow<Long?> = prefsFlow.map { it[SFTP_LAST_BACKUP_AT] }
+    /** Shared by both self-hosted protocols; same 2..15 range the Drive setting uses. Clamped on
+     * read so a corrupt or hand-edited value can't prune every backup off the server. */
+    val sftpKeepCountFlow: Flow<Int> = prefsFlow.map { (it[SFTP_KEEP_COUNT] ?: 5).coerceIn(2, 15) }
+
+    /**
+     * How often the single scheduled backup runs, covering every enabled destination.
+     *
+     * Falls back to whatever the Drive schedule was set to before the per-destination schedules
+     * were merged, so an existing user's backups carry on at the cadence they chose rather than
+     * silently resetting to the default.
+     */
+    val backupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { prefs ->
+        prefs[BACKUP_INTERVAL_MINUTES]
+            ?: prefs[CLOUD_BACKUP_INTERVAL_MINUTES]
+            ?: (24 * 60L)
+    }
     val sftpHostKeyFingerprintFlow: Flow<String?> = prefsFlow.map { it[SFTP_HOST_KEY_FINGERPRINT] }
     val remoteBackupProtocolFlow: Flow<com.mj.yata.domain.model.RemoteBackupProtocol> = prefsFlow.map { prefs ->
         when (prefs[REMOTE_BACKUP_PROTOCOL]) {
@@ -745,6 +763,14 @@ class UserPreferences @Inject constructor(
 
     suspend fun setSftpLastBackupAt(epochMillis: Long) {
         dataStore.edit { it[SFTP_LAST_BACKUP_AT] = epochMillis }
+    }
+
+    suspend fun setSftpKeepCount(count: Int) {
+        dataStore.edit { it[SFTP_KEEP_COUNT] = count.coerceIn(2, 15) }
+    }
+
+    suspend fun setBackupIntervalMinutes(minutes: Long) {
+        dataStore.edit { it[BACKUP_INTERVAL_MINUTES] = minutes }
     }
 
     /** Pass null to un-pin -- used when the user deliberately accepts a changed host key, or

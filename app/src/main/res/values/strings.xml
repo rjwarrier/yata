@@ -405,6 +405,26 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Use secure connection (FTPS)</string>
     <string name="settings_ftp_plain_warning">Plain FTP sends your password and files unencrypted. Only use this on a trusted network.</string>
+    <string name="settings_sftp_backups_to_keep_summary">Keep the last %1$d backups on the server — older ones are pruned automatically.</string>
+    <string name="settings_backup_dest_cloud">Google Drive</string>
+    <string name="settings_backup_dest_local">this device</string>
+    <string name="settings_backup_dest_self_hosted">your server</string>
+    <string name="settings_backup_none_configured">No backup destinations are switched on.</string>
+    <string name="settings_backup_all_failed">Backup failed — %1$s</string>
+    <string name="settings_backup_partial">Backed up %1$d, but failed for %2$s</string>
+    <string name="settings_backup_needs_reauth">Google Drive needs you to sign in again</string>
+    <string name="settings_backup_reauthorize">Reauthorize</string>
+    <string name="settings_backup_interval">Backup frequency</string>
+    <string name="settings_backup_interval_summary">Every configured destination is backed up on this schedule.</string>
+    <plurals name="settings_backup_all_ok">
+        <item quantity="one">Backed up to %1$d destination</item>
+        <item quantity="other">Backed up to %1$d destinations</item>
+    </plurals>
+    <string name="settings_backup_summary_loading">Reading backup…</string>
+    <string name="settings_backup_summary_tasks">Tasks: %1$d</string>
+    <string name="settings_backup_summary_open">Open tasks: %1$d</string>
+    <string name="settings_backup_summary_projects">Projects: %1$d</string>
+    <string name="settings_backup_summary_failed">Couldn\'t read this backup: %1$s</string>
     <string name="settings_backup_passphrase">Backup encryption passphrase</string>
     <string name="settings_backup_passphrase_set">A passphrase is already set. Leave this blank to keep it, or type a new one to replace it.</string>
     <string name="settings_backup_passphrase_hint">Encrypts the backup file itself before it leaves your device, so it stays private even on a server you don\'t fully control. Keep a copy somewhere safe — without this passphrase the backup cannot be restored, on this phone or any other.</string>
@@ -576,8 +596,6 @@
     <!-- Manual cloud sync from the Today top bar -->
     <string name="cd_sync_now">Sync now</string>
     <string name="sync_in_progress">Syncing…</string>
-    <string name="sync_success">Synced to cloud</string>
-    <string name="sync_failed">Sync failed - check your connection and try again</string>
 
     <!-- Crash logs -->
     <string name="crash_log_title">Crash Logs</string>
@@ -939,7 +957,7 @@
     <string name="settings_backups_to_keep_summary">Keep the last %1$d cloud backups — older ones are pruned automatically.</string>
     <!-- Shown above the backup-frequency choices, so the schedule isn't mistaken for the only
          time a backup happens. -->
-    <string name="settings_backup_frequency_explainer">A backup also uploads a couple of minutes after any task change, regardless of this setting — this controls the periodic safety-net schedule underneath that.</string>
+    <string name="settings_backup_frequency_explainer">Applies to every destination you\'ve switched on — Google Drive, this device, and your own server are all backed up together. A backup also runs a couple of minutes after any task change, regardless of this setting; this controls the periodic safety net underneath that.</string>
     <string name="settings_sync_after_change">Right after any change in a task</string>
     <!-- %1$d is a whole number of minutes (30, 60, 120). -->
     <string name="settings_sync_every_minutes">Every %1$d minutes</string>

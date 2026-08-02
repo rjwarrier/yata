@@ -17,6 +17,22 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **One backup covers every destination you've set up.** Backing up — from the Today sync button,
+  from Settings, on the periodic schedule, or automatically after a task changes — now writes to
+  Google Drive, this device, *and* your own server, whichever of them you've switched on. Each is
+  attempted independently, so one failing doesn't stop the others, and the result names what
+  actually failed ("Backed up 1, but failed for your server") rather than a blanket message that
+  would be wrong for the copies that succeeded. The Today sync button now appears whenever any
+  destination is configured, not only when Google Drive is.
+- **A single backup schedule** replaces the four separate per-destination schedules, so every copy
+  is the same age instead of one quietly falling days behind another. Your existing frequency
+  carries over.
+- **Backups to keep is configurable for self-hosted backup** (Settings → Self-Hosted Backup),
+  2–15, matching the Google Drive setting. Was fixed at 5.
+- **Restoring from a server shows what's in the backup first** — total tasks, open tasks and
+  projects — so you can tell a full backup from one taken when there was barely anything in it.
+  A backup that can't be read (wrong passphrase, truncated file) says so and can't be restored.
+- A progress spinner on the self-hosted "Back up now", matching the Google Drive one.
 - **A peek at tomorrow when Today is empty.** When there's nothing due today, a "Show upcoming
   tasks" button appears below the empty state — tapping it reveals tomorrow's and the day after's
   open tasks, dimmed but fully clickable and completable, for that visit only. Settings → Task

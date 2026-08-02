@@ -5,6 +5,7 @@ import android.util.Log
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpNotConfiguredException
+import com.mj.yata.domain.model.BackupSummary
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -48,7 +49,6 @@ class FtpBackupManager @Inject constructor(
 ) {
     companion object {
         private const val TAG = "FtpBackupManager"
-        private const val KEEP_BACKUPS = 5
         private const val FILENAME_PREFIX = "yata_backup_"
         // Zipped rather than raw JSON: a backup carrying base64 photo bytes is large, and the
         // less time the data connection is open the less there is to go wrong on it.
@@ -87,6 +87,7 @@ class FtpBackupManager @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+                val keepCount = userPreferences.sftpKeepCountFlow.first()
                 val (primaryJson, _) = jsonExporter.buildSplitBackupJson(archiveMonths = 0)
                 val jsonBytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
                 val zipped = zip(jsonBytes)
@@ -110,7 +111,7 @@ class FtpBackupManager @Inject constructor(
                         ensureRemoteDir(client, remoteDir)
                         check(client.changeWorkingDirectory(remoteDir)) { "Could not open remote folder $remoteDir" }
                         upload(client, filename, bytes)
-                        pruneOldBackups(client, remoteDir)
+                        pruneOldBackups(client, remoteDir, keepCount)
                     } finally {
                         disconnectQuietly(client)
                     }
@@ -201,41 +202,7 @@ class FtpBackupManager @Inject constructor(
     suspend fun restoreBackup(filename: String): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                val remoteDir = userPreferences.sftpRemoteDirFlow.first()
-                val client = connect()
-                val bytes = try {
-                    client.changeWorkingDirectory(remoteDir)
-                    val expected = remoteSize(client, filename)
-                    val out = ByteArrayOutputStream()
-                    check(client.retrieveFile(filename, out)) { "Download failed: ${client.replyString}" }
-                    val downloaded = out.toByteArray()
-                    // Same reasoning as the upload check, in reverse: importing a half-downloaded
-                    // backup would overwrite live data with a fragment of itself.
-                    if (expected != null && expected != downloaded.size.toLong()) {
-                        throw IllegalStateException(
-                            "Download truncated — got ${downloaded.size} of $expected bytes"
-                        )
-                    }
-                    downloaded
-                } finally {
-                    disconnectQuietly(client)
-                }
-                // Decided by the file's own header rather than its name, so a backup stays
-                // restorable even if it gets renamed on the server.
-                val decrypted = if (BackupCrypto.isEncrypted(bytes)) {
-                    val passphrase = credentialsStore.backupPassphrase
-                        ?: throw IllegalStateException(
-                            "This backup is encrypted — set the backup passphrase before restoring"
-                        )
-                    try {
-                        BackupCrypto.decrypt(bytes, passphrase)
-                    } catch (e: Exception) {
-                        throw IllegalStateException("Wrong passphrase, or the backup is damaged", e)
-                    }
-                } else {
-                    bytes
-                }
-                val jsonBytes = if (isZip(decrypted)) unzip(decrypted) else decrypted
+                val jsonBytes = fetchBackupJson(filename)
                 if (jsonExporter.importBytes(jsonBytes)) {
                     Result.success(Unit)
                 } else {
@@ -246,6 +213,63 @@ class FtpBackupManager @Inject constructor(
                 Result.failure(e)
             }
         }
+    }
+
+    /**
+     * Reads a backup's contents without importing it, so the confirm dialog can say what restoring
+     * would actually bring back. Same download-and-decode path as [restoreBackup] — a backup that
+     * can't be summarised is one that couldn't have been restored either, and the user finds that
+     * out before the destructive step rather than during it.
+     */
+    suspend fun inspectBackup(filename: String): Result<BackupSummary> = sessionMutex.withLock {
+        withContext(Dispatchers.IO) {
+            try {
+                Result.success(jsonExporter.summarise(fetchBackupJson(filename)))
+            } catch (e: Exception) {
+                Log.w(TAG, "inspectBackup failed", e)
+                Result.failure(e)
+            }
+        }
+    }
+
+    /** Downloads, verifies length, decrypts if needed, unzips if needed. */
+    private suspend fun fetchBackupJson(filename: String): ByteArray {
+        val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+        val client = connect()
+        val bytes = try {
+            client.changeWorkingDirectory(remoteDir)
+            val expected = remoteSize(client, filename)
+            val out = ByteArrayOutputStream()
+            check(client.retrieveFile(filename, out)) { "Download failed: ${client.replyString}" }
+            val downloaded = out.toByteArray()
+            // Same reasoning as the upload check, in reverse: importing a half-downloaded
+            // backup would overwrite live data with a fragment of itself.
+            if (expected != null && expected != downloaded.size.toLong()) {
+                throw IllegalStateException(
+                    "Download truncated — got ${downloaded.size} of $expected bytes"
+                )
+            }
+            downloaded
+        } finally {
+            disconnectQuietly(client)
+        }
+
+        // Decided by the file's own header rather than its name, so a backup stays restorable
+        // even if it gets renamed on the server.
+        val decrypted = if (BackupCrypto.isEncrypted(bytes)) {
+            val passphrase = credentialsStore.backupPassphrase
+                ?: throw IllegalStateException(
+                    "This backup is encrypted — set the backup passphrase before restoring"
+                )
+            try {
+                BackupCrypto.decrypt(bytes, passphrase)
+            } catch (e: Exception) {
+                throw IllegalStateException("Wrong passphrase, or the backup is damaged", e)
+            }
+        } else {
+            bytes
+        }
+        return if (isZip(decrypted)) unzip(decrypted) else decrypted
     }
 
     private suspend fun connect(): FTPClient {
@@ -357,9 +381,9 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
-    private fun pruneOldBackups(client: FTPClient, dir: String) {
+    private fun pruneOldBackups(client: FTPClient, dir: String, keepCount: Int) {
         val names = client.listNames()?.filter { it.startsWith(FILENAME_PREFIX) }?.sortedByDescending { it } ?: return
-        names.drop(KEEP_BACKUPS).forEach { name ->
+        names.drop(keepCount).forEach { name ->
             try {
                 client.deleteFile(name)
             } catch (e: Exception) {
@@ -368,8 +392,4 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
-    /** Reschedules the periodic upload job — not suspend, WorkManager enqueue is sync. */
-    fun updateBackupInterval(intervalMinutes: Long) {
-        FtpBackupWorker.schedule(context, intervalMinutes, androidx.work.ExistingPeriodicWorkPolicy.UPDATE)
-    }
 }

@@ -122,16 +122,15 @@ class YataApplication : Application(), Configuration.Provider {
     }
 
     private suspend fun reconcileBackgroundJobs() {
-        val wifiOnly = userPreferences.cloudBackupWifiOnlyFlow.first()
-        val interval = userPreferences.cloudBackupIntervalMinutesFlow.first()
-        CloudBackupWorker.schedule(this, interval, androidx.work.ExistingPeriodicWorkPolicy.KEEP, wifiOnly)
-
-        val localInterval = userPreferences.localBackupIntervalMinutesFlow.first()
-        LocalBackupWorker.schedule(this, localInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
-
-        val sftpInterval = userPreferences.sftpIntervalMinutesFlow.first()
-        com.mj.yata.data.sftp.SftpBackupWorker.schedule(this, sftpInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
-        com.mj.yata.data.ftp.FtpBackupWorker.schedule(this, sftpInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP)
+        // One scheduled backup covering every enabled destination, replacing the four that used to
+        // run per destination. Cancelling the old unique work names first is what stops their
+        // already-enqueued periodic jobs from continuing to fire after an upgrade — without it a
+        // device would back everything up on five overlapping schedules.
+        com.mj.yata.data.backup.UnifiedBackupWorker.cancelLegacyWorkers(this)
+        val backupInterval = userPreferences.backupIntervalMinutesFlow.first()
+        com.mj.yata.data.backup.UnifiedBackupWorker.schedule(
+            this, backupInterval, androidx.work.ExistingPeriodicWorkPolicy.KEEP
+        )
 
         // Both notification workers are now user-controllable. Reconciled on every launch so
         // a preference change applies from the next start even though these are scheduled

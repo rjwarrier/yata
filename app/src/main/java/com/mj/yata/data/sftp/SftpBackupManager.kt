@@ -57,7 +57,6 @@ class SftpBackupManager @Inject constructor(
 ) {
     companion object {
         private const val TAG = "SftpBackupManager"
-        private const val KEEP_BACKUPS = 5
         private const val FILENAME_PREFIX = "yata_backup_"
         private const val FILENAME_SUFFIX = ".json"
         private const val CONNECT_TIMEOUT_MS = 15_000
@@ -69,11 +68,6 @@ class SftpBackupManager @Inject constructor(
         userPreferences.setSftpHostKeyFingerprint(fingerprint)
     }
 
-    /** Reschedules the periodic upload job — not suspend, WorkManager enqueue is sync, matching
-     * [com.mj.yata.data.cloud.CloudBackupManager.updateBackupInterval]'s shape. */
-    fun updateBackupInterval(intervalMinutes: Long) {
-        SftpBackupWorker.schedule(context, intervalMinutes, androidx.work.ExistingPeriodicWorkPolicy.UPDATE)
-    }
 
     suspend fun testConnection(): SftpConnectionTestResult = withContext(Dispatchers.IO) {
         var observed: String? = null
@@ -90,6 +84,7 @@ class SftpBackupManager @Inject constructor(
     suspend fun backupNow(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+            val keepCount = userPreferences.sftpKeepCountFlow.first()
             val (primaryJson, _) = jsonExporter.buildSplitBackupJson(archiveMonths = 0)
             val bytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
             val filename = FILENAME_PREFIX +
@@ -103,7 +98,7 @@ class SftpBackupManager @Inject constructor(
                     ssh.newSFTPClient().use { sftp ->
                         ensureRemoteDir(sftp, remoteDir)
                         sftp.put(tempFile.absolutePath, "$remoteDir/$filename")
-                        pruneOldBackups(sftp, remoteDir)
+                        pruneOldBackups(sftp, remoteDir, keepCount)
                     }
                 }
             } finally {
@@ -138,13 +133,8 @@ class SftpBackupManager @Inject constructor(
     }
 
     suspend fun restoreBackup(filename: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val tempFile = File.createTempFile("sftp_download", ".json", context.cacheDir)
         try {
-            val remoteDir = userPreferences.sftpRemoteDirFlow.first()
-            buildClient().use { ssh ->
-                ssh.newSFTPClient().use { sftp -> sftp.get("$remoteDir/$filename", tempFile.absolutePath) }
-            }
-            val bytes = tempFile.readBytes()
+            val bytes = download(filename)
             if (jsonExporter.importBytes(bytes)) {
                 Result.success(Unit)
             } else {
@@ -153,6 +143,28 @@ class SftpBackupManager @Inject constructor(
         } catch (e: Exception) {
             Log.w(TAG, "restoreBackup failed", e)
             Result.failure(e)
+        }
+    }
+
+    /** Counterpart to [com.mj.yata.data.ftp.FtpBackupManager.inspectBackup] — see it for why the
+     * confirm dialog reads a backup's contents before restoring it. */
+    suspend fun inspectBackup(filename: String): Result<com.mj.yata.domain.model.BackupSummary> = withContext(Dispatchers.IO) {
+        try {
+            Result.success(jsonExporter.summarise(download(filename)))
+        } catch (e: Exception) {
+            Log.w(TAG, "inspectBackup failed", e)
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun download(filename: String): ByteArray {
+        val tempFile = File.createTempFile("sftp_download", ".json", context.cacheDir)
+        try {
+            val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+            buildClient().use { ssh ->
+                ssh.newSFTPClient().use { sftp -> sftp.get("$remoteDir/$filename", tempFile.absolutePath) }
+            }
+            return tempFile.readBytes()
         } finally {
             tempFile.delete()
         }
@@ -238,11 +250,11 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
-    private fun pruneOldBackups(sftp: SFTPClient, dir: String) {
+    private fun pruneOldBackups(sftp: SFTPClient, dir: String, keepCount: Int) {
         val files = sftp.ls(dir)
             .filter { it.name.startsWith(FILENAME_PREFIX) }
             .sortedByDescending { it.name }
-        files.drop(KEEP_BACKUPS).forEach { entry ->
+        files.drop(keepCount).forEach { entry ->
             try {
                 sftp.rm("$dir/${entry.name}")
             } catch (e: Exception) {

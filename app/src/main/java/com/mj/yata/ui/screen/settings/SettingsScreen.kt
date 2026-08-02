@@ -210,6 +210,7 @@ fun SettingsScreen(
     val sftpHostKeyFingerprint = uiState.sftpHostKeyFingerprint
     val remoteBackupProtocol = uiState.remoteBackupProtocol
     val ftpUseTls = uiState.ftpUseTls
+    val sftpKeepCount = uiState.sftpKeepCount
     val isFtpProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
 
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
@@ -251,7 +252,11 @@ fun SettingsScreen(
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
     var sftpBackupList by remember { mutableStateOf<List<String>>(emptyList()) }
     var isRestoringSftpBackup by remember { mutableStateOf(false) }
+    var isSftpBackingUp by remember { mutableStateOf(false) }
     var pendingSftpRestoreFilename by remember { mutableStateOf<String?>(null) }
+    var sftpBackupSummary by remember { mutableStateOf<com.mj.yata.domain.model.BackupSummary?>(null) }
+    var isInspectingSftpBackup by remember { mutableStateOf(false) }
+    var sftpInspectError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val settingsListState = rememberLazyListState()
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
@@ -2169,15 +2174,23 @@ fun SettingsScreen(
                                 .fillMaxWidth()
                                 .clickable(enabled = cloudBackupEnabled && !isCloudBackingUp) {
                                     isCloudBackingUp = true
-                                    viewModel.cloudBackupNow { result ->
+                                    viewModel.backupAllNow { results ->
                                         isCloudBackingUp = false
                                         scope.launch {
-                                            val reauth = isReauthRecoverable(result.exceptionOrNull())
-                                            val outcome = snackbarHostState.showSnackbar(
-                                                message = if (result.isSuccess) "Backed up to Google Drive" else "Backup failed — ${result.exceptionOrNull()?.message ?: "try again later"}",
-                                                actionLabel = if (reauth) "Reauthorize" else null
-                                            )
-                                            if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
+                                            val cloudError = results
+                                                .firstOrNull { it.destination == com.mj.yata.domain.model.BackupDestination.CLOUD }
+                                                ?.error
+                                            // Only Drive can need re-auth, and only its own failure
+                                            // should offer that action.
+                                            if (isReauthRecoverable(cloudError)) {
+                                                val outcome = snackbarHostState.showSnackbar(
+                                                    message = context.getString(R.string.settings_backup_needs_reauth),
+                                                    actionLabel = context.getString(R.string.settings_backup_reauthorize)
+                                                )
+                                                if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
+                                            } else {
+                                                reportBackupResults(results, snackbarHostState, context)
+                                            }
                                         }
                                     }
                                 }
@@ -2547,6 +2560,28 @@ fun SettingsScreen(
                         if (sftpHost.isNotBlank()) {
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                var sftpKeepPosition by remember(sftpKeepCount) { mutableFloatStateOf(sftpKeepCount.toFloat()) }
+                                Text(
+                                    text = stringResource(R.string.settings_backups_to_keep),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = stringResource(R.string.settings_sftp_backups_to_keep_summary, sftpKeepPosition.toInt()),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Slider(
+                                    value = sftpKeepPosition,
+                                    onValueChange = { sftpKeepPosition = it },
+                                    onValueChangeFinished = { viewModel.setSftpKeepCount(sftpKeepPosition.toInt()) },
+                                    valueRange = 2f..15f,
+                                    steps = 12 // 14 stops total (min + 12 + max), 1 apart
+                                )
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -2579,19 +2614,20 @@ fun SettingsScreen(
                                         )
                                     }
                                 }
-                                TextButton(onClick = {
-                                    val backupNow = if (isFtpProtocol) viewModel::ftpBackupNow else viewModel::sftpBackupNow
-                                    backupNow { result ->
-                                        scope.launch {
-                                            if (result.isSuccess) {
-                                                snackbarHostState.showSuccess(context.getString(R.string.settings_sftp_backup_started))
-                                            } else {
-                                                snackbarHostState.showError(result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed))
-                                            }
+                                if (isSftpBackingUp) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                } else {
+                                    TextButton(onClick = {
+                                        isSftpBackingUp = true
+                                        // Backs up every configured destination, not just this
+                                        // section's -- see BackupOperations.backupAllConfigured.
+                                        viewModel.backupAllNow { results ->
+                                            isSftpBackingUp = false
+                                            scope.launch { reportBackupResults(results, snackbarHostState, context) }
                                         }
+                                    }) {
+                                        Text(stringResource(R.string.settings_back_up_now))
                                     }
-                                }) {
-                                    Text(stringResource(R.string.settings_back_up_now))
                                 }
                             }
 
@@ -3159,12 +3195,81 @@ fun SettingsScreen(
     }
 
     pendingSftpRestoreFilename?.let { filename ->
+        // Read the backup before offering to restore it. Restore overwrites live data, and the
+        // filename alone can't tell a full backup from one taken while the database was nearly
+        // empty — the counts are what make this a checkable decision.
+        LaunchedEffect(filename) {
+            isInspectingSftpBackup = true
+            sftpBackupSummary = null
+            sftpInspectError = null
+            val inspect = if (isFtpProtocol) viewModel::inspectFtpBackup else viewModel::inspectSftpBackup
+            inspect(filename) { result ->
+                isInspectingSftpBackup = false
+                result
+                    .onSuccess { sftpBackupSummary = it }
+                    .onFailure { sftpInspectError = it.message ?: context.getString(R.string.export_failed) }
+            }
+        }
         AlertDialog(
             onDismissRequest = { pendingSftpRestoreFilename = null },
             title = { Text(stringResource(R.string.settings_sftp_restore_confirm_title)) },
-            text = { Text(stringResource(R.string.settings_sftp_restore_confirm_body)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(filename, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    when {
+                        isInspectingSftpBackup -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    stringResource(R.string.settings_backup_summary_loading),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                        sftpBackupSummary != null -> {
+                            val summary = sftpBackupSummary!!
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        stringResource(R.string.settings_backup_summary_tasks, summary.totalTasks),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        stringResource(R.string.settings_backup_summary_open, summary.openTasks),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        stringResource(R.string.settings_backup_summary_projects, summary.totalProjects),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
+                        }
+                        sftpInspectError != null -> {
+                            Text(
+                                stringResource(R.string.settings_backup_summary_failed, sftpInspectError!!),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    Text(stringResource(R.string.settings_sftp_restore_confirm_body))
+                }
+            },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(
+                    // A backup that couldn't be read is one that couldn't be restored either —
+                    // better to block here than to fail halfway through overwriting live data.
+                    enabled = !isInspectingSftpBackup && sftpInspectError == null,
+                    onClick = {
                     pendingSftpRestoreFilename = null
                     isRestoringSftpBackup = true
                     val restoreBackup = if (isFtpProtocol) viewModel::restoreFtpBackup else viewModel::restoreSftpBackup
@@ -3186,6 +3291,7 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = { pendingSftpRestoreFilename = null }) { Text(stringResource(R.string.action_cancel)) }
             }
+
         )
     }
 
@@ -3595,6 +3701,17 @@ private fun signedCount(n: Int): String = if (n > 0) "+$n" else "$n"
  * Play Services' cached account silently disappears out from under a still-"enabled" local flag. */
 private fun isReauthRecoverable(t: Throwable?): Boolean =
     t is CloudBackupError.NeedsReauth || t is CloudBackupError.NotSignedIn
+
+/** Shows a multi-destination backup run as one snackbar — message built by
+ * [com.mj.yata.util.backupResultMessage] so every "back up now" entry point words it the same. */
+private suspend fun reportBackupResults(
+    results: List<com.mj.yata.domain.model.BackupRunResult>,
+    snackbarHostState: SnackbarHostState,
+    context: android.content.Context
+) {
+    val message = com.mj.yata.util.backupResultMessage(results, context)
+    if (message.isError) snackbarHostState.showError(message.text) else snackbarHostState.showSuccess(message.text)
+}
 
 /** Renders nothing when [totalCount] is 0 — most comparisons won't have all three categories,
  * and an empty "Changed since backup" header with no rows under it reads as broken, not "none." */

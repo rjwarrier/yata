@@ -181,6 +181,7 @@ data class SettingsUiState(
     val sftpHostKeyFingerprint: String? = null,
     val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol = com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
     val ftpUseTls: Boolean = true,
+    val sftpKeepCount: Int = 5,
     val todayRemainingCount: Int = 0
 )
 
@@ -302,7 +303,8 @@ private data class SftpStatusState(
 
 private data class RemoteBackupProtocolState(
     val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol,
-    val ftpUseTls: Boolean
+    val ftpUseTls: Boolean,
+    val sftpKeepCount: Int
 )
 
 private data class SftpSettingsState(
@@ -522,8 +524,9 @@ private data class MainNavigationState(
             ) { remoteDir, intervalMinutes, lastBackupAt, hostKeyFingerprint -> SftpStatusState(remoteDir, intervalMinutes, lastBackupAt, hostKeyFingerprint) },
             combine(
                 userPreferences.remoteBackupProtocolFlow,
-                userPreferences.ftpUseTlsFlow
-            ) { protocol, ftpUseTls -> RemoteBackupProtocolState(protocol, ftpUseTls) }
+                userPreferences.ftpUseTlsFlow,
+                userPreferences.sftpKeepCountFlow
+            ) { protocol, ftpUseTls, keepCount -> RemoteBackupProtocolState(protocol, ftpUseTls, keepCount) }
         ) { config, status, protocol -> SftpSettingsState(config, status, protocol) },
         todayRemainingCount
     ) { core, cloud, cloudSchedule, sftp, count ->
@@ -578,6 +581,7 @@ private data class MainNavigationState(
             sftpHostKeyFingerprint = sftp.status.sftpHostKeyFingerprint,
             remoteBackupProtocol = sftp.protocol.remoteBackupProtocol,
             ftpUseTls = sftp.protocol.ftpUseTls,
+            sftpKeepCount = sftp.protocol.sftpKeepCount,
             todayRemainingCount = count
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
@@ -970,6 +974,25 @@ private data class MainNavigationState(
 
     val cloudBackupEnabled: StateFlow<Boolean> = userPreferences.cloudBackupEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /**
+     * True when *any* backup destination is switched on and usable — what the Today top bar's sync
+     * button gates on. It used to gate on Drive alone, which hid the button entirely from someone
+     * backing up only to their own server or only on-device: the one control for "back up right
+     * now" was invisible precisely to the people who'd set a destination up for it.
+     *
+     * Self-hosted additionally requires a host, since the toggle can be on with the server dialog
+     * never filled in — showing a sync button whose only destination is guaranteed to fail is
+     * worse than not showing it.
+     */
+    val anyBackupDestinationEnabled: StateFlow<Boolean> = combine(
+        userPreferences.cloudBackupEnabledFlow,
+        userPreferences.localBackupEnabledFlow,
+        userPreferences.sftpBackupEnabledFlow,
+        userPreferences.sftpHostFlow
+    ) { cloud, local, selfHosted, host ->
+        cloud || local || (selfHosted && host.isNotBlank())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val cloudBackupAccountEmail: StateFlow<String?> = userPreferences.cloudBackupAccountEmailFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -1883,16 +1906,24 @@ private data class MainNavigationState(
 
     fun setSftpIntervalMinutes(minutes: Long) {
         safeLaunch { userPreferences.setSftpIntervalMinutes(minutes) }
-        // Both protocols' periodic workers are always scheduled (each no-ops unless it's the
-        // currently-selected one, see FtpBackupWorker's doc comment) — reschedule both rather
-        // than branching on which one is "active" right now, so a later protocol switch doesn't
-        // leave the other running on a stale interval from before this call.
-        backupOperations.updateSftpBackupInterval(minutes)
-        backupOperations.updateFtpBackupInterval(minutes)
     }
 
     fun setRemoteBackupProtocol(protocol: com.mj.yata.domain.model.RemoteBackupProtocol) {
         safeLaunch { userPreferences.setRemoteBackupProtocol(protocol) }
+    }
+
+    fun setSftpKeepCount(count: Int) {
+        safeLaunch { userPreferences.setSftpKeepCount(count) }
+    }
+
+    /** Backs up every enabled destination; one result per attempted destination. */
+    fun backupAllNow(onResult: (List<com.mj.yata.domain.model.BackupRunResult>) -> Unit) {
+        safeLaunch { onResult(backupOperations.backupAllConfigured()) }
+    }
+
+    fun setBackupIntervalMinutes(minutes: Long) {
+        safeLaunch { userPreferences.setBackupIntervalMinutes(minutes) }
+        backupOperations.updateBackupInterval(minutes)
     }
 
     fun setFtpUseTls(useTls: Boolean) {
@@ -1955,6 +1986,14 @@ private data class MainNavigationState(
         safeLaunch { onResult(backupOperations.restoreFtpBackup(filename)) }
     }
 
+    fun inspectFtpBackup(filename: String, onResult: (Result<com.mj.yata.domain.model.BackupSummary>) -> Unit) {
+        safeLaunch { onResult(backupOperations.inspectFtpBackup(filename)) }
+    }
+
+    fun inspectSftpBackup(filename: String, onResult: (Result<com.mj.yata.domain.model.BackupSummary>) -> Unit) {
+        safeLaunch { onResult(backupOperations.inspectSftpBackup(filename)) }
+    }
+
     fun streakForTask(taskId: String, onResult: (Int) -> Unit) {
         safeLaunch {
             onResult(repository.getTaskStreak(taskId))
@@ -1967,11 +2006,17 @@ private data class MainNavigationState(
         }
     }
 
+    /**
+     * The one backup schedule, covering every enabled destination. Still writes the old Drive-only
+     * key so a downgrade to a build with per-destination schedules keeps the user's chosen cadence
+     * rather than silently reverting to the default.
+     */
     fun setCloudBackupIntervalMinutes(minutes: Long) {
         safeLaunch {
             userPreferences.setCloudBackupIntervalMinutes(minutes)
+            userPreferences.setBackupIntervalMinutes(minutes)
         }
-        backupOperations.updateCloudBackupInterval(minutes)
+        backupOperations.updateBackupInterval(minutes)
     }
 
     fun setCloudBackupArchiveMonths(months: Int) {

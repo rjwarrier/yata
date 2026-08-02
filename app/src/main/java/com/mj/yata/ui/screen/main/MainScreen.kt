@@ -1,6 +1,8 @@
 package com.mj.yata.ui.screen.main
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.platform.LocalContext
+import com.mj.yata.util.backupResultMessage
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -94,25 +96,26 @@ fun MainScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Manual cloud sync from the Today top bar. Lives here rather than in TodayTab because the
+    // Manual sync from the Today top bar. Lives here rather than in TodayTab because the
     // SnackbarHostState that reports the result belongs to this Scaffold, and because `syncing`
     // has to survive the tab switching underneath it.
-    val cloudBackupEnabled by viewModel.cloudBackupEnabled.collectAsStateWithLifecycle()
+    val cloudBackupEnabled by viewModel.anyBackupDestinationEnabled.collectAsStateWithLifecycle()
     var syncing by remember { mutableStateOf(false) }
-    val syncSuccessMessage = stringResource(R.string.sync_success)
-    val syncFailedMessage = stringResource(R.string.sync_failed)
+    val context = LocalContext.current
 
     fun runManualSync() {
         // Guarded rather than queued: repeated taps during a slow upload should do nothing, not
         // stack up duplicate backups of the same data.
         if (syncing) return
         syncing = true
-        viewModel.cloudBackupNow { result ->
+        // Every configured destination, not just Drive -- this button is "back up now", and a
+        // user with two destinations set up expects both to be current afterwards. The message
+        // names whichever ones failed rather than a blanket "sync failed" that would be wrong for
+        // the destinations that did succeed.
+        viewModel.backupAllNow { results ->
             syncing = false
             scope.launch {
-                snackbarHostState.showSnackbar(
-                    if (result.isSuccess) syncSuccessMessage else syncFailedMessage
-                )
+                snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
             }
         }
     }

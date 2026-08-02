@@ -483,6 +483,26 @@ class JsonExporter @Inject constructor(
         }
     }
 
+    /**
+     * Counts what a backup holds without importing it. Lives here rather than in the backup
+     * managers because this class owns the payload's shape — the key names below are the same
+     * ones [importJson] reads, and they only have to stay in step in one place.
+     */
+    fun summarise(bytes: ByteArray): BackupSummary {
+        val root = JSONObject(String(bytes, Charsets.UTF_8))
+        val tasks = root.optJSONArray("tasks")
+        val totalTasks = tasks?.length() ?: 0
+        var openTasks = 0
+        for (i in 0 until totalTasks) {
+            if (tasks?.optJSONObject(i)?.optBoolean("done", false) == false) openTasks++
+        }
+        return BackupSummary(
+            totalTasks = totalTasks,
+            openTasks = openTasks,
+            totalProjects = root.optJSONArray("projects")?.length() ?: 0
+        )
+    }
+
     private suspend fun importJson(root: JSONObject): Boolean {
             var skippedRows = 0
 
