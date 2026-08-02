@@ -31,7 +31,12 @@ fun TabEmptyState(
     subtitle: String,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Shrinks the icon badge and surrounding padding — for when this isn't the only thing on
+     * screen (e.g. Today's empty state with an upcoming-tasks preview below it), where the full
+     * size is just pushing real content further down rather than centering an otherwise-blank
+     * screen, which is what the default size is actually for. */
+    compact: Boolean = false
 ) {
     val isEnhancedM3 = com.mj.yata.ui.theme.LocalEnhancedM3Theming.current
     val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "emptyPulse")
@@ -50,12 +55,12 @@ fun TabEmptyState(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 56.dp, horizontal = 32.dp),
+            .padding(vertical = if (compact) 20.dp else 56.dp, horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         androidx.compose.foundation.layout.Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(if (compact) 48.dp else 64.dp)
                 .graphicsLayer {
                     scaleX = pulseScale
                     scaleY = pulseScale
@@ -68,10 +73,10 @@ fun TabEmptyState(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(30.dp)
+                modifier = Modifier.size(if (compact) 22.dp else 30.dp)
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(if (compact) 10.dp else 16.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),

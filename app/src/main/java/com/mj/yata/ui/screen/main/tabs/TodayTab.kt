@@ -481,7 +481,11 @@ fun TodayTab(
                                 selectedFilter = "All"
                                 activeStatFilter = null
                             }
-                        }
+                        },
+                        // Full size only when this is the only thing on screen — with an
+                        // upcoming-tasks preview (or its reveal button) below, the large default
+                        // is just pushing real content further down.
+                        compact = !filtered && hasUpcomingPreview
                     )
                 }
 
