@@ -15,6 +15,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+
+- **White/transparent logo uploads for profile and person photos now get the app-icon treatment.**
+  A picked image that's mostly a white glyph on a transparent background (an SVG re-exported as
+  PNG, or any icon-style upload — SVG itself can't be decoded directly) is detected automatically
+  and recolored onto a Material You background instead of rendering invisible white-on-white.
+  Ordinary photos are left untouched.
+
 ### Fixed
 
 - **New tasks in a project with no due date no longer default to today.** Picking (or opening the

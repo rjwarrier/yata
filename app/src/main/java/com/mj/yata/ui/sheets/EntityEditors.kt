@@ -19,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -523,13 +524,25 @@ fun PersonEditorSheet(
         }
     }
 
+    // Same treatment as the app's own wordmark on the About screen — resolved here, in
+    // composition, since ProfilePhotoUtils is a plain (non-Composable) object.
+    val avatarGlyphForeground = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
+    val avatarGlyphBackground = MaterialTheme.colorScheme.primaryContainer.toArgb()
+
     pickedPhotoBitmap?.let { bitmap ->
         com.mj.yata.ui.widgets.CircularImageCropper(
             source = bitmap,
             onConfirm = { cropped ->
                 photoScope.launch {
                     val saved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        com.mj.yata.util.ProfilePhotoUtils.saveCircularAvatar(context, cropped)
+                        // A white/transparent glyph export would otherwise show white-on-white on
+                        // most surfaces — recolor it to read like the app's own icon instead.
+                        val processed = if (com.mj.yata.util.ProfilePhotoUtils.looksLikeTransparentGlyph(cropped)) {
+                            com.mj.yata.util.ProfilePhotoUtils.tintGlyphOnBackground(cropped, avatarGlyphForeground, avatarGlyphBackground)
+                        } else {
+                            cropped
+                        }
+                        com.mj.yata.util.ProfilePhotoUtils.saveCircularAvatar(context, processed)
                     }
                     photoUri = saved.toString()
                     pickedPhotoBitmap = null

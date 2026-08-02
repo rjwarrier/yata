@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.net.Uri
@@ -79,5 +80,74 @@ object ProfilePhotoUtils {
         val file = File(dir, "avatar_${System.currentTimeMillis()}_${java.util.UUID.randomUUID()}.png")
         FileOutputStream(file).use { out -> output.compress(Bitmap.CompressFormat.PNG, 100, out) }
         return Uri.fromFile(file)
+    }
+
+    /**
+     * True when [bitmap] looks like a white/near-white glyph on a transparent background — a
+     * logomark exported as a transparent PNG (an SVG can't be decoded by [decodeSampledBitmap] at
+     * all, since [BitmapFactory] only reads raster formats; a transparent PNG is the export that
+     * actually reaches here) — rather than a photo. A real photo essentially never has meaningful
+     * transparency; this only needs to be roughly right, not exact.
+     *
+     * Sampled on a coarse grid rather than every pixel — this runs on a full-resolution crop, and
+     * a rough read is all the caller needs to decide whether to recolor it.
+     */
+    fun looksLikeTransparentGlyph(bitmap: Bitmap): Boolean {
+        val width = bitmap.width
+        val height = bitmap.height
+        if (width == 0 || height == 0) return false
+        val stepX = maxOf(1, width / 64)
+        val stepY = maxOf(1, height / 64)
+
+        var sampled = 0
+        var transparent = 0
+        var opaqueNearWhite = 0
+        var opaqueOther = 0
+        var y = 0
+        while (y < height) {
+            var x = 0
+            while (x < width) {
+                val pixel = bitmap.getPixel(x, y)
+                sampled++
+                if ((pixel ushr 24) and 0xFF < 32) {
+                    transparent++
+                } else {
+                    val r = (pixel ushr 16) and 0xFF
+                    val g = (pixel ushr 8) and 0xFF
+                    val b = pixel and 0xFF
+                    if (r > 200 && g > 200 && b > 200) opaqueNearWhite++ else opaqueOther++
+                }
+                x += stepX
+            }
+            y += stepY
+        }
+        if (sampled == 0) return false
+
+        val opaqueCount = opaqueNearWhite + opaqueOther
+        // Needs real transparency — a photo rarely has any at all — and, of whatever isn't
+        // transparent, needs to be overwhelmingly near-white: a few anti-aliased edge pixels are
+        // fine, a photo's mix of colors is not.
+        return transparent.toFloat() / sampled > 0.15f &&
+            opaqueCount > 0 &&
+            opaqueNearWhite.toFloat() / opaqueCount > 0.85f
+    }
+
+    /**
+     * Recolors [bitmap]'s content to [foregroundColor] (preserving its alpha, so a glyph's shape
+     * and anti-aliased edges survive) over a solid [backgroundColor] fill — turning a white
+     * glyph-on-transparent export into something that reads on every surface, the same treatment
+     * the app's own wordmark gets on the About screen. Only meaningful for images
+     * [looksLikeTransparentGlyph] returns true for; called on anything else it would just paint
+     * over the photo's own colors.
+     */
+    fun tintGlyphOnBackground(bitmap: Bitmap, foregroundColor: Int, backgroundColor: Int): Bitmap {
+        val output = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        canvas.drawColor(backgroundColor)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            colorFilter = PorterDuffColorFilter(foregroundColor, PorterDuff.Mode.SRC_IN)
+        }
+        canvas.drawBitmap(bitmap, 0f, 0f, paint)
+        return output
     }
 }

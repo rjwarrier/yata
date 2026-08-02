@@ -2915,13 +2915,27 @@ fun SettingsScreen(
         }
     )
 
+    // Same treatment as the app's own wordmark on the About screen — resolved here, in
+    // composition, since ProfilePhotoUtils is a plain (non-Composable) object.
+    val avatarGlyphForeground = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
+    val avatarGlyphBackground = MaterialTheme.colorScheme.primaryContainer.toArgb()
+
     pickedPhotoBitmap?.let { bitmap ->
         CircularImageCropper(
             source = bitmap,
             onConfirm = { cropped ->
                 scope.launch {
                     val savedUri = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        ProfilePhotoUtils.saveCircularProfilePhoto(context, cropped)
+                        // A white/transparent glyph export (an SVG re-exported as PNG, or any
+                        // "app icon"-style upload) would otherwise show white-on-white on most
+                        // surfaces — recolor it to read like the app's own icon instead of
+                        // silently going invisible.
+                        val processed = if (ProfilePhotoUtils.looksLikeTransparentGlyph(cropped)) {
+                            ProfilePhotoUtils.tintGlyphOnBackground(cropped, avatarGlyphForeground, avatarGlyphBackground)
+                        } else {
+                            cropped
+                        }
+                        ProfilePhotoUtils.saveCircularProfilePhoto(context, processed)
                     }
                     viewModel.setUserPhotoUri(savedUri.toString())
                     pickedPhotoBitmap = null
