@@ -22,23 +22,28 @@ import org.apache.commons.net.ftp.FTPReply
 import org.apache.commons.net.ftp.FTPSClient
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.security.KeyStore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 
 /**
  * FTP/FTPS counterpart to [com.mj.yata.data.sftp.SftpBackupManager] — same JSON payload, same
  * host/port/username/remote-dir config (shared between the two protocols; see
  * [UserPreferences]'s doc comment on `SFTP_BACKUP_ENABLED` and neighbours), different transport.
  *
- * Unlike SFTP, there's no host-key/TOFU concept here: FTPS certificate validation goes through
- * the platform's own trust store via [FTPSClient], the same as any HTTPS connection this app
- * makes — no custom pinning, no bypass. A self-signed certificate on the user's own server will
- * fail to validate, same as it would in a browser; that's a real limitation of this
- * implementation (documented, not silently worked around by disabling validation) rather than a
- * gap in what FTPS itself supports.
+ * Unlike SFTP, there's no host-key/TOFU concept here. FTPS still protects the control channel
+ * and, when possible, the data channel, but a lot of self-hosted FTP servers use legacy
+ * certificates without proper subjectAltName entries. Enforcing browser-style hostname checks
+ * would break those existing setups, so this client validates the certificate chain without
+ * requiring a hostname/SAN match.
  */
 @Singleton
 class FtpBackupManager @Inject constructor(
@@ -110,7 +115,14 @@ class FtpBackupManager @Inject constructor(
                     try {
                         ensureRemoteDir(client, remoteDir)
                         check(client.changeWorkingDirectory(remoteDir)) { "Could not open remote folder $remoteDir" }
-                        upload(client, filename, bytes)
+                        val temporaryFilename = ".$filename.part"
+                        upload(client, temporaryFilename, bytes)
+                        if (!client.rename(temporaryFilename, filename)) {
+                            deleteQuietly(client, temporaryFilename)
+                            throw IllegalStateException(
+                                "Could not publish completed backup: ${client.replyString.trim()}"
+                            )
+                        }
                         pruneOldBackups(client, remoteDir, keepCount)
                     } finally {
                         disconnectQuietly(client)
@@ -133,30 +145,35 @@ class FtpBackupManager @Inject constructor(
      * Anything short of a byte-exact match is deleted and reported as a failure.
      */
     private fun upload(client: FTPClient, filename: String, bytes: ByteArray) {
-        val stream = client.storeFileStream(filename)
-        if (stream == null) {
-            // The server accepts STOR and creates the (empty) file before the data connection is
-            // established, so a data-connection failure still leaves a 0-byte file behind that
-            // looks like a backup. Clean it up rather than leave that lying around.
+        var commandCompleted = false
+        try {
+            val stream = client.storeFileStream(filename)
+                ?: throw IllegalStateException(
+                    "Could not open data connection: ${client.replyString.trim()}"
+                )
+            // Flush before close so the payload is on the wire ahead of the TLS shutdown, then let
+            // completePendingCommand read the server's real verdict (226 transferred vs 451 aborted).
+            stream.use {
+                it.write(bytes)
+                it.flush()
+            }
+            val completed = client.completePendingCommand()
+            commandCompleted = true
+            if (!completed) {
+                throw IllegalStateException("Transfer aborted by server: ${client.replyString.trim()}")
+            }
+            val uploaded = remoteSize(client, filename)
+            if (uploaded != null && uploaded != bytes.size.toLong()) {
+                throw IllegalStateException(
+                    "Upload truncated — $uploaded of ${bytes.size} bytes reached the server"
+                )
+            }
+        } catch (t: Throwable) {
+            // A control command cannot be issued until the pending STOR reply is consumed. Do this
+            // best-effort after a write/close failure, then remove the unpublished temporary file.
+            if (!commandCompleted) runCatching { client.completePendingCommand() }
             deleteQuietly(client, filename)
-            throw IllegalStateException("Could not open data connection: ${client.replyString.trim()}")
-        }
-        // Flush before close so the payload is on the wire ahead of the TLS shutdown, then let
-        // completePendingCommand read the server's real verdict (226 transferred vs 451 aborted).
-        stream.use {
-            it.write(bytes)
-            it.flush()
-        }
-        if (!client.completePendingCommand()) {
-            deleteQuietly(client, filename)
-            throw IllegalStateException("Transfer aborted by server: ${client.replyString.trim()}")
-        }
-        val uploaded = remoteSize(client, filename)
-        if (uploaded != null && uploaded != bytes.size.toLong()) {
-            deleteQuietly(client, filename)
-            throw IllegalStateException(
-                "Upload truncated — $uploaded of ${bytes.size} bytes reached the server"
-            )
+            throw t
         }
     }
 
@@ -232,6 +249,18 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
+    /** Read-only access for comparing a server backup with current local data. */
+    suspend fun readBackupJson(filename: String): Result<ByteArray> = sessionMutex.withLock {
+        withContext(Dispatchers.IO) {
+            try {
+                Result.success(fetchBackupJson(filename))
+            } catch (e: Exception) {
+                Log.w(TAG, "readBackupJson failed", e)
+                Result.failure(e)
+            }
+        }
+    }
+
     /** Downloads, verifies length, decrypts if needed, unzips if needed. */
     private suspend fun fetchBackupJson(filename: String): ByteArray {
         val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -288,9 +317,19 @@ class FtpBackupManager @Inject constructor(
         // dedicated TLS-from-the-start port) -- explicit is what virtually every FTPS server
         // actually expects on the standard port 21, implicit is a legacy convention tied to a
         // different port that's uncommon on self-hosted setups.
-        val client: FTPClient = if (useTls) FTPSClient(false) else FTPClient()
+        val client: FTPClient = if (useTls) {
+            FTPSClient(false).apply {
+                // Commons Net's default trust manager only checks certificate dates. Install the
+                // platform CA trust manager explicitly, but do not enable endpoint identification:
+                // many self-hosted FTPS servers have certificates with no matching SAN, and the
+                // Settings screen exposes only "use FTPS" rather than a separate strict TLS mode.
+                setTrustManager(platformTrustManager())
+            }
+        } else {
+            FTPClient()
+        }
         client.connectTimeout = CONNECT_TIMEOUT_MS
-        client.connect(host, port)
+        connectPreferIpv4(client, host, port)
         val connectReply = client.replyCode
         if (!FTPReply.isPositiveCompletion(connectReply)) {
             client.disconnect()
@@ -334,6 +373,38 @@ class FtpBackupManager @Inject constructor(
             throw e
         }
         return client
+    }
+
+    private fun connectPreferIpv4(client: FTPClient, host: String, port: Int) {
+        val addresses = try {
+            InetAddress.getAllByName(host).toList()
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not resolve $host manually; falling back to FTPClient resolver", e)
+            client.connect(host, port)
+            return
+        }
+        val ordered = (addresses.filterIsInstance<Inet4Address>() +
+            addresses.filterNot { it is Inet4Address })
+            .distinctBy { it.hostAddress }
+
+        var lastError: Exception? = null
+        for (address in ordered) {
+            try {
+                client.connect(address, port)
+                return
+            } catch (e: Exception) {
+                lastError = e
+                disconnectQuietly(client)
+            }
+        }
+        throw lastError ?: IOException("Could not connect to $host:$port")
+    }
+
+    private fun platformTrustManager(): X509TrustManager {
+        val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+        factory.init(null as KeyStore?)
+        return factory.trustManagers.filterIsInstance<X509TrustManager>().singleOrNull()
+            ?: throw IllegalStateException("Platform X.509 trust manager is unavailable")
     }
 
     private fun zip(jsonBytes: ByteArray): ByteArray {

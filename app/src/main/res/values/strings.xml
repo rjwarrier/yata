@@ -87,7 +87,7 @@
     <string name="settings_section_manage">MANAGE</string>
     <string name="settings_section_privacy">PRIVACY &amp; SECURITY</string>
     <string name="settings_section_backup">BACKUP &amp; DATA</string>
-    <string name="settings_section_cloud_backup">CLOUD BACKUP</string>
+    <string name="settings_section_cloud_backup">REMOTE BACKUP</string>
     <string name="settings_section_local_backup">LOCAL BACKUP</string>
     <string name="settings_section_help_about">HELP &amp; ABOUT</string>
     <string name="settings_section_navigation">NAVIGATION</string>
@@ -390,8 +390,8 @@
 
     <!-- Self-hosted (SFTP) backup -->
     <string name="settings_section_sftp_backup">Self-Hosted Backup</string>
-    <string name="settings_sftp_backup">Self-hosted (SFTP)</string>
-    <string name="settings_sftp_backup_summary">Back up to your own server over SFTP — no account, no vendor lock-in.</string>
+    <string name="settings_sftp_backup">Self-hosted server</string>
+    <string name="settings_sftp_backup_summary">Back up to your own server over SFTP, FTPS, or FTP.</string>
     <string name="settings_sftp_configure_server">Server</string>
     <string name="settings_sftp_not_configured">Not configured</string>
     <!-- %1$s is a formatted relative time, e.g. "2 hours ago". -->
@@ -547,6 +547,7 @@
     <string name="settings_change_profile_photo">Change profile photo</string>
     <string name="settings_compare_with_backup">Compare with Backup</string>
     <string name="settings_compare_with_backup_2">Compare with backup</string>
+    <string name="settings_cloud_backup_limited_testing">Option under limited testing</string>
     <string name="settings_delete_all_data">Delete all data</string>
     <string name="settings_delete_all_data_2">Delete all data?</string>
     <string name="settings_dismiss">Dismiss</string>
@@ -920,7 +921,12 @@
     <string name="settings_data_kept_when_hidden">Your data is kept even when hidden.</string>
 
     <!-- Settings: Cloud backup -->
-    <string name="settings_cloud_backup">Cloud Backup</string>
+    <string name="settings_cloud_backup">Remote backup destinations</string>
+    <string name="settings_cloud_backup_summary">Keep off-device copies in Google Drive, on your own server, or both.</string>
+    <string name="settings_backup_tab_drive">Drive</string>
+    <string name="settings_backup_tab_self_host">Self Host</string>
+    <string name="settings_google_drive_backup">Google Drive</string>
+    <string name="settings_google_drive_backup_summary">Back up to your Google Drive account.</string>
     <string name="settings_wifi_only">Wi-Fi only</string>
     <string name="settings_wifi_only_summary">Skip backups on mobile data.</string>
     <string name="settings_archive_old_completed">Archive old completed tasks</string>
@@ -955,6 +961,7 @@
     <!-- Cloud backup retention. %1$d is how many backups are kept before the oldest is pruned. -->
     <string name="settings_backups_to_keep">Backups to keep</string>
     <string name="settings_backups_to_keep_summary">Keep the last %1$d cloud backups — older ones are pruned automatically.</string>
+    <string name="settings_remote_backups_to_keep_summary">Keep the last %1$d backups in each remote destination — older ones are pruned automatically.</string>
     <!-- Shown above the backup-frequency choices, so the schedule isn't mistaken for the only
          time a backup happens. -->
     <string name="settings_backup_frequency_explainer">Applies to every destination you\'ve switched on — Google Drive, this device, and your own server are all backed up together. A backup also runs a couple of minutes after any task change, regardless of this setting; this controls the periodic safety net underneath that.</string>

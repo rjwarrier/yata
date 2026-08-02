@@ -51,6 +51,7 @@ class BackupOperations @Inject constructor(
     private companion object {
         /** Matches the window the Drive-only debounce used, so edit bursts behave as before. */
         const val DEBOUNCE_MILLIS = 2 * 60 * 1000L
+        const val DRIVE_LIMITED_TEST_EMAIL = "rjwarrier@gmail.com"
     }
 
     private val debounceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -69,7 +70,7 @@ class BackupOperations @Inject constructor(
      * attempted and don't appear in the list.
      */
     suspend fun backupAllConfigured(): List<BackupRunResult> = buildList {
-        if (userPreferences.cloudBackupEnabledFlow.first()) {
+        if (userPreferences.cloudBackupEnabledFlow.first() && isDriveBackupAvailable()) {
             add(attempt(BackupDestination.CLOUD) { cloudBackupManager.backupNow() })
         }
         if (userPreferences.localBackupEnabledFlow.first()) {
@@ -134,7 +135,12 @@ class BackupOperations @Inject constructor(
 
     suspend fun cloudSignOut() = cloudBackupManager.signOut()
 
-    suspend fun cloudBackupNow(): Result<Unit> = cloudBackupManager.backupNow()
+    suspend fun cloudBackupNow(): Result<Unit> =
+        if (isDriveBackupAvailable()) {
+            cloudBackupManager.backupNow()
+        } else {
+            Result.failure(IllegalStateException("Google Drive backup is under limited testing"))
+        }
 
     suspend fun listCloudBackups(): Result<List<CloudBackupEntry>> = cloudBackupManager.listBackups()
 
@@ -142,6 +148,33 @@ class BackupOperations @Inject constructor(
 
     suspend fun compareWithLastBackup(tasks: List<Task>): Result<CloudBackupDiff> =
         cloudBackupManager.compareWithLatestBackup(tasks)
+
+    suspend fun compareWithLastSelfHostedBackup(tasks: List<Task>): Result<CloudBackupDiff> {
+        val useFtp = userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP
+        val backups = (if (useFtp) {
+            ftpBackupManager.listBackups()
+        } else {
+            sftpBackupManager.listBackups()
+        }).getOrElse { return Result.failure(it) }
+        val latest = backups.firstOrNull()
+            ?: return Result.failure(IllegalStateException("No server backups found yet"))
+        val bytes = (if (useFtp) {
+            ftpBackupManager.readBackupJson(latest)
+        } else {
+            sftpBackupManager.readBackupJson(latest)
+        }).getOrElse { return Result.failure(it) }
+        return try {
+            Result.success(
+                cloudBackupManager.compareBackupJsonWithTasks(
+                    backupJsonBytes = bytes,
+                    currentTasks = tasks,
+                    backupCreatedTime = backupCreatedTimeFromFilename(latest)
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     /** Reschedules the single periodic backup job that covers every destination. */
     fun updateBackupInterval(minutes: Long) =
@@ -177,4 +210,23 @@ class BackupOperations @Inject constructor(
 
     suspend fun inspectFtpBackup(filename: String): Result<BackupSummary> =
         ftpBackupManager.inspectBackup(filename)
+
+    private suspend fun isDriveBackupAvailable(): Boolean =
+        userPreferences.userEmailFlow.first().trim().equals(DRIVE_LIMITED_TEST_EMAIL, ignoreCase = true)
+
+    private fun backupCreatedTimeFromFilename(filename: String): String {
+        val name = filename.substringAfterLast('/')
+        val match = Regex("""yata_backup_(\d{8})_(\d{6})\.json""").matchEntire(name)
+            ?: return filename
+        return try {
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss", java.util.Locale.US)
+            val localDateTime = java.time.LocalDateTime.parse(
+                match.groupValues[1] + match.groupValues[2],
+                formatter
+            )
+            localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toString()
+        } catch (e: Exception) {
+            filename
+        }
+    }
 }

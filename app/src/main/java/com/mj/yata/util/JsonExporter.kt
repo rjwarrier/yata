@@ -17,6 +17,14 @@ import kotlinx.coroutines.Dispatchers
 import javax.inject.Inject
 import javax.inject.Singleton
 
+internal const val CURRENT_BACKUP_VERSION = 4
+
+/** Rejects arbitrary JSON before restore mutates any state. Every YATA backup, including an
+ * archive-only payload and a legitimately empty database, contains a version and a tasks array. */
+internal fun isRecognizedBackup(root: JSONObject): Boolean =
+    root.optInt("version", -1) in 1..CURRENT_BACKUP_VERSION &&
+        root.optJSONArray("tasks") != null
+
 @Singleton
 class JsonExporter @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -119,7 +127,9 @@ class JsonExporter @Inject constructor(
     suspend fun exportData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
             val root = buildBackupJson(loadBackupData())
-            context.contentResolver.openOutputStream(uri)?.use { os ->
+            val outputStream = context.contentResolver.openOutputStream(uri)
+                ?: return@withContext false
+            outputStream.use { os ->
                 OutputStreamWriter(os).use { writer ->
                     writer.write(root.toString(2))
                 }
@@ -165,7 +175,7 @@ class JsonExporter @Inject constructor(
 
         val primary = buildBackupJson(data.copy(tasks = recentTasks, comments = recentComments))
         val archive = JSONObject().apply {
-            put("version", 4)
+            put("version", CURRENT_BACKUP_VERSION)
             put("archive", true)
             put("tasks", taskListToJson(oldTasks))
             put("comments", commentListToJson(oldComments))
@@ -184,7 +194,7 @@ class JsonExporter @Inject constructor(
             val comments = data.comments
 
             val root = JSONObject()
-            root.put("version", 4)
+            root.put("version", CURRENT_BACKUP_VERSION)
             // The user's own profile — avatar, name, email. All three live in DataStore rather
             // than the database, so they are not part of any entity list and have to be carried
             // at the root. Blank name/email are omitted rather than written as "", so restoring a
@@ -490,6 +500,7 @@ class JsonExporter @Inject constructor(
      */
     fun summarise(bytes: ByteArray): BackupSummary {
         val root = JSONObject(String(bytes, Charsets.UTF_8))
+        require(isRecognizedBackup(root)) { "File is not a recognized YATA backup" }
         val tasks = root.optJSONArray("tasks")
         val totalTasks = tasks?.length() ?: 0
         var openTasks = 0
@@ -504,6 +515,10 @@ class JsonExporter @Inject constructor(
     }
 
     private suspend fun importJson(root: JSONObject): Boolean {
+            if (!isRecognizedBackup(root)) {
+                Log.w("JsonExporter", "importJson: unrecognized or unsupported backup payload")
+                return false
+            }
             var skippedRows = 0
 
             /** Runs [block] for row [i] of [label], logging and skipping just that row (instead
@@ -847,6 +862,9 @@ class JsonExporter @Inject constructor(
             if (skippedRows > 0) {
                 Log.w("JsonExporter", "importJson: completed with $skippedRows malformed row(s) skipped")
             }
-            return true
+            // Callers must not announce a successful restore when any requested data was lost.
+            // Successfully imported rows remain available, but the failure result makes the
+            // partial restore explicit instead of silently presenting it as complete.
+            return skippedRows == 0
     }
 }

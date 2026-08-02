@@ -187,10 +187,10 @@ fun TodayTab(
     // when its own day arrives.
     val tomorrowStr = remember(today) { today.plusDays(1).toString() }
     val dayAfterTomorrowStr = remember(today) { today.plusDays(2).toString() }
-    val tomorrowPreviewTasks = remember(tasks, tomorrowStr) {
+    val tomorrowPreviewTasks = remember(tasks, tomorrowStr, sortMode) {
         tasks.filter { !it.done && it.due == tomorrowStr }.sortedByMode(sortMode)
     }
-    val dayAfterTomorrowPreviewTasks = remember(tasks, dayAfterTomorrowStr) {
+    val dayAfterTomorrowPreviewTasks = remember(tasks, dayAfterTomorrowStr, sortMode) {
         tasks.filter { !it.done && it.due == dayAfterTomorrowStr }.sortedByMode(sortMode)
     }
     val hasUpcomingPreview = tomorrowPreviewTasks.isNotEmpty() || dayAfterTomorrowPreviewTasks.isNotEmpty()

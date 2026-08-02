@@ -208,6 +208,18 @@ interface TaskDao {
     @Query("SELECT * FROM tasks")
     fun getAll(): Flow<List<TaskEntity>>
 
+    /** Rows Room will cascade when a list is deleted, captured first so external alarms can be
+     * cancelled before those rows disappear. */
+    @Query("SELECT * FROM tasks WHERE listId = :listId")
+    suspend fun getTasksCascadedByListDelete(listId: String): List<TaskEntity>
+
+    /** Deleting a project also cascades its lists, so include tasks attached through either FK. */
+    @Query(
+        "SELECT * FROM tasks WHERE projectId = :projectId " +
+            "OR listId IN (SELECT id FROM lists WHERE projectId = :projectId)"
+    )
+    suspend fun getTasksCascadedByProjectDelete(projectId: String): List<TaskEntity>
+
     @Query("SELECT * FROM tasks WHERE id = :id")
     fun getById(id: String): Flow<TaskEntity?>
 

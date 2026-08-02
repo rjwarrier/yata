@@ -447,7 +447,10 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteProject(project: Project) {
+        val tasksToDelete = db.taskDao().getTasksCascadedByProjectDelete(project.id)
+        tasksToDelete.forEach { reminderScheduler.cancelReminder(it) }
         db.projectDao().delete(project.toEntity())
+        widgetUpdater.notifyTasksChanged()
     }
 
     override suspend fun deleteProjectOnly(project: Project) {
@@ -482,7 +485,10 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteList(list: YataList) {
+        val tasksToDelete = db.taskDao().getTasksCascadedByListDelete(list.id)
+        tasksToDelete.forEach { reminderScheduler.cancelReminder(it) }
         db.listDao().delete(list.toEntity())
+        widgetUpdater.notifyTasksChanged()
     }
 
     override suspend fun setListsArchived(ids: List<String>, archived: Boolean) {

@@ -6,8 +6,11 @@ import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.common.SecurityUtils
 import net.schmizz.sshj.sftp.SFTPClient
@@ -21,8 +24,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /** The outcome of [SftpBackupManager.testConnection] — always carries the server's host key
- * fingerprint when the transport got far enough to see one, success or not, so the caller can
- * offer to pin it (first connection) or warn that it changed (host key mismatch). */
+ * fingerprint when the transport got far enough to see one, success or not. An unpinned first
+ * test intentionally stops before authentication and therefore returns `success = false`. */
 data class SftpConnectionTestResult(
     val success: Boolean,
     val fingerprint: String?,
@@ -32,6 +35,9 @@ data class SftpConnectionTestResult(
 /** Thrown by [SftpBackupManager] when a connection is attempted with required fields unset. */
 class SftpNotConfiguredException(message: String) : Exception(message)
 
+/** No authentication is attempted until the user has confirmed the observed host key. */
+class SftpHostKeyNotTrustedException(message: String) : Exception(message)
+
 /**
  * On-device counterpart to [com.mj.yata.data.cloud.CloudBackupManager] and
  * [com.mj.yata.data.local.backup.LocalBackupManager] — same JSON payload (via [JsonExporter]),
@@ -40,13 +46,13 @@ class SftpNotConfiguredException(message: String) : Exception(message)
  * SFTP works.
  *
  * Host key verification is TOFU (trust-on-first-use), matching how every mainstream SSH client
- * behaves: the fingerprint observed on the first successful connection is pinned in
+ * behaves: the fingerprint observed during the first unauthenticated key exchange is pinned in
  * [UserPreferences.sftpHostKeyFingerprintFlow], and every later connection must present the exact
  * same key or the connection is refused outright — never silently downgraded to "accept
  * anything," which is what would make this a real man-in-the-middle hole rather than a
- * self-hosted convenience. [testConnection] is the only entry point that connects when nothing is
- * pinned yet, specifically so the UI can show the fingerprint and ask the user to confirm it
- * before [backupNow]/[restoreBackup] (used by the scheduled worker too) will pin anything.
+ * self-hosted convenience. [testConnection] is the only entry point that reaches an unpinned
+ * server, and it rejects the key after observing its fingerprint so no credential is sent. The UI
+ * asks the user to confirm it before a second, authenticated test or any backup/restore can run.
  */
 @Singleton
 class SftpBackupManager @Inject constructor(
@@ -62,6 +68,8 @@ class SftpBackupManager @Inject constructor(
         private const val CONNECT_TIMEOUT_MS = 15_000
     }
 
+    private val sessionMutex = Mutex()
+
     /** Pins [fingerprint] as the trusted host key — called only after the user has explicitly
      * confirmed it (first connection) or deliberately chosen to trust a changed key. */
     suspend fun pinHostKey(fingerprint: String) {
@@ -72,7 +80,7 @@ class SftpBackupManager @Inject constructor(
     suspend fun testConnection(): SftpConnectionTestResult = withContext(Dispatchers.IO) {
         var observed: String? = null
         try {
-            val ssh = buildClient { observed = it }
+            val ssh = buildClient(allowUnpinnedProbe = true) { observed = it }
             ssh.disconnect()
             SftpConnectionTestResult(success = true, fingerprint = observed, error = null)
         } catch (e: Exception) {
@@ -81,35 +89,53 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
-    suspend fun backupNow(): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val remoteDir = userPreferences.sftpRemoteDirFlow.first()
-            val keepCount = userPreferences.sftpKeepCountFlow.first()
-            val (primaryJson, _) = jsonExporter.buildSplitBackupJson(archiveMonths = 0)
-            val bytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
-            val filename = FILENAME_PREFIX +
-                SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                FILENAME_SUFFIX
-
-            val tempFile = File.createTempFile("sftp_upload", ".json", context.cacheDir)
+    suspend fun backupNow(): Result<Unit> = sessionMutex.withLock {
+        withContext(Dispatchers.IO) {
             try {
-                tempFile.writeBytes(bytes)
-                buildClient().use { ssh ->
-                    ssh.newSFTPClient().use { sftp ->
-                        ensureRemoteDir(sftp, remoteDir)
-                        sftp.put(tempFile.absolutePath, "$remoteDir/$filename")
-                        pruneOldBackups(sftp, remoteDir, keepCount)
-                    }
-                }
-            } finally {
-                tempFile.delete()
-            }
+                val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+                val keepCount = userPreferences.sftpKeepCountFlow.first()
+                val (primaryJson, _) = jsonExporter.buildSplitBackupJson(archiveMonths = 0)
+                val bytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
+                val filename = FILENAME_PREFIX +
+                    SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
+                    FILENAME_SUFFIX
 
-            userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.w(TAG, "backupNow failed", e)
-            Result.failure(e)
+                val tempFile = File.createTempFile("sftp_upload", ".json", context.cacheDir)
+                try {
+                    tempFile.writeBytes(bytes)
+                    // Once STOR begins, finish publishing or remove the temporary remote object.
+                    // Cancellation between put and rename must never expose a partial backup.
+                    withContext(NonCancellable) {
+                        buildClient().use { ssh ->
+                            ssh.newSFTPClient().use { sftp ->
+                                ensureRemoteDir(sftp, remoteDir)
+                                val finalPath = "$remoteDir/$filename"
+                                val temporaryPath = "$remoteDir/.$filename.part"
+                                try {
+                                    sftp.put(tempFile.absolutePath, temporaryPath)
+                                    val uploadedSize = sftp.stat(temporaryPath).size
+                                    check(uploadedSize == bytes.size.toLong()) {
+                                        "Upload truncated — $uploadedSize of ${bytes.size} bytes reached the server"
+                                    }
+                                    sftp.rename(temporaryPath, finalPath)
+                                } catch (t: Throwable) {
+                                    runCatching { sftp.rm(temporaryPath) }
+                                    throw t
+                                }
+                                pruneOldBackups(sftp, remoteDir, keepCount)
+                            }
+                        }
+                    }
+                } finally {
+                    tempFile.delete()
+                }
+
+                userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.w(TAG, "backupNow failed", e)
+                Result.failure(e)
+            }
         }
     }
 
@@ -157,6 +183,16 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    /** Read-only access for comparing a server backup with current local data. */
+    suspend fun readBackupJson(filename: String): Result<ByteArray> = withContext(Dispatchers.IO) {
+        try {
+            Result.success(download(filename))
+        } catch (e: Exception) {
+            Log.w(TAG, "readBackupJson failed", e)
+            Result.failure(e)
+        }
+    }
+
     private suspend fun download(filename: String): ByteArray {
         val tempFile = File.createTempFile("sftp_download", ".json", context.cacheDir)
         try {
@@ -174,7 +210,10 @@ class SftpBackupManager @Inject constructor(
      * whether to accept it — so callers can capture the fingerprint even when verification then
      * rejects it (a changed key) or auth afterward fails (wrong password), neither of which is
      * the caller finding out what key the server actually offered. */
-    private suspend fun buildClient(onHostKeyObserved: (String) -> Unit = {}): SSHClient {
+    private suspend fun buildClient(
+        allowUnpinnedProbe: Boolean = false,
+        onHostKeyObserved: (String) -> Unit = {}
+    ): SSHClient {
         val host = userPreferences.sftpHostFlow.first()
         val port = userPreferences.sftpPortFlow.first()
         val username = userPreferences.sftpUsernameFlow.first()
@@ -184,6 +223,11 @@ class SftpBackupManager @Inject constructor(
         if (host.isBlank() || username.isBlank()) {
             throw SftpNotConfiguredException("SFTP host and username must be set")
         }
+        if (pinnedFingerprint == null && !allowUnpinnedProbe) {
+            throw SftpHostKeyNotTrustedException(
+                "SFTP server is not trusted yet — test the connection and confirm its host key"
+            )
+        }
 
         val ssh = SSHClient()
         ssh.connectTimeout = CONNECT_TIMEOUT_MS
@@ -191,7 +235,9 @@ class SftpBackupManager @Inject constructor(
             override fun verify(hostname: String, port: Int, key: PublicKey): Boolean {
                 val fingerprint = fingerprintOf(key)
                 onHostKeyObserved(fingerprint)
-                return pinnedFingerprint == null || pinnedFingerprint == fingerprint
+                // An unpinned test connection deliberately fails immediately after key exchange.
+                // The fingerprint is returned to the UI, but no password/private key is sent.
+                return pinnedFingerprint != null && pinnedFingerprint == fingerprint
             }
 
             // Used by sshj to prefer already-known key algorithms during negotiation (the way an

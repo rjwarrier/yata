@@ -212,6 +212,7 @@ fun SettingsScreen(
     val ftpUseTls = uiState.ftpUseTls
     val sftpKeepCount = uiState.sftpKeepCount
     val isFtpProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
+    val isGoogleDriveBackupAvailable = userEmail.trim().equals("rjwarrier@gmail.com", ignoreCase = true)
 
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
@@ -252,7 +253,6 @@ fun SettingsScreen(
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
     var sftpBackupList by remember { mutableStateOf<List<String>>(emptyList()) }
     var isRestoringSftpBackup by remember { mutableStateOf(false) }
-    var isSftpBackingUp by remember { mutableStateOf(false) }
     var pendingSftpRestoreFilename by remember { mutableStateOf<String?>(null) }
     var sftpBackupSummary by remember { mutableStateOf<com.mj.yata.domain.model.BackupSummary?>(null) }
     var isInspectingSftpBackup by remember { mutableStateOf(false) }
@@ -276,10 +276,9 @@ fun SettingsScreen(
         SettingsSearchTarget(stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", 9),
         SettingsSearchTarget(stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", 10),
         SettingsSearchTarget(stringResource(R.string.settings_section_backup), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", 11),
-        SettingsSearchTarget(stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "cloud backup restore wifi frequency", 12),
+        SettingsSearchTarget(stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "cloud backup google drive self hosted sftp ftp server restore wifi frequency", 12),
         SettingsSearchTarget(stringResource(R.string.settings_section_local_backup), stringResource(R.string.settings_search_local_summary), "local backup restore", 13),
-        SettingsSearchTarget(stringResource(R.string.settings_section_sftp_backup), stringResource(R.string.settings_search_sftp_summary), "sftp ssh server self hosted host key private", 14),
-        SettingsSearchTarget(stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide", 15)
+        SettingsSearchTarget(stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide", 14)
     )
     val normalizedSettingsQuery = settingsSearchQuery.trim().lowercase()
     val filteredSettingsTargets = remember(normalizedSettingsQuery, settingsSearchTargets) {
@@ -2057,6 +2056,39 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable { showArchiveMonthsDialog = true }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Archive,
+                            contentDescription = stringResource(R.string.settings_archive_old_completed),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_archive_old_completed),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = formatArchiveMonths(cloudBackupArchiveMonths),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .clickable(enabled = !isDeletingAll) { showDeleteAllDialog = true }
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -2088,121 +2120,590 @@ fun SettingsScreen(
             }
         }
         item {
-            // 4. Cloud Backup Section
+            // 4. Remote Backup Section: off-device destinations live together so the user can
+            // reason about "where else is my data copied?" without jumping between cards.
             SettingsSectionHeader(stringResource(R.string.settings_section_cloud_backup), Icons.Default.CloudSync)
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SettingsSectionCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudSync,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_cloud_backup),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_cloud_backup_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                var selectedRemoteBackupTab by rememberSaveable { mutableStateOf(0) }
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    SegmentedButton(
+                        selected = selectedRemoteBackupTab == 0,
+                        onClick = { selectedRemoteBackupTab = 0 },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.CloudUpload,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.settings_backup_tab_drive),
+                                maxLines = 1,
+                                color = if (isGoogleDriveBackupAvailable || selectedRemoteBackupTab == 0) {
+                                    Color.Unspecified
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+                                }
+                            )
+                        }
+                    )
+                    SegmentedButton(
+                        selected = selectedRemoteBackupTab == 1,
+                        onClick = { selectedRemoteBackupTab = 1 },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Dns,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.settings_backup_tab_self_host),
+                                maxLines = 1
+                            )
+                        }
+                    )
+                }
+
+                if (selectedRemoteBackupTab == 0) Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CloudUpload,
+                                contentDescription = null,
+                                tint = if (isGoogleDriveBackupAvailable) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.settings_google_drive_backup),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                    color = if (isGoogleDriveBackupAvailable) {
+                                        MaterialTheme.colorScheme.onSurface
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+                                    }
+                                )
+                                Text(
+                                    text = if (cloudBackupAccountEmail != null) {
+                                        "Signed in as $cloudBackupAccountEmail"
+                                    } else {
+                                        stringResource(R.string.settings_google_drive_backup_summary)
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                if (!isGoogleDriveBackupAvailable) {
+                                    Text(
+                                        text = stringResource(R.string.settings_cloud_backup_limited_testing),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                                    )
+                                }
+                            }
+                            if (cloudBackupAccountEmail != null) {
+                                Switch(
+                                    checked = cloudBackupEnabled && isGoogleDriveBackupAvailable,
+                                    enabled = isGoogleDriveBackupAvailable,
+                                    onCheckedChange = { viewModel.setCloudBackupEnabled(it) }
+                                )
+                            } else {
+                                TextButton(
+                                    enabled = isGoogleDriveBackupAvailable,
+                                    onClick = onCloudSignInRequested
+                                ) {
+                                    Text(stringResource(R.string.settings_sign_in))
+                                }
+                            }
+                        }
+
+                        if (isGoogleDriveBackupAvailable && cloudBackupEnabled && !staleBannerDismissed && isCloudBackupStale(cloudBackupLastAt)) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (cloudBackupLastAt == null) {
+                                            "Cloud backup hasn't run yet."
+                                        } else {
+                                            "Cloud backup hasn't run in over 7 days."
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.settings_dismiss),
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clip(CircleShape)
+                                            .clickable { staleBannerDismissed = true }
+                                    )
+                                }
+                            }
+                        }
+
+                        if (isGoogleDriveBackupAvailable && cloudBackupAccountEmail != null) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !isLoadingBackupDiff) {
+                                        showBackupDiffDialog = true
+                                        isLoadingBackupDiff = true
+                                        backupDiffResult = null
+                                        backupDiffError = null
+                                        backupDiffIsReauth = false
+                                        viewModel.compareWithLastBackup { result ->
+                                            isLoadingBackupDiff = false
+                                            result.fold(
+                                                onSuccess = { backupDiffResult = it },
+                                                onFailure = {
+                                                    backupDiffError = it.message ?: "Couldn't compare with backup"
+                                                    backupDiffIsReauth = isReauthRecoverable(it)
+                                                }
+                                            )
+                                        }
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.CompareArrows,
+                                    contentDescription = stringResource(R.string.settings_compare_with_backup_2),
+                                    tint = MaterialTheme.colorScheme.tertiary
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = stringResource(R.string.settings_compare_with_backup),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.settings_wifi_only),
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.settings_wifi_only_summary),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Switch(
+                                    checked = cloudBackupWifiOnly,
+                                    onCheckedChange = { viewModel.setCloudBackupWifiOnly(it) }
+                                )
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        showCloudRestoreSheet = true
+                                        isLoadingCloudBackups = true
+                                        viewModel.listCloudBackups { result ->
+                                            isLoadingCloudBackups = false
+                                            cloudBackupList = result.getOrDefault(emptyList())
+                                            val exc = result.exceptionOrNull()
+                                            if (exc != null) {
+                                                scope.launch {
+                                                    val outcome = snackbarHostState.showSnackbar(
+                                                        message = "Couldn't reach Google Drive",
+                                                        actionLabel = if (isReauthRecoverable(exc)) "Reauthorize" else null
+                                                    )
+                                                    if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudDownload,
+                                    contentDescription = stringResource(R.string.settings_restore_from_cloud),
+                                    tint = MaterialTheme.colorScheme.tertiary
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = stringResource(R.string.settings_restore_from_cloud),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.cloudSignOut()
+                                        scope.launch { snackbarHostState.showSuccess(context.getString(R.string.settings_cloud_signed_out)) }
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_sign_out),
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (selectedRemoteBackupTab == 1) Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Dns,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.settings_sftp_backup),
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                    )
+                                    Text(
+                                        text = if (sftpHost.isBlank()) {
+                                            stringResource(R.string.settings_sftp_backup_summary)
+                                        } else {
+                                            val protocolLabel = when {
+                                                isFtpProtocol && ftpUseTls -> "FTPS"
+                                                isFtpProtocol -> "FTP"
+                                                else -> "SFTP"
+                                            }
+                                            "$sftpUsername@$sftpHost:$sftpPort ($protocolLabel)"
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Switch(
+                                checked = sftpBackupEnabled,
+                                onCheckedChange = { viewModel.setSftpBackupEnabled(it) }
+                            )
+                        }
+
+                        if (sftpBackupEnabled) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showSftpConfigDialog = true }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.settings_sftp_configure_server),
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                    )
+                                    Text(
+                                        text = if (sftpHost.isBlank()) {
+                                            stringResource(R.string.settings_sftp_not_configured)
+                                        } else {
+                                            val protocolLabel = when {
+                                                isFtpProtocol && ftpUseTls -> "FTPS"
+                                                isFtpProtocol -> "FTP"
+                                                else -> "SFTP"
+                                            }
+                                            "$sftpUsername@$sftpHost:$sftpPort ($protocolLabel)"
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(
+                                        enabled = sftpHost.isNotBlank() && !isLoadingBackupDiff
+                                    ) {
+                                        showBackupDiffDialog = true
+                                        isLoadingBackupDiff = true
+                                        backupDiffResult = null
+                                        backupDiffError = null
+                                        backupDiffIsReauth = false
+                                        viewModel.compareWithLastSelfHostedBackup { result ->
+                                            isLoadingBackupDiff = false
+                                            result.fold(
+                                                onSuccess = { backupDiffResult = it },
+                                                onFailure = {
+                                                    backupDiffError = it.message ?: "Couldn't compare with backup"
+                                                }
+                                            )
+                                        }
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.CompareArrows,
+                                    contentDescription = stringResource(R.string.settings_compare_with_backup_2),
+                                    tint = if (sftpHost.isNotBlank()) {
+                                        MaterialTheme.colorScheme.tertiary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.settings_compare_with_backup),
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = if (sftpHost.isNotBlank()) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+                                        }
+                                    )
+                                    if (sftpHost.isBlank()) {
+                                        Text(
+                                            text = stringResource(R.string.settings_sftp_not_configured),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (sftpHost.isNotBlank()) {
+                                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    Text(
+                                        text = stringResource(R.string.settings_last_sftp_backup, formatRelativeBackupTime(sftpLastBackupAt)),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    // Host-key trust is an SFTP concept only -- FTPS validates
+                                    // certificates through the platform trust store instead, with
+                                    // no separate pin/confirm step to report status on here.
+                                    if (!isFtpProtocol) {
+                                        Text(
+                                            text = stringResource(
+                                                if (sftpHostKeyFingerprint != null) {
+                                                    R.string.settings_sftp_server_trusted
+                                                } else {
+                                                    R.string.settings_sftp_server_not_yet_trusted
+                                                }
+                                            ),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (sftpHostKeyFingerprint != null) {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            } else {
+                                                MaterialTheme.colorScheme.error
+                                            }
+                                        )
+                                    }
+                                }
+
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            showSftpRestoreDialog = true
+                                            isLoadingSftpBackups = true
+                                            val listBackups = if (isFtpProtocol) viewModel::listFtpBackups else viewModel::listSftpBackups
+                                            listBackups { result ->
+                                                isLoadingSftpBackups = false
+                                                sftpBackupList = result.getOrDefault(emptyList())
+                                                result.exceptionOrNull()?.let { error ->
+                                                    scope.launch {
+                                                        snackbarHostState.showError(error.message ?: context.getString(R.string.export_failed))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.settings_restore_sftp_backup),
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ((isGoogleDriveBackupAvailable && cloudBackupAccountEmail != null) || sftpBackupEnabled) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showFrequencyDialog = true }
+                            .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudUpload,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.settings_cloud_backup),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                text = stringResource(R.string.settings_backup_frequency),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
-                                text = if (cloudBackupAccountEmail != null) {
-                                    "Signed in as $cloudBackupAccountEmail"
-                                } else {
-                                    "Automatically backs up to your Google Drive."
-                                },
+                                text = syncFrequencyLabel(cloudBackupIntervalMinutes),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        if (cloudBackupAccountEmail != null) {
-                            Switch(
-                                checked = cloudBackupEnabled,
-                                onCheckedChange = { viewModel.setCloudBackupEnabled(it) }
-                            )
-                        } else {
-                            TextButton(onClick = onCloudSignInRequested) {
-                                Text(stringResource(R.string.settings_sign_in))
-                            }
-                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
-                    if (cloudBackupEnabled && !staleBannerDismissed && isCloudBackupStale(cloudBackupLastAt)) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = if (cloudBackupLastAt == null) {
-                                        "Cloud backup hasn't run yet."
-                                    } else {
-                                        "Cloud backup hasn't run in over 7 days."
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.settings_dismiss),
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clip(CircleShape)
-                                        .clickable { staleBannerDismissed = true }
-                                )
-                            }
-                        }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                        val remoteKeepCount = minOf(cloudBackupKeepCount, sftpKeepCount)
+                        var keepCountPosition by remember(remoteKeepCount) { mutableFloatStateOf(remoteKeepCount.toFloat()) }
+                        Text(
+                            text = stringResource(R.string.settings_backups_to_keep),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_remote_backups_to_keep_summary, keepCountPosition.toInt()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Slider(
+                            value = keepCountPosition,
+                            onValueChange = { keepCountPosition = it },
+                            onValueChangeFinished = { viewModel.setRemoteBackupKeepCount(keepCountPosition.toInt()) },
+                            valueRange = 2f..15f,
+                            steps = 12 // 14 stops total (min + 12 + max), 1 apart
+                        )
                     }
 
-                    if (cloudBackupAccountEmail != null) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = cloudBackupEnabled && !isCloudBackingUp) {
-                                    isCloudBackingUp = true
-                                    viewModel.backupAllNow { results ->
-                                        isCloudBackingUp = false
-                                        scope.launch {
-                                            val cloudError = results
-                                                .firstOrNull { it.destination == com.mj.yata.domain.model.BackupDestination.CLOUD }
-                                                ?.error
-                                            // Only Drive can need re-auth, and only its own failure
-                                            // should offer that action.
-                                            if (isReauthRecoverable(cloudError)) {
-                                                val outcome = snackbarHostState.showSnackbar(
-                                                    message = context.getString(R.string.settings_backup_needs_reauth),
-                                                    actionLabel = context.getString(R.string.settings_backup_reauthorize)
-                                                )
-                                                if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
-                                            } else {
-                                                reportBackupResults(results, snackbarHostState, context)
-                                            }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = !isCloudBackingUp) {
+                                isCloudBackingUp = true
+                                viewModel.backupAllNow { results ->
+                                    isCloudBackingUp = false
+                                    scope.launch {
+                                        val cloudError = results
+                                            .firstOrNull { it.destination == com.mj.yata.domain.model.BackupDestination.CLOUD }
+                                            ?.error
+                                        // Only Drive can need re-auth, and only its own failure
+                                        // should offer that action.
+                                        if (isReauthRecoverable(cloudError)) {
+                                            val outcome = snackbarHostState.showSnackbar(
+                                                message = context.getString(R.string.settings_backup_needs_reauth),
+                                                actionLabel = context.getString(R.string.settings_backup_reauthorize)
+                                            )
+                                            if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
+                                        } else {
+                                            reportBackupResults(results, snackbarHostState, context)
                                         }
                                     }
                                 }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.settings_back_up_now),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                    color = if (cloudBackupEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                )
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_back_up_now),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            if (isGoogleDriveBackupAvailable && cloudBackupEnabled) {
                                 Text(
                                     text = stringResource(
                                         R.string.settings_last_backed_up,
@@ -2213,203 +2714,9 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            if (isCloudBackingUp) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            }
                         }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable(enabled = !isLoadingBackupDiff) {
-                                    showBackupDiffDialog = true
-                                    isLoadingBackupDiff = true
-                                    backupDiffResult = null
-                                    backupDiffError = null
-                                    backupDiffIsReauth = false
-                                    viewModel.compareWithLastBackup { result ->
-                                        isLoadingBackupDiff = false
-                                        result.fold(
-                                            onSuccess = { backupDiffResult = it },
-                                            onFailure = {
-                                                backupDiffError = it.message ?: "Couldn't compare with backup"
-                                                backupDiffIsReauth = isReauthRecoverable(it)
-                                            }
-                                        )
-                                    }
-                                }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.CompareArrows,
-                                contentDescription = stringResource(R.string.settings_compare_with_backup_2),
-                                tint = MaterialTheme.colorScheme.tertiary
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                text = stringResource(R.string.settings_compare_with_backup),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.settings_wifi_only),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                                )
-                                Text(
-                                    text = stringResource(R.string.settings_wifi_only_summary),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = cloudBackupWifiOnly,
-                                onCheckedChange = { viewModel.setCloudBackupWifiOnly(it) }
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showFrequencyDialog = true }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.settings_backup_frequency),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                                )
-                                Text(
-                                    text = syncFrequencyLabel(cloudBackupIntervalMinutes),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showArchiveMonthsDialog = true }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.settings_archive_old_completed),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                                )
-                                Text(
-                                    text = formatArchiveMonths(cloudBackupArchiveMonths),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            var keepCountPosition by remember(cloudBackupKeepCount) { mutableFloatStateOf(cloudBackupKeepCount.toFloat()) }
-                            Text(
-                                text = stringResource(R.string.settings_backups_to_keep),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_backups_to_keep_summary, keepCountPosition.toInt()),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Slider(
-                                value = keepCountPosition,
-                                onValueChange = { keepCountPosition = it },
-                                onValueChangeFinished = { viewModel.setCloudBackupKeepCount(keepCountPosition.toInt()) },
-                                valueRange = 2f..15f,
-                                steps = 12 // 14 stops total (min + 12 + max), 1 apart
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    showCloudRestoreSheet = true
-                                    isLoadingCloudBackups = true
-                                    viewModel.listCloudBackups { result ->
-                                        isLoadingCloudBackups = false
-                                        cloudBackupList = result.getOrDefault(emptyList())
-                                        val exc = result.exceptionOrNull()
-                                        if (exc != null) {
-                                            scope.launch {
-                                                val outcome = snackbarHostState.showSnackbar(
-                                                    message = "Couldn't reach Google Drive",
-                                                    actionLabel = if (isReauthRecoverable(exc)) "Reauthorize" else null
-                                                )
-                                                if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudDownload,
-                                contentDescription = stringResource(R.string.settings_restore_from_cloud),
-                                tint = MaterialTheme.colorScheme.tertiary
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                text = stringResource(R.string.settings_restore_from_cloud),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.cloudSignOut()
-                                    scope.launch { snackbarHostState.showSuccess(context.getString(R.string.settings_cloud_signed_out)) }
-                                }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_sign_out),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.error
-                            )
+                        if (isCloudBackingUp) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         }
                     }
                 }
@@ -2481,184 +2788,6 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.error
                             )
-                        }
-                    }
-                }
-            }
-        }
-
-        item {
-            // Self-hosted (SFTP) Backup Section — any server the user already has, no vendor
-            // account. Host key trust is TOFU: nothing is pinned until the user explicitly
-            // confirms a fingerprint from the config dialog's Test Connection button.
-            SettingsSectionHeader(stringResource(R.string.settings_section_sftp_backup), Icons.Default.Dns)
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_sftp_backup),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_sftp_backup_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = sftpBackupEnabled,
-                            onCheckedChange = { viewModel.setSftpBackupEnabled(it) }
-                        )
-                    }
-
-                    if (sftpBackupEnabled) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showSftpConfigDialog = true }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.settings_sftp_configure_server),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                                )
-                                Text(
-                                    text = if (sftpHost.isBlank()) {
-                                        stringResource(R.string.settings_sftp_not_configured)
-                                    } else {
-                                        val protocolLabel = when {
-                                            isFtpProtocol && ftpUseTls -> "FTPS"
-                                            isFtpProtocol -> "FTP"
-                                            else -> "SFTP"
-                                        }
-                                        "$sftpUsername@$sftpHost:$sftpPort ($protocolLabel)"
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        if (sftpHost.isNotBlank()) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                                var sftpKeepPosition by remember(sftpKeepCount) { mutableFloatStateOf(sftpKeepCount.toFloat()) }
-                                Text(
-                                    text = stringResource(R.string.settings_backups_to_keep),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                                )
-                                Text(
-                                    text = stringResource(R.string.settings_sftp_backups_to_keep_summary, sftpKeepPosition.toInt()),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Slider(
-                                    value = sftpKeepPosition,
-                                    onValueChange = { sftpKeepPosition = it },
-                                    onValueChangeFinished = { viewModel.setSftpKeepCount(sftpKeepPosition.toInt()) },
-                                    valueRange = 2f..15f,
-                                    steps = 12 // 14 stops total (min + 12 + max), 1 apart
-                                )
-                            }
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = stringResource(R.string.settings_last_sftp_backup, formatRelativeBackupTime(sftpLastBackupAt)),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    // Host-key trust is an SFTP concept only -- FTPS validates
-                                    // certificates through the platform trust store instead, with
-                                    // no separate pin/confirm step to report status on here.
-                                    if (!isFtpProtocol) {
-                                        Text(
-                                            text = stringResource(
-                                                if (sftpHostKeyFingerprint != null) {
-                                                    R.string.settings_sftp_server_trusted
-                                                } else {
-                                                    R.string.settings_sftp_server_not_yet_trusted
-                                                }
-                                            ),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (sftpHostKeyFingerprint != null) {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            } else {
-                                                MaterialTheme.colorScheme.error
-                                            }
-                                        )
-                                    }
-                                }
-                                if (isSftpBackingUp) {
-                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                } else {
-                                    TextButton(onClick = {
-                                        isSftpBackingUp = true
-                                        // Backs up every configured destination, not just this
-                                        // section's -- see BackupOperations.backupAllConfigured.
-                                        viewModel.backupAllNow { results ->
-                                            isSftpBackingUp = false
-                                            scope.launch { reportBackupResults(results, snackbarHostState, context) }
-                                        }
-                                    }) {
-                                        Text(stringResource(R.string.settings_back_up_now))
-                                    }
-                                }
-                            }
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        showSftpRestoreDialog = true
-                                        isLoadingSftpBackups = true
-                                        val listBackups = if (isFtpProtocol) viewModel::listFtpBackups else viewModel::listSftpBackups
-                                        listBackups { result ->
-                                            isLoadingSftpBackups = false
-                                            sftpBackupList = result.getOrDefault(emptyList())
-                                            result.exceptionOrNull()?.let { error ->
-                                                scope.launch {
-                                                    snackbarHostState.showError(error.message ?: context.getString(R.string.export_failed))
-                                                }
-                                            }
-                                        }
-                                    }
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.settings_restore_sftp_backup),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
                         }
                     }
                 }
@@ -2843,7 +2972,10 @@ fun SettingsScreen(
         // Never pre-filled with the stored value — the passphrase is write-only from the UI's
         // point of view, same as the password fields. Blank therefore means "leave as-is".
         var draftBackupPassphrase by remember { mutableStateOf("") }
+        val passwordAlreadySet = remember { viewModel.hasRemoteBackupPassword() }
+        val keyPassphraseAlreadySet = remember { viewModel.hasSftpKeyPassphrase() }
         val backupPassphraseAlreadySet = remember { viewModel.hasRemoteBackupPassphrase() }
+        val savedSecretPlaceholder = "••••••••"
         var isTestingConnection by remember { mutableStateOf(false) }
         // null = untested this session, true/false = last test's outcome. A successful SFTP test
         // with no fingerprint pinned yet, or a failed one where the failure is a host-key
@@ -2856,13 +2988,7 @@ fun SettingsScreen(
         var isHostKeyMismatch by remember { mutableStateOf(false) }
         val draftIsFtp = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
 
-        fun saveNonSecretFields() {
-            viewModel.setRemoteBackupProtocol(draftProtocol)
-            viewModel.setFtpUseTls(draftFtpUseTls)
-            viewModel.setSftpHost(draftHost)
-            draftPort.toIntOrNull()?.let { viewModel.setSftpPort(it) }
-            viewModel.setSftpUsername(draftUsername)
-            viewModel.setSftpRemoteDir(draftRemoteDir)
+        fun saveServerConfiguration(onSaved: () -> Unit = {}) {
             if (draftIsFtp) {
                 if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
                 // Blank means "keep whatever is stored" rather than "remove encryption" — silently
@@ -2881,6 +3007,16 @@ fun SettingsScreen(
                     if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
                 }
             }
+            viewModel.saveRemoteBackupConfiguration(
+                protocol = draftProtocol,
+                useTls = draftFtpUseTls,
+                host = draftHost,
+                port = draftPort.toIntOrNull() ?: sftpPort,
+                username = draftUsername,
+                remoteDir = draftRemoteDir,
+                authMethod = draftAuthMethod,
+                onSaved = onSaved
+            )
         }
 
         AlertDialog(
@@ -2943,6 +3079,9 @@ fun SettingsScreen(
                             value = draftPassword,
                             onValueChange = { draftPassword = it },
                             label = { Text(stringResource(R.string.settings_sftp_password)) },
+                            placeholder = {
+                                if (passwordAlreadySet) Text(savedSecretPlaceholder)
+                            },
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
@@ -2977,6 +3116,9 @@ fun SettingsScreen(
                             value = draftBackupPassphrase,
                             onValueChange = { draftBackupPassphrase = it },
                             label = { Text(stringResource(R.string.settings_backup_passphrase)) },
+                            placeholder = {
+                                if (backupPassphraseAlreadySet) Text(savedSecretPlaceholder)
+                            },
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
@@ -3013,6 +3155,9 @@ fun SettingsScreen(
                                 value = draftPassphrase,
                                 onValueChange = { draftPassphrase = it },
                                 label = { Text(stringResource(R.string.settings_sftp_passphrase)) },
+                                placeholder = {
+                                    if (keyPassphraseAlreadySet) Text(savedSecretPlaceholder)
+                                },
                                 singleLine = true,
                                 visualTransformation = PasswordVisualTransformation(),
                                 modifier = Modifier.fillMaxWidth()
@@ -3022,6 +3167,9 @@ fun SettingsScreen(
                                 value = draftPassword,
                                 onValueChange = { draftPassword = it },
                                 label = { Text(stringResource(R.string.settings_sftp_password)) },
+                                placeholder = {
+                                    if (passwordAlreadySet) Text(savedSecretPlaceholder)
+                                },
                                 singleLine = true,
                                 visualTransformation = PasswordVisualTransformation(),
                                 modifier = Modifier.fillMaxWidth()
@@ -3031,42 +3179,46 @@ fun SettingsScreen(
 
                     OutlinedButton(
                         onClick = {
-                            saveNonSecretFields()
                             testResultOk = null
                             testResultMessage = null
                             pendingTrustFingerprint = null
                             isHostKeyMismatch = false
                             isTestingConnection = true
-                            if (draftIsFtp) {
-                                viewModel.testFtpConnection { result ->
-                                    isTestingConnection = false
-                                    testResultOk = result.isSuccess
-                                    testResultMessage = if (result.isSuccess) {
-                                        context.getString(R.string.settings_sftp_connection_ok)
-                                    } else {
-                                        result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
-                                    }
-                                }
-                            } else {
-                                viewModel.testSftpConnection { result ->
-                                    isTestingConnection = false
-                                    testResultOk = result.success
-                                    if (result.success) {
-                                        if (sftpHostKeyFingerprint == null && result.fingerprint != null) {
-                                            // First-ever connection to this server -- ask before pinning.
-                                            pendingTrustFingerprint = result.fingerprint
+                            saveServerConfiguration {
+                                if (draftIsFtp) {
+                                    viewModel.testFtpConnection { result ->
+                                        isTestingConnection = false
+                                        testResultOk = result.isSuccess
+                                        testResultMessage = if (result.isSuccess) {
+                                            context.getString(R.string.settings_sftp_connection_ok)
                                         } else {
-                                            testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
+                                            result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
                                         }
-                                    } else {
-                                        val mismatch = sftpHostKeyFingerprint != null &&
+                                    }
+                                } else {
+                                    viewModel.testSftpConnection { result ->
+                                        isTestingConnection = false
+                                        testResultOk = result.success
+                                        val firstObservedKey = sftpHostKeyFingerprint == null &&
                                             result.fingerprint != null &&
-                                            result.fingerprint != sftpHostKeyFingerprint
-                                        if (mismatch) {
-                                            isHostKeyMismatch = true
+                                            result.fingerprint.isNotBlank()
+                                        if (firstObservedKey) {
+                                            // The transport intentionally stopped before authentication.
+                                            // Confirming below pins the key, then runs the real auth test.
                                             pendingTrustFingerprint = result.fingerprint
+                                        } else if (result.success) {
+                                            testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
                                         } else {
-                                            testResultMessage = result.error?.message ?: context.getString(R.string.export_failed)
+                                            val mismatch = sftpHostKeyFingerprint != null &&
+                                                result.fingerprint != null &&
+                                                result.fingerprint != sftpHostKeyFingerprint
+                                            if (mismatch) {
+                                                isHostKeyMismatch = true
+                                                pendingTrustFingerprint = result.fingerprint
+                                            } else {
+                                                testResultMessage = result.error?.message
+                                                    ?: context.getString(R.string.export_failed)
+                                            }
                                         }
                                     }
                                 }
@@ -3101,10 +3253,27 @@ fun SettingsScreen(
                                 )
                                 Button(
                                     onClick = {
-                                        viewModel.pinSftpHostKey(fingerprint)
-                                        testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
                                         pendingTrustFingerprint = null
                                         isHostKeyMismatch = false
+                                        testResultMessage = null
+                                        isTestingConnection = true
+                                        viewModel.pinAndTestSftpConnection(fingerprint) { result ->
+                                            isTestingConnection = false
+                                            testResultOk = result.success
+                                            if (result.success) {
+                                                testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
+                                            } else {
+                                                val changedAgain = result.fingerprint != null &&
+                                                    result.fingerprint != fingerprint
+                                                if (changedAgain) {
+                                                    isHostKeyMismatch = true
+                                                    pendingTrustFingerprint = result.fingerprint
+                                                } else {
+                                                    testResultMessage = result.error?.message
+                                                        ?: context.getString(R.string.export_failed)
+                                                }
+                                            }
+                                        }
                                     },
                                     colors = if (isHostKeyMismatch) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error) else ButtonDefaults.buttonColors()
                                 ) {
@@ -3129,7 +3298,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    saveNonSecretFields()
+                    saveServerConfiguration()
                     showSftpConfigDialog = false
                 }) {
                     Text(stringResource(R.string.action_save))

@@ -757,6 +757,36 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[SFTP_REMOTE_DIR] = if (trimmed.startsWith("/")) trimmed else "/$trimmed" }
     }
 
+    /** Persists one coherent server configuration. Connection tests call this once and await it,
+     * rather than racing a group of independent DataStore edits and reading a hybrid config. */
+    suspend fun setRemoteBackupConfiguration(
+        protocol: com.mj.yata.domain.model.RemoteBackupProtocol,
+        useTls: Boolean,
+        host: String,
+        port: Int,
+        username: String,
+        remoteDir: String,
+        authMethod: String
+    ) {
+        val normalizedHost = host.trim()
+        val normalizedPort = port.coerceIn(1, 65535)
+        val normalizedDir = remoteDir.trim().ifBlank { "/yata-backups" }.let {
+            if (it.startsWith("/")) it else "/$it"
+        }
+        dataStore.edit { prefs ->
+            val identityChanged = prefs[SFTP_HOST] != normalizedHost ||
+                prefs[SFTP_PORT] != normalizedPort
+            prefs[REMOTE_BACKUP_PROTOCOL] = protocol.name
+            prefs[FTP_USE_TLS] = useTls
+            prefs[SFTP_HOST] = normalizedHost
+            prefs[SFTP_PORT] = normalizedPort
+            prefs[SFTP_USERNAME] = username.trim()
+            prefs[SFTP_REMOTE_DIR] = normalizedDir
+            prefs[SFTP_AUTH_METHOD] = if (authMethod == "PRIVATE_KEY") "PRIVATE_KEY" else "PASSWORD"
+            if (identityChanged) prefs.remove(SFTP_HOST_KEY_FINGERPRINT)
+        }
+    }
+
     suspend fun setSftpIntervalMinutes(minutes: Long) {
         dataStore.edit { it[SFTP_INTERVAL_MINUTES] = minutes.coerceAtLeast(15L) }
     }

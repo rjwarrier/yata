@@ -3,10 +3,8 @@ package com.mj.yata.data.backup
 import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
-import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -41,12 +39,11 @@ class UnifiedBackupWorker @AssistedInject constructor(
         val failed = results.filter { !it.isSuccess }
         failed.forEach { Log.w(TAG, "Scheduled backup to ${it.destination} failed", it.error) }
 
-        // Retry only when nothing at all got through — that's the signature of something transient
-        // and shared (no network, airplane mode) which a retry can actually fix. A partial failure
-        // is usually specific to one destination (wrong password, server down); retrying would
-        // re-upload to the destinations that already succeeded, and the next scheduled run covers
-        // it anyway.
-        return if (failed.size == results.size) Result.retry() else Result.success()
+        // Every configured destination is an independent safety copy. A local success must not
+        // suppress a transient Drive/SFTP failure until the next periodic interval. Successful
+        // destinations may receive another rotated copy on retry, which is preferable to leaving
+        // a requested destination stale and is bounded by each manager's retention policy.
+        return if (failed.isNotEmpty()) Result.retry() else Result.success()
     }
 
     companion object {
@@ -66,16 +63,9 @@ class UnifiedBackupWorker @AssistedInject constructor(
             intervalMinutes: Long = DEFAULT_INTERVAL_MINUTES,
             policy: ExistingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.KEEP
         ) {
-            // Any network rather than unmetered: a self-hosted destination is often reached over a
-            // LAN or VPN that a metered check misreads, and the Wi-Fi-only preference is applied
-            // per-destination by the managers themselves.
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
             val request = PeriodicWorkRequestBuilder<UnifiedBackupWorker>(
                 intervalMinutes.coerceAtLeast(15L), TimeUnit.MINUTES
             )
-                .setConstraints(constraints)
                 .build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(WORK_NAME, policy, request)
         }

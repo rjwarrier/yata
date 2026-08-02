@@ -1857,7 +1857,10 @@ private data class MainNavigationState(
 
     fun setCloudBackupEnabled(enabled: Boolean) {
         safeLaunch {
-            userPreferences.setCloudBackupEnabled(enabled)
+            val driveBackupAllowed = userPreferences.userEmailFlow.first()
+                .trim()
+                .equals("rjwarrier@gmail.com", ignoreCase = true)
+            userPreferences.setCloudBackupEnabled(enabled && driveBackupAllowed)
         }
     }
 
@@ -1930,9 +1933,35 @@ private data class MainNavigationState(
         safeLaunch { userPreferences.setFtpUseTls(useTls) }
     }
 
+    fun saveRemoteBackupConfiguration(
+        protocol: com.mj.yata.domain.model.RemoteBackupProtocol,
+        useTls: Boolean,
+        host: String,
+        port: Int,
+        username: String,
+        remoteDir: String,
+        authMethod: String,
+        onSaved: () -> Unit = {}
+    ) {
+        safeLaunch {
+            userPreferences.setRemoteBackupConfiguration(
+                protocol = protocol,
+                useTls = useTls,
+                host = host,
+                port = port,
+                username = username,
+                remoteDir = remoteDir,
+                authMethod = authMethod
+            )
+            onSaved()
+        }
+    }
+
     fun setSftpPassword(password: String) {
         remoteBackupCredentialsStore.password = password.ifBlank { null }
     }
+
+    fun hasRemoteBackupPassword(): Boolean = remoteBackupCredentialsStore.password != null
 
     /** Passphrase the uploaded backup file is encrypted with; blank clears it (uploads in clear). */
     fun setRemoteBackupPassphrase(passphrase: String) {
@@ -1947,6 +1976,8 @@ private data class MainNavigationState(
         remoteBackupCredentialsStore.passphrase = passphrase.ifBlank { null }
     }
 
+    fun hasSftpKeyPassphrase(): Boolean = remoteBackupCredentialsStore.passphrase != null
+
     /** Host key isn't pinned here — the caller (Settings) decides whether to call
      * [pinSftpHostKey] with the returned fingerprint, since a first connection needs the user to
      * see and confirm it, and a changed one needs an explicit "trust anyway." */
@@ -1956,6 +1987,18 @@ private data class MainNavigationState(
 
     fun pinSftpHostKey(fingerprint: String) {
         safeLaunch { backupOperations.pinSftpHostKey(fingerprint) }
+    }
+
+    /** Persists an explicitly confirmed key, then performs the credential-authenticated test.
+     * Keeping both operations in one coroutine prevents the test from racing the DataStore write. */
+    fun pinAndTestSftpConnection(
+        fingerprint: String,
+        onResult: (SftpConnectionTestResult) -> Unit
+    ) {
+        safeLaunch {
+            backupOperations.pinSftpHostKey(fingerprint)
+            onResult(backupOperations.testSftpConnection())
+        }
     }
 
     fun sftpBackupNow(onResult: (Result<Unit>) -> Unit) {
@@ -2031,6 +2074,14 @@ private data class MainNavigationState(
         }
     }
 
+    /** One visible retention setting for every off-device backup destination. */
+    fun setRemoteBackupKeepCount(count: Int) {
+        safeLaunch {
+            userPreferences.setCloudBackupKeepCount(count)
+            userPreferences.setSftpKeepCount(count)
+        }
+    }
+
     fun cloudBackupNow(onResult: (Result<Unit>) -> Unit) {
         safeLaunch { onResult(backupOperations.cloudBackupNow()) }
     }
@@ -2045,5 +2096,9 @@ private data class MainNavigationState(
 
     fun compareWithLastBackup(onResult: (Result<com.mj.yata.data.cloud.CloudBackupDiff>) -> Unit) {
         safeLaunch { onResult(backupOperations.compareWithLastBackup(tasks.value)) }
+    }
+
+    fun compareWithLastSelfHostedBackup(onResult: (Result<com.mj.yata.data.cloud.CloudBackupDiff>) -> Unit) {
+        safeLaunch { onResult(backupOperations.compareWithLastSelfHostedBackup(tasks.value)) }
     }
 }

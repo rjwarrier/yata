@@ -38,12 +38,18 @@ class YataApplication : Application(), Configuration.Provider {
 
         // sshj (SFTP backup) needs Bouncy Castle for algorithms Android's stock security
         // providers don't cover (Ed25519 keys, curve25519-sha256 key exchange), which a lot of
-        // real-world OpenSSH servers default to. Inserted rather than appended so it's actually
-        // consulted ahead of Android's own (incomplete, for this purpose) provider -- and only if
-        // it isn't already registered, since Application.onCreate can run more than once in the
-        // same process (e.g. after a config change triggers a fresh Application on some OEMs).
-        if (java.security.Security.getProvider(org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME) == null) {
-            java.security.Security.insertProviderAt(org.bouncycastle.jce.provider.BouncyCastleProvider(), 1)
+        // real-world OpenSSH servers default to. Android normally already has an incomplete
+        // provider named "BC", so checking only the name would leave that provider in place and
+        // never register the bundled implementation.
+        val bundledBouncyCastle = org.bouncycastle.jce.provider.BouncyCastleProvider()
+        val registeredBouncyCastle = java.security.Security.getProvider(
+            org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME
+        )
+        if (registeredBouncyCastle?.javaClass != bundledBouncyCastle.javaClass) {
+            if (registeredBouncyCastle != null) {
+                java.security.Security.removeProvider(registeredBouncyCastle.name)
+            }
+            java.security.Security.insertProviderAt(bundledBouncyCastle, 1)
         }
 
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()

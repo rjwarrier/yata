@@ -19,6 +19,7 @@ import com.mj.yata.domain.model.Task
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -94,6 +95,8 @@ class CloudBackupManager @Inject constructor(
         private const val DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
         private const val DEBOUNCE_MILLIS = 2 * 60 * 1000L
         private const val MAX_DIFF_TITLES = 8
+        private const val PRIMARY_FILENAME_PREFIX = "yata_backup_"
+        private const val PRIMARY_FILENAME_SUFFIX = ".json"
 
         // Single cumulative file, not a rotated series like the primary backups — replaced in
         // place whenever archived-completed-task content changes rather than pruned/kept-N.
@@ -203,23 +206,22 @@ class CloudBackupManager @Inject constructor(
             val archiveMonths = userPreferences.cloudBackupArchiveMonthsFlow.first()
             val (primaryJson, archiveJson) = jsonExporter.buildSplitBackupJson(archiveMonths)
             val primaryBytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
-            val filename = "yata_backup_" +
+            val filename = PRIMARY_FILENAME_PREFIX +
                 java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date()) +
-                ".json"
+                PRIMARY_FILENAME_SUFFIX
 
             uploadFile(token, filename, primaryBytes).getOrElse { e ->
                 Log.w(TAG, "backupNow: primary upload failed", e)
                 return@withContext Result.failure(e)
             }
 
-            // Best-effort — the archive is a convenience split, not the source of truth (nothing
-            // was removed from the live DB), so a failure here shouldn't fail the whole backup.
-            if (archiveJson != null) {
-                try {
-                    replaceArchiveFile(token, archiveJson.toString(2).toByteArray(Charsets.UTF_8))
-                } catch (e: Exception) {
-                    Log.w(TAG, "backupNow: archive upload failed, primary backup still succeeded", e)
-                }
+            // The primary payload deliberately omits archived completed tasks, so the archive is
+            // part of a complete cloud backup rather than a best-effort convenience. A null
+            // archive removes any stale older copy that would otherwise be merged on restore.
+            val archiveBytes = archiveJson?.toString(2)?.toByteArray(Charsets.UTF_8)
+            syncArchiveFile(token, archiveBytes).getOrElse { e ->
+                Log.w(TAG, "backupNow: archive sync failed", e)
+                return@withContext Result.failure(e)
             }
 
             userPreferences.setCloudBackupLastAt(System.currentTimeMillis())
@@ -259,19 +261,54 @@ class CloudBackupManager @Inject constructor(
         return Result.success(Unit)
     }
 
-    /** [ARCHIVE_FILENAME] is a single logical file, not a rotated series — delete whatever's
-     * there under that name (if anything) before uploading the replacement, since Drive's simple
-     * multipart-create endpoint doesn't do in-place content updates. */
-    private fun replaceArchiveFile(token: String, bytes: ByteArray) {
-        findFileIdByName(ARCHIVE_FILENAME, token)?.let { existingId ->
-            val request = Request.Builder()
-                .url("$DRIVE_FILES_URL/$existingId")
-                .addHeader("Authorization", "Bearer $token")
-                .delete()
-                .build()
-            httpClient.newCall(request).execute().close()
+    /** Updates the archive at Drive's file-resource level. PATCH leaves the previous content
+     * intact when a replacement upload fails; a create is needed only for the first archive. */
+    private fun syncArchiveFile(token: String, bytes: ByteArray?): Result<Unit> = try {
+        val existingId = findFileIdByName(ARCHIVE_FILENAME, token)
+        when {
+            bytes == null && existingId != null -> deleteFile(token, existingId)
+            bytes == null -> Result.success(Unit)
+            existingId != null -> updateFileContent(token, existingId, bytes)
+            else -> uploadFile(token, ARCHIVE_FILENAME, bytes)
         }
-        uploadFile(token, ARCHIVE_FILENAME, bytes).getOrThrow()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    private fun updateFileContent(token: String, fileId: String, bytes: ByteArray): Result<Unit> {
+        val request = Request.Builder()
+            .url("$DRIVE_UPLOAD_URL/$fileId?uploadType=media")
+            .addHeader("Authorization", "Bearer $token")
+            .patch(bytes.toRequestBody("application/json".toMediaType()))
+            .build()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val reason = driveErrorMessage(response)
+                return Result.failure(
+                    CloudBackupError.Api("Archive update failed: HTTP ${response.code} — $reason")
+                )
+            }
+        }
+        return Result.success(Unit)
+    }
+
+    private fun deleteFile(token: String, fileId: String): Result<Unit> {
+        val request = Request.Builder()
+            .url("$DRIVE_FILES_URL/$fileId")
+            .addHeader("Authorization", "Bearer $token")
+            .delete()
+            .build()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val reason = driveErrorMessage(response)
+                return Result.failure(
+                    CloudBackupError.Api("Delete failed: HTTP ${response.code} — $reason")
+                )
+            }
+        }
+        return Result.success(Unit)
     }
 
     private fun findFileIdByName(name: String, token: String): String? {
@@ -281,7 +318,10 @@ class CloudBackupManager @Inject constructor(
             .get()
             .build()
         httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return null
+            if (!response.isSuccessful) {
+                val reason = driveErrorMessage(response)
+                throw IOException("File lookup failed: HTTP ${response.code} — $reason")
+            }
             val json = JSONObject(response.body?.string() ?: "{}")
             val files = json.optJSONArray("files") ?: JSONArray()
             return if (files.length() > 0) files.getJSONObject(0).getString("id") else null
@@ -351,48 +391,65 @@ class CloudBackupManager @Inject constructor(
                 tasksArr.put(archiveTasksArr.getJSONObject(i))
             }
 
-            var backupDone = 0
-            var backupPending = 0
-            // id -> (title, done), so added/removed/changed below can diff by id rather than by
-            // title (titles aren't unique, ids are).
-            val backupById = HashMap<String, Pair<String, Boolean>>(tasksArr.length())
-            for (i in 0 until tasksArr.length()) {
-                val o = tasksArr.getJSONObject(i)
-                val done = o.optBoolean("done", false)
-                if (done) backupDone++ else backupPending++
-                backupById[o.getString("id")] = o.getString("title") to done
-            }
-
-            val currentById = currentTasks.associateBy { it.id }
-            val currentDone = currentTasks.count { it.done }
-
-            val addedTitles = currentById.keys.minus(backupById.keys).map { currentById.getValue(it).title }
-            val removedTitles = backupById.keys.minus(currentById.keys).map { backupById.getValue(it).first }
-            val changedTitles = currentById.keys.intersect(backupById.keys).mapNotNull { id ->
-                val current = currentById.getValue(id)
-                val backup = backupById.getValue(id)
-                if (current.title != backup.first || current.done != backup.second) current.title else null
-            }
-
-            Result.success(
-                CloudBackupDiff(
-                    currentPending = currentTasks.size - currentDone,
-                    currentDone = currentDone,
-                    backupPending = backupPending,
-                    backupDone = backupDone,
-                    backupCreatedTime = latest.createdTime,
-                    addedTitles = addedTitles.take(MAX_DIFF_TITLES),
-                    addedCount = addedTitles.size,
-                    removedTitles = removedTitles.take(MAX_DIFF_TITLES),
-                    removedCount = removedTitles.size,
-                    changedTitles = changedTitles.take(MAX_DIFF_TITLES),
-                    changedCount = changedTitles.size
-                )
-            )
+            Result.success(buildDiff(tasksArr, currentTasks, latest.createdTime))
         } catch (e: IOException) {
             Log.w(TAG, "compareWithLatestBackup failed", e)
             Result.failure(e)
         }
+    }
+
+    /** Same comparison engine used by Drive, exposed for self-hosted backups whose bytes come
+     * from SFTP/FTP instead of Google Drive. This is deliberately read-only. */
+    fun compareBackupJsonWithTasks(
+        backupJsonBytes: ByteArray,
+        currentTasks: List<Task>,
+        backupCreatedTime: String
+    ): CloudBackupDiff {
+        val tasksArr = JSONObject(String(backupJsonBytes, Charsets.UTF_8)).optJSONArray("tasks") ?: JSONArray()
+        return buildDiff(tasksArr, currentTasks, backupCreatedTime)
+    }
+
+    private fun buildDiff(
+        tasksArr: JSONArray,
+        currentTasks: List<Task>,
+        backupCreatedTime: String
+    ): CloudBackupDiff {
+        var backupDone = 0
+        var backupPending = 0
+        // id -> (title, done), so added/removed/changed below can diff by id rather than by
+        // title (titles aren't unique, ids are).
+        val backupById = HashMap<String, Pair<String, Boolean>>(tasksArr.length())
+        for (i in 0 until tasksArr.length()) {
+            val o = tasksArr.getJSONObject(i)
+            val done = o.optBoolean("done", false)
+            if (done) backupDone++ else backupPending++
+            backupById[o.getString("id")] = o.getString("title") to done
+        }
+
+        val currentById = currentTasks.associateBy { it.id }
+        val currentDone = currentTasks.count { it.done }
+
+        val addedTitles = currentById.keys.minus(backupById.keys).map { currentById.getValue(it).title }
+        val removedTitles = backupById.keys.minus(currentById.keys).map { backupById.getValue(it).first }
+        val changedTitles = currentById.keys.intersect(backupById.keys).mapNotNull { id ->
+            val current = currentById.getValue(id)
+            val backup = backupById.getValue(id)
+            if (current.title != backup.first || current.done != backup.second) current.title else null
+        }
+
+        return CloudBackupDiff(
+            currentPending = currentTasks.size - currentDone,
+            currentDone = currentDone,
+            backupPending = backupPending,
+            backupDone = backupDone,
+            backupCreatedTime = backupCreatedTime,
+            addedTitles = addedTitles.take(MAX_DIFF_TITLES),
+            addedCount = addedTitles.size,
+            removedTitles = removedTitles.take(MAX_DIFF_TITLES),
+            removedCount = removedTitles.size,
+            changedTitles = changedTitles.take(MAX_DIFF_TITLES),
+            changedCount = changedTitles.size
+        )
     }
 
     private fun downloadBackupBytes(fileId: String, token: String): ByteArray {
@@ -412,8 +469,12 @@ class CloudBackupManager @Inject constructor(
     }
 
     private fun fetchBackupList(token: String): List<CloudBackupEntry> {
+        val nameQuery = java.net.URLEncoder.encode(
+            "name contains '$PRIMARY_FILENAME_PREFIX' and trashed = false",
+            "UTF-8"
+        )
         val request = Request.Builder()
-            .url("$DRIVE_FILES_URL?spaces=appDataFolder&fields=files(id,name,createdTime,size)&orderBy=createdTime desc&pageSize=20")
+            .url("$DRIVE_FILES_URL?spaces=appDataFolder&q=$nameQuery&fields=files(id,name,createdTime,size)&orderBy=createdTime desc&pageSize=100")
             .addHeader("Authorization", "Bearer $token")
             .get()
             .build()
@@ -426,14 +487,21 @@ class CloudBackupManager @Inject constructor(
             }
             val json = JSONObject(response.body?.string() ?: "{}")
             val filesArr = json.optJSONArray("files") ?: JSONArray()
-            return (0 until filesArr.length()).map { i ->
+            return (0 until filesArr.length()).mapNotNull { i ->
                 val o = filesArr.getJSONObject(i)
-                CloudBackupEntry(
-                    id = o.getString("id"),
-                    name = o.getString("name"),
-                    createdTime = o.getString("createdTime"),
-                    sizeBytes = o.optString("size", null)?.toLongOrNull()
-                )
+                val name = o.getString("name")
+                if (!name.startsWith(PRIMARY_FILENAME_PREFIX) ||
+                    !name.endsWith(PRIMARY_FILENAME_SUFFIX)
+                ) {
+                    null
+                } else {
+                    CloudBackupEntry(
+                        id = o.getString("id"),
+                        name = name,
+                        createdTime = o.getString("createdTime"),
+                        sizeBytes = o.optString("size", null)?.toLongOrNull()
+                    )
+                }
             }
         }
     }
@@ -447,13 +515,10 @@ class CloudBackupManager @Inject constructor(
         }
         backups.drop(keepCount).forEach { entry ->
             try {
-                val request = Request.Builder()
-                    .url("$DRIVE_FILES_URL/${entry.id}")
-                    .addHeader("Authorization", "Bearer $token")
-                    .delete()
-                    .build()
-                httpClient.newCall(request).execute().close()
+                deleteFile(token, entry.id).getOrThrow()
             } catch (e: IOException) {
+                Log.w(TAG, "pruneOldBackups: failed to delete ${entry.id}", e)
+            } catch (e: CloudBackupError) {
                 Log.w(TAG, "pruneOldBackups: failed to delete ${entry.id}", e)
             }
         }

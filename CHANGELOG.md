@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.90 beta] - 2026-08-02
+
+`versionCode 12`. Upgrades in place over 0.89 beta.
+
 ### Added
 
 - **One backup covers every destination you've set up.** Backing up — from the Today sync button,
@@ -32,6 +36,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 - **Restoring from a server shows what's in the backup first** — total tasks, open tasks and
   projects — so you can tell a full backup from one taken when there was barely anything in it.
   A backup that can't be read (wrong passphrase, truncated file) says so and can't be restored.
+- **Compare with Backup now works for self-hosted backup too.** The Self Host tab can compare
+  current tasks with the latest FTP/FTPS/SFTP backup using the same diff view as Google Drive.
 - A progress spinner on the self-hosted "Back up now", matching the Google Drive one.
 - **A peek at tomorrow when Today is empty.** When there's nothing due today, a "Show upcoming
   tasks" button appears below the empty state — tapping it reveals tomorrow's and the day after's
@@ -63,6 +69,16 @@ test-only changes belong in the commit message, not here, unless they change beh
   and recolored onto a Material You background instead of rendering invisible white-on-white.
   Ordinary photos are left untouched. The crop screen now hints at this so it isn't a surprise.
 
+### Changed
+
+- **Remote Backup settings are now cohesive.** Google Drive and Self Host live under one section
+  with Material 3 segmented destination tabs, shared frequency/retention/back-up-now controls,
+  and less duplicated setup.
+- Google Drive backup is limited to the test profile email for now; other profiles see the option
+  disabled with an "Option under limited testing" note.
+- "Archive old completed tasks" moved out of the Drive tab and into Backup & Data where it reads
+  as general backup/data behavior.
+
 ### Fixed
 
 - **New tasks in a project with no due date no longer default to today.** Picking (or opening the
@@ -73,6 +89,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   kept in sync with the picture set in Settings, so it always fell back to "Y" initials. Existing
   profile photos are picked up automatically on next launch; new ones sync immediately, including
   through backup restore.
+- FTP/FTPS self-hosted backup comparison now prefers the server's IPv4 address before IPv6/NAT64,
+  avoiding a connection-denied path some Android networks picked for ranjithj.in.
 
 ## [0.89 beta] - 2026-08-01
 
@@ -518,7 +536,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.89-beta...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.90-beta...HEAD
+[0.90 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90-beta
 [0.89 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.89-beta
 [0.88 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.88-beta
 [0.87 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.87-beta

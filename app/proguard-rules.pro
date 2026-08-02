@@ -31,3 +31,4 @@
 -dontwarn net.schmizz.sshj.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.slf4j.**
+-dontwarn sun.security.x509.X509Key
