@@ -2804,6 +2804,10 @@ fun SettingsScreen(
         var draftPrivateKey by remember { mutableStateOf("") }
         var draftPassphrase by remember { mutableStateOf("") }
         var draftFtpUseTls by remember { mutableStateOf(ftpUseTls) }
+        // Never pre-filled with the stored value — the passphrase is write-only from the UI's
+        // point of view, same as the password fields. Blank therefore means "leave as-is".
+        var draftBackupPassphrase by remember { mutableStateOf("") }
+        val backupPassphraseAlreadySet = remember { viewModel.hasRemoteBackupPassphrase() }
         var isTestingConnection by remember { mutableStateOf(false) }
         // null = untested this session, true/false = last test's outcome. A successful SFTP test
         // with no fingerprint pinned yet, or a failed one where the failure is a host-key
@@ -2825,6 +2829,12 @@ fun SettingsScreen(
             viewModel.setSftpRemoteDir(draftRemoteDir)
             if (draftIsFtp) {
                 if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
+                // Blank means "keep whatever is stored" rather than "remove encryption" — silently
+                // dropping to unencrypted uploads because a field was left empty is not a default
+                // anyone would want.
+                if (draftBackupPassphrase.isNotBlank()) {
+                    viewModel.setRemoteBackupPassphrase(draftBackupPassphrase)
+                }
             } else {
                 viewModel.setSftpAuthMethod(draftAuthMethod)
                 if (draftAuthMethod == "PRIVATE_KEY") {
@@ -2850,7 +2860,17 @@ fun SettingsScreen(
                     SegmentedControl(
                         items = listOf(com.mj.yata.domain.model.RemoteBackupProtocol.SFTP, com.mj.yata.domain.model.RemoteBackupProtocol.FTP),
                         selectedItem = draftProtocol,
-                        onItemSelected = { draftProtocol = it },
+                        onItemSelected = { newProtocol ->
+                            // Only nudge the port if it's still sitting at the *other* protocol's
+                            // default -- a custom port the user already typed must survive a
+                            // protocol switch.
+                            if (newProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP && draftPort == "22") {
+                                draftPort = "21"
+                            } else if (newProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP && draftPort == "21") {
+                                draftPort = "22"
+                            }
+                            draftProtocol = newProtocol
+                        },
                         labelProvider = { if (it == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP) protocolSftpLabel else protocolFtpLabel }
                     )
                     OutlinedTextField(
@@ -2917,6 +2937,23 @@ fun SettingsScreen(
                                 )
                             }
                         }
+                        OutlinedTextField(
+                            value = draftBackupPassphrase,
+                            onValueChange = { draftBackupPassphrase = it },
+                            label = { Text(stringResource(R.string.settings_backup_passphrase)) },
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = if (backupPassphraseAlreadySet) {
+                                stringResource(R.string.settings_backup_passphrase_set)
+                            } else {
+                                stringResource(R.string.settings_backup_passphrase_hint)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     } else {
                         val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
                         val authKeyLabel = stringResource(R.string.settings_sftp_auth_key)

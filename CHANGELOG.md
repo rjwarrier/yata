@@ -26,7 +26,13 @@ test-only changes belong in the commit message, not here, unless they change beh
   remote folder) and schedules the same JSON payload the Google Drive and on-device backups use —
   no vendor account, no lock-in to a specific host. A protocol picker switches between the two;
   FTP defaults to FTPS (TLS) and only sends plain, unencrypted FTP if you explicitly opt out, with
-  a warning shown while that's on. Host key trust is TOFU (trust-on-first-use) for SFTP: the
+  a warning shown while that's on. An optional **backup passphrase** encrypts the backup file
+  itself (AES-256-GCM) before it leaves the device, so it stays private even on a server you don't
+  fully control — and unlike the on-device encrypted backup, a passphrase you know can be used to
+  restore onto a different phone. Keep a copy of it: without it the backup can't be restored.
+  Uploads are verified byte-for-byte against the server after transfer, and a short or interrupted
+  upload is deleted and reported rather than left sitting there looking like a good backup. Host
+  key trust is TOFU (trust-on-first-use) for SFTP: the
   server's fingerprint is shown and must be explicitly confirmed on first connection, and every
   later connection has to present that exact same key or the connection is refused outright — a
   changed key surfaces as a clear warning to trust or reject, never a silent downgrade. FTPS

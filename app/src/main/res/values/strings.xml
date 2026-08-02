@@ -405,6 +405,9 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Use secure connection (FTPS)</string>
     <string name="settings_ftp_plain_warning">Plain FTP sends your password and files unencrypted. Only use this on a trusted network.</string>
+    <string name="settings_backup_passphrase">Backup encryption passphrase</string>
+    <string name="settings_backup_passphrase_set">A passphrase is already set. Leave this blank to keep it, or type a new one to replace it.</string>
+    <string name="settings_backup_passphrase_hint">Encrypts the backup file itself before it leaves your device, so it stays private even on a server you don\'t fully control. Keep a copy somewhere safe — without this passphrase the backup cannot be restored, on this phone or any other.</string>
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Username</string>

@@ -33,6 +33,7 @@ class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext conte
         const val KEY_PASSWORD = "password"
         const val KEY_PRIVATE_KEY_PEM = "private_key_pem"
         const val KEY_PASSPHRASE = "passphrase"
+        const val KEY_BACKUP_PASSPHRASE = "backup_passphrase"
     }
 
     private val prefs by lazy {
@@ -65,7 +66,23 @@ class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext conte
         get() = prefs.getString(KEY_PASSPHRASE, null)
         set(value) = prefs.edit { if (value != null) putString(KEY_PASSPHRASE, value) else remove(KEY_PASSPHRASE) }
 
-    /** Wipes all three — called when the user disables/reconfigures self-hosted backup, so
+    /**
+     * Passphrase the backup *file itself* is encrypted with before it leaves the device — distinct
+     * from [password] (which authenticates to the server) and from [passphrase] (which unlocks an
+     * SSH private key). Null means backups are uploaded unencrypted.
+     *
+     * Kept here so scheduled backups can run unattended, but unlike the other secrets this one is
+     * unrecoverable-by-design: it never goes to the server, so a backup can only be restored by
+     * someone who still knows it. Losing it loses the backups, which is why the settings UI says so
+     * out loud.
+     */
+    var backupPassphrase: String?
+        get() = prefs.getString(KEY_BACKUP_PASSPHRASE, null)
+        set(value) = prefs.edit {
+            if (!value.isNullOrBlank()) putString(KEY_BACKUP_PASSPHRASE, value) else remove(KEY_BACKUP_PASSPHRASE)
+        }
+
+    /** Wipes all of them — called when the user disables/reconfigures self-hosted backup, so
      * switching protocol, auth method, or server doesn't leave a stale credential behind that
      * nothing references anymore but that's still sitting encrypted on disk. */
     fun clear() {

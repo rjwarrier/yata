@@ -1903,6 +1903,14 @@ private data class MainNavigationState(
         remoteBackupCredentialsStore.password = password.ifBlank { null }
     }
 
+    /** Passphrase the uploaded backup file is encrypted with; blank clears it (uploads in clear). */
+    fun setRemoteBackupPassphrase(passphrase: String) {
+        remoteBackupCredentialsStore.backupPassphrase = passphrase.ifBlank { null }
+    }
+
+    /** Only whether one is set — the value itself is never read back into the UI. */
+    fun hasRemoteBackupPassphrase(): Boolean = remoteBackupCredentialsStore.backupPassphrase != null
+
     fun setSftpPrivateKey(pem: String, passphrase: String) {
         remoteBackupCredentialsStore.privateKeyPem = pem.ifBlank { null }
         remoteBackupCredentialsStore.passphrase = passphrase.ifBlank { null }
