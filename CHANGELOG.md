@@ -37,7 +37,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   projects — so you can tell a full backup from one taken when there was barely anything in it.
   A backup that can't be read (wrong passphrase, truncated file) says so and can't be restored.
 - **Compare with Backup now works for self-hosted backup too.** The Self Host tab can compare
-  current tasks with the latest FTP/FTPS/SFTP backup using the same diff view as Google Drive.
+  current tasks with the latest FTP/FTPS/SFTP backup using the same diff view as Google Drive:
+  pending/done totals, tasks added since the backup, tasks missing locally, and tasks whose title
+  or completion state changed. The row is visible in the Self Host tab whenever that destination
+  is enabled, and stays greyed out with a "Not configured" hint until server details are saved.
 - A progress spinner on the self-hosted "Back up now", matching the Google Drive one.
 - **A peek at tomorrow when Today is empty.** When there's nothing due today, a "Show upcoming
   tasks" button appears below the empty state — tapping it reveals tomorrow's and the day after's
@@ -74,8 +77,13 @@ test-only changes belong in the commit message, not here, unless they change beh
 - **Remote Backup settings are now cohesive.** Google Drive and Self Host live under one section
   with Material 3 segmented destination tabs, shared frequency/retention/back-up-now controls,
   and less duplicated setup.
+- The remote destination picker now uses a Material 3 segmented control with Drive/Self Host
+  icons instead of an in-card tab strip, making the two backup destinations read as peers.
+- Password, private-key passphrase, and backup-encryption passphrase fields now show a masked
+  placeholder when a saved value exists, while still keeping the actual secret write-only.
 - Google Drive backup is limited to the test profile email for now; other profiles see the option
-  disabled with an "Option under limited testing" note.
+  disabled with an "Option under limited testing" note, and automatic/manual Drive backup is
+  skipped at the backup layer for non-test profiles rather than merely hidden in the UI.
 - "Archive old completed tasks" moved out of the Drive tab and into Backup & Data where it reads
   as general backup/data behavior.
 
@@ -89,6 +97,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   kept in sync with the picture set in Settings, so it always fell back to "Y" initials. Existing
   profile photos are picked up automatically on next launch; new ones sync immediately, including
   through backup restore.
+- FTPS uploads now publish through a temporary `.part` file and rename only after the byte count
+  matches, so an interrupted transfer cannot leave a half-written file that looks like a valid
+  backup.
+- FTPS certificate handling now validates the certificate chain through the platform trust store
+  without requiring a hostname/SAN match, which keeps secure self-hosted servers with legacy
+  certificates usable while still rejecting untrusted certificate chains.
 - FTP/FTPS self-hosted backup comparison now prefers the server's IPv4 address before IPv6/NAT64,
   avoiding a connection-denied path some Android networks picked for ranjithj.in.
 
