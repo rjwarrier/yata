@@ -136,6 +136,26 @@ fun CircularImageCropper(
                                 }
                             }
                     )
+
+                    // Center crosshair — a fixed alignment guide, not part of the crop math (the
+                    // crop is always exactly the circle's contents regardless of these lines), so
+                    // it draws in its own non-interactive layer on top rather than moving with
+                    // the image underneath.
+                    androidx.compose.foundation.Canvas(modifier = Modifier.matchParentSize()) {
+                        val lineColor = Color.White.copy(alpha = 0.5f)
+                        drawLine(
+                            color = lineColor,
+                            start = Offset(size.width / 2f, 0f),
+                            end = Offset(size.width / 2f, size.height),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                        drawLine(
+                            color = lineColor,
+                            start = Offset(0f, size.height / 2f),
+                            end = Offset(size.width, size.height / 2f),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                    }
                 }
 
                 // Deliberately directly beneath the circle rather than pinned to the bottom of
