@@ -185,6 +185,7 @@ fun SettingsScreen(
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
+    val todayShowUpcomingWhenEmpty by viewModel.todayShowUpcomingWhenEmpty.collectAsStateWithLifecycle()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
@@ -1201,6 +1202,15 @@ fun SettingsScreen(
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 }
+
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_today_show_upcoming_when_empty),
+                    subtitle = stringResource(R.string.settings_today_show_upcoming_when_empty_summary),
+                    checked = todayShowUpcomingWhenEmpty,
+                    onCheckedChange = { viewModel.setTodayShowUpcomingWhenEmpty(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(

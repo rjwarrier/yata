@@ -181,6 +181,7 @@ class UserPreferences @Inject constructor(
         val UPCOMING_TAB_ENABLED    = booleanPreferencesKey("upcoming_tab_enabled")
         val FAB_POSITION            = stringPreferencesKey("fab_position")
         val HIDE_COMPLETED_TODAY    = booleanPreferencesKey("hide_completed_today")
+        val TODAY_SHOW_UPCOMING_WHEN_EMPTY = booleanPreferencesKey("today_show_upcoming_when_empty")
         val HIDE_COMPLETED_PROJECT  = booleanPreferencesKey("hide_completed_project")
         val HIDE_COMPLETED_LIST     = booleanPreferencesKey("hide_completed_list")
         val HIDE_COMPLETED_PERSON   = booleanPreferencesKey("hide_completed_person")
@@ -355,6 +356,7 @@ class UserPreferences @Inject constructor(
     val sftpLastBackupAtFlow: Flow<Long?> = prefsFlow.map { it[SFTP_LAST_BACKUP_AT] }
     val sftpHostKeyFingerprintFlow: Flow<String?> = prefsFlow.map { it[SFTP_HOST_KEY_FINGERPRINT] }
     val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_TODAY] ?: false }
+    val todayShowUpcomingWhenEmptyFlow: Flow<Boolean> = prefsFlow.map { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] ?: false }
     val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PROJECT] ?: false }
     val hideCompletedListFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_LIST] ?: false }
     val hideCompletedPersonFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PERSON] ?: false }
@@ -533,6 +535,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setHideCompletedToday(hide: Boolean) {
         dataStore.edit { it[HIDE_COMPLETED_TODAY] = hide }
+    }
+
+    suspend fun setTodayShowUpcomingWhenEmpty(enabled: Boolean) {
+        dataStore.edit { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] = enabled }
     }
 
     suspend fun setHideCompletedProject(hide: Boolean) {

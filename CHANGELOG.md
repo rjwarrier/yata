@@ -17,6 +17,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **A peek at tomorrow when Today is empty.** When there's nothing due today, a "Show upcoming
+  tasks" button appears below the empty state — tapping it reveals tomorrow's and the day after's
+  open tasks, dimmed but fully clickable and completable, for that visit only. Settings → Task
+  Defaults has a toggle to show them automatically every time instead, no button needed.
 - **Self-hosted backup over SFTP.** Settings → Self-Hosted Backup connects to any server you
   already run (password or private-key auth, configurable remote folder) and schedules the same
   JSON payload the Google Drive and on-device backups use — no vendor account, no lock-in to a

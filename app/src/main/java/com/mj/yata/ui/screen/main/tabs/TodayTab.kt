@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -88,6 +89,10 @@ fun TodayTab(
     confettiEnabled: Boolean = true,
     syncing: Boolean = false,
     onSyncClick: () -> Unit = {},
+    /** When Today has nothing due, show tomorrow/day-after tasks automatically (dimmed, but fully
+     * clickable/completable) instead of requiring the empty state's "Show upcoming tasks" button
+     * to be tapped each time. Settings → Task Defaults. */
+    showUpcomingWhenEmpty: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -173,6 +178,27 @@ fun TodayTab(
     val completedTasks = remember(filteredTasks, hideCompleted) {
         if (hideCompleted) emptyList() else filteredTasks.filter { it.done }
     }
+
+    // Fallback preview shown only when Today is genuinely empty (see the empty-state branch
+    // below) — tomorrow's and the day after's open tasks, dimmed but fully interactive. Not
+    // routed through the exclude-from-Today/deferral machinery those due-today lists use: this
+    // is a peek at what's coming, not a claim that these tasks belong to today, so a task in an
+    // excluded project or one that's merely deferred still shows here exactly as it'll appear
+    // when its own day arrives.
+    val tomorrowStr = remember(today) { today.plusDays(1).toString() }
+    val dayAfterTomorrowStr = remember(today) { today.plusDays(2).toString() }
+    val tomorrowPreviewTasks = remember(tasks, tomorrowStr) {
+        tasks.filter { !it.done && it.due == tomorrowStr }.sortedByMode(sortMode)
+    }
+    val dayAfterTomorrowPreviewTasks = remember(tasks, dayAfterTomorrowStr) {
+        tasks.filter { !it.done && it.due == dayAfterTomorrowStr }.sortedByMode(sortMode)
+    }
+    val hasUpcomingPreview = tomorrowPreviewTasks.isNotEmpty() || dayAfterTomorrowPreviewTasks.isNotEmpty()
+    // The button's temporary reveal — resets on next screen visit/recomposition scope, unlike
+    // showUpcomingWhenEmpty which is a standing Settings choice. Only relevant when that setting
+    // is off; when it's on the preview always shows and this is moot.
+    var upcomingPreviewRevealed by remember { mutableStateOf(false) }
+    val showUpcomingPreview = showUpcomingWhenEmpty || upcomingPreviewRevealed
 
     // Fires when today's last open task is ticked off. Keyed on remainingCount rather than the
     // pendingTasks list below it, because that one is narrowed by the stat-filter chips — picking
@@ -443,8 +469,8 @@ fun TodayTab(
             contentPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 88.dp)
         ) {
             if (pendingTasks.isEmpty() && completedTasks.isEmpty()) {
+                val filtered = selectedFilter != "All" || activeStatFilter != null
                 item {
-                    val filtered = selectedFilter != "All" || activeStatFilter != null
                     com.mj.yata.ui.widgets.TabEmptyState(
                         icon = Icons.Default.TaskAlt,
                         title = stringResource(R.string.today_all_caught_up),
@@ -457,6 +483,68 @@ fun TodayTab(
                             }
                         }
                     )
+                }
+
+                // Only when Today is genuinely empty (not just filtered down to nothing) is a
+                // peek at what's coming worth offering — a filtered-empty state means there's
+                // real work today, just hidden by the chips.
+                if (!filtered && hasUpcomingPreview) {
+                    if (!showUpcomingPreview) {
+                        item(key = "upcoming_preview_button") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                TextButton(onClick = { upcomingPreviewRevealed = true }) {
+                                    Text(stringResource(R.string.today_show_upcoming_tasks))
+                                }
+                            }
+                        }
+                    } else {
+                        // Dimmed but fully interactive — same TaskRow, same onToggleDone/onTaskClick
+                        // wiring as the normal list below, just visually de-emphasized via alpha
+                        // so it reads as "not today's business" without hiding it behind selection.
+                        @Composable
+                        fun LazyItemScope.dimmedPreviewRow(task: Task) {
+                            val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                            val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
+                                if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
+                            }
+                            val taskTags = remember(task, projects, tags, tagsEnabled) {
+                                if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                            }
+                            TaskRow(
+                                task = task,
+                                list = taskList,
+                                assignees = taskAssignees,
+                                tags = taskTags,
+                                onToggleDone = { onToggleDone(task.id) },
+                                onTaskClick = { onTaskClick(task.id) },
+                                onCommentClick = { pendingCommentTask = task },
+                                onQuickSnooze = { preset -> onQuickSnooze(task.id, preset) },
+                                onRenameTask = { title -> onRenameTask(task.id, title) },
+                                density = taskRowDensity,
+                                horizontalPadding = 12.dp,
+                                showDueDate = false,
+                                modifier = Modifier
+                                    .alpha(0.5f)
+                                    .animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
+                            )
+                        }
+
+                        if (tomorrowPreviewTasks.isNotEmpty()) {
+                            item(key = "upcoming_preview_tomorrow_header") {
+                                TaskSectionHeader(stringResource(R.string.today_tomorrow_header), tomorrowPreviewTasks.size, horizontalPadding = 12.dp)
+                            }
+                            items(tomorrowPreviewTasks, key = { "preview_tmrw_" + it.id }, contentType = { "task" }) { task -> dimmedPreviewRow(task) }
+                        }
+                        if (dayAfterTomorrowPreviewTasks.isNotEmpty()) {
+                            item(key = "upcoming_preview_day_after_header") {
+                                TaskSectionHeader(stringResource(R.string.today_day_after_tomorrow_header), dayAfterTomorrowPreviewTasks.size, horizontalPadding = 12.dp)
+                            }
+                            items(dayAfterTomorrowPreviewTasks, key = { "preview_dat_" + it.id }, contentType = { "task" }) { task -> dimmedPreviewRow(task) }
+                        }
+                    }
                 }
             } else {
                 @Composable

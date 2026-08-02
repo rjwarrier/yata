@@ -783,10 +783,16 @@ private data class MainNavigationState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.StartupTab.LAST_USED)
     val confettiEnabled: StateFlow<Boolean> = userPreferences.confettiEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val todayShowUpcomingWhenEmpty: StateFlow<Boolean> = userPreferences.todayShowUpcomingWhenEmptyFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
     val timeFormat: StateFlow<com.mj.yata.domain.model.TimeFormat> = userPreferences.timeFormatFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.TimeFormat.SYSTEM)
     val dateFormat: StateFlow<com.mj.yata.domain.model.DateFormat> = userPreferences.dateFormatFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.DateFormat.SYSTEM)
+
+    fun setTodayShowUpcomingWhenEmpty(enabled: Boolean) {
+        safeLaunch { userPreferences.setTodayShowUpcomingWhenEmpty(enabled) }
+    }
 
     fun setSwipeRightAction(action: com.mj.yata.domain.model.SwipeAction) {
         safeLaunch { userPreferences.setSwipeRightAction(action) }

@@ -708,6 +708,13 @@
     <string name="settings_search_cloud_summary">Cloud schedule, status, compare, and restore</string>
     <string name="settings_search_local_summary">Local backup schedule and restore</string>
     <string name="settings_search_sftp_summary">Self-hosted SFTP server backup and restore</string>
+
+    <!-- Today tab: peek at tomorrow/day-after tasks when today itself is empty. -->
+    <string name="today_show_upcoming_tasks">Show upcoming tasks</string>
+    <string name="today_tomorrow_header">TOMORROW</string>
+    <string name="today_day_after_tomorrow_header">DAY AFTER TOMORROW</string>
+    <string name="settings_today_show_upcoming_when_empty">Show upcoming tasks when Today is empty</string>
+    <string name="settings_today_show_upcoming_when_empty_summary">Automatically preview tomorrow\'s and the day after\'s tasks (dimmed) instead of showing a "Show upcoming tasks" button.</string>
     <string name="settings_search_help_summary">Feature guide, version, and app information</string>
     <string name="settings_reset_settings">Reset app settings</string>
     <string name="settings_reset_dialog_title">Reset app settings?</string>

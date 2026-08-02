@@ -186,6 +186,7 @@ fun MainScreen(
 
     val startupTab by viewModel.startupTab.collectAsStateWithLifecycle()
     val confettiEnabled by viewModel.confettiEnabled.collectAsStateWithLifecycle()
+    val todayShowUpcomingWhenEmpty by viewModel.todayShowUpcomingWhenEmpty.collectAsStateWithLifecycle()
 
     fun isTabAvailable(tabId: Int): Boolean = when (tabId) {
         0 -> todayTabEnabled
@@ -713,7 +714,8 @@ fun MainScreen(
                             cloudSyncEnabled = cloudBackupEnabled,
                             confettiEnabled = confettiEnabled,
                             syncing = syncing,
-                            onSyncClick = { runManualSync() }
+                            onSyncClick = { runManualSync() },
+                            showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty
                         )
                         1 -> ProjectsTab(
                             projects = projects,
