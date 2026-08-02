@@ -505,7 +505,15 @@ class JsonExporter @Inject constructor(
             // fields existed, or before the user filled them in — can't wipe a value set since.
             root.optString("profilePhoto", null)?.let { encoded ->
                 decodeProfilePhoto(encoded)?.let { uri ->
-                    userPreferences.setUserPhotoUri(uri.toString())
+                    val uriString = uri.toString()
+                    userPreferences.setUserPhotoUri(uriString)
+                    // Keeps the "me" Person's avatar (assignee stacks, PersonDetailScreen, ...) in
+                    // sync immediately — MainViewModel.setUserPhotoUri normally does this, but a
+                    // restore writes straight to DataStore and would otherwise leave the Person
+                    // row stale until the next app start.
+                    repository.getPeople().first().find { it.isMe }?.let { me ->
+                        repository.upsertPerson(me.copy(photoUri = uriString))
+                    }
                 }
             }
             root.optString("profileName", null)?.takeIf { it.isNotBlank() }?.let {

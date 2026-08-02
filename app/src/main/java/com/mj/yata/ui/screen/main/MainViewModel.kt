@@ -107,6 +107,23 @@ class MainViewModel @Inject constructor(
             repository.seedInitialDataIfNeeded()
             repository.purgeOldTrash()
             repository.autoArchiveOldCompleted()
+            syncMePersonPhotoWithProfile()
+        }
+    }
+
+    /**
+     * One-time reconciliation on startup: the "me" [Person] row (used for assignee avatars
+     * everywhere — task rows, PersonDetailScreen, mentions) is seeded once with `photoUri = null`
+     * and was never kept in sync with the profile photo saved in Settings, which lives separately
+     * in DataStore. Anyone who set a profile picture before this fix has a "me" row that still
+     * shows initials instead of it. [setUserPhotoUri] keeps the two in sync going forward; this
+     * catches everyone who set theirs before that existed.
+     */
+    private suspend fun syncMePersonPhotoWithProfile() {
+        val targetUri = userPreferences.userPhotoUriFlow.first()
+        val me = repository.getPeople().first().find { it.isMe } ?: return
+        if (me.photoUri != targetUri) {
+            repository.upsertPerson(me.copy(photoUri = targetUri))
         }
     }
 
@@ -1604,6 +1621,13 @@ private data class MainNavigationState(
     fun setUserPhotoUri(uri: String?) {
         safeLaunch {
             userPreferences.setUserPhotoUri(uri)
+            // Keeps the "me" Person's avatar (shown wherever a task is assigned to you) in sync
+            // with the profile photo — see syncMePersonPhotoWithProfile for why this can't be
+            // skipped in favor of a one-time backfill alone.
+            val me = repository.getPeople().first().find { it.isMe }
+            if (me != null && me.photoUri != uri) {
+                repository.upsertPerson(me.copy(photoUri = uri))
+            }
         }
     }
 

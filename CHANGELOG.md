@@ -15,6 +15,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Fixed
+
+- **Your profile picture now shows on tasks assigned to you.** The "You" person used for assignee
+  avatars everywhere (task rows, person detail, mentions) was seeded once with no photo and never
+  kept in sync with the picture set in Settings, so it always fell back to "Y" initials. Existing
+  profile photos are picked up automatically on next launch; new ones sync immediately, including
+  through backup restore.
+
 ## [0.89 beta] - 2026-08-01
 
 `versionCode 11`. Upgrades in place over 0.88 beta; the database migrates from 29 to 30 with
