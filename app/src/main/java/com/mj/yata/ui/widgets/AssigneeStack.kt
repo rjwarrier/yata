@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -59,6 +60,12 @@ fun PersonAvatar(
     // Per accent rather than one ink for the whole palette — white initials on the yellow and
     // lime accents were all but invisible.
     val textColor = accents.onAccentFor(bgColor)
+    val isMaterialGlyph = com.mj.yata.util.ProfilePhotoUtils.isMaterialGlyphUri(photoUri)
+    // Transparent glyphs keep their source pixels on disk. Resolving their colors here makes a
+    // wallpaper-driven dynamic color change recompose the avatar instead of leaving stale colors
+    // baked into the saved PNG.
+    val avatarBackgroundColor = if (isMaterialGlyph) MaterialTheme.colorScheme.primaryContainer else bgColor
+    val glyphColor = MaterialTheme.colorScheme.onPrimaryContainer
 
     val context = LocalContext.current
     val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photoUri) {
@@ -93,7 +100,7 @@ fun PersonAvatar(
                 if (drawRing) Modifier.border(2.dp, ringColor, CircleShape) else Modifier
             )
             .clip(CircleShape)
-            .background(bgColor, CircleShape),
+            .background(avatarBackgroundColor, CircleShape),
         contentAlignment = Alignment.Center
     ) {
         val loadedBitmap = bitmap
@@ -103,6 +110,7 @@ fun PersonAvatar(
                 bitmap = imageBitmap,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                colorFilter = if (isMaterialGlyph) ColorFilter.tint(glyphColor) else null,
                 modifier = Modifier.size(size)
             )
         } else {

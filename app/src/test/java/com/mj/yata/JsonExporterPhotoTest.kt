@@ -31,6 +31,28 @@ class JsonExporterPhotoTest {
     }
 
     @Test
+    fun materialGlyphMarker_roundTripsForProfileAndPersonPhotos() {
+        val person = JSONObject().apply { put("photoIsMaterialGlyph", true) }
+        val root = JSONObject().apply {
+            put("profilePhotoIsMaterialGlyph", true)
+            put("person", person)
+        }
+
+        val read = JSONObject(root.toString())
+        assertTrue(read.optBoolean("profilePhotoIsMaterialGlyph", false))
+        assertTrue(read.getJSONObject("person").optBoolean("photoIsMaterialGlyph", false))
+    }
+
+    @Test
+    fun backupWithoutMaterialGlyphMarkers_treatsPhotosAsRegularImages() {
+        val person = JSONObject().apply { put("photoData", "aGVsbG8=") }
+        val root = JSONObject().apply { put("person", person) }
+
+        assertEquals(false, root.optBoolean("profilePhotoIsMaterialGlyph", false))
+        assertEquals(false, person.optBoolean("photoIsMaterialGlyph", false))
+    }
+
+    @Test
     fun personWithoutPhotoData_stillExposesLegacyPhotoUri() {
         // A backup written before photoData existed: photoUri must remain readable so those
         // restores are no worse than they were.

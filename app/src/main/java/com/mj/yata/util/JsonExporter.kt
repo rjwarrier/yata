@@ -53,14 +53,14 @@ class JsonExporter @Inject constructor(
         }
     }
 
-    private fun decodePhotoToAvatarFile(base64: String?): Uri? {
+    private fun decodePhotoToAvatarFile(base64: String?, isMaterialGlyph: Boolean): Uri? {
         if (base64.isNullOrBlank()) return null
         return try {
             val bytes = android.util.Base64.decode(base64, android.util.Base64.NO_WRAP)
             val dir = java.io.File(context.filesDir, "avatars").apply { mkdirs() }
             val file = java.io.File(dir, "avatar_restored_${java.util.UUID.randomUUID()}.png")
             file.writeBytes(bytes)
-            Uri.fromFile(file)
+            ProfilePhotoUtils.withMaterialGlyphFlag(Uri.fromFile(file), isMaterialGlyph)
         } catch (e: Exception) {
             Log.w("JsonExporter", "Could not restore person photo", e)
             null
@@ -68,16 +68,17 @@ class JsonExporter @Inject constructor(
     }
 
     /** The user's own photo lives at a single fixed filename, unlike per-person avatars. */
-    private fun decodeProfilePhoto(base64: String?): Uri? {
+    private fun decodeProfilePhoto(base64: String?, isMaterialGlyph: Boolean): Uri? {
         if (base64.isNullOrBlank()) return null
         return try {
             val bytes = android.util.Base64.decode(base64, android.util.Base64.NO_WRAP)
             val file = java.io.File(context.filesDir, "profile_photo.png")
             file.writeBytes(bytes)
             // Cache-busting param so avatar composables keyed on the Uri string reload it.
-            Uri.fromFile(file).buildUpon()
+            val cacheBustedUri = Uri.fromFile(file).buildUpon()
                 .appendQueryParameter("t", System.currentTimeMillis().toString())
                 .build()
+            ProfilePhotoUtils.withMaterialGlyphFlag(cacheBustedUri, isMaterialGlyph)
         } catch (e: Exception) {
             Log.w("JsonExporter", "Could not restore profile photo", e)
             null
@@ -97,6 +98,8 @@ class JsonExporter @Inject constructor(
         val comments: List<TaskComment>,
         /** The user's own avatar, base64-encoded. Null when none is set or the file is gone. */
         val profilePhoto: String?,
+        /** True when profilePhoto is a transparent glyph tinted from the live Material scheme. */
+        val profilePhotoIsMaterialGlyph: Boolean,
         /** The user's own name and email. Like the avatar these live in DataStore, not the
          * database, so they are not part of any entity list. Blank when never set. */
         val profileName: String,
@@ -105,24 +108,27 @@ class JsonExporter @Inject constructor(
         val settings: List<com.mj.yata.data.local.datastore.PortableSetting>
     )
 
-    private suspend fun loadBackupData(): BackupData = BackupData(
-        people = repository.getPeople().first(),
-        personGroups = repository.getPersonGroups().first(),
-        projects = repository.getProjects().first(),
-        lists = repository.getLists().first(),
-        tags = repository.getTags().first(),
-        tagGroups = repository.getTagGroups().first(),
-        // Archived tasks must be included explicitly: getTasks() excludes them by design, and a
-        // backup that silently omitted them would lose them outright on restore — and worse, the
-        // export-then-wipe path (backupThenDeleteAllData) would delete them after writing a
-        // backup that never contained them. Trash (deletedAt) is still deliberately excluded.
-        tasks = repository.getTasks().first() + repository.getArchivedTasks().first(),
-        comments = repository.getAllComments().first(),
-        profilePhoto = encodePhoto(userPreferences.userPhotoUriFlow.first()),
-        profileName = userPreferences.userNameFlow.first(),
-        profileEmail = userPreferences.userEmailFlow.first(),
-        settings = userPreferences.exportPortableSettings()
-    )
+    private suspend fun loadBackupData(): BackupData {
+        val profilePhotoUri = userPreferences.userPhotoUriFlow.first()
+        return BackupData(
+            people = repository.getPeople().first(),
+            personGroups = repository.getPersonGroups().first(),
+            projects = repository.getProjects().first(),
+            lists = repository.getLists().first(),
+            tags = repository.getTags().first(),
+            tagGroups = repository.getTagGroups().first(),
+            // Archived tasks must be included explicitly: getTasks() excludes them by design, and
+            // a backup that omitted them would lose them during export-then-wipe. Trash remains
+            // deliberately excluded.
+            tasks = repository.getTasks().first() + repository.getArchivedTasks().first(),
+            comments = repository.getAllComments().first(),
+            profilePhoto = encodePhoto(profilePhotoUri),
+            profilePhotoIsMaterialGlyph = ProfilePhotoUtils.isMaterialGlyphUri(profilePhotoUri),
+            profileName = userPreferences.userNameFlow.first(),
+            profileEmail = userPreferences.userEmailFlow.first(),
+            settings = userPreferences.exportPortableSettings()
+        )
+    }
 
     suspend fun exportData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -199,7 +205,10 @@ class JsonExporter @Inject constructor(
             // than the database, so they are not part of any entity list and have to be carried
             // at the root. Blank name/email are omitted rather than written as "", so restoring a
             // backup taken before the profile was filled in can't blank out a name set since.
-            data.profilePhoto?.let { root.put("profilePhoto", it) }
+            data.profilePhoto?.let {
+                root.put("profilePhoto", it)
+                if (data.profilePhotoIsMaterialGlyph) root.put("profilePhotoIsMaterialGlyph", true)
+            }
             data.profileName.takeIf { it.isNotBlank() }?.let { root.put("profileName", it) }
             data.profileEmail.takeIf { it.isNotBlank() }?.let { root.put("profileEmail", it) }
 
@@ -233,6 +242,9 @@ class JsonExporter @Inject constructor(
                 // The bytes, not just the path — see encodePhoto. Absent for people with no
                 // avatar, so backups don't carry empty keys for most rows.
                 encodePhoto(p.photoUri)?.let { o.put("photoData", it) }
+                if (ProfilePhotoUtils.isMaterialGlyphUri(p.photoUri)) {
+                    o.put("photoIsMaterialGlyph", true)
+                }
                 o.put("isMe", p.isMe)
                 o.put("groupId", p.groupId ?: JSONObject.NULL)
                 o.put("starred", p.starred)
@@ -539,7 +551,10 @@ class JsonExporter @Inject constructor(
             // backup actually carries it, so restoring an older backup — one written before these
             // fields existed, or before the user filled them in — can't wipe a value set since.
             root.optString("profilePhoto", null)?.let { encoded ->
-                decodeProfilePhoto(encoded)?.let { uri ->
+                decodeProfilePhoto(
+                    encoded,
+                    isMaterialGlyph = root.optBoolean("profilePhotoIsMaterialGlyph", false)
+                )?.let { uri ->
                     val uriString = uri.toString()
                     userPreferences.setUserPhotoUri(uriString)
                     // Keeps the "me" Person's avatar (assignee stacks, PersonDetailScreen, ...) in
@@ -614,7 +629,13 @@ class JsonExporter @Inject constructor(
                                 // reinstall it is a dangling reference that silently degrades to
                                 // initials. Backups written before photoData existed still fall
                                 // back to it, which is no worse than before.
-                                photoUri = decodePhotoToAvatarFile(o.optString("photoData", null))?.toString()
+                                photoUri = decodePhotoToAvatarFile(
+                                    o.optString("photoData", null),
+                                    isMaterialGlyph = o.optBoolean(
+                                        "photoIsMaterialGlyph",
+                                        ProfilePhotoUtils.isMaterialGlyphUri(o.optString("photoUri", null))
+                                    )
+                                )?.toString()
                                     ?: if (o.isNull("photoUri")) null else o.optString("photoUri"),
                                 isMe = o.optBoolean("isMe", false),
                                 groupId = if (o.isNull("groupId")) null else o.optString("groupId", null),

@@ -3773,27 +3773,21 @@ fun SettingsScreen(
         }
     )
 
-    // Same treatment as the app's own wordmark on the About screen — resolved here, in
-    // composition, since ProfilePhotoUtils is a plain (non-Composable) object.
-    val avatarGlyphForeground = MaterialTheme.colorScheme.onPrimaryContainer.toArgb()
-    val avatarGlyphBackground = MaterialTheme.colorScheme.primaryContainer.toArgb()
-
+    // Recognition happens once at import; the transparent source itself stays unchanged so the
+    // avatar renderer can apply whatever Material palette is current later.
     pickedPhotoBitmap?.let { bitmap ->
         CircularImageCropper(
             source = bitmap,
             onConfirm = { cropped ->
                 scope.launch {
                     val savedUri = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        // A white/transparent glyph export (an SVG re-exported as PNG, or any
-                        // "app icon"-style upload) would otherwise show white-on-white on most
-                        // surfaces — recolor it to read like the app's own icon instead of
-                        // silently going invisible.
-                        val processed = if (ProfilePhotoUtils.looksLikeTransparentGlyph(cropped)) {
-                            ProfilePhotoUtils.tintGlyphOnBackground(cropped, avatarGlyphForeground, avatarGlyphBackground)
-                        } else {
-                            cropped
-                        }
-                        ProfilePhotoUtils.saveCircularProfilePhoto(context, processed)
+                        // Mark white-on-transparent artwork for live Material tinting at render.
+                        val isMaterialGlyph = ProfilePhotoUtils.looksLikeTransparentGlyph(cropped)
+                        ProfilePhotoUtils.saveCircularProfilePhoto(
+                            context,
+                            cropped,
+                            isMaterialGlyph = isMaterialGlyph
+                        )
                     }
                     viewModel.setUserPhotoUri(savedUri.toString())
                     pickedPhotoBitmap = null

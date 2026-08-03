@@ -15,6 +15,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Fixed
+
+- Transparent white PNGs used as profile or person avatars now follow the current Material You
+  palette when the wallpaper changes, instead of keeping the colors active when they were added.
+
 ## [0.90 beta] - 2026-08-02
 
 `versionCode 12`. Upgrades in place over 0.89 beta.

@@ -6,7 +6,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.net.Uri
@@ -17,6 +16,29 @@ object ProfilePhotoUtils {
     private const val FILE_NAME = "profile_photo.png"
     private const val AVATAR_DIR = "avatars"
     private const val MAX_DECODE_DIMENSION = 1600
+    private const val MATERIAL_GLYPH_QUERY_PARAM = "m3Glyph"
+
+    /**
+     * Whether [uriString] points at a transparent glyph that should be colored at render time.
+     * The PNG remains transparent so wallpaper-driven Material colors can change independently
+     * of the stored image bytes.
+     */
+    fun isMaterialGlyphUri(uriString: String?): Boolean {
+        if (uriString.isNullOrBlank()) return false
+        return try {
+            Uri.parse(uriString).getQueryParameter(MATERIAL_GLYPH_QUERY_PARAM) == "1"
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /** Adds the render-time Material glyph marker used by avatar Uris and backup restore. */
+    fun withMaterialGlyphFlag(uri: Uri, isMaterialGlyph: Boolean): Uri =
+        if (isMaterialGlyph) {
+            uri.buildUpon().appendQueryParameter(MATERIAL_GLYPH_QUERY_PARAM, "1").build()
+        } else {
+            uri
+        }
 
     /** Downsampled decode so a multi-megapixel photo doesn't blow up memory in the cropper. */
     fun decodeSampledBitmap(context: Context, uri: Uri, maxDimension: Int = MAX_DECODE_DIMENSION): Bitmap? {
@@ -54,14 +76,19 @@ object ProfilePhotoUtils {
      * overwriting any previous one. The returned Uri has a cache-busting query param so avatar
      * widgets keyed on the Uri string reload it.
      */
-    fun saveCircularProfilePhoto(context: Context, squareBitmap: Bitmap): Uri {
+    fun saveCircularProfilePhoto(
+        context: Context,
+        squareBitmap: Bitmap,
+        isMaterialGlyph: Boolean = false
+    ): Uri {
         val output = maskCircular(squareBitmap)
         val file = File(context.filesDir, FILE_NAME)
         FileOutputStream(file).use { out -> output.compress(Bitmap.CompressFormat.PNG, 100, out) }
 
-        return Uri.fromFile(file).buildUpon()
+        val cacheBustedUri = Uri.fromFile(file).buildUpon()
             .appendQueryParameter("t", System.currentTimeMillis().toString())
             .build()
+        return withMaterialGlyphFlag(cacheBustedUri, isMaterialGlyph)
     }
 
     /**
@@ -74,12 +101,16 @@ object ProfilePhotoUtils {
      * bytes into an owned file fixes that. Unlike [saveCircularProfilePhoto]'s single fixed file,
      * each call gets a unique name so multiple people don't overwrite one another.
      */
-    fun saveCircularAvatar(context: Context, squareBitmap: Bitmap): Uri {
+    fun saveCircularAvatar(
+        context: Context,
+        squareBitmap: Bitmap,
+        isMaterialGlyph: Boolean = false
+    ): Uri {
         val output = maskCircular(squareBitmap)
         val dir = File(context.filesDir, AVATAR_DIR).apply { mkdirs() }
         val file = File(dir, "avatar_${System.currentTimeMillis()}_${java.util.UUID.randomUUID()}.png")
         FileOutputStream(file).use { out -> output.compress(Bitmap.CompressFormat.PNG, 100, out) }
-        return Uri.fromFile(file)
+        return withMaterialGlyphFlag(Uri.fromFile(file), isMaterialGlyph)
     }
 
     /**
@@ -132,22 +163,4 @@ object ProfilePhotoUtils {
             opaqueNearWhite.toFloat() / opaqueCount > 0.85f
     }
 
-    /**
-     * Recolors [bitmap]'s content to [foregroundColor] (preserving its alpha, so a glyph's shape
-     * and anti-aliased edges survive) over a solid [backgroundColor] fill — turning a white
-     * glyph-on-transparent export into something that reads on every surface, the same treatment
-     * the app's own wordmark gets on the About screen. Only meaningful for images
-     * [looksLikeTransparentGlyph] returns true for; called on anything else it would just paint
-     * over the photo's own colors.
-     */
-    fun tintGlyphOnBackground(bitmap: Bitmap, foregroundColor: Int, backgroundColor: Int): Bitmap {
-        val output = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(output)
-        canvas.drawColor(backgroundColor)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            colorFilter = PorterDuffColorFilter(foregroundColor, PorterDuff.Mode.SRC_IN)
-        }
-        canvas.drawBitmap(bitmap, 0f, 0f, paint)
-        return output
-    }
 }
