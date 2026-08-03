@@ -15,10 +15,16 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.90.1 beta] - 2026-08-03
+
+`versionCode 13`. Upgrades in place over 0.90 beta.
+
 ### Fixed
 
-- Transparent white PNGs used as profile or person avatars now follow the current Material You
+- Transparent white PNGs selected as profile or person avatars now follow the current Material You
   palette when the wallpaper changes, instead of keeping the colors active when they were added.
+  An avatar saved by 0.90 beta must be selected once more because that version flattened the old
+  palette into the stored image and discarded the original transparency.
 
 ## [0.90 beta] - 2026-08-02
 
@@ -555,7 +561,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.90-beta...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.90.1-beta...HEAD
+[0.90.1 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90.1-beta
 [0.90 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90-beta
 [0.89 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.89-beta
 [0.88 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.88-beta
