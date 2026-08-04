@@ -34,7 +34,7 @@ class FtpBackupWorker @AssistedInject constructor(
         if (!userPreferences.sftpBackupEnabledFlow.first()) return Result.success()
         if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.FTP) return Result.success()
 
-        val result = ftpBackupManager.backupNow()
+        val result = ftpBackupManager.syncNow()
         return if (result.isSuccess) {
             Result.success()
         } else {

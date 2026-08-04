@@ -34,7 +34,12 @@ class DemoRepository @Inject constructor() : YataRepository {
     override suspend fun getTaskStreak(taskId: String): Int = 0
 
     override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) = Unit
-    override suspend fun upsertTasks(tasks: List<Task>, notify: Boolean, resyncReminder: Boolean) = Unit
+    override suspend fun upsertTasks(
+        tasks: List<Task>,
+        notify: Boolean,
+        resyncReminder: Boolean,
+        preserveExistingCreatedAt: Boolean
+    ) = Unit
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = Unit
     override suspend fun skipTaskOccurrence(id: String) = Unit
     override fun searchTasks(query: String): Flow<List<Task>> =

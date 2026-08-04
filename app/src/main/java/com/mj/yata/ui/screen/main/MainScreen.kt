@@ -96,24 +96,21 @@ fun MainScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Manual sync from the Today top bar. Lives here rather than in TodayTab because the
-    // SnackbarHostState that reports the result belongs to this Scaffold, and because `syncing`
-    // has to survive the tab switching underneath it.
-    val cloudBackupEnabled by viewModel.anyBackupDestinationEnabled.collectAsStateWithLifecycle()
-    var syncing by remember { mutableStateOf(false) }
+    // Manual sync from the Today top bar. The in-progress state comes from BackupOperations so
+    // automatic startup/debounced/settings syncs animate the same button.
+    val backupDestinationEnabled by viewModel.anyBackupDestinationEnabled.collectAsStateWithLifecycle()
+    val syncInProgress by viewModel.syncInProgress.collectAsStateWithLifecycle()
+    val syncAnimating by viewModel.syncPendingOrInProgress.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     fun runManualSync() {
         // Guarded rather than queued: repeated taps during a slow upload should do nothing, not
         // stack up duplicate backups of the same data.
-        if (syncing) return
-        syncing = true
-        // Every configured destination, not just Drive -- this button is "back up now", and a
-        // user with two destinations set up expects both to be current afterwards. The message
+        if (syncInProgress) return
+        // Every configured destination runs from this one button. The message
         // names whichever ones failed rather than a blanket "sync failed" that would be wrong for
         // the destinations that did succeed.
         viewModel.backupAllNow { results ->
-            syncing = false
             scope.launch {
                 snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
             }
@@ -714,9 +711,10 @@ fun MainScreen(
                             onHideCompletedChange = { viewModel.setHideCompletedToday(it) },
                             sortMode = sortModeToday,
                             onSortModeChange = { viewModel.setSortModeToday(it) },
-                            cloudSyncEnabled = cloudBackupEnabled,
+                            backupSyncEnabled = backupDestinationEnabled,
                             confettiEnabled = confettiEnabled,
-                            syncing = syncing,
+                            syncing = syncAnimating,
+                            syncButtonEnabled = !syncInProgress,
                             onSyncClick = { runManualSync() },
                             showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty
                         )

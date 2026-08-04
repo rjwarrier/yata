@@ -2,21 +2,28 @@ package com.mj.yata.data.backup
 
 import android.content.Context
 import android.util.Log
-import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.domain.usecase.BackupOperations
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedInject
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import java.util.concurrent.TimeUnit
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface UnifiedBackupWorkerEntryPoint {
+    fun backupOperations(): BackupOperations
+}
 
 /**
  * The one scheduled backup job, covering every destination the user has enabled.
  *
- * Replaces the four per-destination workers (Drive, on-device, SFTP, FTP) that each ran on their
+ * Replaces the old per-destination workers that each ran on their
  * own interval. Separate schedules meant a trigger only ever refreshed one copy, so a second
  * destination configured for redundancy could silently fall days behind the first — and four
  * independent jobs made "when did this last actually run" nearly impossible to answer. One job on
@@ -25,12 +32,17 @@ import java.util.concurrent.TimeUnit
  * [cancelLegacyWorkers] retires the old unique work names; without it their already-enqueued
  * periodic jobs would keep firing alongside this one, backing everything up several times a day.
  */
-@HiltWorker
-class UnifiedBackupWorker @AssistedInject constructor(
-    @Assisted context: Context,
-    @Assisted params: WorkerParameters,
-    private val backupOperations: BackupOperations
+class UnifiedBackupWorker(
+    context: Context,
+    params: WorkerParameters
 ) : CoroutineWorker(context, params) {
+
+    private val backupOperations: BackupOperations by lazy {
+        EntryPointAccessors.fromApplication(
+            applicationContext,
+            UnifiedBackupWorkerEntryPoint::class.java
+        ).backupOperations()
+    }
 
     override suspend fun doWork(): Result {
         val results = backupOperations.backupAllConfigured()
@@ -40,7 +52,7 @@ class UnifiedBackupWorker @AssistedInject constructor(
         failed.forEach { Log.w(TAG, "Scheduled backup to ${it.destination} failed", it.error) }
 
         // Every configured destination is an independent safety copy. A local success must not
-        // suppress a transient Drive/SFTP failure until the next periodic interval. Successful
+        // suppress a transient server failure until the next periodic interval. Successful
         // destinations may receive another rotated copy on retry, which is preferable to leaving
         // a requested destination stale and is bounded by each manager's retention policy.
         return if (failed.isNotEmpty()) Result.retry() else Result.success()

@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mj.yata.R
-import com.mj.yata.data.cloud.CloudBackupEntry
+import com.mj.yata.data.backup.BackupDiff
 import com.mj.yata.data.local.crash.CrashLogEntry
 import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
@@ -111,6 +111,9 @@ class MainViewModel @Inject constructor(
             repository.purgeOldTrash()
             repository.autoArchiveOldCompleted()
             syncMePersonPhotoWithProfile()
+            // A device with no local edit would otherwise wait for the periodic worker before it
+            // sees another device's changes. Opening the app is the natural low-cost pull trigger.
+            backupOperations.syncSelfHostedIfConfigured()
         }
     }
 
@@ -161,15 +164,9 @@ data class SettingsUiState(
     val tagsFeatureEnabled: Boolean = true,
     val projectsFeatureEnabled: Boolean = true,
     val lists: List<YataList> = emptyList(),
-    val cloudBackupEnabled: Boolean = false,
-    val cloudBackupAccountEmail: String? = null,
-    val cloudBackupLastAt: Long? = null,
-    val cloudBackupWifiOnly: Boolean = true,
-    val cloudBackupIntervalMinutes: Long = 1440L,
-    val cloudBackupArchiveMonths: Int = 6,
+    val backupIntervalMinutes: Long = 1440L,
     val localBackupEnabled: Boolean = false,
     val localBackupLastAt: Long? = null,
-    val cloudBackupKeepCount: Int = 5,
     val sftpBackupEnabled: Boolean = false,
     val sftpHost: String = "",
     val sftpPort: Int = 22,
@@ -267,24 +264,15 @@ private data class SettingsVisualFeatureState(
     val projectsFeatureEnabled: Boolean
 )
 
-private data class SettingsCloudState(
+private data class SettingsBackupState(
     val lists: List<YataList>,
-    val cloudBackupEnabled: Boolean,
-    val cloudBackupAccountEmail: String?,
-    val cloudBackupLastAt: Long?,
-    val cloudBackupWifiOnly: Boolean
-)
-
-private data class SettingsCloudScheduleState(
-    val cloudBackupIntervalMinutes: Long,
-    val cloudBackupArchiveMonths: Int,
+    val backupIntervalMinutes: Long,
     val localBackupEnabled: Boolean,
-    val localBackupLastAt: Long?,
-    val cloudBackupKeepCount: Int
+    val localBackupLastAt: Long?
 )
 
 // Split across two nested groups (rather than one) purely because there are 9 SFTP fields and
-// combine's direct-lambda overload tops out at 5 — same reason SettingsCloudState/
+// combine's direct-lambda overload tops out at 5 — same reason SettingsBackupState/
 // SettingsCloudScheduleState are split from each other.
 private data class SftpConfigState(
     val sftpBackupEnabled: Boolean,
@@ -492,21 +480,11 @@ private data class MainNavigationState(
         settingsCoreFlow,
         combine(
             repository.getLists(),
-            userPreferences.cloudBackupEnabledFlow,
-            userPreferences.cloudBackupAccountEmailFlow,
-            userPreferences.cloudBackupLastAtFlow,
-            userPreferences.cloudBackupWifiOnlyFlow
-        ) { lists, cloudBackupEnabled, cloudBackupAccountEmail, cloudBackupLastAt, cloudBackupWifiOnly ->
-            SettingsCloudState(lists, cloudBackupEnabled, cloudBackupAccountEmail, cloudBackupLastAt, cloudBackupWifiOnly)
-        },
-        combine(
-            userPreferences.cloudBackupIntervalMinutesFlow,
-            userPreferences.cloudBackupArchiveMonthsFlow,
+            userPreferences.backupIntervalMinutesFlow,
             userPreferences.localBackupEnabledFlow,
-            userPreferences.localBackupLastAtFlow,
-            userPreferences.cloudBackupKeepCountFlow
-        ) { cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt, cloudBackupKeepCount ->
-            SettingsCloudScheduleState(cloudBackupIntervalMinutes, cloudBackupArchiveMonths, localBackupEnabled, localBackupLastAt, cloudBackupKeepCount)
+            userPreferences.localBackupLastAtFlow
+        ) { lists, backupIntervalMinutes, localBackupEnabled, localBackupLastAt ->
+            SettingsBackupState(lists, backupIntervalMinutes, localBackupEnabled, localBackupLastAt)
         },
         combine(
             combine(
@@ -529,7 +507,7 @@ private data class MainNavigationState(
             ) { protocol, ftpUseTls, keepCount -> RemoteBackupProtocolState(protocol, ftpUseTls, keepCount) }
         ) { config, status, protocol -> SftpSettingsState(config, status, protocol) },
         todayRemainingCount
-    ) { core, cloud, cloudSchedule, sftp, count ->
+    ) { core, backup, sftp, count ->
         SettingsUiState(
             themeMode = core.profile.themeMode,
             appFont = core.profile.appFont,
@@ -560,16 +538,10 @@ private data class MainNavigationState(
             peopleFeatureEnabled = core.visualFeature.peopleFeatureEnabled,
             tagsFeatureEnabled = core.visualFeature.tagsFeatureEnabled,
             projectsFeatureEnabled = core.visualFeature.projectsFeatureEnabled,
-            lists = cloud.lists,
-            cloudBackupEnabled = cloud.cloudBackupEnabled,
-            cloudBackupAccountEmail = cloud.cloudBackupAccountEmail,
-            cloudBackupLastAt = cloud.cloudBackupLastAt,
-            cloudBackupWifiOnly = cloud.cloudBackupWifiOnly,
-            cloudBackupIntervalMinutes = cloudSchedule.cloudBackupIntervalMinutes,
-            cloudBackupArchiveMonths = cloudSchedule.cloudBackupArchiveMonths,
-            localBackupEnabled = cloudSchedule.localBackupEnabled,
-            localBackupLastAt = cloudSchedule.localBackupLastAt,
-            cloudBackupKeepCount = cloudSchedule.cloudBackupKeepCount,
+            lists = backup.lists,
+            backupIntervalMinutes = backup.backupIntervalMinutes,
+            localBackupEnabled = backup.localBackupEnabled,
+            localBackupLastAt = backup.localBackupLastAt,
             sftpBackupEnabled = sftp.config.sftpBackupEnabled,
             sftpHost = sftp.config.sftpHost,
             sftpPort = sftp.config.sftpPort,
@@ -972,13 +944,10 @@ private data class MainNavigationState(
         safeLaunch { userPreferences.setAutoAssignToMe(enabled) }
     }
 
-    val cloudBackupEnabled: StateFlow<Boolean> = userPreferences.cloudBackupEnabledFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
     /**
      * True when *any* backup destination is switched on and usable — what the Today top bar's sync
-     * button gates on. It used to gate on Drive alone, which hid the button entirely from someone
-     * backing up only to their own server or only on-device: the one control for "back up right
+     * button gates on. It used to gate on one remote provider alone, which hid the button entirely
+     * from someone backing up only to their own server or only on-device: the one control for "back up right
      * now" was invisible precisely to the people who'd set a destination up for it.
      *
      * Self-hosted additionally requires a host, since the toggle can be on with the server dialog
@@ -986,28 +955,18 @@ private data class MainNavigationState(
      * worse than not showing it.
      */
     val anyBackupDestinationEnabled: StateFlow<Boolean> = combine(
-        userPreferences.cloudBackupEnabledFlow,
         userPreferences.localBackupEnabledFlow,
         userPreferences.sftpBackupEnabledFlow,
         userPreferences.sftpHostFlow
-    ) { cloud, local, selfHosted, host ->
-        cloud || local || (selfHosted && host.isNotBlank())
+    ) { local, selfHosted, host ->
+        local || (selfHosted && host.isNotBlank())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    val cloudBackupAccountEmail: StateFlow<String?> = userPreferences.cloudBackupAccountEmailFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val syncInProgress: StateFlow<Boolean> = backupOperations.syncInProgress
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    val cloudBackupLastAt: StateFlow<Long?> = userPreferences.cloudBackupLastAtFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    val cloudBackupWifiOnly: StateFlow<Boolean> = userPreferences.cloudBackupWifiOnlyFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-    val cloudBackupIntervalMinutes: StateFlow<Long> = userPreferences.cloudBackupIntervalMinutesFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 24 * 60L)
-
-    val cloudBackupArchiveMonths: StateFlow<Int> = userPreferences.cloudBackupArchiveMonthsFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 6)
+    val syncPendingOrInProgress: StateFlow<Boolean> = backupOperations.syncPendingOrInProgress
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val savedSmartFilterSets: StateFlow<Set<String>> = userPreferences.savedSmartFilterSetsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
@@ -1851,19 +1810,6 @@ private data class MainNavigationState(
         }
     }
 
-    fun cloudSignOut() {
-        safeLaunch { backupOperations.cloudSignOut() }
-    }
-
-    fun setCloudBackupEnabled(enabled: Boolean) {
-        safeLaunch {
-            val driveBackupAllowed = userPreferences.userEmailFlow.first()
-                .trim()
-                .equals("rjwarrier@gmail.com", ignoreCase = true)
-            userPreferences.setCloudBackupEnabled(enabled && driveBackupAllowed)
-        }
-    }
-
     fun setLocalBackupEnabled(enabled: Boolean) {
         safeLaunch {
             userPreferences.setLocalBackupEnabled(enabled)
@@ -1921,6 +1867,7 @@ private data class MainNavigationState(
 
     /** Backs up every enabled destination; one result per attempted destination. */
     fun backupAllNow(onResult: (List<com.mj.yata.domain.model.BackupRunResult>) -> Unit) {
+        backupOperations.cancelDebouncedBackup()
         safeLaunch { onResult(backupOperations.backupAllConfigured()) }
     }
 
@@ -2002,6 +1949,7 @@ private data class MainNavigationState(
     }
 
     fun sftpBackupNow(onResult: (Result<Unit>) -> Unit) {
+        backupOperations.cancelDebouncedBackup()
         safeLaunch { onResult(backupOperations.sftpBackupNow()) }
     }
 
@@ -2018,6 +1966,7 @@ private data class MainNavigationState(
     }
 
     fun ftpBackupNow(onResult: (Result<Unit>) -> Unit) {
+        backupOperations.cancelDebouncedBackup()
         safeLaunch { onResult(backupOperations.ftpBackupNow()) }
     }
 
@@ -2043,62 +1992,19 @@ private data class MainNavigationState(
         }
     }
 
-    fun setCloudBackupWifiOnly(wifiOnly: Boolean) {
-        safeLaunch {
-            userPreferences.setCloudBackupWifiOnly(wifiOnly)
-        }
-    }
-
     /**
-     * The one backup schedule, covering every enabled destination. Still writes the old Drive-only
+     * The one backup schedule, covering every enabled destination. Still writes the old legacy
      * key so a downgrade to a build with per-destination schedules keeps the user's chosen cadence
      * rather than silently reverting to the default.
      */
-    fun setCloudBackupIntervalMinutes(minutes: Long) {
-        safeLaunch {
-            userPreferences.setCloudBackupIntervalMinutes(minutes)
-            userPreferences.setBackupIntervalMinutes(minutes)
-        }
-        backupOperations.updateBackupInterval(minutes)
-    }
-
-    fun setCloudBackupArchiveMonths(months: Int) {
-        safeLaunch {
-            userPreferences.setCloudBackupArchiveMonths(months)
-        }
-    }
-
-    fun setCloudBackupKeepCount(count: Int) {
-        safeLaunch {
-            userPreferences.setCloudBackupKeepCount(count)
-        }
-    }
-
     /** One visible retention setting for every off-device backup destination. */
     fun setRemoteBackupKeepCount(count: Int) {
         safeLaunch {
-            userPreferences.setCloudBackupKeepCount(count)
             userPreferences.setSftpKeepCount(count)
         }
     }
 
-    fun cloudBackupNow(onResult: (Result<Unit>) -> Unit) {
-        safeLaunch { onResult(backupOperations.cloudBackupNow()) }
-    }
-
-    fun listCloudBackups(onResult: (Result<List<CloudBackupEntry>>) -> Unit) {
-        safeLaunch { onResult(backupOperations.listCloudBackups()) }
-    }
-
-    fun restoreCloudBackup(fileId: String, onResult: (Result<Unit>) -> Unit) {
-        safeLaunch { onResult(backupOperations.restoreCloudBackup(fileId)) }
-    }
-
-    fun compareWithLastBackup(onResult: (Result<com.mj.yata.data.cloud.CloudBackupDiff>) -> Unit) {
-        safeLaunch { onResult(backupOperations.compareWithLastBackup(tasks.value)) }
-    }
-
-    fun compareWithLastSelfHostedBackup(onResult: (Result<com.mj.yata.data.cloud.CloudBackupDiff>) -> Unit) {
+    fun compareWithLastSelfHostedBackup(onResult: (Result<BackupDiff>) -> Unit) {
         safeLaunch { onResult(backupOperations.compareWithLastSelfHostedBackup(tasks.value)) }
     }
 }

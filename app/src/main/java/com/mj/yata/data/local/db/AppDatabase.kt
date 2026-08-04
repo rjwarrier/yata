@@ -24,7 +24,7 @@ import org.json.JSONArray
         SubtaskEntity::class,
         TaskCommentEntity::class
     ],
-    version = 30,
+    version = 31,
     // Exported to app/schemas — gives migration tests real historical schemas to open, and lets
     // purely-additive future changes use Room auto-migrations instead of hand-written ones.
     exportSchema = true
@@ -346,6 +346,24 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_29_30 = object : Migration(29, 30) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE tasks ADD COLUMN estimateMinutes INTEGER DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_30_31 = object : Migration(30, 31) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN ownerId TEXT DEFAULT NULL")
+                val hasAssigneeTable = db.query(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'task_person_cross_ref'"
+                ).use { it.moveToFirst() }
+                if (hasAssigneeTable) {
+                    // Composite junction rows retain insertion rowid. Capture the first assignment
+                    // once so future Room relation query ordering cannot silently change ownership.
+                    db.execSQL(
+                        "UPDATE tasks SET ownerId = (" +
+                            "SELECT personId FROM task_person_cross_ref " +
+                            "WHERE taskId = tasks.id ORDER BY rowid ASC LIMIT 1)"
+                    )
+                }
             }
         }
     }

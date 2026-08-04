@@ -157,7 +157,9 @@ fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>, subtask
     completedAt = completedAt,
     createdAt = createdAt,
     deletedAt = deletedAt,
-    assigneeIds = assigneeIds,
+    assigneeIds = ownerId?.takeIf { it in assigneeIds }?.let { owner ->
+        listOf(owner) + assigneeIds.filterNot { it == owner }
+    } ?: assigneeIds,
     tagIds = tagIds,
     recurrence = deserializeRecurrence(recurrenceJson),
     subtasks = subtasks,
@@ -191,7 +193,8 @@ fun Task.toEntity() = TaskEntity(
     seriesId = seriesId,
     archived = archived,
     followUpAt = followUpAt,
-    estimateMinutes = estimateMinutes
+    estimateMinutes = estimateMinutes,
+    ownerId = assigneeIds.firstOrNull()
 )
 
 fun TaskWithRelations.toDomain() = task.toDomain(

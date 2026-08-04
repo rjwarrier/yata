@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 
 interface WidgetUpdater {
-    /** Refreshes every placed instance of every home-screen widget. Called after any task write. */
+    /** Called after any sync-relevant data write to schedule sync and refresh placed home-screen widgets. */
     fun notifyTasksChanged()
 }
 
@@ -54,6 +54,7 @@ class WidgetUpdaterImpl @Inject constructor(
     }
 
     override fun notifyTasksChanged() {
+        backupOperations.get().scheduleDebouncedBackup()
         changeEvents.tryEmit(Unit)
     }
 
@@ -110,9 +111,6 @@ class WidgetUpdaterImpl @Inject constructor(
             }
         }
 
-        // Trigger backup debounce across every configured destination, not just Drive -- a task
-        // change should refresh all the copies the user asked for, not leave the others stale.
-        backupOperations.get().scheduleDebouncedBackup()
     }
 
     private fun isOverdue(task: com.mj.yata.domain.model.Task, today: java.time.LocalDate): Boolean {

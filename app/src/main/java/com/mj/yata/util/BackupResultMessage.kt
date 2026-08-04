@@ -40,7 +40,6 @@ fun backupResultMessage(results: List<BackupRunResult>, context: Context): Backu
 }
 
 fun backupDestinationLabel(destination: BackupDestination): Int = when (destination) {
-    BackupDestination.CLOUD -> R.string.settings_backup_dest_cloud
     BackupDestination.LOCAL -> R.string.settings_backup_dest_local
     BackupDestination.SELF_HOSTED -> R.string.settings_backup_dest_self_hosted
 }

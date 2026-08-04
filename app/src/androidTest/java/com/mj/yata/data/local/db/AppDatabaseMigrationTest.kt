@@ -675,6 +675,51 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate30To31_addsAndBackfillsOwnerId() {
+        context.deleteDatabase(TEST_DB)
+        createVersion18TasksTableDatabase().apply {
+            execSQL(
+                "CREATE TABLE `task_person_cross_ref` (" +
+                    "`taskId` TEXT NOT NULL, `personId` TEXT NOT NULL, " +
+                    "PRIMARY KEY(`taskId`, `personId`))"
+            )
+            execSQL(
+                "INSERT INTO `tasks` (`id`,`title`,`listId`,`projectId`,`section`,`dueDate`,`dueTime`,`reminder`,`priority`,`flag`,`done`,`completedAt`,`deletedAt`,`notes`,`recurrenceJson`,`sortOrder`) " +
+                    "VALUES ('t1','Delegate',NULL,NULL,'',NULL,NULL,NULL,'none',0,0,NULL,NULL,NULL,NULL,0)"
+            )
+            execSQL(
+                "INSERT INTO `task_person_cross_ref` (`taskId`, `personId`) " +
+                    "VALUES ('t1', 'owner'), ('t1', 'collaborator')"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(31) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_23_24.migrate(db)
+                    AppDatabase.MIGRATION_24_25.migrate(db)
+                    AppDatabase.MIGRATION_25_26.migrate(db)
+                    AppDatabase.MIGRATION_26_27.migrate(db)
+                    AppDatabase.MIGRATION_27_28.migrate(db)
+                    AppDatabase.MIGRATION_29_30.migrate(db)
+                    AppDatabase.MIGRATION_30_31.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("SELECT `id`, `ownerId` FROM `tasks` WHERE `id` = 't1'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("owner", cursor.getString(cursor.getColumnIndexOrThrow("ownerId")))
+            }
+            close()
+        }
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)

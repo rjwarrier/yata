@@ -1,14 +1,17 @@
 package com.mj.yata.domain.usecase
 
-import com.mj.yata.data.cloud.CloudBackupDiff
-import com.mj.yata.data.cloud.CloudBackupEntry
-import com.mj.yata.data.cloud.CloudBackupManager
+import com.mj.yata.data.backup.BackupDiff
+import com.mj.yata.data.backup.compareBackupJsonWithTasks
 import com.mj.yata.data.ftp.FtpBackupManager
 import com.mj.yata.data.local.backup.LocalBackupManager
 import com.mj.yata.data.sftp.SftpBackupManager
 import com.mj.yata.data.sftp.SftpConnectionTestResult
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
+import com.mj.yata.R
 import com.mj.yata.data.backup.UnifiedBackupWorker
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.BackupDestination
@@ -22,6 +25,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.mj.yata.domain.repository.YataRepository
@@ -31,8 +37,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Backup triggers extracted from MainViewModel — Drive (cloud), on-device (local), and the
- * export-then-wipe path. Only the "do it now" actions live here; the enabled/interval/wifi-only
+ * Backup triggers extracted from MainViewModel — self-hosted sync, on-device backup, and the
+ * export-then-wipe path. Only the "do it now" actions live here; the enabled/interval
  * *preferences* stay on the ViewModel with the rest of the DataStore setters, since those are
  * plain writes with no orchestration.
  */
@@ -40,7 +46,6 @@ import javax.inject.Singleton
 class BackupOperations @Inject constructor(
     private val repository: YataRepository,
     private val jsonExporter: JsonExporter,
-    private val cloudBackupManager: CloudBackupManager,
     private val localBackupManager: LocalBackupManager,
     private val sftpBackupManager: SftpBackupManager,
     private val ftpBackupManager: FtpBackupManager,
@@ -49,13 +54,21 @@ class BackupOperations @Inject constructor(
 ) {
 
     private companion object {
-        /** Matches the window the Drive-only debounce used, so edit bursts behave as before. */
-        const val DEBOUNCE_MILLIS = 2 * 60 * 1000L
-        const val DRIVE_LIMITED_TEST_EMAIL = "rjwarrier@gmail.com"
+        /** Keeps edit bursts from producing a backup for every individual keystroke. */
+        const val DEBOUNCE_MILLIS = 15 * 1000L
     }
 
     private val debounceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var debounceJob: Job? = null
+    private var debounceGeneration = 0
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val syncStateLock = Any()
+    private var activeSyncs = 0
+    private var activeSyncFailed = false
+    private val _syncInProgress = MutableStateFlow(false)
+    val syncInProgress: StateFlow<Boolean> = _syncInProgress.asStateFlow()
+    private val _syncPendingOrInProgress = MutableStateFlow(false)
+    val syncPendingOrInProgress: StateFlow<Boolean> = _syncPendingOrInProgress.asStateFlow()
 
     /**
      * Backs up to every destination the user has switched on, whatever triggered it — the manual
@@ -65,45 +78,146 @@ class BackupOperations @Inject constructor(
      *
      * Runs sequentially and never lets one destination's failure stop the next: the whole value of
      * a second destination is that it still works when the first doesn't. Returns one result per
-     * *attempted* destination, so callers can report "Drive ok, server failed" rather than a single
+     * *attempted* destination, so callers can report "local ok, server failed" rather than a single
      * verdict that's wrong for at least one of them. Destinations that are switched off aren't
      * attempted and don't appear in the list.
      */
     suspend fun backupAllConfigured(): List<BackupRunResult> = buildList {
-        if (userPreferences.cloudBackupEnabledFlow.first() && isDriveBackupAvailable()) {
-            add(attempt(BackupDestination.CLOUD) { cloudBackupManager.backupNow() })
-        }
-        if (userPreferences.localBackupEnabledFlow.first()) {
-            add(attempt(BackupDestination.LOCAL) { localBackupManager.backupNow() })
-        }
         // Host check as well as the toggle: the switch can be on with the server dialog never
         // filled in, and an attempt that can only fail would report a backup failure for something
-        // the user never actually set up.
+        // the user never actually set up. Sync first so any pulled changes are included in the
+        // local safety copy produced by the same run.
         if (userPreferences.sftpBackupEnabledFlow.first() &&
             userPreferences.sftpHostFlow.first().isNotBlank()
         ) {
             val useFtp = userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP
             add(
                 attempt(BackupDestination.SELF_HOSTED) {
-                    if (useFtp) ftpBackupManager.backupNow() else sftpBackupManager.backupNow()
+                    syncSelfHostedWithToast {
+                        if (useFtp) ftpBackupManager.syncNow() else sftpBackupManager.syncNow()
+                    }
                 }
             )
+        }
+        if (userPreferences.localBackupEnabledFlow.first()) {
+            add(attempt(BackupDestination.LOCAL) { localBackupManager.backupNow() })
         }
     }
 
     /**
-     * Coalesces a burst of edits into one backup of every destination, [DEBOUNCE_MILLIS] after the
-     * last change. Replaces the Drive-only debounce this used to call, which left the other
-     * destinations only as fresh as their next scheduled run.
+     * Coalesces a burst of edits into one backup of every destination shortly after the last
+     * change, so self-hosted sync stays fresh between scheduled runs without firing once per
+     * keystroke.
      *
-     * Scoped to the process rather than any caller: the point is to still be running two minutes
-     * after the screen that triggered it went away.
+     * Scoped to the process rather than any caller: the point is to still be running shortly after
+     * the screen that triggered it went away.
      */
     fun scheduleDebouncedBackup() {
-        debounceJob?.cancel()
-        debounceJob = debounceScope.launch {
-            delay(DEBOUNCE_MILLIS)
-            backupAllConfigured()
+        val generation = synchronized(syncStateLock) {
+            debounceGeneration += 1
+            debounceJob?.cancel()
+            _syncPendingOrInProgress.value = true
+            debounceGeneration
+        }
+        val nextJob = debounceScope.launch {
+            try {
+                delay(DEBOUNCE_MILLIS)
+                backupAllConfigured()
+            } finally {
+                finishDebouncedBackup(generation)
+            }
+        }
+        synchronized(syncStateLock) {
+            if (generation == debounceGeneration) {
+                debounceJob = nextJob
+            } else {
+                nextJob.cancel()
+            }
+        }
+    }
+
+    fun cancelDebouncedBackup() {
+        val jobToCancel = synchronized(syncStateLock) {
+            debounceGeneration += 1
+            val job = debounceJob
+            debounceJob = null
+            if (activeSyncs == 0) _syncPendingOrInProgress.value = false
+            job
+        }
+        jobToCancel?.cancel()
+    }
+
+    private fun finishDebouncedBackup(generation: Int) {
+        synchronized(syncStateLock) {
+            if (generation == debounceGeneration) {
+                debounceJob = null
+                if (activeSyncs == 0) _syncPendingOrInProgress.value = false
+            }
+        }
+    }
+
+    /** Pulls remote changes whenever the main app is opened, without touching other backups. */
+    suspend fun syncSelfHostedIfConfigured(): Result<Unit>? {
+        if (!userPreferences.sftpBackupEnabledFlow.first() ||
+            userPreferences.sftpHostFlow.first().isBlank()
+        ) return null
+        return syncSelfHostedWithToast {
+            if (userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP) {
+                ftpBackupManager.syncNow()
+            } else {
+                sftpBackupManager.syncNow()
+            }
+        }
+    }
+
+    private suspend fun syncSelfHostedWithToast(block: suspend () -> Result<Unit>): Result<Unit> {
+        beginSyncFeedback()
+        return try {
+            val result = block()
+            finishSyncFeedback(success = result.isSuccess)
+            result
+        } catch (e: CancellationException) {
+            finishSyncFeedback(success = false)
+            throw e
+        } catch (t: Throwable) {
+            finishSyncFeedback(success = false)
+            Result.failure(t)
+        }
+    }
+
+    private fun beginSyncFeedback() {
+        val shouldToast = synchronized(syncStateLock) {
+            activeSyncs++
+            if (activeSyncs == 1) {
+                activeSyncFailed = false
+                _syncInProgress.value = true
+                _syncPendingOrInProgress.value = true
+                true
+            } else {
+                false
+            }
+        }
+        if (shouldToast) showSyncToast(R.string.sync_toast_started)
+    }
+
+    private fun finishSyncFeedback(success: Boolean) {
+        val finalToast = synchronized(syncStateLock) {
+            if (!success) activeSyncFailed = true
+            activeSyncs = (activeSyncs - 1).coerceAtLeast(0)
+            if (activeSyncs == 0) {
+                _syncInProgress.value = false
+                if (debounceJob?.isActive != true) _syncPendingOrInProgress.value = false
+                if (activeSyncFailed) R.string.sync_toast_failed else R.string.sync_toast_finished
+            } else {
+                null
+            }
+        }
+        finalToast?.let(::showSyncToast)
+    }
+
+    private fun showSyncToast(messageRes: Int) {
+        mainHandler.post {
+            Toast.makeText(context, context.getString(messageRes), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -133,23 +247,7 @@ class BackupOperations @Inject constructor(
         return filename
     }
 
-    suspend fun cloudSignOut() = cloudBackupManager.signOut()
-
-    suspend fun cloudBackupNow(): Result<Unit> =
-        if (isDriveBackupAvailable()) {
-            cloudBackupManager.backupNow()
-        } else {
-            Result.failure(IllegalStateException("Google Drive backup is under limited testing"))
-        }
-
-    suspend fun listCloudBackups(): Result<List<CloudBackupEntry>> = cloudBackupManager.listBackups()
-
-    suspend fun restoreCloudBackup(fileId: String): Result<Unit> = cloudBackupManager.restoreBackup(fileId)
-
-    suspend fun compareWithLastBackup(tasks: List<Task>): Result<CloudBackupDiff> =
-        cloudBackupManager.compareWithLatestBackup(tasks)
-
-    suspend fun compareWithLastSelfHostedBackup(tasks: List<Task>): Result<CloudBackupDiff> {
+    suspend fun compareWithLastSelfHostedBackup(tasks: List<Task>): Result<BackupDiff> {
         val useFtp = userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP
         val backups = (if (useFtp) {
             ftpBackupManager.listBackups()
@@ -165,7 +263,7 @@ class BackupOperations @Inject constructor(
         }).getOrElse { return Result.failure(it) }
         return try {
             Result.success(
-                cloudBackupManager.compareBackupJsonWithTasks(
+                compareBackupJsonWithTasks(
                     backupJsonBytes = bytes,
                     currentTasks = tasks,
                     backupCreatedTime = backupCreatedTimeFromFilename(latest)
@@ -180,9 +278,7 @@ class BackupOperations @Inject constructor(
     fun updateBackupInterval(minutes: Long) =
         UnifiedBackupWorker.schedule(context, minutes, androidx.work.ExistingPeriodicWorkPolicy.UPDATE)
 
-    /** Reschedules the periodic Drive upload job. Not suspend — WorkManager enqueue is sync. */
-    fun updateCloudBackupInterval(minutes: Long) = cloudBackupManager.updateBackupInterval(minutes)
-
+    /** Triggers an immediate encrypted on-device backup. */
     suspend fun backupLocalNow() = localBackupManager.backupNow()
 
     suspend fun restoreLatestLocalBackup(): Boolean = localBackupManager.restoreLatest().isSuccess
@@ -191,7 +287,7 @@ class BackupOperations @Inject constructor(
 
     suspend fun pinSftpHostKey(fingerprint: String) = sftpBackupManager.pinHostKey(fingerprint)
 
-    suspend fun sftpBackupNow(): Result<Unit> = sftpBackupManager.backupNow()
+    suspend fun sftpBackupNow(): Result<Unit> = syncSelfHostedWithToast { sftpBackupManager.syncNow() }
 
     suspend fun listSftpBackups(): Result<List<String>> = sftpBackupManager.listBackups()
 
@@ -202,7 +298,7 @@ class BackupOperations @Inject constructor(
 
     suspend fun testFtpConnection(): Result<Unit> = ftpBackupManager.testConnection()
 
-    suspend fun ftpBackupNow(): Result<Unit> = ftpBackupManager.backupNow()
+    suspend fun ftpBackupNow(): Result<Unit> = syncSelfHostedWithToast { ftpBackupManager.syncNow() }
 
     suspend fun listFtpBackups(): Result<List<String>> = ftpBackupManager.listBackups()
 
@@ -211,12 +307,9 @@ class BackupOperations @Inject constructor(
     suspend fun inspectFtpBackup(filename: String): Result<BackupSummary> =
         ftpBackupManager.inspectBackup(filename)
 
-    private suspend fun isDriveBackupAvailable(): Boolean =
-        userPreferences.userEmailFlow.first().trim().equals(DRIVE_LIMITED_TEST_EMAIL, ignoreCase = true)
-
     private fun backupCreatedTimeFromFilename(filename: String): String {
         val name = filename.substringAfterLast('/')
-        val match = Regex("""yata_backup_(\d{8})_(\d{6})\.json""").matchEntire(name)
+        val match = Regex("""yata_backup_(\d{8})_(\d{6})\.(json|zip)(\.enc)?""").matchEntire(name)
             ?: return filename
         return try {
             val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss", java.util.Locale.US)

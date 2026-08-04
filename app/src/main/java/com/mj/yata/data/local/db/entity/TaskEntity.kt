@@ -68,5 +68,8 @@ data class TaskEntity(
     val followUpAt: Long? = null,
     // Planned effort in minutes; null = unestimated, which is not the same as 0. See
     // Task.estimateMinutes in domain/model/DomainModels.kt.
-    val estimateMinutes: Int? = null
+    val estimateMinutes: Int? = null,
+    // The junction table is a set and Room does not guarantee relation order. Persist the owner
+    // separately so assigneeIds[0] survives backup/sync/import and remains semantic.
+    val ownerId: String? = null
 )

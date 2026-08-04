@@ -134,11 +134,13 @@ class ReminderScheduler @Inject constructor(
         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
     }
 
-    override fun cancelReminder(task: TaskEntity) {
+    override fun cancelReminder(task: TaskEntity) = cancelReminder(task.id)
+
+    override fun cancelReminder(taskId: String) {
         val intent = Intent(context, ReminderReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            task.id.hashCode(),
+            taskId.hashCode(),
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )

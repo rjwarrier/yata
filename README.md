@@ -72,7 +72,8 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 
 **Backup & export**
 - Full JSON backup/restore, CSV export/import
-- Google Drive cloud backup (Drive `appDataFolder` scope + Google Sign-In), periodic + debounced background upload via WorkManager, optional Wi-Fi-only
+- Self-hosted sync and backup over SFTP/FTPS/FTP, periodic + debounced background sync via WorkManager
+- Client-only multi-device sync over a self-hosted SFTP/FTPS/FTP folder: three-way snapshot merge, deletion propagation, remote writer lease, foreground/periodic/debounced pulls, and rotated rollback backups; no custom server daemon required. Devices in one sync set use the same protocol, remote folder, and encryption passphrase.
 - `.ics` calendar export, Markdown export for clipboard/share
 - Branded PDF/image export for any Project, Tag, or Person — accent-colored letterhead, stat chips + progress bar, tasks grouped by project/list with tag chips and assignee names, via an options sheet (include/exclude completed with an optional "older than N days" cutoff, strike-off toggle, show tags/assignees, Compact/Relaxed layout). PDFs paginate cleanly (never mid-row) with real page numbers and document metadata (Title/Author/Subject)
 
@@ -96,8 +97,8 @@ YATA is a single-user, offline-first task manager. Tasks can optionally be organ
 | Persistence | Room 2.6.1 (hand-written migrations) + DataStore Preferences |
 | Navigation | Navigation-Compose 2.7.7 |
 | Home-screen widgets | Glance 1.1.1 (`glance-appwidget`, `glance-material3`) |
-| Background work | WorkManager + Hilt-Work (cloud backup uploads) |
-| Cloud backup | Google Sign-In + Drive REST v3 over OkHttp |
+| Background work | WorkManager + Hilt-Work (self-hosted and local backups) |
+| Self-hosted sync | Client-side SFTP/FTPS/FTP snapshot merge; no custom server daemon required |
 | Markdown | Markwon |
 | PDF metadata | `pdfbox-android` (Info-dictionary only — pages are rendered natively via `android.graphics.pdf.PdfDocument`) |
 | Tasker plugin | `taskerpluginlibrary` |

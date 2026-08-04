@@ -3,6 +3,8 @@ package com.mj.yata.data.sftp
 import android.content.Context
 import android.util.Log
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.data.sync.SnapshotSyncEngine
+import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +22,7 @@ import java.security.PublicKey
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,11 +42,9 @@ class SftpNotConfiguredException(message: String) : Exception(message)
 class SftpHostKeyNotTrustedException(message: String) : Exception(message)
 
 /**
- * On-device counterpart to [com.mj.yata.data.cloud.CloudBackupManager] and
- * [com.mj.yata.data.local.backup.LocalBackupManager] — same JSON payload (via [JsonExporter]),
- * uploaded over SFTP to a server the user supplies, instead of Google Drive or app-private
- * storage. No third-party account, no vendor lock-in to a specific host — anything that speaks
- * SFTP works.
+ * Server-backup counterpart to [com.mj.yata.data.local.backup.LocalBackupManager] — same JSON
+ * payload (via [JsonExporter]), uploaded over SFTP to a server the user supplies. No third-party
+ * account, no vendor lock-in to a specific host — anything that speaks SFTP works.
  *
  * Host key verification is TOFU (trust-on-first-use), matching how every mainstream SSH client
  * behaves: the fingerprint observed during the first unauthenticated key exchange is pinned in
@@ -59,13 +60,21 @@ class SftpBackupManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val jsonExporter: JsonExporter,
     private val userPreferences: UserPreferences,
-    private val credentialsStore: RemoteBackupCredentialsStore
+    private val credentialsStore: RemoteBackupCredentialsStore,
+    private val snapshotSyncEngine: SnapshotSyncEngine
 ) {
     companion object {
         private const val TAG = "SftpBackupManager"
         private const val FILENAME_PREFIX = "yata_backup_"
         private const val FILENAME_SUFFIX = ".json"
+        private const val ENCRYPTED_SUFFIX = ".json.enc"
+        private const val SYNC_FILENAME = "yata_sync_v1.json"
+        private const val SYNC_PREVIOUS_FILENAME = ".yata_sync_v1.previous"
+        private const val SYNC_LOCK_DIR = ".yata_sync_v1.lock"
+        private const val SYNC_LEASE_FILE = "lease"
+        private const val SYNC_LOCK_STALE_MILLIS = 60 * 60 * 1000L
         private const val CONNECT_TIMEOUT_MS = 15_000
+        private const val SOCKET_TIMEOUT_MS = 60_000
     }
 
     private val sessionMutex = Mutex()
@@ -95,10 +104,11 @@ class SftpBackupManager @Inject constructor(
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
                 val keepCount = userPreferences.sftpKeepCountFlow.first()
                 val (primaryJson, _) = jsonExporter.buildSplitBackupJson(archiveMonths = 0)
-                val bytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
+                val bytes = encodePayload(primaryJson.toString(2).toByteArray(Charsets.UTF_8))
+                val encrypted = credentialsStore.backupPassphrase != null
                 val filename = FILENAME_PREFIX +
                     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                    FILENAME_SUFFIX
+                    (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
 
                 val tempFile = File.createTempFile("sftp_upload", ".json", context.cacheDir)
                 try {
@@ -109,8 +119,8 @@ class SftpBackupManager @Inject constructor(
                         buildClient().use { ssh ->
                             ssh.newSFTPClient().use { sftp ->
                                 ensureRemoteDir(sftp, remoteDir)
-                                val finalPath = "$remoteDir/$filename"
-                                val temporaryPath = "$remoteDir/.$filename.part"
+                                val finalPath = remotePath(remoteDir, filename)
+                                val temporaryPath = remotePath(remoteDir, ".$filename.part")
                                 try {
                                     sftp.put(tempFile.absolutePath, temporaryPath)
                                     val uploadedSize = sftp.stat(temporaryPath).size
@@ -139,6 +149,74 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    /**
+     * Pulls the canonical server snapshot, merges it with this device, and publishes the merged
+     * result while holding a cross-device lease. Timestamped backups remain recovery points; the
+     * fixed canonical file is the only input devices normally synchronize against.
+     */
+    suspend fun syncNow(): Result<Unit> = sessionMutex.withLock {
+        withContext(Dispatchers.IO) {
+            try {
+                val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+                val keepCount = userPreferences.sftpKeepCountFlow.first()
+                val host = userPreferences.sftpHostFlow.first()
+                val port = userPreferences.sftpPortFlow.first()
+                val username = userPreferences.sftpUsernameFlow.first()
+                val normalizedHost = host.trim().trimEnd('.').lowercase(Locale.ROOT)
+
+                withContext(NonCancellable) {
+                    buildClient().use { ssh ->
+                        ssh.newSFTPClient().use { sftp ->
+                            ensureRemoteDir(sftp, remoteDir)
+                            val canonicalRemoteDir =
+                                sftp.canonicalize(remoteDir).trimEnd('/').ifEmpty { "/" }
+                            val scopeKey =
+                                "sftp|$username@$normalizedHost:$port|$canonicalRemoteDir"
+                            val lease = acquireSyncLease(sftp, remoteDir)
+                            try {
+                                val remote = readSyncSource(sftp, remoteDir)
+                                val prepared = snapshotSyncEngine.prepare(
+                                    remoteBytes = remote.jsonBytes,
+                                    scopeKey = scopeKey,
+                                    remoteIsRecovery =
+                                        remote.jsonBytes != null && !remote.canonicalHeadValid
+                                )
+                                val publish = prepared.remoteNeedsPublish || !remote.canonicalHeadValid
+                                val canonicalBytes = if (publish) {
+                                    encodePayload(prepared.canonicalBytes)
+                                } else {
+                                    null
+                                }
+                                if (canonicalBytes != null) {
+                                    publishCanonical(
+                                        sftp = sftp,
+                                        remoteDir = remoteDir,
+                                        bytes = canonicalBytes,
+                                        previousBytes = remote.encodedBytes,
+                                        lease = lease
+                                    )
+                                }
+                                snapshotSyncEngine.commit(prepared)
+                                if (canonicalBytes != null) {
+                                    writeTimestampedBackup(sftp, remoteDir, canonicalBytes)
+                                    pruneOldBackups(sftp, remoteDir, keepCount)
+                                }
+                            } finally {
+                                releaseSyncLease(sftp, lease)
+                            }
+                        }
+                    }
+                }
+
+                userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.w(TAG, "syncNow failed", e)
+                Result.failure(e)
+            }
+        }
+    }
+
     /** Filenames only, newest first — the same ordering [pruneOldBackups] relies on
      * (timestamp-embedded names sort correctly as plain strings). */
     suspend fun listBackups(): Result<List<String>> = withContext(Dispatchers.IO) {
@@ -147,7 +225,9 @@ class SftpBackupManager @Inject constructor(
             val names = buildClient().use { ssh ->
                 ssh.newSFTPClient().use { sftp ->
                     sftp.ls(remoteDir)
-                        .filter { it.name.startsWith(FILENAME_PREFIX) }
+                        .filter {
+                            it.isRegularFile && isHistoryBackupName(it.name)
+                        }
                         .map { it.name }
                 }
             }
@@ -158,17 +238,19 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
-    suspend fun restoreBackup(filename: String): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val bytes = download(filename)
-            if (jsonExporter.importBytes(bytes)) {
-                Result.success(Unit)
-            } else {
-                Result.failure(IllegalStateException("Restore failed - backup file unreadable"))
+    suspend fun restoreBackup(filename: String): Result<Unit> = sessionMutex.withLock {
+        withContext(Dispatchers.IO) {
+            try {
+                val bytes = download(filename)
+                if (jsonExporter.importBytes(bytes)) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(IllegalStateException("Restore failed - backup file unreadable"))
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "restoreBackup failed", e)
+                Result.failure(e)
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "restoreBackup failed", e)
-            Result.failure(e)
         }
     }
 
@@ -198,9 +280,9 @@ class SftpBackupManager @Inject constructor(
         try {
             val remoteDir = userPreferences.sftpRemoteDirFlow.first()
             buildClient().use { ssh ->
-                ssh.newSFTPClient().use { sftp -> sftp.get("$remoteDir/$filename", tempFile.absolutePath) }
+                ssh.newSFTPClient().use { sftp -> sftp.get(remotePath(remoteDir, filename), tempFile.absolutePath) }
             }
-            return tempFile.readBytes()
+            return decodePayload(tempFile.readBytes())
         } finally {
             tempFile.delete()
         }
@@ -210,6 +292,260 @@ class SftpBackupManager @Inject constructor(
      * whether to accept it — so callers can capture the fingerprint even when verification then
      * rejects it (a changed key) or auth afterward fails (wrong password), neither of which is
      * the caller finding out what key the server actually offered. */
+    private data class SyncLease(
+        val lockPath: String,
+        val leasePath: String,
+        val token: String
+    )
+
+    private data class RemoteSyncSource(
+        val jsonBytes: ByteArray?,
+        val encodedBytes: ByteArray?,
+        val canonicalHeadValid: Boolean
+    )
+
+    private fun encodePayload(jsonBytes: ByteArray): ByteArray {
+        val passphrase = credentialsStore.backupPassphrase
+        return if (passphrase == null) jsonBytes else BackupCrypto.encrypt(jsonBytes, passphrase)
+    }
+
+    private fun decodePayload(bytes: ByteArray): ByteArray {
+        if (!BackupCrypto.isEncrypted(bytes)) return bytes
+        val passphrase = credentialsStore.backupPassphrase
+            ?: throw IllegalStateException(
+                "This backup is encrypted - set the backup passphrase before syncing or restoring"
+            )
+        return try {
+            BackupCrypto.decrypt(bytes, passphrase)
+        } catch (e: Exception) {
+            throw IllegalStateException("Wrong passphrase, or the backup is damaged", e)
+        }
+    }
+
+    private fun readSyncSource(sftp: SFTPClient, remoteDir: String): RemoteSyncSource {
+        val canonicalPath = remotePath(remoteDir, SYNC_FILENAME)
+        var sawExistingCandidate = false
+
+        fun acceptIfValid(candidate: String, bytes: ByteArray): RemoteSyncSource? {
+            sawExistingCandidate = true
+            val decoded = try {
+                decodePayload(bytes)
+            } catch (e: Exception) {
+                Log.w(TAG, "Skipping unreadable sync candidate $candidate", e)
+                return null
+            }
+            if (!snapshotSyncEngine.isValidRemoteSnapshot(decoded)) {
+                Log.w(TAG, "Skipping invalid sync candidate $candidate")
+                return null
+            }
+            return RemoteSyncSource(
+                jsonBytes = decoded,
+                encodedBytes = bytes,
+                canonicalHeadValid = candidate == canonicalPath
+            )
+        }
+
+        val canonicalBytes = try {
+            readRemoteBytes(sftp, canonicalPath)
+        } catch (e: IllegalStateException) {
+            sawExistingCandidate = true
+            Log.w(TAG, "Skipping damaged sync candidate $canonicalPath", e)
+            null
+        }
+        if (canonicalBytes != null) {
+            acceptIfValid(canonicalPath, canonicalBytes)?.let { return it }
+        }
+
+        val historyPaths = sftp.ls(remoteDir)
+            .asSequence()
+            .filter { it.isRegularFile && isHistoryBackupName(it.name) }
+            .map { remotePath(remoteDir, it.name) }
+            .sortedDescending()
+            .toList()
+        val recoveryCandidates = historyPaths.asSequence() +
+            sequenceOf(remotePath(remoteDir, SYNC_PREVIOUS_FILENAME))
+
+        for (candidate in recoveryCandidates) {
+            val bytes = try {
+                readRemoteBytes(sftp, candidate)
+            } catch (e: IllegalStateException) {
+                sawExistingCandidate = true
+                Log.w(TAG, "Skipping damaged sync candidate $candidate", e)
+                continue
+            } ?: continue
+            acceptIfValid(candidate, bytes)?.let { return it }
+        }
+        check(!sawExistingCandidate) {
+            "Remote sync files exist, but none contains a valid YATA snapshot"
+        }
+        return RemoteSyncSource(jsonBytes = null, encodedBytes = null, canonicalHeadValid = false)
+    }
+
+    private fun readRemoteBytes(sftp: SFTPClient, remotePath: String): ByteArray? {
+        val attributes = sftp.statExistence(remotePath) ?: return null
+        val temporary = File.createTempFile("sftp_sync_read", ".tmp", context.cacheDir)
+        return try {
+            sftp.get(remotePath, temporary.absolutePath)
+            val bytes = temporary.readBytes()
+            check(bytes.size.toLong() == attributes.size) {
+                "Download truncated - got ${bytes.size} of ${attributes.size} bytes"
+            }
+            bytes
+        } finally {
+            temporary.delete()
+        }
+    }
+
+    private fun writeRemoteBytes(sftp: SFTPClient, remotePath: String, bytes: ByteArray) {
+        val temporary = File.createTempFile("sftp_sync_write", ".tmp", context.cacheDir)
+        try {
+            temporary.writeBytes(bytes)
+            sftp.put(temporary.absolutePath, remotePath)
+            val uploadedSize = sftp.stat(remotePath).size
+            check(uploadedSize == bytes.size.toLong()) {
+                "Upload truncated - $uploadedSize of ${bytes.size} bytes reached the server"
+            }
+        } finally {
+            temporary.delete()
+        }
+    }
+
+    private fun publishCanonical(
+        sftp: SFTPClient,
+        remoteDir: String,
+        bytes: ByteArray,
+        previousBytes: ByteArray?,
+        lease: SyncLease
+    ) {
+        val canonicalPath = remotePath(remoteDir, SYNC_FILENAME)
+        val previousPath = remotePath(remoteDir, SYNC_PREVIOUS_FILENAME)
+        val temporaryPath = remotePath(remoteDir, ".$SYNC_FILENAME.${UUID.randomUUID()}.part")
+        val previousTemporaryPath =
+            remotePath(remoteDir, ".$SYNC_PREVIOUS_FILENAME.${UUID.randomUUID()}.part")
+        try {
+            writeRemoteBytes(sftp, temporaryPath, bytes)
+            if (previousBytes != null) {
+                writeRemoteBytes(sftp, previousTemporaryPath, previousBytes)
+            }
+            verifySyncLeaseOwnership(sftp, lease)
+            if (previousBytes != null) {
+                removeRemoteFileIfPresent(sftp, previousPath)
+                sftp.rename(previousTemporaryPath, previousPath)
+            }
+            verifySyncLeaseOwnership(sftp, lease)
+            removeRemoteFileIfPresent(sftp, canonicalPath)
+            sftp.rename(temporaryPath, canonicalPath)
+        } catch (t: Throwable) {
+            runCatching { removeRemoteFileIfPresent(sftp, temporaryPath) }
+            runCatching { removeRemoteFileIfPresent(sftp, previousTemporaryPath) }
+            throw t
+        }
+    }
+
+    private fun writeTimestampedBackup(sftp: SFTPClient, remoteDir: String, bytes: ByteArray) {
+        val encrypted = credentialsStore.backupPassphrase != null
+        val filename = FILENAME_PREFIX +
+            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
+            (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+        val finalPath = remotePath(remoteDir, filename)
+        val temporaryPath = remotePath(remoteDir, ".$filename.${UUID.randomUUID()}.part")
+        try {
+            writeRemoteBytes(sftp, temporaryPath, bytes)
+            removeRemoteFileIfPresent(sftp, finalPath)
+            sftp.rename(temporaryPath, finalPath)
+        } catch (t: Throwable) {
+            runCatching { removeRemoteFileIfPresent(sftp, temporaryPath) }
+            throw t
+        }
+    }
+
+    private fun acquireSyncLease(sftp: SFTPClient, remoteDir: String): SyncLease {
+        val lockPath = remotePath(remoteDir, SYNC_LOCK_DIR)
+        val leasePath = remotePath(lockPath, SYNC_LEASE_FILE)
+        for (attempt in 0 until 3) {
+            val mkdirFailure = try {
+                sftp.mkdir(lockPath)
+                null
+            } catch (e: Exception) {
+                e
+            }
+
+            if (mkdirFailure == null) {
+                val token = UUID.randomUUID().toString()
+                try {
+                    writeRemoteBytes(sftp, leasePath, syncLeasePayload(token))
+                    return SyncLease(lockPath, leasePath, token)
+                } catch (t: Throwable) {
+                    runCatching { removeRemoteFileIfPresent(sftp, leasePath) }
+                    runCatching { sftp.rmdir(lockPath) }
+                    throw t
+                }
+            }
+
+            val lockAttributes = sftp.statExistence(lockPath) ?: throw mkdirFailure
+            val leaseTimestamp = readRemoteBytes(sftp, leasePath)
+                ?.toString(Charsets.UTF_8)
+                ?.lineSequence()
+                ?.firstOrNull()
+                ?.toLongOrNull()
+            val observedAt = leaseTimestamp ?: lockAttributes.mtime * 1000L
+            val ageMillis = System.currentTimeMillis() - observedAt
+            if (ageMillis < SYNC_LOCK_STALE_MILLIS) {
+                throw IllegalStateException("Another device is already syncing with this server", mkdirFailure)
+            }
+
+            Log.w(TAG, "Breaking stale SFTP sync lease after ${ageMillis / 1000L}s")
+            removeRemoteFileIfPresent(sftp, leasePath)
+            try {
+                sftp.rmdir(lockPath)
+            } catch (e: Exception) {
+                if (attempt == 2) throw e
+            }
+        }
+        throw IllegalStateException("Could not acquire the SFTP sync lease")
+    }
+
+    private fun verifySyncLeaseOwnership(sftp: SFTPClient, lease: SyncLease) {
+        check(readSyncLeaseToken(sftp, lease.leasePath) == lease.token) {
+            "The SFTP sync lease expired or changed ownership before publish"
+        }
+    }
+
+    private fun releaseSyncLease(sftp: SFTPClient, lease: SyncLease) {
+        try {
+            val ownerToken = readSyncLeaseToken(sftp, lease.leasePath)
+            if (ownerToken != lease.token) {
+                Log.w(TAG, "SFTP sync lease ownership changed before release; leaving it intact")
+                return
+            }
+            removeRemoteFileIfPresent(sftp, lease.leasePath)
+            sftp.rmdir(lease.lockPath)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not release SFTP sync lease; it will expire automatically", e)
+        }
+    }
+
+    private fun syncLeasePayload(token: String): ByteArray =
+        "${System.currentTimeMillis()}\n$token".toByteArray(Charsets.UTF_8)
+
+    private fun readSyncLeaseToken(sftp: SFTPClient, leasePath: String): String? =
+        readRemoteBytes(sftp, leasePath)
+            ?.toString(Charsets.UTF_8)
+            ?.lineSequence()
+            ?.drop(1)
+            ?.firstOrNull()
+
+    private fun removeRemoteFileIfPresent(sftp: SFTPClient, path: String) {
+        if (sftp.statExistence(path) != null) sftp.rm(path)
+    }
+
+    private fun remotePath(directory: String, name: String): String =
+        if (directory == "/") "/$name" else "${directory.trimEnd('/')}/$name"
+
+    private fun isHistoryBackupName(name: String): Boolean =
+        name.startsWith(FILENAME_PREFIX) &&
+            (name.endsWith(FILENAME_SUFFIX) || name.endsWith(ENCRYPTED_SUFFIX))
+
     private suspend fun buildClient(
         allowUnpinnedProbe: Boolean = false,
         onHostKeyObserved: (String) -> Unit = {}
@@ -231,6 +567,7 @@ class SftpBackupManager @Inject constructor(
 
         val ssh = SSHClient()
         ssh.connectTimeout = CONNECT_TIMEOUT_MS
+        ssh.timeout = SOCKET_TIMEOUT_MS
         ssh.addHostKeyVerifier(object : HostKeyVerifier {
             override fun verify(hostname: String, port: Int, key: PublicKey): Boolean {
                 val fingerprint = fingerprintOf(key)
@@ -298,11 +635,13 @@ class SftpBackupManager @Inject constructor(
 
     private fun pruneOldBackups(sftp: SFTPClient, dir: String, keepCount: Int) {
         val files = sftp.ls(dir)
-            .filter { it.name.startsWith(FILENAME_PREFIX) }
+            .filter {
+                it.isRegularFile && isHistoryBackupName(it.name)
+            }
             .sortedByDescending { it.name }
         files.drop(keepCount).forEach { entry ->
             try {
-                sftp.rm("$dir/${entry.name}")
+                sftp.rm(remotePath(dir, entry.name))
             } catch (e: Exception) {
                 Log.w(TAG, "pruneOldBackups: failed to delete ${entry.name}", e)
             }

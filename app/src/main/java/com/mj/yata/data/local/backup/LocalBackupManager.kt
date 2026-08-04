@@ -16,9 +16,8 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** On-device counterpart to [com.mj.yata.data.cloud.CloudBackupManager] — same JSON payload
- * (via [JsonExporter]), but written encrypted to app-specific external storage instead of
- * Google Drive, so a user gets automated backups without a network round-trip or an account. */
+/** On-device backup manager: same JSON payload (via [JsonExporter]), but written encrypted to
+ * app-specific external storage so a user gets automated backups without a network round-trip. */
 @Singleton
 class LocalBackupManager @Inject constructor(
     @ApplicationContext private val context: Context,

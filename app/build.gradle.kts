@@ -30,8 +30,8 @@ android {
         applicationId = "com.mj.yata"
         minSdk = 26
         targetSdk = 35
-        versionCode = 13
-        versionName = "0.90.1 beta"
+        versionCode = 14
+        versionName = "0.91 beta"
 
         // Stamped fresh into every build (not just release) so Help & About's "Build N.DDMMYYYYHHmm"
         // line reflects exactly when this particular APK was assembled, not just the day — the
@@ -270,10 +270,6 @@ dependencies {
     implementation(libs.glance.appwidget)
     implementation(libs.glance.material3)
 
-    // Cloud backup: Google Sign-In (Drive appDataFolder scope) + Drive REST v3 over OkHttp
-    implementation(libs.play.services.auth)
-    implementation(libs.okhttp)
-
     // Self-hosted backup: SFTP to a user's own server. sshj needs Bouncy Castle registered as a
     // security provider (see YataApplication) for algorithms Android's stock providers don't
     // cover (Ed25519, curve25519-sha256), which a lot of real-world OpenSSH servers default to.
@@ -294,7 +290,7 @@ dependencies {
     // required for this one.
     implementation(libs.commons.net)
 
-    // Cloud backup: periodic + debounced background upload
+    // Periodic and debounced self-hosted/local backup work
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)

@@ -40,7 +40,7 @@
         tools:targetApi="33">
 
         <!-- WorkManager auto-init disabled — YataApplication provides its own Configuration
-             (via Configuration.Provider) so HiltWorkerFactory can inject CloudBackupWorker. -->
+             (via Configuration.Provider) so HiltWorkerFactory can inject app workers. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

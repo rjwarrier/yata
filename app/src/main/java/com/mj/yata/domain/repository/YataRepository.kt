@@ -16,7 +16,7 @@ interface YataRepository {
      * TaskEntity.seriesId and RecurrenceEvaluator.computeStreak. */
     suspend fun getTaskStreak(taskId: String): Int
 
-    // [notify] defaults to true (fires the widget-refresh/cloud-backup-debounce
+    // [notify] defaults to true (fires the widget-refresh/server-sync-debounce
     // signal immediately, as every existing call site expects). Bulk callers that loop this N
     // times pass false and call [notifyTasksChanged] once after the loop instead — a 20-task
     // bulk action used to fire that whole pipeline 20 times.
@@ -26,7 +26,12 @@ interface YataRepository {
     // no bearing on reminders (tags, project/list, sort order, flag) pass false — rescheduling
     // an alarm that can't have changed was pure waste, and multiplied per item in a bulk loop.
     suspend fun upsertTask(task: Task, notify: Boolean = true, resyncReminder: Boolean = true)
-    suspend fun upsertTasks(tasks: List<Task>, notify: Boolean = true, resyncReminder: Boolean = true)
+    suspend fun upsertTasks(
+        tasks: List<Task>,
+        notify: Boolean = true,
+        resyncReminder: Boolean = true,
+        preserveExistingCreatedAt: Boolean = true
+    )
     suspend fun toggleTaskDone(id: String, notify: Boolean = true)
     suspend fun skipTaskOccurrence(id: String)
     fun searchTasks(query: String): Flow<List<Task>>
@@ -35,8 +40,9 @@ interface YataRepository {
     suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean = true)
     suspend fun setTaskSortOrder(id: String, sortOrder: Int, notify: Boolean = true)
 
-    /** Manually fires the same "something changed" signal [upsertTask]/etc. fire automatically —
-     * for bulk callers that suppressed it per-item via `notify = false`. */
+    /** Manually fires the same "something changed" signal [upsertTask]/project/list/tag/etc. fire automatically —
+     * this is the single hook that refreshes widgets and queues self-hosted sync after saved data changes.
+     * Bulk callers that suppressed it per-item via `notify = false` call this once at the end. */
     fun notifyTasksChanged()
 
     // Deleting a task moves it to Trash (soft delete) rather than removing it outright.

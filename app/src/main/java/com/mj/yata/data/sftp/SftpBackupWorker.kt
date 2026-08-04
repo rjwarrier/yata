@@ -16,11 +16,10 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
-/** Periodic counterpart to [com.mj.yata.data.cloud.CloudBackupWorker] and
- * [com.mj.yata.data.local.backup.LocalBackupWorker] for SFTP. A network constraint is needed
- * (unlike the on-device one) but it's always "any network," not Wi-Fi-only like cloud backup can
- * be configured for -- a self-hosted server is often reached over a local network or a VPN a
- * metered-connection check wouldn't distinguish correctly anyway.
+/** Legacy periodic worker for SFTP server backups. A network constraint is needed
+ * (unlike the on-device worker), but it is always "any network" because a self-hosted server is
+ * often reached over a local network or VPN that a metered-connection check would not distinguish
+ * correctly anyway.
  *
  * Scheduled unconditionally alongside [com.mj.yata.data.ftp.FtpBackupWorker] at app start -- see
  * that class's doc comment for why both run and only the currently-selected protocol's actually
@@ -37,7 +36,7 @@ class SftpBackupWorker @AssistedInject constructor(
         if (!userPreferences.sftpBackupEnabledFlow.first()) return Result.success()
         if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.SFTP) return Result.success()
 
-        val result = sftpBackupManager.backupNow()
+        val result = sftpBackupManager.syncNow()
         return if (result.isSuccess) {
             Result.success()
         } else {

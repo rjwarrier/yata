@@ -71,8 +71,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
-import com.mj.yata.data.cloud.CloudBackupError
-import com.mj.yata.data.cloud.isCloudBackupStale
+import com.mj.yata.data.backup.BackupDiff
 import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
@@ -131,7 +130,6 @@ fun SettingsScreen(
     onImportPlainTextRequested: () -> Unit,
     onExportCsvRequested: () -> Unit,
     onExportIcsRequested: () -> Unit,
-    onCloudSignInRequested: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
     onNavigateToTrash: () -> Unit,
     onNavigateToArchive: () -> Unit,
@@ -190,15 +188,9 @@ fun SettingsScreen(
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
     val lists = uiState.lists
-    val cloudBackupEnabled = uiState.cloudBackupEnabled
-    val cloudBackupAccountEmail = uiState.cloudBackupAccountEmail
-    val cloudBackupLastAt = uiState.cloudBackupLastAt
-    val cloudBackupWifiOnly = uiState.cloudBackupWifiOnly
-    val cloudBackupIntervalMinutes = uiState.cloudBackupIntervalMinutes
+    val backupIntervalMinutes = uiState.backupIntervalMinutes
     val localBackupEnabled = uiState.localBackupEnabled
     val localBackupLastAt = uiState.localBackupLastAt
-    val cloudBackupArchiveMonths = uiState.cloudBackupArchiveMonths
-    val cloudBackupKeepCount = uiState.cloudBackupKeepCount
     val sftpBackupEnabled = uiState.sftpBackupEnabled
     val sftpHost = uiState.sftpHost
     val sftpPort = uiState.sftpPort
@@ -212,7 +204,6 @@ fun SettingsScreen(
     val ftpUseTls = uiState.ftpUseTls
     val sftpKeepCount = uiState.sftpKeepCount
     val isFtpProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
-    val isGoogleDriveBackupAvailable = userEmail.trim().equals("rjwarrier@gmail.com", ignoreCase = true)
 
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
@@ -276,7 +267,7 @@ fun SettingsScreen(
         SettingsSearchTarget(stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", 9),
         SettingsSearchTarget(stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", 10),
         SettingsSearchTarget(stringResource(R.string.settings_section_backup), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", 11),
-        SettingsSearchTarget(stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "cloud backup google drive self hosted sftp ftp server restore wifi frequency", 12),
+        SettingsSearchTarget(stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "self hosted server sync backup sftp ftp restore frequency", 12),
         SettingsSearchTarget(stringResource(R.string.settings_section_local_backup), stringResource(R.string.settings_search_local_summary), "local backup restore", 13),
         SettingsSearchTarget(stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide", 14)
     )
@@ -295,20 +286,12 @@ fun SettingsScreen(
         }
     }
 
-    var isCloudBackingUp by remember { mutableStateOf(false) }
-    var showCloudRestoreSheet by remember { mutableStateOf(false) }
-    var isLoadingCloudBackups by remember { mutableStateOf(false) }
-    var cloudBackupList by remember { mutableStateOf<List<com.mj.yata.data.cloud.CloudBackupEntry>>(emptyList()) }
-    var isRestoringCloudBackup by remember { mutableStateOf(false) }
+    var isBackingUp by remember { mutableStateOf(false) }
     var showFrequencyDialog by remember { mutableStateOf(false) }
-    var showArchiveMonthsDialog by remember { mutableStateOf(false) }
     var showBackupDiffDialog by remember { mutableStateOf(false) }
     var isLoadingBackupDiff by remember { mutableStateOf(false) }
-    var backupDiffResult by remember { mutableStateOf<com.mj.yata.data.cloud.CloudBackupDiff?>(null) }
+    var backupDiffResult by remember { mutableStateOf<BackupDiff?>(null) }
     var backupDiffError by remember { mutableStateOf<String?>(null) }
-    var backupDiffIsReauth by remember { mutableStateOf(false) }
-    var staleBannerDismissed by remember { mutableStateOf(false) }
-    var pendingRestoreEntry by remember { mutableStateOf<com.mj.yata.data.cloud.CloudBackupEntry?>(null) }
 
     val context = LocalContext.current
     var pickedPhotoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
@@ -2056,39 +2039,6 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showArchiveMonthsDialog = true }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Archive,
-                            contentDescription = stringResource(R.string.settings_archive_old_completed),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_archive_old_completed),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = formatArchiveMonths(cloudBackupArchiveMonths),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
                             .clickable(enabled = !isDeletingAll) { showDeleteAllDialog = true }
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -2149,272 +2099,7 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                var selectedRemoteBackupTab by rememberSaveable { mutableStateOf(0) }
-                SingleChoiceSegmentedButtonRow(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    SegmentedButton(
-                        selected = selectedRemoteBackupTab == 0,
-                        onClick = { selectedRemoteBackupTab = 0 },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.CloudUpload,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = stringResource(R.string.settings_backup_tab_drive),
-                                maxLines = 1,
-                                color = if (isGoogleDriveBackupAvailable || selectedRemoteBackupTab == 0) {
-                                    Color.Unspecified
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
-                                }
-                            )
-                        }
-                    )
-                    SegmentedButton(
-                        selected = selectedRemoteBackupTab == 1,
-                        onClick = { selectedRemoteBackupTab = 1 },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Dns,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = stringResource(R.string.settings_backup_tab_self_host),
-                                maxLines = 1
-                            )
-                        }
-                    )
-                }
-
-                if (selectedRemoteBackupTab == 0) Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudUpload,
-                                contentDescription = null,
-                                tint = if (isGoogleDriveBackupAvailable) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.settings_google_drive_backup),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                    color = if (isGoogleDriveBackupAvailable) {
-                                        MaterialTheme.colorScheme.onSurface
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
-                                    }
-                                )
-                                Text(
-                                    text = if (cloudBackupAccountEmail != null) {
-                                        "Signed in as $cloudBackupAccountEmail"
-                                    } else {
-                                        stringResource(R.string.settings_google_drive_backup_summary)
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                if (!isGoogleDriveBackupAvailable) {
-                                    Text(
-                                        text = stringResource(R.string.settings_cloud_backup_limited_testing),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
-                                    )
-                                }
-                            }
-                            if (cloudBackupAccountEmail != null) {
-                                Switch(
-                                    checked = cloudBackupEnabled && isGoogleDriveBackupAvailable,
-                                    enabled = isGoogleDriveBackupAvailable,
-                                    onCheckedChange = { viewModel.setCloudBackupEnabled(it) }
-                                )
-                            } else {
-                                TextButton(
-                                    enabled = isGoogleDriveBackupAvailable,
-                                    onClick = onCloudSignInRequested
-                                ) {
-                                    Text(stringResource(R.string.settings_sign_in))
-                                }
-                            }
-                        }
-
-                        if (isGoogleDriveBackupAvailable && cloudBackupEnabled && !staleBannerDismissed && isCloudBackupStale(cloudBackupLastAt)) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = if (cloudBackupLastAt == null) {
-                                            "Cloud backup hasn't run yet."
-                                        } else {
-                                            "Cloud backup hasn't run in over 7 days."
-                                        },
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onErrorContainer,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.settings_dismiss),
-                                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                                        modifier = Modifier
-                                            .size(18.dp)
-                                            .clip(CircleShape)
-                                            .clickable { staleBannerDismissed = true }
-                                    )
-                                }
-                            }
-                        }
-
-                        if (isGoogleDriveBackupAvailable && cloudBackupAccountEmail != null) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(enabled = !isLoadingBackupDiff) {
-                                        showBackupDiffDialog = true
-                                        isLoadingBackupDiff = true
-                                        backupDiffResult = null
-                                        backupDiffError = null
-                                        backupDiffIsReauth = false
-                                        viewModel.compareWithLastBackup { result ->
-                                            isLoadingBackupDiff = false
-                                            result.fold(
-                                                onSuccess = { backupDiffResult = it },
-                                                onFailure = {
-                                                    backupDiffError = it.message ?: "Couldn't compare with backup"
-                                                    backupDiffIsReauth = isReauthRecoverable(it)
-                                                }
-                                            )
-                                        }
-                                    }
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.CompareArrows,
-                                    contentDescription = stringResource(R.string.settings_compare_with_backup_2),
-                                    tint = MaterialTheme.colorScheme.tertiary
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Text(
-                                    text = stringResource(R.string.settings_compare_with_backup),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.settings_wifi_only),
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.settings_wifi_only_summary),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Switch(
-                                    checked = cloudBackupWifiOnly,
-                                    onCheckedChange = { viewModel.setCloudBackupWifiOnly(it) }
-                                )
-                            }
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        showCloudRestoreSheet = true
-                                        isLoadingCloudBackups = true
-                                        viewModel.listCloudBackups { result ->
-                                            isLoadingCloudBackups = false
-                                            cloudBackupList = result.getOrDefault(emptyList())
-                                            val exc = result.exceptionOrNull()
-                                            if (exc != null) {
-                                                scope.launch {
-                                                    val outcome = snackbarHostState.showSnackbar(
-                                                        message = "Couldn't reach Google Drive",
-                                                        actionLabel = if (isReauthRecoverable(exc)) "Reauthorize" else null
-                                                    )
-                                                    if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
-                                                }
-                                            }
-                                        }
-                                    }
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CloudDownload,
-                                    contentDescription = stringResource(R.string.settings_restore_from_cloud),
-                                    tint = MaterialTheme.colorScheme.tertiary
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Text(
-                                    text = stringResource(R.string.settings_restore_from_cloud),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        viewModel.cloudSignOut()
-                                        scope.launch { snackbarHostState.showSuccess(context.getString(R.string.settings_cloud_signed_out)) }
-                                    }
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.settings_sign_out),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (selectedRemoteBackupTab == 1) Surface(
+                Surface(
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -2511,7 +2196,6 @@ fun SettingsScreen(
                                         isLoadingBackupDiff = true
                                         backupDiffResult = null
                                         backupDiffError = null
-                                        backupDiffIsReauth = false
                                         viewModel.compareWithLastSelfHostedBackup { result ->
                                             isLoadingBackupDiff = false
                                             result.fold(
@@ -2617,7 +2301,7 @@ fun SettingsScreen(
                     }
                 }
 
-                if ((isGoogleDriveBackupAvailable && cloudBackupAccountEmail != null) || sftpBackupEnabled) {
+                if (sftpBackupEnabled) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     Row(
@@ -2633,7 +2317,7 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
-                                text = syncFrequencyLabel(cloudBackupIntervalMinutes),
+                                text = syncFrequencyLabel(backupIntervalMinutes),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2648,7 +2332,7 @@ fun SettingsScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        val remoteKeepCount = minOf(cloudBackupKeepCount, sftpKeepCount)
+                        val remoteKeepCount = sftpKeepCount
                         var keepCountPosition by remember(remoteKeepCount) { mutableFloatStateOf(remoteKeepCount.toFloat()) }
                         Text(
                             text = stringResource(R.string.settings_backups_to_keep),
@@ -2673,25 +2357,12 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(enabled = !isCloudBackingUp) {
-                                isCloudBackingUp = true
+                            .clickable(enabled = !isBackingUp) {
+                                isBackingUp = true
                                 viewModel.backupAllNow { results ->
-                                    isCloudBackingUp = false
+                                    isBackingUp = false
                                     scope.launch {
-                                        val cloudError = results
-                                            .firstOrNull { it.destination == com.mj.yata.domain.model.BackupDestination.CLOUD }
-                                            ?.error
-                                        // Only Drive can need re-auth, and only its own failure
-                                        // should offer that action.
-                                        if (isReauthRecoverable(cloudError)) {
-                                            val outcome = snackbarHostState.showSnackbar(
-                                                message = context.getString(R.string.settings_backup_needs_reauth),
-                                                actionLabel = context.getString(R.string.settings_backup_reauthorize)
-                                            )
-                                            if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
-                                        } else {
-                                            reportBackupResults(results, snackbarHostState, context)
-                                        }
+                                        reportBackupResults(results, snackbarHostState, context)
                                     }
                                 }
                             }
@@ -2700,22 +2371,11 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.settings_back_up_now),
+                                text = stringResource(R.string.settings_sync_and_backup_now),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
-                            if (isGoogleDriveBackupAvailable && cloudBackupEnabled) {
-                                Text(
-                                    text = stringResource(
-                                        R.string.settings_last_backed_up,
-                                        formatRelativeBackupTime(cloudBackupLastAt) +
-                                            (formatAbsoluteBackupTime(cloudBackupLastAt)?.let { " · $it" } ?: "")
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
                         }
-                        if (isCloudBackingUp) {
+                        if (isBackingUp) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         }
                     }
@@ -3518,17 +3178,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showBackupDiffDialog = false }) { Text(stringResource(R.string.action_close)) }
-            },
-            dismissButton = if (backupDiffIsReauth) {
-                {
-                    TextButton(onClick = {
-                        showBackupDiffDialog = false
-                        onCloudSignInRequested()
-                    }) {
-                        Text(stringResource(R.string.settings_reauthorize))
-                    }
-                }
-            } else null
+            }
         )
     }
 
@@ -3551,7 +3201,7 @@ fun SettingsScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
-                                    viewModel.setCloudBackupIntervalMinutes(minutes)
+                                    viewModel.setBackupIntervalMinutes(minutes)
                                     showFrequencyDialog = false
                                 }
                                 .padding(vertical = 10.dp),
@@ -3561,9 +3211,9 @@ fun SettingsScreen(
                             // dot is a built-in animated transition (same as the Archive Months
                             // dialog right below), instead of the checkmark just popping in/out.
                             RadioButton(
-                                selected = cloudBackupIntervalMinutes == minutes,
+                                selected = backupIntervalMinutes == minutes,
                                 onClick = {
-                                    viewModel.setCloudBackupIntervalMinutes(minutes)
+                                    viewModel.setBackupIntervalMinutes(minutes)
                                     showFrequencyDialog = false
                                 }
                             )
@@ -3575,148 +3225,6 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showFrequencyDialog = false }) { Text(stringResource(R.string.action_cancel)) }
-            }
-        )
-    }
-
-    if (showArchiveMonthsDialog) {
-        AlertDialog(
-            onDismissRequest = { showArchiveMonthsDialog = false },
-            title = { Text(stringResource(R.string.settings_archive_old_completed_tasks)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_cloud_archive_explainer),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    listOf(0 to "Never", 3 to "3 months", 6 to "6 months", 12 to "12 months").forEach { (months, label) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable {
-                                    viewModel.setCloudBackupArchiveMonths(months)
-                                    showArchiveMonthsDialog = false
-                                }
-                                .padding(vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = cloudBackupArchiveMonths == months,
-                                onClick = {
-                                    viewModel.setCloudBackupArchiveMonths(months)
-                                    showArchiveMonthsDialog = false
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = label, style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showArchiveMonthsDialog = false }) { Text(stringResource(R.string.action_done)) }
-            }
-        )
-    }
-
-    if (showCloudRestoreSheet) {
-        AlertDialog(
-            onDismissRequest = { if (!isRestoringCloudBackup) showCloudRestoreSheet = false },
-            title = { Text(stringResource(R.string.settings_restore_from_cloud_backup)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    when {
-                        isLoadingCloudBackups -> {
-                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator()
-                            }
-                        }
-                        cloudBackupList.isEmpty() -> {
-                            Text(stringResource(R.string.settings_no_cloud_backups_found_yet),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        else -> {
-                            cloudBackupList.forEach { entry ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable(enabled = !isRestoringCloudBackup) { pendingRestoreEntry = entry }
-                                        .padding(vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CloudDownload,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.tertiary
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        Text(
-                                            text = formatBackupTimestamp(entry.createdTime),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        formatBackupSize(entry.sizeBytes)?.let { sizeLabel ->
-                                            Text(
-                                                text = sizeLabel,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            if (isRestoringCloudBackup) {
-                                Box(modifier = Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showCloudRestoreSheet = false }, enabled = !isRestoringCloudBackup) {
-                    Text(stringResource(R.string.action_close))
-                }
-            }
-        )
-    }
-
-    pendingRestoreEntry?.let { entry ->
-        AlertDialog(
-            onDismissRequest = { pendingRestoreEntry = null },
-            title = { Text(stringResource(R.string.settings_restore_this_backup)) },
-            text = {
-                Text(
-                    stringResource(R.string.settings_restore_merge_body, formatBackupTimestamp(entry.createdTime))
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val target = entry
-                    pendingRestoreEntry = null
-                    isRestoringCloudBackup = true
-                    viewModel.restoreCloudBackup(target.id) { result ->
-                        isRestoringCloudBackup = false
-                        showCloudRestoreSheet = false
-                        scope.launch {
-                            val reauth = isReauthRecoverable(result.exceptionOrNull())
-                            val outcome = snackbarHostState.showSnackbar(
-                                message = if (result.isSuccess) "Restored from cloud backup" else "Restore failed — ${result.exceptionOrNull()?.message ?: "try again later"}",
-                                actionLabel = if (reauth) "Reauthorize" else null
-                            )
-                            if (outcome == SnackbarResult.ActionPerformed) onCloudSignInRequested()
-                        }
-                    }
-                }) {
-                    Text(stringResource(R.string.cd_trash_restore), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingRestoreEntry = null }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -3837,10 +3345,10 @@ private fun minutesToIntervalDisplay(minutes: Long): Pair<Long, String> = when {
     else -> minutes to "Minutes"
 }
 
-/** WorkManager's own floor for periodic work (see UserPreferences.setCloudBackupIntervalMinutes'
+/** WorkManager's own floor for periodic work (see UserPreferences.setBackupIntervalMinutes'
  * coerceAtLeast) — there's no shorter periodic schedule to fall back to, so it doubles as the
  * "right after any change" option's stored value. The actual near-immediate upload is the
- * always-on ~2 minute debounce in CloudBackupManager.scheduleDebouncedBackup, which this dialog
+ * always-on short debounce in BackupOperations.scheduleDebouncedBackup, which this dialog
  * doesn't control either way. */
 private const val SYNC_AFTER_CHANGE_MINUTES = 15L
 
@@ -3862,9 +3370,6 @@ private fun signedCount(n: Int): String = if (n > 0) "+$n" else "$n"
 /** Both cases are fixed the same way (re-run the sign-in flow), so every "Reauthorize" action
  * button in this screen checks this instead of just NeedsReauth — NotSignedIn shows up when
  * Play Services' cached account silently disappears out from under a still-"enabled" local flag. */
-private fun isReauthRecoverable(t: Throwable?): Boolean =
-    t is CloudBackupError.NeedsReauth || t is CloudBackupError.NotSignedIn
-
 /** Shows a multi-destination backup run as one snackbar — message built by
  * [com.mj.yata.util.backupResultMessage] so every "back up now" entry point words it the same. */
 private suspend fun reportBackupResults(

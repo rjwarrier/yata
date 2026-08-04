@@ -182,10 +182,10 @@ private val helpSections = listOf(
         title = "Backup & Export",
         description = "Protect or move your data when you need to.",
         bullets = listOf(
-            "Cloud backup uses Google Drive app data storage when enabled.",
+            "Self-hosted sync keeps encrypted copies on your own server when enabled.",
             "File backup and restore use JSON for the full YATA dataset.",
             "Calendar export creates an .ics file, and Markdown export is useful for sharing.",
-            "Choose how many cloud backups to keep (2–15) with the slider in Settings > Cloud.",
+            "Choose how many server backups to keep (2–15) with the slider in Settings > Self-hosted sync.",
             "Pick the backup schedule — right after any change in a task, or every 30, 60, or 120 minutes."
         ),
         icon = Icons.Default.Backup

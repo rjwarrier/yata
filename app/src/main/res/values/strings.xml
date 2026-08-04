@@ -389,16 +389,16 @@
     <string name="circular_image_cropper_transparent_png_hint">Tip: a transparent PNG with a white shape becomes a Material You icon automatically</string>
 
     <!-- Self-hosted (SFTP) backup -->
-    <string name="settings_section_sftp_backup">Self-Hosted Backup</string>
+    <string name="settings_section_sftp_backup">Self-Hosted Sync &amp; Backup</string>
     <string name="settings_sftp_backup">Self-hosted server</string>
-    <string name="settings_sftp_backup_summary">Back up to your own server over SFTP, FTPS, or FTP.</string>
+    <string name="settings_sftp_backup_summary">Sync across devices and keep versioned backups on your own server. Use the same protocol, folder, and encryption passphrase on each device.</string>
     <string name="settings_sftp_configure_server">Server</string>
     <string name="settings_sftp_not_configured">Not configured</string>
     <!-- %1$s is a formatted relative time, e.g. "2 hours ago". -->
-    <string name="settings_last_sftp_backup">Last backup: %1$s</string>
+    <string name="settings_last_sftp_backup">Last sync/backup: %1$s</string>
     <string name="settings_sftp_server_trusted">Server verified</string>
     <string name="settings_sftp_server_not_yet_trusted">Server not yet verified — open Server to test the connection</string>
-    <string name="settings_sftp_backup_started">Backup started</string>
+    <string name="settings_sftp_backup_started">Sync started</string>
     <string name="settings_restore_sftp_backup">Restore from server…</string>
     <string name="settings_sftp_config_title">Self-hosted server</string>
     <string name="settings_sftp_protocol_sftp">SFTP</string>
@@ -406,14 +406,11 @@
     <string name="settings_ftp_use_tls">Use secure connection (FTPS)</string>
     <string name="settings_ftp_plain_warning">Plain FTP sends your password and files unencrypted. Only use this on a trusted network.</string>
     <string name="settings_sftp_backups_to_keep_summary">Keep the last %1$d backups on the server — older ones are pruned automatically.</string>
-    <string name="settings_backup_dest_cloud">Google Drive</string>
     <string name="settings_backup_dest_local">this device</string>
     <string name="settings_backup_dest_self_hosted">your server</string>
     <string name="settings_backup_none_configured">No backup destinations are switched on.</string>
     <string name="settings_backup_all_failed">Backup failed — %1$s</string>
     <string name="settings_backup_partial">Backed up %1$d, but failed for %2$s</string>
-    <string name="settings_backup_needs_reauth">Google Drive needs you to sign in again</string>
-    <string name="settings_backup_reauthorize">Reauthorize</string>
     <string name="settings_backup_interval">Backup frequency</string>
     <string name="settings_backup_interval_summary">Every configured destination is backed up on this schedule.</string>
     <plurals name="settings_backup_all_ok">
@@ -541,13 +538,12 @@
     <string name="recurrence_badge_repeats">Repeats</string>
     <string name="search_remove_saved_filter">Remove saved filter</string>
     <string name="search_search_or_try_overdue_flagged">Search, or try \"overdue\", \"flagged\"...</string>
-    <string name="settings_archive_old_completed_tasks">Archive old completed tasks</string>
     <string name="settings_back_up_now">Back up now</string>
+    <string name="settings_sync_and_backup_now">Sync &amp; back up now</string>
     <string name="settings_backup_frequency">Backup frequency</string>
     <string name="settings_change_profile_photo">Change profile photo</string>
     <string name="settings_compare_with_backup">Compare with Backup</string>
     <string name="settings_compare_with_backup_2">Compare with backup</string>
-    <string name="settings_cloud_backup_limited_testing">Option under limited testing</string>
     <string name="settings_delete_all_data">Delete all data</string>
     <string name="settings_delete_all_data_2">Delete all data?</string>
     <string name="settings_dismiss">Dismiss</string>
@@ -560,11 +556,7 @@
     <string name="settings_import_csv_or_text">Import CSV or text</string>
     <string name="settings_import_data">Import data</string>
     <string name="settings_new_pin_4_8_digits">New PIN (4-8 digits)</string>
-    <string name="settings_no_cloud_backups_found_yet">No cloud backups found yet.</string>
-    <string name="settings_reauthorize">Reauthorize</string>
     <string name="settings_remove">Remove</string>
-    <string name="settings_restore_from_cloud">Restore from cloud</string>
-    <string name="settings_restore_from_cloud_backup">Restore from Cloud Backup</string>
     <string name="settings_restore_from_local_backup">Restore from local backup?</string>
     <string name="settings_restore_this_backup">Restore this backup?</string>
     <string name="settings_save_email">Save email</string>
@@ -594,9 +586,12 @@
     <string name="today_hide_completed">Hide completed tasks</string>
     <string name="cd_open_profile">Open profile and settings</string>
 
-    <!-- Manual cloud sync from the Today top bar -->
+    <!-- Manual server sync from the Today top bar -->
     <string name="cd_sync_now">Sync now</string>
     <string name="sync_in_progress">Syncing…</string>
+    <string name="sync_toast_started">Sync started</string>
+    <string name="sync_toast_finished">Sync finished</string>
+    <string name="sync_toast_failed">Sync failed</string>
 
     <!-- Crash logs -->
     <string name="crash_log_title">Crash Logs</string>
@@ -731,9 +726,9 @@
     <string name="settings_search_manage_summary">Manage projects, people, and tags</string>
     <string name="settings_search_privacy_summary">App lock, PIN, and lock timeout</string>
     <string name="settings_search_data_summary">Import, export, archive, Trash, and deletion</string>
-    <string name="settings_search_cloud_summary">Cloud schedule, status, compare, and restore</string>
+    <string name="settings_search_cloud_summary">Server sync schedule, status, compare, and restore</string>
     <string name="settings_search_local_summary">Local backup schedule and restore</string>
-    <string name="settings_search_sftp_summary">Self-hosted SFTP server backup and restore</string>
+    <string name="settings_search_sftp_summary">Self-hosted device sync, backup, and restore</string>
 
     <!-- Today tab: peek at tomorrow/day-after tasks when today itself is empty. -->
     <string name="today_show_upcoming_tasks">Show upcoming tasks</string>
@@ -851,7 +846,6 @@
     <string name="recurrence_yearly">Yearly</string>
     <string name="recurrence_custom">Custom…</string>
     <string name="recurrence_custom_help">Custom rules support intervals, weekdays, monthly dates, yearly repeats, and end dates.</string>
-    <string name="settings_cloud_signed_out">Signed out of cloud backup</string>
     <string name="settings_local_backup_started">Local backup started</string>
     <string name="settings_theme_mode">Theme mode</string>
     <string name="settings_color_intensity">Color intensity</string>
@@ -920,21 +914,9 @@
     <string name="settings_delete_all_data_summary">Backs up to Downloads automatically, then erases everything on this device.</string>
     <string name="settings_data_kept_when_hidden">Your data is kept even when hidden.</string>
 
-    <!-- Settings: Cloud backup -->
-    <string name="settings_cloud_backup">Remote backup destinations</string>
-    <string name="settings_cloud_backup_summary">Keep off-device copies in Google Drive, on your own server, or both.</string>
-    <string name="settings_backup_tab_drive">Drive</string>
-    <string name="settings_backup_tab_self_host">Self Host</string>
-    <string name="settings_google_drive_backup">Google Drive</string>
-    <string name="settings_google_drive_backup_summary">Back up to your Google Drive account.</string>
-    <string name="settings_wifi_only">Wi-Fi only</string>
-    <string name="settings_wifi_only_summary">Skip backups on mobile data.</string>
-    <string name="settings_archive_old_completed">Archive old completed tasks</string>
-    <string name="settings_sign_out">Sign out</string>
-    <string name="settings_backup_frequency_minimum">Minimum 15 minutes - Android won\'t run background backups more often than that.</string>
-    <string name="settings_cloud_archive_explainer">Completed tasks older than this move out of the main cloud backup into a separate archive file, so the backup that uploads every time doesn\'t keep growing. Nothing is deleted from the app.</string>
-    <!-- %1$s is a relative time ("2 hours ago"), optionally followed by an absolute one. -->
-    <string name="settings_last_backed_up">Last backed up: %1$s</string>
+    <!-- Settings: Self-hosted sync and backup -->
+    <string name="settings_cloud_backup">Self-hosted sync &amp; backup</string>
+    <string name="settings_cloud_backup_summary">Sync devices and keep versioned backups on your own server.</string>
     <string name="settings_last_local_backup">Last local backup: %1$s</string>
 
     <!-- Settings: Local backup -->
@@ -958,13 +940,12 @@
     <string name="settings_diff_item">• %1$s</string>
     <string name="settings_diff_more">+%1$d more</string>
 
-    <!-- Cloud backup retention. %1$d is how many backups are kept before the oldest is pruned. -->
+    <!-- Server backup retention. %1$d is how many backups are kept before the oldest is pruned. -->
     <string name="settings_backups_to_keep">Backups to keep</string>
-    <string name="settings_backups_to_keep_summary">Keep the last %1$d cloud backups — older ones are pruned automatically.</string>
-    <string name="settings_remote_backups_to_keep_summary">Keep the last %1$d backups in each remote destination — older ones are pruned automatically.</string>
+    <string name="settings_remote_backups_to_keep_summary">Keep the last %1$d backups on the server — older ones are pruned automatically.</string>
     <!-- Shown above the backup-frequency choices, so the schedule isn't mistaken for the only
          time a backup happens. -->
-    <string name="settings_backup_frequency_explainer">Applies to every destination you\'ve switched on — Google Drive, this device, and your own server are all backed up together. A backup also runs a couple of minutes after any task change, regardless of this setting; this controls the periodic safety net underneath that.</string>
+    <string name="settings_backup_frequency_explainer">Applies to every destination you\'ve switched on. A server sync also runs a couple of minutes after any task change; this controls the periodic safety net underneath that.</string>
     <string name="settings_sync_after_change">Right after any change in a task</string>
     <!-- %1$d is a whole number of minutes (30, 60, 120). -->
     <string name="settings_sync_every_minutes">Every %1$d minutes</string>

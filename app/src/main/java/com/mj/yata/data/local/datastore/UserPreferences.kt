@@ -87,10 +87,10 @@ class UserPreferences @Inject constructor(
          * Preferences deliberately left out of a backup, by key name.
          *
          * - The app-lock PIN hash and its salt: a backup file is not the place for an
-         *   authentication credential, and it travels off-device to Drive. Restoring leaves app
-         *   lock off, to be set again.
-         * - The cloud account email: the OAuth grant that makes it meaningful is per-device, so a
-         *   restored value would name an account the install can't actually use.
+         *   authentication credential, especially when it can travel off-device. Restoring leaves
+         *   app lock off, to be set again.
+         * - Legacy cloud account values: old OAuth grants were per-device, so restored values would
+         *   name an account the install could not actually use.
          * - The cached primary colour: derived from the live theme on every start.
          * - The profile photo Uri: an absolute path into *this* install's filesDir, meaningless in
          *   another. `JsonExporter` carries the photo bytes and rewrites the Uri itself.
@@ -98,7 +98,13 @@ class UserPreferences @Inject constructor(
         val NON_PORTABLE_KEYS = setOf(
             "app_lock_pin_hash",
             "app_lock_pin_salt",
+            "cloud_backup_enabled",
             "cloud_backup_account_email",
+            "cloud_backup_last_at",
+            "cloud_backup_wifi_only",
+            "cloud_backup_interval_minutes",
+            "cloud_backup_archive_months",
+            "cloud_backup_keep_count",
             "last_primary_argb",
             "user_photo_uri"
         )
@@ -120,18 +126,9 @@ class UserPreferences @Inject constructor(
         val PEOPLE_FEATURE_ENABLED   = booleanPreferencesKey("people_feature_enabled")
         val TAGS_FEATURE_ENABLED     = booleanPreferencesKey("tags_feature_enabled")
         val PROJECTS_FEATURE_ENABLED = booleanPreferencesKey("projects_feature_enabled")
-        val CLOUD_BACKUP_ENABLED     = booleanPreferencesKey("cloud_backup_enabled")
-        val CLOUD_BACKUP_ACCOUNT     = stringPreferencesKey("cloud_backup_account_email")
-        val CLOUD_BACKUP_LAST_AT     = longPreferencesKey("cloud_backup_last_at")
-        val CLOUD_BACKUP_WIFI_ONLY   = booleanPreferencesKey("cloud_backup_wifi_only")
         val CLOUD_BACKUP_INTERVAL_MINUTES = longPreferencesKey("cloud_backup_interval_minutes")
-        // Completed tasks older than this move out of the small, frequently-uploaded primary
-        // cloud backup into a separate archive file so the primary doesn't grow forever. 0 means
-        // "never archive" (always back up everything in one file).
-        val CLOUD_BACKUP_ARCHIVE_MONTHS = intPreferencesKey("cloud_backup_archive_months")
-        // How many primary cloud backups Drive keeps before pruning the oldest — see
-        // CloudBackupManager.pruneOldBackups.
-        val CLOUD_BACKUP_KEEP_COUNT = intPreferencesKey("cloud_backup_keep_count")
+        // Legacy Drive-era keys are kept only so snapshot export/import can ignore them and old
+        // installs can carry their chosen cadence forward.
         val LOCAL_BACKUP_ENABLED    = booleanPreferencesKey("local_backup_enabled")
         val LOCAL_BACKUP_LAST_AT    = longPreferencesKey("local_backup_last_at")
         val LOCAL_BACKUP_INTERVAL_MINUTES = longPreferencesKey("local_backup_interval_minutes")
@@ -346,15 +343,8 @@ class UserPreferences @Inject constructor(
     val peopleFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[PEOPLE_FEATURE_ENABLED] ?: true }
     val tagsFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TAGS_FEATURE_ENABLED] ?: true }
     val projectsFeatureEnabledFlow: Flow<Boolean> = prefsFlow.map { it[PROJECTS_FEATURE_ENABLED] ?: true }
-    val cloudBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[CLOUD_BACKUP_ENABLED] ?: false }
-    val cloudBackupAccountEmailFlow: Flow<String?> = prefsFlow.map { it[CLOUD_BACKUP_ACCOUNT] }
-    val cloudBackupLastAtFlow: Flow<Long?> = prefsFlow.map { it[CLOUD_BACKUP_LAST_AT] }
-    val cloudBackupWifiOnlyFlow: Flow<Boolean> = prefsFlow.map { it[CLOUD_BACKUP_WIFI_ONLY] ?: true }
-    // Default matches CloudBackupWorker's default schedule (1 day) — WorkManager enforces a
+    // Default matches the old periodic backup schedule (1 day) — WorkManager enforces a
     // 15-minute floor on periodic work, so this is clamped the same way on write.
-    val cloudBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[CLOUD_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
-    val cloudBackupArchiveMonthsFlow: Flow<Int> = prefsFlow.map { it[CLOUD_BACKUP_ARCHIVE_MONTHS] ?: 6 }
-    val cloudBackupKeepCountFlow: Flow<Int> = prefsFlow.map { (it[CLOUD_BACKUP_KEEP_COUNT] ?: 5).coerceIn(2, 15) }
     val localBackupEnabledFlow: Flow<Boolean> = prefsFlow.map { it[LOCAL_BACKUP_ENABLED] ?: false }
     val localBackupLastAtFlow: Flow<Long?> = prefsFlow.map { it[LOCAL_BACKUP_LAST_AT] }
     val localBackupIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[LOCAL_BACKUP_INTERVAL_MINUTES] ?: (24 * 60L) }
@@ -366,14 +356,14 @@ class UserPreferences @Inject constructor(
     val sftpRemoteDirFlow: Flow<String> = prefsFlow.map { it[SFTP_REMOTE_DIR] ?: "/yata-backups" }
     val sftpIntervalMinutesFlow: Flow<Long> = prefsFlow.map { it[SFTP_INTERVAL_MINUTES] ?: (24 * 60L) }
     val sftpLastBackupAtFlow: Flow<Long?> = prefsFlow.map { it[SFTP_LAST_BACKUP_AT] }
-    /** Shared by both self-hosted protocols; same 2..15 range the Drive setting uses. Clamped on
+    /** Shared by both self-hosted protocols. Clamped on
      * read so a corrupt or hand-edited value can't prune every backup off the server. */
     val sftpKeepCountFlow: Flow<Int> = prefsFlow.map { (it[SFTP_KEEP_COUNT] ?: 5).coerceIn(2, 15) }
 
     /**
      * How often the single scheduled backup runs, covering every enabled destination.
      *
-     * Falls back to whatever the Drive schedule was set to before the per-destination schedules
+     * Falls back to whatever the legacy remote schedule was set to before the schedules
      * were merged, so an existing user's backups carry on at the cadence they chose rather than
      * silently resetting to the default.
      */
@@ -507,6 +497,62 @@ class UserPreferences @Inject constructor(
         }
     }
 
+    /**
+     * Replaces the portable portion of DataStore with [settings], while leaving explicitly
+     * preserved and inherently non-portable keys untouched. Unlike [importPortableSettings], this
+     * removes portable values that are absent from the incoming snapshot so a synchronized delete
+     * does not leave stale device state behind.
+     */
+    suspend fun replacePortableSettings(
+        settings: List<PortableSetting>,
+        preservedNames: Set<String>,
+        preservedPrefixes: Set<String>
+    ) {
+        val targetNames = settings.asSequence()
+            .map { it.name }
+            .filterNot { it in NON_PORTABLE_KEYS }
+            .toSet()
+
+        dataStore.edit { prefs ->
+            prefs.asMap().toList().forEach { (storedKey, storedValue) ->
+                val name = storedKey.name
+                val preserved = name in NON_PORTABLE_KEYS ||
+                    name in preservedNames ||
+                    preservedPrefixes.any(name::startsWith)
+                if (name !in targetNames && !preserved) {
+                    when (storedValue) {
+                        is Boolean -> prefs.remove(booleanPreferencesKey(name))
+                        is Int -> prefs.remove(intPreferencesKey(name))
+                        is Long -> prefs.remove(longPreferencesKey(name))
+                        is Float -> prefs.remove(floatPreferencesKey(name))
+                        is Double -> prefs.remove(doublePreferencesKey(name))
+                        is String -> prefs.remove(stringPreferencesKey(name))
+                        is Set<*> -> prefs.remove(stringSetPreferencesKey(name))
+                    }
+                }
+            }
+
+            settings.forEach { setting ->
+                if (setting.name in NON_PORTABLE_KEYS) return@forEach
+                val v = setting.value
+                when (setting.type) {
+                    "bool" -> (v as? Boolean)?.let { prefs[booleanPreferencesKey(setting.name)] = it }
+                    "int" -> (v as? Number)?.let { prefs[intPreferencesKey(setting.name)] = it.toInt() }
+                    "long" -> (v as? Number)?.let { prefs[longPreferencesKey(setting.name)] = it.toLong() }
+                    "float" -> (v as? Number)?.let { prefs[floatPreferencesKey(setting.name)] = it.toFloat() }
+                    "double" -> (v as? Number)?.let { prefs[doublePreferencesKey(setting.name)] = it.toDouble() }
+                    "string" -> (v as? String)?.let { prefs[stringPreferencesKey(setting.name)] = it }
+                    "stringSet" -> {
+                        @Suppress("UNCHECKED_CAST")
+                        (v as? Collection<*>)?.let { raw ->
+                            prefs[stringSetPreferencesKey(setting.name)] = raw.filterIsInstance<String>().toSet()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /** Default true: new tasks were unconditionally assigned to the user before this existed, so
      * anything else would silently change behaviour for everyone on upgrade. */
     val autoAssignToMeFlow: Flow<Boolean> = prefsFlow.map { it[AUTO_ASSIGN_TO_ME] ?: true }
@@ -562,10 +608,6 @@ class UserPreferences @Inject constructor(
 
     suspend fun setProjectsFeatureEnabled(enabled: Boolean) {
         dataStore.edit { it[PROJECTS_FEATURE_ENABLED] = enabled }
-    }
-
-    suspend fun setCloudBackupEnabled(enabled: Boolean) {
-        dataStore.edit { it[CLOUD_BACKUP_ENABLED] = enabled }
     }
 
     suspend fun setHideCompletedToday(hide: Boolean) {
@@ -692,32 +734,6 @@ class UserPreferences @Inject constructor(
             val existing = prefs[RECENT_TASK_IDS]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
             prefs[RECENT_TASK_IDS] = (listOf(id) + existing.filterNot { it == id }).take(8).joinToString(",")
         }
-    }
-
-    suspend fun setCloudBackupAccountEmail(email: String?) {
-        dataStore.edit {
-            if (email != null) it[CLOUD_BACKUP_ACCOUNT] = email else it.remove(CLOUD_BACKUP_ACCOUNT)
-        }
-    }
-
-    suspend fun setCloudBackupLastAt(epochMillis: Long) {
-        dataStore.edit { it[CLOUD_BACKUP_LAST_AT] = epochMillis }
-    }
-
-    suspend fun setCloudBackupWifiOnly(wifiOnly: Boolean) {
-        dataStore.edit { it[CLOUD_BACKUP_WIFI_ONLY] = wifiOnly }
-    }
-
-    suspend fun setCloudBackupIntervalMinutes(minutes: Long) {
-        dataStore.edit { it[CLOUD_BACKUP_INTERVAL_MINUTES] = minutes.coerceAtLeast(15L) }
-    }
-
-    suspend fun setCloudBackupArchiveMonths(months: Int) {
-        dataStore.edit { it[CLOUD_BACKUP_ARCHIVE_MONTHS] = months.coerceAtLeast(0) }
-    }
-
-    suspend fun setCloudBackupKeepCount(count: Int) {
-        dataStore.edit { it[CLOUD_BACKUP_KEEP_COUNT] = count.coerceIn(2, 15) }
     }
 
     suspend fun setLocalBackupEnabled(enabled: Boolean) {

@@ -1,4 +1,4 @@
-package com.mj.yata.ui.screen.welcome
+﻿package com.mj.yata.ui.screen.welcome
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -50,7 +50,7 @@ private val pages = listOf(
     WelcomePage(
         icon = Icons.Default.TaskAlt,
         title = "Welcome to YATA",
-        description = "Yet Another Task App — organize your day, delegate to your team, and see everything at a glance. Natural-language quick add (\"call Priya tomorrow 3pm high priority\"), home-screen widgets, a Quick Settings tile, and Google Drive backup all come built in. A quick tour of the basics — replay it anytime from Settings → About."
+        description = "Yet Another Task App — organize your day, delegate to your team, and see everything at a glance. Natural-language quick add (\"call Priya tomorrow 3pm high priority\"), home-screen widgets, a Quick Settings tile, and self-hosted sync all come built in. A quick tour of the basics — replay it anytime from Settings → About."
     ),
     WelcomePage(
         icon = Icons.Default.Layers,

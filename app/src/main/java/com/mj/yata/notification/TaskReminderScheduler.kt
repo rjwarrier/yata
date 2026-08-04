@@ -6,6 +6,7 @@ interface TaskReminderScheduler {
     suspend fun scheduleReminder(task: TaskEntity)
     fun scheduleReminderDelayed(task: TaskEntity, delayMillis: Long)
     fun cancelReminder(task: TaskEntity)
+    fun cancelReminder(taskId: String)
 
     /** Cancels or (re)schedules each task's reminder as appropriate, reading the default
      * reminder time from DataStore once for the whole batch instead of once per task — for

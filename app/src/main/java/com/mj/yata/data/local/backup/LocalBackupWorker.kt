@@ -13,8 +13,8 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
-/** Periodic on-device counterpart to [com.mj.yata.data.cloud.CloudBackupWorker] — no network
- * constraint needed since this never leaves the device. */
+/** Legacy periodic on-device backup worker. No network constraint is needed because this never
+ * leaves the device. */
 @HiltWorker
 class LocalBackupWorker @AssistedInject constructor(
     @Assisted context: Context,

@@ -38,7 +38,6 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.mj.yata.data.cloud.CloudBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.navigation.AppNavigation
@@ -65,7 +64,6 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     @Inject lateinit var icsExporter: IcsExporter
     @Inject lateinit var plainTextImporter: PlainTextImporter
     @Inject lateinit var userPreferences: UserPreferences
-    @Inject lateinit var cloudBackupManager: CloudBackupManager
     @Inject lateinit var errorBus: com.mj.yata.ui.error.AppErrorBus
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -146,22 +144,6 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
             Toast.makeText(
                 this@MainActivity,
                 if (ok) "Calendar file exported" else "Export failed",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
-    private val cloudSignInLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        lifecycleScope.launch {
-            val outcome = cloudBackupManager.handleSignInResult(result.data)
-            Toast.makeText(
-                this@MainActivity,
-                outcome.fold(
-                    onSuccess = { email -> "Signed in as $email" },
-                    onFailure = { "Google sign-in failed or was cancelled" }
-                ),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -515,8 +497,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                                 onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
                                 onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
                                 onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
-                                onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
-                                onCloudSignInRequested = { cloudSignInLauncher.launch(cloudBackupManager.signInIntent()) }
+                                onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") }
                             )
                             SnackbarHost(
                                 hostState = errorHostState,

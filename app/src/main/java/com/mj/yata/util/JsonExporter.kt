@@ -3,8 +3,11 @@ package com.mj.yata.util
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.room.withTransaction
+import com.mj.yata.data.local.db.AppDatabase
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.domain.model.*
+import com.mj.yata.notification.TaskReminderScheduler
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
@@ -19,6 +22,19 @@ import javax.inject.Singleton
 
 internal const val CURRENT_BACKUP_VERSION = 4
 
+private val SYNC_PRESERVED_SETTING_NAMES = setOf(
+    "backup_interval_minutes",
+    "remote_backup_protocol",
+    "ftp_use_tls"
+)
+private val SYNC_PRESERVED_SETTING_PREFIXES = setOf(
+    "app_lock_",
+    "sftp_",
+    "cloud_backup_",
+    "local_backup_"
+)
+private const val CURRENT_SYNC_FORMAT_VERSION = 1
+
 /** Rejects arbitrary JSON before restore mutates any state. Every YATA backup, including an
  * archive-only payload and a legitimately empty database, contains a version and a tasks array. */
 internal fun isRecognizedBackup(root: JSONObject): Boolean =
@@ -28,8 +44,10 @@ internal fun isRecognizedBackup(root: JSONObject): Boolean =
 @Singleton
 class JsonExporter @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val db: AppDatabase,
     private val repository: YataRepository,
-    private val userPreferences: com.mj.yata.data.local.datastore.UserPreferences
+    private val userPreferences: com.mj.yata.data.local.datastore.UserPreferences,
+    private val reminderScheduler: TaskReminderScheduler
 ) {
     /**
      * Photos are stored as file:// Uris into the app's own filesDir (see ProfilePhotoUtils), so
@@ -110,24 +128,35 @@ class JsonExporter @Inject constructor(
 
     private suspend fun loadBackupData(): BackupData {
         val profilePhotoUri = userPreferences.userPhotoUriFlow.first()
-        return BackupData(
-            people = repository.getPeople().first(),
-            personGroups = repository.getPersonGroups().first(),
-            projects = repository.getProjects().first(),
-            lists = repository.getLists().first(),
-            tags = repository.getTags().first(),
-            tagGroups = repository.getTagGroups().first(),
-            // Archived tasks must be included explicitly: getTasks() excludes them by design, and
-            // a backup that omitted them would lose them during export-then-wipe. Trash remains
-            // deliberately excluded.
-            tasks = repository.getTasks().first() + repository.getArchivedTasks().first(),
-            comments = repository.getAllComments().first(),
-            profilePhoto = encodePhoto(profilePhotoUri),
-            profilePhotoIsMaterialGlyph = ProfilePhotoUtils.isMaterialGlyphUri(profilePhotoUri),
-            profileName = userPreferences.userNameFlow.first(),
-            profileEmail = userPreferences.userEmailFlow.first(),
-            settings = userPreferences.exportPortableSettings()
-        )
+        val profilePhoto = encodePhoto(profilePhotoUri)
+        val profilePhotoIsMaterialGlyph = ProfilePhotoUtils.isMaterialGlyphUri(profilePhotoUri)
+        val profileName = userPreferences.userNameFlow.first()
+        val profileEmail = userPreferences.userEmailFlow.first()
+        val settings = userPreferences.exportPortableSettings()
+        // Keep every Room collection on one read transaction. Without this, a task edit that
+        // lands between independently collected flows can publish a task whose relation, comment,
+        // project, or person side comes from a different database instant.
+        return db.withTransaction {
+            BackupData(
+                people = repository.getPeople().first(),
+                personGroups = repository.getPersonGroups().first(),
+                projects = repository.getProjects().first(),
+                lists = repository.getLists().first(),
+                tags = repository.getTags().first(),
+                tagGroups = repository.getTagGroups().first(),
+                // All lifecycle states are part of the canonical snapshot. In particular, Trash
+                // must travel between devices: omitting it resurrects stale rows remotely.
+                tasks = repository.getTasks().first() +
+                    repository.getArchivedTasks().first() +
+                    repository.getDeletedTasks().first(),
+                comments = repository.getAllComments().first(),
+                profilePhoto = profilePhoto,
+                profilePhotoIsMaterialGlyph = profilePhotoIsMaterialGlyph,
+                profileName = profileName,
+                profileEmail = profileEmail,
+                settings = settings
+            )
+        }
     }
 
     suspend fun exportData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
@@ -155,7 +184,7 @@ class JsonExporter @Inject constructor(
 
     /**
      * Splits completed tasks older than [archiveMonths] (and their comments) out of the payload
-     * cloud backup uploads — that payload gets rebuilt and re-uploaded on every debounce/interval
+     * scheduled backups upload — that payload gets rebuilt and re-uploaded on every debounce/interval
      * trigger, so letting years of completed tasks pile up in it makes every single backup bigger
      * forever. The split-off tasks go in the returned archive payload instead, uploaded to its own
      * file that's only replaced when its contents actually change. [archiveMonths] <= 0 disables
@@ -248,6 +277,7 @@ class JsonExporter @Inject constructor(
                 o.put("isMe", p.isMe)
                 o.put("groupId", p.groupId ?: JSONObject.NULL)
                 o.put("starred", p.starred)
+                o.put("sortOrder", p.sortOrder)
                 o.put("archived", p.archived)
                 peopleArr.put(o)
             }
@@ -277,6 +307,7 @@ class JsonExporter @Inject constructor(
                 o.put("defaultReminder", pr.defaultReminder ?: JSONObject.NULL)
                 o.put("description", pr.description ?: JSONObject.NULL)
                 o.put("excludeFromToday", pr.excludeFromToday)
+                o.put("sortOrder", pr.sortOrder)
                 o.put("archived", pr.archived)
                 val commonTagIdsArr = JSONArray()
                 pr.commonTagIds.forEach { commonTagIdsArr.put(it) }
@@ -298,6 +329,7 @@ class JsonExporter @Inject constructor(
                 o.put("icon", l.icon)
                 o.put("starred", l.starred)
                 o.put("excludeFromToday", l.excludeFromToday)
+                o.put("sortOrder", l.sortOrder)
                 o.put("archived", l.archived)
                 listsArr.put(o)
             }
@@ -355,8 +387,10 @@ class JsonExporter @Inject constructor(
             o.put("done", t.done)
             o.put("completedAt", t.completedAt ?: JSONObject.NULL)
             o.put("createdAt", t.createdAt ?: JSONObject.NULL)
+            o.put("deletedAt", t.deletedAt ?: JSONObject.NULL)
             o.put("notes", t.notes)
             o.put("sortOrder", t.sortOrder)
+            o.put("seriesId", t.seriesId ?: JSONObject.NULL)
             o.put("archived", t.archived)
             o.put("followUpAt", t.followUpAt ?: JSONObject.NULL)
             o.put("estimateMinutes", t.estimateMinutes ?: JSONObject.NULL)
@@ -398,6 +432,7 @@ class JsonExporter @Inject constructor(
                     }
                 }
                 ro.put("ends", endsObj)
+                ro.put("basedOnCompletion", r.basedOnCompletion)
                 o.put("recurrence", ro)
             }
 
@@ -505,6 +540,369 @@ class JsonExporter @Inject constructor(
         }
     }
 
+    /** Validates a canonical sync payload without reading or mutating local state. */
+    fun validateBytesForSync(bytes: ByteArray) {
+        validateSyncSnapshot(JSONObject(String(bytes, Charsets.UTF_8)))
+    }
+
+    /**
+     * Replaces local portable state with one already-merged canonical sync snapshot. Ordinary
+     * restore remains an overlay through [importBytes]; exact deletion is deliberately confined
+     * to this entry point. The Room portion is one transaction, so a malformed row or FK failure
+     * rolls every entity mutation back. DataStore and profile-photo files are restored from the
+     * pre-apply snapshot if that transaction fails.
+     */
+    suspend fun replaceBytesForSync(bytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
+        val target = try {
+            JSONObject(String(bytes, Charsets.UTF_8)).also(::validateSyncSnapshot)
+        } catch (e: Exception) {
+            Log.w("JsonExporter", "replaceBytesForSync: invalid canonical snapshot", e)
+            return@withContext false
+        }
+        val targetTaskIds = syncRows(target, "tasks").keys
+        val before = try {
+            JSONObject(String(exportToBytes(), Charsets.UTF_8))
+        } catch (e: Exception) {
+            Log.w("JsonExporter", "replaceBytesForSync: could not capture rollback state", e)
+            return@withContext false
+        }
+
+        try {
+            db.withTransaction {
+                deleteRowsMissingFromSync(target)
+                check(importJson(target, replaceForSync = true)) {
+                    "Canonical sync snapshot contained an entity that could not be imported"
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Log.w("JsonExporter", "replaceBytesForSync: apply failed; Room rolled back", e)
+            runCatching { restorePortableStateAfterFailedSync(before) }
+                .onFailure { rollbackError ->
+                    Log.e("JsonExporter", "replaceBytesForSync: DataStore rollback failed", rollbackError)
+                }
+            // AlarmManager and widget notifications are external to Room, so the transaction
+            // cannot roll them back. Reconcile every restored lifecycle state after Room has
+            // returned to its pre-sync contents.
+            runCatching {
+                val restoredTasks = (
+                    repository.getTasks().first() +
+                        repository.getArchivedTasks().first() +
+                        repository.getDeletedTasks().first()
+                    ).distinctBy { it.id }
+                val restoredIds = restoredTasks.mapTo(hashSetOf()) { it.id }
+                (targetTaskIds - restoredIds).forEach(reminderScheduler::cancelReminder)
+                repository.upsertTasks(
+                    restoredTasks,
+                    notify = true,
+                    resyncReminder = true,
+                    preserveExistingCreatedAt = true
+                )
+            }.onFailure { rollbackError ->
+                Log.e(
+                    "JsonExporter",
+                    "replaceBytesForSync: reminder/widget reconciliation failed",
+                    rollbackError
+                )
+            }
+            false
+        }
+    }
+
+    private suspend fun deleteRowsMissingFromSync(root: JSONObject) {
+        val commentIds = syncRows(root, "comments").keys
+        repository.getAllComments().first()
+            .filterNot { it.id in commentIds }
+            .forEach { repository.deleteComment(it) }
+
+        val taskIds = syncRows(root, "tasks").keys
+        val currentTasks = (
+            repository.getTasks().first() +
+                repository.getArchivedTasks().first() +
+                repository.getDeletedTasks().first()
+            ).distinctBy { it.id }
+        currentTasks.filterNot { it.id in taskIds }
+            .forEach { repository.permanentlyDeleteTask(it) }
+
+        val projectIds = syncRows(root, "projects").keys
+        repository.getProjects().first().filterNot { it.id in projectIds }
+            .forEach { repository.deleteProject(it) }
+
+        val listIds = syncRows(root, "lists").keys
+        repository.getLists().first().filterNot { it.id in listIds }
+            .forEach { repository.deleteList(it) }
+
+        val personIds = syncRows(root, "people").keys
+        repository.getPeople().first().filterNot { it.id in personIds }
+            .forEach { repository.deletePerson(it) }
+
+        val tagIds = syncRows(root, "tags").keys
+        repository.getTags().first().filterNot { it.id in tagIds }
+            .forEach { repository.deleteTag(it) }
+
+        val personGroupIds = syncRows(root, "personGroups").keys
+        repository.getPersonGroups().first().filterNot { it.id in personGroupIds }
+            .forEach { repository.deletePersonGroup(it) }
+
+        val tagGroupIds = syncRows(root, "tagGroups").keys
+        repository.getTagGroups().first().filterNot { it.id in tagGroupIds }
+            .forEach { repository.deleteTagGroup(it) }
+    }
+
+    private suspend fun restorePortableStateAfterFailedSync(root: JSONObject) {
+        userPreferences.replacePortableSettings(
+            portableSettings(root.optJSONArray("settings")),
+            preservedNames = SYNC_PRESERVED_SETTING_NAMES,
+            preservedPrefixes = SYNC_PRESERVED_SETTING_PREFIXES
+        )
+        userPreferences.setUserName(root.optString("profileName", ""))
+        userPreferences.setUserEmail(root.optString("profileEmail", ""))
+        val encoded = root.optString("profilePhoto", null)
+        if (encoded == null) {
+            userPreferences.setUserPhotoUri(null)
+        } else {
+            val restored = decodeProfilePhoto(
+                encoded,
+                isMaterialGlyph = root.optBoolean("profilePhotoIsMaterialGlyph", false)
+            ) ?: error("Could not restore previous profile photo")
+            userPreferences.setUserPhotoUri(restored.toString())
+        }
+    }
+
+    private fun validateSyncSnapshot(root: JSONObject) {
+        require(isRecognizedBackup(root)) { "Not a recognized YATA snapshot" }
+        require(root.optInt("syncVersion", -1) == CURRENT_SYNC_FORMAT_VERSION) {
+            "Unsupported sync snapshot version"
+        }
+        fun validatePhoto(value: String, label: String) {
+            require(value.isNotBlank()) { "$label is empty" }
+            try {
+                android.util.Base64.decode(value, android.util.Base64.NO_WRAP)
+            } catch (e: IllegalArgumentException) {
+                throw IllegalArgumentException("$label is not valid base64", e)
+            }
+        }
+        fun JSONObject.requireOptionalString(key: String) {
+            if (has(key) && !isNull(key)) require(get(key) is String) { "$key is not a string" }
+        }
+        fun JSONObject.requireOptionalNumber(key: String) {
+            if (has(key) && !isNull(key)) require(get(key) is Number) { "$key is not numeric" }
+        }
+        fun JSONObject.requireOptionalBoolean(key: String, required: Boolean = false) {
+            if (!has(key)) {
+                require(!required) { "Missing $key" }
+            } else {
+                require(get(key) is Boolean) { "$key is not Boolean" }
+            }
+        }
+        fun JSONObject.requireOptionalStringArray(key: String) {
+            if (!has(key)) return
+            val values = get(key) as? JSONArray ?: error("$key is not an array")
+            for (i in 0 until values.length()) values.getString(i)
+        }
+        if (root.has("profilePhoto") && !root.isNull("profilePhoto")) {
+            validatePhoto(root.getString("profilePhoto"), "Profile photo")
+        }
+        root.requireOptionalString("profileName")
+        root.requireOptionalString("profileEmail")
+        root.requireOptionalBoolean("profilePhotoIsMaterialGlyph")
+
+        val people = syncRows(root, "people")
+        val personGroups = syncRows(root, "personGroups")
+        val projects = syncRows(root, "projects")
+        val lists = syncRows(root, "lists")
+        val tags = syncRows(root, "tags")
+        val tagGroups = syncRows(root, "tagGroups")
+        val tasks = syncRows(root, "tasks")
+        val comments = syncRows(root, "comments")
+        syncRows(root, "settings", idKey = "name")
+        portableSettings(root.getJSONArray("settings"))
+
+        require(people.values.count { it.optBoolean("isMe", false) } == 1) {
+            "A canonical snapshot must contain exactly one current-user person"
+        }
+
+        personGroups.values.forEach { row ->
+            row.getString("name"); row.getString("color")
+        }
+        tagGroups.values.forEach { row ->
+            row.getString("name"); row.getString("color")
+        }
+        people.values.forEach { row ->
+            row.getString("name"); row.getString("initials"); row.getString("color")
+            row.nullableString("groupId")?.let { require(it in personGroups) }
+            row.requireOptionalBoolean("isMe", required = true)
+            row.requireOptionalBoolean("starred")
+            row.requireOptionalNumber("sortOrder")
+            row.requireOptionalBoolean("archived")
+            row.requireOptionalBoolean("photoIsMaterialGlyph")
+            if (row.has("photoData") && !row.isNull("photoData")) {
+                validatePhoto(row.getString("photoData"), "Person photo")
+            }
+        }
+        tags.values.forEach { row ->
+            row.getString("name"); row.getString("color")
+            row.nullableString("groupId")?.let { require(it in tagGroups) }
+            row.requireOptionalBoolean("starred")
+            row.requireOptionalBoolean("hideCompletedByDefault")
+        }
+        projects.values.forEach { row ->
+            row.getString("name"); row.getString("color"); row.getString("icon")
+            row.requireOptionalString("due")
+            row.requireOptionalString("defaultReminder")
+            row.requireOptionalString("description")
+            row.requireOptionalBoolean("starred")
+            row.requireOptionalBoolean("excludeFromToday")
+            row.requireOptionalNumber("sortOrder")
+            row.requireOptionalBoolean("archived")
+            row.requireOptionalStringArray("sectionNames")
+            row.requireOptionalStringArray("commonTagIds")
+            row.optJSONArray("commonTagIds")?.let { ids ->
+                // commonTagIds is intentionally denormalized text with no FK. Existing databases
+                // may retain a stale ID after its tag is deleted, so validate shape/duplicates but
+                // do not reject an otherwise restorable snapshot for that legacy state.
+                requireStringIds(ids, allowed = null, label = "project commonTagIds")
+            }
+        }
+        lists.values.forEach { row ->
+            row.getString("name"); row.getString("color"); row.getString("icon")
+            row.requireOptionalBoolean("starred")
+            row.requireOptionalBoolean("excludeFromToday")
+            row.requireOptionalNumber("sortOrder")
+            row.requireOptionalBoolean("archived")
+        }
+
+        val allSubtaskIds = mutableSetOf<String>()
+        tasks.values.forEach { row ->
+            row.getString("title"); row.getString("section"); row.getString("priority")
+            row.requireOptionalString("listId")
+            row.requireOptionalString("projectId")
+            row.requireOptionalString("due")
+            row.requireOptionalString("startDate")
+            row.requireOptionalString("time")
+            row.requireOptionalString("reminder")
+            row.requireOptionalString("notes")
+            row.requireOptionalString("seriesId")
+            row.requireOptionalBoolean("flag", required = true)
+            row.requireOptionalBoolean("done", required = true)
+            row.requireOptionalBoolean("archived")
+            row.requireOptionalNumber("completedAt")
+            row.requireOptionalNumber("createdAt")
+            row.requireOptionalNumber("deletedAt")
+            row.requireOptionalNumber("sortOrder")
+            row.requireOptionalNumber("followUpAt")
+            row.requireOptionalNumber("estimateMinutes")
+            row.nullableString("listId")?.let { require(it in lists) }
+            row.nullableString("projectId")?.let { require(it in projects) }
+            requireStringIds(row.getJSONArray("assigneeIds"), people.keys, "task assigneeIds")
+            requireStringIds(row.getJSONArray("tagIds"), tags.keys, "task tagIds")
+            val recurrence = if (!row.has("recurrence") || row.isNull("recurrence")) {
+                null
+            } else {
+                row.get("recurrence") as? JSONObject
+                    ?: error("Task recurrence is not an object")
+            }
+            recurrence?.let {
+                recurrence.getString("freq")
+                require(recurrence.getInt("interval") > 0) { "Recurrence interval must be positive" }
+                recurrence.requireOptionalNumber("bymonthday")
+                recurrence.requireOptionalBoolean("basedOnCompletion")
+                recurrence.requireOptionalStringArray("byday")
+                recurrence.optJSONArray("byday")?.let { days ->
+                    for (i in 0 until days.length()) days.getString(i)
+                }
+                val ends = recurrence.getJSONObject("ends")
+                when (ends.getString("type")) {
+                    "never" -> Unit
+                    "after" -> require(ends.getInt("count") > 0)
+                    "on" -> ends.getString("date")
+                    else -> error("Unknown recurrence end type")
+                }
+            }
+
+            val subtasks = row.getJSONArray("subtasks")
+            val idsForTask = mutableSetOf<String>()
+            val subtaskPositions = mutableMapOf<String, Int>()
+            for (i in 0 until subtasks.length()) {
+                val subtask = subtasks.getJSONObject(i)
+                val id = subtask.getString("id").also { require(it.isNotBlank()) }
+                require(idsForTask.add(id) && allSubtaskIds.add(id)) { "Duplicate subtask $id" }
+                subtaskPositions[id] = i
+                subtask.getString("title"); subtask.getBoolean("done")
+                subtask.requireOptionalString("parentSubtaskId")
+                subtask.requireOptionalNumber("sortOrder")
+            }
+            for (i in 0 until subtasks.length()) {
+                subtasks.getJSONObject(i).nullableString("parentSubtaskId")?.let { parentId ->
+                    require(parentId in idsForTask) { "Subtask parent is outside its task" }
+                    require(subtaskPositions.getValue(parentId) < i) {
+                        "Subtask parent must precede its child"
+                    }
+                }
+            }
+        }
+        comments.values.forEach { row ->
+            row.getString("body")
+            require(row.getString("taskId") in tasks) { "Comment references a missing task" }
+            row.getLong("createdAt")
+            row.requireOptionalString("authorId")
+        }
+    }
+
+    private fun syncRows(
+        root: JSONObject,
+        collection: String,
+        idKey: String = "id"
+    ): Map<String, JSONObject> {
+        val array = root.getJSONArray(collection)
+        val rows = linkedMapOf<String, JSONObject>()
+        for (i in 0 until array.length()) {
+            val row = array.getJSONObject(i)
+            val id = row.getString(idKey)
+            require(id.isNotBlank()) { "Blank $idKey in $collection" }
+            require(rows.put(id, row) == null) { "Duplicate $collection record $id" }
+        }
+        return rows
+    }
+
+    private fun portableSettings(array: JSONArray?): List<com.mj.yata.data.local.datastore.PortableSetting> {
+        if (array == null) return emptyList()
+        return buildList {
+            for (i in 0 until array.length()) {
+                val row = array.getJSONObject(i)
+                val name = row.getString("name").also { require(it.isNotBlank()) }
+                val type = row.getString("type")
+                val raw = row.get("value")
+                val value: Any = when (type) {
+                    "bool" -> raw as? Boolean ?: error("Setting $name is not Boolean")
+                    "int", "long", "float", "double" ->
+                        raw as? Number ?: error("Setting $name is not numeric")
+                    "string" -> raw as? String ?: error("Setting $name is not String")
+                    "stringSet" -> {
+                        val values = raw as? JSONArray ?: error("Setting $name is not a string array")
+                        buildSet {
+                            for (j in 0 until values.length()) add(values.getString(j))
+                        }
+                    }
+                    else -> error("Unknown portable setting type $type")
+                }
+                add(com.mj.yata.data.local.datastore.PortableSetting(name, type, value))
+            }
+        }
+    }
+
+    private fun requireStringIds(array: JSONArray, allowed: Set<String>?, label: String) {
+        val seen = mutableSetOf<String>()
+        for (i in 0 until array.length()) {
+            val id = array.getString(i)
+            require(seen.add(id)) { "Duplicate ID in $label" }
+            if (allowed != null) require(id in allowed) { "$label references missing record $id" }
+        }
+    }
+
+    private fun JSONObject.nullableString(key: String): String? =
+        if (isNull(key)) null else getString(key)
+
     /**
      * Counts what a backup holds without importing it. Lives here rather than in the backup
      * managers because this class owns the payload's shape — the key names below are the same
@@ -526,7 +924,7 @@ class JsonExporter @Inject constructor(
         )
     }
 
-    private suspend fun importJson(root: JSONObject): Boolean {
+    private suspend fun importJson(root: JSONObject, replaceForSync: Boolean = false): Boolean {
             if (!isRecognizedBackup(root)) {
                 Log.w("JsonExporter", "importJson: unrecognized or unsupported backup payload")
                 return false
@@ -550,11 +948,14 @@ class JsonExporter @Inject constructor(
             // DataStore; name and email go straight to DataStore. Each only overwrites when the
             // backup actually carries it, so restoring an older backup — one written before these
             // fields existed, or before the user filled them in — can't wipe a value set since.
-            root.optString("profilePhoto", null)?.let { encoded ->
-                decodeProfilePhoto(
-                    encoded,
+            val encodedProfilePhoto = root.optString("profilePhoto", null)
+            if (encodedProfilePhoto != null) {
+                val restoredUri = decodeProfilePhoto(
+                    encodedProfilePhoto,
                     isMaterialGlyph = root.optBoolean("profilePhotoIsMaterialGlyph", false)
-                )?.let { uri ->
+                )
+                if (restoredUri != null) {
+                    val uri = restoredUri
                     val uriString = uri.toString()
                     userPreferences.setUserPhotoUri(uriString)
                     // Keeps the "me" Person's avatar (assignee stacks, PersonDetailScreen, ...) in
@@ -564,13 +965,25 @@ class JsonExporter @Inject constructor(
                     repository.getPeople().first().find { it.isMe }?.let { me ->
                         repository.upsertPerson(me.copy(photoUri = uriString))
                     }
+                } else if (replaceForSync) {
+                    skippedRows++
+                }
+            } else if (replaceForSync) {
+                userPreferences.setUserPhotoUri(null)
+                repository.getPeople().first().find { it.isMe }?.let { me ->
+                    repository.upsertPerson(me.copy(photoUri = null))
                 }
             }
-            root.optString("profileName", null)?.takeIf { it.isNotBlank() }?.let {
-                userPreferences.setUserName(it)
-            }
-            root.optString("profileEmail", null)?.takeIf { it.isNotBlank() }?.let {
-                userPreferences.setUserEmail(it)
+            if (replaceForSync) {
+                userPreferences.setUserName(root.optString("profileName", ""))
+                userPreferences.setUserEmail(root.optString("profileEmail", ""))
+            } else {
+                root.optString("profileName", null)?.takeIf { it.isNotBlank() }?.let {
+                    userPreferences.setUserName(it)
+                }
+                root.optString("profileEmail", null)?.takeIf { it.isNotBlank() }?.let {
+                    userPreferences.setUserEmail(it)
+                }
             }
 
             // Settings, applied before the entity rows below so that anything reading a preference
@@ -592,10 +1005,19 @@ class JsonExporter @Inject constructor(
                         } else raw
                         restored.add(com.mj.yata.data.local.datastore.PortableSetting(name, type, value))
                     } catch (e: Exception) {
+                        if (replaceForSync) skippedRows++
                         Log.w("JsonExporter", "importData: skipping malformed setting row $i", e)
                     }
                 }
-                userPreferences.importPortableSettings(restored)
+                if (replaceForSync) {
+                    userPreferences.replacePortableSettings(
+                        restored,
+                        preservedNames = SYNC_PRESERVED_SETTING_NAMES,
+                        preservedPrefixes = SYNC_PRESERVED_SETTING_PREFIXES
+                    )
+                } else {
+                    userPreferences.importPortableSettings(restored)
+                }
             }
 
             // 1. Import Person groups (must exist before people reference them)
@@ -617,6 +1039,17 @@ class JsonExporter @Inject constructor(
                 for (i in 0 until peopleArr.length()) {
                     importRow("person", i) {
                         val o = peopleArr.getJSONObject(i)
+                        val photoData = o.optString("photoData", null)
+                        val restoredPhoto = decodePhotoToAvatarFile(
+                            photoData,
+                            isMaterialGlyph = o.optBoolean(
+                                "photoIsMaterialGlyph",
+                                ProfilePhotoUtils.isMaterialGlyphUri(o.optString("photoUri", null))
+                            )
+                        )
+                        if (replaceForSync && !photoData.isNullOrBlank() && restoredPhoto == null) {
+                            error("Could not persist synchronized person photo")
+                        }
                         repository.upsertPerson(
                             Person(
                                 id = o.getString("id"),
@@ -629,17 +1062,12 @@ class JsonExporter @Inject constructor(
                                 // reinstall it is a dangling reference that silently degrades to
                                 // initials. Backups written before photoData existed still fall
                                 // back to it, which is no worse than before.
-                                photoUri = decodePhotoToAvatarFile(
-                                    o.optString("photoData", null),
-                                    isMaterialGlyph = o.optBoolean(
-                                        "photoIsMaterialGlyph",
-                                        ProfilePhotoUtils.isMaterialGlyphUri(o.optString("photoUri", null))
-                                    )
-                                )?.toString()
+                                photoUri = restoredPhoto?.toString()
                                     ?: if (o.isNull("photoUri")) null else o.optString("photoUri"),
                                 isMe = o.optBoolean("isMe", false),
                                 groupId = if (o.isNull("groupId")) null else o.optString("groupId", null),
                                 starred = o.optBoolean("starred", false),
+                                sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false)
                             )
                         )
@@ -681,6 +1109,7 @@ class JsonExporter @Inject constructor(
                                 defaultReminder = if (o.isNull("defaultReminder")) null else o.optString("defaultReminder", null),
                                 description = if (o.isNull("description")) null else o.optString("description", null),
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
+                                sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false),
                                 sectionNames = sectionNames
                             )
@@ -703,6 +1132,7 @@ class JsonExporter @Inject constructor(
                                 icon = o.getString("icon"),
                                 starred = o.optBoolean("starred", false),
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
+                                sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false)
                             )
                         )
@@ -794,7 +1224,8 @@ class JsonExporter @Inject constructor(
                                     interval = recObj.getInt("interval"),
                                     byday = byday,
                                     bymonthday = if (recObj.has("bymonthday")) recObj.getInt("bymonthday") else null,
-                                    ends = ends
+                                    ends = ends,
+                                    basedOnCompletion = recObj.optBoolean("basedOnCompletion", false)
                                 )
                             } catch (e: Exception) {
                                 Log.w("JsonExporter", "importData: dropping malformed recurrence on task row $i", e)
@@ -837,12 +1268,14 @@ class JsonExporter @Inject constructor(
                                 // Absent in backups written before DB 27 — stays null there, and
                                 // the upsert then treats the restored task as created now.
                                 createdAt = if (o.isNull("createdAt")) null else o.optLong("createdAt"),
+                                deletedAt = if (o.isNull("deletedAt")) null else o.optLong("deletedAt"),
                                 assigneeIds = assigneeIds,
                                 tagIds = tagIds,
                                 recurrence = recurrence,
                                 subtasks = subtasks,
                                 notes = if (o.isNull("notes")) null else o.optString("notes"),
                                 sortOrder = o.optInt("sortOrder", i),
+                                seriesId = if (o.isNull("seriesId")) null else o.optString("seriesId", null),
                                 // Absent in backups written before task archiving existed —
                                 // those restore as un-archived, which is the correct reading.
                                 archived = o.optBoolean("archived", false),
@@ -859,7 +1292,12 @@ class JsonExporter @Inject constructor(
                 }
             }
             if (tasksToImport.isNotEmpty()) {
-                repository.upsertTasks(tasksToImport, notify = true, resyncReminder = true)
+                repository.upsertTasks(
+                    tasksToImport,
+                    notify = true,
+                    resyncReminder = true,
+                    preserveExistingCreatedAt = !replaceForSync
+                )
             }
 
             // 6. Import Comments (after tasks so the taskId foreign key exists)
@@ -878,6 +1316,12 @@ class JsonExporter @Inject constructor(
                             )
                         )
                     }
+                }
+            }
+            if (replaceForSync) {
+                val profileUri = userPreferences.userPhotoUriFlow.first()
+                repository.getPeople().first().find { it.isMe }?.let { me ->
+                    if (me.photoUri != profileUri) repository.upsertPerson(me.copy(photoUri = profileUri))
                 }
             }
             if (skippedRows > 0) {

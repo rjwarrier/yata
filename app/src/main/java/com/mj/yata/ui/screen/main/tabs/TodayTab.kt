@@ -84,10 +84,11 @@ fun TodayTab(
     taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
     hideCompleted: Boolean = false,
     onHideCompletedChange: (Boolean) -> Unit = {},
-    /** Gates the manual sync button — there is nothing to sync to until cloud backup is set up. */
-    cloudSyncEnabled: Boolean = false,
+    /** Gates the manual sync button — there is nothing remote to sync until a server is set up. */
+    backupSyncEnabled: Boolean = false,
     confettiEnabled: Boolean = true,
     syncing: Boolean = false,
+    syncButtonEnabled: Boolean = true,
     onSyncClick: () -> Unit = {},
     /** When Today has nothing due, show tomorrow/day-after tasks automatically (dimmed, but fully
      * clickable/completable) instead of requiring the empty state's "Show upcoming tasks" button
@@ -265,8 +266,8 @@ fun TodayTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (cloudSyncEnabled) {
-                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSyncClick, enabled = !syncing) {
+                if (backupSyncEnabled) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSyncClick, enabled = syncButtonEnabled) {
                         if (syncing) {
                             // Replaces the icon in place rather than sitting next to it, so the
                             // row doesn't reflow mid-sync. Sized to the icon, not the button.

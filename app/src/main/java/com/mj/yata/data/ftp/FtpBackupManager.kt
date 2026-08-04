@@ -5,6 +5,7 @@ import android.util.Log
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpNotConfiguredException
+import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.domain.model.BackupSummary
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
@@ -29,6 +30,7 @@ import java.security.KeyStore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import javax.net.ssl.TrustManagerFactory
@@ -50,7 +52,8 @@ class FtpBackupManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val jsonExporter: JsonExporter,
     private val userPreferences: UserPreferences,
-    private val credentialsStore: RemoteBackupCredentialsStore
+    private val credentialsStore: RemoteBackupCredentialsStore,
+    private val snapshotSyncEngine: SnapshotSyncEngine
 ) {
     companion object {
         private const val TAG = "FtpBackupManager"
@@ -60,6 +63,11 @@ class FtpBackupManager @Inject constructor(
         private const val FILENAME_SUFFIX = ".zip"
         private const val ENCRYPTED_SUFFIX = ".zip.enc"
         private const val ZIP_ENTRY_NAME = "backup.json"
+        private const val SYNC_FILENAME = "yata_sync_v1.data"
+        private const val SYNC_PREVIOUS_FILENAME = ".yata_sync_v1.previous"
+        private const val SYNC_LOCK_DIR = ".yata_sync_v1.lock"
+        private const val SYNC_LEASE_FILE = "lease"
+        private const val SYNC_LOCK_STALE_MILLIS = 60 * 60 * 1000L
         private const val CONNECT_TIMEOUT_MS = 15_000
         private const val DATA_TIMEOUT_MS = 60_000
         private const val UPLOAD_BUFFER_BYTES = 64 * 1024
@@ -138,11 +146,86 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
+    /** Full two-way sync using only generic FTP/FTPS file operations. */
+    suspend fun syncNow(): Result<Unit> = sessionMutex.withLock {
+        withContext(Dispatchers.IO) {
+            try {
+                val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+                val keepCount = userPreferences.sftpKeepCountFlow.first()
+                val host = userPreferences.sftpHostFlow.first()
+                val port = userPreferences.sftpPortFlow.first()
+                val username = userPreferences.sftpUsernameFlow.first()
+                val normalizedHost = host.trim().trimEnd('.').lowercase(Locale.ROOT)
+
+                withContext(NonCancellable) {
+                    val client = connect()
+                    try {
+                        ensureRemoteDir(client, remoteDir)
+                        check(client.changeWorkingDirectory(remoteDir)) {
+                            "Could not open remote folder $remoteDir"
+                        }
+                        val canonicalRemoteDir = client.printWorkingDirectory()
+                            ?.trim()
+                            ?.trimEnd('/')
+                            ?.ifEmpty { "/" }
+                            ?: error("The FTP server did not report its current folder")
+                        val scopeKey =
+                            "ftp|$username@$normalizedHost:$port|$canonicalRemoteDir"
+                        val lease = acquireSyncLock(client)
+                        try {
+                            val remote = readValidSyncSource(client)
+                            val prepared = snapshotSyncEngine.prepare(
+                                remoteBytes = remote.jsonBytes,
+                                scopeKey = scopeKey,
+                                remoteIsRecovery =
+                                    remote.jsonBytes != null && !remote.canonicalHeadValid
+                            )
+                            val publish =
+                                prepared.remoteNeedsPublish || !remote.canonicalHeadValid
+                            val encoded = if (publish) {
+                                encodePayload(prepared.canonicalBytes)
+                            } else {
+                                null
+                            }
+                            if (encoded != null) {
+                                publishCanonicalSnapshot(
+                                    client = client,
+                                    bytes = encoded,
+                                    previousBytes = remote.encodedBytes,
+                                    hadCurrent = remote.hadCanonical,
+                                    lease = lease
+                                )
+                            }
+                            snapshotSyncEngine.commit(prepared)
+
+                            if (encoded != null) {
+                                val encrypted = credentialsStore.backupPassphrase != null
+                                val backupName = FILENAME_PREFIX +
+                                    SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
+                                    (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+                                publishNewFile(client, backupName, encoded)
+                                pruneOldBackups(client, remoteDir, keepCount)
+                            }
+                        } finally {
+                            releaseSyncLock(client, lease)
+                        }
+                    } finally {
+                        disconnectQuietly(client)
+                    }
+                }
+
+                userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.w(TAG, "syncNow failed", e)
+                Result.failure(e)
+            }
+        }
+    }
+
     /**
-     * Uploads and then *verifies*. `storeFile`-style success only means the client finished
-     * writing; a data connection that dies mid-stream can still leave a partial file behind, and
-     * a backup that restores to a fraction of your data is worse than one that never happened.
-     * Anything short of a byte-exact match is deleted and reported as a failure.
+     * Uploads and then verifies. A successful write alone does not prove the server received the
+     * complete object; anything short of a byte-exact match is deleted and reported as failure.
      */
     private fun upload(client: FTPClient, filename: String, bytes: ByteArray) {
         var commandCompleted = false
@@ -197,6 +280,266 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
+    private fun encodePayload(jsonBytes: ByteArray): ByteArray {
+        val zipped = zip(jsonBytes)
+        val passphrase = credentialsStore.backupPassphrase
+        return if (passphrase == null) zipped else BackupCrypto.encrypt(zipped, passphrase)
+    }
+
+    private fun decodePayload(bytes: ByteArray): ByteArray {
+        val decrypted = if (BackupCrypto.isEncrypted(bytes)) {
+            val passphrase = credentialsStore.backupPassphrase
+                ?: throw IllegalStateException(
+                    "This sync snapshot is encrypted — set the backup passphrase first"
+                )
+            try {
+                BackupCrypto.decrypt(bytes, passphrase)
+            } catch (e: Exception) {
+                throw IllegalStateException("Wrong passphrase, or the sync snapshot is damaged", e)
+            }
+        } else {
+            bytes
+        }
+        return if (isZip(decrypted)) unzip(decrypted) else decrypted
+    }
+
+    private data class RemoteSyncSource(
+        val jsonBytes: ByteArray?,
+        val encodedBytes: ByteArray?,
+        val hadCanonical: Boolean,
+        val canonicalHeadValid: Boolean
+    )
+
+    /**
+     * Tries recovery candidates in durability order. A damaged head must not hide a usable
+     * previous/history snapshot, but finding remote files and validating none of them must also
+     * never be mistaken for a brand-new empty server.
+     */
+    private fun readValidSyncSource(client: FTPClient): RemoteSyncSource {
+        var sawCandidate = false
+        val currentPayload = readRemoteBytesOrNull(client, SYNC_FILENAME)
+
+        fun acceptIfValid(label: String, payload: ByteArray?): RemoteSyncSource? {
+            if (payload == null) return null
+            sawCandidate = true
+            val decoded = try {
+                decodePayload(payload)
+            } catch (e: Exception) {
+                Log.w(TAG, "Ignoring unreadable FTP sync candidate $label", e)
+                return null
+            }
+            if (!snapshotSyncEngine.isValidRemoteSnapshot(decoded)) {
+                Log.w(TAG, "Ignoring invalid FTP sync candidate $label")
+                return null
+            }
+            return RemoteSyncSource(
+                jsonBytes = decoded,
+                encodedBytes = payload,
+                hadCanonical = currentPayload != null,
+                canonicalHeadValid = label == SYNC_FILENAME
+            )
+        }
+
+        acceptIfValid(SYNC_FILENAME, currentPayload)?.let { return it }
+
+        listHistoryBackupNames(client).forEach { filename ->
+            // The listing itself observed a candidate. If it disappears before RETR, fail closed
+            // rather than reclassifying a raced/unstable remote as a brand-new empty server.
+            sawCandidate = true
+            val payload = readRemoteBytesOrNull(client, filename)
+            acceptIfValid(filename, payload)?.let { return it }
+        }
+
+        val previousPayload = readRemoteBytesOrNull(client, SYNC_PREVIOUS_FILENAME)
+        acceptIfValid(SYNC_PREVIOUS_FILENAME, previousPayload)?.let { return it }
+
+        check(!sawCandidate) {
+            "The server contains sync/backup files, but none is a valid YATA snapshot"
+        }
+        return RemoteSyncSource(
+            jsonBytes = null,
+            encodedBytes = null,
+            hadCanonical = currentPayload != null,
+            canonicalHeadValid = false
+        )
+    }
+
+    private fun readRemoteBytesOrNull(client: FTPClient, filename: String): ByteArray? {
+        val expected = remoteSize(client, filename)
+        val out = ByteArrayOutputStream()
+        if (!client.retrieveFile(filename, out)) {
+            if (client.replyCode == 550 && isDefinitelyAbsent(client, filename)) return null
+            throw IllegalStateException("Download failed: ${client.replyString.trim()}")
+        }
+        return out.toByteArray().also { downloaded ->
+            if (expected != null && expected != downloaded.size.toLong()) {
+                throw IllegalStateException(
+                    "Download truncated — got ${downloaded.size} of $expected bytes"
+                )
+            }
+        }
+    }
+
+    /** A 550 can also mean permission denied; only a successful parent listing proves absence. */
+    private fun isDefinitelyAbsent(client: FTPClient, filename: String): Boolean {
+        val normalized = filename.trimEnd('/')
+        val separator = normalized.lastIndexOf('/')
+        val parent = if (separator < 0) "." else normalized.substring(0, separator).ifBlank { "/" }
+        val leaf = normalized.substring(separator + 1)
+        val entries = client.listFiles(parent)
+        check(FTPReply.isPositiveCompletion(client.replyCode)) {
+            "Could not verify whether $filename is absent: ${client.replyString.trim()}"
+        }
+        return entries.none { entry ->
+            entry.name.trimEnd('/').substringAfterLast('/') == leaf
+        }
+    }
+
+    private fun publishCanonicalSnapshot(
+        client: FTPClient,
+        bytes: ByteArray,
+        previousBytes: ByteArray?,
+        hadCurrent: Boolean,
+        lease: SyncLease
+    ) {
+        val temporary = ".$SYNC_FILENAME.${UUID.randomUUID()}.part"
+        val previousTemporary = ".$SYNC_PREVIOUS_FILENAME.${UUID.randomUUID()}.part"
+        upload(client, temporary, bytes)
+        try {
+            if (previousBytes != null) upload(client, previousTemporary, previousBytes)
+
+            // Confirm nobody recovered our lock immediately before canonical names are mutated.
+            verifySyncLockOwnership(client, lease)
+
+            if (previousBytes != null) {
+                client.deleteFile(SYNC_PREVIOUS_FILENAME)
+                if (!client.rename(previousTemporary, SYNC_PREVIOUS_FILENAME)) {
+                    throw IllegalStateException(
+                        "Could not publish the previous sync snapshot: ${client.replyString.trim()}"
+                    )
+                }
+            }
+            verifySyncLockOwnership(client, lease)
+            if (hadCurrent && !client.deleteFile(SYNC_FILENAME)) {
+                throw IllegalStateException(
+                    "Could not replace the old sync snapshot: ${client.replyString.trim()}"
+                )
+            }
+            if (!client.rename(temporary, SYNC_FILENAME)) {
+                throw IllegalStateException(
+                    "Could not publish the sync snapshot: ${client.replyString.trim()}"
+                )
+            }
+        } catch (t: Throwable) {
+            deleteQuietly(client, temporary)
+            deleteQuietly(client, previousTemporary)
+            throw t
+        }
+    }
+
+    private fun publishNewFile(client: FTPClient, filename: String, bytes: ByteArray) {
+        val temporary = ".$filename.${UUID.randomUUID()}.part"
+        upload(client, temporary, bytes)
+        if (!client.rename(temporary, filename)) {
+            // Two serialized devices can still finish within the same timestamp second. Replacing
+            // that one history slot is harmless; the canonical sync state is already published.
+            client.deleteFile(filename)
+            if (!client.rename(temporary, filename)) {
+                deleteQuietly(client, temporary)
+                throw IllegalStateException(
+                    "Could not publish completed backup: ${client.replyString.trim()}"
+                )
+            }
+        }
+    }
+
+    private data class SyncLease(val token: String)
+
+    private fun acquireSyncLock(client: FTPClient): SyncLease {
+        if (!client.makeDirectory(SYNC_LOCK_DIR)) {
+            val leaseMillis = readRemoteBytesOrNull(client, "$SYNC_LOCK_DIR/$SYNC_LEASE_FILE")
+                ?.toString(Charsets.UTF_8)
+                ?.lineSequence()
+                ?.firstOrNull()
+                ?.toLongOrNull()
+            val directoryMillis = runCatching {
+                client.mlistFile(SYNC_LOCK_DIR)?.timestamp?.timeInMillis
+            }.getOrNull()
+            val lockedAt = leaseMillis ?: directoryMillis
+            val isStale = lockedAt != null &&
+                System.currentTimeMillis() - lockedAt > SYNC_LOCK_STALE_MILLIS
+            if (!isStale) {
+                throw IllegalStateException("Another device is syncing; try again shortly")
+            }
+            client.deleteFile("$SYNC_LOCK_DIR/$SYNC_LEASE_FILE")
+            check(client.removeDirectory(SYNC_LOCK_DIR) && client.makeDirectory(SYNC_LOCK_DIR)) {
+                "Could not recover a stale sync lock: ${client.replyString.trim()}"
+            }
+        }
+        val lease = SyncLease(UUID.randomUUID().toString())
+        try {
+            upload(
+                client,
+                "$SYNC_LOCK_DIR/$SYNC_LEASE_FILE",
+                leasePayload(lease)
+            )
+        } catch (t: Throwable) {
+            client.removeDirectory(SYNC_LOCK_DIR)
+            throw t
+        }
+        return lease
+    }
+
+    private fun verifySyncLockOwnership(client: FTPClient, lease: SyncLease) {
+        check(readLeaseToken(client) == lease.token) {
+            "FTP sync lock ownership was lost before publication"
+        }
+    }
+
+    private fun leasePayload(lease: SyncLease): ByteArray =
+        "${System.currentTimeMillis()}\n${lease.token}".toByteArray(Charsets.UTF_8)
+
+    private fun readLeaseToken(client: FTPClient): String? =
+        readRemoteBytesOrNull(client, "$SYNC_LOCK_DIR/$SYNC_LEASE_FILE")
+            ?.toString(Charsets.UTF_8)
+            ?.lineSequence()
+            ?.drop(1)
+            ?.firstOrNull()
+
+    private fun releaseSyncLock(client: FTPClient, lease: SyncLease) {
+        try {
+            if (readLeaseToken(client) != lease.token) {
+                Log.w(TAG, "FTP sync lock ownership changed before release; leaving it intact")
+                return
+            }
+            if (!client.deleteFile("$SYNC_LOCK_DIR/$SYNC_LEASE_FILE")) {
+                Log.w(TAG, "Could not remove FTP sync lease: ${client.replyString.trim()}")
+                return
+            }
+            if (!client.removeDirectory(SYNC_LOCK_DIR)) {
+                Log.w(TAG, "Could not release sync lock: ${client.replyString.trim()}")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not release sync lock", e)
+        }
+    }
+
+    private fun isHistoryBackupName(name: String): Boolean =
+        name.startsWith(FILENAME_PREFIX) &&
+            (name.endsWith(FILENAME_SUFFIX) || name.endsWith(ENCRYPTED_SUFFIX))
+
+    private fun listHistoryBackupNames(client: FTPClient): List<String> {
+        val files = client.listFiles()
+        check(FTPReply.isPositiveCompletion(client.replyCode)) {
+            "Could not list FTP backup history: ${client.replyString.trim()}"
+        }
+        return files.asSequence()
+            .filter { it.isFile && isHistoryBackupName(it.name) }
+            .map { it.name }
+            .sortedDescending()
+            .toList()
+    }
+
     suspend fun listBackups(): Result<List<String>> = withContext(Dispatchers.IO) {
         try {
             val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -204,7 +547,7 @@ class FtpBackupManager @Inject constructor(
             val names = try {
                 client.changeWorkingDirectory(remoteDir)
                 client.listNames()
-                    ?.filter { it.startsWith(FILENAME_PREFIX) }
+                    ?.filter(::isHistoryBackupName)
                     ?: emptyList()
             } finally {
                 disconnectQuietly(client)
@@ -453,7 +796,10 @@ class FtpBackupManager @Inject constructor(
     }
 
     private fun pruneOldBackups(client: FTPClient, dir: String, keepCount: Int) {
-        val names = client.listNames()?.filter { it.startsWith(FILENAME_PREFIX) }?.sortedByDescending { it } ?: return
+        val names = client.listNames()
+            ?.filter(::isHistoryBackupName)
+            ?.sortedByDescending { it }
+            ?: return
         names.drop(keepCount).forEach { name ->
             try {
                 client.deleteFile(name)

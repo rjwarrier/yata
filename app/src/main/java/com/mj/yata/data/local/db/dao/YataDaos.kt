@@ -213,11 +213,8 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE listId = :listId")
     suspend fun getTasksCascadedByListDelete(listId: String): List<TaskEntity>
 
-    /** Deleting a project also cascades its lists, so include tasks attached through either FK. */
-    @Query(
-        "SELECT * FROM tasks WHERE projectId = :projectId " +
-            "OR listId IN (SELECT id FROM lists WHERE projectId = :projectId)"
-    )
+    /** Rows Room will cascade when a project is deleted. Lists are independent of projects. */
+    @Query("SELECT * FROM tasks WHERE projectId = :projectId")
     suspend fun getTasksCascadedByProjectDelete(projectId: String): List<TaskEntity>
 
     @Query("SELECT * FROM tasks WHERE id = :id")
@@ -269,7 +266,7 @@ interface TaskDao {
     suspend fun emptyTrash()
 
     @Query("DELETE FROM tasks WHERE deletedAt IS NOT NULL AND deletedAt < :threshold")
-    suspend fun purgeTrashOlderThan(threshold: Long)
+    suspend fun purgeTrashOlderThan(threshold: Long): Int
 
     /**
      * Auto-archive: shelve tasks completed before [threshold]. Excludes rows already archived,
