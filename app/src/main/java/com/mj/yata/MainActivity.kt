@@ -39,6 +39,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.domain.model.MotionMode
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.navigation.AppNavigation
 import com.mj.yata.ui.screen.lock.AppLockState
@@ -46,6 +47,7 @@ import com.mj.yata.ui.screen.lock.LockScreen
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
+import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.PlainTextImporter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -307,9 +309,14 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
                 ThemeMode.SYSTEM -> systemDark
             }
 
-            val reduceMotionEnabled by userPreferences.reduceMotionEnabledFlow.collectAsState(initial = false)
-            LaunchedEffect(reduceMotionEnabled) {
-                com.mj.yata.ui.theme.YataDur.applyReduceMotion(reduceMotionEnabled)
+            val motionMode by userPreferences.motionModeFlow.collectAsState(initial = MotionMode.FULL)
+            val reduceMotionEnabled = motionMode != MotionMode.FULL
+            LaunchedEffect(motionMode) {
+                com.mj.yata.ui.theme.YataDur.applyMotionMode(motionMode)
+            }
+            val dateAliasDefinitions by userPreferences.dateAliasDefinitionsFlow.collectAsState(initial = emptySet())
+            LaunchedEffect(dateAliasDefinitions) {
+                NaturalLanguageParser.configureDateAliases(dateAliasDefinitions)
             }
 
             val uiScale by userPreferences.uiScaleFlow.collectAsState(initial = 1.0f)

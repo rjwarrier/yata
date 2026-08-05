@@ -75,9 +75,13 @@ import com.mj.yata.data.backup.BackupDiff
 import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
+import com.mj.yata.domain.model.DateAliasDefinition
+import com.mj.yata.domain.model.DateAliasTarget
 import com.mj.yata.domain.model.DateFormat
 import com.mj.yata.domain.model.DefaultDueDate
 import com.mj.yata.domain.model.FabPosition
+import com.mj.yata.domain.model.MotionMode
+import com.mj.yata.domain.model.SavedThemePreset
 import com.mj.yata.domain.model.StartupTab
 import com.mj.yata.domain.model.SwipeAction
 import com.mj.yata.domain.model.TaskRowDensity
@@ -178,6 +182,7 @@ fun SettingsScreen(
     val defaultReminderHour = uiState.defaultReminderHour
     val defaultReminderMinute = uiState.defaultReminderMinute
     val reduceMotionEnabled = uiState.reduceMotionEnabled
+    val motionMode = uiState.motionMode
     val enhancedM3ThemingEnabled = uiState.enhancedM3ThemingEnabled
     val floatingBottomNavEnabled = uiState.floatingBottomNavEnabled
     val bottomNavLabelsEnabled = uiState.bottomNavLabelsEnabled
@@ -232,6 +237,9 @@ fun SettingsScreen(
     val ftpUseTls = uiState.ftpUseTls
     val sftpKeepCount = uiState.sftpKeepCount
     val isFtpProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
+    val dateAliasDefinitions = uiState.dateAliasDefinitions
+    val savedThemePresetDefinitions = uiState.savedThemePresetDefinitions
+    val taskerIntegrationEnabled = uiState.taskerIntegrationEnabled
 
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
@@ -253,6 +261,11 @@ fun SettingsScreen(
     var showReminderTimePicker by remember { mutableStateOf(false) }
     var showSnoozeTonightPicker by remember { mutableStateOf(false) }
     var showSnoozeTomorrowPicker by remember { mutableStateOf(false) }
+    var newDateAlias by rememberSaveable { mutableStateOf("") }
+    var selectedDateAliasTarget by rememberSaveable { mutableStateOf(DateAliasTarget.TOMORROW) }
+    var showDateAliasTargetMenu by remember { mutableStateOf(false) }
+    var showThemePresetDialog by remember { mutableStateOf(false) }
+    var themePresetName by rememberSaveable { mutableStateOf("") }
 
     var editingName by remember { mutableStateOf(false) }
     var tempName by remember { mutableStateOf(userName) }
@@ -297,11 +310,15 @@ fun SettingsScreen(
         SettingsSearchTarget("profile", stringResource(R.string.settings_section_profile), stringResource(R.string.settings_search_profile_summary), "name email photo account", null, Icons.Default.Person),
         SettingsSearchTarget("appearance", stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_search_appearance_summary), "theme dark light amoled color font language motion intensity tint saturation vivid muted background", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
         SettingsSearchTarget("display", stringResource(R.string.settings_section_display), stringResource(R.string.settings_search_display_summary), "scale text density compact spacious card cards row", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Tune),
+        SettingsSearchTarget("motion_mode", "Motion mode", "Full, reduced, or off", "animation reduce motion off accessibility", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Tune),
+        SettingsSearchTarget("theme_presets", "Theme presets", "Save and reapply personal themes", "theme preset saved color font material you", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
         SettingsSearchTarget("navigation", stringResource(R.string.settings_section_navigation), stringResource(R.string.settings_search_navigation_summary), "bottom navigation labels fab quick add", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Navigation),
         SettingsSearchTarget("features", stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("manage", stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Build),
+        SettingsSearchTarget("tasker", "Tasker", "Automation access for creating tasks", "tasker automation plugin create task", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
         SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
+        SettingsSearchTarget("date_aliases", "Date aliases", "Custom quick-add words for due dates", "quick add natural language date aliases keywords today tomorrow", SettingsDestination.TASK_DEFAULTS, Icons.Default.CalendarMonth),
         SettingsSearchTarget("notifications", stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
         SettingsSearchTarget("privacy_security", stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
         SettingsSearchTarget("data_management", stringResource(R.string.settings_section_data_management), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", SettingsDestination.DATA_MANAGEMENT, Icons.Default.Storage),
@@ -683,6 +700,57 @@ fun SettingsScreen(
                     // Both apply on top of whatever scheme is in play — Material You, a custom
                     // seed, or the built-in palette — so they stay useful regardless of the
                     // toggles above them.
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Theme presets",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                )
+                                Text(
+                                    text = "Save this color, font, and theme combination.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            TextButton(onClick = {
+                                themePresetName = ""
+                                showThemePresetDialog = true
+                            }) {
+                                Text("Save")
+                            }
+                        }
+                        val savedPresets = savedThemePresetDefinitions.mapNotNull(SavedThemePreset::decode).sortedBy { it.name }
+                        if (savedPresets.isNotEmpty()) {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(savedPresets, key = { it.encode() }) { preset ->
+                                    AssistChip(
+                                        onClick = { viewModel.applyThemePreset(preset.encode()) },
+                                        label = { Text(preset.name) },
+                                        trailingIcon = {
+                                            IconButton(
+                                                onClick = { viewModel.removeThemePreset(preset.encode()) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Remove ${preset.name}",
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                     StopSliderSetting(
                         title = stringResource(R.string.settings_color_intensity),
                         description = stringResource(R.string.settings_color_intensity_desc),
@@ -915,25 +983,27 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_reduce_motion),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_reduce_motion_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = reduceMotionEnabled,
-                            onCheckedChange = { viewModel.setReduceMotionEnabled(it) }
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Motion mode",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = "Control app animations without changing other visual settings.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        SegmentedControl(
+                            items = listOf(MotionMode.FULL, MotionMode.REDUCED, MotionMode.OFF),
+                            selectedItem = motionMode,
+                            onItemSelected = { viewModel.setMotionMode(it) },
+                            labelProvider = {
+                                when (it) {
+                                    MotionMode.FULL -> "Full"
+                                    MotionMode.REDUCED -> "Reduced"
+                                    MotionMode.OFF -> "Off"
+                                }
+                            }
                         )
                     }
 
@@ -1109,6 +1179,13 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                SettingsToggleRow(
+                    title = "Tasker integration",
+                    subtitle = "Allow Tasker profiles to create tasks through the Yata plugin.",
+                    checked = taskerIntegrationEnabled,
+                    onCheckedChange = { viewModel.setTaskerIntegrationEnabled(it) }
+                )
             }
         }
         }
@@ -1280,6 +1357,85 @@ fun SettingsScreen(
                             }
                         }
                     )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Date aliases",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = "Teach quick add your own date words.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = newDateAlias,
+                            onValueChange = { newDateAlias = it },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            label = { Text("Word") }
+                        )
+                        Box {
+                            AssistChip(
+                                onClick = { showDateAliasTargetMenu = true },
+                                label = { Text(selectedDateAliasTarget.label) }
+                            )
+                            DropdownMenu(
+                                expanded = showDateAliasTargetMenu,
+                                onDismissRequest = { showDateAliasTargetMenu = false }
+                            ) {
+                                DateAliasTarget.entries.forEach { target ->
+                                    DropdownMenuItem(
+                                        text = { Text(target.label) },
+                                        onClick = {
+                                            selectedDateAliasTarget = target
+                                            showDateAliasTargetMenu = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.addDateAlias(newDateAlias, selectedDateAliasTarget)
+                            newDateAlias = ""
+                        },
+                        enabled = newDateAlias.isNotBlank()
+                    ) {
+                        Text("Add alias")
+                    }
+                    val aliases = dateAliasDefinitions.mapNotNull(DateAliasDefinition::decode).sortedBy { it.alias }
+                    if (aliases.isNotEmpty()) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(aliases, key = { it.encode() }) { alias ->
+                                AssistChip(
+                                    onClick = {},
+                                    label = { Text("${alias.alias} -> ${alias.target.label}") },
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = { viewModel.removeDateAlias(alias.encode()) },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Remove ${alias.alias}",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -2596,6 +2752,46 @@ fun SettingsScreen(
         }
     }
 }
+
+    if (showThemePresetDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemePresetDialog = false },
+            title = { Text("Save theme preset") },
+            text = {
+                OutlinedTextField(
+                    value = themePresetName,
+                    onValueChange = { themePresetName = it },
+                    singleLine = true,
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.saveCurrentThemePreset(
+                            name = themePresetName,
+                            themeMode = themeMode,
+                            seedColorArgb = customThemeSeedColorArgb,
+                            colorIntensity = colorIntensity,
+                            backgroundTint = backgroundTint,
+                            appFont = appFont,
+                            dynamicColorEnabled = dynamicColorEnabled
+                        )
+                        showThemePresetDialog = false
+                    },
+                    enabled = themePresetName.isNotBlank()
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showThemePresetDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
 
     if (showResetSettingsDialog) {
         AlertDialog(

@@ -6,6 +6,7 @@ import com.joaomgcd.taskerpluginlibrary.input.TaskerInput
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResult
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResultError
 import com.joaomgcd.taskerpluginlibrary.runner.TaskerPluginResultSucess
+import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
@@ -33,7 +34,12 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
 
         return try {
             val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
+            val userPreferences = UserPreferences(context.applicationContext)
             runBlocking<TaskerPluginResult<Unit>> {
+                if (!userPreferences.taskerIntegrationEnabledFlow.first()) {
+                    return@runBlocking TaskerPluginResultError(3, "Tasker integration is disabled in Yata Settings.")
+                }
+                NaturalLanguageParser.configureDateAliases(userPreferences.dateAliasDefinitionsFlow.first())
                 // Checked before resolving/creating any project·list·tag·person side effects,
                 // so a rejected duplicate never leaves behind newly-created entities for a task
                 // that was never actually added.

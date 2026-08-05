@@ -2,6 +2,8 @@ package com.mj.yata.util
 
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
+import com.mj.yata.domain.model.DateAliasDefinition
+import com.mj.yata.domain.model.DateAliasTarget
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -57,6 +59,7 @@ object NaturalLanguageParser {
     // produces is written to `Task.time`, which is the storage format (see
     // TaskScheduleUtils.storageTimeFormatter). The preference is applied when the time is shown.
     private val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+    @Volatile private var customDateAliases: Map<String, DateAliasTarget> = emptyMap()
 
     private val weekdayNames = mapOf(
         "monday" to DayOfWeek.MONDAY, "mon" to DayOfWeek.MONDAY,
@@ -71,6 +74,29 @@ object NaturalLanguageParser {
         DayOfWeek.MONDAY to "MO", DayOfWeek.TUESDAY to "TU", DayOfWeek.WEDNESDAY to "WE",
         DayOfWeek.THURSDAY to "TH", DayOfWeek.FRIDAY to "FR", DayOfWeek.SATURDAY to "SA", DayOfWeek.SUNDAY to "SU"
     )
+
+    fun configureDateAliases(encodedDefinitions: Set<String>) {
+        customDateAliases = encodedDefinitions
+            .mapNotNull(DateAliasDefinition::decode)
+            .associate { it.alias to it.target }
+        synchronized(cacheLock) { parseCache.clear() }
+    }
+
+    private fun resolveDateAlias(target: DateAliasTarget, referenceDate: LocalDate): LocalDate =
+        when (target) {
+            DateAliasTarget.TODAY -> referenceDate
+            DateAliasTarget.TOMORROW -> referenceDate.plusDays(1)
+            DateAliasTarget.NEXT_WEEK -> referenceDate.plusWeeks(1)
+            DateAliasTarget.NEXT_MONTH -> referenceDate.plusMonths(1)
+            DateAliasTarget.WEEKEND -> nextOrSame(referenceDate, DayOfWeek.SATURDAY)
+            DateAliasTarget.MONDAY -> nextOrSame(referenceDate, DayOfWeek.MONDAY)
+            DateAliasTarget.TUESDAY -> nextOrSame(referenceDate, DayOfWeek.TUESDAY)
+            DateAliasTarget.WEDNESDAY -> nextOrSame(referenceDate, DayOfWeek.WEDNESDAY)
+            DateAliasTarget.THURSDAY -> nextOrSame(referenceDate, DayOfWeek.THURSDAY)
+            DateAliasTarget.FRIDAY -> nextOrSame(referenceDate, DayOfWeek.FRIDAY)
+            DateAliasTarget.SATURDAY -> nextOrSame(referenceDate, DayOfWeek.SATURDAY)
+            DateAliasTarget.SUNDAY -> nextOrSame(referenceDate, DayOfWeek.SUNDAY)
+        }
 
     // â”€â”€ Time â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Accepts "5:30pm", "5.30pm", "5 a.m.", "5:30 a. m.", "at 5 pm", "10 A.M.", "5p.m."
@@ -992,7 +1018,17 @@ object NaturalLanguageParser {
                 if (due != null) break
             }
         }
-        // "in N hour(s)"/"in N minute(s)"/"in half an hour" â€” the only relative-date phrases
+        if (due == null) {
+            for ((alias, target) in customDateAliases.entries.sortedByDescending { it.key.length }) {
+                firstFreeWord(alias)?.let { m ->
+                    due = resolveDateAlias(target, referenceDate)
+                    claim(m.range)
+                    dueRange = m.range
+                }
+                if (due != null) break
+            }
+        }
+        // "in N hour(s)"/"in N minute(s)"/"in half an hour" are the only relative-date phrases
         // precise enough to need a clock time, not just a calendar date, so they set both
         // together (crossing midnight rolls the due date forward naturally, e.g. "in 3 hours"
         // at 11pm is due tomorrow). A pre-existing explicit time claim wins if there already

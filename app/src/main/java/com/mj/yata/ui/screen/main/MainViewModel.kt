@@ -144,6 +144,7 @@ data class SettingsUiState(
     val defaultReminderHour: Int = 9,
     val defaultReminderMinute: Int = 0,
     val reduceMotionEnabled: Boolean = false,
+    val motionMode: MotionMode = MotionMode.FULL,
     val enhancedM3ThemingEnabled: Boolean = false,
     val floatingBottomNavEnabled: Boolean = false,
     val bottomNavLabelsEnabled: Boolean = true,
@@ -179,6 +180,9 @@ data class SettingsUiState(
     val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol = com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
     val ftpUseTls: Boolean = true,
     val sftpKeepCount: Int = 5,
+    val dateAliasDefinitions: Set<String> = emptySet(),
+    val savedThemePresetDefinitions: Set<String> = emptySet(),
+    val taskerIntegrationEnabled: Boolean = true,
     val todayRemainingCount: Int = 0
 )
 
@@ -228,6 +232,7 @@ private data class SettingsReminderState(
 // nested combine that only existed to fit them within combine's five-flow limit.
 private data class SettingsDisplayState(
     val reduceMotionEnabled: Boolean,
+    val motionMode: MotionMode,
     val enhancedM3ThemingEnabled: Boolean,
     val floatingBottomNavEnabled: Boolean,
     val bottomNavLabelsEnabled: Boolean,
@@ -299,6 +304,12 @@ private data class SftpSettingsState(
     val config: SftpConfigState,
     val status: SftpStatusState,
     val protocol: RemoteBackupProtocolState
+)
+
+private data class SettingsPortState(
+    val dateAliasDefinitions: Set<String>,
+    val savedThemePresetDefinitions: Set<String>,
+    val taskerIntegrationEnabled: Boolean
 )
 
 private data class SettingsCoreState(
@@ -415,13 +426,16 @@ private data class MainNavigationState(
             SettingsReminderState(defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute)
         },
         combine(
-            userPreferences.reduceMotionEnabledFlow,
+            combine(
+                userPreferences.motionModeFlow,
+                userPreferences.reduceMotionEnabledFlow
+            ) { motionMode, reduceMotion -> motionMode to reduceMotion },
             userPreferences.enhancedM3ThemingEnabledFlow,
             userPreferences.floatingBottomNavEnabledFlow,
             userPreferences.bottomNavLabelsEnabledFlow,
             userPreferences.textScaleFlow
-        ) { reduceMotion, enhancedM3, floatingNav, bottomNavLabels, textScale ->
-            SettingsDisplayState(reduceMotion, enhancedM3, floatingNav, bottomNavLabels, textScale)
+        ) { motion, enhancedM3, floatingNav, bottomNavLabels, textScale ->
+            SettingsDisplayState(motion.second, motion.first, enhancedM3, floatingNav, bottomNavLabels, textScale)
         },
         combine(
             userPreferences.taskRowDensityFlow,
@@ -506,8 +520,15 @@ private data class MainNavigationState(
                 userPreferences.sftpKeepCountFlow
             ) { protocol, ftpUseTls, keepCount -> RemoteBackupProtocolState(protocol, ftpUseTls, keepCount) }
         ) { config, status, protocol -> SftpSettingsState(config, status, protocol) },
+        combine(
+            userPreferences.dateAliasDefinitionsFlow,
+            userPreferences.savedThemePresetsFlow,
+            userPreferences.taskerIntegrationEnabledFlow
+        ) { dateAliases, savedPresets, taskerEnabled ->
+            SettingsPortState(dateAliases, savedPresets, taskerEnabled)
+        },
         todayRemainingCount
-    ) { core, backup, sftp, count ->
+    ) { core, backup, sftp, ports, count ->
         SettingsUiState(
             themeMode = core.profile.themeMode,
             appFont = core.profile.appFont,
@@ -519,6 +540,7 @@ private data class MainNavigationState(
             defaultReminderHour = core.reminder.defaultReminderHour,
             defaultReminderMinute = core.reminder.defaultReminderMinute,
             reduceMotionEnabled = core.display.reduceMotionEnabled,
+            motionMode = core.display.motionMode,
             enhancedM3ThemingEnabled = core.display.enhancedM3ThemingEnabled,
             floatingBottomNavEnabled = core.display.floatingBottomNavEnabled,
             bottomNavLabelsEnabled = core.display.bottomNavLabelsEnabled,
@@ -554,6 +576,9 @@ private data class MainNavigationState(
             remoteBackupProtocol = sftp.protocol.remoteBackupProtocol,
             ftpUseTls = sftp.protocol.ftpUseTls,
             sftpKeepCount = sftp.protocol.sftpKeepCount,
+            dateAliasDefinitions = ports.dateAliasDefinitions,
+            savedThemePresetDefinitions = ports.savedThemePresetDefinitions,
+            taskerIntegrationEnabled = ports.taskerIntegrationEnabled,
             todayRemainingCount = count
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
@@ -866,6 +891,19 @@ private data class MainNavigationState(
 
     val reduceMotionEnabled: StateFlow<Boolean> = userPreferences.reduceMotionEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val motionMode: StateFlow<MotionMode> = userPreferences.motionModeFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MotionMode.FULL)
+
+    val dateAliasDefinitions: StateFlow<Set<String>> = userPreferences.dateAliasDefinitionsFlow
+        .onEach { NaturalLanguageParser.configureDateAliases(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    val savedThemePresetDefinitions: StateFlow<Set<String>> = userPreferences.savedThemePresetsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    val taskerIntegrationEnabled: StateFlow<Boolean> = userPreferences.taskerIntegrationEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val enhancedM3ThemingEnabled: StateFlow<Boolean> = userPreferences.enhancedM3ThemingEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -1562,6 +1600,12 @@ private data class MainNavigationState(
         }
     }
 
+    fun setMotionMode(mode: MotionMode) {
+        safeLaunch {
+            userPreferences.setMotionMode(mode)
+        }
+    }
+
     fun setEnhancedM3ThemingEnabled(enabled: Boolean) {
         safeLaunch {
             userPreferences.setEnhancedM3ThemingEnabled(enabled)
@@ -1573,6 +1617,70 @@ private data class MainNavigationState(
     fun setCustomThemeSeedColor(argb: Int?) {
         safeLaunch {
             userPreferences.setCustomThemeSeedColor(argb)
+        }
+    }
+
+    fun addDateAlias(alias: String, target: DateAliasTarget) {
+        val normalized = alias.trim().lowercase()
+        if (normalized.isBlank()) return
+        safeLaunch {
+            userPreferences.addDateAlias(DateAliasDefinition(normalized, target))
+        }
+    }
+
+    fun removeDateAlias(encodedDefinition: String) {
+        safeLaunch {
+            userPreferences.removeDateAlias(encodedDefinition)
+        }
+    }
+
+    fun saveCurrentThemePreset(
+        name: String,
+        themeMode: ThemeMode,
+        seedColorArgb: Int?,
+        colorIntensity: ColorIntensity,
+        backgroundTint: BackgroundTint,
+        appFont: AppFont,
+        dynamicColorEnabled: Boolean
+    ) {
+        val trimmed = name.trim()
+        if (trimmed.isBlank()) return
+        safeLaunch {
+            userPreferences.saveThemePreset(
+                SavedThemePreset(
+                    name = trimmed,
+                    themeMode = themeMode,
+                    seedColorArgb = seedColorArgb,
+                    colorIntensity = colorIntensity,
+                    backgroundTint = backgroundTint,
+                    appFont = appFont,
+                    dynamicColorEnabled = dynamicColorEnabled
+                )
+            )
+        }
+    }
+
+    fun applyThemePreset(encodedPreset: String) {
+        val preset = SavedThemePreset.decode(encodedPreset) ?: return
+        safeLaunch {
+            userPreferences.setThemeMode(preset.themeMode)
+            userPreferences.setDynamicColorEnabled(preset.dynamicColorEnabled)
+            userPreferences.setCustomThemeSeedColor(preset.seedColorArgb)
+            userPreferences.setColorIntensity(preset.colorIntensity)
+            userPreferences.setBackgroundTint(preset.backgroundTint)
+            userPreferences.setAppFont(preset.appFont)
+        }
+    }
+
+    fun removeThemePreset(encodedPreset: String) {
+        safeLaunch {
+            userPreferences.removeThemePreset(encodedPreset)
+        }
+    }
+
+    fun setTaskerIntegrationEnabled(enabled: Boolean) {
+        safeLaunch {
+            userPreferences.setTaskerIntegrationEnabled(enabled)
         }
     }
 

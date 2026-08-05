@@ -8,7 +8,10 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.mj.yata.domain.model.AppFont
 import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
+import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DefaultDueDate
+import com.mj.yata.domain.model.MotionMode
+import com.mj.yata.domain.model.SavedThemePreset
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.util.decodeSalt
 import com.mj.yata.util.encodeSalt
@@ -228,6 +231,10 @@ class UserPreferences @Inject constructor(
         val SORT_MODE_TAG_DETAIL  = stringPreferencesKey("sort_mode_tag_detail")
         val SORT_MODE_TAGS_TAB    = stringPreferencesKey("sort_mode_tags_tab")
         val SORT_MODE_PEOPLE_TAB  = stringPreferencesKey("sort_mode_people_tab")
+        val MOTION_MODE           = stringPreferencesKey("motion_mode")
+        val DATE_ALIASES          = stringSetPreferencesKey("date_aliases")
+        val SAVED_THEME_PRESETS   = stringSetPreferencesKey("saved_theme_presets")
+        val TASKER_INTEGRATION_ENABLED = booleanPreferencesKey("tasker_integration_enabled")
     }
 
     /** Unknown/absent values fall back to the enum default rather than throwing — a persisted
@@ -249,7 +256,18 @@ class UserPreferences @Inject constructor(
 
     // Dark from 9pm to 7am by default.
 
-    val reduceMotionEnabledFlow: Flow<Boolean> = prefsFlow.map { it[REDUCE_MOTION_ENABLED] ?: false }
+    val motionModeFlow: Flow<MotionMode> = prefsFlow.map { prefs ->
+        MotionMode.entries.firstOrNull { it.name == prefs[MOTION_MODE] }
+            ?: if (prefs[REDUCE_MOTION_ENABLED] == true) MotionMode.REDUCED else MotionMode.FULL
+    }
+    val reduceMotionEnabledFlow: Flow<Boolean> = prefsFlow.map { prefs ->
+        val mode = MotionMode.entries.firstOrNull { it.name == prefs[MOTION_MODE] }
+        when (mode) {
+            MotionMode.REDUCED, MotionMode.OFF -> true
+            MotionMode.FULL -> false
+            null -> prefs[REDUCE_MOTION_ENABLED] ?: false
+        }
+    }
     val enhancedM3ThemingEnabledFlow: Flow<Boolean> = prefsFlow.map { it[ENHANCED_M3_THEMING_ENABLED] ?: false }
     val floatingBottomNavEnabledFlow: Flow<Boolean> = prefsFlow.map { it[FLOATING_BOTTOM_NAV_ENABLED] ?: false }
     val bottomNavLabelsEnabledFlow: Flow<Boolean> = prefsFlow.map { it[BOTTOM_NAV_LABELS_ENABLED] ?: true }
@@ -294,6 +312,9 @@ class UserPreferences @Inject constructor(
         com.mj.yata.domain.model.DateFormat.entries.firstOrNull { it.name == prefs[DATE_FORMAT] }
             ?: com.mj.yata.domain.model.DateFormat.SYSTEM
     }
+    val dateAliasDefinitionsFlow: Flow<Set<String>> = prefsFlow.map { it[DATE_ALIASES] ?: emptySet() }
+    val savedThemePresetsFlow: Flow<Set<String>> = prefsFlow.map { it[SAVED_THEME_PRESETS] ?: emptySet() }
+    val taskerIntegrationEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TASKER_INTEGRATION_ENABLED] ?: true }
 
     // Off by default: the flat list is the app's existing look, and this changes every task list
     // at once, so it has to be something a user opts into rather than finds applied after update.
@@ -836,7 +857,17 @@ class UserPreferences @Inject constructor(
     }
 
     suspend fun setReduceMotionEnabled(enabled: Boolean) {
-        dataStore.edit { it[REDUCE_MOTION_ENABLED] = enabled }
+        dataStore.edit {
+            it[REDUCE_MOTION_ENABLED] = enabled
+            it[MOTION_MODE] = if (enabled) MotionMode.REDUCED.name else MotionMode.FULL.name
+        }
+    }
+
+    suspend fun setMotionMode(mode: MotionMode) {
+        dataStore.edit {
+            it[MOTION_MODE] = mode.name
+            it[REDUCE_MOTION_ENABLED] = mode != MotionMode.FULL
+        }
     }
 
     suspend fun setEnhancedM3ThemingEnabled(enabled: Boolean) {
@@ -859,6 +890,48 @@ class UserPreferences @Inject constructor(
         dataStore.edit {
             if (argb == null) it.remove(CUSTOM_THEME_SEED_COLOR) else it[CUSTOM_THEME_SEED_COLOR] = argb
         }
+    }
+
+    suspend fun addDateAlias(definition: DateAliasDefinition) {
+        val encoded = definition.encode()
+        if (encoded.substringBefore("|").isBlank()) return
+        dataStore.edit { prefs ->
+            val existing = prefs[DATE_ALIASES] ?: emptySet()
+            val withoutSameAlias = existing.filterNot {
+                DateAliasDefinition.decode(it)?.alias == definition.alias.trim().lowercase()
+            }.toSet()
+            prefs[DATE_ALIASES] = withoutSameAlias + encoded
+        }
+    }
+
+    suspend fun removeDateAlias(encodedDefinition: String) {
+        dataStore.edit { prefs ->
+            val updated = (prefs[DATE_ALIASES] ?: emptySet()) - encodedDefinition
+            if (updated.isEmpty()) prefs.remove(DATE_ALIASES) else prefs[DATE_ALIASES] = updated
+        }
+    }
+
+    suspend fun saveThemePreset(preset: SavedThemePreset) {
+        val encoded = preset.encode()
+        if (preset.name.isBlank()) return
+        dataStore.edit { prefs ->
+            val existing = prefs[SAVED_THEME_PRESETS] ?: emptySet()
+            val withoutSameName = existing.filterNot {
+                SavedThemePreset.decode(it)?.name.equals(preset.name, ignoreCase = true)
+            }.toSet()
+            prefs[SAVED_THEME_PRESETS] = withoutSameName + encoded
+        }
+    }
+
+    suspend fun removeThemePreset(encodedPreset: String) {
+        dataStore.edit { prefs ->
+            val updated = (prefs[SAVED_THEME_PRESETS] ?: emptySet()) - encodedPreset
+            if (updated.isEmpty()) prefs.remove(SAVED_THEME_PRESETS) else prefs[SAVED_THEME_PRESETS] = updated
+        }
+    }
+
+    suspend fun setTaskerIntegrationEnabled(enabled: Boolean) {
+        dataStore.edit { it[TASKER_INTEGRATION_ENABLED] = enabled }
     }
 
     suspend fun setCompletionSoundEnabled(enabled: Boolean) {
@@ -1032,6 +1105,7 @@ class UserPreferences @Inject constructor(
             prefs.remove(START_OF_WEEK_SUNDAY); prefs.remove(DEFAULT_REMINDER_HOUR); prefs.remove(DEFAULT_REMINDER_MINUTE)
             prefs.remove(UI_SCALE); prefs.remove(TEXT_SCALE); prefs.remove(DYNAMIC_COLOR_ENABLED)
             prefs.remove(CUSTOM_THEME_SEED_COLOR); prefs.remove(REDUCE_MOTION_ENABLED); prefs.remove(ENHANCED_M3_THEMING_ENABLED)
+            prefs.remove(MOTION_MODE); prefs.remove(DATE_ALIASES)
             prefs.remove(FLOATING_BOTTOM_NAV_ENABLED); prefs.remove(BOTTOM_NAV_LABELS_ENABLED); prefs.remove(COMPLETION_SOUND_ENABLED)
             prefs.remove(HAPTICS_ENABLED); prefs.remove(TASK_SWIPE_ACTIONS_ENABLED); prefs.remove(TASK_ROW_DENSITY)
             prefs.remove(TASK_CARD_BACKGROUND)
@@ -1043,7 +1117,7 @@ class UserPreferences @Inject constructor(
             prefs.remove(SNOOZE_TOMORROW_HOUR); prefs.remove(SNOOZE_TOMORROW_MINUTE)
             prefs.remove(SWIPE_RIGHT_ACTION); prefs.remove(SWIPE_LEFT_ACTION); prefs.remove(STARTUP_TAB)
             prefs.remove(CONFETTI_ENABLED); prefs.remove(TIME_FORMAT); prefs.remove(DATE_FORMAT)
-            prefs.remove(VOICE_RECOGNITION_LANGUAGE)
+            prefs.remove(VOICE_RECOGNITION_LANGUAGE); prefs.remove(TASKER_INTEGRATION_ENABLED)
         }
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntOffset
+import com.mj.yata.domain.model.MotionMode
 
 /** Centralized easings/durations mirroring handoff m3-widgets.jsx EASE/DUR. */
 object YataEase {
@@ -38,11 +39,30 @@ object YataDur {
         private set
 
     fun applyReduceMotion(enabled: Boolean) {
-        val scale = if (enabled) 3 else 1
-        nav = defaultNav / scale
-        sheet = defaultSheet / scale
-        fade = defaultFade / scale
-        micro = defaultMicro / scale
+        applyMotionMode(if (enabled) MotionMode.REDUCED else MotionMode.FULL)
+    }
+
+    fun applyMotionMode(mode: MotionMode) {
+        when (mode) {
+            MotionMode.FULL -> {
+                nav = defaultNav
+                sheet = defaultSheet
+                fade = defaultFade
+                micro = defaultMicro
+            }
+            MotionMode.REDUCED -> {
+                nav = defaultNav / 3
+                sheet = defaultSheet / 3
+                fade = defaultFade / 3
+                micro = defaultMicro / 3
+            }
+            MotionMode.OFF -> {
+                nav = 0
+                sheet = 0
+                fade = 0
+                micro = 0
+            }
+        }
     }
 }
 
