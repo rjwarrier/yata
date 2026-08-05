@@ -92,6 +92,36 @@ class SearchQueryParserTest {
     }
 
     @Test
+    fun parsesPortuguesePhrases() {
+        val result = parseSearchQuery("alta prioridade atrasadas relatório")
+        assertEquals(setOf(SmartFilter.HIGH_PRIORITY, SmartFilter.OVERDUE), result.filters.toSet())
+        assertEquals("relatório", result.residualText)
+    }
+
+    @Test
+    fun parsesPortugueseSearchAliases() {
+        assertEquals(listOf(SmartFilter.NO_DUE_DATE), parseSearchQuery("sem data").filters)
+        assertEquals(listOf(SmartFilter.ASSIGNED_TO_ME), parseSearchQuery("atribuídas a mim").filters)
+        assertEquals(listOf(SmartFilter.DUE_TODAY), parseSearchQuery("vencem hoje").filters)
+        assertEquals(listOf(SmartFilter.FLAGGED), parseSearchQuery("sinalizadas").filters)
+    }
+
+    @Test
+    fun parsesFrenchPhrases() {
+        val result = parseSearchQuery("haute priorité en retard rapport")
+        assertEquals(setOf(SmartFilter.HIGH_PRIORITY, SmartFilter.OVERDUE), result.filters.toSet())
+        assertEquals("rapport", result.residualText)
+    }
+
+    @Test
+    fun parsesFrenchSearchAliases() {
+        assertEquals(listOf(SmartFilter.NO_DUE_DATE), parseSearchQuery("sans date").filters)
+        assertEquals(listOf(SmartFilter.ASSIGNED_TO_ME), parseSearchQuery("assignées à moi").filters)
+        assertEquals(listOf(SmartFilter.DUE_TODAY), parseSearchQuery("aujourd'hui").filters)
+        assertEquals(listOf(SmartFilter.FLAGGED), parseSearchQuery("marquées").filters)
+    }
+
+    @Test
     fun isCaseInsensitive() {
         val result = parseSearchQuery("HIGH PRIORITY")
         assertEquals(listOf(SmartFilter.HIGH_PRIORITY), result.filters)

@@ -68,6 +68,74 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun parsesPortugueseTomorrowAndTime() {
+        val result = NaturalLanguageParser.parse("amanhã às 15:30 comprar leite", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("3:30 PM", result.time)
+        assertEquals("comprar leite", result.title)
+    }
+
+    @Test
+    fun parsesPortugueseRecurrenceReminderAndPriority() {
+        val result = NaturalLanguageParser.parse(
+            "cada segunda-feira academia lembrete 15 minutos antes alta prioridade",
+            ref
+        )
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(listOf("MO"), result.recurrence?.byday)
+        assertEquals("15 min before", result.reminder)
+        assertEquals("high", result.priority)
+        assertEquals("academia", result.title)
+    }
+
+    @Test
+    fun parsesPortugueseContainersTagsAndAssignees() {
+        val result = NaturalLanguageParser.parse(
+            "comprar leite projeto Casa lista Compras etiqueta recado atribuir a Ana",
+            ref
+        )
+        assertEquals("comprar leite", result.title)
+        assertEquals("Casa", result.projectName)
+        assertEquals("Compras", result.listName)
+        assertEquals(listOf("recado"), result.tagNames)
+        assertEquals(listOf("Ana"), result.assigneeNames)
+    }
+
+    @Test
+    fun parsesFrenchTomorrowAndTime() {
+        val result = NaturalLanguageParser.parse("demain à 15:30 acheter du lait", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("3:30 PM", result.time)
+        assertEquals("acheter du lait", result.title)
+    }
+
+    @Test
+    fun parsesFrenchRecurrenceReminderAndPriority() {
+        val result = NaturalLanguageParser.parse(
+            "chaque lundi gym rappel 15 minutes avant haute priorité",
+            ref
+        )
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(listOf("MO"), result.recurrence?.byday)
+        assertEquals("15 min before", result.reminder)
+        assertEquals("high", result.priority)
+        assertEquals("gym", result.title)
+    }
+
+    @Test
+    fun parsesFrenchContainersTagsAndAssignees() {
+        val result = NaturalLanguageParser.parse(
+            "acheter lait projet Maison liste Courses étiquette course assigner à Ana",
+            ref
+        )
+        assertEquals("acheter lait", result.title)
+        assertEquals("Maison", result.projectName)
+        assertEquals("Courses", result.listName)
+        assertEquals(listOf("course"), result.tagNames)
+        assertEquals(listOf("Ana"), result.assigneeNames)
+    }
+
+    @Test
     fun parsesInNDays() {
         val result = NaturalLanguageParser.parse("in 3 days renew license", ref)
         assertEquals("2026-07-07", result.due)
