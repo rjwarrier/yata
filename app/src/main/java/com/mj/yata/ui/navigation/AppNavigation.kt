@@ -28,6 +28,7 @@ import com.mj.yata.ui.screen.tag.TagDetailScreen
 import com.mj.yata.ui.screen.list.ListDetailScreen
 import com.mj.yata.ui.screen.search.SearchScreen
 import com.mj.yata.ui.screen.settings.HelpAboutScreen
+import com.mj.yata.ui.screen.settings.SettingsDestination
 import com.mj.yata.ui.screen.settings.SettingsScreen
 import com.mj.yata.ui.screen.archive.ArchiveScreen
 import com.mj.yata.ui.screen.trash.TrashScreen
@@ -259,7 +260,35 @@ fun AppNavigation(
                 onNavigateToArchive = { navController.navigate(Screen.Archive.route) },
                 onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
                 onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
-                onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) }
+                onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
+                onNavigateToSettingsDestination = { destination ->
+                    navController.navigate(Screen.SettingsSection.createRoute(destination.routeSegment))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.SettingsSection.route,
+            arguments = listOf(navArgument("section") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            val destination =
+                SettingsDestination.fromRouteSegment(backStackEntry.arguments?.getString("section"))
+            SettingsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onExportRequested = onExportRequested,
+                onImportRequested = onImportRequested,
+                onImportPlainTextRequested = onImportPlainTextRequested,
+                onExportCsvRequested = onExportCsvRequested,
+                onExportIcsRequested = onExportIcsRequested,
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTrash = { navController.navigate(Screen.Trash.route) },
+                onNavigateToArchive = { navController.navigate(Screen.Archive.route) },
+                onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
+                onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
+                onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
+                settingsDestination = destination
             )
         }
 

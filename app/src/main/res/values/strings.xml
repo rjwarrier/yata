@@ -79,18 +79,22 @@
     <string name="settings_font">Font</string>
 
     <!-- Settings section headings, in screen order. -->
-    <string name="settings_section_profile">PROFILE</string>
-    <string name="settings_section_appearance">APPEARANCE</string>
-    <string name="settings_section_display">DISPLAY</string>
-    <string name="settings_section_notifications">NOTIFICATIONS</string>
-    <string name="settings_section_features">FEATURES</string>
-    <string name="settings_section_manage">MANAGE</string>
-    <string name="settings_section_privacy">PRIVACY &amp; SECURITY</string>
-    <string name="settings_section_backup">BACKUP &amp; DATA</string>
-    <string name="settings_section_cloud_backup">REMOTE BACKUP</string>
-    <string name="settings_section_local_backup">LOCAL BACKUP</string>
-    <string name="settings_section_help_about">HELP &amp; ABOUT</string>
-    <string name="settings_section_navigation">NAVIGATION</string>
+    <string name="settings_section_profile">Profile</string>
+    <string name="settings_section_appearance_display">Appearance &amp; Display</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_display">Display</string>
+    <string name="settings_section_navigation_features">Navigation &amp; Features</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_section_features">Features</string>
+    <string name="settings_section_manage">Manage</string>
+    <string name="settings_section_privacy">Privacy &amp; Security</string>
+    <string name="settings_section_data_management">Data Management</string>
+    <string name="settings_section_backup">Backup &amp; Data</string>
+    <string name="settings_section_backup_sync">Backup &amp; Sync</string>
+    <string name="settings_section_cloud_backup">Remote Backup</string>
+    <string name="settings_section_local_backup">Local Backup</string>
+    <string name="settings_section_help_about">Help &amp; About</string>
+    <string name="settings_section_navigation">Navigation</string>
     <!-- Startup tab -->
     <string name="settings_startup_tab">Open on</string>
     <string name="settings_startup_tab_desc">Which tab the app starts on. A tab that\'s switched off in Features falls back to Today.</string>
@@ -156,8 +160,8 @@
     <!-- System notification settings -->
     <string name="settings_system_notifications">Sound &amp; vibration</string>
     <string name="settings_system_notifications_desc">Opens Android\'s own notification settings for YATA.</string>
-    <string name="settings_section_sound_feedback">SOUND &amp; FEEDBACK</string>
-    <string name="settings_section_task_defaults">TASK DEFAULTS</string>
+    <string name="settings_section_sound_feedback">Sound &amp; Feedback</string>
+    <string name="settings_section_task_defaults">Task Defaults</string>
 
     <string name="settings_floating_bottom_panel">Use floating bottom panel</string>
     <string name="settings_floating_bottom_panel_desc">Display the bottom navigation bar as a floating pill panel detached from screen edges.</string>
@@ -716,8 +720,10 @@
     <string name="settings_search_placeholder">Try “reminders”, “theme”, or “backup”</string>
     <string name="settings_search_no_results">No matching settings</string>
     <string name="settings_search_profile_summary">Name, email, and profile photo</string>
+    <string name="settings_search_appearance_display_summary">Theme, color, font, language, scale, and density</string>
     <string name="settings_search_appearance_summary">Theme, color, font, language, and motion</string>
     <string name="settings_search_display_summary">Interface scale, text size, and task density</string>
+    <string name="settings_search_navigation_features_summary">Bottom navigation, quick add, app areas, and managers</string>
     <string name="settings_search_navigation_summary">Bottom navigation and quick-add placement</string>
     <string name="settings_search_feedback_summary">Sound, haptics, swipe actions, and Undo</string>
     <string name="settings_search_defaults_summary">Defaults for new tasks and voice input</string>
@@ -726,6 +732,7 @@
     <string name="settings_search_manage_summary">Manage projects, people, and tags</string>
     <string name="settings_search_privacy_summary">App lock, PIN, and lock timeout</string>
     <string name="settings_search_data_summary">Import, export, archive, Trash, and deletion</string>
+    <string name="settings_search_backup_sync_summary">Remote and local backup schedule, compare, and restore</string>
     <string name="settings_search_cloud_summary">Server sync schedule, status, compare, and restore</string>
     <string name="settings_search_local_summary">Local backup schedule and restore</string>
     <string name="settings_search_sftp_summary">Self-hosted device sync, backup, and restore</string>

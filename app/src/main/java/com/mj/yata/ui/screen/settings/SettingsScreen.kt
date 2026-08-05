@@ -114,11 +114,37 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 private data class SettingsSearchTarget(
+    val key: String,
     val title: String,
     val summary: String,
     val keywords: String,
-    val itemIndex: Int
+    val destination: SettingsDestination?,
+    val icon: ImageVector
 )
+
+private data class SettingsHubDestination(
+    val title: String,
+    val summary: String,
+    val destination: SettingsDestination,
+    val icon: ImageVector
+)
+
+enum class SettingsDestination(val routeSegment: String, private val aliases: Set<String> = emptySet()) {
+    APPEARANCE_DISPLAY("appearance_display", setOf("appearance", "display")),
+    NAVIGATION_FEATURES("navigation_features", setOf("navigation", "features", "manage")),
+    SOUND_FEEDBACK("sound_feedback"),
+    TASK_DEFAULTS("task_defaults"),
+    NOTIFICATIONS("notifications"),
+    PRIVACY_SECURITY("privacy_security"),
+    DATA_MANAGEMENT("data_management", setOf("backup_data")),
+    BACKUP_SYNC("backup_sync", setOf("remote_backup", "local_backup", "cloud_backup")),
+    HELP_ABOUT("help_about");
+
+    companion object {
+        fun fromRouteSegment(routeSegment: String?): SettingsDestination? =
+            entries.firstOrNull { it.routeSegment == routeSegment || routeSegment in it.aliases }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,6 +162,8 @@ fun SettingsScreen(
     onNavigateToWelcome: () -> Unit,
     onNavigateToHelpAbout: () -> Unit,
     onNavigateToCrashLog: () -> Unit,
+    settingsDestination: SettingsDestination? = null,
+    onNavigateToSettingsDestination: (SettingsDestination) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
@@ -251,38 +279,41 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val settingsListState = rememberLazyListState()
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
-    var pendingSettingsIndex by remember { mutableStateOf<Int?>(null) }
     var showSettingsMenu by remember { mutableStateOf(false) }
     var showResetSettingsDialog by remember { mutableStateOf(false) }
 
+    val settingsHubDestinations = listOf(
+        SettingsHubDestination(stringResource(R.string.settings_section_appearance_display), stringResource(R.string.settings_search_appearance_display_summary), SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
+        SettingsHubDestination(stringResource(R.string.settings_section_navigation_features), stringResource(R.string.settings_search_navigation_features_summary), SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Navigation),
+        SettingsHubDestination(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
+        SettingsHubDestination(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
+        SettingsHubDestination(stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
+        SettingsHubDestination(stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
+        SettingsHubDestination(stringResource(R.string.settings_section_data_management), stringResource(R.string.settings_search_data_summary), SettingsDestination.DATA_MANAGEMENT, Icons.Default.Storage),
+        SettingsHubDestination(stringResource(R.string.settings_section_backup_sync), stringResource(R.string.settings_search_backup_sync_summary), SettingsDestination.BACKUP_SYNC, Icons.Default.CloudSync),
+        SettingsHubDestination(stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), SettingsDestination.HELP_ABOUT, Icons.AutoMirrored.Filled.HelpOutline)
+    )
     val settingsSearchTargets = listOf(
-        SettingsSearchTarget(stringResource(R.string.settings_section_profile), stringResource(R.string.settings_search_profile_summary), "name email photo account", 1),
-        SettingsSearchTarget(stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_search_appearance_summary), "theme dark light amoled color font language motion intensity tint saturation vivid muted background", 2),
-        SettingsSearchTarget(stringResource(R.string.settings_section_display), stringResource(R.string.settings_search_display_summary), "scale text density compact spacious card cards row", 3),
-        SettingsSearchTarget(stringResource(R.string.settings_section_navigation), stringResource(R.string.settings_search_navigation_summary), "bottom navigation labels fab quick add", 4),
-        SettingsSearchTarget(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", 5),
-        SettingsSearchTarget(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me", 6),
-        SettingsSearchTarget(stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", 7),
-        SettingsSearchTarget(stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", 8),
-        SettingsSearchTarget(stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", 9),
-        SettingsSearchTarget(stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", 10),
-        SettingsSearchTarget(stringResource(R.string.settings_section_backup), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", 11),
-        SettingsSearchTarget(stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "self hosted server sync backup sftp ftp restore frequency", 12),
-        SettingsSearchTarget(stringResource(R.string.settings_section_local_backup), stringResource(R.string.settings_search_local_summary), "local backup restore", 13),
-        SettingsSearchTarget(stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide", 14)
+        SettingsSearchTarget("profile", stringResource(R.string.settings_section_profile), stringResource(R.string.settings_search_profile_summary), "name email photo account", null, Icons.Default.Person),
+        SettingsSearchTarget("appearance", stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_search_appearance_summary), "theme dark light amoled color font language motion intensity tint saturation vivid muted background", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
+        SettingsSearchTarget("display", stringResource(R.string.settings_section_display), stringResource(R.string.settings_search_display_summary), "scale text density compact spacious card cards row", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Tune),
+        SettingsSearchTarget("navigation", stringResource(R.string.settings_section_navigation), stringResource(R.string.settings_search_navigation_summary), "bottom navigation labels fab quick add", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Navigation),
+        SettingsSearchTarget("features", stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
+        SettingsSearchTarget("manage", stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Build),
+        SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
+        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
+        SettingsSearchTarget("notifications", stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
+        SettingsSearchTarget("privacy_security", stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
+        SettingsSearchTarget("data_management", stringResource(R.string.settings_section_data_management), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", SettingsDestination.DATA_MANAGEMENT, Icons.Default.Storage),
+        SettingsSearchTarget("remote_backup", stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "self hosted server sync backup sftp ftp restore frequency", SettingsDestination.BACKUP_SYNC, Icons.Default.CloudSync),
+        SettingsSearchTarget("local_backup", stringResource(R.string.settings_section_local_backup), stringResource(R.string.settings_search_local_summary), "local backup restore", SettingsDestination.BACKUP_SYNC, Icons.Default.Save),
+        SettingsSearchTarget("help_about", stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide crash logs", SettingsDestination.HELP_ABOUT, Icons.AutoMirrored.Filled.HelpOutline)
     )
     val normalizedSettingsQuery = settingsSearchQuery.trim().lowercase()
     val filteredSettingsTargets = remember(normalizedSettingsQuery, settingsSearchTargets) {
         if (normalizedSettingsQuery.isBlank()) emptyList() else settingsSearchTargets.filter {
             val haystack = "${it.title} ${it.summary} ${it.keywords}".lowercase()
             normalizedSettingsQuery.split(Regex("\\s+")).all(haystack::contains)
-        }
-    }
-
-    LaunchedEffect(pendingSettingsIndex) {
-        pendingSettingsIndex?.let { index ->
-            settingsListState.animateScrollToItem(index)
-            pendingSettingsIndex = null
         }
     }
 
@@ -294,6 +325,11 @@ fun SettingsScreen(
     var backupDiffError by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
+    val currentSettingsTitle =
+        settingsDestination?.let { destination ->
+            settingsHubDestinations.firstOrNull { it.destination == destination }?.title
+        } ?: stringResource(R.string.settings_settings)
+    val isSettingsRoot = settingsDestination == null
     var pickedPhotoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
@@ -315,21 +351,23 @@ fun SettingsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
-                selectedTab = -1,
-                todayBadgeCount = todayBadgeCount,
-                peopleEnabled = peopleFeatureEnabled,
-                tagsEnabled = tagsFeatureEnabled,
-                projectsEnabled = projectsFeatureEnabled,
-                todayEnabled = todayTabEnabled,
-                upcomingEnabled = upcomingTabEnabled,
-                onTabSelected = onNavigateToTab
-            )
+            if (isSettingsRoot) {
+                com.mj.yata.ui.screen.main.CustomBottomNav(
+                    selectedTab = -1,
+                    todayBadgeCount = todayBadgeCount,
+                    peopleEnabled = peopleFeatureEnabled,
+                    tagsEnabled = tagsFeatureEnabled,
+                    projectsEnabled = projectsFeatureEnabled,
+                    todayEnabled = todayTabEnabled,
+                    upcomingEnabled = upcomingTabEnabled,
+                    onTabSelected = onNavigateToTab
+                )
+            }
         },
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.settings_settings),
+                    Text(currentSettingsTitle,
                         style = androidx.compose.ui.text.TextStyle(
                             fontWeight = FontWeight.ExtraBold,
                             fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All
@@ -342,18 +380,20 @@ fun SettingsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showSettingsMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
-                    }
-                    DropdownMenu(expanded = showSettingsMenu, onDismissRequest = { showSettingsMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.settings_reset_settings)) },
-                            leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
-                            onClick = {
-                                showSettingsMenu = false
-                                showResetSettingsDialog = true
-                            }
-                        )
+                    if (isSettingsRoot) {
+                        IconButton(onClick = { showSettingsMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
+                        }
+                        DropdownMenu(expanded = showSettingsMenu, onDismissRequest = { showSettingsMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.settings_reset_settings)) },
+                                leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
+                                onClick = {
+                                    showSettingsMenu = false
+                                    showResetSettingsDialog = true
+                                }
+                            )
+                        }
                     }
                 }
             )
@@ -369,85 +409,8 @@ fun SettingsScreen(
             contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            item(key = "settings_search") {
-                // Styled to the M3 search-field spec rather than as a general text field: pill
-                // shape, tonal surfaceContainerHigh container, no indicator line, and a
-                // placeholder instead of a floating label — search fields don't take one, and the
-                // label animating up over a magnifier icon was the least M3 thing on the screen.
-                //
-                // Deliberately not the M3 SearchBar/DockedSearchBar composable: those own an
-                // expanding full-screen surface and render their own results, which fights this
-                // screen — the results here are a card inline in the settings list, and the field
-                // scrolls away with it. Same visual language, without hijacking the interaction.
-                val searchLabel = stringResource(R.string.settings_search_label)
-                val focusManager = LocalFocusManager.current
-                TextField(
-                    value = settingsSearchQuery,
-                    onValueChange = { settingsSearchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .semantics { contentDescription = searchLabel },
-                    singleLine = true,
-                    shape = CircleShape,
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    trailingIcon = {
-                        // Only present with text to clear, so the field isn't permanently carrying
-                        // a control that would do nothing.
-                        if (settingsSearchQuery.isNotEmpty()) {
-                            IconButton(onClick = { settingsSearchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
-                            }
-                        }
-                    },
-                    placeholder = { Text(stringResource(R.string.settings_search_placeholder)) },
-                    // Filtering is live, so the IME action has nothing to submit — it just gets
-                    // the keyboard out of the way of the results.
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    // Same tonal treatment as the notes/comment/subtask fields — one definition
-                    // in YataInputField rather than a second copy of the colour list here.
-                    colors = com.mj.yata.ui.widgets.yataFieldColors()
-                )
-            }
-            if (settingsSearchQuery.isNotBlank()) {
-                item(key = "settings_search_results") {
-                    SettingsSectionCard {
-                        if (filteredSettingsTargets.isEmpty()) {
-                            Text(
-                                stringResource(R.string.settings_search_no_results),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        } else {
-                            filteredSettingsTargets.forEachIndexed { index, target ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            settingsSearchQuery = ""
-                                            pendingSettingsIndex = target.itemIndex
-                                        }
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(target.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                                        Text(target.summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    Icon(Icons.Default.ChevronRight, contentDescription = null)
-                                }
-                                if (index != filteredSettingsTargets.lastIndex) {
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            item {
-            // 1. Profile Section
-            SettingsSectionHeader(stringResource(R.string.settings_section_profile), Icons.Default.Person)
+            if (isSettingsRoot) {
+            item(key = "profile") {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(20.dp),
@@ -551,9 +514,95 @@ fun SettingsScreen(
                 }
             }
         }
+            item(key = "settings_search") {
+                // Styled to the M3 search-field spec rather than as a general text field: pill
+                // shape, tonal surfaceContainerHigh container, no indicator line, and a
+                // placeholder instead of a floating label — search fields don't take one, and the
+                // label animating up over a magnifier icon was the least M3 thing on the screen.
+                //
+                // Deliberately not the M3 SearchBar/DockedSearchBar composable: those own an
+                // expanding full-screen surface and render their own results, which fights this
+                // screen — the results here are a card inline in the settings list, and the field
+                // scrolls away with it. Same visual language, without hijacking the interaction.
+                val searchLabel = stringResource(R.string.settings_search_label)
+                val focusManager = LocalFocusManager.current
+                TextField(
+                    value = settingsSearchQuery,
+                    onValueChange = { settingsSearchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .semantics { contentDescription = searchLabel },
+                    singleLine = true,
+                    shape = CircleShape,
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        // Only present with text to clear, so the field isn't permanently carrying
+                        // a control that would do nothing.
+                        if (settingsSearchQuery.isNotEmpty()) {
+                            IconButton(onClick = { settingsSearchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
+                            }
+                        }
+                    },
+                    placeholder = { Text(stringResource(R.string.settings_search_placeholder)) },
+                    // Filtering is live, so the IME action has nothing to submit — it just gets
+                    // the keyboard out of the way of the results.
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                    // Same tonal treatment as the notes/comment/subtask fields — one definition
+                    // in YataInputField rather than a second copy of the colour list here.
+                    colors = com.mj.yata.ui.widgets.yataFieldColors()
+                )
+            }
+            if (settingsSearchQuery.isNotBlank()) {
+                item(key = "settings_search_results") {
+                    SettingsSectionCard {
+                        if (filteredSettingsTargets.isEmpty()) {
+                            Text(
+                                stringResource(R.string.settings_search_no_results),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        } else {
+                            filteredSettingsTargets.forEachIndexed { index, target ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            settingsSearchQuery = ""
+                                            target.destination?.let(onNavigateToSettingsDestination)
+                                                ?: scope.launch { settingsListState.animateScrollToItem(0) }
+                                        }
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(target.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                        Text(target.summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Icon(Icons.Default.ChevronRight, contentDescription = null)
+                                }
+                                if (index != filteredSettingsTargets.lastIndex) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            items(settingsHubDestinations, key = { it.destination.routeSegment }) { target ->
+                SettingsDestinationCard(
+                    icon = target.icon,
+                    title = target.title,
+                    summary = target.summary,
+                    onClick = { onNavigateToSettingsDestination(target.destination) }
+                )
+            }
+            }
+        if (settingsDestination == SettingsDestination.APPEARANCE_DISPLAY) {
         item {
             // 2. Preferences Section
-            SettingsSectionHeader(stringResource(R.string.settings_section_appearance), Icons.Default.Palette)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -741,10 +790,11 @@ fun SettingsScreen(
                 }
             }
         }
+        }
 
+        if (settingsDestination == SettingsDestination.APPEARANCE_DISPLAY) {
         item {
             // 3. Display Section
-            SettingsSectionHeader(stringResource(R.string.settings_section_display), Icons.Default.Tune)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -985,10 +1035,11 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.NAVIGATION_FEATURES) {
         item {
             // Navigation — everything that changes the bottom nav's shape or contents. Split out
             // of the old PREFERENCES catch-all, which mixed these with theming and task defaults.
-            SettingsSectionHeader(stringResource(R.string.settings_section_navigation), Icons.Default.Navigation)
             SettingsSectionCard {
                 SettingsToggleRow(
                     title = stringResource(R.string.settings_floating_bottom_panel),
@@ -1060,10 +1111,11 @@ fun SettingsScreen(
                 )
             }
         }
+        }
 
+        if (settingsDestination == SettingsDestination.SOUND_FEEDBACK) {
         item {
             // Sound & feedback — the app's response to an action, as opposed to its layout.
-            SettingsSectionHeader(stringResource(R.string.settings_section_sound_feedback), Icons.Default.VolumeUp)
             SettingsSectionCard {
                 SettingsToggleRow(
                     title = stringResource(R.string.settings_completion_sound),
@@ -1175,11 +1227,12 @@ fun SettingsScreen(
                 }
             }
         }
+        }
 
+        if (settingsDestination == SettingsDestination.TASK_DEFAULTS) {
         item {
             // Task defaults — what a newly created task inherits, plus the calendar/voice
             // conventions the app assumes. Previously buried at the end of PREFERENCES.
-            SettingsSectionHeader(stringResource(R.string.settings_section_task_defaults), Icons.Default.TaskAlt)
             SettingsSectionCard {
                 // Hidden when the People feature is off: with no people there is nobody to assign
                 // to, so the row would toggle something with no observable effect.
@@ -1331,12 +1384,13 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.NOTIFICATIONS) {
         item {
             // Notifications Section — Android (especially Samsung/One UI) silently downgrades
             // reminders to a fuzzy ~1hr-late delivery window, or kills them outright in Doze,
             // unless these two OS-level permissions are granted. Neither is requestable at
             // runtime like POST_NOTIFICATIONS — the user has to grant them from system settings.
-            SettingsSectionHeader(stringResource(R.string.settings_section_notifications), Icons.Default.Notifications)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -1484,10 +1538,11 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.NAVIGATION_FEATURES) {
         item {
             // Features Section — hides the entire tab/pickers/chips for a feature, but never
             // touches stored data, so re-enabling shows everything exactly as it was.
-            SettingsSectionHeader(stringResource(R.string.settings_section_features), Icons.Default.Extension)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -1538,6 +1593,8 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.NAVIGATION_FEATURES) {
         item {
             // Manage Section — tap-through to the People/Tags/Projects tabs, per handoff's Settings "Manage" rows.
             // Purely a visibility toggle (see Features section above), so each row/divider fades
@@ -1550,7 +1607,6 @@ fun SettingsScreen(
                     shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
             ) {
                 Column {
-                    SettingsSectionHeader(stringResource(R.string.settings_section_manage), Icons.Default.Build)
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
                         shape = RoundedCornerShape(16.dp),
@@ -1579,6 +1635,8 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.PRIVACY_SECURITY) {
         item {
             // Privacy & Security Section
             val context = LocalContext.current
@@ -1590,7 +1648,6 @@ fun SettingsScreen(
             }
             var showPinDialog by remember { mutableStateOf(false) }
 
-            SettingsSectionHeader(stringResource(R.string.settings_section_privacy), Icons.Default.Lock)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -1690,9 +1747,10 @@ fun SettingsScreen(
                 )
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.DATA_MANAGEMENT) {
         item {
             // 5. Backup/Data Section
-            SettingsSectionHeader(stringResource(R.string.settings_section_backup), Icons.Default.Storage)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -2069,10 +2127,11 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.BACKUP_SYNC) {
         item {
             // 4. Remote Backup Section: off-device destinations live together so the user can
             // reason about "where else is my data copied?" without jumping between cards.
-            SettingsSectionHeader(stringResource(R.string.settings_section_cloud_backup), Icons.Default.CloudSync)
             SettingsSectionCard {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -2382,9 +2441,10 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.BACKUP_SYNC) {
         item {
             // Local Backup Section — encrypted, on-device, no account needed.
-            SettingsSectionHeader(stringResource(R.string.settings_section_local_backup), Icons.Default.Save)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -2453,8 +2513,9 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.HELP_ABOUT) {
         item {
-            SettingsSectionHeader(stringResource(R.string.settings_section_help_about), Icons.AutoMirrored.Filled.HelpOutline)
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -2492,6 +2553,8 @@ fun SettingsScreen(
                 }
             }
         }
+        }
+        if (settingsDestination == SettingsDestination.HELP_ABOUT) {
         item {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -2529,6 +2592,7 @@ fun SettingsScreen(
                     )
                 }
             }
+        }
         }
     }
 }
@@ -3534,6 +3598,60 @@ private fun AnimatedDivider(visible: Boolean) {
         exit = fadeOut(tween(YataDur.fade))
     ) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    }
+}
+
+@Composable
+private fun SettingsDestinationCard(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        }
     }
 }
 
