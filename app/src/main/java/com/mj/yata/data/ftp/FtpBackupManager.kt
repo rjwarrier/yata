@@ -2,6 +2,7 @@ package com.mj.yata.data.ftp
 
 import android.content.Context
 import android.util.Log
+import com.mj.yata.data.local.backup.RecoveryBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpNotConfiguredException
@@ -53,7 +54,8 @@ class FtpBackupManager @Inject constructor(
     private val jsonExporter: JsonExporter,
     private val userPreferences: UserPreferences,
     private val credentialsStore: RemoteBackupCredentialsStore,
-    private val snapshotSyncEngine: SnapshotSyncEngine
+    private val snapshotSyncEngine: SnapshotSyncEngine,
+    private val recoveryBackupManager: RecoveryBackupManager
 ) {
     companion object {
         private const val TAG = "FtpBackupManager"
@@ -563,6 +565,12 @@ class FtpBackupManager @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val jsonBytes = fetchBackupJson(filename)
+                recoveryBackupManager.saveCurrent("pre_ftp_restore").getOrElse { e ->
+                    throw IllegalStateException(
+                        "Could not create a recovery backup before restore; local data was not changed",
+                        e
+                    )
+                }
                 if (jsonExporter.importBytes(jsonBytes)) {
                     Result.success(Unit)
                 } else {

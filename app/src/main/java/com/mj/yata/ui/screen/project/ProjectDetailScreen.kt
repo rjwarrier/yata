@@ -92,20 +92,23 @@ fun ProjectDetailScreen(
     // A project's tasks are already scoped to this one project, so the export's subheading
     // groups by list instead (a project name heading would be redundant on every group here).
     val listsById = remember(lists) { lists.associateBy { it.id } }
+    val projectsById = remember(projects) { projects.associateBy { it.id } }
+    val tagsById = remember(tags) { tags.associateBy { it.id } }
+    val peopleById = remember(people) { people.associateBy { it.id } }
     fun exportGroupLabel(task: Task): String =
         listsById[task.listId]?.name?.let { "List - $it" } ?: ""
 
     val tagErrorColor = MaterialTheme.colorScheme.error
     fun exportTagChips(task: Task): List<com.mj.yata.util.export.ExportTagChip> =
-        task.effectiveTagIds(projects).mapNotNull { tagId ->
-            tags.find { it.id == tagId }?.let { tag ->
+        task.effectiveTagIds(projectsById).mapNotNull { tagId ->
+            tagsById[tagId]?.let { tag ->
                 val color = if (tag.color == "error") tagErrorColor else accents.getAccent(tag.color)
                 com.mj.yata.util.export.ExportTagChip(tag.name, color)
             }
         }
 
     fun exportAssigneeNames(task: Task): List<String> =
-        task.assigneeIds.mapNotNull { id -> people.find { it.id == id }?.name }
+        task.assigneeIds.mapNotNull { id -> peopleById[id]?.name }
 
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
@@ -429,8 +432,6 @@ fun ProjectDetailScreen(
         }
     ) { innerPadding ->
         val listsById = remember(lists) { lists.associateBy { it.id } }
-        val peopleById = remember(people) { people.associateBy { it.id } }
-
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -498,8 +499,8 @@ fun ProjectDetailScreen(
                 val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                     if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                 }
-                val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
-                    if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
+                    if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                 }
 
                 TaskRow(

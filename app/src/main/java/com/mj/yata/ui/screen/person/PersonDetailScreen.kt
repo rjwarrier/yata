@@ -100,26 +100,30 @@ fun PersonDetailScreen(
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val projectsById = remember(projects) { projects.associateBy { it.id } }
+    val listsById = remember(lists) { lists.associateBy { it.id } }
+    val tagsById = remember(tags) { tags.associateBy { it.id } }
+    val peopleById = remember(people) { people.associateBy { it.id } }
 
     // Project name takes priority over list name for the export's subheading — a task's
     // projectId/listId are mutually exclusive containers in this app, so this just picks
     // whichever one the task actually has.
     fun exportGroupLabel(task: Task): String =
-        projects.find { it.id == task.projectId }?.name?.let { "Project - $it" }
-            ?: lists.find { it.id == task.listId }?.name?.let { "List - $it" }
+        projectsById[task.projectId]?.name?.let { "Project - $it" }
+            ?: listsById[task.listId]?.name?.let { "List - $it" }
             ?: ""
 
     val exportTagErrorColor = MaterialTheme.colorScheme.error
     fun exportTagChips(task: Task): List<com.mj.yata.util.export.ExportTagChip> =
-        task.effectiveTagIds(projects).mapNotNull { tagId ->
-            tags.find { it.id == tagId }?.let { t ->
+        task.effectiveTagIds(projectsById).mapNotNull { tagId ->
+            tagsById[tagId]?.let { t ->
                 val color = if (t.color == "error") exportTagErrorColor else accents.getAccent(t.color)
                 com.mj.yata.util.export.ExportTagChip(t.name, color)
             }
         }
 
     fun exportAssigneeNames(task: Task): List<String> =
-        task.assigneeIds.mapNotNull { id -> people.find { it.id == id }?.name }
+        task.assigneeIds.mapNotNull { id -> peopleById[id]?.name }
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
@@ -377,9 +381,6 @@ fun PersonDetailScreen(
             }
         }
     ) { innerPadding ->
-        val listsById = remember(lists) { lists.associateBy { it.id } }
-        val peopleById = remember(people) { people.associateBy { it.id } }
-
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
@@ -548,8 +549,8 @@ fun PersonDetailScreen(
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
                         }
-                        val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
-                            if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                        val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
+                            if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                         }
 
                         TaskRow(
@@ -648,8 +649,8 @@ fun PersonDetailScreen(
                         val taskAssignees = remember(task.assigneeIds, peopleById) {
                             task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
                         }
-                        val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
-                            if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                        val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
+                            if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                         }
 
                         TaskRow(

@@ -235,16 +235,27 @@ fun Task.effectiveTagIds(projects: List<Project>): List<String> {
     return (tagIds + common).distinct()
 }
 
+fun Task.effectiveTagIds(projectsById: Map<String, Project>): List<String> {
+    val common = projectId?.let { projectsById[it] }?.commonTagIds ?: emptyList()
+    return (tagIds + common).distinct()
+}
+
 fun Task.effectiveTags(projects: List<Project>, tags: List<Tag>): List<Tag> {
     val ids = effectiveTagIds(projects)
     return ids.mapNotNull { id -> tags.find { it.id == id } }
 }
+
+fun Task.effectiveTags(projectsById: Map<String, Project>, tagsById: Map<String, Tag>): List<Tag> =
+    effectiveTagIds(projectsById).mapNotNull { id -> tagsById[id] }
 
 /** Tag IDs inherited live from the task's project — not removable at the task level. */
 fun Task.inheritedTagIds(projects: List<Project>): List<String> {
     val project = projects.find { it.id == projectId }
     return project?.commonTagIds ?: emptyList()
 }
+
+fun Task.inheritedTagIds(projectsById: Map<String, Project>): List<String> =
+    projectId?.let { projectsById[it] }?.commonTagIds ?: emptyList()
 
 /**
  * True if this task was still open, or was completed on [day], as of the end of [day] — i.e. it

@@ -22,7 +22,8 @@ import javax.inject.Singleton
 class LocalBackupManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val jsonExporter: JsonExporter,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val recoveryBackupManager: RecoveryBackupManager
 ) {
     companion object {
         private const val TAG = "LocalBackupManager"
@@ -68,13 +69,19 @@ class LocalBackupManager @Inject constructor(
             val latest = backupDir().listFiles()
                 ?.filter { it.name.startsWith(FILENAME_PREFIX) }
                 ?.maxByOrNull { it.name }
-                ?: return@withContext Result.failure(IllegalStateException("No local backup found"))
+                ?: return@withContext recoveryBackupManager.restoreLatest()
 
             val encryptedFile = EncryptedFile.Builder(
                 context, latest, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
             ).build()
             val bytes = encryptedFile.openFileInput().use { it.readBytes() }
 
+            recoveryBackupManager.saveCurrent("pre_local_restore").getOrElse { e ->
+                throw IllegalStateException(
+                    "Could not create a recovery backup before restore; local data was not changed",
+                    e
+                )
+            }
             if (jsonExporter.importBytes(bytes)) Result.success(Unit)
             else Result.failure(IllegalStateException("Restore failed - backup file unreadable"))
         } catch (e: Exception) {

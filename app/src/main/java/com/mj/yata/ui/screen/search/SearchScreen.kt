@@ -117,8 +117,8 @@ internal fun parseSearchQuery(raw: String): ParsedSearchQuery {
 private fun Task.matchesSearchText(
     query: String,
     peopleById: Map<String, Person>,
-    tags: List<Tag>,
-    projects: List<Project>
+    tagsById: Map<String, Tag>,
+    projectsById: Map<String, Project>
 ): Boolean {
     val terms = query.split(Regex("\\s+")).filter { it.isNotBlank() }
     if (terms.isEmpty()) return true
@@ -126,7 +126,7 @@ private fun Task.matchesSearchText(
         append(title).append(' ')
         append(notes.orEmpty()).append(' ')
         assigneeIds.mapNotNull { peopleById[it]?.name }.forEach { append(it).append(' ') }
-        effectiveTags(projects, tags).forEach { append(it.name).append(' ') }
+        effectiveTags(projectsById, tagsById).forEach { append(it.name).append(' ') }
         subtasks.forEach { append(it.title).append(' ') }
     }.lowercase()
     return terms.all { haystack.contains(it.lowercase()) }
@@ -206,6 +206,7 @@ fun SearchScreen(
     val peopleById = remember(people) { people.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
     val listsById = remember(lists) { lists.associateBy { it.id } }
+    val projectsById = remember(projects) { projects.associateBy { it.id } }
 
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
@@ -223,7 +224,7 @@ fun SearchScreen(
         viewModel.searchTasks(debouncedQuery)
     }.collectAsStateWithLifecycle(initialValue = emptyList())
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
-    val filteredTasks = remember(tasks, queryTasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tags, projects) {
+    val filteredTasks = remember(tasks, queryTasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty() && !includeArchived && !includeTrash) {
             emptyList()
         } else {
@@ -234,14 +235,14 @@ fun SearchScreen(
             } else if (debouncedQuery.isBlank()) {
                 archivedTasks
             } else {
-                archivedTasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tags, projects) }
+                archivedTasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tagsById, projectsById) }
             }
             val trashSource = if (!includeTrash) {
                 emptyList()
             } else if (debouncedQuery.isBlank()) {
                 deletedTasks
             } else {
-                deletedTasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tags, projects) }
+                deletedTasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tagsById, projectsById) }
             }
             val sourceTasks = (activeSource + archivedSource + trashSource).distinctBy { it.id }
             sourceTasks.filter { task ->
@@ -337,6 +338,8 @@ fun SearchScreen(
                 tags = tags,
                 listsById = listsById,
                 peopleById = peopleById,
+                projectsById = projectsById,
+                tagsById = tagsById,
                 archivedTaskIds = archivedTaskIds,
                 deletedTaskIds = deletedTaskIds,
                 archivedProjectIds = archivedProjectIds,
@@ -409,6 +412,8 @@ fun SearchScreen(
                     tags = tags,
                     listsById = listsById,
                     peopleById = peopleById,
+                    projectsById = projectsById,
+                    tagsById = tagsById,
                     archivedTaskIds = archivedTaskIds,
                     deletedTaskIds = deletedTaskIds,
                     archivedProjectIds = archivedProjectIds,
@@ -554,6 +559,8 @@ private fun SearchResultsList(
     tags: List<Tag>,
     listsById: Map<String, YataList>,
     peopleById: Map<String, Person>,
+    projectsById: Map<String, Project>,
+    tagsById: Map<String, Tag>,
     archivedTaskIds: Set<String>,
     deletedTaskIds: Set<String>,
     archivedProjectIds: Set<String>,
@@ -682,8 +689,8 @@ private fun SearchResultsList(
                 val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
                     if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                 }
-                val taskTags = remember(task, projects, tags, tagsEnabled) {
-                    if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                val taskTags = remember(task, projectsById, tagsById, tagsEnabled) {
+                    if (tagsEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                 }
 
                 Column(

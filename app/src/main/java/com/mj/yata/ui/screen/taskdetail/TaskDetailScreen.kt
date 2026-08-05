@@ -200,14 +200,18 @@ fun TaskDetailScreen(
         if (!userToggledComments) showComments = comments.isNotEmpty()
     }
 
-    val taskList = remember(task, lists) { lists.find { it.id == task.listId } }
-    val project = remember(task, projects) { projects.find { it.id == task.projectId } }
-    val taskAssignees = remember(task, people) { task.assigneeIds.mapNotNull { pid -> people.find { it.id == pid } } }
+    val listsById = remember(lists) { lists.associateBy { it.id } }
+    val projectsById = remember(projects) { projects.associateBy { it.id } }
+    val peopleById = remember(people) { people.associateBy { it.id } }
+    val tagsById = remember(tags) { tags.associateBy { it.id } }
+    val taskList = remember(task, listsById) { listsById[task.listId] }
+    val project = remember(task, projectsById) { projectsById[task.projectId] }
+    val taskAssignees = remember(task, peopleById) { task.assigneeIds.mapNotNull { pid -> peopleById[pid] } }
     val ownTagIds = task.tagIds
-    val inheritedTagIds = remember(task, projects) { task.inheritedTagIds(projects) }
-    val ownTags = remember(ownTagIds, tags) { ownTagIds.mapNotNull { tid -> tags.find { it.id == tid } } }
-    val inheritedTags = remember(inheritedTagIds, ownTagIds, tags) {
-        inheritedTagIds.filter { it !in ownTagIds }.mapNotNull { tid -> tags.find { it.id == tid } }
+    val inheritedTagIds = remember(task, projectsById) { task.inheritedTagIds(projectsById) }
+    val ownTags = remember(ownTagIds, tagsById) { ownTagIds.mapNotNull { tid -> tagsById[tid] } }
+    val inheritedTags = remember(inheritedTagIds, ownTagIds, tagsById) {
+        inheritedTagIds.filter { it !in ownTagIds }.mapNotNull { tid -> tagsById[tid] }
     }
 
     val listColor = taskList?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary

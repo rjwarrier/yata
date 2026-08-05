@@ -106,8 +106,9 @@ class SingleListWidget : GlanceAppWidget() {
                     val tag = repository.getTagById(sourceId).first()
                     if (tag != null) {
                         val projects = repository.getProjects().first()
+                        val projectsById = projects.associateBy { it.id }
                         source = SingleWidgetSource(tag.name, tag.color, R.drawable.ic_widget_tag)
-                        tasks = allTasks.filter { it.effectiveTagIds(projects).contains(tag.id) }.sortedBy { it.sortOrder }
+                        tasks = allTasks.filter { it.effectiveTagIds(projectsById).contains(tag.id) }.sortedBy { it.sortOrder }
                     }
                 }
                 SingleWidgetSourceType.LIST -> {

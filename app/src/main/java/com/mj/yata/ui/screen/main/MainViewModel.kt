@@ -361,6 +361,36 @@ private data class MainNavigationState(
     val tasks: StateFlow<List<Task>> = repository.getTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val projects: StateFlow<List<Project>> = repository.getProjects()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activeProjects: StateFlow<List<Project>> = repository.getActiveProjects()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val archivedProjects: StateFlow<List<Project>> = repository.getArchivedProjects()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val lists: StateFlow<List<YataList>> = repository.getLists()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val people: StateFlow<List<Person>> = repository.getPeople()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activePeople: StateFlow<List<Person>> = repository.getActivePeople()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val archivedPeople: StateFlow<List<Person>> = repository.getArchivedPeople()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val tags: StateFlow<List<Tag>> = repository.getTags()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val tagGroups: StateFlow<List<TagGroup>> = repository.getTagGroups()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val personGroups: StateFlow<List<PersonGroup>> = repository.getPersonGroups()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar,
      * and consumed by [settingsUiState]/[mainScreenUiState] below instead of each recomputing it
      * independently (one of those inline copies had drifted and was missing the
@@ -373,10 +403,10 @@ private data class MainNavigationState(
      * project exclusion and neither deferral nor waiting-on, so the badge could show a count the
      * Today screen it links to didn't actually list. */
     val todayRemainingCount: StateFlow<Int> = combine(
-        repository.getTasks(),
-        repository.getProjects(),
-        repository.getLists(),
-        repository.getPeople()
+        tasks,
+        projects,
+        lists,
+        people
     ) { list, projectList, listList, peopleList ->
         val todayStr = LocalDate.now().toString()
         val myId = peopleList.firstOrNull { it.isMe }?.id
@@ -493,7 +523,7 @@ private data class MainNavigationState(
     val settingsUiState: StateFlow<SettingsUiState> = combine(
         settingsCoreFlow,
         combine(
-            repository.getLists(),
+            lists,
             userPreferences.backupIntervalMinutesFlow,
             userPreferences.localBackupEnabledFlow,
             userPreferences.localBackupLastAtFlow
@@ -585,19 +615,19 @@ private data class MainNavigationState(
 
     val mainScreenUiState: StateFlow<MainScreenUiState> = combine(
         combine(
-            repository.getTasks(),
-            repository.getProjects(),
-            repository.getActiveProjects(),
-            repository.getLists(),
-            repository.getPeople()
+            tasks,
+            projects,
+            activeProjects,
+            lists,
+            people
         ) { tasks, projects, activeProjects, lists, people ->
             MainDataState(tasks, projects, activeProjects, lists, people)
         },
         combine(
-            repository.getActivePeople(),
-            repository.getTags(),
-            repository.getTagGroups(),
-            repository.getPersonGroups()
+            activePeople,
+            tags,
+            tagGroups,
+            personGroups
         ) { activePeople, tags, tagGroups, personGroups ->
             MainExtraDataState(activePeople, tags, tagGroups, personGroups)
         },
@@ -652,37 +682,6 @@ private data class MainNavigationState(
             todayRemainingCount = navigation.todayRemainingCount
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainScreenUiState())
-
-    val projects: StateFlow<List<Project>> = repository.getProjects()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val activeProjects: StateFlow<List<Project>> = repository.getActiveProjects()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val archivedProjects: StateFlow<List<Project>> = repository.getArchivedProjects()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-
-    val lists: StateFlow<List<YataList>> = repository.getLists()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val people: StateFlow<List<Person>> = repository.getPeople()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val activePeople: StateFlow<List<Person>> = repository.getActivePeople()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val archivedPeople: StateFlow<List<Person>> = repository.getArchivedPeople()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val tags: StateFlow<List<Tag>> = repository.getTags()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val tagGroups: StateFlow<List<TagGroup>> = repository.getTagGroups()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val personGroups: StateFlow<List<PersonGroup>> = repository.getPersonGroups()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val analyticsPeriodFlow = MutableStateFlow(AnalyticsPeriod.WEEK)
     val analyticsPeriod: StateFlow<AnalyticsPeriod> = analyticsPeriodFlow.asStateFlow()

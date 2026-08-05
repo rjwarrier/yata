@@ -463,6 +463,8 @@ fun TodayTab(
 
         val listsById = remember(lists) { lists.associateBy { it.id } }
         val peopleById = remember(people) { people.associateBy { it.id } }
+        val projectsById = remember(projects) { projects.associateBy { it.id } }
+        val tagsById = remember(tags) { tags.associateBy { it.id } }
 
         // 4. Task list — flat, no Morning/Afternoon grouping; completed tasks sort to the end.
         LazyColumn(
@@ -515,8 +517,8 @@ fun TodayTab(
                             val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
                                 if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                             }
-                            val taskTags = remember(task, projects, tags, tagsEnabled) {
-                                if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                            val taskTags = remember(task, projectsById, tagsById, tagsEnabled) {
+                                if (tagsEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                             }
                             TaskRow(
                                 task = task,
@@ -558,8 +560,8 @@ fun TodayTab(
                     val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
                         if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                     }
-                    val taskTags = remember(task, projects, tags, tagsEnabled) {
-                        if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                    val taskTags = remember(task, projectsById, tagsById, tagsEnabled) {
+                        if (tagsEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                     }
 
                     TaskRow(

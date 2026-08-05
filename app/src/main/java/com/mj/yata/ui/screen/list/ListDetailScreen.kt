@@ -79,6 +79,9 @@ fun ListDetailScreen(
     val list = remember(lists, listId) { lists.find { it.id == listId } }
     val accents = LocalYataAccents.current
     val scope = rememberCoroutineScope()
+    val projectsById = remember(projects) { projects.associateBy { it.id } }
+    val tagsById = remember(tags) { tags.associateBy { it.id } }
+    val peopleById = remember(people) { people.associateBy { it.id } }
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val exportContext = androidx.compose.ui.platform.LocalContext.current
@@ -90,19 +93,19 @@ fun ListDetailScreen(
     // by project instead (a list name heading would be redundant on every group here) —
     // mirroring how ProjectDetailScreen groups by list for the same reason, just flipped.
     fun exportGroupLabel(task: Task): String =
-        projects.find { it.id == task.projectId }?.name?.let { "Project - $it" } ?: ""
+        projectsById[task.projectId]?.name?.let { "Project - $it" } ?: ""
 
     val exportTagErrorColor = MaterialTheme.colorScheme.error
     fun exportTagChips(task: Task): List<com.mj.yata.util.export.ExportTagChip> =
-        task.effectiveTagIds(projects).mapNotNull { tagId ->
-            tags.find { it.id == tagId }?.let { t ->
+        task.effectiveTagIds(projectsById).mapNotNull { tagId ->
+            tagsById[tagId]?.let { t ->
                 val color = if (t.color == "error") exportTagErrorColor else accents.getAccent(t.color)
                 com.mj.yata.util.export.ExportTagChip(t.name, color)
             }
         }
 
     fun exportAssigneeNames(task: Task): List<String> =
-        task.assigneeIds.mapNotNull { id -> people.find { it.id == id }?.name }
+        task.assigneeIds.mapNotNull { id -> peopleById[id]?.name }
 
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var isEditSheetOpen by remember { mutableStateOf(false) }
@@ -355,7 +358,6 @@ fun ListDetailScreen(
             }
         }
     ) { innerPadding ->
-        val peopleById = remember(people) { people.associateBy { it.id } }
         val progress = if (listTasks.isNotEmpty()) doneTasks.toFloat() / listTasks.size else 0f
         val overdueCount = remember(listTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(listTasks) }
         val highPriorityCount = remember(listTasks) { listTasks.count { !it.done && it.priority == "high" } }
@@ -408,8 +410,8 @@ fun ListDetailScreen(
                 val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                     if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                 }
-                val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
-                    if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
+                    if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                 }
 
                 TaskRow(

@@ -102,9 +102,9 @@ fun saveBitmapAsPdf(
         val canvas = page.canvas
         canvas.drawColor(android.graphics.Color.WHITE)
 
-        val bitmapSlice = Bitmap.createBitmap(bitmap, 0, slice.startY, bitmap.width, slice.height)
-        canvas.drawBitmap(bitmapSlice, margin.toFloat(), margin.toFloat(), null)
-        bitmapSlice.recycle()
+        val src = android.graphics.Rect(0, slice.startY, bitmap.width, slice.startY + slice.height)
+        val dst = android.graphics.Rect(margin, margin, margin + bitmap.width, margin + slice.height)
+        canvas.drawBitmap(bitmap, src, dst, null)
         canvas.drawText(
             context.getString(R.string.export_page_of, index + 1, slices.size),
             pageWidth / 2f,

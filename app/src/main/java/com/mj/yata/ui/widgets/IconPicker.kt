@@ -8,6 +8,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.DirectionsBike
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AttachMoney
@@ -24,7 +31,6 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Devices
-import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Favorite
@@ -33,7 +39,6 @@ import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.LocalAtm
@@ -57,7 +62,6 @@ import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TheaterComedy
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Yard
@@ -68,7 +72,6 @@ import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Gavel
@@ -77,7 +80,6 @@ import androidx.compose.material.icons.filled.LocalPhone
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.LocationOn
@@ -95,7 +97,6 @@ import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Apartment
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Terminal
@@ -134,7 +135,6 @@ import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.Luggage
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Translate
@@ -164,7 +164,7 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "layers" -> Icons.Default.Layers
     "home" -> Icons.Default.Home
     "star" -> Icons.Default.Star
-    "label" -> Icons.Default.Label
+    "label" -> Icons.AutoMirrored.Filled.Label
     "folder" -> Icons.Default.Folder
     "work" -> Icons.Default.BusinessCenter
     "school" -> Icons.Default.School
@@ -191,7 +191,7 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "savings" -> Icons.Default.Savings
     "card" -> Icons.Default.CreditCard
     "receipt" -> Icons.Default.Receipt
-    "trending" -> Icons.Default.TrendingUp
+    "trending" -> Icons.AutoMirrored.Filled.TrendingUp
     "invoice" -> Icons.Default.RequestQuote
     "atm" -> Icons.Default.LocalAtm
     // Home / chores
@@ -213,7 +213,7 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "spa" -> Icons.Default.Spa
     "meditation" -> Icons.Default.SelfImprovement
     // Travel / transport
-    "bike" -> Icons.Default.DirectionsBike
+    "bike" -> Icons.AutoMirrored.Filled.DirectionsBike
     "bus" -> Icons.Default.DirectionsBus
     "backpack" -> Icons.Default.Backpack
     "world" -> Icons.Default.Public
@@ -229,7 +229,7 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "timeline" -> Icons.Default.Timeline
     "taskalt" -> Icons.Default.TaskAlt
     "cloud" -> Icons.Default.Cloud
-    "run" -> Icons.Default.DirectionsRun
+    "run" -> Icons.AutoMirrored.Filled.DirectionsRun
     "event" -> Icons.Default.Event
     "pin" -> Icons.Default.PushPin
     "gavel" -> Icons.Default.Gavel
@@ -239,7 +239,7 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "alarm" -> Icons.Default.NotificationsActive
     // Round 2 new icons
     "settings" -> Icons.Default.Settings
-    "chart" -> Icons.Default.ShowChart
+    "chart" -> Icons.AutoMirrored.Filled.ShowChart
     "key" -> Icons.Default.Key
     "construction" -> Icons.Default.Construction
     "location" -> Icons.Default.LocationOn
@@ -257,7 +257,7 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "inventory" -> Icons.Default.Inventory2
     "store" -> Icons.Default.Storefront
     "apartment" -> Icons.Default.Apartment
-    "assignment" -> Icons.Default.Assignment
+    "assignment" -> Icons.AutoMirrored.Filled.Assignment
     "document" -> Icons.Default.Description
     "badge" -> Icons.Default.Badge
     // Tech
@@ -303,7 +303,7 @@ fun iconVectorFor(key: String): ImageVector = when (key) {
     "map" -> Icons.Default.Map
     "explore" -> Icons.Default.Explore
     // Learning / creative
-    "menubook" -> Icons.Default.MenuBook
+    "menubook" -> Icons.AutoMirrored.Filled.MenuBook
     "science" -> Icons.Default.Science
     "calculate" -> Icons.Default.Calculate
     "translate" -> Icons.Default.Translate

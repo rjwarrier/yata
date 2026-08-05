@@ -138,12 +138,13 @@ fun TagsTab(
             // matching the pattern TodayTab/UpcomingTab already use for their cross-feature reads.
             // (total, done) per tag — used for both the "N open" label and the progress ring,
             // matching PeopleTab's PersonRow (totalTasks/doneTasks/progress) convention.
-            val tagTaskCounts = remember(tasks, projects, tagsEnabled) {
+            val projectsById = remember(projects) { projects.associateBy { it.id } }
+            val tagTaskCounts = remember(tasks, projectsById, tagsEnabled) {
                 if (!tagsEnabled) return@remember emptyMap()
                 val totals = mutableMapOf<String, Int>()
                 val done = mutableMapOf<String, Int>()
                 tasks.forEach { task ->
-                    task.effectiveTagIds(projects).forEach { tagId ->
+                    task.effectiveTagIds(projectsById).forEach { tagId ->
                         totals[tagId] = (totals[tagId] ?: 0) + 1
                         if (task.done) done[tagId] = (done[tagId] ?: 0) + 1
                     }

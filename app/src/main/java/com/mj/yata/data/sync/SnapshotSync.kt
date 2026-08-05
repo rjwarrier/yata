@@ -2,6 +2,7 @@ package com.mj.yata.data.sync
 
 import android.content.Context
 import android.util.Log
+import com.mj.yata.data.local.backup.RecoveryBackupManager
 import com.mj.yata.util.CURRENT_BACKUP_VERSION
 import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.isRecognizedBackup
@@ -386,7 +387,8 @@ internal data class PreparedSnapshotSync(
 @Singleton
 class SnapshotSyncEngine @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val jsonExporter: JsonExporter
+    private val jsonExporter: JsonExporter,
+    private val recoveryBackupManager: RecoveryBackupManager
 ) {
     internal suspend fun prepare(
         remoteBytes: ByteArray?,
@@ -439,6 +441,12 @@ class SnapshotSyncEngine @Inject constructor(
             ).json
         }
         if (!SnapshotMerger.equivalent(current, localTarget)) {
+            recoveryBackupManager.saveCurrent("pre_sync_apply").getOrElse { e ->
+                throw IllegalStateException(
+                    "Could not create a recovery backup before applying sync; local data was not changed",
+                    e
+                )
+            }
             check(jsonExporter.replaceBytesForSync(localTarget.toString(2).toByteArray(Charsets.UTF_8))) {
                 "The server snapshot was published, but applying it locally failed; sync again to retry"
             }

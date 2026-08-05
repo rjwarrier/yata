@@ -81,6 +81,8 @@ fun NextDaysScreen(
             .sortedWith(compareBy({ it.due }, { it.sortOrder }))
     }
     val groupedByDate = remember(upcomingTasks) { upcomingTasks.groupBy { it.due!! } }
+    val projectsById = remember(projects) { projects.associateBy { it.id } }
+    val tagsById = remember(tags) { tags.associateBy { it.id } }
 
     fun dateLabel(dateStr: String): String {
         // The window filter above is a lexicographic string compare, so a malformed due date
@@ -180,8 +182,8 @@ fun NextDaysScreen(
                         val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
                             if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                         }
-                        val taskTags = remember(task, projects, tags, tagsFeatureEnabled) {
-                            if (tagsFeatureEnabled) task.effectiveTags(projects, tags) else emptyList()
+                        val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
+                            if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                         }
 
                         TaskRow(

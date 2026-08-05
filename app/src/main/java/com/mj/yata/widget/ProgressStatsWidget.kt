@@ -155,8 +155,9 @@ private fun ProgressStatsContent(
                 )
             }
         } else {
+            val tasksByListId = tasks.groupBy { it.listId }
             val byList = lists
-                .map { list -> list to tasks.filter { it.listId == list.id } }
+                .map { list -> list to tasksByListId[list.id].orEmpty() }
                 .filter { it.second.isNotEmpty() }
                 .sortedByDescending { it.second.size }
                 .take(if (isTall) 8 else 4)

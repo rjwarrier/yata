@@ -21,11 +21,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.RestoreFromTrash
@@ -146,7 +146,7 @@ private val helpSections = listOf(
             "Use tag detail screens to review everything with that label.",
             "Tags can have default hide-completed behavior for focused views."
         ),
-        icon = Icons.Default.Label
+        icon = Icons.AutoMirrored.Filled.Label
     ),
     HelpSection(
         title = "Analytics",

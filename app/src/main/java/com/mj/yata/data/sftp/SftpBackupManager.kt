@@ -2,6 +2,7 @@ package com.mj.yata.data.sftp
 
 import android.content.Context
 import android.util.Log
+import com.mj.yata.data.local.backup.RecoveryBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.util.BackupCrypto
@@ -61,7 +62,8 @@ class SftpBackupManager @Inject constructor(
     private val jsonExporter: JsonExporter,
     private val userPreferences: UserPreferences,
     private val credentialsStore: RemoteBackupCredentialsStore,
-    private val snapshotSyncEngine: SnapshotSyncEngine
+    private val snapshotSyncEngine: SnapshotSyncEngine,
+    private val recoveryBackupManager: RecoveryBackupManager
 ) {
     companion object {
         private const val TAG = "SftpBackupManager"
@@ -242,6 +244,12 @@ class SftpBackupManager @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val bytes = download(filename)
+                recoveryBackupManager.saveCurrent("pre_sftp_restore").getOrElse { e ->
+                    throw IllegalStateException(
+                        "Could not create a recovery backup before restore; local data was not changed",
+                        e
+                    )
+                }
                 if (jsonExporter.importBytes(bytes)) {
                     Result.success(Unit)
                 } else {
@@ -276,15 +284,14 @@ class SftpBackupManager @Inject constructor(
     }
 
     private suspend fun download(filename: String): ByteArray {
-        val tempFile = File.createTempFile("sftp_download", ".json", context.cacheDir)
-        try {
-            val remoteDir = userPreferences.sftpRemoteDirFlow.first()
-            buildClient().use { ssh ->
-                ssh.newSFTPClient().use { sftp -> sftp.get(remotePath(remoteDir, filename), tempFile.absolutePath) }
+        val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+        buildClient().use { ssh ->
+            ssh.newSFTPClient().use { sftp ->
+                val path = remotePath(remoteDir, filename)
+                val bytes = readRemoteBytes(sftp, path)
+                    ?: throw IllegalStateException("Backup file no longer exists: $filename")
+                return decodePayload(bytes)
             }
-            return decodePayload(tempFile.readBytes())
-        } finally {
-            tempFile.delete()
         }
     }
 

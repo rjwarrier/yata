@@ -139,6 +139,8 @@ fun UpcomingTab(
     }
 
     val listsById = remember(lists) { lists.associateBy { it.id } }
+    val projectsById = remember(projects) { projects.associateBy { it.id } }
+    val tagsById = remember(tags) { tags.associateBy { it.id } }
     val archivedProjectIds = remember(projects) { projects.archivedProjects().map { it.id }.toSet() }
     val activeTasks = remember(tasks, archivedProjectIds) {
         tasks.filter { it.projectId !in archivedProjectIds }
@@ -512,8 +514,8 @@ fun UpcomingTab(
                             val taskAssignees = remember(task.assigneeIds, peopleById, peopleEnabled) {
                                 if (peopleEnabled) task.assigneeIds.mapNotNull { pid -> peopleById[pid] } else emptyList()
                             }
-                            val taskTags = remember(task, projects, tags, tagsEnabled) {
-                                if (tagsEnabled) task.effectiveTags(projects, tags) else emptyList()
+                            val taskTags = remember(task, projectsById, tagsById, tagsEnabled) {
+                                if (tagsEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
                             }
 
                             TaskRow(
