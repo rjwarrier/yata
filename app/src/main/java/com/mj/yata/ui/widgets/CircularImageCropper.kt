@@ -47,7 +47,8 @@ private val VIEWPORT_SIZE = 280.dp
 fun CircularImageCropper(
     source: Bitmap,
     onConfirm: (Bitmap) -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    onSelectNewImage: (() -> Unit)? = null
 ) {
     var zoom by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -163,6 +164,13 @@ fun CircularImageCropper(
                 // the circle and hint always render, so keeping the actions in that same centred
                 // block makes them visible regardless of how the dialog window resolves insets.
                 Spacer(modifier = Modifier.height(28.dp))
+
+                if (onSelectNewImage != null) {
+                    TextButton(onClick = onSelectNewImage) {
+                        Text(stringResource(R.string.circular_image_cropper_select_new_image), color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
 
                 Row(
                     modifier = Modifier.padding(horizontal = 24.dp),

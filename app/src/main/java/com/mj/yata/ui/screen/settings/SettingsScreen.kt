@@ -6,6 +6,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,21 +43,44 @@ import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.RocketLaunch
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -65,6 +89,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -267,11 +293,9 @@ fun SettingsScreen(
     var showThemePresetDialog by remember { mutableStateOf(false) }
     var themePresetName by rememberSaveable { mutableStateOf("") }
 
-    var editingName by remember { mutableStateOf(false) }
-    var tempName by remember { mutableStateOf(userName) }
-
-    var editingEmail by remember { mutableStateOf(false) }
-    var tempEmail by remember { mutableStateOf(userEmail) }
+    var showProfileDialog by remember { mutableStateOf(false) }
+    var profileDraftName by rememberSaveable { mutableStateOf("") }
+    var profileDraftEmail by rememberSaveable { mutableStateOf("") }
 
     val todayBadgeCount = uiState.todayRemainingCount
 
@@ -342,6 +366,48 @@ fun SettingsScreen(
     var backupDiffError by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
+    val profileAvatarPresets = listOf(
+        ProfilePhotoUtils.PresetAvatar.LOOP,
+        ProfilePhotoUtils.PresetAvatar.PERSON,
+        ProfilePhotoUtils.PresetAvatar.SMILE,
+        ProfilePhotoUtils.PresetAvatar.GLASSES,
+        ProfilePhotoUtils.PresetAvatar.FRIENDS,
+        ProfilePhotoUtils.PresetAvatar.TEAM,
+        ProfilePhotoUtils.PresetAvatar.FAMILY,
+        ProfilePhotoUtils.PresetAvatar.HELPER,
+        ProfilePhotoUtils.PresetAvatar.THINKER,
+        ProfilePhotoUtils.PresetAvatar.CHILD,
+        ProfilePhotoUtils.PresetAvatar.GUIDE,
+        ProfilePhotoUtils.PresetAvatar.CREATOR,
+        ProfilePhotoUtils.PresetAvatar.LISTENER,
+        ProfilePhotoUtils.PresetAvatar.LEADER,
+        ProfilePhotoUtils.PresetAvatar.FOCUS,
+        ProfilePhotoUtils.PresetAvatar.STAR,
+        ProfilePhotoUtils.PresetAvatar.HEART,
+        ProfilePhotoUtils.PresetAvatar.ROCKET,
+        ProfilePhotoUtils.PresetAvatar.WORK,
+        ProfilePhotoUtils.PresetAvatar.LEAF,
+        ProfilePhotoUtils.PresetAvatar.SPARK,
+        ProfilePhotoUtils.PresetAvatar.HOME,
+        ProfilePhotoUtils.PresetAvatar.STUDY,
+        ProfilePhotoUtils.PresetAvatar.TRAVEL,
+        ProfilePhotoUtils.PresetAvatar.FITNESS,
+        ProfilePhotoUtils.PresetAvatar.FOOD,
+        ProfilePhotoUtils.PresetAvatar.BOOK,
+        ProfilePhotoUtils.PresetAvatar.MUSIC,
+        ProfilePhotoUtils.PresetAvatar.CODE,
+        ProfilePhotoUtils.PresetAvatar.ART,
+        ProfilePhotoUtils.PresetAvatar.CAMERA,
+        ProfilePhotoUtils.PresetAvatar.IDEA,
+        ProfilePhotoUtils.PresetAvatar.SHIELD,
+        ProfilePhotoUtils.PresetAvatar.CLOUD,
+        ProfilePhotoUtils.PresetAvatar.CHECK,
+        ProfilePhotoUtils.PresetAvatar.COFFEE,
+        ProfilePhotoUtils.PresetAvatar.CALENDAR,
+        ProfilePhotoUtils.PresetAvatar.WAVE,
+        ProfilePhotoUtils.PresetAvatar.ORBIT,
+        ProfilePhotoUtils.PresetAvatar.BLOOM
+    )
     val currentSettingsTitle =
         settingsDestination?.let { destination ->
             settingsHubDestinations.firstOrNull { it.destination == destination }?.title
@@ -440,11 +506,36 @@ fun SettingsScreen(
                 ) {
                     Box(
                         modifier = Modifier.clickable {
-                            photoPickerLauncher.launch(
-                                androidx.activity.result.PickVisualMediaRequest(
-                                    androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                            if (userPhotoUri.isNullOrBlank()) {
+                                photoPickerLauncher.launch(
+                                    androidx.activity.result.PickVisualMediaRequest(
+                                        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
                                 )
-                            )
+                            } else {
+                                scope.launch {
+                                    val currentBitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        try {
+                                            ProfilePhotoUtils.decodeSampledBitmap(
+                                                context,
+                                                android.net.Uri.parse(userPhotoUri),
+                                                maxDimension = 1600
+                                            )
+                                        } catch (e: Exception) {
+                                            null
+                                        }
+                                    }
+                                    if (currentBitmap != null) {
+                                        pickedPhotoBitmap = currentBitmap
+                                    } else {
+                                        photoPickerLauncher.launch(
+                                            androidx.activity.result.PickVisualMediaRequest(
+                                                androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                            )
+                                        )
+                                    }
+                                }
+                            }
                         }
                     ) {
                         com.mj.yata.ui.widgets.PersonAvatar(
@@ -470,63 +561,36 @@ fun SettingsScreen(
                             )
                         }
                     }
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        if (editingName) {
-                            OutlinedTextField(
-                                value = tempName,
-                                onValueChange = { tempName = it },
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                trailingIcon = {
-                                    IconButton(onClick = {
-                                        viewModel.setUserName(tempName)
-                                        editingName = false
-                                    }) {
-                                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.settings_save_name))
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            Text(
-                                text = userName.ifBlank { stringResource(R.string.profile_add_name) },
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = if (userName.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant
-                                        else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.clickable {
-                                    tempName = userName
-                                    editingName = true
-                                }
-                            )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                profileDraftName = userName
+                                profileDraftEmail = userEmail
+                                showProfileDialog = true
+                            },
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = userName.ifBlank { stringResource(R.string.profile_add_name) },
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (userName.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant
+                                    else MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = userEmail.ifBlank { stringResource(R.string.profile_add_email) },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            profileDraftName = userName
+                            profileDraftEmail = userEmail
+                            showProfileDialog = true
                         }
-
-                        if (editingEmail) {
-                            OutlinedTextField(
-                                value = tempEmail,
-                                onValueChange = { tempEmail = it },
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.bodySmall,
-                                trailingIcon = {
-                                    IconButton(onClick = {
-                                        viewModel.setUserEmail(tempEmail)
-                                        editingEmail = false
-                                    }) {
-                                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.settings_save_email))
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            Text(
-                                text = userEmail.ifBlank { stringResource(R.string.profile_add_email) },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.clickable {
-                                    tempEmail = userEmail
-                                    editingEmail = true
-                                }
-                            )
-                        }
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.settings_edit))
                     }
                 }
             }
@@ -2753,6 +2817,68 @@ fun SettingsScreen(
     }
 }
 
+    if (showProfileDialog) {
+        val saveProfile = {
+            viewModel.setUserName(profileDraftName.trim())
+            viewModel.setUserEmail(profileDraftEmail.trim())
+            showProfileDialog = false
+        }
+        AlertDialog(
+            onDismissRequest = { showProfileDialog = false },
+            title = { Text("Edit profile") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = profileDraftName,
+                        onValueChange = { profileDraftName = it },
+                        singleLine = true,
+                        label = { Text("Name") },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = profileDraftEmail,
+                        onValueChange = { profileDraftEmail = it },
+                        singleLine = true,
+                        label = { Text("Email") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = { saveProfile() }),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Avatar",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(profileAvatarPresets, key = { it.name }) { preset ->
+                            PresetAvatarChoice(
+                                preset = preset,
+                                label = preset.label,
+                                context = context,
+                                onClick = {
+                                    pickedPhotoBitmap = ProfilePhotoUtils.presetAvatarBitmap(context, preset)
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = saveProfile) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showProfileDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     if (showThemePresetDialog) {
         AlertDialog(
             onDismissRequest = { showThemePresetDialog = false },
@@ -3561,7 +3687,15 @@ fun SettingsScreen(
                     pickedPhotoBitmap = null
                 }
             },
-            onCancel = { pickedPhotoBitmap = null }
+            onCancel = { pickedPhotoBitmap = null },
+            onSelectNewImage = {
+                pickedPhotoBitmap = null
+                photoPickerLauncher.launch(
+                    androidx.activity.result.PickVisualMediaRequest(
+                        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                    )
+                )
+            }
         )
     }
 }
@@ -4072,10 +4206,15 @@ private fun NotificationPermissionRow(
  * picking one is just choosing which seed color to theme from. */
 @Composable
 private fun colorIntensityLabels(): List<String> = listOf(
+    stringResource(R.string.settings_intensity_minimal),
     stringResource(R.string.settings_intensity_muted),
+    stringResource(R.string.settings_intensity_soft),
     stringResource(R.string.settings_intensity_normal),
+    stringResource(R.string.settings_intensity_bright),
     stringResource(R.string.settings_intensity_vivid),
-    stringResource(R.string.settings_intensity_pop)
+    stringResource(R.string.settings_intensity_bold),
+    stringResource(R.string.settings_intensity_pop),
+    stringResource(R.string.settings_intensity_electric)
 )
 
 @Composable
@@ -4225,6 +4364,43 @@ private fun ThemeColorPicker(selectedSeedArgb: Int?, onSelect: (Int?) -> Unit) {
                 onSelect(color.toArgb())
                 showCustomPicker = false
             }
+        )
+    }
+}
+
+@Composable
+private fun PresetAvatarChoice(
+    preset: ProfilePhotoUtils.PresetAvatar,
+    label: String,
+    context: android.content.Context,
+    onClick: () -> Unit
+) {
+    val imageBitmap = remember(context, preset) {
+        ProfilePhotoUtils.presetAvatarBitmap(context, preset).asImageBitmap()
+    }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Surface(
+            onClick = onClick,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.size(54.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = label,
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
+                    modifier = Modifier.size(34.dp)
+                )
+            }
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

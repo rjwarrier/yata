@@ -85,6 +85,8 @@ fun MainScreen(
     onNavigateToTagDetail: (String) -> Unit,
     onNavigateToListDetail: (String) -> Unit,
     initialTab: Int = -1,
+    requestedTab: Int = -1,
+    onTabRequestHandled: () -> Unit = {},
     initialShowNewTaskSheet: Boolean = false,
     initialQuickAddListId: String? = null
 ) {
@@ -205,6 +207,14 @@ fun MainScreen(
             val requested = if (startupTab == StartupTab.LAST_USED) lastHomeTab else startupTab.tabId
             selectedTab = if (isTabAvailable(requested)) requested else 0
             restoredHomeTab = true
+        }
+    }
+
+    LaunchedEffect(requestedTab) {
+        if (requestedTab >= 0) {
+            selectedTab = if (isTabAvailable(requestedTab)) requestedTab else 0
+            restoredHomeTab = true
+            onTabRequestHandled()
         }
     }
 

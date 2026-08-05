@@ -249,6 +249,7 @@
     <string name="action_save">Save</string>
     <string name="action_none_remove_from_project">None (remove from project)</string>
     <string name="action_none_remove_from_list">None (remove from list)</string>
+    <string name="press_back_again_to_exit">Press back again to exit</string>
 
     <!-- Shared content descriptions -->
     <string name="cd_back">Back</string>
@@ -390,6 +391,7 @@
     <string name="cd_open_menu">Open menu</string>
     <string name="cd_search">Search</string>
     <string name="circular_image_cropper_use_photo">Use photo</string>
+    <string name="circular_image_cropper_select_new_image">Select new image</string>
     <string name="circular_image_cropper_transparent_png_hint">Tip: a transparent PNG with a white shape becomes a Material You icon automatically</string>
 
     <!-- Self-hosted (SFTP) backup -->
@@ -857,10 +859,15 @@
     <string name="settings_theme_mode">Theme mode</string>
     <string name="settings_color_intensity">Color intensity</string>
     <string name="settings_color_intensity_desc">How saturated the app\'s accent colors are.</string>
+    <string name="settings_intensity_minimal">Minimal</string>
     <string name="settings_intensity_muted">Muted</string>
+    <string name="settings_intensity_soft">Soft</string>
     <string name="settings_intensity_normal">Normal</string>
+    <string name="settings_intensity_bright">Bright</string>
     <string name="settings_intensity_vivid">Vivid</string>
+    <string name="settings_intensity_bold">Bold</string>
     <string name="settings_intensity_pop">Pop</string>
+    <string name="settings_intensity_electric">Electric</string>
     <string name="settings_background_tint">Background tint</string>
     <string name="settings_background_tint_desc">How much of the theme color carries into page and card backgrounds.</string>
     <!-- Background tint stops, in slider order from neutral grey to fully saturated. -->

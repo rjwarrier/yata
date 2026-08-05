@@ -1,22 +1,32 @@
 package com.mj.yata.ui.navigation
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavBackStackEntry
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import android.net.Uri
+import android.widget.Toast
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mj.yata.R
 import com.mj.yata.ui.screen.analytics.AnalyticsScreen
 import com.mj.yata.ui.screen.main.MainScreen
 import com.mj.yata.ui.screen.main.MainViewModel
@@ -36,6 +46,9 @@ import com.mj.yata.ui.screen.welcome.WelcomeScreen
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 
+private const val MAIN_TAB_REQUEST_KEY = "main_tab_request"
+private const val EXIT_BACK_PRESS_WINDOW_MS = 2_000L
+
 @Composable
 fun AppNavigation(
     navController: NavHostController,
@@ -45,10 +58,29 @@ fun AppNavigation(
     onExportCsvRequested: () -> Unit,
     onExportIcsRequested: () -> Unit
 ) {
+    val context = LocalContext.current
+    val currentBackStackEntry = navController.currentBackStackEntryAsState().value
+    val lastExitBackPressAt = remember { mutableLongStateOf(0L) }
+
+    BackHandler(enabled = currentBackStackEntry?.destination?.route == Screen.Main.route) {
+        val now = System.currentTimeMillis()
+        if (now - lastExitBackPressAt.longValue <= EXIT_BACK_PRESS_WINDOW_MS) {
+            context.findActivity()?.finish()
+        } else {
+            lastExitBackPressAt.longValue = now
+            Toast.makeText(context, context.getString(R.string.press_back_again_to_exit), Toast.LENGTH_SHORT).show()
+        }
+    }
+
     val onNavigateToTab: (Int) -> Unit = { index ->
-        navController.navigate(Screen.Main.createRoute(index)) {
-            popUpTo(Screen.Main.route) { inclusive = true }
-            launchSingleTop = true
+        val tab = index.coerceIn(0, 4)
+        val returnedToMain = navController.popBackStack(Screen.Main.route, false)
+        if (returnedToMain) {
+            navController.currentBackStackEntry?.savedStateHandle?.set(MAIN_TAB_REQUEST_KEY, tab)
+        } else {
+            navController.navigate(Screen.Main.createRoute(tab)) {
+                launchSingleTop = true
+            }
         }
     }
     // Reduce Motion shortens these via YataDur.nav (see Motion.kt) but a full-width slide is the
@@ -90,11 +122,19 @@ fun AppNavigation(
             val initialTab = backStackEntry.arguments?.getInt("tab") ?: -1
             val initialShowNewTaskSheet = backStackEntry.arguments?.getBoolean("quickAdd") ?: false
             val initialQuickAddListId = backStackEntry.arguments?.getString("quickAddListId")
+            val requestedTab = backStackEntry.savedStateHandle
+                .getStateFlow(MAIN_TAB_REQUEST_KEY, -1)
+                .collectAsStateWithLifecycle()
+                .value
             val viewModel: MainViewModel = hiltViewModel()
             MainScreen(
                 viewModel = viewModel,
                 navController = navController,
                 initialTab = initialTab,
+                requestedTab = requestedTab,
+                onTabRequestHandled = {
+                    backStackEntry.savedStateHandle[MAIN_TAB_REQUEST_KEY] = -1
+                },
                 initialShowNewTaskSheet = initialShowNewTaskSheet,
                 initialQuickAddListId = initialQuickAddListId,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
@@ -376,4 +416,10 @@ private fun NavBackStackEntry.sharedViewModel(navController: NavHostController):
     } else {
         hiltViewModel()
     }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

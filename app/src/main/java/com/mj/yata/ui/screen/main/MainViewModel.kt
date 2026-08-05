@@ -1017,7 +1017,11 @@ private data class MainNavigationState(
         ids.mapNotNull { byId[it] }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val lastHomeTab: StateFlow<Int> = userPreferences.lastHomeTabFlow
+    private val liveHomeTab = MutableStateFlow<Int?>(null)
+    val lastHomeTab: StateFlow<Int> = combine(
+        userPreferences.lastHomeTabFlow,
+        liveHomeTab
+    ) { persisted, live -> live ?: persisted }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     // Actions
@@ -1245,8 +1249,10 @@ private data class MainNavigationState(
     }
 
     fun setLastHomeTab(tab: Int) {
+        val safeTab = tab.coerceIn(0, 4)
+        liveHomeTab.value = safeTab
         safeLaunch {
-            userPreferences.setLastHomeTab(tab)
+            userPreferences.setLastHomeTab(safeTab)
         }
     }
 

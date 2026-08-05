@@ -13,8 +13,13 @@ package com.mj.yata.domain.model
  * distance from grey, not of an HSL percentage, so 1.8x is already a large move.
  */
 enum class ColorIntensity(val chromaFactor: Float) {
+    MINIMAL(0.25f),
     MUTED(0.5f),
+    SOFT(0.75f),
     NORMAL(1f),
+    BRIGHT(1.2f),
     VIVID(1.35f),
-    POP(1.8f)
+    BOLD(1.55f),
+    POP(1.8f),
+    ELECTRIC(2.1f)
 }
