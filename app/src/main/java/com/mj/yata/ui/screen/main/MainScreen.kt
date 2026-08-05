@@ -57,6 +57,7 @@ import com.mj.yata.domain.model.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.ui.navigation.Screen
 import com.mj.yata.ui.screen.main.tabs.*
+import com.mj.yata.ui.screen.search.smartFilterSetLabel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
@@ -1018,23 +1019,6 @@ private data class PaletteEntry(
     val onClick: () -> Unit
 )
 
-private fun String.smartFilterSetLabel(): String {
-    val labels = mapOf(
-        "OVERDUE" to "Overdue",
-        "FOCUS" to "Focus mode",
-        "MORNING_REVIEW" to "Morning review",
-        "EVENING_REVIEW" to "Evening review",
-        "STALE_TASKS" to "Stale nudges",
-        "AT_RISK" to "At risk",
-        "ASSIGNED_TO_ME" to "Assigned to me",
-        "HIGH_PRIORITY" to "High priority",
-        "FLAGGED" to "Flagged",
-        "DUE_TODAY" to "Due today",
-        "NO_DUE_DATE" to "No due date"
-    )
-    return split(",").mapNotNull { labels[it] }.ifEmpty { listOf("Saved view") }.joinToString(" + ")
-}
-
 @Composable
 private fun CommandPaletteDialog(
     tasks: List<Task>,
@@ -1078,7 +1062,7 @@ private fun CommandPaletteDialog(
         // User-saved filter combos (Search screen's "Save" chip) — reachable from here too,
         // not just the drawer's "Custom Views" section, so typing part of the combo's label
         // finds it the same way a built-in preset does.
-        PaletteEntry(encoded.smartFilterSetLabel(), "Saved view", Icons.Default.FilterList) { onSavedSearch(encoded) }
+        PaletteEntry(encoded.smartFilterSetLabel(), stringResource(R.string.search_filter_saved_view), Icons.Default.FilterList) { onSavedSearch(encoded) }
     }
     val filteredCommands = commandEntries.filter {
         query.isBlank() ||

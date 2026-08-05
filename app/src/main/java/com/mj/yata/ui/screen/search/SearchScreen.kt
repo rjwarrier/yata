@@ -1,5 +1,6 @@
 package com.mj.yata.ui.screen.search
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,18 +40,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** One-tap filters shown before/alongside a text query — each is a self-contained predicate so
  * toggling several combines them with AND (narrows further, doesn't union). */
-internal enum class SmartFilter(val label: String) {
-    FOCUS("Focus mode"),
-    MORNING_REVIEW("Morning review"),
-    EVENING_REVIEW("Evening review"),
-    STALE_TASKS("Stale nudges"),
-    AT_RISK("At risk"),
-    ASSIGNED_TO_ME("Assigned to me"),
-    OVERDUE("Overdue") ,
-    HIGH_PRIORITY("High priority"),
-    FLAGGED("Flagged"),
-    DUE_TODAY("Due today"),
-    NO_DUE_DATE("No due date");
+internal enum class SmartFilter(@StringRes val labelRes: Int) {
+    FOCUS(R.string.search_filter_focus),
+    MORNING_REVIEW(R.string.search_filter_morning_review),
+    EVENING_REVIEW(R.string.search_filter_evening_review),
+    STALE_TASKS(R.string.search_filter_stale_tasks),
+    AT_RISK(R.string.search_filter_at_risk),
+    ASSIGNED_TO_ME(R.string.search_filter_assigned_to_me),
+    OVERDUE(R.string.search_filter_overdue),
+    HIGH_PRIORITY(R.string.search_filter_high_priority),
+    FLAGGED(R.string.search_filter_flagged),
+    DUE_TODAY(R.string.search_filter_due_today),
+    NO_DUE_DATE(R.string.search_filter_no_due_date);
 
     fun matches(task: Task, today: LocalDate, myId: String): Boolean = when (this) {
         FOCUS -> !task.done && (task.flag || task.priority == "high" || task.due == today.toString() || task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true)
@@ -77,8 +78,11 @@ private fun List<SmartFilter>.encodedSmartFilterSet(): String =
 private fun String.toSmartFilters(): List<SmartFilter> =
     split(",").mapNotNull { name -> SmartFilter.entries.find { it.name == name } }
 
-private fun String.smartFilterSetLabel(): String =
-    toSmartFilters().joinToString(" + ") { it.label }
+@Composable
+internal fun String.smartFilterSetLabel(): String {
+    val labels = toSmartFilters().map { stringResource(it.labelRes) }
+    return labels.ifEmpty { listOf(stringResource(R.string.search_filter_saved_view)) }.joinToString(" + ")
+}
 
 /** Natural-language phrases recognized in the search box, mapped to the same [SmartFilter]
  * chips a user could tap by hand — longer/more specific phrases first so e.g. "no due date"
@@ -92,7 +96,24 @@ internal val searchFilterPhrases = listOf(
     "assigned to me" to SmartFilter.ASSIGNED_TO_ME,
     "due today" to SmartFilter.DUE_TODAY,
     "overdue" to SmartFilter.OVERDUE,
-    "flagged" to SmartFilter.FLAGGED
+    "flagged" to SmartFilter.FLAGGED,
+    "sin fecha limite" to SmartFilter.NO_DUE_DATE,
+    "sin fecha límite" to SmartFilter.NO_DUE_DATE,
+    "sin fecha" to SmartFilter.NO_DUE_DATE,
+    "sin vencer" to SmartFilter.NO_DUE_DATE,
+    "alta prioridad" to SmartFilter.HIGH_PRIORITY,
+    "prioridad alta" to SmartFilter.HIGH_PRIORITY,
+    "asignadas a mi" to SmartFilter.ASSIGNED_TO_ME,
+    "asignadas a mí" to SmartFilter.ASSIGNED_TO_ME,
+    "asignado a mi" to SmartFilter.ASSIGNED_TO_ME,
+    "asignado a mí" to SmartFilter.ASSIGNED_TO_ME,
+    "vencen hoy" to SmartFilter.DUE_TODAY,
+    "para hoy" to SmartFilter.DUE_TODAY,
+    "hoy" to SmartFilter.DUE_TODAY,
+    "atrasadas" to SmartFilter.OVERDUE,
+    "vencidas" to SmartFilter.OVERDUE,
+    "marcadas" to SmartFilter.FLAGGED,
+    "destacadas" to SmartFilter.FLAGGED
 )
 
 internal data class ParsedSearchQuery(val filters: List<SmartFilter>, val residualText: String)
@@ -105,7 +126,7 @@ internal fun parseSearchQuery(raw: String): ParsedSearchQuery {
     var remaining = raw
     val matched = mutableListOf<SmartFilter>()
     for ((phrase, filter) in searchFilterPhrases) {
-        val regex = Regex("\\b${Regex.escape(phrase)}\\b", RegexOption.IGNORE_CASE)
+        val regex = Regex("(?<![\\p{L}\\p{N}_])${Regex.escape(phrase)}(?![\\p{L}\\p{N}_])", RegexOption.IGNORE_CASE)
         if (regex.containsMatchIn(remaining)) {
             matched.add(filter)
             remaining = regex.replace(remaining, " ")
@@ -593,18 +614,18 @@ private fun SearchResultsList(
                     FilterChip(
                         selected = activeFilters.contains(filter),
                         onClick = { onToggleFilter(filter) },
-                        label = { Text(filter.label) }
+                        label = { Text(stringResource(filter.labelRes)) }
                     )
                 }
                 FilterChip(
                     selected = includeArchived,
                     onClick = onToggleIncludeArchived,
-                    label = { Text("Archived") }
+                    label = { Text(stringResource(R.string.search_filter_archived)) }
                 )
                 FilterChip(
                     selected = includeTrash,
                     onClick = onToggleIncludeTrash,
-                    label = { Text("Trash") }
+                    label = { Text(stringResource(R.string.search_filter_trash)) }
                 )
                 if (canSaveCurrentSmartFilterSet) {
                     AssistChip(
@@ -636,7 +657,7 @@ private fun SearchResultsList(
                             val filters = encoded.toSmartFilters()
                             if (filters.isEmpty()) null else encoded to filters
                         }
-                        .sortedBy { (_, filters) -> filters.joinToString(",") { it.label } }
+                        .sortedBy { (_, filters) -> filters.joinToString(",") { it.name } }
                         .forEach { (encoded, filters) ->
                             InputChip(
                                 selected = activeFilters.toSet() == filters.toSet(),
@@ -697,9 +718,9 @@ private fun SearchResultsList(
                     modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                 ) {
                     val lifecycleBadges = listOfNotNull(
-                        "In Trash".takeIf { task.id in deletedTaskIds || task.deletedAt != null },
-                        "Archived".takeIf { task.id in archivedTaskIds || task.archived },
-                        "Archived project".takeIf { task.projectId in archivedProjectIds }
+                        R.string.search_badge_in_trash.takeIf { task.id in deletedTaskIds || task.deletedAt != null },
+                        R.string.search_badge_archived.takeIf { task.id in archivedTaskIds || task.archived },
+                        R.string.search_badge_archived_project.takeIf { task.projectId in archivedProjectIds }
                     )
                     if (lifecycleBadges.isNotEmpty()) {
                         androidx.compose.foundation.layout.FlowRow(
@@ -707,9 +728,10 @@ private fun SearchResultsList(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            lifecycleBadges.forEach { label ->
+                            lifecycleBadges.forEach { labelRes ->
+                                val isTrashBadge = labelRes == R.string.search_badge_in_trash
                                 Surface(
-                                    color = if (label == "In Trash") {
+                                    color = if (isTrashBadge) {
                                         MaterialTheme.colorScheme.errorContainer
                                     } else {
                                         MaterialTheme.colorScheme.tertiaryContainer
@@ -717,9 +739,9 @@ private fun SearchResultsList(
                                     shape = androidx.compose.foundation.shape.RoundedCornerShape(999.dp)
                                 ) {
                                     Text(
-                                        text = label,
+                                        text = stringResource(labelRes),
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (label == "In Trash") {
+                                        color = if (isTrashBadge) {
                                             MaterialTheme.colorScheme.onErrorContainer
                                         } else {
                                             MaterialTheme.colorScheme.onTertiaryContainer

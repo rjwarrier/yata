@@ -135,6 +135,23 @@
     <string name="search_no_matches">No matches</string>
     <string name="search_no_matches_subtitle">Try a different query or loosen the active filters.</string>
     <string name="search_clear">Clear search</string>
+    <string name="search_filter_focus">Focus mode</string>
+    <string name="search_filter_morning_review">Morning review</string>
+    <string name="search_filter_evening_review">Evening review</string>
+    <string name="search_filter_stale_tasks">Stale nudges</string>
+    <string name="search_filter_at_risk">At risk</string>
+    <string name="search_filter_assigned_to_me">Assigned to me</string>
+    <string name="search_filter_overdue">Overdue</string>
+    <string name="search_filter_high_priority">High priority</string>
+    <string name="search_filter_flagged">Flagged</string>
+    <string name="search_filter_due_today">Due today</string>
+    <string name="search_filter_no_due_date">No due date</string>
+    <string name="search_filter_saved_view">Saved view</string>
+    <string name="search_filter_archived">Archived</string>
+    <string name="search_filter_trash">Trash</string>
+    <string name="search_badge_in_trash">In Trash</string>
+    <string name="search_badge_archived">Archived</string>
+    <string name="search_badge_archived_project">Archived project</string>
     <!-- Swipe actions -->
     <string name="settings_swipe_right_action">Swipe right does</string>
     <string name="settings_swipe_left_action">Swipe left does</string>

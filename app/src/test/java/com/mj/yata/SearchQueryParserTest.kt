@@ -77,6 +77,21 @@ class SearchQueryParserTest {
     }
 
     @Test
+    fun parsesSpanishPhrases() {
+        val result = parseSearchQuery("alta prioridad atrasadas informe")
+        assertEquals(setOf(SmartFilter.HIGH_PRIORITY, SmartFilter.OVERDUE), result.filters.toSet())
+        assertEquals("informe", result.residualText)
+    }
+
+    @Test
+    fun parsesSpanishSearchAliases() {
+        assertEquals(listOf(SmartFilter.NO_DUE_DATE), parseSearchQuery("sin fecha límite").filters)
+        assertEquals(listOf(SmartFilter.ASSIGNED_TO_ME), parseSearchQuery("asignadas a mí").filters)
+        assertEquals(listOf(SmartFilter.DUE_TODAY), parseSearchQuery("vencen hoy").filters)
+        assertEquals(listOf(SmartFilter.FLAGGED), parseSearchQuery("marcadas").filters)
+    }
+
+    @Test
     fun isCaseInsensitive() {
         val result = parseSearchQuery("HIGH PRIORITY")
         assertEquals(listOf(SmartFilter.HIGH_PRIORITY), result.filters)

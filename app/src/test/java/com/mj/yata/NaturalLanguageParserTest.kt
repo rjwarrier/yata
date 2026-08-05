@@ -27,6 +27,47 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun parsesSpanishTomorrowAndTime() {
+        val result = NaturalLanguageParser.parse("mañana a las 15:30 comprar leche", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("3:30 PM", result.time)
+        assertEquals("comprar leche", result.title)
+    }
+
+    @Test
+    fun parsesSpanishRelativeDatesAndWeekdays() {
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("pasado mañana dentista", ref).due)
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("próximo lunes sincronización", ref).due)
+        assertEquals("2026-07-11", NaturalLanguageParser.parse("en una semana seguimiento", ref).due)
+    }
+
+    @Test
+    fun parsesSpanishRecurrenceReminderAndPriority() {
+        val result = NaturalLanguageParser.parse(
+            "cada lunes gimnasio recuérdame 15 minutos antes alta prioridad",
+            ref
+        )
+        assertEquals("weekly", result.recurrence?.freq)
+        assertEquals(listOf("MO"), result.recurrence?.byday)
+        assertEquals("15 min before", result.reminder)
+        assertEquals("high", result.priority)
+        assertEquals("gimnasio", result.title)
+    }
+
+    @Test
+    fun parsesSpanishContainersTagsAndAssignees() {
+        val result = NaturalLanguageParser.parse(
+            "comprar leche proyecto Casa lista Compras etiqueta recado asignar a Ana",
+            ref
+        )
+        assertEquals("comprar leche", result.title)
+        assertEquals("Casa", result.projectName)
+        assertEquals("Compras", result.listName)
+        assertEquals(listOf("recado"), result.tagNames)
+        assertEquals(listOf("Ana"), result.assigneeNames)
+    }
+
+    @Test
     fun parsesInNDays() {
         val result = NaturalLanguageParser.parse("in 3 days renew license", ref)
         assertEquals("2026-07-07", result.due)
