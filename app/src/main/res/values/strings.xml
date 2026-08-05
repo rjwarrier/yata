@@ -236,6 +236,11 @@
     <!-- App language (Android 13+ per-app language picker) -->
     <string name="settings_app_language">App language</string>
     <string name="settings_app_language_desc">Choose the language YATA is displayed in.</string>
+    <string name="settings_language_system_default">System default</string>
+    <string name="settings_language_picker_title">Choose language</string>
+    <string name="settings_language_picker_subtitle">Switch YATA immediately. System follows your device language.</string>
+    <string name="settings_language_search_placeholder">Search languages</string>
+    <string name="settings_language_selected">Selected</string>
 
     <!-- Archive -->
     <string name="settings_task_lifecycle">Task lifecycle</string>

@@ -175,6 +175,11 @@
     <string name="settings_overdue_nudges_desc">Notificações de acompanhamento para tarefas atrasadas.</string>
     <string name="settings_app_language">Idioma do aplicativo</string>
     <string name="settings_app_language_desc">Escolha o idioma em que o YATA será exibido.</string>
+    <string name="settings_language_system_default">Padrão do sistema</string>
+    <string name="settings_language_picker_title">Escolher idioma</string>
+    <string name="settings_language_picker_subtitle">Muda o YATA imediatamente. Sistema usa o idioma do dispositivo.</string>
+    <string name="settings_language_search_placeholder">Buscar idiomas</string>
+    <string name="settings_language_selected">Selecionado</string>
     <string name="settings_task_lifecycle">Ciclo de vida da tarefa</string>
     <string name="settings_task_lifecycle_desc">A lixeira exclui tarefas após uma janela de retenção; O arquivo apenas oculta tarefas e as mantém intactas.</string>
     <string name="settings_archive_desc">Arquive tarefas sem excluí-las. As tarefas arquivadas ficam ocultas das listas, são mantidas indefinidamente e podem ser desarquivadas.</string>

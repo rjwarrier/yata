@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -60,7 +61,7 @@ import javax.inject.Inject
 private const val SPLASH_MAX_WAIT_MS = 1200L
 
 @AndroidEntryPoint
-class MainActivity : androidx.fragment.app.FragmentActivity() {
+class MainActivity : AppCompatActivity() {
 
     @Inject lateinit var jsonExporter: JsonExporter
     @Inject lateinit var icsExporter: IcsExporter

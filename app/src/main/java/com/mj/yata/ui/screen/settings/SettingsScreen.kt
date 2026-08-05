@@ -227,6 +227,7 @@ fun SettingsScreen(
     val dynamicColorEnabled = uiState.dynamicColorEnabled
     val colorIntensity by viewModel.colorIntensity.collectAsStateWithLifecycle()
     val backgroundTint by viewModel.backgroundTint.collectAsStateWithLifecycle()
+    val appLanguage by viewModel.appLanguage.collectAsStateWithLifecycle()
     val taskCardBackground by viewModel.taskCardBackground.collectAsStateWithLifecycle()
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
     val autoArchiveDays by viewModel.autoArchiveDays.collectAsStateWithLifecycle()
@@ -834,50 +835,13 @@ fun SettingsScreen(
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    // Locales come from AppLanguage, which mirrors the values-* resource folders.
+                    LanguageSettingsSection(
+                        selectedLanguage = appLanguage,
+                        onLanguageSelected = viewModel::setAppLanguage
+                    )
 
-                    // Per-app language picker, Android 13+ only — below that the system has no
-                    // such screen and the intent would resolve to nothing. Deep-links into
-                    // system settings rather than reimplementing a language list, so it always
-                    // matches whichever locales the installed APK actually ships.
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                        val languageContext = LocalContext.current
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    runCatching {
-                                        languageContext.startActivity(
-                                            android.content.Intent(
-                                                android.provider.Settings.ACTION_APP_LOCALE_SETTINGS,
-                                                android.net.Uri.fromParts("package", languageContext.packageName, null)
-                                            )
-                                        )
-                                    }
-                                }
-                                .padding(vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.settings_app_language),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                                )
-                                Text(
-                                    text = stringResource(R.string.settings_app_language_desc),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     // Font sits after the color controls: theme mode, Material You and the seed
                     // picker are one continuous "what color is the app" decision, and the font

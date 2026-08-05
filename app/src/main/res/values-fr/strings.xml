@@ -175,6 +175,11 @@
     <string name="settings_overdue_nudges_desc">Notifications de suivi pour les tâches en retard.</string>
     <string name="settings_app_language">Langue de l\'application</string>
     <string name="settings_app_language_desc">Choisissez la langue dans laquelle YATA est affiché.</string>
+    <string name="settings_language_system_default">Langue du système</string>
+    <string name="settings_language_picker_title">Choisir la langue</string>
+    <string name="settings_language_picker_subtitle">Change YATA immédiatement. Système utilise la langue de l\'appareil.</string>
+    <string name="settings_language_search_placeholder">Rechercher des langues</string>
+    <string name="settings_language_selected">Sélectionné</string>
     <string name="settings_task_lifecycle">Cycle de vie des tâches</string>
     <string name="settings_task_lifecycle_desc">La corbeille supprime les tâches après une fenêtre de conservation ; Archive masque uniquement les tâches et les conserve intactes.</string>
     <string name="settings_archive_desc">Rangez les tâches sans les supprimer. Les tâches archivées sont masquées des listes, conservées indéfiniment et peuvent être désarchivées.</string>

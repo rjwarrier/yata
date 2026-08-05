@@ -192,6 +192,11 @@
     <string name="settings_overdue_nudges_desc">Notificaciones de seguimiento para tareas atrasadas.</string>
     <string name="settings_app_language">Idioma de la app</string>
     <string name="settings_app_language_desc">Elige el idioma en el que se muestra YATA.</string>
+    <string name="settings_language_system_default">Predeterminado del sistema</string>
+    <string name="settings_language_picker_title">Elegir idioma</string>
+    <string name="settings_language_picker_subtitle">Cambia YATA al instante. Sistema usa el idioma del dispositivo.</string>
+    <string name="settings_language_search_placeholder">Buscar idiomas</string>
+    <string name="settings_language_selected">Seleccionado</string>
 
     <string name="settings_task_lifecycle">Ciclo de vida de tareas</string>
     <string name="settings_task_lifecycle_desc">La papelera elimina tareas tras un periodo de retención; Archivo solo oculta tareas y las mantiene intactas.</string>

@@ -7,7 +7,7 @@
         including for anyone using the dark or AMOLED theme. Pointing it at a colour that has a
         -night variant means the gap is filled with something close to the app instead.
     -->
-    <style name="Theme.Yata" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.Yata" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:statusBarColor">@color/splash_background</item>
     </style>

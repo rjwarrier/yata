@@ -17,6 +17,7 @@ import com.mj.yata.domain.usecase.TaskOperations
 import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.AnalyticsUiState
 import com.mj.yata.util.AnalyticsUtils
+import com.mj.yata.util.AppLanguageController
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
@@ -420,6 +421,14 @@ private data class MainNavigationState(
 
     val voiceRecognitionLanguage: StateFlow<String> = userPreferences.voiceRecognitionLanguageFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "default")
+
+    private val _appLanguage = MutableStateFlow(AppLanguageController.current())
+    val appLanguage: StateFlow<AppLanguage> = _appLanguage.asStateFlow()
+
+    fun setAppLanguage(language: AppLanguage) {
+        AppLanguageController.apply(language)
+        _appLanguage.value = language
+    }
 
     fun setVoiceRecognitionLanguage(lang: String) {
         safeLaunch {
