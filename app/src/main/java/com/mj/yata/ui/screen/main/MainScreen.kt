@@ -336,14 +336,14 @@ fun MainScreen(
                     }
 
                     item {
-                        DrawerItem("Today", Icons.Default.Today, selectedTab == 0) {
+                        DrawerItem(stringResource(R.string.tab_today), Icons.Default.Today, selectedTab == 0) {
                             selectedTab = 0
                             scope.launch { drawerState.close() }
                         }
                     }
                     if (projectsFeatureEnabled) {
                         item {
-                            DrawerItem("Projects", Icons.Default.Layers, selectedTab == 1) {
+                            DrawerItem(stringResource(R.string.tab_projects), Icons.Default.Layers, selectedTab == 1) {
                                 selectedTab = 1
                                 scope.launch { drawerState.close() }
                             }
@@ -351,7 +351,7 @@ fun MainScreen(
                     }
                     if (peopleFeatureEnabled) {
                         item {
-                            DrawerItem("People", Icons.Default.People, selectedTab == 2) {
+                            DrawerItem(stringResource(R.string.tab_people), Icons.Default.People, selectedTab == 2) {
                                 selectedTab = 2
                                 scope.launch { drawerState.close() }
                             }
@@ -359,14 +359,14 @@ fun MainScreen(
                     }
                     if (tagsFeatureEnabled) {
                         item {
-                            DrawerItem("Tags", Icons.AutoMirrored.Filled.Label, selectedTab == 3) {
+                            DrawerItem(stringResource(R.string.tab_tags), Icons.AutoMirrored.Filled.Label, selectedTab == 3) {
                                 selectedTab = 3
                                 scope.launch { drawerState.close() }
                             }
                         }
                     }
                     item {
-                        DrawerItem("Upcoming", Icons.Default.CalendarViewWeek, selectedTab == 4) {
+                        DrawerItem(stringResource(R.string.tab_upcoming), Icons.Default.CalendarViewWeek, selectedTab == 4) {
                             selectedTab = 4
                             scope.launch { drawerState.close() }
                         }
@@ -379,7 +379,7 @@ fun MainScreen(
                     // menu positions. Next 10 Days is also on Today's top bar, so it lost nothing.
                     item {
                         Spacer(modifier = Modifier.height(8.dp))
-                        DrawerItem("Command palette", Icons.Default.Bolt, false) {
+                        DrawerItem(stringResource(R.string.main_command_palette), Icons.Default.Bolt, false) {
                             showCommandPalette = true
                             scope.launch { drawerState.close() }
                         }
@@ -543,11 +543,11 @@ fun MainScreen(
                 // drawer, whether or not the content above it needed to scroll.
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                    DrawerItem("Analytics", Icons.Default.Analytics, false) {
+                    DrawerItem(stringResource(R.string.analytics_analytics), Icons.Default.Analytics, false) {
                         onNavigateToAnalytics()
                         scope.launch { drawerState.close() }
                     }
-                    DrawerItem("Settings", Icons.Default.Settings, false) {
+                    DrawerItem(stringResource(R.string.settings_settings), Icons.Default.Settings, false) {
                         onNavigateToSettings()
                         scope.launch { drawerState.close() }
                     }
@@ -1039,25 +1039,25 @@ private fun CommandPaletteDialog(
 ) {
     var query by remember { mutableStateOf("") }
     val commandEntries = listOfNotNull(
-        PaletteEntry("New task", "Create a task", Icons.Default.Add, onNewTask),
-        PaletteEntry("Search", "Find tasks and saved filters", Icons.Default.Search, onSearch),
-        PaletteEntry("Today", "Open today's tasks", Icons.Default.Today) { onSelectTab(0) },
-        if (projectsEnabled) PaletteEntry("Projects", "Open projects", Icons.Default.Layers) { onSelectTab(1) } else null,
-        if (peopleEnabled) PaletteEntry("People", "Open people", Icons.Default.People) { onSelectTab(2) } else null,
-        if (tagsEnabled) PaletteEntry("Tags", "Open tags", Icons.AutoMirrored.Filled.Label) { onSelectTab(3) } else null,
-        PaletteEntry("Upcoming", "Open calendar and agenda", Icons.Default.CalendarViewWeek) { onSelectTab(4) },
-        PaletteEntry("Next 10 Days", "Open the focused date list", Icons.Default.DateRange, onNextDays),
+        PaletteEntry(stringResource(R.string.new_task_title), stringResource(R.string.main_palette_new_task_subtitle), Icons.Default.Add, onNewTask),
+        PaletteEntry(stringResource(R.string.cd_search), stringResource(R.string.main_palette_search_subtitle), Icons.Default.Search, onSearch),
+        PaletteEntry(stringResource(R.string.tab_today), stringResource(R.string.main_palette_today_subtitle), Icons.Default.Today) { onSelectTab(0) },
+        if (projectsEnabled) PaletteEntry(stringResource(R.string.tab_projects), stringResource(R.string.main_palette_projects_subtitle), Icons.Default.Layers) { onSelectTab(1) } else null,
+        if (peopleEnabled) PaletteEntry(stringResource(R.string.tab_people), stringResource(R.string.main_palette_people_subtitle), Icons.Default.People) { onSelectTab(2) } else null,
+        if (tagsEnabled) PaletteEntry(stringResource(R.string.tab_tags), stringResource(R.string.main_palette_tags_subtitle), Icons.AutoMirrored.Filled.Label) { onSelectTab(3) } else null,
+        PaletteEntry(stringResource(R.string.tab_upcoming), stringResource(R.string.main_palette_upcoming_subtitle), Icons.Default.CalendarViewWeek) { onSelectTab(4) },
+        PaletteEntry(stringResource(R.string.today_next_10_days), stringResource(R.string.main_palette_next_days_subtitle), Icons.Default.DateRange, onNextDays),
         // Formerly the drawer's "Tools" section. They're preset searches, so the palette — which
         // already filters by title and subtitle — is a better home than eight fixed menu rows:
         // typing "over" or "stale" reaches them without knowing where they sit.
-        if (peopleEnabled) PaletteEntry("My Work", "Tasks assigned to you", Icons.Default.AssignmentInd) { onSavedSearch("ASSIGNED_TO_ME") } else null,
-        PaletteEntry("Focus Mode", "High-priority and flagged work", Icons.Default.CenterFocusStrong) { onSavedSearch("FOCUS") },
-        PaletteEntry("Morning Review", "Plan what's due today", Icons.Default.WbSunny) { onSavedSearch("MORNING_REVIEW") },
-        PaletteEntry("Evening Review", "Wrap up and reschedule", Icons.Default.NightsStay) { onSavedSearch("EVENING_REVIEW") },
-        PaletteEntry("Stale Nudges", "Tasks untouched for a while", Icons.Default.HourglassEmpty) { onSavedSearch("STALE_TASKS") },
-        PaletteEntry("Task Health", "Overdue and at-risk tasks", Icons.Default.HealthAndSafety) { onSavedSearch("AT_RISK") },
-        PaletteEntry("Analytics", "Open productivity insights", Icons.Default.Analytics, onAnalytics),
-        PaletteEntry("Settings", "Open preferences", Icons.Default.Settings, onSettings)
+        if (peopleEnabled) PaletteEntry(stringResource(R.string.main_palette_my_work), stringResource(R.string.main_palette_my_work_subtitle), Icons.Default.AssignmentInd) { onSavedSearch("ASSIGNED_TO_ME") } else null,
+        PaletteEntry(stringResource(R.string.search_filter_focus), stringResource(R.string.main_palette_focus_subtitle), Icons.Default.CenterFocusStrong) { onSavedSearch("FOCUS") },
+        PaletteEntry(stringResource(R.string.search_filter_morning_review), stringResource(R.string.main_palette_morning_review_subtitle), Icons.Default.WbSunny) { onSavedSearch("MORNING_REVIEW") },
+        PaletteEntry(stringResource(R.string.search_filter_evening_review), stringResource(R.string.main_palette_evening_review_subtitle), Icons.Default.NightsStay) { onSavedSearch("EVENING_REVIEW") },
+        PaletteEntry(stringResource(R.string.search_filter_stale_tasks), stringResource(R.string.main_palette_stale_tasks_subtitle), Icons.Default.HourglassEmpty) { onSavedSearch("STALE_TASKS") },
+        PaletteEntry(stringResource(R.string.main_palette_task_health), stringResource(R.string.main_palette_task_health_subtitle), Icons.Default.HealthAndSafety) { onSavedSearch("AT_RISK") },
+        PaletteEntry(stringResource(R.string.analytics_analytics), stringResource(R.string.main_palette_analytics_subtitle), Icons.Default.Analytics, onAnalytics),
+        PaletteEntry(stringResource(R.string.settings_settings), stringResource(R.string.main_palette_settings_subtitle), Icons.Default.Settings, onSettings)
     ) + savedSmartFilterSets.sorted().map { encoded ->
         // User-saved filter combos (Search screen's "Save" chip) — reachable from here too,
         // not just the drawer's "Custom Views" section, so typing part of the combo's label
