@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.mj.yata.ui.widgets.showUndoSnackbar
+import com.mj.yata.BuildConfig
 import com.mj.yata.R
 import com.mj.yata.domain.model.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -316,6 +317,11 @@ fun MainScreen(
                                 photoUri = userPhotoUri
                             )
                             Column {
+                                Text(
+                                    text = "yata ${BuildConfig.VERSION_NAME}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 Text(
                                     text = userName.ifBlank { stringResource(R.string.profile_add_name) },
                                     style = MaterialTheme.typography.titleMedium,
