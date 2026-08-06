@@ -244,6 +244,7 @@ class SftpBackupManager @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val bytes = download(filename)
+                jsonExporter.dryRunRestoreBytes(bytes)
                 recoveryBackupManager.saveCurrent("pre_sftp_restore").getOrElse { e ->
                     throw IllegalStateException(
                         "Could not create a recovery backup before restore; local data was not changed",

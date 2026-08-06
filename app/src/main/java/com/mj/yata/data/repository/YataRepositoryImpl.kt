@@ -81,11 +81,14 @@ class YataRepositoryImpl @Inject constructor(
         preserveExistingCreatedAt: Boolean
     ) {
         if (tasks.isEmpty()) return
+        val sanitizedTasks = withContext(Dispatchers.IO) {
+            tasks.map { sanitizeTaskForWrite(it) }
+        }
 
         db.withTransaction {
             // Batch-fetch existing cross-refs for every task up front — 3 queries total instead
             // of 3 per task — then diff each task against its slice of these in-memory maps.
-            val taskIds = tasks.map { it.id }
+            val taskIds = sanitizedTasks.map { it.id }
             val existingPeopleByTask = db.taskDao().getPersonCrossRefsForTasks(taskIds)
                 .groupBy({ it.taskId }, { it.personId })
             val existingTagsByTask = db.taskDao().getTagCrossRefsForTasks(taskIds)
@@ -103,7 +106,7 @@ class YataRepositoryImpl @Inject constructor(
             }
             val now = System.currentTimeMillis()
 
-            tasks.forEach { task ->
+            sanitizedTasks.forEach { task ->
                 val entity = task.toEntity().let {
                     it.copy(
                         createdAt = if (preserveExistingCreatedAt) {
@@ -147,7 +150,7 @@ class YataRepositoryImpl @Inject constructor(
         }
 
         if (resyncReminder) {
-            reminderScheduler.syncReminders(tasks.map { task ->
+            reminderScheduler.syncReminders(sanitizedTasks.map { task ->
                 task.toEntity().let { entity ->
                     // ReminderScheduler historically only knew about done/due/reminder. Feed
                     // archived and trashed rows through its cancellation branch as well.
@@ -186,7 +189,9 @@ class YataRepositoryImpl @Inject constructor(
         sortOrder: Int,
         notify: Boolean
     ) = withContext(Dispatchers.IO) {
-        db.taskDao().updateContainer(id, listId, projectId, sortOrder)
+        val safeListId = listId?.takeIf { db.listDao().getByIdDirect(it) != null }
+        val safeProjectId = projectId?.takeIf { db.projectDao().getByIdDirect(it) != null }
+        db.taskDao().updateContainer(id, safeListId, safeProjectId, sortOrder)
         if (notify) widgetUpdater.notifyTasksChanged()
     }
 
@@ -608,6 +613,71 @@ class YataRepositoryImpl @Inject constructor(
         } else {
             reminderScheduler.scheduleReminder(task)
         }
+    }
+
+    private fun sanitizeTaskForWrite(task: Task): Task {
+        val safeListId = task.listId?.takeIf { db.listDao().getByIdDirect(it) != null }
+        val safeProjectId = task.projectId?.takeIf { db.projectDao().getByIdDirect(it) != null }
+        val safeAssigneeIds = task.assigneeIds.distinct().filter { db.personDao().getByIdDirect(it) != null }
+        val safeTagIds = task.tagIds.distinct().filter { db.tagDao().getByIdDirect(it) != null }
+        val safeReminder = task.reminder?.takeIf { task.due != null }
+        val safeEstimate = task.estimateMinutes?.takeIf { it >= 0 }
+
+        return task.copy(
+            listId = safeListId,
+            projectId = safeProjectId,
+            assigneeIds = safeAssigneeIds,
+            tagIds = safeTagIds,
+            reminder = safeReminder,
+            recurrence = sanitizeRecurrence(task.recurrence),
+            subtasks = sanitizeSubtasks(task.subtasks),
+            estimateMinutes = safeEstimate
+        )
+    }
+
+    private fun sanitizeRecurrence(recurrence: Recurrence?): Recurrence? {
+        recurrence ?: return null
+        if (recurrence.freq !in VALID_RECURRENCE_FREQUENCIES) return null
+        val interval = recurrence.interval.takeIf { it > 0 } ?: return null
+        val byday = recurrence.byday
+            ?.map { it.uppercase() }
+            ?.filter { it in VALID_RECURRENCE_DAYS }
+            ?.distinct()
+            ?.takeIf { it.isNotEmpty() }
+        val bymonthday = recurrence.bymonthday?.takeIf { it == -1 || it in 1..31 }
+        val ends = when (val ends = recurrence.ends) {
+            is RecurrenceEnds.After -> ends.takeIf { it.count > 0 } ?: RecurrenceEnds.Never
+            is RecurrenceEnds.On -> ends.takeIf {
+                runCatching { java.time.LocalDate.parse(it.date) }.isSuccess
+            } ?: RecurrenceEnds.Never
+            RecurrenceEnds.Never -> ends
+        }
+        return recurrence.copy(
+            interval = interval,
+            byday = byday,
+            bymonthday = bymonthday,
+            ends = ends
+        )
+    }
+
+    private fun sanitizeSubtasks(subtasks: List<Subtask>): List<Subtask> {
+        val seen = linkedSetOf<String>()
+        return subtasks
+            .sortedWith(compareBy({ it.sortOrder }, { it.id }))
+            .mapIndexedNotNull { index, subtask ->
+                val id = subtask.id.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
+                if (!seen.add(id)) return@mapIndexedNotNull null
+                subtask.copy(
+                    id = id,
+                    parentSubtaskId = subtask.parentSubtaskId?.takeIf { it in seen },
+                    sortOrder = index
+                )
+            }
+    }
+
+    companion object {
+        private val VALID_RECURRENCE_FREQUENCIES = setOf("daily", "weekly", "monthly", "yearly")
+        private val VALID_RECURRENCE_DAYS = setOf("MO", "TU", "WE", "TH", "FR", "SA", "SU")
     }
 }
 

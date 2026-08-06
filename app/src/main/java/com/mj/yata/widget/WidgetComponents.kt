@@ -40,8 +40,10 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextDecoration
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.MainActivity
 import com.mj.yata.domain.model.Task
+import com.mj.yata.notification.recordBackgroundFailure
 import dagger.hilt.android.EntryPointAccessors
 
 val taskIdKey = ActionParameters.Key<String>("task_id")
@@ -204,6 +206,20 @@ fun WidgetDivider() {
 }
 
 @Composable
+fun WidgetStaleBadge(health: WidgetHealth?) {
+    if (health?.stale != true) return
+    Text(
+        text = "Stale",
+        maxLines = 1,
+        style = TextStyle(
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = androidx.glance.GlanceTheme.colors.error
+        )
+    )
+}
+
+@Composable
 fun WidgetProgressRingImage(
     context: Context,
     progress: Float,
@@ -238,9 +254,13 @@ class ToggleTaskDoneAction : ActionCallback {
         glanceId: androidx.glance.GlanceId,
         parameters: ActionParameters
     ) {
-        val taskId = parameters[taskIdKey] ?: return
-        val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
-        repository.toggleTaskDone(taskId)
-        WidgetRefresher.refreshAll(context)
+        try {
+            val taskId = parameters[taskIdKey] ?: return
+            val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
+            repository.toggleTaskDone(taskId)
+            WidgetRefresher.refreshAll(context)
+        } catch (t: Throwable) {
+            recordBackgroundFailure(context, "ToggleTaskDoneAction", OperationHistoryStore.WIDGETS_REFRESH, t)
+        }
     }
 }

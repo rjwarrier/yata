@@ -3,11 +3,14 @@ package com.mj.yata.notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.util.Log
+import androidx.work.CoroutineWorker
+import androidx.work.ListenableWorker
 import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /**
@@ -57,5 +60,24 @@ fun recordBackgroundFailure(
     CrashLogStore(appContext).record(throwable, tag, fatal = false)
     if (operationId != null) {
         OperationHistoryStore(appContext).recordFailure(operationId, throwable, "$tag failed")
+    }
+}
+
+suspend inline fun CoroutineWorker.runOperationSafely(
+    operationHistoryStore: OperationHistoryStore,
+    operationId: String,
+    tag: String,
+    runReason: String,
+    fallback: ListenableWorker.Result = ListenableWorker.Result.retry(),
+    block: suspend () -> ListenableWorker.Result
+): ListenableWorker.Result {
+    operationHistoryStore.recordRun(operationId, runReason)
+    return try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (t: Throwable) {
+        recordBackgroundFailure(applicationContext, tag, operationId, t)
+        fallback
     }
 }

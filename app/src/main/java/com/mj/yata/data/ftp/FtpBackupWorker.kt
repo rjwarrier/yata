@@ -13,6 +13,7 @@ import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.data.sftp.SftpNotConfiguredException
 import com.mj.yata.domain.model.RemoteBackupProtocol
+import com.mj.yata.notification.runOperationSafely
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -32,20 +33,23 @@ class FtpBackupWorker @AssistedInject constructor(
     private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result {
-        operationHistoryStore.recordRun(OperationHistoryStore.SYNC_FTP_LEGACY, "Legacy FTP worker started")
-        try {
+    override suspend fun doWork(): Result = runOperationSafely(
+        operationHistoryStore = operationHistoryStore,
+        operationId = OperationHistoryStore.SYNC_FTP_LEGACY,
+        tag = TAG,
+        runReason = "Legacy FTP worker started"
+    ) {
             if (!userPreferences.sftpBackupEnabledFlow.first()) {
                 operationHistoryStore.recordSkipped(OperationHistoryStore.SYNC_FTP_LEGACY, "Self-hosted backup is disabled")
-                return Result.success()
+                return@runOperationSafely Result.success()
             }
             if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.FTP) {
                 operationHistoryStore.recordSkipped(OperationHistoryStore.SYNC_FTP_LEGACY, "FTP is not the selected protocol")
-                return Result.success()
+                return@runOperationSafely Result.success()
             }
 
             val result = ftpBackupManager.syncNow()
-            return if (result.isSuccess) {
+            if (result.isSuccess) {
                 operationHistoryStore.recordSuccess(OperationHistoryStore.SYNC_FTP_LEGACY, "FTP sync completed")
                 Result.success()
             } else {
@@ -63,13 +67,10 @@ class FtpBackupWorker @AssistedInject constructor(
                     }
                 }
             }
-        } catch (t: Throwable) {
-            operationHistoryStore.recordFailure(OperationHistoryStore.SYNC_FTP_LEGACY, t)
-            throw t
-        }
     }
 
     companion object {
+        private const val TAG = "FtpBackupWorker"
         private const val WORK_NAME = "ftp_backup_periodic"
         const val DEFAULT_INTERVAL_MINUTES = 24 * 60L
 

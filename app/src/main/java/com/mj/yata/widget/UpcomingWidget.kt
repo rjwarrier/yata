@@ -66,6 +66,7 @@ class UpcomingWidget : GlanceAppWidget() {
         val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
         val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
+        val health = WidgetHealthStore.read(context, UpcomingWidget::class.java.name)
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val allTasks = repository.getTasks().first()
@@ -97,7 +98,8 @@ class UpcomingWidget : GlanceAppWidget() {
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
                     opacity = opacity,
-                    accentOverride = accentOverride
+                    accentOverride = accentOverride,
+                    health = health
                 )
             }
         }
@@ -121,7 +123,8 @@ private fun UpcomingWidgetContent(
     customLabel: String?,
     useM3Colors: Boolean,
     opacity: Float,
-    accentOverride: androidx.compose.ui.graphics.Color?
+    accentOverride: androidx.compose.ui.graphics.Color?,
+    health: WidgetHealth?
 ) {
     val isLarge = LocalSize.current.height > 180.dp
     val listsById = lists.associateBy { it.id }
@@ -141,6 +144,7 @@ private fun UpcomingWidgetContent(
     ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
             WidgetSectionHeader(customLabel ?: "Upcoming", chromeColorProvider)
+            WidgetStaleBadge(health)
             Spacer(modifier = GlanceModifier.height(8.dp))
 
             if (isLarge) {
@@ -246,8 +250,9 @@ private fun upcomingAgendaDays(
 ): List<AgendaDay> {
     val todayStr = today.toString()
     val byDate = allTasks
-        .filter { it.due != null && !it.done }
-        .groupBy { it.due!! }
+        .filter { !it.done }
+        .mapNotNull { task -> task.due?.let { due -> due to task } }
+        .groupBy({ it.first }, { it.second })
 
     val todayTasks = allTasks.filter {
         !it.done && it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&

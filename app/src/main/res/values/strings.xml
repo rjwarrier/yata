@@ -643,6 +643,10 @@
     <string name="diagnostics_title">Diagnostics</string>
     <string name="diagnostics_operation_history">Operation history</string>
     <string name="diagnostics_crash_reports">Crash reports</string>
+    <string name="diagnostics_crash_clusters">Repeated failure groups</string>
+    <string name="diagnostics_crash_cluster_count">%1$d times</string>
+    <string name="diagnostics_first_seen">First seen</string>
+    <string name="diagnostics_last_seen">Last seen</string>
     <string name="crash_log_title">Crash Logs</string>
     <string name="settings_crash_logs">Diagnostics</string>
     <string name="settings_crash_logs_summary">Recent backup, sync, reminder, widget, and crash activity.</string>

@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.domain.model.RemoteBackupProtocol
+import com.mj.yata.notification.runOperationSafely
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -34,20 +35,23 @@ class SftpBackupWorker @AssistedInject constructor(
     private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result {
-        operationHistoryStore.recordRun(OperationHistoryStore.SYNC_SFTP_LEGACY, "Legacy SFTP worker started")
-        try {
+    override suspend fun doWork(): Result = runOperationSafely(
+        operationHistoryStore = operationHistoryStore,
+        operationId = OperationHistoryStore.SYNC_SFTP_LEGACY,
+        tag = TAG,
+        runReason = "Legacy SFTP worker started"
+    ) {
             if (!userPreferences.sftpBackupEnabledFlow.first()) {
                 operationHistoryStore.recordSkipped(OperationHistoryStore.SYNC_SFTP_LEGACY, "Self-hosted backup is disabled")
-                return Result.success()
+                return@runOperationSafely Result.success()
             }
             if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.SFTP) {
                 operationHistoryStore.recordSkipped(OperationHistoryStore.SYNC_SFTP_LEGACY, "SFTP is not the selected protocol")
-                return Result.success()
+                return@runOperationSafely Result.success()
             }
 
             val result = sftpBackupManager.syncNow()
-            return if (result.isSuccess) {
+            if (result.isSuccess) {
                 operationHistoryStore.recordSuccess(OperationHistoryStore.SYNC_SFTP_LEGACY, "SFTP sync completed")
                 Result.success()
             } else {
@@ -68,13 +72,10 @@ class SftpBackupWorker @AssistedInject constructor(
                     }
                 }
             }
-        } catch (t: Throwable) {
-            operationHistoryStore.recordFailure(OperationHistoryStore.SYNC_SFTP_LEGACY, t)
-            throw t
-        }
     }
 
     companion object {
+        private const val TAG = "SftpBackupWorker"
         private const val WORK_NAME = "sftp_backup_periodic"
         const val DEFAULT_INTERVAL_MINUTES = 24 * 60L
 

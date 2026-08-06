@@ -37,8 +37,12 @@ class DailyAgendaWorker @AssistedInject constructor(
     private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result {
-        operationHistoryStore.recordRun(OperationHistoryStore.REMINDERS_DAILY_AGENDA, "Daily agenda worker started")
+    override suspend fun doWork(): Result = runOperationSafely(
+        operationHistoryStore = operationHistoryStore,
+        operationId = OperationHistoryStore.REMINDERS_DAILY_AGENDA,
+        tag = TAG,
+        runReason = "Daily agenda worker started"
+    ) {
         val tasks = repository.getTasks().first()
         val people = repository.getPeople().first()
         val today = LocalDate.now().toString()
@@ -50,7 +54,7 @@ class DailyAgendaWorker @AssistedInject constructor(
         val dueToday = tasks.filter { !it.done && it.due == today && !it.isDeferredOn(today) }
         if (dueToday.isEmpty()) {
             operationHistoryStore.recordSuccess(OperationHistoryStore.REMINDERS_DAILY_AGENDA, "No tasks due today")
-            return Result.success()
+            return@runOperationSafely Result.success()
         }
 
         val peopleById = people.associateBy { it.id }
@@ -63,6 +67,13 @@ class DailyAgendaWorker @AssistedInject constructor(
         }
 
         NotificationHelper.createChannels(applicationContext)
+        if (!NotificationPermissionUtils.areNotificationsEnabled(applicationContext)) {
+            operationHistoryStore.recordSkipped(
+                OperationHistoryStore.REMINDERS_DAILY_AGENDA,
+                "Notification permission is disabled"
+            )
+            return@runOperationSafely Result.success()
+        }
         val accentColor = resolveNotificationAccentColor(applicationContext)
         val notification = NotificationHelper.buildDailyAgendaNotification(applicationContext, accentColor, dueToday.size, lines)
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -72,10 +83,11 @@ class DailyAgendaWorker @AssistedInject constructor(
             OperationHistoryStore.REMINDERS_DAILY_AGENDA,
             "Posted daily agenda for ${dueToday.size} task(s)"
         )
-        return Result.success()
+        Result.success()
     }
 
     companion object {
+        private const val TAG = "DailyAgendaWorker"
         private const val WORK_NAME = "daily_agenda"
 
         /**

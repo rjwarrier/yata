@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mj.yata.R
 import com.mj.yata.data.backup.BackupDiff
+import com.mj.yata.data.local.crash.CrashLogCluster
 import com.mj.yata.data.local.crash.CrashLogEntry
 import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
@@ -84,13 +85,17 @@ class MainViewModel @Inject constructor(
      */
     private val _crashLogs = MutableStateFlow<List<CrashLogEntry>>(emptyList())
     val crashLogs: StateFlow<List<CrashLogEntry>> = _crashLogs.asStateFlow()
+    private val _crashClusters = MutableStateFlow<List<CrashLogCluster>>(emptyList())
+    val crashClusters: StateFlow<List<CrashLogCluster>> = _crashClusters.asStateFlow()
     private val _operationHistory = MutableStateFlow<List<OperationHistoryEntry>>(emptyList())
     val operationHistory: StateFlow<List<OperationHistoryEntry>> = _operationHistory.asStateFlow()
 
     fun refreshCrashLogs() {
         safeLaunch {
             val entries = withContext(Dispatchers.IO) { crashLogStore.list() }
+            val clusters = withContext(Dispatchers.IO) { crashLogStore.listClusters() }
             _crashLogs.value = entries
+            _crashClusters.value = clusters
             refreshOperationHistory()
         }
     }

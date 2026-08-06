@@ -10,6 +10,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -48,12 +51,22 @@ class LocalBackupManager @Inject constructor(
                 SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
                 FILENAME_SUFFIX
             val file = File(backupDir(), filename)
+            val tempFile = File(backupDir(), "$filename.tmp")
             if (file.exists()) file.delete()
+            if (tempFile.exists()) tempFile.delete()
 
             val encryptedFile = EncryptedFile.Builder(
-                context, file, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+                context, tempFile, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
             ).build()
-            encryptedFile.openFileOutput().use { it.write(bytes) }
+            encryptedFile.openFileOutput().use {
+                it.write(bytes)
+                it.fd.sync()
+            }
+            val verified = EncryptedFile.Builder(
+                context, tempFile, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+            ).build().openFileInput().use { it.readBytes() }
+            check(verified.contentEquals(bytes)) { "Local backup verification failed" }
+            moveIntoPlace(tempFile, file)
 
             userPreferences.setLocalBackupLastAt(System.currentTimeMillis())
             pruneOldBackups()
@@ -75,6 +88,7 @@ class LocalBackupManager @Inject constructor(
                 context, latest, masterKey, EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
             ).build()
             val bytes = encryptedFile.openFileInput().use { it.readBytes() }
+            jsonExporter.dryRunRestoreBytes(bytes)
 
             recoveryBackupManager.saveCurrent("pre_local_restore").getOrElse { e ->
                 throw IllegalStateException(
@@ -96,5 +110,18 @@ class LocalBackupManager @Inject constructor(
             ?.sortedByDescending { it.name }
             ?: return
         files.drop(KEEP_BACKUPS).forEach { it.delete() }
+    }
+
+    private fun moveIntoPlace(tempFile: File, finalFile: File) {
+        try {
+            Files.move(
+                tempFile.toPath(),
+                finalFile.toPath(),
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING
+            )
+        } catch (_: AtomicMoveNotSupportedException) {
+            Files.move(tempFile.toPath(), finalFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
     }
 }

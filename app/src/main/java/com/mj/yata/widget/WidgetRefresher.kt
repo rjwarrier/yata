@@ -64,7 +64,15 @@ object WidgetRefresher {
             // actually land on the host. Held under the same lock acquisition throughout, so
             // nothing else touching this widget id can interleave with the retries.
             repeat(3) { attempt ->
-                widget.update(context, id)
+                try {
+                    widget.update(context, id)
+                    WidgetHealthStore.markSuccess(context, widget::class.java.name)
+                } catch (t: Throwable) {
+                    if (attempt == 2) {
+                        WidgetHealthStore.markFailure(context, widget::class.java.name, t)
+                        throw t
+                    }
+                }
                 if (attempt < 2) delay(400)
             }
         }

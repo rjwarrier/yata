@@ -63,6 +63,7 @@ class YataAppWidget : GlanceAppWidget() {
         val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
         val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
+        val health = WidgetHealthStore.read(context, YataAppWidget::class.java.name)
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val today = LocalDate.now()
@@ -107,7 +108,8 @@ class YataAppWidget : GlanceAppWidget() {
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
                     opacity = opacity,
-                    accentOverride = accentOverride
+                    accentOverride = accentOverride,
+                    health = health
                 )
             }
         }
@@ -129,7 +131,8 @@ private fun TodayWidgetContent(
     customLabel: String?,
     useM3Colors: Boolean,
     opacity: Float,
-    accentOverride: androidx.compose.ui.graphics.Color?
+    accentOverride: androidx.compose.ui.graphics.Color?,
+    health: WidgetHealth?
 ) {
     val chromeColor = accentOverride ?: colors.primary
 
@@ -150,6 +153,8 @@ private fun TodayWidgetContent(
                     style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurface)
                 )
             }
+            WidgetStaleBadge(health)
+            if (health?.stale == true) Spacer(modifier = GlanceModifier.width(6.dp))
             WidgetProgressRingImage(
                 context = context,
                 progress = progress,

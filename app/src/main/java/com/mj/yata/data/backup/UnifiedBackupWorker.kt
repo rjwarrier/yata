@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.domain.usecase.BackupOperations
+import com.mj.yata.notification.runOperationSafely
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -52,13 +53,16 @@ class UnifiedBackupWorker(
         ).operationHistoryStore()
     }
 
-    override suspend fun doWork(): Result {
-        operationHistoryStore.recordRun(OperationHistoryStore.BACKUP_UNIFIED, "Scheduled backup started")
-        try {
+    override suspend fun doWork(): Result = runOperationSafely(
+        operationHistoryStore = operationHistoryStore,
+        operationId = OperationHistoryStore.BACKUP_UNIFIED,
+        tag = TAG,
+        runReason = "Scheduled backup started"
+    ) {
             val results = backupOperations.backupAllConfigured()
             if (results.isEmpty()) {
                 operationHistoryStore.recordSkipped(OperationHistoryStore.BACKUP_UNIFIED, "No backup destinations are enabled")
-                return Result.success()
+                return@runOperationSafely Result.success()
             }
 
             val failed = results.filter { !it.isSuccess }
@@ -68,7 +72,7 @@ class UnifiedBackupWorker(
             // suppress a transient server failure until the next periodic interval. Successful
             // destinations may receive another rotated copy on retry, which is preferable to leaving
             // a requested destination stale and is bounded by each manager's retention policy.
-            return if (failed.isNotEmpty()) {
+            if (failed.isNotEmpty()) {
                 val reason = failed.joinToString { result ->
                     "${result.destination}: ${result.error?.message ?: result.error?.javaClass?.simpleName ?: "failed"}"
                 }
@@ -81,10 +85,6 @@ class UnifiedBackupWorker(
                 )
                 Result.success()
             }
-        } catch (t: Throwable) {
-            operationHistoryStore.recordFailure(OperationHistoryStore.BACKUP_UNIFIED, t)
-            throw t
-        }
     }
 
     companion object {

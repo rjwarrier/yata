@@ -175,9 +175,10 @@ fun TodayTab(
     // interleaving them in raw sortOrder. Hiding completed drops both the tasks and the section
     // headers themselves, rather than leaving an empty "Completed" heading around.
     val pendingTasks = remember(filteredTasks, sortMode, activeStatFilter, today) {
+        val statFilter = activeStatFilter
         filteredTasks
             .filter { !it.done }
-            .filter { activeStatFilter == null || activeStatFilter!!.matches(it, today) }
+            .filter { statFilter == null || statFilter.matches(it, today) }
             .sortedByMode(sortMode)
     }
     val completedTasks = remember(filteredTasks, hideCompleted) {
@@ -437,9 +438,9 @@ fun TodayTab(
             )
         }
 
-        if (activeStatFilter != null) {
+        activeStatFilter?.let { statFilter ->
             com.mj.yata.ui.widgets.ActiveFilterBanner(
-                kind = activeStatFilter!!,
+                kind = statFilter,
                 onClear = { activeStatFilter = null }
             )
         }

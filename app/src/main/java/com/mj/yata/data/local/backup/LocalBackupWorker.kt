@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.notification.runOperationSafely
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -25,29 +26,29 @@ class LocalBackupWorker @AssistedInject constructor(
     private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result {
-        operationHistoryStore.recordRun(OperationHistoryStore.BACKUP_LOCAL_LEGACY, "Legacy local backup worker started")
-        try {
+    override suspend fun doWork(): Result = runOperationSafely(
+        operationHistoryStore = operationHistoryStore,
+        operationId = OperationHistoryStore.BACKUP_LOCAL_LEGACY,
+        tag = TAG,
+        runReason = "Legacy local backup worker started"
+    ) {
             if (!userPreferences.localBackupEnabledFlow.first()) {
                 operationHistoryStore.recordSkipped(OperationHistoryStore.BACKUP_LOCAL_LEGACY, "Local backup is disabled")
-                return Result.success()
+                return@runOperationSafely Result.success()
             }
 
             val result = localBackupManager.backupNow()
-            return if (result.isSuccess) {
+            if (result.isSuccess) {
                 operationHistoryStore.recordSuccess(OperationHistoryStore.BACKUP_LOCAL_LEGACY, "Local backup completed")
                 Result.success()
             } else {
                 operationHistoryStore.recordFailure(OperationHistoryStore.BACKUP_LOCAL_LEGACY, result.exceptionOrNull())
                 Result.retry()
             }
-        } catch (t: Throwable) {
-            operationHistoryStore.recordFailure(OperationHistoryStore.BACKUP_LOCAL_LEGACY, t)
-            throw t
-        }
     }
 
     companion object {
+        private const val TAG = "LocalBackupWorker"
         private const val WORK_NAME = "local_backup_periodic"
         const val DEFAULT_INTERVAL_MINUTES = 24 * 60L
 

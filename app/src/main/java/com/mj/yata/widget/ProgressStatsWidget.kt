@@ -61,6 +61,7 @@ class ProgressStatsWidget : GlanceAppWidget() {
         val useM3Colors = prefs[WIDGET_USE_M3_COLORS_KEY] ?: false
         val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
+        val health = WidgetHealthStore.read(context, ProgressStatsWidget::class.java.name)
 
         val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
         val today = LocalDate.now()
@@ -95,7 +96,8 @@ class ProgressStatsWidget : GlanceAppWidget() {
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
                     opacity = opacity,
-                    accentOverride = accentOverride
+                    accentOverride = accentOverride,
+                    health = health
                 )
             }
         }
@@ -114,7 +116,8 @@ private fun ProgressStatsContent(
     customLabel: String?,
     useM3Colors: Boolean,
     opacity: Float,
-    accentOverride: androidx.compose.ui.graphics.Color?
+    accentOverride: androidx.compose.ui.graphics.Color?,
+    health: WidgetHealth?
 ) {
     val isSmall = LocalSize.current.width < 180.dp
     val isTall = LocalSize.current.height > 180.dp
@@ -153,6 +156,7 @@ private fun ProgressStatsContent(
                     text = if (!customLabel.isNullOrBlank()) customLabel else "$done/$total done today",
                     style = TextStyle(fontSize = 12.5.sp, color = GlanceTheme.colors.onSurfaceVariant)
                 )
+                WidgetStaleBadge(health)
             }
         } else {
             val tasksByListId = tasks.groupBy { it.listId }

@@ -134,6 +134,7 @@ class SingleListWidget : GlanceAppWidget() {
         val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
+        val health = WidgetHealthStore.read(context, SingleListWidget::class.java.name)
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -150,7 +151,8 @@ class SingleListWidget : GlanceAppWidget() {
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
                     opacity = opacity,
-                    accentOverride = accentOverride
+                    accentOverride = accentOverride,
+                    health = health
                 )
             }
         }
@@ -171,7 +173,8 @@ private fun SingleListWidgetContent(
     customLabel: String?,
     useM3Colors: Boolean,
     opacity: Float,
-    accentOverride: androidx.compose.ui.graphics.Color?
+    accentOverride: androidx.compose.ui.graphics.Color?,
+    health: WidgetHealth?
 ) {
     Box(
         modifier = GlanceModifier
@@ -223,6 +226,8 @@ private fun SingleListWidgetContent(
                             style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant)
                         )
                     }
+                    WidgetStaleBadge(health)
+                    if (health?.stale == true) Spacer(modifier = GlanceModifier.width(6.dp))
                     if (isLarge) {
                         WidgetProgressRingImage(
                             context = context,

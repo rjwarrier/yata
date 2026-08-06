@@ -565,6 +565,7 @@ class FtpBackupManager @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val jsonBytes = fetchBackupJson(filename)
+                jsonExporter.dryRunRestoreBytes(jsonBytes)
                 recoveryBackupManager.saveCurrent("pre_ftp_restore").getOrElse { e ->
                     throw IllegalStateException(
                         "Could not create a recovery backup before restore; local data was not changed",

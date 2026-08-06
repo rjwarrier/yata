@@ -8,6 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -23,6 +24,17 @@ data class CrashLogEntry(
     /** False for a failure that was caught and reported rather than one that killed the process. */
     val fatal: Boolean
 )
+
+data class CrashLogCluster(
+    val fingerprint: String,
+    val summary: String,
+    val fatalCount: Int,
+    val handledCount: Int,
+    val firstSeenAt: Long,
+    val lastSeenAt: Long
+) {
+    val count: Int get() = fatalCount + handledCount
+}
 
 /**
  * On-device crash history, written to `filesDir/crash_logs/`.
@@ -96,6 +108,37 @@ class CrashLogStore @Inject constructor(
         emptyList()
     }
 
+    fun listClusters(): List<CrashLogCluster> = try {
+        dir.listFiles { f -> f.isFile && f.name.endsWith(".txt") }
+            .orEmpty()
+            .mapNotNull { file ->
+                val entry = entryFor(file) ?: return@mapNotNull null
+                val body = file.readText()
+                ClusterSeed(
+                    fingerprint = fingerprintOf(body),
+                    summary = entry.summary.ifBlank { "Unknown failure" },
+                    timestampMillis = entry.timestampMillis,
+                    fatal = entry.fatal
+                )
+            }
+            .groupBy { it.fingerprint }
+            .map { (fingerprint, seeds) ->
+                val ordered = seeds.sortedBy { it.timestampMillis }
+                CrashLogCluster(
+                    fingerprint = fingerprint,
+                    summary = ordered.lastOrNull()?.summary.orEmpty(),
+                    fatalCount = seeds.count { it.fatal },
+                    handledCount = seeds.count { !it.fatal },
+                    firstSeenAt = ordered.firstOrNull()?.timestampMillis ?: 0L,
+                    lastSeenAt = ordered.lastOrNull()?.timestampMillis ?: 0L
+                )
+            }
+            .sortedWith(compareByDescending<CrashLogCluster> { it.count }.thenByDescending { it.lastSeenAt })
+    } catch (t: Throwable) {
+        Log.e(TAG, "Could not cluster crash logs", t)
+        emptyList()
+    }
+
     fun read(id: String): String = try {
         File(dir, id).takeIf { it.isFile }?.readText().orEmpty()
     } catch (t: Throwable) {
@@ -127,6 +170,43 @@ class CrashLogStore @Inject constructor(
     } catch (t: Throwable) {
         ""
     }
+
+    private fun entryFor(file: File): CrashLogEntry? {
+        val fatal = file.name.startsWith("crash_")
+        val millis = file.name.removePrefix(if (fatal) "crash_" else "handled_")
+            .removeSuffix(".txt")
+            .toLongOrNull() ?: return null
+        return CrashLogEntry(
+            id = file.name,
+            timestampMillis = millis,
+            summary = summaryOf(file),
+            fatal = fatal
+        )
+    }
+
+    private fun fingerprintOf(body: String): String {
+        val normalized = body.lineSequence()
+            .filter { line -> line.isNotBlank() && !HEADER_KEYS.any(line::startsWith) }
+            .map { line ->
+                line.trim()
+                    .replace(Regex("""\([^)]*:\d+\)"""), "(source)")
+                    .replace(Regex("""\$\d+"""), "$")
+            }
+            .take(24)
+            .joinToString("\n")
+            .ifBlank { body.take(256) }
+        return MessageDigest.getInstance("SHA-256")
+            .digest(normalized.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+            .take(12)
+    }
+
+    private data class ClusterSeed(
+        val fingerprint: String,
+        val summary: String,
+        val timestampMillis: Long,
+        val fatal: Boolean
+    )
 
     /**
      * Bounds disk use. A crash loop can write a report every few seconds, and this directory is

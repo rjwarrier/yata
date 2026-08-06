@@ -197,6 +197,18 @@ tasks.register("lintHardcodedStrings") {
     }
 }
 
+tasks.register("releaseGate") {
+    group = "verification"
+    description = "Runs the local pre-release stability gate: compile, JVM tests, Android test compile, lint, and hardcoded-string audit."
+    dependsOn(
+        "compileDebugKotlin",
+        "testDebugUnitTest",
+        "compileDebugAndroidTestKotlin",
+        "lintDebug",
+        "lintHardcodedStrings"
+    )
+}
+
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }

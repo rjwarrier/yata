@@ -32,8 +32,12 @@ class OverdueEscalationWorker @AssistedInject constructor(
     private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result {
-        operationHistoryStore.recordRun(OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION, "Overdue escalation worker started")
+    override suspend fun doWork(): Result = runOperationSafely(
+        operationHistoryStore = operationHistoryStore,
+        operationId = OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION,
+        tag = TAG,
+        runReason = "Overdue escalation worker started"
+    ) {
         val tasks = repository.getTasks().first()
         val people = repository.getPeople().first()
         val today = LocalDate.now()
@@ -49,10 +53,17 @@ class OverdueEscalationWorker @AssistedInject constructor(
 
         if (lines.isEmpty()) {
             operationHistoryStore.recordSuccess(OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION, "No overdue escalations")
-            return Result.success()
+            return@runOperationSafely Result.success()
         }
 
         NotificationHelper.createChannels(applicationContext)
+        if (!NotificationPermissionUtils.areNotificationsEnabled(applicationContext)) {
+            operationHistoryStore.recordSkipped(
+                OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION,
+                "Notification permission is disabled"
+            )
+            return@runOperationSafely Result.success()
+        }
         val accentColor = resolveNotificationAccentColor(applicationContext)
         val notification = NotificationHelper.buildEscalationNotification(applicationContext, accentColor, lines)
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -62,10 +73,11 @@ class OverdueEscalationWorker @AssistedInject constructor(
             OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION,
             "Posted ${lines.size} overdue escalation line(s)"
         )
-        return Result.success()
+        Result.success()
     }
 
     companion object {
+        private const val TAG = "OverdueEscalationWorker"
         private const val WORK_NAME = "overdue_escalation_daily"
         const val ESCALATION_THRESHOLD_DAYS = 2L
 

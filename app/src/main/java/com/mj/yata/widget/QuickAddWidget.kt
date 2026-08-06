@@ -92,6 +92,7 @@ class QuickAddWidget : GlanceAppWidget() {
 
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
+        val health = WidgetHealthStore.read(context, QuickAddWidget::class.java.name)
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -109,7 +110,8 @@ class QuickAddWidget : GlanceAppWidget() {
                     customLabel = customLabel,
                     useM3Colors = useM3Colors,
                     opacity = opacity,
-                    accentOverride = accentOverride
+                    accentOverride = accentOverride,
+                    health = health
                 )
             }
         }
@@ -131,7 +133,8 @@ private fun QuickAddWidgetContent(
     customLabel: String?,
     useM3Colors: Boolean,
     opacity: Float,
-    accentOverride: Color?
+    accentOverride: Color?,
+    health: WidgetHealth?
 ) {
     val isSmall = LocalSize.current.width < 180.dp
     val isTall = LocalSize.current.height > 140.dp
@@ -162,10 +165,12 @@ private fun QuickAddWidgetContent(
                     maxLines = 1,
                     style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurfaceVariant)
                 )
+                WidgetStaleBadge(health)
             }
         } else {
             Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
                 WidgetSectionHeader(customLabel ?: context.getString(R.string.quick_add_widget_header), ColorProvider(accentOverride ?: colors.primary))
+                WidgetStaleBadge(health)
                 Spacer(modifier = GlanceModifier.height(8.dp))
                 Box(
                     modifier = GlanceModifier

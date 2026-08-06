@@ -22,6 +22,13 @@ class ReminderReceiver : BroadcastReceiver() {
         // Resolving the effective M3 color needs a DataStore read, so keep the receiver alive
         // with goAsync() and treat failures as handled Diagnostics entries.
         goAsyncSafely(context, TAG, OperationHistoryStore.REMINDERS_TASK) {
+            if (!NotificationPermissionUtils.areNotificationsEnabled(context)) {
+                OperationHistoryStore(context.applicationContext).recordSkipped(
+                    OperationHistoryStore.REMINDERS_TASK,
+                    "Notification permission is disabled"
+                )
+                return@goAsyncSafely
+            }
             val accentColor = resolveNotificationAccentColor(context)
             val notification = NotificationHelper.buildReminderNotification(
                 context = context,

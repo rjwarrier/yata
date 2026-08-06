@@ -146,7 +146,11 @@ fun UpcomingTab(
     val activeTasks = remember(tasks, archivedProjectIds) {
         tasks.filter { it.projectId !in archivedProjectIds }
     }
-    val tasksByDate = remember(activeTasks) { activeTasks.filter { it.due != null }.groupBy { it.due!! } }
+    val tasksByDate = remember(activeTasks) {
+        activeTasks
+            .mapNotNull { task -> task.due?.let { due -> due to task } }
+            .groupBy({ it.first }, { it.second })
+    }
 
     // State for filter chips
     var selectedFilter by remember { mutableStateOf(UpcomingTaskFilter.ALL) }

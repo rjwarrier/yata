@@ -71,6 +71,7 @@ class TeamOverdueWidget : GlanceAppWidget() {
 
         val theme = resolveWidgetTheme(context)
         val accentOverride = accentOverrideKey?.let { theme.accents.getAccent(it) }
+        val health = WidgetHealthStore.read(context, TeamOverdueWidget::class.java.name)
 
         provideContent {
             GlanceTheme(colors = theme.glanceColors) {
@@ -81,7 +82,8 @@ class TeamOverdueWidget : GlanceAppWidget() {
                     cornerRadius = cornerRadius,
                     customLabel = customLabel,
                     opacity = opacity,
-                    accentOverride = accentOverride
+                    accentOverride = accentOverride,
+                    health = health
                 )
             }
         }
@@ -96,7 +98,8 @@ private fun TeamOverdueContent(
     cornerRadius: Int,
     customLabel: String?,
     opacity: Float,
-    accentOverride: androidx.compose.ui.graphics.Color?
+    accentOverride: androidx.compose.ui.graphics.Color?,
+    health: WidgetHealth?
 ) {
     val maxRows = if (LocalSize.current.height > 180.dp) 8 else 5
     Box(
@@ -110,6 +113,7 @@ private fun TeamOverdueContent(
     ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
             WidgetSectionHeader(customLabel ?: "Team Overdue", ColorProvider(accentOverride ?: colors.error))
+            WidgetStaleBadge(health)
             Spacer(modifier = GlanceModifier.height(8.dp))
             if (overdueByPerson.isEmpty()) {
                 Box(modifier = GlanceModifier.fillMaxWidth().defaultWeight(), contentAlignment = Alignment.Center) {

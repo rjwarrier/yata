@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.app.NotificationCompat
 import com.mj.yata.R
+import com.mj.yata.data.local.crash.CrashLogCluster
 import com.mj.yata.data.local.crash.CrashLogEntry
 import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
 import com.mj.yata.data.local.operationhistory.OperationStatus
@@ -69,6 +70,7 @@ fun CrashLogScreen(
     modifier: Modifier = Modifier
 ) {
     val logs by viewModel.crashLogs.collectAsStateWithLifecycle()
+    val crashClusters by viewModel.crashClusters.collectAsStateWithLifecycle()
     val operationHistory by viewModel.operationHistory.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -177,6 +179,17 @@ fun CrashLogScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            if (crashClusters.isNotEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.diagnostics_crash_clusters),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
+                items(crashClusters.take(5), key = { it.fingerprint }) { cluster ->
+                    CrashClusterCard(cluster = cluster)
+                }
+            }
             items(logs, key = { it.id }) { entry ->
                 CrashLogCard(
                     entry = entry,
@@ -222,6 +235,50 @@ fun CrashLogScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun CrashClusterCard(cluster: CrashLogCluster) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.diagnostics_crash_cluster_count, cluster.count),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Text(
+                    text = cluster.fingerprint,
+                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(cluster.summary, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OperationMetric(
+                    label = stringResource(R.string.diagnostics_first_seen),
+                    value = formatTimestamp(cluster.firstSeenAt),
+                    modifier = Modifier.weight(1f)
+                )
+                OperationMetric(
+                    label = stringResource(R.string.diagnostics_last_seen),
+                    value = formatTimestamp(cluster.lastSeenAt),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
     }
 }
 

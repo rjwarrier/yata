@@ -18,6 +18,7 @@ import com.mj.yata.domain.model.hiddenFromMainTaskProjectIds
 import com.mj.yata.domain.model.isActionableToday
 import com.mj.yata.domain.model.wasPendingAsOf
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.notification.recordBackgroundFailure
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
@@ -59,7 +60,7 @@ class WidgetUpdaterImpl @Inject constructor(
                         processUpdate()
                     } catch (t: Throwable) {
                         operationHistoryStore.recordFailure(OperationHistoryStore.WIDGETS_REFRESH, t)
-                        throw t
+                        recordBackgroundFailure(context, TAG, OperationHistoryStore.WIDGETS_REFRESH, t)
                     }
                 }
         }
@@ -228,5 +229,9 @@ class WidgetUpdaterImpl @Inject constructor(
         if (task.done) return false
         val due = task.due?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return false
         return due.isBefore(today)
+    }
+
+    companion object {
+        private const val TAG = "WidgetUpdater"
     }
 }

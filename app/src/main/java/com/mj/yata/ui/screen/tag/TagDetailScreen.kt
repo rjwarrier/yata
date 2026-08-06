@@ -167,7 +167,8 @@ fun TagDetailScreen(
         allTaggedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
     }
     val displayedPendingTaggedTasks = remember(pendingTaggedTasks, activeStatFilter, heroToday) {
-        pendingTaggedTasks.filter { activeStatFilter == null || activeStatFilter!!.matches(it, heroToday) }
+        val statFilter = activeStatFilter
+        pendingTaggedTasks.filter { statFilter == null || statFilter.matches(it, heroToday) }
     }
     val completedTaggedTasks = remember(allTaggedTasks, hideCompleted, searchQuery) {
         if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) }
@@ -408,10 +409,10 @@ fun TagDetailScreen(
                 )
             }
 
-            if (activeStatFilter != null) {
+            activeStatFilter?.let { statFilter ->
                 item {
                     com.mj.yata.ui.widgets.ActiveFilterBanner(
-                        kind = activeStatFilter!!,
+                        kind = statFilter,
                         onClear = { activeStatFilter = null }
                     )
                 }

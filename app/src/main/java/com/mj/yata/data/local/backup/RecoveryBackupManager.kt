@@ -62,6 +62,7 @@ class RecoveryBackupManager @Inject constructor(
             }
             val recoveryBytes = bytes
                 ?: return@withContext Result.failure(IllegalStateException("No recovery backup found"))
+            jsonExporter.dryRunRestoreBytes(recoveryBytes)
             if (jsonExporter.importBytes(recoveryBytes)) {
                 Result.success(Unit)
             } else {

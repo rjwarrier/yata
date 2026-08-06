@@ -522,7 +522,8 @@ class JsonExporter @Inject constructor(
                     }
                 }
             }
-            importJson(JSONObject(sb.toString()))
+            val root = JSONObject(sb.toString()).also(::validateBackupPayload)
+            importJson(root)
         } catch (e: Exception) {
             Log.e("JsonExporter", "importData failed", e)
             false
@@ -533,11 +534,21 @@ class JsonExporter @Inject constructor(
      * through a [android.content.ContentResolver]. */
     suspend fun importBytes(bytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
         try {
-            importJson(JSONObject(String(bytes, Charsets.UTF_8)))
+            val root = JSONObject(String(bytes, Charsets.UTF_8)).also(::validateBackupPayload)
+            importJson(root)
         } catch (e: Exception) {
             Log.e("JsonExporter", "importBytes failed", e)
             false
         }
+    }
+
+    fun validateBackupBytes(bytes: ByteArray) {
+        validateBackupPayload(JSONObject(String(bytes, Charsets.UTF_8)))
+    }
+
+    fun dryRunRestoreBytes(bytes: ByteArray): BackupSummary {
+        validateBackupBytes(bytes)
+        return summarise(bytes)
     }
 
     /** Validates a canonical sync payload without reading or mutating local state. */
@@ -909,8 +920,7 @@ class JsonExporter @Inject constructor(
      * ones [importJson] reads, and they only have to stay in step in one place.
      */
     fun summarise(bytes: ByteArray): BackupSummary {
-        val root = JSONObject(String(bytes, Charsets.UTF_8))
-        require(isRecognizedBackup(root)) { "File is not a recognized YATA backup" }
+        val root = JSONObject(String(bytes, Charsets.UTF_8)).also(::validateBackupPayload)
         val tasks = root.optJSONArray("tasks")
         val totalTasks = tasks?.length() ?: 0
         var openTasks = 0
@@ -922,6 +932,177 @@ class JsonExporter @Inject constructor(
             openTasks = openTasks,
             totalProjects = root.optJSONArray("projects")?.length() ?: 0
         )
+    }
+
+    private fun validateBackupPayload(root: JSONObject) {
+        require(isRecognizedBackup(root)) { "File is not a recognized YATA backup" }
+
+        fun validatePhoto(value: String, label: String) {
+            require(value.isNotBlank()) { "$label is empty" }
+            try {
+                android.util.Base64.decode(value, android.util.Base64.NO_WRAP)
+            } catch (e: IllegalArgumentException) {
+                throw IllegalArgumentException("$label is not valid base64", e)
+            }
+        }
+        fun JSONObject.optionalArray(key: String): JSONArray? =
+            if (!has(key) || isNull(key)) null else get(key) as? JSONArray ?: error("$key is not an array")
+        fun JSONObject.requireOptionalString(key: String) {
+            if (has(key) && !isNull(key)) require(get(key) is String) { "$key is not a string" }
+        }
+        fun JSONObject.requireOptionalNumber(key: String) {
+            if (has(key) && !isNull(key)) require(get(key) is Number) { "$key is not numeric" }
+        }
+        fun JSONObject.requireOptionalBoolean(key: String) {
+            if (has(key) && !isNull(key)) require(get(key) is Boolean) { "$key is not Boolean" }
+        }
+        fun JSONObject.requireOptionalStringArray(key: String): Set<String>? {
+            val values = optionalArray(key) ?: return null
+            val ids = linkedSetOf<String>()
+            for (i in 0 until values.length()) {
+                val id = values.getString(i)
+                require(id.isNotBlank()) { "$key contains a blank ID" }
+                require(ids.add(id)) { "$key contains duplicate ID $id" }
+            }
+            return ids
+        }
+        fun rows(collection: String, idKey: String = "id"): Map<String, JSONObject> {
+            val array = root.optionalArray(collection) ?: return emptyMap()
+            val out = linkedMapOf<String, JSONObject>()
+            for (i in 0 until array.length()) {
+                val row = array.getJSONObject(i)
+                val id = row.getString(idKey)
+                require(id.isNotBlank()) { "Blank $idKey in $collection" }
+                require(out.put(id, row) == null) { "Duplicate $collection record $id" }
+            }
+            return out
+        }
+
+        if (root.has("profilePhoto") && !root.isNull("profilePhoto")) validatePhoto(root.getString("profilePhoto"), "Profile photo")
+        root.requireOptionalString("profileName")
+        root.requireOptionalString("profileEmail")
+        root.requireOptionalBoolean("profilePhotoIsMaterialGlyph")
+
+        val personGroups = rows("personGroups")
+        val people = rows("people")
+        val projects = rows("projects")
+        val lists = rows("lists")
+        val tagGroups = rows("tagGroups")
+        val tags = rows("tags")
+        val tasks = rows("tasks")
+        val comments = rows("comments")
+        rows("settings", idKey = "name")
+        root.optionalArray("settings")?.let { portableSettings(it) }
+
+        personGroups.values.forEach { it.getString("name"); it.getString("color") }
+        tagGroups.values.forEach { it.getString("name"); it.getString("color") }
+        people.values.forEach { row ->
+            row.getString("name"); row.getString("initials"); row.getString("color")
+            row.nullableString("groupId")?.let { require(it in personGroups) { "Person references missing group $it" } }
+            row.requireOptionalBoolean("isMe")
+            row.requireOptionalBoolean("starred")
+            row.requireOptionalBoolean("archived")
+            row.requireOptionalNumber("sortOrder")
+            row.requireOptionalBoolean("photoIsMaterialGlyph")
+            if (row.has("photoData") && !row.isNull("photoData")) validatePhoto(row.getString("photoData"), "Person photo")
+        }
+        tags.values.forEach { row ->
+            row.getString("name"); row.getString("color")
+            row.nullableString("groupId")?.let { require(it in tagGroups) { "Tag references missing group $it" } }
+            row.requireOptionalBoolean("starred")
+            row.requireOptionalBoolean("hideCompletedByDefault")
+        }
+        projects.values.forEach { row ->
+            row.getString("name")
+            row.requireOptionalString("color")
+            row.requireOptionalString("icon")
+            row.requireOptionalString("due")
+            row.requireOptionalString("defaultReminder")
+            row.requireOptionalString("description")
+            row.requireOptionalBoolean("starred")
+            row.requireOptionalBoolean("excludeFromToday")
+            row.requireOptionalBoolean("archived")
+            row.requireOptionalNumber("sortOrder")
+            row.requireOptionalStringArray("sectionNames")
+            row.requireOptionalStringArray("commonTagIds")?.forEach { id ->
+                if (tags.isNotEmpty()) require(id in tags) { "Project commonTagIds references missing tag $id" }
+            }
+        }
+        lists.values.forEach { row ->
+            row.getString("name")
+            row.requireOptionalString("color")
+            row.requireOptionalString("icon")
+            row.requireOptionalBoolean("starred")
+            row.requireOptionalBoolean("excludeFromToday")
+            row.requireOptionalBoolean("archived")
+            row.requireOptionalNumber("sortOrder")
+        }
+
+        val subtaskIds = mutableSetOf<String>()
+        tasks.values.forEach { row ->
+            row.getString("title")
+            row.requireOptionalString("section")
+            row.requireOptionalString("priority")
+            row.requireOptionalString("due")
+            row.requireOptionalString("startDate")
+            row.requireOptionalString("time")
+            row.requireOptionalString("reminder")
+            row.requireOptionalString("notes")
+            row.requireOptionalString("seriesId")
+            row.requireOptionalBoolean("flag")
+            row.requireOptionalBoolean("done")
+            row.requireOptionalBoolean("archived")
+            row.requireOptionalNumber("completedAt")
+            row.requireOptionalNumber("createdAt")
+            row.requireOptionalNumber("deletedAt")
+            row.requireOptionalNumber("sortOrder")
+            row.requireOptionalNumber("followUpAt")
+            row.requireOptionalNumber("estimateMinutes")
+            row.nullableString("listId")?.let { if (lists.isNotEmpty()) require(it in lists) { "Task references missing list $it" } }
+            row.nullableString("projectId")?.let { if (projects.isNotEmpty()) require(it in projects) { "Task references missing project $it" } }
+            row.requireOptionalStringArray("assigneeIds")?.forEach { id ->
+                if (people.isNotEmpty()) require(id in people) { "Task references missing person $id" }
+            }
+            row.requireOptionalStringArray("tagIds")?.forEach { id ->
+                if (tags.isNotEmpty()) require(id in tags) { "Task references missing tag $id" }
+            }
+            val recurrence = if (!row.has("recurrence") || row.isNull("recurrence")) null else row.get("recurrence") as? JSONObject
+                ?: error("Task recurrence is not an object")
+            recurrence?.let {
+                require(it.getString("freq") in setOf("daily", "weekly", "monthly", "yearly")) { "Unknown recurrence frequency" }
+                require(it.getInt("interval") > 0) { "Recurrence interval must be positive" }
+                it.requireOptionalNumber("bymonthday")
+                it.requireOptionalBoolean("basedOnCompletion")
+                it.requireOptionalStringArray("byday")
+                val ends = it.getJSONObject("ends")
+                when (ends.getString("type")) {
+                    "never" -> Unit
+                    "after" -> require(ends.getInt("count") > 0) { "Recurrence count must be positive" }
+                    "on" -> ends.getString("date")
+                    else -> error("Unknown recurrence end type")
+                }
+            }
+            row.optionalArray("subtasks")?.let { subtasks ->
+                val idsForTask = mutableSetOf<String>()
+                for (i in 0 until subtasks.length()) {
+                    val subtask = subtasks.getJSONObject(i)
+                    val id = subtask.getString("id")
+                    require(id.isNotBlank()) { "Blank subtask ID" }
+                    require(idsForTask.add(id) && subtaskIds.add(id)) { "Duplicate subtask $id" }
+                    subtask.getString("title")
+                    subtask.requireOptionalBoolean("done")
+                    subtask.requireOptionalString("parentSubtaskId")
+                    subtask.requireOptionalNumber("sortOrder")
+                }
+            }
+        }
+        comments.values.forEach { row ->
+            row.getString("body")
+            val taskId = row.getString("taskId")
+            require(taskId in tasks) { "Comment references missing task $taskId" }
+            row.getLong("createdAt")
+            row.requireOptionalString("authorId")
+        }
     }
 
     private suspend fun importJson(root: JSONObject, replaceForSync: Boolean = false): Boolean {
