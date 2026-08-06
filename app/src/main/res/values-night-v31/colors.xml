@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Keep the notification/launcher app icon wallpaper-accented in dark mode too. -->
-    <color name="launcher_icon_background">@android:color/system_accent1_600</color>
+    <color name="launcher_icon_background">@android:color/system_accent1_100</color>
+    <color name="launcher_icon_foreground">@android:color/system_accent1_700</color>
 </resources>

@@ -4,13 +4,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.mj.yata.data.local.db.AppDatabase
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.EntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
  * Re-schedules all pending task reminders after a device reboot,
@@ -25,9 +23,13 @@ class BootReceiver : BroadcastReceiver() {
         fun reminderScheduler(): ReminderScheduler
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(context: Context, intent: Intent) = onReceiveSafely(
+        context = context,
+        tag = TAG,
+        operationId = OperationHistoryStore.REMINDERS_TASK
+    ) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED &&
-            intent.action != "android.intent.action.QUICKBOOT_POWERON") return
+            intent.action != "android.intent.action.QUICKBOOT_POWERON") return@onReceiveSafely
 
         val entryPoint = EntryPointAccessors.fromApplication(
             context.applicationContext,
@@ -36,14 +38,13 @@ class BootReceiver : BroadcastReceiver() {
         val db = entryPoint.appDatabase()
         val scheduler = entryPoint.reminderScheduler()
 
-        val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val tasks = db.taskDao().getActiveReminderTasksDirect()
-                scheduler.scheduleReminders(tasks)
-            } finally {
-                pendingResult.finish()
-            }
+        goAsyncSafely(context, TAG, OperationHistoryStore.REMINDERS_TASK) {
+            val tasks = db.taskDao().getActiveReminderTasksDirect()
+            scheduler.scheduleReminders(tasks)
         }
+    }
+
+    companion object {
+        private const val TAG = "BootReceiver"
     }
 }

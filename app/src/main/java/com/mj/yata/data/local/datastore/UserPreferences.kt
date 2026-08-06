@@ -3,6 +3,7 @@ package com.mj.yata.data.local.datastore
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import com.mj.yata.domain.model.AppFont
@@ -34,7 +35,13 @@ interface TaskListPreferences {
     val defaultListIdFlow: Flow<String>
 }
 
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_settings")
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "user_settings",
+    corruptionHandler = ReplaceFileCorruptionHandler {
+        Log.e("UserPreferences", "Preferences file was corrupt; replacing with defaults", it)
+        emptyPreferences()
+    }
+)
 
 data class UserPreferencesSnapshot(
     val themeMode: ThemeMode,

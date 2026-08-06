@@ -10,5 +10,6 @@
         the compose theme can't help here because none of it exists yet at this moment.
     -->
     <color name="launcher_icon_background">#EFD7CD</color>
+    <color name="launcher_icon_foreground">#FFFFFF</color>
     <color name="splash_background">#EFD7CD</color>
 </resources>

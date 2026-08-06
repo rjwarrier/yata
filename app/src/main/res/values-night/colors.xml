@@ -11,5 +11,6 @@
         than the white flash this replaces, and unavoidable without blocking startup on a disk read.
     -->
     <color name="launcher_icon_background">#1A1110</color>
+    <color name="launcher_icon_foreground">#FFFFFF</color>
     <color name="splash_background">#1A1110</color>
 </resources>

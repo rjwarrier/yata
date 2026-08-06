@@ -1172,4 +1172,33 @@ class NaturalLanguageParserTest {
         assertEquals("10:30 AM", first.time)
         assertEquals("2:30 PM", second.time)
     }
+
+    @Test
+    fun oddInputsDoNotCrashParser() {
+        val inputs = listOf(
+            "",
+            "     ",
+            "\u0000\u0001\u0002",
+            "(((((((((((((((((((((((((",
+            "tomorrow ".repeat(40) + "ship",
+            "every every every monday monday monday",
+            "999999999999999999999999999999999999",
+            "remind remind remind 25:99",
+            "#".repeat(80) + " @@@ +++ ===",
+            "jan 99 feb 99 99/99/9999",
+            "\\today \\tomorrow \\every \\5pm",
+            "mañana amanhã demain tomorrow 3pm 15:30 1530",
+            "first thing at lunch noon-ish eod cob tonight",
+            "x ".repeat(500)
+        )
+
+        inputs.forEach { input ->
+            val result = NaturalLanguageParser.parse(input, ref, LocalTime.of(9, 30))
+            result.highlightRanges.forEach { range ->
+                assertTrue("range starts inside input for <$input>", range.first in input.indices)
+                assertTrue("range ends inside input for <$input>", range.last in input.indices)
+                assertTrue("range is ordered for <$input>", range.first <= range.last)
+            }
+        }
+    }
 }

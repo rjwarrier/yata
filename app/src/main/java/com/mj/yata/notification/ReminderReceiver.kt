@@ -1,40 +1,40 @@
 package com.mj.yata.notification
 
 import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.BroadcastReceiver
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.widget.resolveNotificationAccentColor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class ReminderReceiver : BroadcastReceiver() {
 
-    override fun onReceive(context: Context, intent: Intent) {
-        val taskId    = intent.getStringExtra("EXTRA_TASK_ID") ?: return
+    override fun onReceive(context: Context, intent: Intent) = onReceiveSafely(
+        context = context,
+        tag = TAG,
+        operationId = OperationHistoryStore.REMINDERS_TASK
+    ) {
+        val taskId = intent.getStringExtra("EXTRA_TASK_ID") ?: return@onReceiveSafely
         val taskTitle = intent.getStringExtra("EXTRA_TASK_TITLE") ?: "Task Reminder"
 
         NotificationHelper.createChannels(context)
 
-        // Resolving the app's effective M3 color (light/dark/dynamic) needs a DataStore read,
-        // hence goAsync() — a plain onReceive() can't suspend and would otherwise risk the
-        // process being killed before the read completes.
-        val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val accentColor = resolveNotificationAccentColor(context)
-                val notification = NotificationHelper.buildReminderNotification(
-                    context = context,
-                    taskId = taskId,
-                    taskTitle = taskTitle,
-                    accentColor = accentColor
-                )
-                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                nm.notify(taskId.hashCode(), notification)
-            } finally {
-                pendingResult.finish()
-            }
+        // Resolving the effective M3 color needs a DataStore read, so keep the receiver alive
+        // with goAsync() and treat failures as handled Diagnostics entries.
+        goAsyncSafely(context, TAG, OperationHistoryStore.REMINDERS_TASK) {
+            val accentColor = resolveNotificationAccentColor(context)
+            val notification = NotificationHelper.buildReminderNotification(
+                context = context,
+                taskId = taskId,
+                taskTitle = taskTitle,
+                accentColor = accentColor
+            )
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.notify(taskId.hashCode(), notification)
         }
+    }
+
+    companion object {
+        private const val TAG = "ReminderReceiver"
     }
 }
