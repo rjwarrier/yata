@@ -10,6 +10,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.domain.model.RemoteBackupProtocol
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -29,24 +30,47 @@ class SftpBackupWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val sftpBackupManager: SftpBackupManager,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        if (!userPreferences.sftpBackupEnabledFlow.first()) return Result.success()
-        if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.SFTP) return Result.success()
-
-        val result = sftpBackupManager.syncNow()
-        return if (result.isSuccess) {
-            Result.success()
-        } else {
-            when (result.exceptionOrNull()) {
-                // Nothing configured, or a rejected/missing host key -- retrying on the same
-                // schedule won't fix either, and would just burn WorkManager's retry budget
-                // silently. Both are surfaced in Settings instead.
-                is SftpNotConfiguredException -> Result.success()
-                else -> Result.retry()
+        operationHistoryStore.recordRun(OperationHistoryStore.SYNC_SFTP_LEGACY, "Legacy SFTP worker started")
+        try {
+            if (!userPreferences.sftpBackupEnabledFlow.first()) {
+                operationHistoryStore.recordSkipped(OperationHistoryStore.SYNC_SFTP_LEGACY, "Self-hosted backup is disabled")
+                return Result.success()
             }
+            if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.SFTP) {
+                operationHistoryStore.recordSkipped(OperationHistoryStore.SYNC_SFTP_LEGACY, "SFTP is not the selected protocol")
+                return Result.success()
+            }
+
+            val result = sftpBackupManager.syncNow()
+            return if (result.isSuccess) {
+                operationHistoryStore.recordSuccess(OperationHistoryStore.SYNC_SFTP_LEGACY, "SFTP sync completed")
+                Result.success()
+            } else {
+                when (result.exceptionOrNull()) {
+                    // Nothing configured, or a rejected/missing host key -- retrying on the same
+                    // schedule won't fix either, and would just burn WorkManager's retry budget
+                    // silently. Both are surfaced in Settings instead.
+                    is SftpNotConfiguredException -> {
+                        operationHistoryStore.recordSkipped(
+                            OperationHistoryStore.SYNC_SFTP_LEGACY,
+                            result.exceptionOrNull()?.message ?: "SFTP is not fully configured"
+                        )
+                        Result.success()
+                    }
+                    else -> {
+                        operationHistoryStore.recordFailure(OperationHistoryStore.SYNC_SFTP_LEGACY, result.exceptionOrNull())
+                        Result.retry()
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            operationHistoryStore.recordFailure(OperationHistoryStore.SYNC_SFTP_LEGACY, t)
+            throw t
         }
     }
 

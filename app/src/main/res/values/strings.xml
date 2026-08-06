@@ -640,9 +640,23 @@
     <string name="sync_toast_failed">Sync failed</string>
 
     <!-- Crash logs -->
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_operation_history">Operation history</string>
+    <string name="diagnostics_crash_reports">Crash reports</string>
     <string name="crash_log_title">Crash Logs</string>
-    <string name="settings_crash_logs">Crash Logs</string>
-    <string name="settings_crash_logs_summary">Reports saved automatically when something goes wrong.</string>
+    <string name="settings_crash_logs">Diagnostics</string>
+    <string name="settings_crash_logs_summary">Recent backup, sync, reminder, widget, and crash activity.</string>
+    <string name="operation_status_never_run">Never run</string>
+    <string name="operation_status_running">Running</string>
+    <string name="operation_status_success">Success</string>
+    <string name="operation_status_failure">Failure</string>
+    <string name="operation_status_skipped">Skipped</string>
+    <string name="operation_history_reason">Reason: %1$s</string>
+    <string name="operation_history_last_run">Last run</string>
+    <string name="operation_history_last_success">Last success</string>
+    <string name="operation_history_last_failure">Last failure</string>
+    <string name="operation_history_retry_count">Retry count</string>
+    <string name="operation_history_never">Never</string>
     <string name="crash_log_empty_title">No crash reports</string>
     <string name="crash_log_empty_body">Nothing has gone wrong since the last time these were cleared. Reports show up here on their own — there is nothing to turn on.</string>
     <string name="crash_log_fatal">Crash</string>
@@ -1032,5 +1046,106 @@
     <!-- %1$s is a formatted duration, %2$d how many open tasks carry no estimate yet. -->
     <string name="today_planned_with_unestimated">%1$s planned · %2$d unestimated</string>
     <string name="cd_task_estimate">Estimated %1$s</string>
+
+    <!-- Quick add widget/dialog polish -->
+    <string name="quick_add_created_in">Task created in %1$s with due date %2$s</string>
+    <string name="quick_add_created">Task created with due date %1$s</string>
+    <string name="quick_add_voice_prompt">Speak your task</string>
+    <string name="quick_add_voice_unavailable">Voice input isn\'t available on this device.</string>
+    <string name="quick_add_adding_to">Adding to %1$s</string>
+    <string name="quick_add_preview_heading">Smart add preview</string>
+    <string name="quick_add_preview_title">Title: %1$s</string>
+    <string name="quick_add_preview_due">Due %1$s</string>
+    <string name="quick_add_preview_time">Time %1$s</string>
+    <string name="quick_add_preview_repeat">Repeat %1$s</string>
+    <string name="quick_add_preview_priority">%1$s priority</string>
+    <string name="quick_add_preview_flagged">Flagged</string>
+    <string name="quick_add_preview_target">Target %1$s</string>
+    <string name="quick_add_widget_header">Quick add</string>
+    <string name="quick_add_widget_add_to">Add to %1$s...</string>
+    <string name="quick_add_widget_add_task">Add a task...</string>
+    <string name="quick_add_widget_preset_deleted">Preset deleted - long-press to reconfigure</string>
+    <string name="quick_add_widget_destination">Destination:</string>
+
+    <!-- Shared task filters and empty states -->
+    <string name="task_filter_all">All</string>
+    <string name="task_filter_delegated">Delegated</string>
+    <string name="task_filter_no_matches">No tasks match this filter.</string>
+    <string name="today_no_tasks">No tasks for today.</string>
+    <string name="today_all_caught_up_bang">All caught up!</string>
+    <plurals name="today_to_go">
+        <item quantity="one">%1$d to go</item>
+        <item quantity="other">%1$d to go</item>
+    </plurals>
+    <string name="today_pending_header">PENDING</string>
+    <string name="today_completed_header">COMPLETED</string>
+    <string name="action_show_all">Show all</string>
+    <plurals name="task_count_lower">
+        <item quantity="one">%1$d task</item>
+        <item quantity="other">%1$d tasks</item>
+    </plurals>
+    <string name="upcoming_view_mode_upcoming">Upcoming</string>
+    <string name="upcoming_view_mode_calendar">Calendar</string>
+
+    <!-- Diagnostics health panels -->
+    <string name="diagnostics_reminder_health">Reminder Health</string>
+    <string name="diagnostics_reminder_health_ready">Reminder delivery is ready.</string>
+    <string name="diagnostics_reminder_health_attention">Reminder delivery needs attention.</string>
+    <string name="diagnostics_send_test_reminder">Send test reminder</string>
+    <string name="diagnostics_test_reminder_sent">Test reminder sent.</string>
+    <string name="diagnostics_test_reminder_failed">Couldn\'t send the test reminder.</string>
+    <string name="diagnostics_refresh_checks">Refresh checks</string>
+    <string name="diagnostics_backup_health">Backup Health</string>
+    <string name="diagnostics_backup_health_empty">No backup or sync operation has run yet.</string>
+    <string name="diagnostics_latest_success">Latest success</string>
+    <string name="diagnostics_latest_failure">Latest failure</string>
+    <string name="diagnostics_retrying">Retrying</string>
+    <string name="diagnostics_destinations_seen">Destinations seen</string>
+    <string name="diagnostics_status_ok">OK</string>
+    <string name="diagnostics_status_attention">Attention</string>
+    <string name="diagnostics_status_unknown">Unknown</string>
+    <string name="diagnostics_notification_access">Notification access</string>
+    <string name="diagnostics_exact_alarm_timing">Exact alarm timing</string>
+    <string name="diagnostics_background_delivery">Background delivery</string>
+    <string name="diagnostics_enabled">Enabled</string>
+    <string name="diagnostics_disabled_tap_to_fix">Disabled - tap to fix</string>
+    <string name="diagnostics_allowed">Allowed</string>
+    <string name="diagnostics_not_allowed_tap_to_fix">Not allowed - tap to fix</string>
+    <string name="diagnostics_unrestricted">Unrestricted</string>
+    <string name="diagnostics_optimized_tap_to_fix">Optimized - tap to fix</string>
+
+    <!-- Widget refresh confidence -->
+    <string name="widget_config_refresh_status">Refresh Status</string>
+    <string name="widget_config_refresh_now">Refresh now</string>
+    <string name="widget_config_refreshing">Refreshing...</string>
+    <string name="widget_config_last_refresh">Last refresh: %1$s</string>
+    <string name="widget_config_last_success">Last success: %1$s</string>
+    <string name="widget_config_last_failure">Last failure: %1$s</string>
+    <string name="widget_config_retry_count">Retry count: %1$d</string>
+    <string name="widget_config_refresh_reason">Reason: %1$s</string>
+    <string name="widget_config_never_refreshed">No widget refresh has been recorded yet.</string>
+    <string name="widget_config_refresh_started">Refreshing widget...</string>
+    <string name="widget_config_refresh_succeeded">Widget refreshed.</string>
+    <string name="widget_config_refresh_failed">Widget refresh failed.</string>
+    <string name="widget_config_save_failed">Couldn\'t save widget settings - please try again</string>
+    <string name="widget_config_choose_source_to_pin">Choose Source to Pin</string>
+    <string name="widget_config_choose_preset_destination">Choose Preset Destination (Optional)</string>
+    <string name="widget_config_source_list">List</string>
+    <string name="widget_config_source_project">Project</string>
+    <string name="widget_config_source_tag">Tag</string>
+
+    <!-- Notification summaries -->
+    <string name="daily_agenda_unassigned_count">Unassigned: %1$d</string>
+    <plurals name="notification_due_today_title">
+        <item quantity="one">%1$d task due today</item>
+        <item quantity="other">%1$d tasks due today</item>
+    </plurals>
+    <string name="diagnostics_test_reminder_title">YATA test reminder</string>
+
+    <!-- Accessibility cleanup -->
+    <string name="cd_expand_group">Expand group</string>
+    <string name="cd_collapse_group">Collapse group</string>
+    <string name="cd_expand_section">Expand section</string>
+    <string name="cd_collapse_section">Collapse section</string>
 
 </resources>

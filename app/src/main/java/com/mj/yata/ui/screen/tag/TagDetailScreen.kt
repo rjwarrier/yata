@@ -479,7 +479,7 @@ fun TagDetailScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No tasks match this filter.",
+                                text = stringResource(R.string.task_filter_no_matches),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )

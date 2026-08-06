@@ -59,6 +59,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private enum class ScheduleViewMode { WEEK, MONTH }
+private enum class UpcomingTaskFilter { ALL, ASSIGNED_TO_ME, DELEGATED, HIGH_PRIORITY }
 
 /** yataSlideUp equivalent: 260ms emphasized-decelerate slide + fade, per handoff. */
 private const val SLIDE_UP_MS = 260
@@ -148,16 +149,18 @@ fun UpcomingTab(
     val tasksByDate = remember(activeTasks) { activeTasks.filter { it.due != null }.groupBy { it.due!! } }
 
     // State for filter chips
-    var selectedFilter by remember { mutableStateOf("All") } // "All" | "Assigned to me" | "Delegated" | "High Priority"
+    var selectedFilter by remember { mutableStateOf(UpcomingTaskFilter.ALL) }
     LaunchedEffect(peopleEnabled) {
-        if (!peopleEnabled && selectedFilter != "All" && selectedFilter != "High Priority") selectedFilter = "All"
+        if (!peopleEnabled && selectedFilter != UpcomingTaskFilter.ALL && selectedFilter != UpcomingTaskFilter.HIGH_PRIORITY) {
+            selectedFilter = UpcomingTaskFilter.ALL
+        }
     }
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
     fun applyFilter(list: List<Task>): List<Task> = when (selectedFilter) {
-        "Assigned to me" -> list.filter { it.assigneeIds.contains(myId) }
-        "Delegated" -> list.filter { it.assigneeIds.isNotEmpty() && !it.assigneeIds.contains(myId) }
-        "High Priority" -> list.filter { it.priority == "high" }
-        else -> list
+        UpcomingTaskFilter.ASSIGNED_TO_ME -> list.filter { it.assigneeIds.contains(myId) }
+        UpcomingTaskFilter.DELEGATED -> list.filter { it.assigneeIds.isNotEmpty() && !it.assigneeIds.contains(myId) }
+        UpcomingTaskFilter.HIGH_PRIORITY -> list.filter { it.priority == "high" }
+        UpcomingTaskFilter.ALL -> list
     }
     val accents = LocalYataAccents.current
     val defaultDotColor = MaterialTheme.colorScheme.primary
@@ -179,6 +182,8 @@ fun UpcomingTab(
     val agendaLabel = remember(selectedDay) {
         selectedDay.format(com.mj.yata.util.AppFormats.headerDateFormatter())
     }
+    val upcomingModeLabel = stringResource(R.string.upcoming_view_mode_upcoming)
+    val calendarModeLabel = stringResource(R.string.upcoming_view_mode_calendar)
 
     Column(
         modifier = modifier
@@ -289,7 +294,7 @@ fun UpcomingTab(
                 items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
                 selectedItem = viewMode,
                 onItemSelected = { viewMode = it },
-                labelProvider = { if (it == ScheduleViewMode.WEEK) "Upcoming" else "Calendar" }
+                labelProvider = { if (it == ScheduleViewMode.WEEK) upcomingModeLabel else calendarModeLabel }
             )
         }
 
@@ -435,12 +440,17 @@ fun UpcomingTab(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            listOfNotNull("All", if (peopleEnabled) "Assigned to me" else null, if (peopleEnabled) "Delegated" else null, "High Priority").forEach { filter ->
+            listOfNotNull(
+                UpcomingTaskFilter.ALL,
+                if (peopleEnabled) UpcomingTaskFilter.ASSIGNED_TO_ME else null,
+                if (peopleEnabled) UpcomingTaskFilter.DELEGATED else null,
+                UpcomingTaskFilter.HIGH_PRIORITY
+            ).forEach { filter ->
                 val isSelected = filter == selectedFilter
                 FilterChip(
                     selected = isSelected,
                     onClick = { selectedFilter = filter },
-                    label = { Text(text = filter) },
+                    label = { Text(text = upcomingTaskFilterLabel(filter)) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                         selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -463,7 +473,7 @@ fun UpcomingTab(
             label = "agenda"
         ) { day ->
             val dayTasks = if (day == selectedDay) selectedDayTasks else applyFilter(tasksByDate[day.toString()].orEmpty())
-            val label = if (day == today) "Today" else agendaLabel
+            val label = if (day == today) stringResource(R.string.shortcut_today_short) else agendaLabel
 
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
@@ -482,7 +492,7 @@ fun UpcomingTab(
                             )
                         )
                         Text(
-                            text = "${dayTasks.size} ${if (dayTasks.size == 1) "task" else "tasks"}",
+                            text = pluralStringResource(R.plurals.task_count_lower, dayTasks.size, dayTasks.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -823,3 +833,13 @@ private fun UpcomingEmptyState(modifier: Modifier = Modifier) {
         modifier = modifier
     )
 }
+
+@Composable
+private fun upcomingTaskFilterLabel(filter: UpcomingTaskFilter): String = stringResource(
+    when (filter) {
+        UpcomingTaskFilter.ALL -> R.string.task_filter_all
+        UpcomingTaskFilter.ASSIGNED_TO_ME -> R.string.search_filter_assigned_to_me
+        UpcomingTaskFilter.DELEGATED -> R.string.task_filter_delegated
+        UpcomingTaskFilter.HIGH_PRIORITY -> R.string.search_filter_high_priority
+    }
+)

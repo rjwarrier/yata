@@ -10,6 +10,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.data.sftp.SftpNotConfiguredException
 import com.mj.yata.domain.model.RemoteBackupProtocol
 import dagger.assisted.Assisted
@@ -27,21 +28,44 @@ class FtpBackupWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val ftpBackupManager: FtpBackupManager,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        if (!userPreferences.sftpBackupEnabledFlow.first()) return Result.success()
-        if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.FTP) return Result.success()
-
-        val result = ftpBackupManager.syncNow()
-        return if (result.isSuccess) {
-            Result.success()
-        } else {
-            when (result.exceptionOrNull()) {
-                is SftpNotConfiguredException -> Result.success()
-                else -> Result.retry()
+        operationHistoryStore.recordRun(OperationHistoryStore.SYNC_FTP_LEGACY, "Legacy FTP worker started")
+        try {
+            if (!userPreferences.sftpBackupEnabledFlow.first()) {
+                operationHistoryStore.recordSkipped(OperationHistoryStore.SYNC_FTP_LEGACY, "Self-hosted backup is disabled")
+                return Result.success()
             }
+            if (userPreferences.remoteBackupProtocolFlow.first() != RemoteBackupProtocol.FTP) {
+                operationHistoryStore.recordSkipped(OperationHistoryStore.SYNC_FTP_LEGACY, "FTP is not the selected protocol")
+                return Result.success()
+            }
+
+            val result = ftpBackupManager.syncNow()
+            return if (result.isSuccess) {
+                operationHistoryStore.recordSuccess(OperationHistoryStore.SYNC_FTP_LEGACY, "FTP sync completed")
+                Result.success()
+            } else {
+                when (result.exceptionOrNull()) {
+                    is SftpNotConfiguredException -> {
+                        operationHistoryStore.recordSkipped(
+                            OperationHistoryStore.SYNC_FTP_LEGACY,
+                            result.exceptionOrNull()?.message ?: "FTP is not fully configured"
+                        )
+                        Result.success()
+                    }
+                    else -> {
+                        operationHistoryStore.recordFailure(OperationHistoryStore.SYNC_FTP_LEGACY, result.exceptionOrNull())
+                        Result.retry()
+                    }
+                }
+            }
+        } catch (t: Throwable) {
+            operationHistoryStore.recordFailure(OperationHistoryStore.SYNC_FTP_LEGACY, t)
+            throw t
         }
     }
 

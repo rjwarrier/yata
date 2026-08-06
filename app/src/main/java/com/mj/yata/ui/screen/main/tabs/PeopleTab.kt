@@ -484,7 +484,7 @@ private fun GroupHeader(
             )
             Icon(
                 imageVector = Icons.AutoMirrored.Default.KeyboardArrowRight,
-                contentDescription = if (expanded) "Collapse group" else "Expand group",
+                contentDescription = stringResource(if (expanded) R.string.cd_collapse_group else R.string.cd_expand_group),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .size(16.dp)

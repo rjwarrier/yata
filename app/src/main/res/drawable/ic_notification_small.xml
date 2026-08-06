@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification small icons are alpha masks; Android applies the final system/app tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,0h24v24h-24z" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3"
+        android:pathData="M5.5,10 C7.1,9 8.9,10.2 10.2,12 L12.7,15.1 C13.2,15.8 14,15.9 14.6,15.2 C16,13.8 17.6,10.7 19,5.8" />
+</vector>

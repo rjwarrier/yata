@@ -8,6 +8,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -20,14 +21,30 @@ class LocalBackupWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val localBackupManager: LocalBackupManager,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        if (!userPreferences.localBackupEnabledFlow.first()) return Result.success()
+        operationHistoryStore.recordRun(OperationHistoryStore.BACKUP_LOCAL_LEGACY, "Legacy local backup worker started")
+        try {
+            if (!userPreferences.localBackupEnabledFlow.first()) {
+                operationHistoryStore.recordSkipped(OperationHistoryStore.BACKUP_LOCAL_LEGACY, "Local backup is disabled")
+                return Result.success()
+            }
 
-        val result = localBackupManager.backupNow()
-        return if (result.isSuccess) Result.success() else Result.retry()
+            val result = localBackupManager.backupNow()
+            return if (result.isSuccess) {
+                operationHistoryStore.recordSuccess(OperationHistoryStore.BACKUP_LOCAL_LEGACY, "Local backup completed")
+                Result.success()
+            } else {
+                operationHistoryStore.recordFailure(OperationHistoryStore.BACKUP_LOCAL_LEGACY, result.exceptionOrNull())
+                Result.retry()
+            }
+        } catch (t: Throwable) {
+            operationHistoryStore.recordFailure(OperationHistoryStore.BACKUP_LOCAL_LEGACY, t)
+            throw t
+        }
     }
 
     companion object {

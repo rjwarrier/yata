@@ -37,6 +37,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.mj.yata.R
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 
@@ -157,14 +158,14 @@ private fun QuickAddWidgetContent(
                 )
                 Spacer(modifier = GlanceModifier.height(6.dp))
                 Text(
-                    text = if (!customLabel.isNullOrBlank()) customLabel else "Add task",
+                    text = if (!customLabel.isNullOrBlank()) customLabel else context.getString(R.string.cd_add_task),
                     maxLines = 1,
                     style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = GlanceTheme.colors.onSurfaceVariant)
                 )
             }
         } else {
             Column(modifier = GlanceModifier.fillMaxSize().padding(16.dp)) {
-                WidgetSectionHeader(customLabel ?: "Quick add", ColorProvider(accentOverride ?: colors.primary))
+                WidgetSectionHeader(customLabel ?: context.getString(R.string.quick_add_widget_header), ColorProvider(accentOverride ?: colors.primary))
                 Spacer(modifier = GlanceModifier.height(8.dp))
                 Box(
                     modifier = GlanceModifier
@@ -177,7 +178,8 @@ private fun QuickAddWidgetContent(
                     contentAlignment = Alignment.CenterStart
                 ) {
                     Text(
-                        text = targetName?.let { "Add to $it…" } ?: "Add a task…",
+                        text = targetName?.let { context.getString(R.string.quick_add_widget_add_to, it) }
+                            ?: context.getString(R.string.quick_add_widget_add_task),
                         maxLines = 1,
                         style = TextStyle(fontSize = 14.sp, color = GlanceTheme.colors.onSurfaceVariant)
                     )
@@ -185,7 +187,7 @@ private fun QuickAddWidgetContent(
                 if (presetWasDeleted) {
                     Spacer(modifier = GlanceModifier.height(6.dp))
                     Text(
-                        text = "Preset deleted — long-press to reconfigure",
+                        text = context.getString(R.string.quick_add_widget_preset_deleted),
                         maxLines = 1,
                         style = TextStyle(fontSize = 11.sp, color = ColorProvider(colors.error))
                     )
@@ -197,7 +199,7 @@ private fun QuickAddWidgetContent(
                         modifier = GlanceModifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Destination: ",
+                            text = context.getString(R.string.quick_add_widget_destination) + " ",
                             style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant)
                         )
                         val badgeColor = if (useM3Colors) colors.primary else GlanceTheme.colors.primary.getColor(context)

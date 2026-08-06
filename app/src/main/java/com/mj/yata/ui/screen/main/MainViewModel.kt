@@ -8,6 +8,8 @@ import com.mj.yata.data.backup.BackupDiff
 import com.mj.yata.data.local.crash.CrashLogEntry
 import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpConnectionTestResult
 import com.mj.yata.domain.model.*
@@ -39,6 +41,7 @@ class MainViewModel @Inject constructor(
     private val backupOperations: BackupOperations,
     private val errorBus: AppErrorBus,
     private val crashLogStore: CrashLogStore,
+    private val operationHistoryStore: OperationHistoryStore,
     private val remoteBackupCredentialsStore: RemoteBackupCredentialsStore
 ) : ViewModel() {
 
@@ -81,11 +84,28 @@ class MainViewModel @Inject constructor(
      */
     private val _crashLogs = MutableStateFlow<List<CrashLogEntry>>(emptyList())
     val crashLogs: StateFlow<List<CrashLogEntry>> = _crashLogs.asStateFlow()
+    private val _operationHistory = MutableStateFlow<List<OperationHistoryEntry>>(emptyList())
+    val operationHistory: StateFlow<List<OperationHistoryEntry>> = _operationHistory.asStateFlow()
 
     fun refreshCrashLogs() {
         safeLaunch {
             val entries = withContext(Dispatchers.IO) { crashLogStore.list() }
             _crashLogs.value = entries
+            refreshOperationHistory()
+        }
+    }
+
+    fun refreshOperationHistory() {
+        safeLaunch {
+            val entries = withContext(Dispatchers.IO) { operationHistoryStore.list() }
+            _operationHistory.value = entries
+        }
+    }
+
+    fun clearOperationHistory() {
+        safeLaunch {
+            withContext(Dispatchers.IO) { operationHistoryStore.clear() }
+            refreshOperationHistory()
         }
     }
 

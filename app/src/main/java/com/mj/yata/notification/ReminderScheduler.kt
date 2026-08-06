@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.db.entity.TaskEntity
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.util.TaskScheduleUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -16,17 +17,33 @@ import javax.inject.Inject
 
 class ReminderScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val operationHistoryStore: OperationHistoryStore
 ) : TaskReminderScheduler {
 
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     override suspend fun scheduleReminder(task: TaskEntity) {
-        val defaultTime = LocalTime.of(
-            userPreferences.defaultReminderHourFlow.first(),
-            userPreferences.defaultReminderMinuteFlow.first()
-        )
-        scheduleReminder(task, defaultTime)
+        operationHistoryStore.recordRun(OperationHistoryStore.REMINDERS_TASK, "Scheduling one task reminder")
+        try {
+            val defaultTime = LocalTime.of(
+                userPreferences.defaultReminderHourFlow.first(),
+                userPreferences.defaultReminderMinuteFlow.first()
+            )
+            when (scheduleReminder(task, defaultTime)) {
+                ReminderScheduleOutcome.SCHEDULED -> operationHistoryStore.recordSuccess(
+                    OperationHistoryStore.REMINDERS_TASK,
+                    "Scheduled one task reminder"
+                )
+                ReminderScheduleOutcome.SKIPPED -> operationHistoryStore.recordSkipped(
+                    OperationHistoryStore.REMINDERS_TASK,
+                    "No active reminder needed for one task"
+                )
+            }
+        } catch (t: Throwable) {
+            operationHistoryStore.recordFailure(OperationHistoryStore.REMINDERS_TASK, t)
+            throw t
+        }
     }
 
     /**
@@ -37,34 +54,68 @@ class ReminderScheduler @Inject constructor(
      * window runs out, silently leaving the rest unscheduled.
      */
     suspend fun scheduleReminders(tasks: List<TaskEntity>) {
-        val defaultTime = LocalTime.of(
-            userPreferences.defaultReminderHourFlow.first(),
-            userPreferences.defaultReminderMinuteFlow.first()
-        )
-        tasks.forEach { task -> scheduleReminder(task, defaultTime) }
-    }
-
-    override suspend fun syncReminders(tasks: List<TaskEntity>) {
-        val defaultTime = LocalTime.of(
-            userPreferences.defaultReminderHourFlow.first(),
-            userPreferences.defaultReminderMinuteFlow.first()
-        )
-        tasks.forEach { task ->
-            if (task.done || task.dueDate == null || task.reminder.isNullOrBlank()) {
-                cancelReminder(task)
-            } else {
-                scheduleReminder(task, defaultTime)
+        operationHistoryStore.recordRun(OperationHistoryStore.REMINDERS_TASK, "Scheduling ${tasks.size} reminder(s)")
+        try {
+            val defaultTime = LocalTime.of(
+                userPreferences.defaultReminderHourFlow.first(),
+                userPreferences.defaultReminderMinuteFlow.first()
+            )
+            var scheduled = 0
+            var skipped = 0
+            tasks.forEach { task ->
+                when (scheduleReminder(task, defaultTime)) {
+                    ReminderScheduleOutcome.SCHEDULED -> scheduled++
+                    ReminderScheduleOutcome.SKIPPED -> skipped++
+                }
             }
+            operationHistoryStore.recordSuccess(
+                OperationHistoryStore.REMINDERS_TASK,
+                "Scheduled $scheduled reminder(s), skipped $skipped"
+            )
+        } catch (t: Throwable) {
+            operationHistoryStore.recordFailure(OperationHistoryStore.REMINDERS_TASK, t)
+            throw t
         }
     }
 
-    private fun scheduleReminder(task: TaskEntity, defaultTime: LocalTime) {
-        if (task.dueDate == null || task.done || task.reminder.isNullOrBlank()) return
+    override suspend fun syncReminders(tasks: List<TaskEntity>) {
+        operationHistoryStore.recordRun(OperationHistoryStore.REMINDERS_TASK, "Syncing ${tasks.size} reminder(s)")
+        try {
+            val defaultTime = LocalTime.of(
+                userPreferences.defaultReminderHourFlow.first(),
+                userPreferences.defaultReminderMinuteFlow.first()
+            )
+            var scheduled = 0
+            var cancelled = 0
+            var skipped = 0
+            tasks.forEach { task ->
+                if (task.done || task.dueDate == null || task.reminder.isNullOrBlank()) {
+                    cancelReminder(task)
+                    cancelled++
+                } else {
+                    when (scheduleReminder(task, defaultTime)) {
+                        ReminderScheduleOutcome.SCHEDULED -> scheduled++
+                        ReminderScheduleOutcome.SKIPPED -> skipped++
+                    }
+                }
+            }
+            operationHistoryStore.recordSuccess(
+                OperationHistoryStore.REMINDERS_TASK,
+                "Synced reminders: $scheduled scheduled, $cancelled cancelled, $skipped skipped"
+            )
+        } catch (t: Throwable) {
+            operationHistoryStore.recordFailure(OperationHistoryStore.REMINDERS_TASK, t)
+            throw t
+        }
+    }
+
+    private fun scheduleReminder(task: TaskEntity, defaultTime: LocalTime): ReminderScheduleOutcome {
+        if (task.dueDate == null || task.done || task.reminder.isNullOrBlank()) return ReminderScheduleOutcome.SKIPPED
 
         val localDate = try {
             LocalDate.parse(task.dueDate)
         } catch (e: Exception) {
-            return
+            return ReminderScheduleOutcome.SKIPPED
         }
 
         val localTime = TaskScheduleUtils.parseTime(task.dueTime) ?: defaultTime
@@ -82,7 +133,7 @@ class ReminderScheduler @Inject constructor(
 
         if (triggerAtMillis <= System.currentTimeMillis()) {
             cancelReminder(task)
-            return
+            return ReminderScheduleOutcome.SKIPPED
         }
 
         val intent = Intent(context, ReminderReceiver::class.java).apply {
@@ -98,9 +149,11 @@ class ReminderScheduler @Inject constructor(
         )
 
         scheduleAlarm(triggerAtMillis, pendingIntent)
+        return ReminderScheduleOutcome.SCHEDULED
     }
 
     override fun scheduleReminderDelayed(task: TaskEntity, delayMillis: Long) {
+        operationHistoryStore.recordRun(OperationHistoryStore.REMINDERS_TASK, "Scheduling delayed reminder")
         val triggerAtMillis = System.currentTimeMillis() + delayMillis
 
         val intent = Intent(context, ReminderReceiver::class.java).apply {
@@ -115,7 +168,16 @@ class ReminderScheduler @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        scheduleAlarm(triggerAtMillis, pendingIntent)
+        try {
+            scheduleAlarm(triggerAtMillis, pendingIntent)
+            operationHistoryStore.recordSuccess(
+                OperationHistoryStore.REMINDERS_TASK,
+                "Scheduled delayed reminder"
+            )
+        } catch (t: Throwable) {
+            operationHistoryStore.recordFailure(OperationHistoryStore.REMINDERS_TASK, t)
+            throw t
+        }
     }
 
     /** Checks exact-alarm permission up front instead of relying on catching the
@@ -148,5 +210,10 @@ class ReminderScheduler @Inject constructor(
             alarmManager.cancel(pendingIntent)
             pendingIntent.cancel()
         }
+    }
+
+    private enum class ReminderScheduleOutcome {
+        SCHEDULED,
+        SKIPPED
     }
 }

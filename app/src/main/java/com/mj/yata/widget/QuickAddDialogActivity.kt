@@ -158,7 +158,11 @@ class QuickAddDialogActivity : ComponentActivity() {
                         val dueLabel = com.mj.yata.util.TaskScheduleUtils.formatDueDate(due)
                         android.widget.Toast.makeText(
                             this@QuickAddDialogActivity,
-                            if (destination != null) "Task created in $destination with due date $dueLabel" else "Task created with due date $dueLabel",
+                            if (destination != null) {
+                                getString(R.string.quick_add_created_in, destination, dueLabel)
+                            } else {
+                                getString(R.string.quick_add_created, dueLabel)
+                            },
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
 
@@ -230,17 +234,22 @@ private fun QuickAddDialogContent(
 ) {
     var title by remember { mutableStateOf(initialTitle) }
     val parsedPreview = remember(title) { NaturalLanguageParser.parse(title) }
-    val previewItems = remember(parsedPreview, targetName) {
-        listOfNotNull(
-            parsedPreview.title.takeIf { it.isNotBlank() && it != title.trim() }?.let { "Title: $it" },
-            parsedPreview.due?.let { "Due ${TaskScheduleUtils.formatDueDate(it)}" },
-            parsedPreview.time?.let { "Time $it" },
-            parsedPreview.recurrence?.let { "Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}" },
-            parsedPreview.priority?.let { "${it.uppercase()} priority" },
-            "Flagged".takeIf { parsedPreview.flag },
-            targetName?.let { "Target $it" }
-        )
-    }
+    val previewItems = listOfNotNull(
+        parsedPreview.title
+            .takeIf { it.isNotBlank() && it != title.trim() }
+            ?.let { stringResource(R.string.quick_add_preview_title, it) },
+        parsedPreview.due?.let { stringResource(R.string.quick_add_preview_due, TaskScheduleUtils.formatDueDate(it)) },
+        parsedPreview.time?.let { stringResource(R.string.quick_add_preview_time, it) },
+        parsedPreview.recurrence?.let {
+            stringResource(
+                R.string.quick_add_preview_repeat,
+                com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)
+            )
+        },
+        parsedPreview.priority?.let { stringResource(R.string.quick_add_preview_priority, it.uppercase()) },
+        stringResource(R.string.quick_add_preview_flagged).takeIf { parsedPreview.flag },
+        targetName?.let { stringResource(R.string.quick_add_preview_target, it) }
+    )
     val focusRequester = remember { FocusRequester() }
     val noRipple = remember { MutableInteractionSource() }
     val context = LocalContext.current
@@ -257,12 +266,12 @@ private fun QuickAddDialogContent(
     val startVoiceInput = {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your task")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, context.getString(R.string.quick_add_voice_prompt))
         }
         if (intent.resolveActivity(context.packageManager) != null) {
             speechLauncher.launch(intent)
         } else {
-            android.widget.Toast.makeText(context, "Voice input isn't available on this device.", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.quick_add_voice_unavailable), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -309,7 +318,7 @@ private fun QuickAddDialogContent(
                 Text(stringResource(R.string.quick_add_dialog_quick_add), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 if (targetName != null) {
                     Text(
-                        text = "Adding to $targetName",
+                        text = stringResource(R.string.quick_add_adding_to, targetName),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -338,7 +347,7 @@ private fun QuickAddDialogContent(
                 if (previewItems.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = "Smart add preview",
+                            text = stringResource(R.string.quick_add_preview_heading),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )

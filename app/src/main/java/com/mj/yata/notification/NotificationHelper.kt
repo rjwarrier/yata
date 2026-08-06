@@ -79,7 +79,7 @@ object NotificationHelper {
             .setContentTitle("Overdue tasks in your team")
             .setContentText(lines.joinToString(", "))
             .setStyle(style)
-            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_notification_small)
             .setColor(accentColor)
             .setContentIntent(openIntent)
             .setAutoCancel(true)
@@ -87,11 +87,9 @@ object NotificationHelper {
             .build()
     }
 
-    /** Build a reminder notification with Complete and Snooze actions. No `setLargeIcon` — on
-     * the classic (non-BigPicture) notification layout that draws a large circular image at the
-     * notification's trailing edge, which reads as a stray "extra icon" rather than a deliberate
-     * avatar/photo here, so it's better left off. `setAllowSystemGeneratedContextualActions(false)`
-     * stays regardless, so Android's own inferred actions don't stack on top of our explicit ones.
+    /** Build a reminder notification with Complete and Snooze actions.
+     * `setAllowSystemGeneratedContextualActions(false)` stays regardless, so Android's own
+     * inferred actions don't stack on top of our explicit ones.
      * [accentColor] should be the app's current effective M3 primary color — see
      * [com.mj.yata.widget.resolveNotificationAccentColor] — not a hardcoded value, so the
      * notification icon matches whatever theme the user is on. */
@@ -129,7 +127,7 @@ object NotificationHelper {
             .setContentTitle(context.getString(R.string.notification_reminder_title, taskTitle))
             // getString, not stringResource: notifications are built outside composition.
             .setContentText(context.getString(R.string.notification_helper_this_task_is_due))
-            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_notification_small)
             .setColor(accentColor)
             .setContentIntent(openIntent)
             .setAutoCancel(true)
@@ -179,14 +177,21 @@ object NotificationHelper {
         lines.forEach { style.addLine(it) }
 
         return NotificationCompat.Builder(context, AGENDA_CHANNEL_ID)
-            .setContentTitle("$totalDueToday task${if (totalDueToday == 1) "" else "s"} due today")
+            .setContentTitle(
+                context.resources.getQuantityString(
+                    R.plurals.notification_due_today_title,
+                    totalDueToday,
+                    totalDueToday
+                )
+            )
             .setContentText(lines.joinToString(", "))
             .setStyle(style)
-            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_notification_small)
             .setColor(accentColor)
             .setContentIntent(openIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
     }
+
 }

@@ -11,6 +11,7 @@ import javax.inject.Singleton
 
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.domain.model.effectiveTagIds
 import com.mj.yata.domain.model.hiddenFromMainTaskListIds
 import com.mj.yata.domain.model.hiddenFromMainTaskProjectIds
@@ -32,7 +33,8 @@ class WidgetUpdaterImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     // Lazy breaks Dagger cycles
     private val backupOperations: Lazy<com.mj.yata.domain.usecase.BackupOperations>,
-    private val yataRepository: Lazy<YataRepository>
+    private val yataRepository: Lazy<YataRepository>,
+    private val operationHistoryStore: OperationHistoryStore
 ) : WidgetUpdater {
 
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -53,13 +55,19 @@ class WidgetUpdaterImpl @Inject constructor(
             changeEvents
                 .debounce(500)
                 .collect {
-                    processUpdate()
+                    try {
+                        processUpdate()
+                    } catch (t: Throwable) {
+                        operationHistoryStore.recordFailure(OperationHistoryStore.WIDGETS_REFRESH, t)
+                        throw t
+                    }
                 }
         }
     }
 
     override fun notifyTasksChanged() {
         backupOperations.get().scheduleDebouncedBackup()
+        operationHistoryStore.recordRun(OperationHistoryStore.WIDGETS_REFRESH, "Widget refresh queued after task change")
         changeEvents.tryEmit(Unit)
     }
 
@@ -67,13 +75,18 @@ class WidgetUpdaterImpl @Inject constructor(
         GlanceAppWidgetManager(context).getGlanceIds(widgetClass).isNotEmpty()
 
     private suspend fun processUpdate() {
+        operationHistoryStore.recordRun(OperationHistoryStore.WIDGETS_REFRESH, "Checking placed widgets")
         val repository = yataRepository.get()
         val hasProgress = hasPlacedInstances(ProgressStatsWidget::class.java)
         val hasUpcoming = hasPlacedInstances(UpcomingWidget::class.java)
         val hasTeam = hasPlacedInstances(TeamOverdueWidget::class.java)
         val hasSingleList = hasPlacedInstances(SingleListWidget::class.java)
         val hasAppWidget = hasPlacedInstances(YataAppWidget::class.java)
-        if (!hasProgress && !hasUpcoming && !hasTeam && !hasSingleList && !hasAppWidget) return
+        if (!hasProgress && !hasUpcoming && !hasTeam && !hasSingleList && !hasAppWidget) {
+            operationHistoryStore.recordSkipped(OperationHistoryStore.WIDGETS_REFRESH, "No home-screen widgets are placed")
+            return
+        }
+        var refreshed = 0
 
         val tasks = repository.getTasks().first()
         val needsPeople = hasProgress || hasUpcoming || hasTeam || hasSingleList || hasAppWidget
@@ -107,6 +120,7 @@ class WidgetUpdaterImpl @Inject constructor(
             if (progressHash != lastProgressHash) {
                 lastProgressHash = progressHash
                 WidgetRefresher.refreshWidget(context, ProgressStatsWidget::class.java)
+                refreshed++
             }
         }
 
@@ -133,6 +147,7 @@ class WidgetUpdaterImpl @Inject constructor(
             if (upcomingHash != lastUpcomingHash) {
                 lastUpcomingHash = upcomingHash
                 WidgetRefresher.refreshWidget(context, UpcomingWidget::class.java)
+                refreshed++
             }
         }
 
@@ -147,6 +162,7 @@ class WidgetUpdaterImpl @Inject constructor(
             if (teamHash != lastTeamHash) {
                 lastTeamHash = teamHash
                 WidgetRefresher.refreshWidget(context, TeamOverdueWidget::class.java)
+                refreshed++
             }
         }
 
@@ -173,6 +189,7 @@ class WidgetUpdaterImpl @Inject constructor(
             if (singleListHash != lastSingleListHash) {
                 lastSingleListHash = singleListHash
                 WidgetRefresher.refreshWidget(context, SingleListWidget::class.java)
+                refreshed++
             }
         }
 
@@ -197,9 +214,14 @@ class WidgetUpdaterImpl @Inject constructor(
             if (appWidgetHash != lastAppWidgetHash) {
                 lastAppWidgetHash = appWidgetHash
                 WidgetRefresher.refreshWidget(context, YataAppWidget::class.java)
+                refreshed++
             }
         }
 
+        operationHistoryStore.recordSuccess(
+            OperationHistoryStore.WIDGETS_REFRESH,
+            if (refreshed == 0) "Placed widgets were already current" else "Refreshed $refreshed widget type(s)"
+        )
     }
 
     private fun isOverdue(task: com.mj.yata.domain.model.Task, today: java.time.LocalDate): Boolean {

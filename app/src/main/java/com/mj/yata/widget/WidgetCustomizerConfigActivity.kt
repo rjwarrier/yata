@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +35,9 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.lifecycle.lifecycleScope
 import com.mj.yata.R
+import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.data.local.operationhistory.OperationStatus
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
@@ -49,6 +53,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
@@ -58,6 +65,7 @@ private enum class ConfigCategory { LIST, PROJECT, TAG }
 class WidgetCustomizerConfigActivity : ComponentActivity() {
 
     @Inject lateinit var repository: YataRepository
+    @Inject lateinit var operationHistoryStore: OperationHistoryStore
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private var providerClass: String? = null
@@ -124,6 +132,10 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
 
             setContent {
                 YataTheme {
+                    var widgetHistory by remember { mutableStateOf(loadWidgetRefreshHistory()) }
+                    var refreshInProgress by remember { mutableStateOf(false) }
+                    val composeScope = rememberCoroutineScope()
+
                     WidgetCustomizerScreen(
                         providerClass = providerClass,
                         lists = listsState,
@@ -136,6 +148,34 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                         initialSourceType = initialSourceType,
                         initialOpacity = initialOpacity,
                         initialAccentOverride = initialAccentOverride,
+                        widgetHistory = widgetHistory,
+                        refreshInProgress = refreshInProgress,
+                        onRefreshNow = {
+                            if (!refreshInProgress) {
+                                composeScope.launch {
+                                    refreshInProgress = true
+                                    runCatching {
+                                        refreshConfiguredWidget(
+                                            runReason = "Manual refresh from widget settings",
+                                            successReason = "Manual widget refresh completed"
+                                        )
+                                        android.widget.Toast.makeText(
+                                            this@WidgetCustomizerConfigActivity,
+                                            getString(R.string.widget_config_refresh_succeeded),
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }.onFailure {
+                                        android.widget.Toast.makeText(
+                                            this@WidgetCustomizerConfigActivity,
+                                            getString(R.string.widget_config_refresh_failed),
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                    widgetHistory = loadWidgetRefreshHistory()
+                                    refreshInProgress = false
+                                }
+                            }
+                        },
                         onSave = { radius, label, useM3, sourceId, sourceType, opacity, accentOverride ->
                             onConfigSaved(radius, label, useM3, sourceId, sourceType, opacity, accentOverride)
                         }
@@ -223,23 +263,10 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
             // "closed the configure screen but the widget never actually got the update."
             withContext(kotlinx.coroutines.NonCancellable) {
                 try {
-                    // Force widget update through the same WidgetRefresher path every task-change
-                    // refresh already uses (WidgetUpdater), rather than a one-off `SomeWidget().update()`
-                    // call — that direct call was found to render stale content on the home screen
-                    // until a later unrelated save/refresh caught it up.
-                    val updated = when {
-                        providerClass?.endsWith("SingleListWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, SingleListWidget::class.java); true }
-                        providerClass?.endsWith("QuickAddWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, QuickAddWidget::class.java); true }
-                        providerClass?.endsWith("YataAppWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, YataAppWidget::class.java); true }
-                        providerClass?.endsWith("UpcomingWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, UpcomingWidget::class.java); true }
-                        providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, ProgressStatsWidget::class.java); true }
-                        providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this@WidgetCustomizerConfigActivity, TeamOverdueWidget::class.java); true }
-                        else -> false
-                    }
-                    if (!updated) {
-                        Log.w("WidgetConfig", "onConfigSaved: unrecognized providerClass='$providerClass' for widget $appWidgetId — settings saved but no .update() call matched, refreshing every widget type as a fallback")
-                        WidgetRefresher.refreshAll(this@WidgetCustomizerConfigActivity)
-                    }
+                    refreshConfiguredWidget(
+                        runReason = "Widget settings saved",
+                        successReason = "Widget refreshed after settings save"
+                    )
                 } catch (e: Exception) {
                     Log.e("WidgetConfig", "onConfigSaved: settings saved but widget refresh failed for widget $appWidgetId (providerClass=$providerClass)", e)
                 }
@@ -254,9 +281,39 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
     private fun showSaveFailedToast() {
         android.widget.Toast.makeText(
             this,
-            "Couldn't save widget settings — please try again",
+            getString(R.string.widget_config_save_failed),
             android.widget.Toast.LENGTH_LONG
         ).show()
+    }
+
+    private fun loadWidgetRefreshHistory(): OperationHistoryEntry? =
+        operationHistoryStore.list().firstOrNull { it.id == OperationHistoryStore.WIDGETS_REFRESH }
+
+    private suspend fun refreshConfiguredWidget(runReason: String, successReason: String) {
+        operationHistoryStore.recordRun(OperationHistoryStore.WIDGETS_REFRESH, runReason)
+        try {
+            refreshCurrentProvider()
+            operationHistoryStore.recordSuccess(OperationHistoryStore.WIDGETS_REFRESH, successReason)
+        } catch (e: Exception) {
+            operationHistoryStore.recordFailure(OperationHistoryStore.WIDGETS_REFRESH, e)
+            throw e
+        }
+    }
+
+    private suspend fun refreshCurrentProvider() {
+        val updated = when {
+            providerClass?.endsWith("SingleListWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this, SingleListWidget::class.java); true }
+            providerClass?.endsWith("QuickAddWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this, QuickAddWidget::class.java); true }
+            providerClass?.endsWith("YataAppWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this, YataAppWidget::class.java); true }
+            providerClass?.endsWith("UpcomingWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this, UpcomingWidget::class.java); true }
+            providerClass?.endsWith("ProgressStatsWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this, ProgressStatsWidget::class.java); true }
+            providerClass?.endsWith("TeamOverdueWidgetReceiver") == true -> { WidgetRefresher.refreshWidget(this, TeamOverdueWidget::class.java); true }
+            else -> false
+        }
+        if (!updated) {
+            Log.w("WidgetConfig", "refreshCurrentProvider: unrecognized providerClass='$providerClass' for widget $appWidgetId; refreshing every widget type as a fallback")
+            WidgetRefresher.refreshAll(this)
+        }
     }
 }
 
@@ -274,6 +331,9 @@ private fun WidgetCustomizerScreen(
     initialSourceType: String,
     initialOpacity: Float,
     initialAccentOverride: String?,
+    widgetHistory: OperationHistoryEntry?,
+    refreshInProgress: Boolean,
+    onRefreshNow: () -> Unit,
     onSave: (Int, String, Boolean, String?, String?, Float, String?) -> Unit
 ) {
     var radius by remember { mutableStateOf(initialRadius.coerceIn(2, 30)) }
@@ -296,6 +356,9 @@ private fun WidgetCustomizerScreen(
     // other widgets' per-list/per-task tint) — the toggle would be a visible no-op, so it's
     // hidden here instead of silently doing nothing after Save.
     val supportsM3Colors = providerClass?.endsWith("TeamOverdueWidgetReceiver") != true
+    val sourceListLabel = stringResource(R.string.widget_config_source_list)
+    val sourceProjectLabel = stringResource(R.string.widget_config_source_project)
+    val sourceTagLabel = stringResource(R.string.widget_config_source_tag)
 
     var sourceCategory by remember {
         mutableStateOf(
@@ -405,6 +468,12 @@ private fun WidgetCustomizerScreen(
                 }
             }
 
+            WidgetRefreshStatusCard(
+                history = widgetHistory,
+                refreshInProgress = refreshInProgress,
+                onRefreshNow = onRefreshNow
+            )
+
             // Accent Color Override
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -466,7 +535,10 @@ private fun WidgetCustomizerScreen(
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = if (isSingleList) "Choose Source to Pin" else "Choose Preset Destination (Optional)",
+                            text = stringResource(
+                                if (isSingleList) R.string.widget_config_choose_source_to_pin
+                                else R.string.widget_config_choose_preset_destination
+                            ),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -517,9 +589,9 @@ private fun WidgetCustomizerScreen(
                             onItemSelected = { sourceCategory = it },
                             labelProvider = {
                                 when (it) {
-                                    ConfigCategory.LIST -> "List"
-                                    ConfigCategory.PROJECT -> "Project"
-                                    ConfigCategory.TAG -> "Tag"
+                                    ConfigCategory.LIST -> sourceListLabel
+                                    ConfigCategory.PROJECT -> sourceProjectLabel
+                                    ConfigCategory.TAG -> sourceTagLabel
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -628,6 +700,97 @@ private fun WidgetCustomizerScreen(
         }
     }
 }
+
+/** Last known widget refresh outcome plus a manual refresh hook for configuration confidence. */
+@Composable
+private fun WidgetRefreshStatusCard(
+    history: OperationHistoryEntry?,
+    refreshInProgress: Boolean,
+    onRefreshNow: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.widget_config_refresh_status),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = history?.lastStatus?.let { widgetOperationStatusText(it) }
+                            ?: stringResource(R.string.operation_status_never_run),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                OutlinedButton(onClick = onRefreshNow, enabled = !refreshInProgress) {
+                    if (refreshInProgress) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.widget_config_refreshing))
+                    } else {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.widget_config_refresh_now))
+                    }
+                }
+            }
+            if (history == null || history.lastRunAt == null) {
+                Text(
+                    stringResource(R.string.widget_config_never_refreshed),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Text(
+                    stringResource(R.string.widget_config_last_refresh, formatWidgetTimestamp(history.lastRunAt)),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    stringResource(R.string.widget_config_last_success, formatWidgetTimestamp(history.lastSuccessAt)),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    stringResource(R.string.widget_config_last_failure, formatWidgetTimestamp(history.lastFailureAt)),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    stringResource(R.string.widget_config_retry_count, history.retryCount),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                history.lastReason?.takeIf { it.isNotBlank() }?.let { reason ->
+                    Text(
+                        stringResource(R.string.widget_config_refresh_reason, reason),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun widgetOperationStatusText(status: OperationStatus): String = stringResource(
+    when (status) {
+        OperationStatus.NEVER_RUN -> R.string.operation_status_never_run
+        OperationStatus.RUNNING -> R.string.operation_status_running
+        OperationStatus.SUCCESS -> R.string.operation_status_success
+        OperationStatus.FAILURE -> R.string.operation_status_failure
+        OperationStatus.SKIPPED -> R.string.operation_status_skipped
+    }
+)
+
+@Composable
+private fun formatWidgetTimestamp(millis: Long?): String =
+    millis?.let {
+        SimpleDateFormat("MMM d, HH:mm:ss", Locale.getDefault()).format(Date(it))
+    } ?: stringResource(R.string.operation_history_never)
 
 /** M3 Expressive-style slider thumb — a tall rounded bar instead of the classic round knob. */
 @Composable

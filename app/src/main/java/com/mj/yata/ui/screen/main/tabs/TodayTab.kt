@@ -47,6 +47,8 @@ import com.mj.yata.util.sortedByMode
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+private enum class TodayTaskFilter { ALL, ASSIGNED_TO_ME, DELEGATED, HIGH_PRIORITY }
+
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun TodayTab(
@@ -130,17 +132,19 @@ fun TodayTab(
     }
 
     // State for filter chips
-    var selectedFilter by remember { mutableStateOf("All") } // "All" | "Assigned to me" | "Delegated" | "High Priority"
+    var selectedFilter by remember { mutableStateOf(TodayTaskFilter.ALL) }
     LaunchedEffect(peopleEnabled) {
-        if (!peopleEnabled && selectedFilter != "All" && selectedFilter != "High Priority") selectedFilter = "All"
+        if (!peopleEnabled && selectedFilter != TodayTaskFilter.ALL && selectedFilter != TodayTaskFilter.HIGH_PRIORITY) {
+            selectedFilter = TodayTaskFilter.ALL
+        }
     }
 
     val filteredTasks = remember(todayTasks, selectedFilter, myId) {
         when (selectedFilter) {
-            "Assigned to me" -> todayTasks.filter { it.assigneeIds.contains(myId) }
-            "Delegated" -> todayTasks.filter { it.assigneeIds.isNotEmpty() && !it.assigneeIds.contains(myId) }
-            "High Priority" -> todayTasks.filter { it.priority == "high" }
-            else -> todayTasks
+            TodayTaskFilter.ASSIGNED_TO_ME -> todayTasks.filter { it.assigneeIds.contains(myId) }
+            TodayTaskFilter.DELEGATED -> todayTasks.filter { it.assigneeIds.isNotEmpty() && !it.assigneeIds.contains(myId) }
+            TodayTaskFilter.HIGH_PRIORITY -> todayTasks.filter { it.priority == "high" }
+            TodayTaskFilter.ALL -> todayTasks
         }
     }
 
@@ -355,7 +359,11 @@ fun TodayTab(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (remainingCount == 0 && totalCount > 0) "All caught up!" else "$remainingCount to go",
+                    text = if (remainingCount == 0 && totalCount > 0) {
+                        stringResource(R.string.today_all_caught_up_bang)
+                    } else {
+                        pluralStringResource(R.plurals.today_to_go, remainingCount, remainingCount)
+                    },
                     style = MaterialTheme.typography.displaySmall.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSynthesis = androidx.compose.ui.text.font.FontSynthesis.All,
@@ -445,12 +453,17 @@ fun TodayTab(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            listOfNotNull("All", if (peopleEnabled) "Assigned to me" else null, if (peopleEnabled) "Delegated" else null, "High Priority").forEach { filter ->
+            listOfNotNull(
+                TodayTaskFilter.ALL,
+                if (peopleEnabled) TodayTaskFilter.ASSIGNED_TO_ME else null,
+                if (peopleEnabled) TodayTaskFilter.DELEGATED else null,
+                TodayTaskFilter.HIGH_PRIORITY
+            ).forEach { filter ->
                 val isSelected = filter == selectedFilter
                 FilterChip(
                     selected = isSelected,
                     onClick = { selectedFilter = filter },
-                    label = { Text(text = filter) },
+                    label = { Text(text = todayTaskFilterLabel(filter)) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                         selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -472,16 +485,16 @@ fun TodayTab(
             contentPadding = PaddingValues(start = 12.dp, top = 8.dp, end = 12.dp, bottom = 88.dp)
         ) {
             if (pendingTasks.isEmpty() && completedTasks.isEmpty()) {
-                val filtered = selectedFilter != "All" || activeStatFilter != null
+                val filtered = selectedFilter != TodayTaskFilter.ALL || activeStatFilter != null
                 item {
                     com.mj.yata.ui.widgets.TabEmptyState(
                         icon = Icons.Default.TaskAlt,
                         title = stringResource(R.string.today_all_caught_up),
-                        subtitle = if (!filtered) "No tasks for today." else "No tasks match this filter.",
-                        actionLabel = if (!filtered) "Add task" else "Show all",
+                        subtitle = stringResource(if (!filtered) R.string.today_no_tasks else R.string.task_filter_no_matches),
+                        actionLabel = stringResource(if (!filtered) R.string.cd_add_task else R.string.action_show_all),
                         onAction = {
                             if (!filtered) onNewTaskClick() else {
-                                selectedFilter = "All"
+                                selectedFilter = TodayTaskFilter.ALL
                                 activeStatFilter = null
                             }
                         },
@@ -596,13 +609,13 @@ fun TodayTab(
                 // back to a plain flat list with no "Pending"/"Completed" labels at all.
                 if (!hideCompleted && pendingTasks.isNotEmpty()) {
                     item(key = "pending_header") {
-                        TaskSectionHeader("PENDING", pendingTasks.size, horizontalPadding = 12.dp)
+                        TaskSectionHeader(stringResource(R.string.today_pending_header), pendingTasks.size, horizontalPadding = 12.dp)
                     }
                 }
                 items(pendingTasks, key = { "pending_" + it.id }, contentType = { "task" }) { task -> taskRowContent(task) }
                 if (!hideCompleted && completedTasks.isNotEmpty()) {
                     item(key = "completed_header") {
-                        TaskSectionHeader("COMPLETED", completedTasks.size, horizontalPadding = 12.dp)
+                        TaskSectionHeader(stringResource(R.string.today_completed_header), completedTasks.size, horizontalPadding = 12.dp)
                     }
                     items(completedTasks, key = { "completed_" + it.id }, contentType = { "task" }) { task -> taskRowContent(task) }
                 }
@@ -723,3 +736,13 @@ fun TodayTab(
         )
     }
 }
+
+@Composable
+private fun todayTaskFilterLabel(filter: TodayTaskFilter): String = stringResource(
+    when (filter) {
+        TodayTaskFilter.ALL -> R.string.task_filter_all
+        TodayTaskFilter.ASSIGNED_TO_ME -> R.string.search_filter_assigned_to_me
+        TodayTaskFilter.DELEGATED -> R.string.task_filter_delegated
+        TodayTaskFilter.HIGH_PRIORITY -> R.string.search_filter_high_priority
+    }
+)

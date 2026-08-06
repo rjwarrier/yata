@@ -10,5 +10,6 @@
         their system is Dark gets a dark launch background for a frame — a far smaller mismatch
         than the white flash this replaces, and unavoidable without blocking startup on a disk read.
     -->
+    <color name="launcher_icon_background">#1A1110</color>
     <color name="splash_background">#1A1110</color>
 </resources>

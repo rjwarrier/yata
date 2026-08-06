@@ -9,6 +9,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.mj.yata.R
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.domain.model.isDeferredOn
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.widget.resolveNotificationAccentColor
@@ -31,10 +33,12 @@ import java.util.concurrent.TimeUnit
 class DailyAgendaWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val repository: YataRepository
+    private val repository: YataRepository,
+    private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        operationHistoryStore.recordRun(OperationHistoryStore.REMINDERS_DAILY_AGENDA, "Daily agenda worker started")
         val tasks = repository.getTasks().first()
         val people = repository.getPeople().first()
         val today = LocalDate.now().toString()
@@ -44,12 +48,15 @@ class DailyAgendaWorker @AssistedInject constructor(
         // isWaitingOn: that rule is about your own day view, and this digest is the whole-team
         // picture, so a task you're waiting on someone for still belongs under their line.
         val dueToday = tasks.filter { !it.done && it.due == today && !it.isDeferredOn(today) }
-        if (dueToday.isEmpty()) return Result.success()
+        if (dueToday.isEmpty()) {
+            operationHistoryStore.recordSuccess(OperationHistoryStore.REMINDERS_DAILY_AGENDA, "No tasks due today")
+            return Result.success()
+        }
 
         val peopleById = people.associateBy { it.id }
         val lines = mutableListOf<String>()
         val unassigned = dueToday.count { it.assigneeIds.isEmpty() }
-        if (unassigned > 0) lines.add("Unassigned: $unassigned")
+        if (unassigned > 0) lines.add(applicationContext.getString(R.string.daily_agenda_unassigned_count, unassigned))
         people.forEach { person ->
             val count = dueToday.count { person.id in it.assigneeIds }
             if (count > 0) lines.add("${person.name}: $count")
@@ -61,6 +68,10 @@ class DailyAgendaWorker @AssistedInject constructor(
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(NotificationHelper.DAILY_AGENDA_NOTIFICATION_ID, notification)
 
+        operationHistoryStore.recordSuccess(
+            OperationHistoryStore.REMINDERS_DAILY_AGENDA,
+            "Posted daily agenda for ${dueToday.size} task(s)"
+        )
         return Result.success()
     }
 

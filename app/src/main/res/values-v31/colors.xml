@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ exposes wallpaper-derived system colors as resources. The adaptive launcher
+         background is also what SystemUI uses for the app icon in notification rows. -->
+    <color name="launcher_icon_background">@android:color/system_accent1_600</color>
+</resources>

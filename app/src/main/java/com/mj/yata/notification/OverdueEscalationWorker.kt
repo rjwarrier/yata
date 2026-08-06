@@ -9,6 +9,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.widget.resolveNotificationAccentColor
 import dagger.assisted.Assisted
@@ -27,10 +28,12 @@ import java.util.concurrent.TimeUnit
 class OverdueEscalationWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val repository: YataRepository
+    private val repository: YataRepository,
+    private val operationHistoryStore: OperationHistoryStore
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        operationHistoryStore.recordRun(OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION, "Overdue escalation worker started")
         val tasks = repository.getTasks().first()
         val people = repository.getPeople().first()
         val today = LocalDate.now()
@@ -44,7 +47,10 @@ class OverdueEscalationWorker @AssistedInject constructor(
             if (overdueCount > 0) "${person.name}: $overdueCount overdue" else null
         }
 
-        if (lines.isEmpty()) return Result.success()
+        if (lines.isEmpty()) {
+            operationHistoryStore.recordSuccess(OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION, "No overdue escalations")
+            return Result.success()
+        }
 
         NotificationHelper.createChannels(applicationContext)
         val accentColor = resolveNotificationAccentColor(applicationContext)
@@ -52,6 +58,10 @@ class OverdueEscalationWorker @AssistedInject constructor(
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(NotificationHelper.ESCALATION_NOTIFICATION_ID, notification)
 
+        operationHistoryStore.recordSuccess(
+            OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION,
+            "Posted ${lines.size} overdue escalation line(s)"
+        )
         return Result.success()
     }
 
