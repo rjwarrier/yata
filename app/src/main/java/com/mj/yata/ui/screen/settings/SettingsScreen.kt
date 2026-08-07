@@ -3192,23 +3192,16 @@ fun SettingsScreen(
 
         AlertDialog(
             onDismissRequest = { showSftpConfigDialog = false },
-            title = { Text(if (draftIsGitHub) "GitHub sync" else stringResource(R.string.settings_sftp_config_title)) },
+            title = { Text("Remote sync") },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    val protocolSftpLabel = stringResource(R.string.settings_sftp_protocol_sftp)
-                    val protocolFtpLabel = stringResource(R.string.settings_sftp_protocol_ftp)
-                    val protocolGitHubLabel = "GitHub"
-                    SegmentedControl(
-                        items = listOf(
-                            com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
-                            com.mj.yata.domain.model.RemoteBackupProtocol.FTP,
-                            com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
-                        ),
-                        selectedItem = draftProtocol,
-                        onItemSelected = { newProtocol ->
+                    RemoteConfigHeader(protocol = draftProtocol)
+                    RemoteProviderPicker(
+                        selectedProtocol = draftProtocol,
+                        onProtocolSelected = { newProtocol ->
                             // Only nudge the port if it's still sitting at the *other* protocol's
                             // default -- a custom port the user already typed must survive a
                             // protocol switch.
@@ -3218,100 +3211,119 @@ fun SettingsScreen(
                                 draftPort = "22"
                             }
                             draftProtocol = newProtocol
-                        },
-                        labelProvider = {
-                            when (it) {
-                                com.mj.yata.domain.model.RemoteBackupProtocol.SFTP -> protocolSftpLabel
-                                com.mj.yata.domain.model.RemoteBackupProtocol.FTP -> protocolFtpLabel
-                                com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB -> protocolGitHubLabel
-                            }
                         }
                     )
                     if (draftIsGitHub) {
-                        OutlinedTextField(
-                            value = draftGitHubToken,
-                            onValueChange = { draftGitHubToken = it },
-                            label = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Token")
-                                    IconButton(
-                                        onClick = { showGitHubPatHelpDialog = true },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Info,
-                                            contentDescription = "How to create a GitHub token",
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                        RemoteConfigGroup(
+                            title = "Repository access",
+                            summary = "Limit the token to this private sync repo.",
+                            icon = Icons.Default.Code
+                        ) {
+                            OutlinedTextField(
+                                value = draftGitHubToken,
+                                onValueChange = { draftGitHubToken = it },
+                                label = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Token")
+                                        IconButton(
+                                            onClick = { showGitHubPatHelpDialog = true },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Info,
+                                                contentDescription = "How to create a GitHub token",
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            placeholder = {
-                                if (githubTokenAlreadySet) Text(savedSecretPlaceholder)
-                            },
-                            singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = draftGitHubRepo,
-                            onValueChange = { draftGitHubRepo = it },
-                            label = { Text("Repo") },
-                            placeholder = { Text("owner/repo") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = draftGitHubBranch,
-                            onValueChange = { draftGitHubBranch = it },
-                            label = { Text("Branch") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = draftGitHubApiBase,
-                            onValueChange = { draftGitHubApiBase = it },
-                            label = { Text("API base URL") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Text(
-                            text = "Use a fine-grained token for this repo with Contents read/write.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                                },
+                                placeholder = {
+                                    if (githubTokenAlreadySet) Text(savedSecretPlaceholder)
+                                },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = draftGitHubRepo,
+                                onValueChange = { draftGitHubRepo = it },
+                                label = { Text("Repo") },
+                                placeholder = { Text("owner/repo") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = draftGitHubBranch,
+                                onValueChange = { draftGitHubBranch = it },
+                                label = { Text("Branch") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            OutlinedTextField(
+                                value = draftGitHubApiBase,
+                                onValueChange = { draftGitHubApiBase = it },
+                                label = { Text("API base URL") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Surface(
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Fine-grained token: Contents read/write. Stored encrypted on this device.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
                     } else {
-                        OutlinedTextField(
-                            value = draftHost,
-                            onValueChange = { draftHost = it },
-                            label = { Text(stringResource(R.string.settings_sftp_host)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = draftPort,
-                            onValueChange = { new -> if (new.length <= 5 && new.all { it.isDigit() }) draftPort = new },
-                            label = { Text(stringResource(R.string.settings_sftp_port)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = draftUsername,
-                            onValueChange = { draftUsername = it },
-                            label = { Text(stringResource(R.string.settings_sftp_username)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = draftRemoteDir,
-                            onValueChange = { draftRemoteDir = it },
-                            label = { Text(stringResource(R.string.settings_sftp_remote_dir)) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        RemoteConfigGroup(
+                            title = "Server location",
+                            summary = if (draftIsFtp) "Point YATA at an FTP or FTPS folder." else "Point YATA at an SSH/SFTP folder.",
+                            icon = if (draftIsFtp) Icons.Default.Dns else Icons.Default.Storage
+                        ) {
+                            OutlinedTextField(
+                                value = draftHost,
+                                onValueChange = { draftHost = it },
+                                label = { Text(stringResource(R.string.settings_sftp_host)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                OutlinedTextField(
+                                    value = draftPort,
+                                    onValueChange = { new -> if (new.length <= 5 && new.all { it.isDigit() }) draftPort = new },
+                                    label = { Text(stringResource(R.string.settings_sftp_port)) },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(0.38f)
+                                )
+                                OutlinedTextField(
+                                    value = draftUsername,
+                                    onValueChange = { draftUsername = it },
+                                    label = { Text(stringResource(R.string.settings_sftp_username)) },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(0.62f)
+                                )
+                            }
+                            OutlinedTextField(
+                                value = draftRemoteDir,
+                                onValueChange = { draftRemoteDir = it },
+                                label = { Text(stringResource(R.string.settings_sftp_remote_dir)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                     if (draftIsFtp) {
+                        RemoteConfigGroup(
+                            title = "Credentials",
+                            summary = "Saved secrets are kept encrypted on this device.",
+                            icon = Icons.Default.Lock
+                        ) {
                         OutlinedTextField(
                             value = draftPassword,
                             onValueChange = { draftPassword = it },
@@ -3369,7 +3381,13 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        }
                     } else if (!draftIsGitHub) {
+                        RemoteConfigGroup(
+                            title = "Credentials",
+                            summary = "Use a password or private key for this SFTP server.",
+                            icon = Icons.Default.Lock
+                        ) {
                         val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
                         val authKeyLabel = stringResource(R.string.settings_sftp_auth_key)
                         SegmentedControl(
@@ -3412,9 +3430,10 @@ fun SettingsScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
+                        }
                     }
 
-                    OutlinedButton(
+                    FilledTonalButton(
                         onClick = {
                             testResultOk = null
                             testResultMessage = null
@@ -3480,6 +3499,16 @@ fun SettingsScreen(
                         enabled = !isTestingConnection,
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        if (isTestingConnection) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(
+                                imageVector = if (draftIsGitHub) Icons.Default.Code else Icons.Default.CloudSync,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             if (draftIsGitHub) {
                                 if (isTestingConnection) "Connecting..." else "Connect GitHub"
@@ -3543,11 +3572,29 @@ fun SettingsScreen(
                     }
 
                     testResultMessage?.let { message ->
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (testResultOk == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                        )
+                        Surface(
+                            color = if (testResultOk == true) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
+                            contentColor = if (testResultOk == true) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (testResultOk == true) Icons.Default.CheckCircle else Icons.Default.Info,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = message,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
                     }
                 }
             },
@@ -4055,6 +4102,189 @@ private fun BackupDiffTaskSection(label: String, titles: List<String>, totalCoun
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
+        }
+    }
+}
+
+@Composable
+private fun RemoteConfigHeader(
+    protocol: com.mj.yata.domain.model.RemoteBackupProtocol,
+    modifier: Modifier = Modifier
+) {
+    val (title, body, icon) = when (protocol) {
+        com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB -> Triple(
+            "GitHub sync",
+            "Sync through a private repository with commit history as restore points.",
+            Icons.Default.Code
+        )
+        com.mj.yata.domain.model.RemoteBackupProtocol.FTP -> Triple(
+            "FTP / FTPS sync",
+            "Use your own server folder with rotated backup files.",
+            Icons.Default.Dns
+        )
+        com.mj.yata.domain.model.RemoteBackupProtocol.SFTP -> Triple(
+            "SFTP sync",
+            "Use SSH-backed storage with host-key trust and rotated backups.",
+            Icons.Default.Storage
+        )
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = RoundedCornerShape(24.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.64f),
+                modifier = Modifier.size(46.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(body, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RemoteProviderPicker(
+    selectedProtocol: com.mj.yata.domain.model.RemoteBackupProtocol,
+    onProtocolSelected: (com.mj.yata.domain.model.RemoteBackupProtocol) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Provider",
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary
+        )
+        RemoteProviderOption(
+            selected = selectedProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB,
+            icon = Icons.Default.Code,
+            title = "GitHub",
+            summary = "Private repo, PAT, commit history",
+            onClick = { onProtocolSelected(com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB) }
+        )
+        RemoteProviderOption(
+            selected = selectedProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
+            icon = Icons.Default.Storage,
+            title = "SFTP",
+            summary = "SSH server with host-key trust",
+            onClick = { onProtocolSelected(com.mj.yata.domain.model.RemoteBackupProtocol.SFTP) }
+        )
+        RemoteProviderOption(
+            selected = selectedProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP,
+            icon = Icons.Default.Dns,
+            title = "FTP / FTPS",
+            summary = "Server folder with optional TLS",
+            onClick = { onProtocolSelected(com.mj.yata.domain.model.RemoteBackupProtocol.FTP) }
+        )
+    }
+}
+
+@Composable
+private fun RemoteProviderOption(
+    selected: Boolean,
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    onClick: () -> Unit
+) {
+    val container = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val content = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Surface(
+        color = container,
+        contentColor = content,
+        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                color = content.copy(alpha = 0.12f),
+                shape = CircleShape,
+                modifier = Modifier.size(38.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                }
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
+                Text(summary, style = MaterialTheme.typography.bodySmall, color = content.copy(alpha = 0.78f))
+            }
+            if (selected) {
+                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RemoteConfigGroup(
+    title: String,
+    summary: String? = null,
+    icon: ImageVector,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    shape = CircleShape,
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    summary?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            content()
         }
     }
 }
