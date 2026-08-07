@@ -7,7 +7,12 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.mj.yata.data.github.GitHubAuthException
+import com.mj.yata.data.github.GitHubHistoryRewrittenException
+import com.mj.yata.data.github.GitHubNotFoundException
+import com.mj.yata.data.github.GitHubPermissionException
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.domain.model.BackupRunResult
 import com.mj.yata.domain.usecase.BackupOperations
 import com.mj.yata.notification.runOperationSafely
 import dagger.hilt.EntryPoint
@@ -77,7 +82,7 @@ class UnifiedBackupWorker(
                     "${result.destination}: ${result.error?.message ?: result.error?.javaClass?.simpleName ?: "failed"}"
                 }
                 operationHistoryStore.recordFailure(OperationHistoryStore.BACKUP_UNIFIED, null, reason)
-                Result.retry()
+                if (failed.any(::backupFailureShouldRetry)) Result.retry() else Result.success()
             } else {
                 operationHistoryStore.recordSuccess(
                     OperationHistoryStore.BACKUP_UNIFIED,
@@ -122,3 +127,12 @@ class UnifiedBackupWorker(
         }
     }
 }
+
+internal fun backupFailureShouldRetry(result: BackupRunResult): Boolean =
+    when (result.error) {
+        is GitHubAuthException,
+        is GitHubPermissionException,
+        is GitHubNotFoundException,
+        is GitHubHistoryRewrittenException -> false
+        else -> true
+    }

@@ -33,6 +33,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   short head commit plus token-expiry detail when available.
 - **GitHub PAT help.** The GitHub sync dialog has an info button with short steps for creating a
   fine-grained personal access token with Contents read/write access.
+- Scheduled backup no longer repeatedly retries permanent GitHub sync setup failures such as an
+  expired token, missing repo access, or a detected history rewrite; those failures are recorded
+  for the user to fix, while transient GitHub conflicts/network errors still retry.
 
 ## [0.90.1 beta] - 2026-08-03
 
