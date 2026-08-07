@@ -11,10 +11,14 @@ import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.data.github.GitHubNotFoundException
+import com.mj.yata.data.github.GitHubPermissionException
+import com.mj.yata.data.github.HttpGitHubApi
 import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpConnectionTestResult
 import com.mj.yata.domain.model.*
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.domain.sync.RestorePoint
 import com.mj.yata.domain.usecase.BackupOperations
 import com.mj.yata.domain.usecase.TaskOperations
 import com.mj.yata.util.AnalyticsPeriod
@@ -206,6 +210,12 @@ data class SettingsUiState(
     val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol = com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
     val ftpUseTls: Boolean = true,
     val sftpKeepCount: Int = 5,
+    val githubOwner: String = "",
+    val githubRepo: String = "",
+    val githubBranch: String = "",
+    val githubApiBase: String = "https://api.github.com",
+    val githubTokenExpiresAt: Long? = null,
+    val githubLastHeadSha: String? = null,
     val dateAliasDefinitions: Set<String> = emptySet(),
     val savedThemePresetDefinitions: Set<String> = emptySet(),
     val taskerIntegrationEnabled: Boolean = true,
@@ -326,10 +336,20 @@ private data class RemoteBackupProtocolState(
     val sftpKeepCount: Int
 )
 
+private data class GitHubSettingsState(
+    val owner: String,
+    val repo: String,
+    val branch: String,
+    val apiBase: String,
+    val tokenExpiresAt: Long?,
+    val lastHeadSha: String?
+)
+
 private data class SftpSettingsState(
     val config: SftpConfigState,
     val status: SftpStatusState,
-    val protocol: RemoteBackupProtocolState
+    val protocol: RemoteBackupProtocolState,
+    val github: GitHubSettingsState
 )
 
 private data class SettingsPortState(
@@ -582,8 +602,27 @@ private data class MainNavigationState(
                 userPreferences.remoteBackupProtocolFlow,
                 userPreferences.ftpUseTlsFlow,
                 userPreferences.sftpKeepCountFlow
-            ) { protocol, ftpUseTls, keepCount -> RemoteBackupProtocolState(protocol, ftpUseTls, keepCount) }
-        ) { config, status, protocol -> SftpSettingsState(config, status, protocol) },
+            ) { protocol, ftpUseTls, keepCount -> RemoteBackupProtocolState(protocol, ftpUseTls, keepCount) },
+            combine(
+                userPreferences.githubOwnerFlow,
+                userPreferences.githubRepoFlow,
+                userPreferences.githubBranchFlow,
+                userPreferences.githubApiBaseFlow,
+                combine(
+                    userPreferences.githubTokenExpiresAtFlow,
+                    userPreferences.githubLastHeadShaFlow
+                ) { tokenExpiresAt, lastHeadSha -> tokenExpiresAt to lastHeadSha }
+            ) { owner, repo, branch, apiBase, tokenState ->
+                GitHubSettingsState(
+                    owner = owner,
+                    repo = repo,
+                    branch = branch,
+                    apiBase = apiBase,
+                    tokenExpiresAt = tokenState.first,
+                    lastHeadSha = tokenState.second
+                )
+            }
+        ) { config, status, protocol, github -> SftpSettingsState(config, status, protocol, github) },
         combine(
             userPreferences.dateAliasDefinitionsFlow,
             userPreferences.savedThemePresetsFlow,
@@ -640,6 +679,12 @@ private data class MainNavigationState(
             remoteBackupProtocol = sftp.protocol.remoteBackupProtocol,
             ftpUseTls = sftp.protocol.ftpUseTls,
             sftpKeepCount = sftp.protocol.sftpKeepCount,
+            githubOwner = sftp.github.owner,
+            githubRepo = sftp.github.repo,
+            githubBranch = sftp.github.branch,
+            githubApiBase = sftp.github.apiBase,
+            githubTokenExpiresAt = sftp.github.tokenExpiresAt,
+            githubLastHeadSha = sftp.github.lastHeadSha,
             dateAliasDefinitions = ports.dateAliasDefinitions,
             savedThemePresetDefinitions = ports.savedThemePresetDefinitions,
             taskerIntegrationEnabled = ports.taskerIntegrationEnabled,
@@ -1025,12 +1070,27 @@ private data class MainNavigationState(
      * never filled in — showing a sync button whose only destination is guaranteed to fail is
      * worse than not showing it.
      */
+    private val remoteBackupConfiguredForTopBar: StateFlow<Boolean> = combine(
+        userPreferences.remoteBackupProtocolFlow,
+        userPreferences.sftpHostFlow,
+        userPreferences.githubOwnerFlow,
+        userPreferences.githubRepoFlow
+    ) { protocol, host, githubOwner, githubRepo ->
+        when (protocol) {
+            com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB ->
+                githubOwner.isNotBlank() && githubRepo.isNotBlank()
+            com.mj.yata.domain.model.RemoteBackupProtocol.FTP,
+            com.mj.yata.domain.model.RemoteBackupProtocol.SFTP ->
+                host.isNotBlank()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val anyBackupDestinationEnabled: StateFlow<Boolean> = combine(
         userPreferences.localBackupEnabledFlow,
         userPreferences.sftpBackupEnabledFlow,
-        userPreferences.sftpHostFlow
-    ) { local, selfHosted, host ->
-        local || (selfHosted && host.isNotBlank())
+        remoteBackupConfiguredForTopBar
+    ) { local, selfHosted, remoteConfigured ->
+        local || (selfHosted && remoteConfigured)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val syncInProgress: StateFlow<Boolean> = backupOperations.syncInProgress
@@ -2033,6 +2093,97 @@ private data class MainNavigationState(
         safeLaunch { userPreferences.setFtpUseTls(useTls) }
     }
 
+    fun setGitHubToken(token: String) {
+        remoteBackupCredentialsStore.githubToken = token.ifBlank { null }
+    }
+
+    fun hasGitHubToken(): Boolean = remoteBackupCredentialsStore.githubToken != null
+
+    fun saveGitHubConfiguration(
+        owner: String,
+        repo: String,
+        branch: String,
+        apiBase: String = "https://api.github.com",
+        onSaved: () -> Unit = {}
+    ) {
+        safeLaunch {
+            userPreferences.setGitHubConfiguration(
+                owner = owner,
+                repo = repo,
+                branch = branch,
+                apiBase = apiBase
+            )
+            onSaved()
+        }
+    }
+
+    fun connectGitHubConfiguration(
+        repoText: String,
+        token: String,
+        apiBase: String = "https://api.github.com",
+        onResult: (Result<Unit>) -> Unit
+    ) {
+        safeLaunch {
+            val normalizedApiBase = apiBase.trim().ifBlank { "https://api.github.com" }
+            val tokenToUse = token.ifBlank { remoteBackupCredentialsStore.githubToken.orEmpty() }
+            if (tokenToUse.isBlank()) {
+                onResult(Result.failure(IllegalStateException("GitHub token is required")))
+                return@safeLaunch
+            }
+            val api = HttpGitHubApi(
+                tokenProvider = { tokenToUse },
+                apiBaseProvider = { normalizedApiBase }
+            )
+            val parsed = parseGitHubRepo(repoText)
+            val (owner, repo) = withContext(Dispatchers.IO) {
+                if (parsed.first != null) {
+                    parsed.first!! to parsed.second
+                } else {
+                    api.getUser().login to parsed.second
+                }
+            }
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val remoteRepo = try {
+                        api.getRepo(owner, repo)
+                    } catch (e: GitHubNotFoundException) {
+                        val userLogin = api.getUser().login
+                        if (owner == userLogin) {
+                            api.createRepo(repo, private = true)
+                        } else {
+                            throw e
+                        }
+                    }
+                    if (!remoteRepo.canPush) {
+                        throw GitHubPermissionException()
+                    }
+                    remoteBackupCredentialsStore.githubToken = tokenToUse
+                    userPreferences.setGitHubConfiguration(
+                        owner = owner,
+                        repo = remoteRepo.name,
+                        branch = remoteRepo.defaultBranch,
+                        apiBase = normalizedApiBase
+                    )
+                }
+            }
+            onResult(result)
+        }
+    }
+
+    private fun parseGitHubRepo(repoText: String): Pair<String?, String> {
+        val trimmed = repoText.trim()
+        require(trimmed.isNotBlank()) { "GitHub repo is required" }
+        val parts = trimmed.split("/", limit = 2)
+        return if (parts.size == 2) {
+            val owner = parts[0].trim()
+            val repo = parts[1].trim()
+            require(owner.isNotBlank() && repo.isNotBlank()) { "Enter the repo as owner/name" }
+            owner to repo
+        } else {
+            null to trimmed
+        }
+    }
+
     fun saveRemoteBackupConfiguration(
         protocol: com.mj.yata.domain.model.RemoteBackupProtocol,
         useTls: Boolean,
@@ -2112,6 +2263,18 @@ private data class MainNavigationState(
 
     fun restoreSftpBackup(filename: String, onResult: (Result<Unit>) -> Unit) {
         safeLaunch { onResult(backupOperations.restoreSftpBackup(filename)) }
+    }
+
+    fun listRemoteRestorePoints(onResult: (Result<List<RestorePoint>>) -> Unit) {
+        safeLaunch { onResult(backupOperations.listRemoteRestorePoints()) }
+    }
+
+    fun restoreRemoteSnapshot(id: String, onResult: (Result<Unit>) -> Unit) {
+        safeLaunch { onResult(backupOperations.restoreRemoteSnapshot(id)) }
+    }
+
+    fun inspectRemoteSnapshot(id: String, onResult: (Result<com.mj.yata.domain.model.BackupSummary>) -> Unit) {
+        safeLaunch { onResult(backupOperations.inspectRemoteSnapshot(id)) }
     }
 
     fun testFtpConnection(onResult: (Result<Unit>) -> Unit) {

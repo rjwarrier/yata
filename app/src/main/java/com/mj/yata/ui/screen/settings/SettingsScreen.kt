@@ -115,6 +115,7 @@ import com.mj.yata.domain.model.TaskRowDensity
 import com.mj.yata.domain.model.TimeFormat
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.sync.RestorePoint
 import kotlin.math.roundToInt
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
@@ -298,6 +299,16 @@ fun SettingsScreen(
     val ftpUseTls = uiState.ftpUseTls
     val sftpKeepCount = uiState.sftpKeepCount
     val isFtpProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
+    val isGitHubProtocol = remoteBackupProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
+    val githubOwner = uiState.githubOwner
+    val githubRepo = uiState.githubRepo
+    val githubBranch = uiState.githubBranch
+    val githubApiBase = uiState.githubApiBase
+    val remoteConfigured = if (isGitHubProtocol) {
+        githubOwner.isNotBlank() && githubRepo.isNotBlank()
+    } else {
+        sftpHost.isNotBlank()
+    }
     val dateAliasDefinitions = uiState.dateAliasDefinitions
     val savedThemePresetDefinitions = uiState.savedThemePresetDefinitions
     val taskerIntegrationEnabled = uiState.taskerIntegrationEnabled
@@ -344,10 +355,10 @@ fun SettingsScreen(
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
-    var sftpBackupList by remember { mutableStateOf<List<String>>(emptyList()) }
+    var sftpBackupList by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
     var isRestoringSftpBackup by remember { mutableStateOf(false) }
     var isClearingSyncLock by remember { mutableStateOf(false) }
-    var pendingSftpRestoreFilename by remember { mutableStateOf<String?>(null) }
+    var pendingSftpRestorePoint by remember { mutableStateOf<RestorePoint?>(null) }
     var sftpBackupSummary by remember { mutableStateOf<com.mj.yata.domain.model.BackupSummary?>(null) }
     var isInspectingSftpBackup by remember { mutableStateOf(false) }
     var sftpInspectError by remember { mutableStateOf<String?>(null) }
@@ -2380,8 +2391,10 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                     )
                                     Text(
-                                        text = if (sftpHost.isBlank()) {
+                                        text = if (!remoteConfigured) {
                                             stringResource(R.string.settings_sftp_backup_summary)
+                                        } else if (isGitHubProtocol) {
+                                            "GitHub: $githubOwner/$githubRepo${githubBranch.takeIf { it.isNotBlank() }?.let { " @ $it" } ?: ""}"
                                         } else {
                                             val protocolLabel = when {
                                                 isFtpProtocol && ftpUseTls -> "FTPS"
@@ -2417,8 +2430,10 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                     )
                                     Text(
-                                        text = if (sftpHost.isBlank()) {
+                                        text = if (!remoteConfigured) {
                                             stringResource(R.string.settings_sftp_not_configured)
+                                        } else if (isGitHubProtocol) {
+                                            "GitHub: $githubOwner/$githubRepo${githubBranch.takeIf { it.isNotBlank() }?.let { " @ $it" } ?: ""}"
                                         } else {
                                             val protocolLabel = when {
                                                 isFtpProtocol && ftpUseTls -> "FTPS"
@@ -2444,7 +2459,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable(
-                                        enabled = sftpHost.isNotBlank() && !isLoadingBackupDiff
+                                        enabled = remoteConfigured && !isLoadingBackupDiff
                                     ) {
                                         showBackupDiffDialog = true
                                         isLoadingBackupDiff = true
@@ -2466,7 +2481,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.CompareArrows,
                                     contentDescription = stringResource(R.string.settings_compare_with_backup_2),
-                                    tint = if (sftpHost.isNotBlank()) {
+                                    tint = if (remoteConfigured) {
                                         MaterialTheme.colorScheme.tertiary
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -2477,13 +2492,13 @@ fun SettingsScreen(
                                     Text(
                                         text = stringResource(R.string.settings_compare_with_backup),
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = if (sftpHost.isNotBlank()) {
+                                        color = if (remoteConfigured) {
                                             MaterialTheme.colorScheme.onSurface
                                         } else {
                                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
                                         }
                                     )
-                                    if (sftpHost.isBlank()) {
+                                    if (!remoteConfigured) {
                                         Text(
                                             text = stringResource(R.string.settings_sftp_not_configured),
                                             style = MaterialTheme.typography.bodySmall,
@@ -2493,7 +2508,7 @@ fun SettingsScreen(
                                 }
                             }
 
-                            if (sftpHost.isNotBlank()) {
+                            if (remoteConfigured) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                                     Text(
                                         text = stringResource(R.string.settings_last_sftp_backup, formatRelativeBackupTime(sftpLastBackupAt)),
@@ -2503,7 +2518,7 @@ fun SettingsScreen(
                                     // Host-key trust is an SFTP concept only -- FTPS validates
                                     // certificates through the platform trust store instead, with
                                     // no separate pin/confirm step to report status on here.
-                                    if (!isFtpProtocol) {
+                                    if (!isFtpProtocol && !isGitHubProtocol) {
                                         Text(
                                             text = stringResource(
                                                 if (sftpHostKeyFingerprint != null) {
@@ -2530,8 +2545,7 @@ fun SettingsScreen(
                                         .clickable {
                                             showSftpRestoreDialog = true
                                             isLoadingSftpBackups = true
-                                            val listBackups = if (isFtpProtocol) viewModel::listFtpBackups else viewModel::listSftpBackups
-                                            listBackups { result ->
+                                            viewModel.listRemoteRestorePoints { result ->
                                                 isLoadingSftpBackups = false
                                                 sftpBackupList = result.getOrDefault(emptyList())
                                                 result.exceptionOrNull()?.let { error ->
@@ -2551,38 +2565,40 @@ fun SettingsScreen(
                                     )
                                 }
 
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                if (!isGitHubProtocol) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable(enabled = !isClearingSyncLock) {
-                                            clearSyncLockDialogMessage = null
-                                            showClearSyncLockDialog = true
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable(enabled = !isClearingSyncLock) {
+                                                clearSyncLockDialogMessage = null
+                                                showClearSyncLockDialog = true
+                                            }
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.DeleteForever,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = stringResource(R.string.settings_clear_sync_lock),
+                                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.settings_clear_sync_lock_summary),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
-                                        .padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.DeleteForever,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = stringResource(R.string.settings_clear_sync_lock),
-                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.settings_clear_sync_lock_summary),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    if (isClearingSyncLock) {
-                                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                        if (isClearingSyncLock) {
+                                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                        }
                                     }
                                 }
                             }
@@ -2618,27 +2634,29 @@ fun SettingsScreen(
                         )
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    if (!isGitHubProtocol) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        val remoteKeepCount = sftpKeepCount
-                        var keepCountPosition by remember(remoteKeepCount) { mutableFloatStateOf(remoteKeepCount.toFloat()) }
-                        Text(
-                            text = stringResource(R.string.settings_backups_to_keep),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_remote_backups_to_keep_summary, keepCountPosition.toInt()),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Slider(
-                            value = keepCountPosition,
-                            onValueChange = { keepCountPosition = it },
-                            onValueChangeFinished = { viewModel.setRemoteBackupKeepCount(keepCountPosition.toInt()) },
-                            valueRange = 2f..15f,
-                            steps = 12 // 14 stops total (min + 12 + max), 1 apart
-                        )
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            val remoteKeepCount = sftpKeepCount
+                            var keepCountPosition by remember(remoteKeepCount) { mutableFloatStateOf(remoteKeepCount.toFloat()) }
+                            Text(
+                                text = stringResource(R.string.settings_backups_to_keep),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_remote_backups_to_keep_summary, keepCountPosition.toInt()),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Slider(
+                                value = keepCountPosition,
+                                onValueChange = { keepCountPosition = it },
+                                onValueChangeFinished = { viewModel.setRemoteBackupKeepCount(keepCountPosition.toInt()) },
+                                valueRange = 2f..15f,
+                                steps = 12 // 14 stops total (min + 12 + max), 1 apart
+                            )
+                        }
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -3084,10 +3102,15 @@ fun SettingsScreen(
         var draftPrivateKey by remember { mutableStateOf("") }
         var draftPassphrase by remember { mutableStateOf("") }
         var draftFtpUseTls by remember { mutableStateOf(ftpUseTls) }
+        var draftGitHubToken by remember { mutableStateOf("") }
+        var draftGitHubRepo by remember { mutableStateOf(listOf(githubOwner, githubRepo).filter { it.isNotBlank() }.joinToString("/")) }
+        var draftGitHubBranch by remember { mutableStateOf(githubBranch.ifBlank { "main" }) }
+        var draftGitHubApiBase by remember { mutableStateOf(githubApiBase) }
         // Never pre-filled with the stored value — the passphrase is write-only from the UI's
         // point of view, same as the password fields. Blank therefore means "leave as-is".
         var draftBackupPassphrase by remember { mutableStateOf("") }
         val passwordAlreadySet = remember { viewModel.hasRemoteBackupPassword() }
+        val githubTokenAlreadySet = remember { viewModel.hasGitHubToken() }
         val keyPassphraseAlreadySet = remember { viewModel.hasSftpKeyPassphrase() }
         val backupPassphraseAlreadySet = remember { viewModel.hasRemoteBackupPassphrase() }
         val savedSecretPlaceholder = "••••••••"
@@ -3102,8 +3125,35 @@ fun SettingsScreen(
         var pendingTrustFingerprint by remember { mutableStateOf<String?>(null) }
         var isHostKeyMismatch by remember { mutableStateOf(false) }
         val draftIsFtp = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
+        val draftIsGitHub = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
+        fun parseGitHubRepoDraft(): Pair<String, String>? {
+            val parts = draftGitHubRepo.trim().split("/", limit = 2)
+            return if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) {
+                parts[0] to parts[1]
+            } else {
+                null
+            }
+        }
 
         fun saveServerConfiguration(onSaved: () -> Unit = {}) {
+            if (draftIsGitHub) {
+                if (draftGitHubToken.isNotBlank()) viewModel.setGitHubToken(draftGitHubToken)
+                val repoParts = parseGitHubRepoDraft()
+                if (repoParts != null) {
+                    viewModel.saveGitHubConfiguration(
+                        owner = repoParts.first,
+                        repo = repoParts.second,
+                        branch = draftGitHubBranch,
+                        apiBase = draftGitHubApiBase,
+                        onSaved = onSaved
+                    )
+                } else {
+                    testResultOk = false
+                    testResultMessage = "Enter the repo as owner/name"
+                    isTestingConnection = false
+                }
+                return
+            }
             if (draftIsFtp) {
                 if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
                 // Blank means "keep whatever is stored" rather than "remove encryption" — silently
@@ -3136,7 +3186,7 @@ fun SettingsScreen(
 
         AlertDialog(
             onDismissRequest = { showSftpConfigDialog = false },
-            title = { Text(stringResource(R.string.settings_sftp_config_title)) },
+            title = { Text(if (draftIsGitHub) "GitHub sync" else stringResource(R.string.settings_sftp_config_title)) },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -3144,8 +3194,13 @@ fun SettingsScreen(
                 ) {
                     val protocolSftpLabel = stringResource(R.string.settings_sftp_protocol_sftp)
                     val protocolFtpLabel = stringResource(R.string.settings_sftp_protocol_ftp)
+                    val protocolGitHubLabel = "GitHub"
                     SegmentedControl(
-                        items = listOf(com.mj.yata.domain.model.RemoteBackupProtocol.SFTP, com.mj.yata.domain.model.RemoteBackupProtocol.FTP),
+                        items = listOf(
+                            com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
+                            com.mj.yata.domain.model.RemoteBackupProtocol.FTP,
+                            com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
+                        ),
                         selectedItem = draftProtocol,
                         onItemSelected = { newProtocol ->
                             // Only nudge the port if it's still sitting at the *other* protocol's
@@ -3158,37 +3213,84 @@ fun SettingsScreen(
                             }
                             draftProtocol = newProtocol
                         },
-                        labelProvider = { if (it == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP) protocolSftpLabel else protocolFtpLabel }
+                        labelProvider = {
+                            when (it) {
+                                com.mj.yata.domain.model.RemoteBackupProtocol.SFTP -> protocolSftpLabel
+                                com.mj.yata.domain.model.RemoteBackupProtocol.FTP -> protocolFtpLabel
+                                com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB -> protocolGitHubLabel
+                            }
+                        }
                     )
-                    OutlinedTextField(
-                        value = draftHost,
-                        onValueChange = { draftHost = it },
-                        label = { Text(stringResource(R.string.settings_sftp_host)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = draftPort,
-                        onValueChange = { new -> if (new.length <= 5 && new.all { it.isDigit() }) draftPort = new },
-                        label = { Text(stringResource(R.string.settings_sftp_port)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = draftUsername,
-                        onValueChange = { draftUsername = it },
-                        label = { Text(stringResource(R.string.settings_sftp_username)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = draftRemoteDir,
-                        onValueChange = { draftRemoteDir = it },
-                        label = { Text(stringResource(R.string.settings_sftp_remote_dir)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    if (draftIsGitHub) {
+                        OutlinedTextField(
+                            value = draftGitHubToken,
+                            onValueChange = { draftGitHubToken = it },
+                            label = { Text("Token") },
+                            placeholder = {
+                                if (githubTokenAlreadySet) Text(savedSecretPlaceholder)
+                            },
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = draftGitHubRepo,
+                            onValueChange = { draftGitHubRepo = it },
+                            label = { Text("Repo") },
+                            placeholder = { Text("owner/repo") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = draftGitHubBranch,
+                            onValueChange = { draftGitHubBranch = it },
+                            label = { Text("Branch") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = draftGitHubApiBase,
+                            onValueChange = { draftGitHubApiBase = it },
+                            label = { Text("API base URL") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = "Use a fine-grained token for this repo with Contents read/write.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        OutlinedTextField(
+                            value = draftHost,
+                            onValueChange = { draftHost = it },
+                            label = { Text(stringResource(R.string.settings_sftp_host)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = draftPort,
+                            onValueChange = { new -> if (new.length <= 5 && new.all { it.isDigit() }) draftPort = new },
+                            label = { Text(stringResource(R.string.settings_sftp_port)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = draftUsername,
+                            onValueChange = { draftUsername = it },
+                            label = { Text(stringResource(R.string.settings_sftp_username)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = draftRemoteDir,
+                            onValueChange = { draftRemoteDir = it },
+                            label = { Text(stringResource(R.string.settings_sftp_remote_dir)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                     if (draftIsFtp) {
                         OutlinedTextField(
                             value = draftPassword,
@@ -3247,7 +3349,7 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    } else {
+                    } else if (!draftIsGitHub) {
                         val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
                         val authKeyLabel = stringResource(R.string.settings_sftp_auth_key)
                         SegmentedControl(
@@ -3299,40 +3401,56 @@ fun SettingsScreen(
                             pendingTrustFingerprint = null
                             isHostKeyMismatch = false
                             isTestingConnection = true
-                            saveServerConfiguration {
-                                if (draftIsFtp) {
-                                    viewModel.testFtpConnection { result ->
-                                        isTestingConnection = false
-                                        testResultOk = result.isSuccess
-                                        testResultMessage = if (result.isSuccess) {
-                                            context.getString(R.string.settings_sftp_connection_ok)
-                                        } else {
-                                            result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
-                                        }
+                            if (draftIsGitHub) {
+                                viewModel.connectGitHubConfiguration(
+                                    repoText = draftGitHubRepo,
+                                    token = draftGitHubToken,
+                                    apiBase = draftGitHubApiBase
+                                ) { result ->
+                                    isTestingConnection = false
+                                    testResultOk = result.isSuccess
+                                    testResultMessage = if (result.isSuccess) {
+                                        "GitHub connected"
+                                    } else {
+                                        result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
                                     }
-                                } else {
-                                    viewModel.testSftpConnection { result ->
-                                        isTestingConnection = false
-                                        testResultOk = result.success
-                                        val firstObservedKey = sftpHostKeyFingerprint == null &&
-                                            result.fingerprint != null &&
-                                            result.fingerprint.isNotBlank()
-                                        if (firstObservedKey) {
-                                            // The transport intentionally stopped before authentication.
-                                            // Confirming below pins the key, then runs the real auth test.
-                                            pendingTrustFingerprint = result.fingerprint
-                                        } else if (result.success) {
-                                            testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
-                                        } else {
-                                            val mismatch = sftpHostKeyFingerprint != null &&
-                                                result.fingerprint != null &&
-                                                result.fingerprint != sftpHostKeyFingerprint
-                                            if (mismatch) {
-                                                isHostKeyMismatch = true
-                                                pendingTrustFingerprint = result.fingerprint
+                                }
+                            } else {
+                                saveServerConfiguration {
+                                    if (draftIsFtp) {
+                                        viewModel.testFtpConnection { result ->
+                                            isTestingConnection = false
+                                            testResultOk = result.isSuccess
+                                            testResultMessage = if (result.isSuccess) {
+                                                context.getString(R.string.settings_sftp_connection_ok)
                                             } else {
-                                                testResultMessage = result.error?.message
-                                                    ?: context.getString(R.string.export_failed)
+                                                result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
+                                            }
+                                        }
+                                    } else {
+                                        viewModel.testSftpConnection { result ->
+                                            isTestingConnection = false
+                                            testResultOk = result.success
+                                            val firstObservedKey = sftpHostKeyFingerprint == null &&
+                                                result.fingerprint != null &&
+                                                result.fingerprint.isNotBlank()
+                                            if (firstObservedKey) {
+                                                // The transport intentionally stopped before authentication.
+                                                // Confirming below pins the key, then runs the real auth test.
+                                                pendingTrustFingerprint = result.fingerprint
+                                            } else if (result.success) {
+                                                testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
+                                            } else {
+                                                val mismatch = sftpHostKeyFingerprint != null &&
+                                                    result.fingerprint != null &&
+                                                    result.fingerprint != sftpHostKeyFingerprint
+                                                if (mismatch) {
+                                                    isHostKeyMismatch = true
+                                                    pendingTrustFingerprint = result.fingerprint
+                                                } else {
+                                                    testResultMessage = result.error?.message
+                                                        ?: context.getString(R.string.export_failed)
+                                                }
                                             }
                                         }
                                     }
@@ -3343,7 +3461,9 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            if (isTestingConnection) {
+                            if (draftIsGitHub) {
+                                if (isTestingConnection) "Connecting..." else "Connect GitHub"
+                            } else if (isTestingConnection) {
                                 stringResource(R.string.settings_sftp_testing_connection)
                             } else {
                                 stringResource(R.string.settings_sftp_test_connection)
@@ -3413,8 +3533,13 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    saveServerConfiguration()
-                    showSftpConfigDialog = false
+                    if (draftIsGitHub && parseGitHubRepoDraft() == null) {
+                        testResultOk = false
+                        testResultMessage = "Enter the repo as owner/name"
+                    } else {
+                        saveServerConfiguration()
+                        showSftpConfigDialog = false
+                    }
                 }) {
                     Text(stringResource(R.string.action_save))
                 }
@@ -3428,7 +3553,7 @@ fun SettingsScreen(
     if (showSftpRestoreDialog) {
         AlertDialog(
             onDismissRequest = { if (!isRestoringSftpBackup) showSftpRestoreDialog = false },
-            title = { Text(stringResource(R.string.settings_sftp_restore_title)) },
+            title = { Text(if (isGitHubProtocol) "Restore from GitHub" else stringResource(R.string.settings_sftp_restore_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     when {
@@ -3444,11 +3569,11 @@ fun SettingsScreen(
                             )
                         }
                         else -> {
-                            sftpBackupList.forEach { filename ->
+                            sftpBackupList.forEach { restorePoint ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable(enabled = !isRestoringSftpBackup) { pendingSftpRestoreFilename = filename }
+                                        .clickable(enabled = !isRestoringSftpBackup) { pendingSftpRestorePoint = restorePoint }
                                         .padding(vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -3458,7 +3583,16 @@ fun SettingsScreen(
                                         tint = MaterialTheme.colorScheme.tertiary
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
-                                    Text(filename, style = MaterialTheme.typography.bodyMedium)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(restorePoint.label, style = MaterialTheme.typography.bodyMedium)
+                                        restorePoint.createdAt?.let {
+                                            Text(
+                                                formatBackupTimestamp(it.toString()),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             if (isRestoringSftpBackup) {
@@ -3478,16 +3612,15 @@ fun SettingsScreen(
         )
     }
 
-    pendingSftpRestoreFilename?.let { filename ->
+    pendingSftpRestorePoint?.let { restorePoint ->
         // Read the backup before offering to restore it. Restore overwrites live data, and the
         // filename alone can't tell a full backup from one taken while the database was nearly
         // empty — the counts are what make this a checkable decision.
-        LaunchedEffect(filename) {
+        LaunchedEffect(restorePoint.id) {
             isInspectingSftpBackup = true
             sftpBackupSummary = null
             sftpInspectError = null
-            val inspect = if (isFtpProtocol) viewModel::inspectFtpBackup else viewModel::inspectSftpBackup
-            inspect(filename) { result ->
+            viewModel.inspectRemoteSnapshot(restorePoint.id) { result ->
                 isInspectingSftpBackup = false
                 result
                     .onSuccess { sftpBackupSummary = it }
@@ -3495,11 +3628,11 @@ fun SettingsScreen(
             }
         }
         AlertDialog(
-            onDismissRequest = { pendingSftpRestoreFilename = null },
+            onDismissRequest = { pendingSftpRestorePoint = null },
             title = { Text(stringResource(R.string.settings_sftp_restore_confirm_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(filename, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(restorePoint.label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     when {
                         isInspectingSftpBackup -> {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -3562,10 +3695,9 @@ fun SettingsScreen(
                     // better to block here than to fail halfway through overwriting live data.
                     enabled = !isInspectingSftpBackup && sftpInspectError == null,
                     onClick = {
-                    pendingSftpRestoreFilename = null
+                    pendingSftpRestorePoint = null
                     isRestoringSftpBackup = true
-                    val restoreBackup = if (isFtpProtocol) viewModel::restoreFtpBackup else viewModel::restoreSftpBackup
-                    restoreBackup(filename) { result ->
+                    viewModel.restoreRemoteSnapshot(restorePoint.id) { result ->
                         isRestoringSftpBackup = false
                         showSftpRestoreDialog = false
                         scope.launch {
@@ -3581,7 +3713,7 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingSftpRestoreFilename = null }) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = { pendingSftpRestorePoint = null }) { Text(stringResource(R.string.action_cancel)) }
             }
 
         )

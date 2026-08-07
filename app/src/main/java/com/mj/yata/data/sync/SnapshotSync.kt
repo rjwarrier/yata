@@ -187,6 +187,7 @@ internal object SnapshotMerger {
             name == "remote_backup_protocol" ||
             name == "ftp_use_tls" ||
             name.startsWith("app_lock_") ||
+            name.startsWith("github_") ||
             name.startsWith("sftp_") ||
             name.startsWith("cloud_backup_") ||
             name.startsWith("local_backup_")

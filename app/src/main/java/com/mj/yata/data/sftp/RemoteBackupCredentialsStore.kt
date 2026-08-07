@@ -34,6 +34,7 @@ class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext conte
         const val KEY_PRIVATE_KEY_PEM = "private_key_pem"
         const val KEY_PASSPHRASE = "passphrase"
         const val KEY_BACKUP_PASSPHRASE = "backup_passphrase"
+        const val KEY_GITHUB_TOKEN = "github_token"
     }
 
     private val prefs by lazy {
@@ -80,6 +81,12 @@ class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext conte
         get() = prefs.getString(KEY_BACKUP_PASSPHRASE, null)
         set(value) = prefs.edit {
             if (!value.isNullOrBlank()) putString(KEY_BACKUP_PASSPHRASE, value) else remove(KEY_BACKUP_PASSPHRASE)
+        }
+
+    var githubToken: String?
+        get() = prefs.getString(KEY_GITHUB_TOKEN, null)
+        set(value) = prefs.edit {
+            if (!value.isNullOrBlank()) putString(KEY_GITHUB_TOKEN, value) else remove(KEY_GITHUB_TOKEN)
         }
 
     /** Wipes all of them — called when the user disables/reconfigures self-hosted backup, so

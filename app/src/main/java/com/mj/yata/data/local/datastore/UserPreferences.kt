@@ -168,6 +168,12 @@ class UserPreferences @Inject constructor(
         // (FTPS, explicit AUTH TLS) and is only ever false if the user deliberately opts out,
         // which the config dialog makes an explicit, warned choice rather than a quiet toggle.
         val FTP_USE_TLS             = booleanPreferencesKey("ftp_use_tls")
+        val GITHUB_OWNER            = stringPreferencesKey("github_owner")
+        val GITHUB_REPO             = stringPreferencesKey("github_repo")
+        val GITHUB_BRANCH           = stringPreferencesKey("github_branch")
+        val GITHUB_API_BASE         = stringPreferencesKey("github_api_base")
+        val GITHUB_TOKEN_EXPIRES_AT = longPreferencesKey("github_token_expires_at")
+        val GITHUB_LAST_HEAD_SHA    = stringPreferencesKey("github_last_head_sha")
         // The theme_schedule_* keys that lived here went with the SCHEDULED theme mode. Any values
         // already written stay in the file harmlessly — nothing reads that name any more.
         val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
@@ -404,10 +410,17 @@ class UserPreferences @Inject constructor(
     val remoteBackupProtocolFlow: Flow<com.mj.yata.domain.model.RemoteBackupProtocol> = prefsFlow.map { prefs ->
         when (prefs[REMOTE_BACKUP_PROTOCOL]) {
             com.mj.yata.domain.model.RemoteBackupProtocol.FTP.name -> com.mj.yata.domain.model.RemoteBackupProtocol.FTP
+            com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB.name -> com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
             else -> com.mj.yata.domain.model.RemoteBackupProtocol.SFTP
         }
     }
     val ftpUseTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_USE_TLS] ?: true }
+    val githubOwnerFlow: Flow<String> = prefsFlow.map { it[GITHUB_OWNER] ?: "" }
+    val githubRepoFlow: Flow<String> = prefsFlow.map { it[GITHUB_REPO] ?: "" }
+    val githubBranchFlow: Flow<String> = prefsFlow.map { it[GITHUB_BRANCH] ?: "" }
+    val githubApiBaseFlow: Flow<String> = prefsFlow.map { it[GITHUB_API_BASE] ?: "https://api.github.com" }
+    val githubTokenExpiresAtFlow: Flow<Long?> = prefsFlow.map { it[GITHUB_TOKEN_EXPIRES_AT] }
+    val githubLastHeadShaFlow: Flow<String?> = prefsFlow.map { it[GITHUB_LAST_HEAD_SHA] }
     val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_TODAY] ?: false }
     val todayShowUpcomingWhenEmptyFlow: Flow<Boolean> = prefsFlow.map { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] ?: false }
     val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PROJECT] ?: false }
@@ -861,6 +874,33 @@ class UserPreferences @Inject constructor(
 
     suspend fun setFtpUseTls(useTls: Boolean) {
         dataStore.edit { it[FTP_USE_TLS] = useTls }
+    }
+
+    suspend fun setGitHubConfiguration(
+        owner: String,
+        repo: String,
+        branch: String,
+        apiBase: String = "https://api.github.com"
+    ) {
+        dataStore.edit { prefs ->
+            prefs[GITHUB_OWNER] = owner.trim()
+            prefs[GITHUB_REPO] = repo.trim()
+            prefs[GITHUB_BRANCH] = branch.trim().ifBlank { "main" }
+            prefs[GITHUB_API_BASE] = apiBase.trim().ifBlank { "https://api.github.com" }
+            prefs[REMOTE_BACKUP_PROTOCOL] = com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB.name
+        }
+    }
+
+    suspend fun setGitHubTokenExpiresAt(epochMillis: Long?) {
+        dataStore.edit { prefs ->
+            if (epochMillis != null) prefs[GITHUB_TOKEN_EXPIRES_AT] = epochMillis else prefs.remove(GITHUB_TOKEN_EXPIRES_AT)
+        }
+    }
+
+    suspend fun setGitHubLastHeadSha(sha: String?) {
+        dataStore.edit { prefs ->
+            if (!sha.isNullOrBlank()) prefs[GITHUB_LAST_HEAD_SHA] = sha else prefs.remove(GITHUB_LAST_HEAD_SHA)
+        }
     }
 
     suspend fun setReduceMotionEnabled(enabled: Boolean) {

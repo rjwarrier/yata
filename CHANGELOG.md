@@ -15,6 +15,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+
+- **GitHub sync foundation.** Remote sync can now be configured for a private GitHub repository
+  using a pasted token and `owner/repo`, with restore history backed by commits instead of
+  rotated server files. GitHub sync uses fast-forward-only ref updates, verifies git blob hashes
+  on read/write, stores the token in encrypted preferences, keeps GitHub settings device-local,
+  and hides SFTP/FTP-only lock and retention controls when GitHub is selected.
+
 ## [0.90.1 beta] - 2026-08-03
 
 `versionCode 13`. Upgrades in place over 0.90 beta.

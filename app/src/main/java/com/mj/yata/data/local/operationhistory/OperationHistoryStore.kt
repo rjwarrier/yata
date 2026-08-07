@@ -130,6 +130,7 @@ class OperationHistoryStore @Inject constructor(
         const val BACKUP_LOCAL_LEGACY = "backup.local.legacy"
         const val SYNC_SFTP_LEGACY = "sync.sftp.legacy"
         const val SYNC_FTP_LEGACY = "sync.ftp.legacy"
+        const val SYNC_GITHUB = "sync.github"
         const val REMINDERS_TASK = "reminders.task"
         const val REMINDERS_DAILY_AGENDA = "reminders.daily_agenda"
         const val REMINDERS_OVERDUE_ESCALATION = "reminders.overdue_escalation"
@@ -149,6 +150,7 @@ class OperationHistoryStore @Inject constructor(
             OperationDefinition(BACKUP_LOCAL_LEGACY, "Legacy local backup", "Backup"),
             OperationDefinition(SYNC_SFTP_LEGACY, "Legacy SFTP sync", "Sync"),
             OperationDefinition(SYNC_FTP_LEGACY, "Legacy FTP sync", "Sync"),
+            OperationDefinition(SYNC_GITHUB, "GitHub sync", "Sync"),
             OperationDefinition(REMINDERS_TASK, "Task reminders", "Reminders"),
             OperationDefinition(REMINDERS_DAILY_AGENDA, "Daily agenda", "Reminders"),
             OperationDefinition(REMINDERS_OVERDUE_ESCALATION, "Overdue escalation", "Reminders"),

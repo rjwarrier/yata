@@ -3,6 +3,7 @@ package com.mj.yata.domain.usecase
 import com.mj.yata.data.backup.BackupDiff
 import com.mj.yata.data.backup.compareBackupJsonWithTasks
 import com.mj.yata.data.ftp.FtpBackupManager
+import com.mj.yata.data.github.GitHubSyncManager
 import com.mj.yata.data.local.backup.LocalBackupManager
 import com.mj.yata.data.sftp.SftpBackupManager
 import com.mj.yata.data.sftp.SftpConnectionTestResult
@@ -17,6 +18,9 @@ import com.mj.yata.domain.model.BackupSummary
 import com.mj.yata.domain.model.RemoteBackupProtocol
 import com.mj.yata.domain.model.SyncProgressState
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.sync.LockableSyncTransport
+import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncTransport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +51,7 @@ class BackupOperations @Inject constructor(
     private val localBackupManager: LocalBackupManager,
     private val sftpBackupManager: SftpBackupManager,
     private val ftpBackupManager: FtpBackupManager,
+    private val gitHubSyncManager: GitHubSyncManager,
     private val userPreferences: UserPreferences,
     private val operationHistoryStore: OperationHistoryStore,
     @ApplicationContext private val context: Context
@@ -90,17 +95,12 @@ class BackupOperations @Inject constructor(
         // the user never actually set up. Sync first so any pulled changes are included in the
         // local safety copy produced by the same run.
         if (userPreferences.sftpBackupEnabledFlow.first() &&
-            userPreferences.sftpHostFlow.first().isNotBlank()
+            currentTransport().isConfigured()
         ) {
-            val useFtp = userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP
             add(
                 attempt(BackupDestination.SELF_HOSTED) {
                     syncSelfHostedWithProgress("Syncing before scheduled backup") { progress ->
-                        if (useFtp) {
-                            ftpBackupManager.syncNow(progress)
-                        } else {
-                            sftpBackupManager.syncNow(progress)
-                        }
+                        currentTransport().syncNow(progress)
                     }
                 }
             )
@@ -165,14 +165,10 @@ class BackupOperations @Inject constructor(
     /** Pulls remote changes whenever the main app is opened, without touching other backups. */
     suspend fun syncSelfHostedIfConfigured(): Result<Unit>? {
         if (!userPreferences.sftpBackupEnabledFlow.first() ||
-            userPreferences.sftpHostFlow.first().isBlank()
+            !currentTransport().isConfigured()
         ) return null
         return syncSelfHostedWithProgress("Syncing after app launch") { progress ->
-            if (userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP) {
-                ftpBackupManager.syncNow(progress)
-            } else {
-                sftpBackupManager.syncNow(progress)
-            }
+            currentTransport().syncNow(progress)
         }
     }
 
@@ -203,10 +199,17 @@ class BackupOperations @Inject constructor(
     }
 
     private suspend fun currentSelfHostedSyncOperationId(): String =
-        if (userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP) {
-            OperationHistoryStore.SYNC_FTP_LEGACY
-        } else {
-            OperationHistoryStore.SYNC_SFTP_LEGACY
+        when (userPreferences.remoteBackupProtocolFlow.first()) {
+            RemoteBackupProtocol.FTP -> OperationHistoryStore.SYNC_FTP_LEGACY
+            RemoteBackupProtocol.GITHUB -> OperationHistoryStore.SYNC_GITHUB
+            RemoteBackupProtocol.SFTP -> OperationHistoryStore.SYNC_SFTP_LEGACY
+        }
+
+    private suspend fun currentTransport(): SyncTransport =
+        when (userPreferences.remoteBackupProtocolFlow.first()) {
+            RemoteBackupProtocol.FTP -> ftpBackupManager
+            RemoteBackupProtocol.SFTP -> sftpBackupManager
+            RemoteBackupProtocol.GITHUB -> gitHubSyncManager
         }
 
     private fun beginSyncFeedback() {
@@ -269,25 +272,17 @@ class BackupOperations @Inject constructor(
     }
 
     suspend fun compareWithLastSelfHostedBackup(tasks: List<Task>): Result<BackupDiff> {
-        val useFtp = userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP
-        val backups = (if (useFtp) {
-            ftpBackupManager.listBackups()
-        } else {
-            sftpBackupManager.listBackups()
-        }).getOrElse { return Result.failure(it) }
-        val latest = backups.firstOrNull()
+        val transport = currentTransport()
+        val restorePoints = transport.listRestorePoints().getOrElse { return Result.failure(it) }
+        val latest = restorePoints.firstOrNull()
             ?: return Result.failure(IllegalStateException("No server backups found yet"))
-        val bytes = (if (useFtp) {
-            ftpBackupManager.readBackupJson(latest)
-        } else {
-            sftpBackupManager.readBackupJson(latest)
-        }).getOrElse { return Result.failure(it) }
+        val bytes = transport.readSnapshot(latest.id).getOrElse { return Result.failure(it) }
         return try {
             Result.success(
                 compareBackupJsonWithTasks(
                     backupJsonBytes = bytes,
                     currentTasks = tasks,
-                    backupCreatedTime = backupCreatedTimeFromFilename(latest)
+                    backupCreatedTime = latest.createdAt?.toString() ?: latest.label
                 )
             )
         } catch (e: Exception) {
@@ -320,30 +315,33 @@ class BackupOperations @Inject constructor(
     suspend fun inspectSftpBackup(filename: String): Result<BackupSummary> =
         sftpBackupManager.inspectBackup(filename)
 
+    suspend fun listRemoteRestorePoints(): Result<List<RestorePoint>> =
+        currentTransport().listRestorePoints()
+
+    suspend fun restoreRemoteSnapshot(id: String): Result<Unit> =
+        currentTransport().restore(id)
+
+    suspend fun inspectRemoteSnapshot(id: String): Result<BackupSummary> =
+        currentTransport().inspect(id)
+
     suspend fun testFtpConnection(): Result<Unit> = ftpBackupManager.testConnection()
 
     suspend fun clearSelfHostedSyncLock(): Result<Unit> =
-        if (userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP) {
-            val operationId = OperationHistoryStore.SYNC_FTP_LEGACY
-            operationHistoryStore.recordRun(operationId, "Clearing remote FTP sync lock")
-            ftpBackupManager.clearSyncLock()
-                .also { result ->
-                    result.fold(
-                        onSuccess = { operationHistoryStore.recordSkipped(operationId, "Remote FTP sync lock cleared") },
-                        onFailure = { operationHistoryStore.recordFailure(operationId, it) }
-                    )
-                }
-        } else {
-            val operationId = OperationHistoryStore.SYNC_SFTP_LEGACY
-            operationHistoryStore.recordRun(operationId, "Clearing remote SFTP sync lock")
-            sftpBackupManager.clearSyncLock()
-                .also { result ->
-                    result.fold(
-                        onSuccess = { operationHistoryStore.recordSkipped(operationId, "Remote SFTP sync lock cleared") },
-                        onFailure = { operationHistoryStore.recordFailure(operationId, it) }
-                    )
-                }
-        }
+        currentTransport()
+            .let { transport ->
+                val lockable = transport as? LockableSyncTransport
+                    ?: return Result.failure(IllegalStateException("This sync provider does not use a clearable lock"))
+                val operationId = currentSelfHostedSyncOperationId()
+                val protocol = userPreferences.remoteBackupProtocolFlow.first().name
+                operationHistoryStore.recordRun(operationId, "Clearing remote $protocol sync lock")
+                lockable.clearSyncLock()
+                    .also { result ->
+                        result.fold(
+                            onSuccess = { operationHistoryStore.recordSkipped(operationId, "Remote $protocol sync lock cleared") },
+                            onFailure = { operationHistoryStore.recordFailure(operationId, it) }
+                        )
+                    }
+            }
 
     suspend fun ftpBackupNow(): Result<Unit> =
         syncSelfHostedWithProgress("Manual FTP sync started") { progress ->
@@ -356,20 +354,4 @@ class BackupOperations @Inject constructor(
 
     suspend fun inspectFtpBackup(filename: String): Result<BackupSummary> =
         ftpBackupManager.inspectBackup(filename)
-
-    private fun backupCreatedTimeFromFilename(filename: String): String {
-        val name = filename.substringAfterLast('/')
-        val match = Regex("""yata_backup_(\d{8})_(\d{6})\.(json|zip)(\.enc)?""").matchEntire(name)
-            ?: return filename
-        return try {
-            val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss", java.util.Locale.US)
-            val localDateTime = java.time.LocalDateTime.parse(
-                match.groupValues[1] + match.groupValues[2],
-                formatter
-            )
-            localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toString()
-        } catch (e: Exception) {
-            filename
-        }
-    }
 }

@@ -435,7 +435,7 @@
     <string name="settings_ftp_plain_warning">Plain FTP sends your password and files unencrypted. Only use this on a trusted network.</string>
     <string name="settings_sftp_backups_to_keep_summary">Keep the last %1$d backups on the server — older ones are pruned automatically.</string>
     <string name="settings_backup_dest_local">this device</string>
-    <string name="settings_backup_dest_self_hosted">your server</string>
+    <string name="settings_backup_dest_self_hosted">remote sync</string>
     <string name="settings_backup_none_configured">No backup destinations are switched on.</string>
     <string name="settings_backup_all_failed">Backup failed — %1$s</string>
     <string name="settings_backup_partial">Backed up %1$d, but failed for %2$s</string>

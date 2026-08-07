@@ -98,6 +98,7 @@ class SnapshotSyncTest {
             settings = listOf(
                 setting("theme_mode", "string", "DARK"),
                 setting("sftp_host", "string", "server"),
+                setting("github_owner", "string", "owner"),
                 setting("app_lock_enabled", "bool", true),
                 setting("saved", "stringSet", JSONArray().put("z").put("a"))
             )

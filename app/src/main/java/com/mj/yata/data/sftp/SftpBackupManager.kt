@@ -8,6 +8,9 @@ import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.domain.model.SyncLockBusyException
 import com.mj.yata.domain.model.SyncLockInfo
+import com.mj.yata.domain.sync.LockableSyncTransport
+import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.restorePointFromHistoryName
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -67,7 +70,7 @@ class SftpBackupManager @Inject constructor(
     private val credentialsStore: RemoteBackupCredentialsStore,
     private val snapshotSyncEngine: SnapshotSyncEngine,
     private val recoveryBackupManager: RecoveryBackupManager
-) {
+) : LockableSyncTransport {
     companion object {
         private const val TAG = "SftpBackupManager"
         private const val FILENAME_PREFIX = "yata_backup_"
@@ -90,7 +93,7 @@ class SftpBackupManager @Inject constructor(
         userPreferences.setSftpHostKeyFingerprint(fingerprint)
     }
 
-    suspend fun clearSyncLock(): Result<Unit> = sessionMutex.withLock {
+    override suspend fun clearSyncLock(): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -178,7 +181,7 @@ class SftpBackupManager @Inject constructor(
      * result while holding a cross-device lease. Timestamped backups remain recovery points; the
      * fixed canonical file is the only input devices normally synchronize against.
      */
-    suspend fun syncNow(progress: (Int, String) -> Unit = { _, _ -> }): Result<Unit> = sessionMutex.withLock {
+    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -272,6 +275,9 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun listRestorePoints(): Result<List<RestorePoint>> =
+        listBackups().map { names -> names.map(::restorePointFromHistoryName) }
+
     suspend fun restoreBackup(filename: String): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
@@ -295,6 +301,8 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun restore(id: String): Result<Unit> = restoreBackup(id)
+
     /** Counterpart to [com.mj.yata.data.ftp.FtpBackupManager.inspectBackup] — see it for why the
      * confirm dialog reads a backup's contents before restoring it. */
     suspend fun inspectBackup(filename: String): Result<com.mj.yata.domain.model.BackupSummary> = withContext(Dispatchers.IO) {
@@ -306,6 +314,9 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    override suspend fun inspect(id: String): Result<com.mj.yata.domain.model.BackupSummary> =
+        inspectBackup(id)
+
     /** Read-only access for comparing a server backup with current local data. */
     suspend fun readBackupJson(filename: String): Result<ByteArray> = withContext(Dispatchers.IO) {
         try {
@@ -315,6 +326,11 @@ class SftpBackupManager @Inject constructor(
             Result.failure(e)
         }
     }
+
+    override suspend fun readSnapshot(id: String): Result<ByteArray> = readBackupJson(id)
+
+    override suspend fun isConfigured(): Boolean =
+        userPreferences.sftpHostFlow.first().isNotBlank()
 
     private suspend fun download(filename: String): ByteArray {
         val remoteDir = userPreferences.sftpRemoteDirFlow.first()

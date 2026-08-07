@@ -30,6 +30,7 @@ private val SYNC_PRESERVED_SETTING_NAMES = setOf(
 )
 private val SYNC_PRESERVED_SETTING_PREFIXES = setOf(
     "app_lock_",
+    "github_",
     "sftp_",
     "cloud_backup_",
     "local_backup_"
