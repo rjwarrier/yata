@@ -113,7 +113,7 @@ fun MainScreen(
     val context = LocalContext.current
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
-    var showInitialSyncMergeDialog by remember { mutableStateOf(false) }
+    var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
     var isClearingSyncLock by remember { mutableStateOf(false) }
 
     fun runManualSync(allowInitialJoinMerge: Boolean = false) {
@@ -130,7 +130,7 @@ fun MainScreen(
                 clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
                 showClearSyncLockDialog = true
             } else if (initialJoinFailure != null && !allowInitialJoinMerge) {
-                showInitialSyncMergeDialog = true
+                initialSyncMergeMessage = initialJoinFailure.message
             } else {
                 scope.launch {
                     snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
@@ -1019,19 +1019,15 @@ fun MainScreen(
     }
 
 
-    if (showInitialSyncMergeDialog) {
+    if (initialSyncMergeMessage != null) {
         AlertDialog(
-            onDismissRequest = { showInitialSyncMergeDialog = false },
+            onDismissRequest = { initialSyncMergeMessage = null },
             title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
-            text = {
-                Text(
-                    stringResource(R.string.settings_initial_sync_merge_body)
-                )
-            },
+            text = { Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showInitialSyncMergeDialog = false
+                        initialSyncMergeMessage = null
                         runManualSync(allowInitialJoinMerge = true)
                     }
                 ) {
@@ -1039,7 +1035,7 @@ fun MainScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showInitialSyncMergeDialog = false }) {
+                TextButton(onClick = { initialSyncMergeMessage = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }

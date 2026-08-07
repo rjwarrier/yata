@@ -565,10 +565,28 @@ internal data class PreparedSnapshotSync(
         get() = canonical.toString(2).toByteArray(Charsets.UTF_8)
 }
 
+data class InitialSyncSnapshotSummary(
+    val totalTasks: Int,
+    val openTasks: Int,
+    val totalProjects: Int,
+    val totalPeople: Int
+)
+
 class InitialSyncConfirmationRequiredException(
-    message: String =
-        "This device and the remote sync snapshot both contain data. Review the remote snapshot before first sync so nothing is merged unexpectedly."
-) : Exception(message)
+    val localSummary: InitialSyncSnapshotSummary,
+    val remoteSummary: InitialSyncSnapshotSummary
+) : Exception(initialSyncConfirmationMessage(localSummary, remoteSummary))
+
+private fun initialSyncConfirmationMessage(
+    local: InitialSyncSnapshotSummary,
+    remote: InitialSyncSnapshotSummary
+): String =
+    "This device and the remote sync snapshot both contain data.\n\n" +
+        "This device: ${local.totalTasks} tasks (${local.openTasks} open), " +
+        "${local.totalProjects} projects, ${local.totalPeople} people.\n" +
+        "Remote snapshot: ${remote.totalTasks} tasks (${remote.openTasks} open), " +
+        "${remote.totalProjects} projects, ${remote.totalPeople} people.\n\n" +
+        "YATA will merge them, keep a recovery backup before applying changes, and use the remote copy for any direct conflicts."
 
 @Singleton
 class SnapshotSyncEngine @Inject constructor(
@@ -674,8 +692,25 @@ class SnapshotSyncEngine @Inject constructor(
     ) {
         if (base != null || remote == null || allowInitialJoinMerge) return
         if (hasUserData(local) && hasUserData(remote)) {
-            throw InitialSyncConfirmationRequiredException()
+            throw InitialSyncConfirmationRequiredException(
+                localSummary = initialSyncSummary(local),
+                remoteSummary = initialSyncSummary(remote)
+            )
         }
+    }
+
+    private fun initialSyncSummary(snapshot: JSONObject): InitialSyncSnapshotSummary {
+        val tasks = snapshot.optJSONArray("tasks")
+        var openTasks = 0
+        for (i in 0 until tasks.orZero()) {
+            if (tasks?.optJSONObject(i)?.optBoolean("done", false) == false) openTasks++
+        }
+        return InitialSyncSnapshotSummary(
+            totalTasks = tasks.orZero(),
+            openTasks = openTasks,
+            totalProjects = snapshot.optJSONArray("projects").orZero(),
+            totalPeople = peopleBeyondCurrentUser(snapshot)
+        )
     }
 
     private fun hasUserData(snapshot: JSONObject): Boolean =

@@ -359,7 +359,7 @@ fun SettingsScreen(
     var showSftpRestoreDialog by remember { mutableStateOf(false) }
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
-    var showInitialSyncMergeDialog by remember { mutableStateOf(false) }
+    var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
     var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
     var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
@@ -2688,7 +2688,7 @@ fun SettingsScreen(
                                         clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
                                         showClearSyncLockDialog = true
                                     } else if (initialJoinFailure != null) {
-                                        showInitialSyncMergeDialog = true
+                                        initialSyncMergeMessage = initialJoinFailure.message
                                     } else {
                                         scope.launch {
                                             reportBackupResults(results, snackbarHostState, context)
@@ -3072,19 +3072,15 @@ fun SettingsScreen(
         )
     }
 
-    if (showInitialSyncMergeDialog) {
+    if (initialSyncMergeMessage != null) {
         AlertDialog(
-            onDismissRequest = { showInitialSyncMergeDialog = false },
+            onDismissRequest = { initialSyncMergeMessage = null },
             title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
-            text = {
-                Text(
-                    stringResource(R.string.settings_initial_sync_merge_body)
-                )
-            },
+            text = { Text(initialSyncMergeMessage ?: stringResource(R.string.settings_initial_sync_merge_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showInitialSyncMergeDialog = false
+                        initialSyncMergeMessage = null
                         isBackingUp = true
                         viewModel.backupAllNow(allowInitialJoinMerge = true) { results ->
                             isBackingUp = false
@@ -3098,7 +3094,7 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showInitialSyncMergeDialog = false }) {
+                TextButton(onClick = { initialSyncMergeMessage = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }
