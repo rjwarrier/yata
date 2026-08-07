@@ -309,6 +309,7 @@ fun SettingsScreen(
     val githubRepo = uiState.githubRepo
     val githubBranch = uiState.githubBranch
     val githubApiBase = uiState.githubApiBase
+    val githubTokenExpiresAt = uiState.githubTokenExpiresAt
     val remoteConfigured = if (isGitHubProtocol) {
         githubOwner.isNotBlank() && githubRepo.isNotBlank()
     } else {
@@ -3191,6 +3192,7 @@ fun SettingsScreen(
         var isHostKeyMismatch by remember { mutableStateOf(false) }
         val draftIsFtp = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
         val draftIsGitHub = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
+        val tokenExpiryStatus = githubTokenExpiryStatus(githubTokenExpiresAt)
         fun enteredGitHubToken(): String =
             draftGitHubToken.takeUnless { githubTokenAlreadySet && it == savedSecretPlaceholder }.orEmpty()
 
@@ -3306,6 +3308,18 @@ fun SettingsScreen(
                                 visualTransformation = PasswordVisualTransformation(),
                                 modifier = Modifier.fillMaxWidth()
                             )
+                            tokenExpiryStatus?.let { status ->
+                                Text(
+                                    text = status.label,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (status.warning) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                             OutlinedTextField(
                                 value = draftGitHubRepo,
                                 onValueChange = { draftGitHubRepo = it },
@@ -4084,6 +4098,29 @@ private fun formatAbsoluteBackupTime(epochMillis: Long?): String? {
     if (epochMillis == null) return null
     return java.time.Instant.ofEpochMilli(epochMillis).localized()
 }
+
+private data class GitHubTokenExpiryStatus(
+    val label: String,
+    val warning: Boolean
+)
+
+private fun githubTokenExpiryStatus(epochMillis: Long?): GitHubTokenExpiryStatus? {
+    if (epochMillis == null) return null
+    val expiresAt = java.time.Instant.ofEpochMilli(epochMillis)
+    val days = java.time.Duration.between(java.time.Instant.now(), expiresAt).toDays()
+    val formatted = expiresAt.localized()
+    return when {
+        days < 0 -> GitHubTokenExpiryStatus("GitHub token expired on $formatted", warning = true)
+        days <= 14 -> GitHubTokenExpiryStatus(
+            "GitHub token expires in ${days.coerceAtLeast(0).formatDays()}: $formatted",
+            warning = true
+        )
+        else -> GitHubTokenExpiryStatus("GitHub token expires on $formatted", warning = false)
+    }
+}
+
+private fun Long.formatDays(): String =
+    if (this == 1L) "1 day" else "$this days"
 
 private fun formatBackupTimestamp(isoCreatedTime: String): String {
     return try {

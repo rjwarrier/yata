@@ -84,6 +84,53 @@ class HttpGitHubApiTest {
     }
 
     @Test
+    fun capturesTokenExpirationHeader() = runTest {
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = {
+                FakeConnection(
+                    status = 200,
+                    body = """{"login":"octo"}""",
+                    headers = mapOf(
+                        "GitHub-Authentication-Token-Expiration" to "2026-01-01T00:00:00Z"
+                    )
+                )
+            },
+            retryDelay = {}
+        )
+
+        api.getUser()
+
+        assertEquals(1767225600000L, api.tokenExpiresAtEpochMillis)
+    }
+
+    @Test
+    fun missingTokenExpirationHeaderClearsPreviousValue() = runTest {
+        val connections = ArrayDeque(
+            listOf(
+                FakeConnection(
+                    status = 200,
+                    body = """{"login":"octo"}""",
+                    headers = mapOf(
+                        "GitHub-Authentication-Token-Expiration" to "2026-01-01T00:00:00Z"
+                    )
+                ),
+                FakeConnection(status = 200, body = """{"login":"octo"}""")
+            )
+        )
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { connections.removeFirst() },
+            retryDelay = {}
+        )
+
+        api.getUser()
+        api.getUser()
+
+        assertEquals(null, api.tokenExpiresAtEpochMillis)
+    }
+
+    @Test
     fun getContentReturnsNullForMissingPath() = runTest {
         val api = HttpGitHubApi(
             tokenProvider = { "token" },

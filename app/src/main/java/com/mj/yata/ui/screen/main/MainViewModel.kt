@@ -2169,6 +2169,7 @@ private data class MainNavigationState(
                         branch = remoteRepo.defaultBranch,
                         apiBase = normalizedApiBase
                     )
+                    userPreferences.setGitHubTokenExpiresAt(api.tokenExpiresAtEpochMillis)
                 }
             }
             onResult(result)

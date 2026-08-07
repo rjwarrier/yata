@@ -44,6 +44,7 @@ class GitHubSyncManager @Inject constructor(
                     val config = config()
                     val api = api(config)
                     syncResult = publisher(api, options).sync(config, progress)
+                    userPreferences.setGitHubTokenExpiresAt(api.tokenExpiresAtEpochMillis)
                     if (syncResult?.isSuccess == true) {
                         userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
                     }
@@ -178,7 +179,7 @@ class GitHubSyncManager @Inject constructor(
             onHeadPublished = { userPreferences.setGitHubLastHeadSha(it) }
         )
 
-    private fun api(config: GitHubSyncConfig): GitHubApi =
+    private fun api(config: GitHubSyncConfig): HttpGitHubApi =
         HttpGitHubApi(
             tokenProvider = { credentialsStore.githubToken },
             apiBaseProvider = { config.apiBase }

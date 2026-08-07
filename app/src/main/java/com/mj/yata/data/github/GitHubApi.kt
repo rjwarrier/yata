@@ -89,6 +89,8 @@ class HttpGitHubApi(
     private val connectionFactory: (URL) -> HttpURLConnection = { it.openConnection() as HttpURLConnection },
     private val retryDelay: suspend (Long) -> Unit = { delay(it) }
 ) : GitHubApi {
+    var tokenExpiresAtEpochMillis: Long? = null
+        private set
 
     override suspend fun getRepo(owner: String, repo: String): GitHubRepo {
         val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}")
@@ -270,6 +272,7 @@ class HttpGitHubApi(
                     connection.outputStream.use { it.write(bytes) }
                 }
                 val status = connection.responseCode
+                tokenExpiresAtEpochMillis = connection.tokenExpirationEpochMillis()
                 val bytes = if (status in 200..299) {
                     connection.inputStream.use { it.readBytesCompat() }
                 } else {
@@ -330,6 +333,11 @@ class HttpGitHubApi(
 
     private fun path(value: String): String =
         value.trim().replace(" ", "%20")
+
+    private fun HttpURLConnection.tokenExpirationEpochMillis(): Long? =
+        getHeaderField("GitHub-Authentication-Token-Expiration")
+            ?.parseInstantOrNull()
+            ?.toEpochMilli()
 
     private fun java.io.InputStream.readBytesCompat(): ByteArray {
         val out = ByteArrayOutputStream()
