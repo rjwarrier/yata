@@ -883,11 +883,20 @@ class UserPreferences @Inject constructor(
         apiBase: String = "https://api.github.com"
     ) {
         dataStore.edit { prefs ->
-            prefs[GITHUB_OWNER] = owner.trim()
-            prefs[GITHUB_REPO] = repo.trim()
-            prefs[GITHUB_BRANCH] = branch.trim().ifBlank { "main" }
-            prefs[GITHUB_API_BASE] = apiBase.trim().ifBlank { "https://api.github.com" }
+            val normalizedOwner = owner.trim()
+            val normalizedRepo = repo.trim()
+            val normalizedBranch = branch.trim().ifBlank { "main" }
+            val normalizedApiBase = apiBase.trim().ifBlank { "https://api.github.com" }
+            val identityChanged = prefs[GITHUB_OWNER] != normalizedOwner ||
+                prefs[GITHUB_REPO] != normalizedRepo ||
+                prefs[GITHUB_BRANCH] != normalizedBranch ||
+                prefs[GITHUB_API_BASE] != normalizedApiBase
+            prefs[GITHUB_OWNER] = normalizedOwner
+            prefs[GITHUB_REPO] = normalizedRepo
+            prefs[GITHUB_BRANCH] = normalizedBranch
+            prefs[GITHUB_API_BASE] = normalizedApiBase
             prefs[REMOTE_BACKUP_PROTOCOL] = com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB.name
+            if (identityChanged) prefs.remove(GITHUB_LAST_HEAD_SHA)
         }
     }
 

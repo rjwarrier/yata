@@ -200,14 +200,10 @@ internal class GitHubSnapshotPublisher(
         val previousHeadSha = lastObservedHead()?.takeIf { it.isNotBlank() } ?: return
         if (currentHeadSha == previousHeadSha) return
         if (currentHeadSha == null) {
-            throw GitHubConflictException(
-                "GitHub branch history changed outside YATA; restore or reconnect before syncing"
-            )
+            throw GitHubHistoryRewrittenException()
         }
         if (isAncestor(config, ancestorSha = previousHeadSha, descendantSha = currentHeadSha)) return
-        throw GitHubConflictException(
-            "GitHub branch history changed outside YATA; restore or reconnect before syncing"
-        )
+        throw GitHubHistoryRewrittenException()
     }
 
     private suspend fun isAncestor(

@@ -239,7 +239,7 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.exceptionOrNull() is GitHubConflictException)
+        assertTrue(result.exceptionOrNull() is GitHubHistoryRewrittenException)
         assertFalse(prepared)
         assertFalse(committed)
         assertEquals(0, api.updateRefCalls)

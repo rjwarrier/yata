@@ -76,6 +76,10 @@ class GitHubAuthException(message: String = "GitHub token is invalid or expired"
 class GitHubRateLimitException(val resetAtEpochSeconds: Long?) : GitHubException("GitHub rate limit reached")
 class GitHubPermissionException(message: String = "GitHub token does not have write access to this repo") : GitHubException(message)
 class GitHubConflictException(message: String = "GitHub repository changed during sync") : GitHubException(message)
+class GitHubHistoryRewrittenException(
+    message: String =
+        "GitHub branch history changed outside YATA. Restore a snapshot from GitHub history, or reconnect this repo after confirming the current snapshot is correct."
+) : GitHubException(message)
 class GitHubNotFoundException(message: String = "GitHub resource was not found") : GitHubException(message)
 class GitHubTransportException(message: String = "GitHub request failed") : GitHubException(message)
 
