@@ -132,9 +132,13 @@
     <string name="upcoming_clear_day">Clear day</string>
     <string name="upcoming_nothing_scheduled">Nothing scheduled.</string>
     <string name="search_prompt_empty">Type something to search, or pick a filter above.</string>
+    <string name="search_prompt_empty_subtitle">Use text, smart filters, or saved views to narrow your tasks.</string>
     <string name="search_no_matches">No matches</string>
     <string name="search_no_matches_subtitle">Try a different query or loosen the active filters.</string>
     <string name="search_clear">Clear search</string>
+    <string name="search_filters">Filters</string>
+    <string name="search_filter_hint">Tap a chip to build a focused view.</string>
+    <string name="search_saved_views">Saved views</string>
     <string name="search_filter_focus">Focus mode</string>
     <string name="search_filter_morning_review">Morning review</string>
     <string name="search_filter_evening_review">Evening review</string>
@@ -152,6 +156,14 @@
     <string name="search_badge_in_trash">In Trash</string>
     <string name="search_badge_archived">Archived</string>
     <string name="search_badge_archived_project">Archived project</string>
+    <plurals name="search_active_filters_count">
+        <item quantity="one">%d active filter</item>
+        <item quantity="other">%d active filters</item>
+    </plurals>
+    <plurals name="search_results_count">
+        <item quantity="one">%d result</item>
+        <item quantity="other">%d results</item>
+    </plurals>
     <!-- Swipe actions -->
     <string name="settings_swipe_right_action">Swipe right does</string>
     <string name="settings_swipe_left_action">Swipe left does</string>

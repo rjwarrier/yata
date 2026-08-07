@@ -9,7 +9,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -421,7 +424,9 @@ fun SearchScreen(
                 onSearch = {},
                 active = true,
                 onActiveChange = {},
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 placeholder = { Text(stringResource(R.string.search_search_or_try_overdue_flagged)) },
                 leadingIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -633,98 +638,216 @@ private fun SearchResultsList(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 32.dp)
+        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        val activeFilterCount = activeFilters.size +
+            if (includeArchived) 1 else 0 +
+            if (includeTrash) 1 else 0
         item {
-            androidx.compose.foundation.layout.FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                SmartFilter.entries.forEach { filter ->
-                    FilterChip(
-                        selected = activeFilters.contains(filter),
-                        onClick = { onToggleFilter(filter) },
-                        label = { Text(stringResource(filter.labelRes)) }
-                    )
-                }
-                FilterChip(
-                    selected = includeArchived,
-                    onClick = onToggleIncludeArchived,
-                    label = { Text(stringResource(R.string.search_filter_archived)) }
-                )
-                FilterChip(
-                    selected = includeTrash,
-                    onClick = onToggleIncludeTrash,
-                    label = { Text(stringResource(R.string.search_filter_trash)) }
-                )
-                if (canSaveCurrentSmartFilterSet) {
-                    AssistChip(
-                        onClick = onSaveActiveFilters,
-                        label = { Text(stringResource(R.string.action_save)) },
-                        leadingIcon = {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                        ) {
                             Icon(
-                                Icons.Default.BookmarkAdd,
+                                imageVector = Icons.Default.Tune,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .size(20.dp)
                             )
                         }
-                    )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.search_filters),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = if (activeFilterCount == 0) {
+                                    stringResource(R.string.search_filter_hint)
+                                } else {
+                                    pluralStringResource(R.plurals.search_active_filters_count, activeFilterCount, activeFilterCount)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (canSaveCurrentSmartFilterSet) {
+                            FilledTonalIconButton(onClick = onSaveActiveFilters) {
+                                Icon(
+                                    Icons.Default.BookmarkAdd,
+                                    contentDescription = stringResource(R.string.action_save)
+                                )
+                            }
+                        }
+                    }
+
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SmartFilter.entries.forEach { filter ->
+                            FilterChip(
+                                selected = activeFilters.contains(filter),
+                                onClick = { onToggleFilter(filter) },
+                                label = { Text(stringResource(filter.labelRes)) }
+                            )
+                        }
+                        FilterChip(
+                            selected = includeArchived,
+                            onClick = onToggleIncludeArchived,
+                            label = { Text(stringResource(R.string.search_filter_archived)) }
+                        )
+                        FilterChip(
+                            selected = includeTrash,
+                            onClick = onToggleIncludeTrash,
+                            label = { Text(stringResource(R.string.search_filter_trash)) }
+                        )
+                    }
                 }
             }
         }
         if (savedSmartFilterSets.isNotEmpty()) {
             item {
-                androidx.compose.foundation.layout.FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.36f),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    savedSmartFilterSets
-                        .mapNotNull { encoded ->
-                            val filters = encoded.toSmartFilters()
-                            if (filters.isEmpty()) null else encoded to filters
-                        }
-                        .sortedBy { (_, filters) -> filters.joinToString(",") { it.name } }
-                        .forEach { (encoded, filters) ->
-                            InputChip(
-                                selected = activeFilters.toSet() == filters.toSet(),
-                                onClick = { onApplySavedFilter(encoded) },
-                                label = { Text(encoded.smartFilterSetLabel()) },
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = { onRemoveSavedFilter(encoded) },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Close,
-                                            contentDescription = stringResource(R.string.search_remove_saved_filter),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.History,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.search_saved_views),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            savedSmartFilterSets
+                                .mapNotNull { encoded ->
+                                    val filters = encoded.toSmartFilters()
+                                    if (filters.isEmpty()) null else encoded to filters
+                                }
+                                .sortedBy { (_, filters) -> filters.joinToString(",") { it.name } }
+                                .forEach { (encoded, filters) ->
+                                    InputChip(
+                                        selected = activeFilters.toSet() == filters.toSet(),
+                                        onClick = { onApplySavedFilter(encoded) },
+                                        label = { Text(encoded.smartFilterSetLabel()) },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.FilterList,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            IconButton(
+                                                onClick = { onRemoveSavedFilter(encoded) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = stringResource(R.string.search_remove_saved_filter),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    )
+                                }
+                        }
+                    }
+                }
+            }
+        }
+        if (filteredTasks.isNotEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = pluralStringResource(R.plurals.search_results_count, filteredTasks.size, filteredTasks.size),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (query.isNotBlank() || activeFilters.isNotEmpty() || includeArchived || includeTrash) {
+                        TextButton(onClick = onClearSearchFilters) {
+                            Text(stringResource(R.string.search_clear))
+                        }
+                    }
                 }
             }
         }
         if (query.isBlank() && activeFilters.isEmpty()) {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(64.dp),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.72f),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = stringResource(R.string.search_prompt_empty),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
+                    Column(
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 36.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier
+                                    .padding(14.dp)
+                                    .size(28.dp)
+                            )
+                        }
+                        Text(
+                            text = stringResource(R.string.search_prompt_empty),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.search_prompt_empty_subtitle),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         } else if (filteredTasks.isEmpty()) {
