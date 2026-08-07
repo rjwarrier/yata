@@ -40,7 +40,11 @@ data class GitHubRef(val sha: String)
 
 data class GitHubCommit(val sha: String, val treeSha: String)
 
-data class GitHubTree(val sha: String, val entries: List<GitHubTreeEntry>)
+data class GitHubTree(
+    val sha: String,
+    val entries: List<GitHubTreeEntry>,
+    val truncated: Boolean = false
+)
 
 data class GitHubTreeEntry(
     val path: String,
@@ -132,6 +136,7 @@ class HttpGitHubApi(
         val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}/git/trees/${path(treeSha)}?recursive=1")
         return GitHubTree(
             sha = json.getString("sha"),
+            truncated = json.optBoolean("truncated", false),
             entries = json.getJSONArray("tree").objects().map {
                 GitHubTreeEntry(
                     path = it.getString("path"),

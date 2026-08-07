@@ -123,6 +123,50 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
+    fun branchMovedToUnexpectedCommit_failsBeforeLocalCommit() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("server".bytes())
+            returnUnexpectedUpdateRefSha = true
+        }
+        var committed = false
+        val publisher = publisher(api, canonical = "merged".bytes()) { committed = true }
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertFalse(committed)
+        assertEquals(1, api.updateRefCalls)
+    }
+
+    @Test
+    fun truncatedHeadTree_failsClosedBeforeMergeOrCommit() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("server".bytes())
+            returnTruncatedTrees = true
+        }
+        var prepared = false
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _ ->
+                prepared = true
+                GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
+            },
+            commit = { committed = true },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "test commit" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.exceptionOrNull() is GitHubTransportException)
+        assertFalse(prepared)
+        assertFalse(committed)
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
     fun alreadyUpToDate_skipsPublishAndStillCommitsBaseline() = runTest {
         val api = FakeGitHubApi().apply {
             seedHead("same".bytes())
@@ -145,6 +189,65 @@ class GitHubSnapshotPublisherTest {
         assertTrue(result.isSuccess)
         assertTrue(committed)
         assertEquals(0, api.createRefCalls)
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
+    fun alreadyUpToDate_whenHeadMovesBeforeCommit_reReadsAndCommitsLatestBaseline() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("same".bytes())
+            beforeGetRef = { call, fake ->
+                if (call == 2) fake.seedHead("newer".bytes())
+            }
+        }
+        val remoteSnapshots = mutableListOf<String?>()
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { remoteBytes, _ ->
+                remoteSnapshots += remoteBytes?.string()
+                GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
+            },
+            commit = { committed = true },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "no-op" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.isSuccess)
+        assertTrue(committed)
+        assertEquals(listOf("same", "newer"), remoteSnapshots)
+        assertEquals(4, api.getRefCalls)
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
+    fun alreadyUpToDate_whenHeadKeepsMoving_failsWithoutCommit() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("same".bytes())
+            beforeGetRef = { call, fake ->
+                if (call % 2 == 0) fake.seedHead("newer-$call".bytes())
+            }
+        }
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { remoteBytes, _ ->
+                GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
+            },
+            commit = { committed = true },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "no-op" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.exceptionOrNull() is GitHubConflictException)
+        assertFalse(committed)
+        assertEquals(GitHubSnapshotPublisher.MAX_CAS_ATTEMPTS * 2, api.getRefCalls)
         assertEquals(0, api.updateRefCalls)
     }
 
@@ -185,8 +288,12 @@ class GitHubSnapshotPublisherTest {
         var failUpdateRefTimes = 0
         var corruptSnapshotBlobReads = false
         var corruptCreateBlobSha = false
+        var returnUnexpectedUpdateRefSha = false
+        var returnTruncatedTrees = false
         var createRefCalls = 0
         var updateRefCalls = 0
+        var getRefCalls = 0
+        var beforeGetRef: ((Int, FakeGitHubApi) -> Unit)? = null
         val createdCommitParents = mutableListOf<List<String>>()
 
         fun seedHead(snapshot: ByteArray) {
@@ -213,8 +320,11 @@ class GitHubSnapshotPublisherTest {
         override suspend fun createRepo(name: String, private: Boolean): GitHubRepo =
             GitHubRepo("owner", name, defaultBranch = "main", canPush = true)
 
-        override suspend fun getRef(owner: String, repo: String, branch: String): GitHubRef =
-            headCommitSha?.let(::GitHubRef) ?: throw GitHubNotFoundException()
+        override suspend fun getRef(owner: String, repo: String, branch: String): GitHubRef {
+            getRefCalls++
+            beforeGetRef?.invoke(getRefCalls, this)
+            return headCommitSha?.let(::GitHubRef) ?: throw GitHubNotFoundException()
+        }
 
         override suspend fun createRef(owner: String, repo: String, ref: String, sha: String): GitHubRef {
             createRefCalls++
@@ -229,7 +339,7 @@ class GitHubSnapshotPublisherTest {
                 throw GitHubConflictException()
             }
             headCommitSha = sha
-            return GitHubRef(sha)
+            return GitHubRef(if (returnUnexpectedUpdateRefSha) "unexpected-commit" else sha)
         }
 
         override suspend fun getCommit(owner: String, repo: String, sha: String): GitHubCommit =
@@ -240,7 +350,7 @@ class GitHubSnapshotPublisherTest {
         }
 
         override suspend fun getTree(owner: String, repo: String, treeSha: String): GitHubTree =
-            trees[treeSha] ?: throw GitHubNotFoundException()
+            trees[treeSha]?.copy(truncated = returnTruncatedTrees) ?: throw GitHubNotFoundException()
 
         override suspend fun createTree(owner: String, repo: String, baseTreeSha: String?, entries: List<GitHubTreeEntry>): GitHubTree {
             val baseEntries = baseTreeSha?.let { trees.getValue(it).entries }.orEmpty()

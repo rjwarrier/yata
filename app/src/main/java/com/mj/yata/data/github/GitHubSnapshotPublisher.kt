@@ -44,15 +44,13 @@ internal class GitHubSnapshotPublisher(
                 if (prepared.remoteNeedsPublish || head.snapshotBlobSha == null) {
                     progress(74, "Uploading changes")
                     val encoded = encode(prepared.canonicalBytes)
-                    val blobSha = api.createBlob(config.owner, config.repo, encoded)
-                    check(blobSha == GitBlobSha.of(encoded)) {
-                        "GitHub returned a blob SHA that did not match the uploaded snapshot"
-                    }
+                    val blobSha = createBlobVerified(config, encoded, "uploaded snapshot")
                     val entries = mutableListOf(GitHubTreeEntry(path = SNAPSHOT_PATH, sha = blobSha))
                     if (!head.hasReadme) {
+                        val readmeBytes = README_TEXT.toByteArray(Charsets.UTF_8)
                         entries += GitHubTreeEntry(
                             path = README_PATH,
-                            sha = api.createBlob(config.owner, config.repo, README_TEXT.toByteArray(Charsets.UTF_8))
+                            sha = createBlobVerified(config, readmeBytes, "repository README")
                         )
                     }
                     val tree = api.createTree(
@@ -69,18 +67,26 @@ internal class GitHubSnapshotPublisher(
                         parents = head.commitSha?.let(::listOf).orEmpty()
                     )
                     try {
-                        if (head.commitSha == null) {
+                        val publishedRef = if (head.commitSha == null) {
                             api.createRef(config.owner, config.repo, "refs/heads/${config.branch}", newCommit.sha)
                         } else {
                             api.updateRef(config.owner, config.repo, config.branch, newCommit.sha)
                         }
+                        check(publishedRef.sha == newCommit.sha) {
+                            "GitHub moved the branch to a different commit than the uploaded snapshot"
+                        }
                         onHeadPublished(newCommit.sha)
                     } catch (e: GitHubConflictException) {
                         if (attempt < MAX_CAS_ATTEMPTS) continue
-                        throw e
+                        throw exhaustedConflict()
                     }
                 } else {
                     progress(74, "Already up to date")
+                    val latestHead = readHead(config)
+                    if (!latestHead.sameIdentityAs(head)) {
+                        if (attempt < MAX_CAS_ATTEMPTS) continue
+                        throw exhaustedConflict()
+                    }
                 }
 
                 progress(88, "Applying updates")
@@ -95,6 +101,9 @@ internal class GitHubSnapshotPublisher(
     suspend fun readSnapshot(config: GitHubSyncConfig, commitSha: String): ByteArray {
         val commit = api.getCommit(config.owner, config.repo, commitSha)
         val tree = api.getTree(config.owner, config.repo, commit.treeSha)
+        if (tree.truncated) {
+            throw GitHubTransportException("GitHub tree response was truncated; restore was not attempted")
+        }
         val blobSha = tree.entries.firstOrNull { it.path == SNAPSHOT_PATH && it.type == "blob" }?.sha
             ?: throw GitHubNotFoundException("No YATA snapshot exists at this commit")
         return decode(readBlobVerified(config, blobSha))
@@ -108,6 +117,9 @@ internal class GitHubSnapshotPublisher(
         }
         val commit = api.getCommit(config.owner, config.repo, ref.sha)
         val tree = api.getTree(config.owner, config.repo, commit.treeSha)
+        if (tree.truncated) {
+            throw GitHubTransportException("GitHub tree response was truncated; sync was not attempted")
+        }
         return HeadState(
             commitSha = commit.sha,
             treeSha = commit.treeSha,
@@ -124,6 +136,17 @@ internal class GitHubSnapshotPublisher(
         return bytes
     }
 
+    private suspend fun createBlobVerified(config: GitHubSyncConfig, bytes: ByteArray, label: String): String {
+        val sha = api.createBlob(config.owner, config.repo, bytes)
+        check(sha == GitBlobSha.of(bytes)) {
+            "GitHub returned a blob SHA that did not match the $label"
+        }
+        return sha
+    }
+
+    private fun exhaustedConflict(): GitHubConflictException =
+        GitHubConflictException("GitHub repository kept changing during sync; try again")
+
     private fun scopeKey(config: GitHubSyncConfig): String =
         "github|${config.owner}/${config.repo}@${config.branch}:$SNAPSHOT_PATH"
 
@@ -132,7 +155,10 @@ internal class GitHubSnapshotPublisher(
         val treeSha: String?,
         val snapshotBlobSha: String?,
         val hasReadme: Boolean
-    )
+    ) {
+        fun sameIdentityAs(other: HeadState): Boolean =
+            commitSha == other.commitSha && treeSha == other.treeSha && snapshotBlobSha == other.snapshotBlobSha
+    }
 
     companion object {
         const val SNAPSHOT_PATH = "yata/snapshot.json"
