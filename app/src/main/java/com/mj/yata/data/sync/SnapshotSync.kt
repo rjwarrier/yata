@@ -565,6 +565,11 @@ internal data class PreparedSnapshotSync(
         get() = canonical.toString(2).toByteArray(Charsets.UTF_8)
 }
 
+class InitialSyncConfirmationRequiredException(
+    message: String =
+        "This device and the remote sync snapshot both contain data. Review the remote snapshot before first sync so nothing is merged unexpectedly."
+) : Exception(message)
+
 @Singleton
 class SnapshotSyncEngine @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -580,6 +585,7 @@ class SnapshotSyncEngine @Inject constructor(
             val local = normalized(jsonExporter.exportToBytes())
             val observedRemote = remoteBytes?.let(::normalized)
             val base = readBaseline(scopeKey)
+            checkInitialJoinIsExplicit(base, local, observedRemote)
             // A previous/history file is necessarily older than a missing or corrupt canonical.
             // Once this device has a baseline, auto-promoting such a copy could make a newer
             // device accept a rollback. Before the first baseline exists, though, those history
@@ -658,6 +664,35 @@ class SnapshotSyncEngine @Inject constructor(
 
     private fun normalized(bytes: ByteArray): JSONObject =
         SnapshotMerger.normalizeForSync(JSONObject(String(bytes, Charsets.UTF_8)))
+
+    private fun checkInitialJoinIsExplicit(base: JSONObject?, local: JSONObject, remote: JSONObject?) {
+        if (base != null || remote == null) return
+        if (hasUserData(local) && hasUserData(remote)) {
+            throw InitialSyncConfirmationRequiredException()
+        }
+    }
+
+    private fun hasUserData(snapshot: JSONObject): Boolean =
+        snapshot.optJSONArray("tasks").orZero() > 0 ||
+            snapshot.optJSONArray("projects").orZero() > 0 ||
+            snapshot.optJSONArray("lists").orZero() > 0 ||
+            snapshot.optJSONArray("tags").orZero() > 0 ||
+            snapshot.optJSONArray("tagGroups").orZero() > 0 ||
+            snapshot.optJSONArray("personGroups").orZero() > 0 ||
+            snapshot.optJSONArray("comments").orZero() > 0 ||
+            peopleBeyondCurrentUser(snapshot) > 0
+
+    private fun peopleBeyondCurrentUser(snapshot: JSONObject): Int {
+        val people = snapshot.optJSONArray("people") ?: return 0
+        var count = 0
+        for (i in 0 until people.length()) {
+            val person = people.optJSONObject(i) ?: continue
+            if (!person.optBoolean("isMe", false)) count++
+        }
+        return count
+    }
+
+    private fun JSONArray?.orZero(): Int = this?.length() ?: 0
 
     private fun readBaseline(scopeKey: String): JSONObject? = try {
         val file = baselineFile(scopeKey)

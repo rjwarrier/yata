@@ -887,16 +887,12 @@ class UserPreferences @Inject constructor(
             val normalizedRepo = repo.trim()
             val normalizedBranch = branch.trim().ifBlank { "main" }
             val normalizedApiBase = apiBase.trim().ifBlank { "https://api.github.com" }
-            val identityChanged = prefs[GITHUB_OWNER] != normalizedOwner ||
-                prefs[GITHUB_REPO] != normalizedRepo ||
-                prefs[GITHUB_BRANCH] != normalizedBranch ||
-                prefs[GITHUB_API_BASE] != normalizedApiBase
             prefs[GITHUB_OWNER] = normalizedOwner
             prefs[GITHUB_REPO] = normalizedRepo
             prefs[GITHUB_BRANCH] = normalizedBranch
             prefs[GITHUB_API_BASE] = normalizedApiBase
             prefs[REMOTE_BACKUP_PROTOCOL] = com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB.name
-            if (identityChanged) prefs.remove(GITHUB_LAST_HEAD_SHA)
+            prefs.remove(GITHUB_LAST_HEAD_SHA)
         }
     }
 
