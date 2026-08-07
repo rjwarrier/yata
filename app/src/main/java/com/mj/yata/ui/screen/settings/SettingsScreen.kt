@@ -3102,7 +3102,6 @@ fun SettingsScreen(
         var draftPrivateKey by remember { mutableStateOf("") }
         var draftPassphrase by remember { mutableStateOf("") }
         var draftFtpUseTls by remember { mutableStateOf(ftpUseTls) }
-        var draftGitHubToken by remember { mutableStateOf("") }
         var draftGitHubRepo by remember { mutableStateOf(listOf(githubOwner, githubRepo).filter { it.isNotBlank() }.joinToString("/")) }
         var draftGitHubBranch by remember { mutableStateOf(githubBranch.ifBlank { "main" }) }
         var draftGitHubApiBase by remember { mutableStateOf(githubApiBase) }
@@ -3114,6 +3113,9 @@ fun SettingsScreen(
         val keyPassphraseAlreadySet = remember { viewModel.hasSftpKeyPassphrase() }
         val backupPassphraseAlreadySet = remember { viewModel.hasRemoteBackupPassphrase() }
         val savedSecretPlaceholder = "••••••••"
+        var draftGitHubToken by remember {
+            mutableStateOf(if (githubTokenAlreadySet) savedSecretPlaceholder else "")
+        }
         var isTestingConnection by remember { mutableStateOf(false) }
         // null = untested this session, true/false = last test's outcome. A successful SFTP test
         // with no fingerprint pinned yet, or a failed one where the failure is a host-key
@@ -3126,6 +3128,9 @@ fun SettingsScreen(
         var isHostKeyMismatch by remember { mutableStateOf(false) }
         val draftIsFtp = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
         val draftIsGitHub = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
+        fun enteredGitHubToken(): String =
+            draftGitHubToken.takeUnless { githubTokenAlreadySet && it == savedSecretPlaceholder }.orEmpty()
+
         fun parseGitHubRepoDraft(): Pair<String, String>? {
             val parts = draftGitHubRepo.trim().split("/", limit = 2)
             return if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) {
@@ -3137,7 +3142,7 @@ fun SettingsScreen(
 
         fun saveServerConfiguration(onSaved: () -> Unit = {}) {
             if (draftIsGitHub) {
-                if (draftGitHubToken.isNotBlank()) viewModel.setGitHubToken(draftGitHubToken)
+                enteredGitHubToken().takeIf { it.isNotBlank() }?.let(viewModel::setGitHubToken)
                 val repoParts = parseGitHubRepoDraft()
                 if (repoParts != null) {
                     viewModel.saveGitHubConfiguration(
@@ -3404,7 +3409,7 @@ fun SettingsScreen(
                             if (draftIsGitHub) {
                                 viewModel.connectGitHubConfiguration(
                                     repoText = draftGitHubRepo,
-                                    token = draftGitHubToken,
+                                    token = enteredGitHubToken(),
                                     apiBase = draftGitHubApiBase
                                 ) { result ->
                                     isTestingConnection = false
