@@ -40,7 +40,11 @@ data class GitHubUser(val login: String)
 
 data class GitHubRef(val sha: String)
 
-data class GitHubCommit(val sha: String, val treeSha: String)
+data class GitHubCommit(
+    val sha: String,
+    val treeSha: String,
+    val parentShas: List<String> = emptyList()
+)
 
 data class GitHubTree(
     val sha: String,
@@ -130,7 +134,11 @@ class HttpGitHubApi(
 
     override suspend fun getCommit(owner: String, repo: String, sha: String): GitHubCommit {
         val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}/git/commits/${path(sha)}")
-        return GitHubCommit(sha = json.getString("sha"), treeSha = json.getJSONObject("tree").getString("sha"))
+        return GitHubCommit(
+            sha = json.getString("sha"),
+            treeSha = json.getJSONObject("tree").getString("sha"),
+            parentShas = json.optJSONArray("parents")?.objects()?.map { it.getString("sha") }.orEmpty()
+        )
     }
 
     override suspend fun createCommit(owner: String, repo: String, message: String, treeSha: String, parents: List<String>): GitHubCommit {
@@ -139,7 +147,11 @@ class HttpGitHubApi(
             .put("tree", treeSha)
             .put("parents", JSONArray(parents))
         val json = requestJson("POST", "/repos/${path(owner)}/${path(repo)}/git/commits", body = body)
-        return GitHubCommit(sha = json.getString("sha"), treeSha = json.getJSONObject("tree").getString("sha"))
+        return GitHubCommit(
+            sha = json.getString("sha"),
+            treeSha = json.getJSONObject("tree").getString("sha"),
+            parentShas = parents
+        )
     }
 
     override suspend fun getTree(owner: String, repo: String, treeSha: String): GitHubTree {

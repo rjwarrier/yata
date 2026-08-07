@@ -184,6 +184,68 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
+    fun previouslyObservedHeadStillInHistory_allowsSync() = runTest {
+        lateinit var previousHead: String
+        val api = FakeGitHubApi().apply {
+            seedHead("previous".bytes())
+            previousHead = headCommitSha!!
+            seedHead("server".bytes(), parents = listOf(previousHead))
+            createdCommitParents.clear()
+        }
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { remoteBytes, _, _ ->
+                assertEquals("server", remoteBytes?.string())
+                GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
+            },
+            commit = { committed = true },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "test commit" },
+            lastObservedHead = { previousHead }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.isSuccess)
+        assertTrue(committed)
+        assertEquals(1, api.updateRefCalls)
+    }
+
+    @Test
+    fun previouslyObservedHeadMissingFromHistory_failsBeforeMergeOrCommit() = runTest {
+        lateinit var previousHead: String
+        val api = FakeGitHubApi().apply {
+            seedHead("previous".bytes())
+            previousHead = headCommitSha!!
+            seedHead("rewound".bytes())
+            createdCommitParents.clear()
+        }
+        var prepared = false
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _, _ ->
+                prepared = true
+                GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
+            },
+            commit = { committed = true },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "test commit" },
+            lastObservedHead = { previousHead }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.exceptionOrNull() is GitHubConflictException)
+        assertFalse(prepared)
+        assertFalse(committed)
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
     fun truncatedFullTree_doesNotBlockPathBasedSyncLookup() = runTest {
         val api = FakeGitHubApi().apply {
             seedHead("server".bytes())
@@ -403,10 +465,10 @@ class GitHubSnapshotPublisherTest {
         var beforeGetRef: ((Int, FakeGitHubApi) -> Unit)? = null
         val createdCommitParents = mutableListOf<List<String>>()
 
-        fun seedHead(snapshot: ByteArray) {
+        fun seedHead(snapshot: ByteArray, parents: List<String> = emptyList()) {
             val blobSha = putBlob(snapshot)
             val tree = putTree(listOf(GitHubTreeEntry(path = GitHubSnapshotPublisher.SNAPSHOT_PATH, sha = blobSha)))
-            val commit = putCommit(tree.sha, emptyList())
+            val commit = putCommit(tree.sha, parents)
             headCommitSha = commit.sha
         }
 
@@ -511,7 +573,7 @@ class GitHubSnapshotPublisherTest {
 
         private fun putCommit(treeSha: String, parents: List<String>): GitHubCommit {
             val sha = "commit-${commits.size + 1}"
-            val commit = GitHubCommit(sha, treeSha)
+            val commit = GitHubCommit(sha, treeSha, parents)
             commits[sha] = commit
             createdCommitParents += parents
             return commit

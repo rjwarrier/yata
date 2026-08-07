@@ -167,6 +167,7 @@ class GitHubSyncManager @Inject constructor(
             decode = ::decodePayload,
             validateRemoteSnapshot = snapshotSyncEngine::isValidRemoteSnapshot,
             commitMessage = ::commitMessage,
+            lastObservedHead = { userPreferences.githubLastHeadShaFlow.first() },
             onHeadObserved = { userPreferences.setGitHubLastHeadSha(it) },
             onHeadPublished = { userPreferences.setGitHubLastHeadSha(it) }
         )

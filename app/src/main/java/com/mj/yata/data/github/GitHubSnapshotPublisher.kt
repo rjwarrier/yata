@@ -21,6 +21,7 @@ internal class GitHubSnapshotPublisher(
     private val decode: (ByteArray) -> ByteArray,
     private val validateRemoteSnapshot: (ByteArray) -> Boolean = { true },
     private val commitMessage: (ByteArray) -> String,
+    private val lastObservedHead: suspend () -> String? = { null },
     private val onHeadObserved: suspend (String?) -> Unit = {},
     private val onHeadPublished: suspend (String) -> Unit = {}
 ) {
@@ -37,6 +38,7 @@ internal class GitHubSnapshotPublisher(
                 attempt++
                 progress(30, "Reading GitHub repo")
                 val head = readHead(config)
+                ensureHeadHasNotRewound(config, head.commitSha)
                 onHeadObserved(head.commitSha)
                 val remoteSnapshot = readRemoteSnapshot(config, head, progress)
 
@@ -192,6 +194,40 @@ internal class GitHubSnapshotPublisher(
         }
     }
 
+    private suspend fun ensureHeadHasNotRewound(config: GitHubSyncConfig, currentHeadSha: String?) {
+        val previousHeadSha = lastObservedHead()?.takeIf { it.isNotBlank() } ?: return
+        if (currentHeadSha == previousHeadSha) return
+        if (currentHeadSha == null) {
+            throw GitHubConflictException(
+                "GitHub branch history changed outside YATA; restore or reconnect before syncing"
+            )
+        }
+        if (isAncestor(config, ancestorSha = previousHeadSha, descendantSha = currentHeadSha)) return
+        throw GitHubConflictException(
+            "GitHub branch history changed outside YATA; restore or reconnect before syncing"
+        )
+    }
+
+    private suspend fun isAncestor(
+        config: GitHubSyncConfig,
+        ancestorSha: String,
+        descendantSha: String
+    ): Boolean {
+        val pending = ArrayDeque<String>()
+        val seen = mutableSetOf<String>()
+        pending += descendantSha
+        var inspected = 0
+        while (pending.isNotEmpty() && inspected < MAX_ANCESTRY_COMMITS) {
+            val sha = pending.removeFirst()
+            if (!seen.add(sha)) continue
+            if (sha == ancestorSha) return true
+            inspected++
+            val commit = api.getCommit(config.owner, config.repo, sha)
+            pending += commit.parentShas
+        }
+        return false
+    }
+
     private fun exhaustedConflict(): GitHubConflictException =
         GitHubConflictException("GitHub repository kept changing during sync; try again")
 
@@ -218,6 +254,7 @@ internal class GitHubSnapshotPublisher(
         const val README_PATH = "README.md"
         const val MAX_CAS_ATTEMPTS = 3
         const val MAX_RECOVERY_COMMITS = 20
+        const val MAX_ANCESTRY_COMMITS = 250
 
         val README_TEXT = """
             # YATA sync repository
