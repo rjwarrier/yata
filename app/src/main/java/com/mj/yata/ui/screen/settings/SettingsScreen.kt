@@ -2782,30 +2782,6 @@ fun SettingsScreen(
         }
         if (settingsDestination == SettingsDestination.HELP_ABOUT) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "ABOUT",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                AboutYataCard(
-                    demoModeEnabled = demoModeEnabled,
-                    demoModeFeedback = demoModeFeedback,
-                    onToggleDemoMode = {
-                        viewModel.toggleDemoMode()
-                        demoModeFeedback = if (demoModeEnabled) {
-                            R.string.help_demo_mode_off
-                        } else {
-                            R.string.help_demo_mode_on
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-        }
-        if (settingsDestination == SettingsDestination.HELP_ABOUT) {
-        item {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -2882,6 +2858,23 @@ fun SettingsScreen(
                     )
                 }
             }
+        }
+        }
+        if (settingsDestination == SettingsDestination.HELP_ABOUT) {
+        item {
+            AboutYataCard(
+                demoModeEnabled = demoModeEnabled,
+                demoModeFeedback = demoModeFeedback,
+                onToggleDemoMode = {
+                    viewModel.toggleDemoMode()
+                    demoModeFeedback = if (demoModeEnabled) {
+                        R.string.help_demo_mode_off
+                    } else {
+                        R.string.help_demo_mode_on
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
         }
     }
