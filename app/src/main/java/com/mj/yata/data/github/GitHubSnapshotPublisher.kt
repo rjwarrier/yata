@@ -82,8 +82,10 @@ internal class GitHubSnapshotPublisher(
                         } else {
                             api.updateRef(config.owner, config.repo, config.branch, newCommit.sha)
                         }
-                        check(publishedRef.sha == newCommit.sha) {
-                            "GitHub moved the branch to a different commit than the uploaded snapshot"
+                        if (publishedRef.sha != newCommit.sha) {
+                            throw GitHubTransportException(
+                                "GitHub moved the branch to a different commit than the uploaded snapshot"
+                            )
                         }
                         verifyPublishedHead(config, expectedCommitSha = newCommit.sha, expectedBlobSha = blobSha)
                         onHeadPublished(newCommit.sha)
@@ -171,16 +173,20 @@ internal class GitHubSnapshotPublisher(
 
     private suspend fun readBlobVerified(config: GitHubSyncConfig, sha: String): ByteArray {
         val bytes = api.getBlob(config.owner, config.repo, sha)
-        check(GitBlobSha.of(bytes) == sha) {
-            "GitHub returned a blob whose content did not match its SHA"
+        if (GitBlobSha.of(bytes) != sha) {
+            throw GitHubTransportException(
+                "GitHub returned a snapshot whose content did not match its SHA"
+            )
         }
         return bytes
     }
 
     private suspend fun createBlobVerified(config: GitHubSyncConfig, bytes: ByteArray, label: String): String {
         val sha = api.createBlob(config.owner, config.repo, bytes)
-        check(sha == GitBlobSha.of(bytes)) {
-            "GitHub returned a blob SHA that did not match the $label"
+        if (sha != GitBlobSha.of(bytes)) {
+            throw GitHubTransportException(
+                "GitHub returned a blob SHA that did not match the $label"
+            )
         }
         return sha
     }
@@ -191,8 +197,10 @@ internal class GitHubSnapshotPublisher(
         expectedBlobSha: String
     ) {
         val publishedHead = readHead(config)
-        check(publishedHead.commitSha == expectedCommitSha && publishedHead.snapshotBlobSha == expectedBlobSha) {
-            "GitHub did not retain the uploaded snapshot at the branch head"
+        if (publishedHead.commitSha != expectedCommitSha || publishedHead.snapshotBlobSha != expectedBlobSha) {
+            throw GitHubTransportException(
+                "GitHub did not retain the uploaded snapshot at the branch head"
+            )
         }
     }
 

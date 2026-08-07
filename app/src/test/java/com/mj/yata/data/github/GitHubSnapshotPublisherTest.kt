@@ -128,7 +128,7 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertTrue(result.exceptionOrNull() is GitHubTransportException)
         assertFalse(committed)
         assertEquals(0, api.updateRefCalls)
         assertEquals(0, api.createRefCalls)
@@ -145,7 +145,7 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertTrue(result.exceptionOrNull() is GitHubTransportException)
         assertFalse(committed)
         assertEquals(0, api.updateRefCalls)
     }
@@ -161,7 +161,7 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertTrue(result.exceptionOrNull() is GitHubTransportException)
         assertFalse(committed)
         assertEquals(1, api.updateRefCalls)
     }
@@ -178,7 +178,7 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertTrue(result.exceptionOrNull() is GitHubTransportException)
         assertFalse(committed)
         assertEquals(1, api.updateRefCalls)
     }
