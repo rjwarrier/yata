@@ -603,9 +603,17 @@ class SnapshotSyncEngine @Inject constructor(
         val file = baselineFile(scopeKey)
         if (!file.exists()) null else SnapshotMerger.normalizeForSync(JSONObject(file.readText()))
     } catch (e: Exception) {
+        Log.w(TAG, "Primary sync baseline is unreadable; trying previous copy", e)
+        readPreviousBaseline(scopeKey)
+    }
+
+    private fun readPreviousBaseline(scopeKey: String): JSONObject? = try {
+        val file = previousBaselineFile(scopeKey)
+        if (!file.exists()) null else SnapshotMerger.normalizeForSync(JSONObject(file.readText()))
+    } catch (e: Exception) {
         // A baseline is only merge metadata; the canonical server copy remains the source of
-        // truth. Treat corruption as a first join rather than making sync permanently unusable.
-        Log.w(TAG, "Ignoring unreadable local sync baseline", e)
+        // truth. Treat corruption as a first join only after both baseline copies fail.
+        Log.w(TAG, "Ignoring unreadable previous sync baseline", e)
         null
     }
 
@@ -615,6 +623,7 @@ class SnapshotSyncEngine @Inject constructor(
         val temporary = File(target.parentFile, ".${target.name}.part")
         temporary.writeText(value.toString())
         try {
+            preservePreviousBaseline(target, previousBaselineFile(scopeKey))
             try {
                 Files.move(
                     temporary.toPath(),
@@ -633,6 +642,16 @@ class SnapshotSyncEngine @Inject constructor(
             temporary.delete()
             throw IllegalStateException("Could not publish local sync baseline", e)
         }
+    }
+
+    private fun preservePreviousBaseline(target: File, previous: File) {
+        if (!target.exists()) return
+        previous.parentFile?.mkdirs()
+        Files.copy(
+            target.toPath(),
+            previous.toPath(),
+            StandardCopyOption.REPLACE_EXISTING
+        )
     }
 
     private fun writeConflictArtifact(
@@ -672,6 +691,10 @@ class SnapshotSyncEngine @Inject constructor(
 
     private fun baselineFile(scopeKey: String): File {
         return File(File(context.filesDir, "yata-sync"), "${scopeDigest(scopeKey)}.json")
+    }
+
+    private fun previousBaselineFile(scopeKey: String): File {
+        return File(File(context.filesDir, "yata-sync"), "${scopeDigest(scopeKey)}.previous.json")
     }
 
     private fun scopeDigest(scopeKey: String): String =
