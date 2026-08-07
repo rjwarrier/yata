@@ -58,6 +58,21 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun concurrentEdit_mergesIndependentFieldsWithinSameRecord() {
+        val base = snapshot(tasks = listOf(task("t1", "base").put("priority", "none").put("flag", false)))
+        val local = snapshot(tasks = listOf(task("t1", "local").put("priority", "none").put("flag", false)))
+        val remote = snapshot(tasks = listOf(task("t1", "base").put("priority", "high").put("flag", true)))
+
+        val result = SnapshotMerger.merge(base, local, remote)
+        val task = rows(result.json, "tasks").getValue("t1")
+
+        assertEquals("local", task.getString("title"))
+        assertEquals("high", task.getString("priority"))
+        assertTrue(task.getBoolean("flag"))
+        assertEquals(0, result.conflicts)
+    }
+
+    @Test
     fun concurrentEdit_recordsLosingLocalConflictData() {
         val base = snapshot(tasks = listOf(task("t1", "base")))
         val local = snapshot(tasks = listOf(task("t1", "local")))
@@ -67,12 +82,12 @@ class SnapshotSyncTest {
         val conflict = result.conflictRecords.single()
         val conflictJson = SnapshotMerger.conflictRecordsJson(result.conflictRecords).getJSONObject(0)
 
-        assertEquals("tasks/t1", conflict.path)
+        assertEquals("tasks/t1/title", conflict.path)
         assertEquals("tasks", conflict.collection)
         assertEquals("t1", conflict.id)
-        assertEquals("base", conflictJson.getJSONObject("base").getString("title"))
-        assertEquals("local", conflictJson.getJSONObject("local").getString("title"))
-        assertEquals("server", conflictJson.getJSONObject("remote").getString("title"))
+        assertEquals("base", conflictJson.getString("base"))
+        assertEquals("local", conflictJson.getString("local"))
+        assertEquals("server", conflictJson.getString("remote"))
     }
 
     @Test

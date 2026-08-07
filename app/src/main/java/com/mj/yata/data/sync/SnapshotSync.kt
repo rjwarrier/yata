@@ -104,24 +104,23 @@ internal object SnapshotMerger {
             val ids = (baseRows.keys + localRows.keys + remoteRows.keys).toSortedSet()
             val out = JSONArray()
             ids.forEach { id ->
-                val decision = mergeValue(
-                    base = baseRows[id] ?: Missing,
-                    local = localRows[id] ?: Missing,
-                    remote = remoteRows[id] ?: Missing,
+                val baseRow = baseRows[id] ?: Missing
+                val localRow = localRows[id] ?: Missing
+                val remoteRow = remoteRows[id] ?: Missing
+                val rowMerge = mergeRecord(
+                    path = "$collection/$id",
+                    collection = collection,
+                    id = id,
+                    base = baseRow,
+                    local = localRow,
+                    remote = remoteRow,
                     initialJoin = base == null
                 )
-                if (decision.conflict) {
-                    conflicts++
-                    conflictRecords += ConflictRecord(
-                        path = "$collection/$id",
-                        collection = collection,
-                        id = id,
-                        base = baseRows[id] ?: Missing,
-                        local = localRows[id] ?: Missing,
-                        remote = remoteRows[id] ?: Missing
-                    )
+                conflicts += rowMerge.conflicts
+                conflictRecords += rowMerge.conflictRecords
+                if (rowMerge.value !== Missing) {
+                    out.put(deepCopyValue(rowMerge.value))
                 }
-                if (decision.value !== Missing) out.put(deepCopyValue(decision.value))
             }
             merged.put(collection, out)
         }
@@ -241,6 +240,71 @@ internal object SnapshotMerger {
             name.startsWith("local_backup_")
 
     private data class Decision(val value: Any, val conflict: Boolean)
+
+    private data class RecordMerge(
+        val value: Any,
+        val conflicts: Int,
+        val conflictRecords: List<ConflictRecord>
+    )
+
+    private fun mergeRecord(
+        path: String,
+        collection: String,
+        id: String,
+        base: Any,
+        local: Any,
+        remote: Any,
+        initialJoin: Boolean
+    ): RecordMerge {
+        if (!initialJoin && base is JSONObject && local is JSONObject && remote is JSONObject) {
+            val merged = JSONObject()
+            val conflicts = mutableListOf<ConflictRecord>()
+            allKeys(base, local, remote)
+                .filterNot { it == "id" || it == "name" }
+                .sorted()
+                .forEach { key ->
+                    val decision = mergeValue(
+                        base = valueAt(base, key),
+                        local = valueAt(local, key),
+                        remote = valueAt(remote, key),
+                        initialJoin = false
+                    )
+                    if (decision.conflict) {
+                        conflicts += ConflictRecord(
+                            path = "$path/$key",
+                            collection = collection,
+                            id = id,
+                            base = valueAt(base, key),
+                            local = valueAt(local, key),
+                            remote = valueAt(remote, key)
+                        )
+                    }
+                    if (decision.value !== Missing) merged.put(key, deepCopyValue(decision.value))
+                }
+            merged.put(if (collection == "settings") "name" else "id", id)
+            return RecordMerge(merged, conflicts.size, conflicts)
+        }
+
+        val decision = mergeValue(base, local, remote, initialJoin)
+        return RecordMerge(
+            value = decision.value,
+            conflicts = if (decision.conflict) 1 else 0,
+            conflictRecords = if (decision.conflict) {
+                listOf(
+                    ConflictRecord(
+                        path = path,
+                        collection = collection,
+                        id = id,
+                        base = base,
+                        local = local,
+                        remote = remote
+                    )
+                )
+            } else {
+                emptyList()
+            }
+        )
+    }
 
     private fun mergeValue(base: Any, local: Any, remote: Any, initialJoin: Boolean): Decision {
         if (same(local, remote)) return Decision(local, conflict = false)
