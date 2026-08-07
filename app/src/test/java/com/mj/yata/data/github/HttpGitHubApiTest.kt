@@ -83,6 +83,53 @@ class HttpGitHubApiTest {
         assertEquals(0, connections.size)
     }
 
+    @Test
+    fun getContentReturnsNullForMissingPath() = runTest {
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = {
+                FakeConnection(status = 404, body = """{"message":"not found"}""")
+            },
+            retryDelay = {}
+        )
+
+        val content = api.getContent("owner", "repo", "yata/snapshot.json", "main")
+
+        assertEquals(null, content)
+    }
+
+    @Test
+    fun listCommitsPaginatesUntilShortPage() = runTest {
+        val firstPage = (1..100).joinToString(prefix = "[", postfix = "]") { commitJson("sha-$it") }
+        val secondPage = (101..102).joinToString(prefix = "[", postfix = "]") { commitJson("sha-$it") }
+        val connections = ArrayDeque(
+            listOf(
+                FakeConnection(status = 200, body = firstPage),
+                FakeConnection(status = 200, body = secondPage)
+            )
+        )
+        val requestedUrls = mutableListOf<String>()
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { url ->
+                requestedUrls += url.toString()
+                connections.removeFirst()
+            },
+            retryDelay = {}
+        )
+
+        val commits = api.listCommits("owner", "repo", "main", "yata/snapshot.json")
+
+        assertEquals(102, commits.size)
+        assertEquals("sha-1", commits.first().sha)
+        assertEquals("sha-102", commits.last().sha)
+        assertTrue(requestedUrls[0].contains("page=1"))
+        assertTrue(requestedUrls[1].contains("page=2"))
+    }
+
+    private fun commitJson(sha: String): String =
+        """{"sha":"$sha","commit":{"message":"sync","author":{"date":"2026-01-01T00:00:00Z"}}}"""
+
     private class FakeConnection(
         url: URL = URL("https://api.github.test/user"),
         private val status: Int,

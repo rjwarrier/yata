@@ -23,6 +23,7 @@ interface GitHubApi {
     suspend fun createCommit(owner: String, repo: String, message: String, treeSha: String, parents: List<String>): GitHubCommit
     suspend fun getTree(owner: String, repo: String, treeSha: String): GitHubTree
     suspend fun createTree(owner: String, repo: String, baseTreeSha: String?, entries: List<GitHubTreeEntry>): GitHubTree
+    suspend fun getContent(owner: String, repo: String, path: String, ref: String): GitHubContent?
     suspend fun getBlob(owner: String, repo: String, sha: String): ByteArray
     suspend fun createBlob(owner: String, repo: String, bytes: ByteArray): String
     suspend fun listCommits(owner: String, repo: String, branch: String, path: String): List<GitHubCommitSummary>
@@ -51,6 +52,12 @@ data class GitHubTreeEntry(
     val path: String,
     val mode: String = "100644",
     val type: String = "blob",
+    val sha: String
+)
+
+data class GitHubContent(
+    val path: String,
+    val type: String,
     val sha: String
 )
 
@@ -165,6 +172,18 @@ class HttpGitHubApi(
         return GitHubTree(sha = json.getString("sha"), entries = emptyList())
     }
 
+    override suspend fun getContent(owner: String, repo: String, path: String, ref: String): GitHubContent? =
+        try {
+            val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}/contents/${path(path)}?ref=${path(ref)}")
+            GitHubContent(
+                path = json.optString("path", path),
+                type = json.optString("type"),
+                sha = json.getString("sha")
+            )
+        } catch (_: GitHubNotFoundException) {
+            null
+        }
+
     override suspend fun getBlob(owner: String, repo: String, sha: String): ByteArray {
         val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}/git/blobs/${path(sha)}")
         return Base64.getMimeDecoder().decode(json.getString("content"))
@@ -180,16 +199,27 @@ class HttpGitHubApi(
 
     override suspend fun listCommits(owner: String, repo: String, branch: String, path: String): List<GitHubCommitSummary> {
         val encodedPath = path.replace("/", "%2F")
-        val array = requestJsonArray("GET", "/repos/${path(owner)}/${path(repo)}/commits?sha=${path(branch)}&path=$encodedPath")
-        return array.objects().map { json ->
-            val commit = json.getJSONObject("commit")
-            val author = commit.optJSONObject("author")
-            GitHubCommitSummary(
-                sha = json.getString("sha"),
-                message = commit.optString("message"),
-                authoredAt = author?.optString("date")?.parseInstantOrNull()
+        val out = mutableListOf<GitHubCommitSummary>()
+        var page = 1
+        while (true) {
+            val array = requestJsonArray(
+                "GET",
+                "/repos/${path(owner)}/${path(repo)}/commits?sha=${path(branch)}&path=$encodedPath&per_page=$COMMITS_PAGE_SIZE&page=$page"
             )
+            if (array.length() == 0) break
+            out += array.objects().map { json ->
+                val commit = json.getJSONObject("commit")
+                val author = commit.optJSONObject("author")
+                GitHubCommitSummary(
+                    sha = json.getString("sha"),
+                    message = commit.optString("message"),
+                    authoredAt = author?.optString("date")?.parseInstantOrNull()
+                )
+            }
+            if (array.length() < COMMITS_PAGE_SIZE) break
+            page++
         }
+        return out
     }
 
     private suspend fun requestJson(method: String, endpoint: String, body: JSONObject? = null): JSONObject =
@@ -312,5 +342,6 @@ class HttpGitHubApi(
         const val MAX_HTTP_ATTEMPTS = 3
         const val BASE_RETRY_DELAY_MS = 500L
         const val MAX_RATE_LIMIT_RETRY_DELAY_MS = 5_000L
+        const val COMMITS_PAGE_SIZE = 100
     }
 }

@@ -184,17 +184,16 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
-    fun truncatedHeadTree_failsClosedBeforeMergeOrCommit() = runTest {
+    fun truncatedFullTree_doesNotBlockPathBasedSyncLookup() = runTest {
         val api = FakeGitHubApi().apply {
             seedHead("server".bytes())
             returnTruncatedTrees = true
         }
-        var prepared = false
         var committed = false
         val publisher = GitHubSnapshotPublisher(
             api = api,
-            prepare = { _, _, _ ->
-                prepared = true
+            prepare = { remoteBytes, _, _ ->
+                assertEquals("server", remoteBytes?.string())
                 GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
             },
             commit = { committed = true },
@@ -205,10 +204,9 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.exceptionOrNull() is GitHubTransportException)
-        assertFalse(prepared)
-        assertFalse(committed)
-        assertEquals(0, api.updateRefCalls)
+        assertTrue(result.isSuccess)
+        assertTrue(committed)
+        assertEquals(1, api.updateRefCalls)
     }
 
     @Test
@@ -473,6 +471,13 @@ class GitHubSnapshotPublisherTest {
             val baseEntries = baseTreeSha?.let { trees.getValue(it).entries }.orEmpty()
                 .filterNot { base -> entries.any { it.path == base.path } }
             return putTree(baseEntries + entries)
+        }
+
+        override suspend fun getContent(owner: String, repo: String, path: String, ref: String): GitHubContent? {
+            val commit = commits[ref] ?: return null
+            val tree = trees[commit.treeSha] ?: return null
+            val entry = tree.entries.firstOrNull { it.path == path && it.type == "blob" } ?: return null
+            return GitHubContent(path = entry.path, type = "file", sha = entry.sha)
         }
 
         override suspend fun getBlob(owner: String, repo: String, sha: String): ByteArray {

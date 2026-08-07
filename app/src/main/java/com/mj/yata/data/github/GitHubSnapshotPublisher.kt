@@ -107,11 +107,9 @@ internal class GitHubSnapshotPublisher(
 
     suspend fun readSnapshot(config: GitHubSyncConfig, commitSha: String): ByteArray {
         val commit = api.getCommit(config.owner, config.repo, commitSha)
-        val tree = api.getTree(config.owner, config.repo, commit.treeSha)
-        if (tree.truncated) {
-            throw GitHubTransportException("GitHub tree response was truncated; restore was not attempted")
-        }
-        val blobSha = tree.entries.firstOrNull { it.path == SNAPSHOT_PATH && it.type == "blob" }?.sha
+        val blobSha = api.getContent(config.owner, config.repo, SNAPSHOT_PATH, commit.sha)
+            ?.takeIf { it.type == "file" }
+            ?.sha
             ?: throw GitHubNotFoundException("No YATA snapshot exists at this commit")
         return decode(readBlobVerified(config, blobSha))
     }
@@ -155,15 +153,15 @@ internal class GitHubSnapshotPublisher(
             return HeadState(commitSha = null, treeSha = null, snapshotBlobSha = null, hasReadme = false)
         }
         val commit = api.getCommit(config.owner, config.repo, ref.sha)
-        val tree = api.getTree(config.owner, config.repo, commit.treeSha)
-        if (tree.truncated) {
-            throw GitHubTransportException("GitHub tree response was truncated; sync was not attempted")
-        }
+        val snapshot = api.getContent(config.owner, config.repo, SNAPSHOT_PATH, commit.sha)
+            ?.takeIf { it.type == "file" }
+        val readme = api.getContent(config.owner, config.repo, README_PATH, commit.sha)
+            ?.takeIf { it.type == "file" }
         return HeadState(
             commitSha = commit.sha,
             treeSha = commit.treeSha,
-            snapshotBlobSha = tree.entries.firstOrNull { it.path == SNAPSHOT_PATH && it.type == "blob" }?.sha,
-            hasReadme = tree.entries.any { it.path == README_PATH && it.type == "blob" }
+            snapshotBlobSha = snapshot?.sha,
+            hasReadme = readme != null
         )
     }
 
