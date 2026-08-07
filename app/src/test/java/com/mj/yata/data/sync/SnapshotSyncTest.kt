@@ -58,6 +58,24 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun concurrentEdit_recordsLosingLocalConflictData() {
+        val base = snapshot(tasks = listOf(task("t1", "base")))
+        val local = snapshot(tasks = listOf(task("t1", "local")))
+        val remote = snapshot(tasks = listOf(task("t1", "server")))
+
+        val result = SnapshotMerger.merge(base, local, remote)
+        val conflict = result.conflictRecords.single()
+        val conflictJson = SnapshotMerger.conflictRecordsJson(result.conflictRecords).getJSONObject(0)
+
+        assertEquals("tasks/t1", conflict.path)
+        assertEquals("tasks", conflict.collection)
+        assertEquals("t1", conflict.id)
+        assertEquals("base", conflictJson.getJSONObject("base").getString("title"))
+        assertEquals("local", conflictJson.getJSONObject("local").getString("title"))
+        assertEquals("server", conflictJson.getJSONObject("remote").getString("title"))
+    }
+
+    @Test
     fun firstJoin_unionsDevicesAndUsesEstablishedServerOnCollision() {
         val local = snapshot(tasks = listOf(task("same", "local"), task("local", "only")))
         val remote = snapshot(tasks = listOf(task("same", "server"), task("remote", "only")))

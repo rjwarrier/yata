@@ -46,7 +46,20 @@ internal object SnapshotMerger {
 
     private object Missing
 
-    data class MergeResult(val json: JSONObject, val conflicts: Int)
+    data class ConflictRecord(
+        val path: String,
+        val collection: String?,
+        val id: String?,
+        val base: Any,
+        val local: Any,
+        val remote: Any
+    )
+
+    data class MergeResult(
+        val json: JSONObject,
+        val conflicts: Int,
+        val conflictRecords: List<ConflictRecord> = emptyList()
+    )
 
     fun merge(base: JSONObject?, local: JSONObject, remote: JSONObject?): MergeResult {
         if (remote == null) {
@@ -58,6 +71,7 @@ internal object SnapshotMerger {
 
         val merged = JSONObject()
         var conflicts = 0
+        val conflictRecords = mutableListOf<ConflictRecord>()
 
         val scalarKeys = allKeys(base, local, remote)
             .filterNot { it in keyedCollections || it == "version" || it == "syncVersion" }
@@ -69,7 +83,17 @@ internal object SnapshotMerger {
                 remote = valueAt(remote, key),
                 initialJoin = base == null
             )
-            if (decision.conflict) conflicts++
+            if (decision.conflict) {
+                conflicts++
+                conflictRecords += ConflictRecord(
+                    path = key,
+                    collection = null,
+                    id = null,
+                    base = valueAt(base, key),
+                    local = valueAt(local, key),
+                    remote = valueAt(remote, key)
+                )
+            }
             if (decision.value !== Missing) merged.put(key, deepCopyValue(decision.value))
         }
 
@@ -86,7 +110,17 @@ internal object SnapshotMerger {
                     remote = remoteRows[id] ?: Missing,
                     initialJoin = base == null
                 )
-                if (decision.conflict) conflicts++
+                if (decision.conflict) {
+                    conflicts++
+                    conflictRecords += ConflictRecord(
+                        path = "$collection/$id",
+                        collection = collection,
+                        id = id,
+                        base = baseRows[id] ?: Missing,
+                        local = localRows[id] ?: Missing,
+                        remote = remoteRows[id] ?: Missing
+                    )
+                }
                 if (decision.value !== Missing) out.put(deepCopyValue(decision.value))
             }
             merged.put(collection, out)
@@ -95,7 +129,21 @@ internal object SnapshotMerger {
         merged.put("version", CURRENT_BACKUP_VERSION)
         merged.put("syncVersion", SYNC_FORMAT_VERSION)
         repairReferences(merged)
-        return MergeResult(merged, conflicts)
+        return MergeResult(merged, conflicts, conflictRecords)
+    }
+
+    fun conflictRecordsJson(records: List<ConflictRecord>): JSONArray = JSONArray().apply {
+        records.forEach { record ->
+            put(
+                JSONObject()
+                    .put("path", record.path)
+                    .put("collection", record.collection ?: JSONObject.NULL)
+                    .put("id", record.id ?: JSONObject.NULL)
+                    .put("base", conflictValueJson(record.base))
+                    .put("local", conflictValueJson(record.local))
+                    .put("remote", conflictValueJson(record.remote))
+            )
+        }
     }
 
     /** Removes settings that must remain tied to one installation/connection. */
@@ -373,6 +421,13 @@ internal object SnapshotMerger {
         is JSONArray -> JSONArray(value.toString())
         else -> value
     }
+
+    private fun conflictValueJson(value: Any): Any = when (value) {
+        Missing -> JSONObject.NULL
+        is JSONObject -> deepCopy(value)
+        is JSONArray -> JSONArray(value.toString())
+        else -> value
+    }
 }
 
 internal data class PreparedSnapshotSync(
@@ -380,6 +435,7 @@ internal data class PreparedSnapshotSync(
     val localAtStart: JSONObject,
     val canonical: JSONObject,
     val conflicts: Int,
+    val conflictRecords: List<SnapshotMerger.ConflictRecord>,
     val remoteNeedsPublish: Boolean
 ) {
     val canonicalBytes: ByteArray
@@ -416,6 +472,7 @@ class SnapshotSyncEngine @Inject constructor(
                 localAtStart = local,
                 canonical = result.json,
                 conflicts = result.conflicts,
+                conflictRecords = result.conflictRecords,
                 remoteNeedsPublish =
                     remote == null || !SnapshotMerger.equivalent(remote, result.json)
             ).also {
@@ -433,15 +490,17 @@ class SnapshotSyncEngine @Inject constructor(
      */
     internal suspend fun commit(prepared: PreparedSnapshotSync) = withContext(Dispatchers.IO) {
         val current = normalized(jsonExporter.exportToBytes())
-        val localTarget = if (SnapshotMerger.equivalent(current, prepared.localAtStart)) {
-            prepared.canonical
+        val inFlightMerge = if (SnapshotMerger.equivalent(current, prepared.localAtStart)) {
+            null
         } else {
             SnapshotMerger.merge(
                 base = prepared.localAtStart,
                 local = current,
                 remote = prepared.canonical
-            ).json
+            )
         }
+        val localTarget = inFlightMerge?.json ?: prepared.canonical
+        val conflictRecords = prepared.conflictRecords + inFlightMerge?.conflictRecords.orEmpty()
         if (!SnapshotMerger.equivalent(current, localTarget)) {
             recoveryBackupManager.saveCurrent("pre_sync_apply").getOrElse { e ->
                 throw IllegalStateException(
@@ -449,13 +508,21 @@ class SnapshotSyncEngine @Inject constructor(
                     e
                 )
             }
+            if (conflictRecords.isNotEmpty()) {
+                writeConflictArtifact(prepared.scopeKey, conflictRecords)
+            }
             check(jsonExporter.replaceBytesForSync(localTarget.toString(2).toByteArray(Charsets.UTF_8))) {
                 "The server snapshot was published, but applying it locally failed; sync again to retry"
             }
+            val applied = normalized(jsonExporter.exportToBytes())
+            check(SnapshotMerger.equivalent(applied, localTarget)) {
+                "The server snapshot was published, but local verification failed; sync again to retry"
+            }
         }
         writeBaseline(prepared.scopeKey, prepared.canonical)
-        if (prepared.conflicts > 0) {
-            Log.i(TAG, "Resolved ${prepared.conflicts} concurrent sync conflict(s) using the server copy")
+        val totalConflicts = prepared.conflicts + (inFlightMerge?.conflicts ?: 0)
+        if (totalConflicts > 0) {
+            Log.i(TAG, "Resolved $totalConflicts concurrent sync conflict(s) using the server copy")
         }
     }
 
@@ -504,12 +571,49 @@ class SnapshotSyncEngine @Inject constructor(
         }
     }
 
+    private fun writeConflictArtifact(
+        scopeKey: String,
+        records: List<SnapshotMerger.ConflictRecord>
+    ) {
+        val directory = File(context.filesDir, "yata-sync-conflicts")
+        directory.mkdirs()
+        val target = File(directory, "${scopeDigest(scopeKey)}-${System.currentTimeMillis()}.json")
+        val temporary = File(directory, ".${target.name}.part")
+        val payload = JSONObject()
+            .put("createdAt", System.currentTimeMillis())
+            .put("scopeKey", scopeKey)
+            .put("conflictCount", records.size)
+            .put("conflicts", SnapshotMerger.conflictRecordsJson(records))
+        temporary.writeText(payload.toString(2))
+        try {
+            try {
+                Files.move(
+                    temporary.toPath(),
+                    target.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            } catch (_: AtomicMoveNotSupportedException) {
+                Files.move(
+                    temporary.toPath(),
+                    target.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            }
+        } catch (e: Exception) {
+            temporary.delete()
+            throw IllegalStateException("Could not save sync conflict recovery data", e)
+        }
+    }
+
     private fun baselineFile(scopeKey: String): File {
-        val digest = MessageDigest.getInstance("SHA-256")
+        return File(File(context.filesDir, "yata-sync"), "${scopeDigest(scopeKey)}.json")
+    }
+
+    private fun scopeDigest(scopeKey: String): String =
+        MessageDigest.getInstance("SHA-256")
             .digest(scopeKey.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
-        return File(File(context.filesDir, "yata-sync"), "$digest.json")
-    }
 
     private companion object {
         const val TAG = "SnapshotSyncEngine"

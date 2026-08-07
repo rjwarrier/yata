@@ -26,7 +26,10 @@ internal class GitHubSnapshotPublisher(
     suspend fun sync(config: GitHubSyncConfig, progress: (Int, String) -> Unit): Result<Unit> {
         try {
             progress(12, "Connecting to GitHub")
-            api.getRepo(config.owner, config.repo)
+            val repo = api.getRepo(config.owner, config.repo)
+            if (!repo.canPush) {
+                throw GitHubPermissionException()
+            }
 
             var attempt = 0
             while (true) {
@@ -75,6 +78,7 @@ internal class GitHubSnapshotPublisher(
                         check(publishedRef.sha == newCommit.sha) {
                             "GitHub moved the branch to a different commit than the uploaded snapshot"
                         }
+                        verifyPublishedHead(config, expectedCommitSha = newCommit.sha, expectedBlobSha = blobSha)
                         onHeadPublished(newCommit.sha)
                     } catch (e: GitHubConflictException) {
                         if (attempt < MAX_CAS_ATTEMPTS) continue
@@ -142,6 +146,17 @@ internal class GitHubSnapshotPublisher(
             "GitHub returned a blob SHA that did not match the $label"
         }
         return sha
+    }
+
+    private suspend fun verifyPublishedHead(
+        config: GitHubSyncConfig,
+        expectedCommitSha: String,
+        expectedBlobSha: String
+    ) {
+        val publishedHead = readHead(config)
+        check(publishedHead.commitSha == expectedCommitSha && publishedHead.snapshotBlobSha == expectedBlobSha) {
+            "GitHub did not retain the uploaded snapshot at the branch head"
+        }
     }
 
     private fun exhaustedConflict(): GitHubConflictException =

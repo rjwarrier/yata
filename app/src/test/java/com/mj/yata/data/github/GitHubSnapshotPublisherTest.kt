@@ -56,6 +56,34 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
+    fun tokenWithoutPushPermission_failsBeforeMergeOrCommit() = runTest {
+        val api = FakeGitHubApi().apply {
+            canPush = false
+            seedHead("server".bytes())
+        }
+        var prepared = false
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _ ->
+                prepared = true
+                GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
+            },
+            commit = { committed = true },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "test commit" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.exceptionOrNull() is GitHubPermissionException)
+        assertFalse(prepared)
+        assertFalse(committed)
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
     fun staleRef_reReadsMergesAndRetries() = runTest {
         val api = FakeGitHubApi().apply {
             seedHead("server".bytes())
@@ -127,6 +155,23 @@ class GitHubSnapshotPublisherTest {
         val api = FakeGitHubApi().apply {
             seedHead("server".bytes())
             returnUnexpectedUpdateRefSha = true
+        }
+        var committed = false
+        val publisher = publisher(api, canonical = "merged".bytes()) { committed = true }
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertFalse(committed)
+        assertEquals(1, api.updateRefCalls)
+    }
+
+    @Test
+    fun branchMovesAfterRefUpdate_failsBeforeLocalCommit() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("server".bytes())
+            headCommitShaAfterRefWrite = seedCommit("external".bytes())
+            createdCommitParents.clear()
         }
         var committed = false
         val publisher = publisher(api, canonical = "merged".bytes()) { committed = true }
@@ -285,11 +330,13 @@ class GitHubSnapshotPublisherTest {
         private val commits = linkedMapOf<String, GitHubCommit>()
         private val trees = linkedMapOf<String, GitHubTree>()
         var headCommitSha: String? = null
+        var canPush = true
         var failUpdateRefTimes = 0
         var corruptSnapshotBlobReads = false
         var corruptCreateBlobSha = false
         var returnUnexpectedUpdateRefSha = false
         var returnTruncatedTrees = false
+        var headCommitShaAfterRefWrite: String? = null
         var createRefCalls = 0
         var updateRefCalls = 0
         var getRefCalls = 0
@@ -303,6 +350,12 @@ class GitHubSnapshotPublisherTest {
             headCommitSha = commit.sha
         }
 
+        fun seedCommit(snapshot: ByteArray): String {
+            val blobSha = putBlob(snapshot)
+            val tree = putTree(listOf(GitHubTreeEntry(path = GitHubSnapshotPublisher.SNAPSHOT_PATH, sha = blobSha)))
+            return putCommit(tree.sha, emptyList()).sha
+        }
+
         fun seedHeadWithoutSnapshot() {
             val blobSha = putBlob("notes".toByteArray(Charsets.UTF_8))
             val tree = putTree(listOf(GitHubTreeEntry(path = "notes.txt", sha = blobSha)))
@@ -313,7 +366,7 @@ class GitHubSnapshotPublisherTest {
         fun treeForHead(): GitHubTree = trees.getValue(commits.getValue(headCommitSha!!).treeSha)
 
         override suspend fun getRepo(owner: String, repo: String): GitHubRepo =
-            GitHubRepo(owner, repo, defaultBranch = "main", canPush = true)
+            GitHubRepo(owner, repo, defaultBranch = "main", canPush = canPush)
 
         override suspend fun getUser(): GitHubUser = GitHubUser("owner")
 
@@ -329,6 +382,7 @@ class GitHubSnapshotPublisherTest {
         override suspend fun createRef(owner: String, repo: String, ref: String, sha: String): GitHubRef {
             createRefCalls++
             headCommitSha = sha
+            headCommitShaAfterRefWrite?.let { headCommitSha = it }
             return GitHubRef(sha)
         }
 
@@ -339,6 +393,7 @@ class GitHubSnapshotPublisherTest {
                 throw GitHubConflictException()
             }
             headCommitSha = sha
+            headCommitShaAfterRefWrite?.let { headCommitSha = it }
             return GitHubRef(if (returnUnexpectedUpdateRefSha) "unexpected-commit" else sha)
         }
 
