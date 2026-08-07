@@ -2,6 +2,7 @@ package com.mj.yata.util
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.room.withTransaction
 import com.mj.yata.data.local.db.AppDatabase
@@ -211,6 +212,7 @@ class JsonExporter @Inject constructor(
         val primary = buildBackupJson(data.copy(tasks = recentTasks, comments = recentComments))
         val archive = JSONObject().apply {
             put("version", CURRENT_BACKUP_VERSION)
+            put("backupMetadata", backupMetadataJson())
             put("archive", true)
             put("tasks", taskListToJson(oldTasks))
             put("comments", commentListToJson(oldComments))
@@ -230,6 +232,7 @@ class JsonExporter @Inject constructor(
 
             val root = JSONObject()
             root.put("version", CURRENT_BACKUP_VERSION)
+            root.put("backupMetadata", backupMetadataJson())
             // The user's own profile — avatar, name, email. All three live in DataStore rather
             // than the database, so they are not part of any entity list and have to be carried
             // at the root. Blank name/email are omitted rather than written as "", so restoring a
@@ -930,8 +933,31 @@ class JsonExporter @Inject constructor(
         return BackupSummary(
             totalTasks = totalTasks,
             openTasks = openTasks,
-            totalProjects = root.optJSONArray("projects")?.length() ?: 0
+            totalProjects = root.optJSONArray("projects")?.length() ?: 0,
+            createdByDevice = root.optJSONObject("backupMetadata")
+                ?.optString("createdByDevice")
+                ?.takeIf { it.isNotBlank() }
         )
+    }
+
+    private fun backupMetadataJson(): JSONObject =
+        JSONObject().apply {
+            put("createdByDevice", deviceLabel())
+            put("createdAt", System.currentTimeMillis())
+        }
+
+    private fun deviceLabel(): String {
+        val manufacturer = Build.MANUFACTURER.orEmpty().trim()
+        val model = Build.MODEL.orEmpty().trim()
+        val cleanedModel = if (
+            manufacturer.isNotBlank() &&
+            model.startsWith(manufacturer, ignoreCase = true)
+        ) {
+            model
+        } else {
+            listOf(manufacturer, model).filter { it.isNotBlank() }.joinToString(" ")
+        }
+        return cleanedModel.ifBlank { "Unknown Android device" }
     }
 
     private fun validateBackupPayload(root: JSONObject) {

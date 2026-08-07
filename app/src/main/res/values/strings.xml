@@ -449,6 +449,8 @@
     <string name="settings_backup_summary_tasks">Tasks: %1$d</string>
     <string name="settings_backup_summary_open">Open tasks: %1$d</string>
     <string name="settings_backup_summary_projects">Projects: %1$d</string>
+    <string name="settings_backup_summary_device">Created on: %1$s</string>
+    <string name="settings_backup_summary_device_unknown">Unknown device</string>
     <string name="settings_backup_summary_failed">Couldn\'t read this backup: %1$s</string>
     <string name="settings_backup_passphrase">Backup encryption passphrase</string>
     <string name="settings_backup_passphrase_set">A passphrase is already set. Leave this blank to keep it, or type a new one to replace it.</string>
@@ -466,6 +468,15 @@
     <string name="settings_sftp_test_connection">Test connection</string>
     <string name="settings_sftp_testing_connection">Testing connection…</string>
     <string name="settings_sftp_connection_ok">Connected successfully.</string>
+    <string name="settings_clear_sync_lock">Clear sync lock</string>
+    <string name="settings_clear_sync_lock_summary">Use when sync says another device is syncing but no device is active.</string>
+    <string name="settings_clear_sync_lock_title">Clear stale sync lock?</string>
+    <string name="settings_clear_sync_lock_confirm">Only continue if no other YATA device is syncing with this server right now. This removes the remote .yata_sync_v1.lock folder and leaves backups untouched.</string>
+    <string name="settings_clear_sync_lock_confirm_with_owner">Sync is currently locked by %1$s. Lock age: %2$s.\n\nOnly continue if that device is not syncing right now. This removes the remote .yata_sync_v1.lock folder and leaves backups untouched.</string>
+    <string name="settings_clear_sync_lock_confirm_with_age">Sync is currently locked. Lock age: %1$s.\n\nOnly continue if no other YATA device is syncing with this server right now. This removes the remote .yata_sync_v1.lock folder and leaves backups untouched.</string>
+    <string name="settings_clear_sync_lock_action">Clear lock</string>
+    <string name="settings_clear_sync_lock_success">Sync lock cleared.</string>
+    <string name="settings_clear_sync_lock_failed">Couldn\'t clear the sync lock.</string>
     <!-- %1$s is the server's host key fingerprint, e.g. "SHA256:AbCdEf…". -->
     <string name="settings_sftp_trust_prompt">First time connecting to this server. Its key fingerprint is:\n\n%1$s\n\nOnly trust this if you recognize it.</string>
     <string name="settings_sftp_trust_and_save">Trust and save</string>
@@ -638,6 +649,8 @@
     <string name="sync_toast_started">Sync started</string>
     <string name="sync_toast_finished">Sync finished</string>
     <string name="sync_toast_failed">Sync failed</string>
+    <string name="sync_status_finished">Last sync finished</string>
+    <string name="sync_status_failed">Last sync failed</string>
 
     <!-- Crash logs -->
     <string name="diagnostics_title">Diagnostics</string>

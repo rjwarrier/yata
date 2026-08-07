@@ -3,6 +3,8 @@ package com.mj.yata.ui.screen.main
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.platform.LocalContext
 import com.mj.yata.util.backupResultMessage
+import com.mj.yata.util.selfHostedSyncLockFailure
+import com.mj.yata.util.syncLockClearPrompt
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -105,7 +107,11 @@ fun MainScreen(
     val backupDestinationEnabled by viewModel.anyBackupDestinationEnabled.collectAsStateWithLifecycle()
     val syncInProgress by viewModel.syncInProgress.collectAsStateWithLifecycle()
     val syncAnimating by viewModel.syncPendingOrInProgress.collectAsStateWithLifecycle()
+    val lastSyncSucceeded by viewModel.lastSyncSucceeded.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var showClearSyncLockDialog by remember { mutableStateOf(false) }
+    var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
+    var isClearingSyncLock by remember { mutableStateOf(false) }
 
     fun runManualSync() {
         // Guarded rather than queued: repeated taps during a slow upload should do nothing, not
@@ -115,8 +121,14 @@ fun MainScreen(
         // names whichever ones failed rather than a blanket "sync failed" that would be wrong for
         // the destinations that did succeed.
         viewModel.backupAllNow { results ->
-            scope.launch {
-                snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
+            val syncLockFailure = results.selfHostedSyncLockFailure()
+            if (syncLockFailure != null) {
+                clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
+                showClearSyncLockDialog = true
+            } else {
+                scope.launch {
+                    snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
+                }
             }
         }
     }
@@ -731,6 +743,7 @@ fun MainScreen(
                             backupSyncEnabled = backupDestinationEnabled,
                             confettiEnabled = confettiEnabled,
                             syncing = syncAnimating,
+                            lastSyncSucceeded = lastSyncSucceeded,
                             syncButtonEnabled = !syncInProgress,
                             onSyncClick = { runManualSync() },
                             showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty
@@ -993,6 +1006,63 @@ fun MainScreen(
             dismissButton = {
                 TextButton(onClick = { showDiscardNewTaskDialog = false }) {
                     Text(stringResource(R.string.action_keep_editing))
+                }
+            }
+        )
+    }
+
+
+    if (showClearSyncLockDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isClearingSyncLock) {
+                    showClearSyncLockDialog = false
+                    clearSyncLockDialogMessage = null
+                }
+            },
+            title = { Text(stringResource(R.string.settings_clear_sync_lock_title)) },
+            text = { Text(clearSyncLockDialogMessage ?: stringResource(R.string.settings_clear_sync_lock_confirm)) },
+            confirmButton = {
+                TextButton(
+                    enabled = !isClearingSyncLock,
+                    onClick = {
+                        isClearingSyncLock = true
+                        viewModel.clearSelfHostedSyncLock { result ->
+                            isClearingSyncLock = false
+                            showClearSyncLockDialog = false
+                            clearSyncLockDialogMessage = null
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    result.fold(
+                                        onSuccess = { context.getString(R.string.settings_clear_sync_lock_success) },
+                                        onFailure = {
+                                            it.message ?: context.getString(R.string.settings_clear_sync_lock_failed)
+                                        }
+                                    )
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    if (isClearingSyncLock) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(
+                            text = stringResource(R.string.settings_clear_sync_lock_action),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showClearSyncLockDialog = false
+                        clearSyncLockDialogMessage = null
+                    },
+                    enabled = !isClearingSyncLock
+                ) {
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )

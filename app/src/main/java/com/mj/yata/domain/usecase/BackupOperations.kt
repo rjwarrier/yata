@@ -14,6 +14,7 @@ import android.widget.Toast
 import com.mj.yata.R
 import com.mj.yata.data.backup.UnifiedBackupWorker
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.domain.model.BackupDestination
 import com.mj.yata.domain.model.BackupRunResult
 import com.mj.yata.domain.model.BackupSummary
@@ -50,6 +51,7 @@ class BackupOperations @Inject constructor(
     private val sftpBackupManager: SftpBackupManager,
     private val ftpBackupManager: FtpBackupManager,
     private val userPreferences: UserPreferences,
+    private val operationHistoryStore: OperationHistoryStore,
     @ApplicationContext private val context: Context
 ) {
 
@@ -69,6 +71,8 @@ class BackupOperations @Inject constructor(
     val syncInProgress: StateFlow<Boolean> = _syncInProgress.asStateFlow()
     private val _syncPendingOrInProgress = MutableStateFlow(false)
     val syncPendingOrInProgress: StateFlow<Boolean> = _syncPendingOrInProgress.asStateFlow()
+    private val _lastSyncSucceeded = MutableStateFlow<Boolean?>(null)
+    val lastSyncSucceeded: StateFlow<Boolean?> = _lastSyncSucceeded.asStateFlow()
 
     /**
      * Backs up to every destination the user has switched on, whatever triggered it — the manual
@@ -93,7 +97,7 @@ class BackupOperations @Inject constructor(
             val useFtp = userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP
             add(
                 attempt(BackupDestination.SELF_HOSTED) {
-                    syncSelfHostedWithToast {
+                    syncSelfHostedWithToast("Syncing before scheduled backup") {
                         if (useFtp) ftpBackupManager.syncNow() else sftpBackupManager.syncNow()
                     }
                 }
@@ -161,7 +165,7 @@ class BackupOperations @Inject constructor(
         if (!userPreferences.sftpBackupEnabledFlow.first() ||
             userPreferences.sftpHostFlow.first().isBlank()
         ) return null
-        return syncSelfHostedWithToast {
+        return syncSelfHostedWithToast("Syncing after app launch") {
             if (userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP) {
                 ftpBackupManager.syncNow()
             } else {
@@ -170,20 +174,37 @@ class BackupOperations @Inject constructor(
         }
     }
 
-    private suspend fun syncSelfHostedWithToast(block: suspend () -> Result<Unit>): Result<Unit> {
+    private suspend fun syncSelfHostedWithToast(
+        runReason: String,
+        block: suspend () -> Result<Unit>
+    ): Result<Unit> {
+        val operationId = currentSelfHostedSyncOperationId()
+        operationHistoryStore.recordRun(operationId, runReason)
         beginSyncFeedback()
         return try {
             val result = block()
             finishSyncFeedback(success = result.isSuccess)
+            result.fold(
+                onSuccess = { operationHistoryStore.recordSuccess(operationId, "Self-hosted sync completed") },
+                onFailure = { operationHistoryStore.recordFailure(operationId, it) }
+            )
             result
         } catch (e: CancellationException) {
             finishSyncFeedback(success = false)
             throw e
         } catch (t: Throwable) {
             finishSyncFeedback(success = false)
+            operationHistoryStore.recordFailure(operationId, t)
             Result.failure(t)
         }
     }
+
+    private suspend fun currentSelfHostedSyncOperationId(): String =
+        if (userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP) {
+            OperationHistoryStore.SYNC_FTP_LEGACY
+        } else {
+            OperationHistoryStore.SYNC_SFTP_LEGACY
+        }
 
     private fun beginSyncFeedback() {
         val shouldToast = synchronized(syncStateLock) {
@@ -207,6 +228,7 @@ class BackupOperations @Inject constructor(
             if (activeSyncs == 0) {
                 _syncInProgress.value = false
                 if (debounceJob?.isActive != true) _syncPendingOrInProgress.value = false
+                _lastSyncSucceeded.value = !activeSyncFailed
                 if (activeSyncFailed) R.string.sync_toast_failed else R.string.sync_toast_finished
             } else {
                 null
@@ -287,7 +309,8 @@ class BackupOperations @Inject constructor(
 
     suspend fun pinSftpHostKey(fingerprint: String) = sftpBackupManager.pinHostKey(fingerprint)
 
-    suspend fun sftpBackupNow(): Result<Unit> = syncSelfHostedWithToast { sftpBackupManager.syncNow() }
+    suspend fun sftpBackupNow(): Result<Unit> =
+        syncSelfHostedWithToast("Manual SFTP sync started") { sftpBackupManager.syncNow() }
 
     suspend fun listSftpBackups(): Result<List<String>> = sftpBackupManager.listBackups()
 
@@ -298,7 +321,31 @@ class BackupOperations @Inject constructor(
 
     suspend fun testFtpConnection(): Result<Unit> = ftpBackupManager.testConnection()
 
-    suspend fun ftpBackupNow(): Result<Unit> = syncSelfHostedWithToast { ftpBackupManager.syncNow() }
+    suspend fun clearSelfHostedSyncLock(): Result<Unit> =
+        if (userPreferences.remoteBackupProtocolFlow.first() == RemoteBackupProtocol.FTP) {
+            val operationId = OperationHistoryStore.SYNC_FTP_LEGACY
+            operationHistoryStore.recordRun(operationId, "Clearing remote FTP sync lock")
+            ftpBackupManager.clearSyncLock()
+                .also { result ->
+                    result.fold(
+                        onSuccess = { operationHistoryStore.recordSkipped(operationId, "Remote FTP sync lock cleared") },
+                        onFailure = { operationHistoryStore.recordFailure(operationId, it) }
+                    )
+                }
+        } else {
+            val operationId = OperationHistoryStore.SYNC_SFTP_LEGACY
+            operationHistoryStore.recordRun(operationId, "Clearing remote SFTP sync lock")
+            sftpBackupManager.clearSyncLock()
+                .also { result ->
+                    result.fold(
+                        onSuccess = { operationHistoryStore.recordSkipped(operationId, "Remote SFTP sync lock cleared") },
+                        onFailure = { operationHistoryStore.recordFailure(operationId, it) }
+                    )
+                }
+        }
+
+    suspend fun ftpBackupNow(): Result<Unit> =
+        syncSelfHostedWithToast("Manual FTP sync started") { ftpBackupManager.syncNow() }
 
     suspend fun listFtpBackups(): Result<List<String>> = ftpBackupManager.listBackups()
 

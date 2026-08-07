@@ -112,6 +112,7 @@ internal object SnapshotMerger {
             }
         }
         val normalized = deepCopy(source)
+        normalized.remove("backupMetadata")
         val settings = normalized.optJSONArray("settings")
         if (settings != null) {
             val portable = JSONArray()

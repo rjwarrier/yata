@@ -1039,6 +1039,9 @@ private data class MainNavigationState(
     val syncPendingOrInProgress: StateFlow<Boolean> = backupOperations.syncPendingOrInProgress
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val lastSyncSucceeded: StateFlow<Boolean?> = backupOperations.lastSyncSucceeded
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val savedSmartFilterSets: StateFlow<Set<String>> = userPreferences.savedSmartFilterSetsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
@@ -2110,6 +2113,10 @@ private data class MainNavigationState(
 
     fun testFtpConnection(onResult: (Result<Unit>) -> Unit) {
         safeLaunch { onResult(backupOperations.testFtpConnection()) }
+    }
+
+    fun clearSelfHostedSyncLock(onResult: (Result<Unit>) -> Unit) {
+        safeLaunch { onResult(backupOperations.clearSelfHostedSyncLock()) }
     }
 
     fun ftpBackupNow(onResult: (Result<Unit>) -> Unit) {

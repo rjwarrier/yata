@@ -12,7 +12,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
@@ -90,6 +92,7 @@ fun TodayTab(
     backupSyncEnabled: Boolean = false,
     confettiEnabled: Boolean = true,
     syncing: Boolean = false,
+    lastSyncSucceeded: Boolean? = null,
     syncButtonEnabled: Boolean = true,
     onSyncClick: () -> Unit = {},
     /** When Today has nothing due, show tomorrow/day-after tasks automatically (dimmed, but fully
@@ -282,10 +285,7 @@ fun TodayTab(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         } else {
-                            Icon(
-                                imageVector = Icons.Default.CloudSync,
-                                contentDescription = stringResource(R.string.cd_sync_now)
-                            )
+                            SyncStatusIcon(lastSyncSucceeded = lastSyncSucceeded)
                         }
                     }
                 }
@@ -735,6 +735,53 @@ fun TodayTab(
             },
             onDismiss = { pendingCommentTask = null }
         )
+    }
+}
+
+@Composable
+private fun SyncStatusIcon(lastSyncSucceeded: Boolean?) {
+    Box(
+        modifier = Modifier.size(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.CloudSync,
+            contentDescription = stringResource(R.string.cd_sync_now)
+        )
+        lastSyncSucceeded?.let { success ->
+            val containerColor = if (success) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.errorContainer
+            }
+            val contentColor = if (success) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onErrorContainer
+            }
+            val statusDescription = stringResource(
+                if (success) R.string.sync_status_finished else R.string.sync_status_failed
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 3.dp, y = (-3).dp)
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(containerColor)
+                    .semantics {
+                        contentDescription = statusDescription
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (success) Icons.Default.Check else Icons.Default.Close,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(9.dp)
+                )
+            }
+        }
     }
 }
 

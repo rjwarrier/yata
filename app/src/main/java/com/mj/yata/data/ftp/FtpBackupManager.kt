@@ -1,6 +1,7 @@
 package com.mj.yata.data.ftp
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import com.mj.yata.data.local.backup.RecoveryBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
@@ -8,6 +9,8 @@ import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpNotConfiguredException
 import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.domain.model.BackupSummary
+import com.mj.yata.domain.model.SyncLockBusyException
+import com.mj.yata.domain.model.SyncLockInfo
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,6 +28,7 @@ import org.apache.commons.net.ftp.FTPSClient
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.OutputStream
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.security.KeyStore
@@ -93,6 +97,28 @@ class FtpBackupManager @Inject constructor(
                 Result.success(Unit)
             } catch (e: Exception) {
                 Log.w(TAG, "testConnection failed", e)
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun clearSyncLock(): Result<Unit> = sessionMutex.withLock {
+        withContext(Dispatchers.IO) {
+            try {
+                val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+                val client = connect()
+                try {
+                    ensureRemoteDir(client, remoteDir)
+                    check(client.changeWorkingDirectory(remoteDir)) {
+                        "Could not open remote folder $remoteDir"
+                    }
+                    clearSyncLockDirectory(client)
+                    Result.success(Unit)
+                } finally {
+                    disconnectQuietly(client)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "clearSyncLock failed", e)
                 Result.failure(e)
             }
         }
@@ -232,10 +258,7 @@ class FtpBackupManager @Inject constructor(
     private fun upload(client: FTPClient, filename: String, bytes: ByteArray) {
         var commandCompleted = false
         try {
-            val stream = client.storeFileStream(filename)
-                ?: throw IllegalStateException(
-                    "Could not open data connection: ${client.replyString.trim()}"
-                )
+            val stream = openStoreFileStream(client, filename)
             // Flush before close so the payload is on the wire ahead of the TLS shutdown, then let
             // completePendingCommand read the server's real verdict (226 transferred vs 451 aborted).
             stream.use {
@@ -369,7 +392,7 @@ class FtpBackupManager @Inject constructor(
     private fun readRemoteBytesOrNull(client: FTPClient, filename: String): ByteArray? {
         val expected = remoteSize(client, filename)
         val out = ByteArrayOutputStream()
-        if (!client.retrieveFile(filename, out)) {
+        if (!retrieveFileWithPassiveFallback(client, filename, out)) {
             if (client.replyCode == 550 && isDefinitelyAbsent(client, filename)) return null
             throw IllegalStateException("Download failed: ${client.replyString.trim()}")
         }
@@ -459,19 +482,15 @@ class FtpBackupManager @Inject constructor(
 
     private fun acquireSyncLock(client: FTPClient): SyncLease {
         if (!client.makeDirectory(SYNC_LOCK_DIR)) {
-            val leaseMillis = readRemoteBytesOrNull(client, "$SYNC_LOCK_DIR/$SYNC_LEASE_FILE")
-                ?.toString(Charsets.UTF_8)
-                ?.lineSequence()
-                ?.firstOrNull()
-                ?.toLongOrNull()
+            val leaseInfo = readLeaseInfo(client)
             val directoryMillis = runCatching {
                 client.mlistFile(SYNC_LOCK_DIR)?.timestamp?.timeInMillis
             }.getOrNull()
-            val lockedAt = leaseMillis ?: directoryMillis
+            val lockedAt = leaseInfo.lockedAt ?: directoryMillis
             val isStale = lockedAt != null &&
                 System.currentTimeMillis() - lockedAt > SYNC_LOCK_STALE_MILLIS
             if (!isStale) {
-                throw IllegalStateException("Another device is syncing; try again shortly")
+                throw syncLockBusyException(lockedAt, leaseInfo.ownerDevice)
             }
             client.deleteFile("$SYNC_LOCK_DIR/$SYNC_LEASE_FILE")
             check(client.removeDirectory(SYNC_LOCK_DIR) && client.makeDirectory(SYNC_LOCK_DIR)) {
@@ -492,6 +511,28 @@ class FtpBackupManager @Inject constructor(
         return lease
     }
 
+    private fun clearSyncLockDirectory(client: FTPClient) {
+        deleteQuietly(client, "$SYNC_LOCK_DIR/$SYNC_LEASE_FILE")
+        runCatching {
+            client.listFiles(SYNC_LOCK_DIR)
+                .filterNot { it.name == "." || it.name == ".." }
+                .forEach { entry ->
+                    val child = "$SYNC_LOCK_DIR/${entry.name}"
+                    if (entry.isDirectory) {
+                        client.removeDirectory(child)
+                    } else {
+                        client.deleteFile(child)
+                    }
+                }
+        }
+        client.removeDirectory(SYNC_LOCK_DIR)
+        if (client.makeDirectory(SYNC_LOCK_DIR)) {
+            client.removeDirectory(SYNC_LOCK_DIR)
+        } else {
+            throw IllegalStateException("Could not clear the remote sync lock: ${client.replyString.trim()}")
+        }
+    }
+
     private fun verifySyncLockOwnership(client: FTPClient, lease: SyncLease) {
         check(readLeaseToken(client) == lease.token) {
             "FTP sync lock ownership was lost before publication"
@@ -499,14 +540,16 @@ class FtpBackupManager @Inject constructor(
     }
 
     private fun leasePayload(lease: SyncLease): ByteArray =
-        "${System.currentTimeMillis()}\n${lease.token}".toByteArray(Charsets.UTF_8)
+        "${System.currentTimeMillis()}\n${lease.token}\n${deviceLabel()}".toByteArray(Charsets.UTF_8)
 
     private fun readLeaseToken(client: FTPClient): String? =
+        readLeaseInfo(client).token
+
+    private fun readLeaseInfo(client: FTPClient): RemoteLeaseInfo =
         readRemoteBytesOrNull(client, "$SYNC_LOCK_DIR/$SYNC_LEASE_FILE")
             ?.toString(Charsets.UTF_8)
-            ?.lineSequence()
-            ?.drop(1)
-            ?.firstOrNull()
+            ?.let(::parseLeaseInfo)
+            ?: RemoteLeaseInfo()
 
     private fun releaseSyncLock(client: FTPClient, lease: SyncLease) {
         try {
@@ -523,6 +566,59 @@ class FtpBackupManager @Inject constructor(
             }
         } catch (e: Exception) {
             Log.w(TAG, "Could not release sync lock", e)
+        }
+    }
+
+    private fun syncLockBusyException(lockedAt: Long?, ownerDevice: String?): SyncLockBusyException {
+        val age = lockedAt?.let { formatLockAge(System.currentTimeMillis() - it) } ?: "unknown age"
+        return SyncLockBusyException(
+            SyncLockInfo(
+                lockedAt = lockedAt,
+                ageText = age,
+                ownerDevice = ownerDevice
+            )
+        )
+    }
+
+    private data class RemoteLeaseInfo(
+        val lockedAt: Long? = null,
+        val token: String? = null,
+        val ownerDevice: String? = null
+    )
+
+    private fun parseLeaseInfo(payload: String): RemoteLeaseInfo {
+        val lines = payload.lineSequence().map { it.trim() }.toList()
+        return RemoteLeaseInfo(
+            lockedAt = lines.getOrNull(0)?.toLongOrNull(),
+            token = lines.getOrNull(1)?.takeIf { it.isNotBlank() },
+            ownerDevice = lines.getOrNull(2)?.takeIf { it.isNotBlank() }
+        )
+    }
+
+    private fun deviceLabel(): String {
+        val manufacturer = Build.MANUFACTURER.orEmpty().trim()
+        val model = Build.MODEL.orEmpty().trim()
+        val cleanedModel = if (
+            manufacturer.isNotBlank() &&
+            model.startsWith(manufacturer, ignoreCase = true)
+        ) {
+            model
+        } else {
+            listOf(manufacturer, model).filter { it.isNotBlank() }.joinToString(" ")
+        }
+        return cleanedModel.ifBlank { "Unknown Android device" }
+    }
+
+    private fun formatLockAge(ageMillis: Long): String {
+        val clampedSeconds = (ageMillis.coerceAtLeast(0L) / 1000L)
+        val minutes = clampedSeconds / 60L
+        val seconds = clampedSeconds % 60L
+        val hours = minutes / 60L
+        val remainingMinutes = minutes % 60L
+        return when {
+            hours > 0 -> "${hours}h ${remainingMinutes}m"
+            minutes > 0 -> "${minutes}m ${seconds}s"
+            else -> "${seconds}s"
         }
     }
 
@@ -621,7 +717,9 @@ class FtpBackupManager @Inject constructor(
             client.changeWorkingDirectory(remoteDir)
             val expected = remoteSize(client, filename)
             val out = ByteArrayOutputStream()
-            check(client.retrieveFile(filename, out)) { "Download failed: ${client.replyString}" }
+            check(retrieveFileWithPassiveFallback(client, filename, out)) {
+                "Download failed: ${client.replyString}"
+            }
             val downloaded = out.toByteArray()
             // Same reasoning as the upload check, in reverse: importing a half-downloaded
             // backup would overwrite live data with a fragment of itself.
@@ -718,13 +816,60 @@ class FtpBackupManager @Inject constructor(
                 // login still goes over TLS on the control channel.
                 client.execPROT(if (credentialsStore.backupPassphrase != null) "C" else "P")
             }
-            client.enterLocalPassiveMode()
+            configurePassiveDataMode(client)
             client.setFileType(FTP.BINARY_FILE_TYPE)
         } catch (e: Exception) {
             disconnectQuietly(client)
             throw e
         }
         return client
+    }
+
+    private fun openStoreFileStream(client: FTPClient, filename: String): OutputStream {
+        client.storeFileStream(filename)?.let { return it }
+
+        val firstReply = client.replyString.trim()
+        if (isExtendedPassiveDataFailure(firstReply)) {
+            Log.i(TAG, "Retrying FTP upload with regular passive mode after: $firstReply")
+            configurePassiveDataMode(client)
+            client.storeFileStream(filename)?.let { return it }
+            throw IllegalStateException(
+                "Could not open data connection after passive fallback: ${client.replyString.trim()}"
+            )
+        }
+
+        throw IllegalStateException("Could not open data connection: $firstReply")
+    }
+
+    private fun retrieveFileWithPassiveFallback(
+        client: FTPClient,
+        filename: String,
+        out: ByteArrayOutputStream
+    ): Boolean {
+        if (client.retrieveFile(filename, out)) return true
+
+        val firstReply = client.replyString.trim()
+        if (!isExtendedPassiveDataFailure(firstReply)) return false
+
+        Log.i(TAG, "Retrying FTP download with regular passive mode after: $firstReply")
+        out.reset()
+        configurePassiveDataMode(client)
+        if (client.retrieveFile(filename, out)) return true
+
+        throw IllegalStateException(
+            "Download failed after passive fallback: ${client.replyString.trim()}"
+        )
+    }
+
+    private fun configurePassiveDataMode(client: FTPClient) {
+        client.setUseEPSVwithIPv4(false)
+        client.enterLocalPassiveMode()
+    }
+
+    private fun isExtendedPassiveDataFailure(reply: String): Boolean {
+        return reply.startsWith("229") ||
+            reply.contains("Extended Passive Mode", ignoreCase = true) ||
+            reply.contains("EPSV", ignoreCase = true)
     }
 
     private fun connectPreferIpv4(client: FTPClient, host: String, port: Int) {

@@ -136,6 +136,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.toArgb
 import com.mj.yata.util.ProfilePhotoUtils
+import com.mj.yata.util.selfHostedSyncLockFailure
+import com.mj.yata.util.syncLockClearPrompt
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.localized
 import kotlinx.coroutines.launch
@@ -175,6 +177,37 @@ enum class SettingsDestination(val routeSegment: String, private val aliases: Se
         fun fromRouteSegment(routeSegment: String?): SettingsDestination? =
             entries.firstOrNull { it.routeSegment == routeSegment || routeSegment in it.aliases }
     }
+}
+
+@Composable
+private fun SettingsSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit
+) {
+    val searchLabel = stringResource(R.string.settings_search_label)
+    val focusManager = LocalFocusManager.current
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .semantics { contentDescription = searchLabel },
+        singleLine = true,
+        shape = CircleShape,
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
+                }
+            }
+        },
+        placeholder = { Text(stringResource(R.string.settings_search_placeholder)) },
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+        colors = com.mj.yata.ui.widgets.yataFieldColors()
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -308,9 +341,12 @@ fun SettingsScreen(
 
     var showSftpConfigDialog by remember { mutableStateOf(false) }
     var showSftpRestoreDialog by remember { mutableStateOf(false) }
+    var showClearSyncLockDialog by remember { mutableStateOf(false) }
+    var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
     var sftpBackupList by remember { mutableStateOf<List<String>>(emptyList()) }
     var isRestoringSftpBackup by remember { mutableStateOf(false) }
+    var isClearingSyncLock by remember { mutableStateOf(false) }
     var pendingSftpRestoreFilename by remember { mutableStateOf<String?>(null) }
     var sftpBackupSummary by remember { mutableStateOf<com.mj.yata.domain.model.BackupSummary?>(null) }
     var isInspectingSftpBackup by remember { mutableStateOf(false) }
@@ -496,153 +532,123 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             if (isSettingsRoot) {
-            item(key = "profile") {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.clickable {
-                            if (userPhotoUri.isNullOrBlank()) {
-                                photoPickerLauncher.launch(
-                                    androidx.activity.result.PickVisualMediaRequest(
-                                        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
-                            } else {
-                                scope.launch {
-                                    val currentBitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                        try {
-                                            ProfilePhotoUtils.decodeSampledBitmap(
-                                                context,
-                                                android.net.Uri.parse(userPhotoUri),
-                                                maxDimension = 1600
+                item(key = "settings_search") {
+                    SettingsSearchField(
+                        query = settingsSearchQuery,
+                        onQueryChange = { settingsSearchQuery = it }
+                    )
+                }
+                item(key = "profile") {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.clickable {
+                                        if (userPhotoUri.isNullOrBlank()) {
+                                            photoPickerLauncher.launch(
+                                                androidx.activity.result.PickVisualMediaRequest(
+                                                    androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                )
                                             )
-                                        } catch (e: Exception) {
-                                            null
+                                        } else {
+                                            scope.launch {
+                                                val currentBitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                                    try {
+                                                        ProfilePhotoUtils.decodeSampledBitmap(
+                                                            context,
+                                                            android.net.Uri.parse(userPhotoUri),
+                                                            maxDimension = 1600
+                                                        )
+                                                    } catch (e: Exception) {
+                                                        null
+                                                    }
+                                                }
+                                                if (currentBitmap != null) {
+                                                    pickedPhotoBitmap = currentBitmap
+                                                } else {
+                                                    photoPickerLauncher.launch(
+                                                        androidx.activity.result.PickVisualMediaRequest(
+                                                            androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
+                                                        )
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
-                                    if (currentBitmap != null) {
-                                        pickedPhotoBitmap = currentBitmap
-                                    } else {
-                                        photoPickerLauncher.launch(
-                                            androidx.activity.result.PickVisualMediaRequest(
-                                                androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
-                                            )
+                                ) {
+                                    com.mj.yata.ui.widgets.PersonAvatar(
+                                        initials = com.mj.yata.util.initialsFor(userName),
+                                        accentKey = "accentC",
+                                        size = 48.dp,
+                                        photoUri = userPhotoUri
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .size(18.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primary)
+                                            .border(1.5.dp, MaterialTheme.colorScheme.surfaceContainerLow, CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CameraAlt,
+                                            contentDescription = stringResource(R.string.settings_change_profile_photo),
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(11.dp)
                                         )
                                     }
                                 }
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            profileDraftName = userName
+                                            profileDraftEmail = userEmail
+                                            showProfileDialog = true
+                                        },
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = userName.ifBlank { stringResource(R.string.profile_add_name) },
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = if (userName.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = userEmail.ifBlank { stringResource(R.string.profile_add_email) },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        profileDraftName = userName
+                                        profileDraftEmail = userEmail
+                                        showProfileDialog = true
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.settings_edit))
+                                }
                             }
                         }
-                    ) {
-                        com.mj.yata.ui.widgets.PersonAvatar(
-                            initials = com.mj.yata.util.initialsFor(userName),
-                            accentKey = "accentC",
-                            size = 48.dp,
-                            photoUri = userPhotoUri
-                        )
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(18.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                                .border(1.5.dp, MaterialTheme.colorScheme.surfaceContainerLow, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CameraAlt,
-                                contentDescription = stringResource(R.string.settings_change_profile_photo),
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(11.dp)
-                            )
-                        }
-                    }
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                profileDraftName = userName
-                                profileDraftEmail = userEmail
-                                showProfileDialog = true
-                            },
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(
-                            text = userName.ifBlank { stringResource(R.string.profile_add_name) },
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = if (userName.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant
-                                    else MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = userEmail.ifBlank { stringResource(R.string.profile_add_email) },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            profileDraftName = userName
-                            profileDraftEmail = userEmail
-                            showProfileDialog = true
-                        }
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.settings_edit))
                     }
                 }
-            }
-        }
             item(key = "language") {
                 LanguageSettingsSection(
                     selectedLanguage = appLanguage,
                     onLanguageSelected = viewModel::setAppLanguage
-                )
-            }
-            item(key = "settings_search") {
-                // Styled to the M3 search-field spec rather than as a general text field: pill
-                // shape, tonal surfaceContainerHigh container, no indicator line, and a
-                // placeholder instead of a floating label — search fields don't take one, and the
-                // label animating up over a magnifier icon was the least M3 thing on the screen.
-                //
-                // Deliberately not the M3 SearchBar/DockedSearchBar composable: those own an
-                // expanding full-screen surface and render their own results, which fights this
-                // screen — the results here are a card inline in the settings list, and the field
-                // scrolls away with it. Same visual language, without hijacking the interaction.
-                val searchLabel = stringResource(R.string.settings_search_label)
-                val focusManager = LocalFocusManager.current
-                TextField(
-                    value = settingsSearchQuery,
-                    onValueChange = { settingsSearchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .semantics { contentDescription = searchLabel },
-                    singleLine = true,
-                    shape = CircleShape,
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    trailingIcon = {
-                        // Only present with text to clear, so the field isn't permanently carrying
-                        // a control that would do nothing.
-                        if (settingsSearchQuery.isNotEmpty()) {
-                            IconButton(onClick = { settingsSearchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
-                            }
-                        }
-                    },
-                    placeholder = { Text(stringResource(R.string.settings_search_placeholder)) },
-                    // Filtering is live, so the IME action has nothing to submit — it just gets
-                    // the keyboard out of the way of the results.
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                    // Same tonal treatment as the notes/comment/subtask fields — one definition
-                    // in YataInputField rather than a second copy of the colour list here.
-                    colors = com.mj.yata.ui.widgets.yataFieldColors()
                 )
             }
             if (settingsSearchQuery.isNotBlank()) {
@@ -2544,6 +2550,41 @@ fun SettingsScreen(
                                         color = MaterialTheme.colorScheme.error
                                     )
                                 }
+
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = !isClearingSyncLock) {
+                                            clearSyncLockDialogMessage = null
+                                            showClearSyncLockDialog = true
+                                        }
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.DeleteForever,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = stringResource(R.string.settings_clear_sync_lock),
+                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.settings_clear_sync_lock_summary),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    if (isClearingSyncLock) {
+                                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                    }
+                                }
                             }
                         }
                     }
@@ -2609,8 +2650,14 @@ fun SettingsScreen(
                                 isBackingUp = true
                                 viewModel.backupAllNow { results ->
                                     isBackingUp = false
-                                    scope.launch {
-                                        reportBackupResults(results, snackbarHostState, context)
+                                    val syncLockFailure = results.selfHostedSyncLockFailure()
+                                    if (syncLockFailure != null) {
+                                        clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
+                                        showClearSyncLockDialog = true
+                                    } else {
+                                        scope.launch {
+                                            reportBackupResults(results, snackbarHostState, context)
+                                        }
                                     }
                                 }
                             }
@@ -2969,6 +3016,59 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRestoreLocalDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+
+    if (showClearSyncLockDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isClearingSyncLock) showClearSyncLockDialog = false },
+            title = { Text(stringResource(R.string.settings_clear_sync_lock_title)) },
+            text = { Text(clearSyncLockDialogMessage ?: stringResource(R.string.settings_clear_sync_lock_confirm)) },
+            confirmButton = {
+                TextButton(
+                    enabled = !isClearingSyncLock,
+                    onClick = {
+                        isClearingSyncLock = true
+                        viewModel.clearSelfHostedSyncLock { result ->
+                            isClearingSyncLock = false
+                            showClearSyncLockDialog = false
+                            clearSyncLockDialogMessage = null
+                            scope.launch {
+                                result.fold(
+                                    onSuccess = {
+                                        snackbarHostState.showSuccess(context.getString(R.string.settings_clear_sync_lock_success))
+                                    },
+                                    onFailure = { error ->
+                                        snackbarHostState.showError(
+                                            error.message ?: context.getString(R.string.settings_clear_sync_lock_failed)
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    if (isClearingSyncLock) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(
+                            text = stringResource(R.string.settings_clear_sync_lock_action),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showClearSyncLockDialog = false
+                        clearSyncLockDialogMessage = null
+                    },
+                    enabled = !isClearingSyncLock
+                ) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         )
     }
@@ -3422,6 +3522,14 @@ fun SettingsScreen(
                                     modifier = Modifier.padding(12.dp),
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
+                                    Text(
+                                        stringResource(
+                                            R.string.settings_backup_summary_device,
+                                            summary.createdByDevice
+                                                ?: stringResource(R.string.settings_backup_summary_device_unknown)
+                                        ),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                     Text(
                                         stringResource(R.string.settings_backup_summary_tasks, summary.totalTasks),
                                         style = MaterialTheme.typography.bodyMedium

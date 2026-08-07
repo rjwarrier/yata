@@ -1,10 +1,13 @@
 package com.mj.yata.data.sftp
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import com.mj.yata.data.local.backup.RecoveryBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.sync.SnapshotSyncEngine
+import com.mj.yata.domain.model.SyncLockBusyException
+import com.mj.yata.domain.model.SyncLockInfo
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -85,6 +88,25 @@ class SftpBackupManager @Inject constructor(
      * confirmed it (first connection) or deliberately chosen to trust a changed key. */
     suspend fun pinHostKey(fingerprint: String) {
         userPreferences.setSftpHostKeyFingerprint(fingerprint)
+    }
+
+    suspend fun clearSyncLock(): Result<Unit> = sessionMutex.withLock {
+        withContext(Dispatchers.IO) {
+            try {
+                val remoteDir = userPreferences.sftpRemoteDirFlow.first()
+                buildClient().use { ssh ->
+                    ssh.newSFTPClient().use { sftp ->
+                        ensureRemoteDir(sftp, remoteDir)
+                        val lockPath = remotePath(remoteDir, SYNC_LOCK_DIR)
+                        clearSyncLockDirectory(sftp, lockPath)
+                    }
+                }
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.w(TAG, "clearSyncLock failed", e)
+                Result.failure(e)
+            }
+        }
     }
 
 
@@ -491,15 +513,11 @@ class SftpBackupManager @Inject constructor(
             }
 
             val lockAttributes = sftp.statExistence(lockPath) ?: throw mkdirFailure
-            val leaseTimestamp = readRemoteBytes(sftp, leasePath)
-                ?.toString(Charsets.UTF_8)
-                ?.lineSequence()
-                ?.firstOrNull()
-                ?.toLongOrNull()
-            val observedAt = leaseTimestamp ?: lockAttributes.mtime * 1000L
+            val leaseInfo = readSyncLeaseInfo(sftp, leasePath)
+            val observedAt = leaseInfo.lockedAt ?: lockAttributes.mtime * 1000L
             val ageMillis = System.currentTimeMillis() - observedAt
             if (ageMillis < SYNC_LOCK_STALE_MILLIS) {
-                throw IllegalStateException("Another device is already syncing with this server", mkdirFailure)
+                throw syncLockBusyException(observedAt, leaseInfo.ownerDevice, mkdirFailure)
             }
 
             Log.w(TAG, "Breaking stale SFTP sync lease after ${ageMillis / 1000L}s")
@@ -511,6 +529,29 @@ class SftpBackupManager @Inject constructor(
             }
         }
         throw IllegalStateException("Could not acquire the SFTP sync lease")
+    }
+
+    private fun clearSyncLockDirectory(sftp: SFTPClient, lockPath: String) {
+        removeRemoteFileIfPresent(sftp, remotePath(lockPath, SYNC_LEASE_FILE))
+        runCatching {
+            sftp.ls(lockPath)
+                .filterNot { it.name == "." || it.name == ".." }
+                .forEach { entry ->
+                    val child = remotePath(lockPath, entry.name)
+                    if (entry.isDirectory) {
+                        runCatching { sftp.rmdir(child) }
+                    } else {
+                        removeRemoteFileIfPresent(sftp, child)
+                    }
+                }
+        }
+        runCatching { sftp.rmdir(lockPath) }
+        try {
+            sftp.mkdir(lockPath)
+            sftp.rmdir(lockPath)
+        } catch (e: Exception) {
+            throw IllegalStateException("Could not clear the remote sync lock", e)
+        }
     }
 
     private fun verifySyncLeaseOwnership(sftp: SFTPClient, lease: SyncLease) {
@@ -533,15 +574,75 @@ class SftpBackupManager @Inject constructor(
         }
     }
 
+    private fun syncLockBusyException(
+        lockedAt: Long?,
+        ownerDevice: String?,
+        cause: Throwable? = null
+    ): SyncLockBusyException {
+        val age = lockedAt?.let { formatLockAge(System.currentTimeMillis() - it) } ?: "unknown age"
+        return SyncLockBusyException(
+            lockInfo = SyncLockInfo(
+                lockedAt = lockedAt,
+                ageText = age,
+                ownerDevice = ownerDevice
+            ),
+            cause = cause
+        )
+    }
+
+    private fun formatLockAge(ageMillis: Long): String {
+        val clampedSeconds = (ageMillis.coerceAtLeast(0L) / 1000L)
+        val minutes = clampedSeconds / 60L
+        val seconds = clampedSeconds % 60L
+        val hours = minutes / 60L
+        val remainingMinutes = minutes % 60L
+        return when {
+            hours > 0 -> "${hours}h ${remainingMinutes}m"
+            minutes > 0 -> "${minutes}m ${seconds}s"
+            else -> "${seconds}s"
+        }
+    }
+
     private fun syncLeasePayload(token: String): ByteArray =
-        "${System.currentTimeMillis()}\n$token".toByteArray(Charsets.UTF_8)
+        "${System.currentTimeMillis()}\n$token\n${deviceLabel()}".toByteArray(Charsets.UTF_8)
 
     private fun readSyncLeaseToken(sftp: SFTPClient, leasePath: String): String? =
+        readSyncLeaseInfo(sftp, leasePath).token
+
+    private fun readSyncLeaseInfo(sftp: SFTPClient, leasePath: String): RemoteLeaseInfo =
         readRemoteBytes(sftp, leasePath)
             ?.toString(Charsets.UTF_8)
-            ?.lineSequence()
-            ?.drop(1)
-            ?.firstOrNull()
+            ?.let(::parseLeaseInfo)
+            ?: RemoteLeaseInfo()
+
+    private data class RemoteLeaseInfo(
+        val lockedAt: Long? = null,
+        val token: String? = null,
+        val ownerDevice: String? = null
+    )
+
+    private fun parseLeaseInfo(payload: String): RemoteLeaseInfo {
+        val lines = payload.lineSequence().map { it.trim() }.toList()
+        return RemoteLeaseInfo(
+            lockedAt = lines.getOrNull(0)?.toLongOrNull(),
+            token = lines.getOrNull(1)?.takeIf { it.isNotBlank() },
+            ownerDevice = lines.getOrNull(2)?.takeIf { it.isNotBlank() }
+        )
+    }
+
+    private fun deviceLabel(): String {
+        val manufacturer = Build.MANUFACTURER.orEmpty().trim()
+        val model = Build.MODEL.orEmpty().trim()
+        val cleanedModel = if (
+            manufacturer.isNotBlank() &&
+            model.startsWith(manufacturer, ignoreCase = true)
+        ) {
+            model
+        } else {
+            listOf(manufacturer, model).filter { it.isNotBlank() }.joinToString(" ")
+        }
+        return cleanedModel.ifBlank { "Unknown Android device" }
+    }
 
     private fun removeRemoteFileIfPresent(sftp: SFTPClient, path: String) {
         if (sftp.statExistence(path) != null) sftp.rm(path)

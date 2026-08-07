@@ -11,5 +11,6 @@ package com.mj.yata.domain.model
 data class BackupSummary(
     val totalTasks: Int,
     val openTasks: Int,
-    val totalProjects: Int
+    val totalProjects: Int,
+    val createdByDevice: String? = null
 )
