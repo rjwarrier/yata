@@ -638,8 +638,8 @@
     <string name="settings_search_placeholder">Essayez « rappels », « thème » ou « sauvegarde »</string>
     <string name="settings_search_no_results">Aucun paramètre correspondant</string>
     <string name="settings_search_profile_summary">Nom, e-mail et photo de profil</string>
-    <string name="settings_search_appearance_display_summary">Thème, couleur, police, langue, échelle et densité</string>
-    <string name="settings_search_appearance_summary">Thème, couleur, police, langue et mouvement</string>
+    <string name="settings_search_appearance_display_summary">Thème, couleur, police, échelle et densité</string>
+    <string name="settings_search_appearance_summary">Thème, couleur, police et mouvement</string>
     <string name="settings_search_display_summary">Échelle de l\'interface, taille du texte et densité des tâches</string>
     <string name="settings_search_navigation_features_summary">Navigation inférieure, ajout rapide, zones d\'application et gestionnaires</string>
     <string name="settings_search_navigation_summary">Navigation inférieure et emplacement d\'ajout rapide</string>

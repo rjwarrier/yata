@@ -638,8 +638,8 @@
     <string name="settings_search_placeholder">Experimente “lembretes”, “tema” ou “backup”</string>
     <string name="settings_search_no_results">Nenhuma configuração correspondente</string>
     <string name="settings_search_profile_summary">Nome, e-mail e foto do perfil</string>
-    <string name="settings_search_appearance_display_summary">Tema, cor, fonte, idioma, escala e densidade</string>
-    <string name="settings_search_appearance_summary">Tema, cor, fonte, idioma e movimento</string>
+    <string name="settings_search_appearance_display_summary">Tema, cor, fonte, escala e densidade</string>
+    <string name="settings_search_appearance_summary">Tema, cor, fonte e movimento</string>
     <string name="settings_search_display_summary">Escala da interface, tamanho do texto e densidade da tarefa</string>
     <string name="settings_search_navigation_features_summary">Navegação inferior, adição rápida, áreas de aplicativos e gerenciadores</string>
     <string name="settings_search_navigation_summary">Navegação inferior e posicionamento de adição rápida</string>

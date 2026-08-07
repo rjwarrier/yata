@@ -642,6 +642,7 @@
     <!-- Crash logs -->
     <string name="diagnostics_title">Diagnostics</string>
     <string name="diagnostics_operation_history">Operation history</string>
+    <string name="diagnostics_operation_history_empty">No background operation history yet.</string>
     <string name="diagnostics_crash_reports">Crash reports</string>
     <string name="diagnostics_crash_clusters">Repeated failure groups</string>
     <string name="diagnostics_crash_cluster_count">%1$d times</string>
@@ -780,8 +781,8 @@
     <string name="settings_search_placeholder">Try “reminders”, “theme”, or “backup”</string>
     <string name="settings_search_no_results">No matching settings</string>
     <string name="settings_search_profile_summary">Name, email, and profile photo</string>
-    <string name="settings_search_appearance_display_summary">Theme, color, font, language, scale, and density</string>
-    <string name="settings_search_appearance_summary">Theme, color, font, language, and motion</string>
+    <string name="settings_search_appearance_display_summary">Theme, color, font, scale, and density</string>
+    <string name="settings_search_appearance_summary">Theme, color, font, and motion</string>
     <string name="settings_search_display_summary">Interface scale, text size, and task density</string>
     <string name="settings_search_navigation_features_summary">Bottom navigation, quick add, app areas, and managers</string>
     <string name="settings_search_navigation_summary">Bottom navigation and quick-add placement</string>

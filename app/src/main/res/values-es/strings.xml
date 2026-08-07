@@ -313,8 +313,8 @@
     <string name="settings_search_placeholder">Prueba “recordatorios”, “tema” o “copia”</string>
     <string name="settings_search_no_results">Sin ajustes coincidentes</string>
     <string name="settings_search_profile_summary">Nombre, correo y foto de perfil</string>
-    <string name="settings_search_appearance_display_summary">Tema, color, fuente, idioma, escala y densidad</string>
-    <string name="settings_search_appearance_summary">Tema, color, fuente, idioma y movimiento</string>
+    <string name="settings_search_appearance_display_summary">Tema, color, fuente, escala y densidad</string>
+    <string name="settings_search_appearance_summary">Tema, color, fuente y movimiento</string>
     <string name="settings_search_display_summary">Escala de interfaz, tamaño de texto y densidad de tareas</string>
     <string name="settings_search_navigation_features_summary">Navegación inferior, añadir rápido, áreas de la app y gestores</string>
     <string name="settings_search_navigation_summary">Navegación inferior y posición de añadir rápido</string>

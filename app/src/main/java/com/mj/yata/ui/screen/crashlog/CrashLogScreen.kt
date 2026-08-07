@@ -18,6 +18,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -127,7 +129,7 @@ fun CrashLogScreen(
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 ReminderHealthCard(
@@ -154,30 +156,10 @@ fun CrashLogScreen(
                 BackupHealthCard(entries = operationHistory.filter { it.category == "Backup" || it.category == "Sync" })
             }
             item {
-                Text(
-                    text = stringResource(R.string.diagnostics_operation_history),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-            }
-            items(operationHistory, key = { it.id }) { entry ->
-                OperationHistoryCard(entry = entry)
+                OperationHistoryPanel(entries = operationHistory)
             }
             item {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.diagnostics_crash_reports),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = if (logs.isEmpty()) {
-                        stringResource(R.string.crash_log_empty_body)
-                    } else {
-                        pluralStringResource(R.plurals.crash_log_count, logs.size, logs.size)
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                CrashReportsSummary(logCount = logs.size)
             }
             if (crashClusters.isNotEmpty()) {
                 item {
@@ -235,6 +217,144 @@ fun CrashLogScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun CrashReportsSummary(logCount: Int) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = stringResource(R.string.diagnostics_crash_reports),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = if (logCount == 0) {
+                    stringResource(R.string.crash_log_empty_body)
+                } else {
+                    pluralStringResource(R.plurals.crash_log_count, logCount, logCount)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun OperationHistoryPanel(entries: List<OperationHistoryEntry>) {
+    val groupedEntries = remember(entries) { entries.groupBy { it.category }.entries.toList() }
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.diagnostics_operation_history),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            if (entries.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.diagnostics_operation_history_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                for (group in groupedEntries) {
+                    val category = group.key
+                    val categoryEntries = group.value
+                    Text(
+                        text = category,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    for (index in categoryEntries.indices) {
+                        val entry = categoryEntries[index]
+                        OperationHistoryRow(entry = entry)
+                        if (index != categoryEntries.lastIndex) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OperationHistoryRow(entry: OperationHistoryEntry) {
+    var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { expanded = !expanded }
+            .padding(vertical = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(statusContainerColor(entry.lastStatus))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = statusText(entry.lastStatus),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                    color = statusContentColor(entry.lastStatus)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(entry.title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
+                Text(
+                    text = stringResource(R.string.operation_history_last_run) + ": " + formatNullableTimestamp(entry.lastRunAt),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        if (expanded) {
+            Spacer(Modifier.height(8.dp))
+            entry.lastReason?.takeIf { it.isNotBlank() }?.let { reason ->
+                Text(
+                    text = stringResource(R.string.operation_history_reason, reason),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OperationMetric(
+                    label = stringResource(R.string.operation_history_last_success),
+                    value = formatNullableTimestamp(entry.lastSuccessAt),
+                    modifier = Modifier.weight(1f)
+                )
+                OperationMetric(
+                    label = stringResource(R.string.operation_history_last_failure),
+                    value = formatNullableTimestamp(entry.lastFailureAt),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            OperationMetric(
+                label = stringResource(R.string.operation_history_retry_count),
+                value = entry.retryCount.toString(),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 

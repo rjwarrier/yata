@@ -68,6 +68,7 @@ import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
@@ -333,7 +334,8 @@ fun SettingsScreen(
     )
     val settingsSearchTargets = listOf(
         SettingsSearchTarget("profile", stringResource(R.string.settings_section_profile), stringResource(R.string.settings_search_profile_summary), "name email photo account", null, Icons.Default.Person),
-        SettingsSearchTarget("appearance", stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_search_appearance_summary), "theme dark light amoled color font language motion intensity tint saturation vivid muted background", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
+        SettingsSearchTarget("language", stringResource(R.string.settings_app_language), stringResource(R.string.settings_app_language_desc), "language locale translation system default app", null, Icons.Default.Language),
+        SettingsSearchTarget("appearance", stringResource(R.string.settings_section_appearance), stringResource(R.string.settings_search_appearance_summary), "theme dark light amoled color font motion intensity tint saturation vivid muted background", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
         SettingsSearchTarget("display", stringResource(R.string.settings_section_display), stringResource(R.string.settings_search_display_summary), "scale text density compact spacious card cards row", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Tune),
         SettingsSearchTarget("motion_mode", "Motion mode", "Full, reduced, or off", "animation reduce motion off accessibility", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Tune),
         SettingsSearchTarget("theme_presets", "Theme presets", "Save and reapply personal themes", "theme preset saved color font material you", SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
@@ -596,6 +598,12 @@ fun SettingsScreen(
                 }
             }
         }
+            item(key = "language") {
+                LanguageSettingsSection(
+                    selectedLanguage = appLanguage,
+                    onLanguageSelected = viewModel::setAppLanguage
+                )
+            }
             item(key = "settings_search") {
                 // Styled to the M3 search-field spec rather than as a general text field: pill
                 // shape, tonal surfaceContainerHigh container, no indicator line, and a
@@ -654,7 +662,11 @@ fun SettingsScreen(
                                         .clickable {
                                             settingsSearchQuery = ""
                                             target.destination?.let(onNavigateToSettingsDestination)
-                                                ?: scope.launch { settingsListState.animateScrollToItem(0) }
+                                                ?: scope.launch {
+                                                    settingsListState.animateScrollToItem(
+                                                        if (target.key == "language") 1 else 0
+                                                    )
+                                                }
                                         }
                                         .padding(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -832,13 +844,6 @@ fun SettingsScreen(
                         stopLabels = backgroundTintLabels(),
                         selectedIndex = backgroundTint.ordinal,
                         onSelect = { viewModel.setBackgroundTint(BackgroundTint.entries[it]) }
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    // Locales come from AppLanguage, which mirrors the values-* resource folders.
-                    LanguageSettingsSection(
-                        selectedLanguage = appLanguage,
-                        onLanguageSelected = viewModel::setAppLanguage
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
