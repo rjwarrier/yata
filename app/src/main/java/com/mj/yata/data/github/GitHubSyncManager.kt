@@ -146,10 +146,11 @@ class GitHubSyncManager @Inject constructor(
     private fun publisher(api: GitHubApi): GitHubSnapshotPublisher =
         GitHubSnapshotPublisher(
             api = api,
-            prepare = { remoteBytes, scopeKey ->
+            prepare = { remoteBytes, scopeKey, remoteIsRecovery ->
                 val prepared = snapshotSyncEngine.prepare(
                     remoteBytes = remoteBytes,
-                    scopeKey = scopeKey
+                    scopeKey = scopeKey,
+                    remoteIsRecovery = remoteIsRecovery
                 )
                 GitHubPreparedSnapshot(
                     canonicalBytes = prepared.canonicalBytes,
@@ -164,6 +165,7 @@ class GitHubSyncManager @Inject constructor(
             },
             encode = ::encodePayload,
             decode = ::decodePayload,
+            validateRemoteSnapshot = snapshotSyncEngine::isValidRemoteSnapshot,
             commitMessage = ::commitMessage,
             onHeadObserved = { userPreferences.setGitHubLastHeadSha(it) },
             onHeadPublished = { userPreferences.setGitHubLastHeadSha(it) }

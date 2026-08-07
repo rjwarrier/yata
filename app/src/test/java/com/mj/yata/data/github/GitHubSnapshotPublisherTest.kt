@@ -65,7 +65,7 @@ class GitHubSnapshotPublisherTest {
         var committed = false
         val publisher = GitHubSnapshotPublisher(
             api = api,
-            prepare = { _, _ ->
+            prepare = { _, _, _ ->
                 prepared = true
                 GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
             },
@@ -193,7 +193,7 @@ class GitHubSnapshotPublisherTest {
         var committed = false
         val publisher = GitHubSnapshotPublisher(
             api = api,
-            prepare = { _, _ ->
+            prepare = { _, _, _ ->
                 prepared = true
                 GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
             },
@@ -219,7 +219,7 @@ class GitHubSnapshotPublisherTest {
         var committed = false
         val publisher = GitHubSnapshotPublisher(
             api = api,
-            prepare = { remoteBytes, _ ->
+            prepare = { remoteBytes, _, _ ->
                 assertEquals("same", remoteBytes?.string())
                 GitHubPreparedSnapshot(canonicalBytes = "same".bytes(), remoteNeedsPublish = false)
             },
@@ -249,7 +249,7 @@ class GitHubSnapshotPublisherTest {
         var committed = false
         val publisher = GitHubSnapshotPublisher(
             api = api,
-            prepare = { remoteBytes, _ ->
+            prepare = { remoteBytes, _, _ ->
                 remoteSnapshots += remoteBytes?.string()
                 GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
             },
@@ -279,7 +279,7 @@ class GitHubSnapshotPublisherTest {
         var committed = false
         val publisher = GitHubSnapshotPublisher(
             api = api,
-            prepare = { remoteBytes, _ ->
+            prepare = { remoteBytes, _, _ ->
                 GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
             },
             commit = { committed = true },
@@ -294,6 +294,68 @@ class GitHubSnapshotPublisherTest {
         assertFalse(committed)
         assertEquals(GitHubSnapshotPublisher.MAX_CAS_ATTEMPTS * 2, api.getRefCalls)
         assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
+    fun damagedHeadSnapshot_promotesValidHistoryCandidateOnFirstJoin() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("valid-history".bytes())
+            seedHead("damaged-head".bytes())
+            createdCommitParents.clear()
+        }
+        var preparedRemote: String? = null
+        var preparedWasRecovery = false
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { remoteBytes, _, remoteIsRecovery ->
+                preparedRemote = remoteBytes?.string()
+                preparedWasRecovery = remoteIsRecovery
+                GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
+            },
+            commit = { committed = true },
+            encode = { it },
+            decode = { it },
+            validateRemoteSnapshot = { it.string() != "damaged-head" },
+            commitMessage = { "promote recovery" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.isSuccess)
+        assertTrue(committed)
+        assertTrue(preparedWasRecovery)
+        assertEquals("valid-history", preparedRemote)
+        assertEquals(1, api.updateRefCalls)
+    }
+
+    @Test
+    fun damagedHeadSnapshot_recoveryRejectedByPrepareDoesNotPublishOrCommit() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("valid-history".bytes())
+            seedHead("damaged-head".bytes())
+            createdCommitParents.clear()
+        }
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _, remoteIsRecovery ->
+                check(!remoteIsRecovery) { "Recovery requires manual restore once a baseline exists" }
+                GitHubPreparedSnapshot(canonicalBytes = "promoted".bytes(), remoteNeedsPublish = true)
+            },
+            commit = { committed = true },
+            encode = { it },
+            decode = { it },
+            validateRemoteSnapshot = { it.string() != "damaged-head" },
+            commitMessage = { "blocked recovery" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertFalse(committed)
+        assertEquals(0, api.updateRefCalls)
+        assertEquals(0, api.createRefCalls)
     }
 
     @Test
@@ -315,7 +377,7 @@ class GitHubSnapshotPublisherTest {
         onCommit: () -> Unit = {}
     ) = GitHubSnapshotPublisher(
         api = api,
-        prepare = { remoteBytes, _ ->
+        prepare = { remoteBytes, _, _ ->
             onPrepare(remoteBytes)
             GitHubPreparedSnapshot(canonicalBytes = canonical, remoteNeedsPublish = true)
         },
@@ -427,7 +489,7 @@ class GitHubSnapshotPublisherTest {
             }
 
         override suspend fun listCommits(owner: String, repo: String, branch: String, path: String): List<GitHubCommitSummary> =
-            commits.keys.map { GitHubCommitSummary(it, "commit", Instant.EPOCH) }
+            commits.keys.reversed().map { GitHubCommitSummary(it, "commit", Instant.EPOCH) }
 
         private fun putBlob(bytes: ByteArray): String {
             val sha = GitBlobSha.of(bytes)

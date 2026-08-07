@@ -15,10 +15,11 @@ internal data class GitHubPreparedSnapshot(
 
 internal class GitHubSnapshotPublisher(
     private val api: GitHubApi,
-    private val prepare: suspend (remoteBytes: ByteArray?, scopeKey: String) -> GitHubPreparedSnapshot,
+    private val prepare: suspend (remoteBytes: ByteArray?, scopeKey: String, remoteIsRecovery: Boolean) -> GitHubPreparedSnapshot,
     private val commit: suspend (GitHubPreparedSnapshot) -> Unit,
     private val encode: (ByteArray) -> ByteArray,
     private val decode: (ByteArray) -> ByteArray,
+    private val validateRemoteSnapshot: (ByteArray) -> Boolean = { true },
     private val commitMessage: (ByteArray) -> String,
     private val onHeadObserved: suspend (String?) -> Unit = {},
     private val onHeadPublished: suspend (String) -> Unit = {}
@@ -37,14 +38,16 @@ internal class GitHubSnapshotPublisher(
                 progress(30, "Reading GitHub repo")
                 val head = readHead(config)
                 onHeadObserved(head.commitSha)
-                val remoteBytes = head.snapshotBlobSha?.let { sha ->
-                    readBlobVerified(config, sha)
-                }?.let(decode)
+                val remoteSnapshot = readRemoteSnapshot(config, head, progress)
 
                 progress(56, "Merging GitHub changes")
-                val prepared = prepare(remoteBytes, scopeKey(config))
+                val prepared = prepare(
+                    remoteSnapshot.bytes,
+                    scopeKey(config),
+                    remoteSnapshot.isRecovery
+                )
 
-                if (prepared.remoteNeedsPublish || head.snapshotBlobSha == null) {
+                if (prepared.remoteNeedsPublish || head.snapshotBlobSha == null || remoteSnapshot.isRecovery) {
                     progress(74, "Publishing GitHub commit")
                     val encoded = encode(prepared.canonicalBytes)
                     val blobSha = createBlobVerified(config, encoded, "uploaded snapshot")
@@ -113,6 +116,38 @@ internal class GitHubSnapshotPublisher(
         return decode(readBlobVerified(config, blobSha))
     }
 
+    private suspend fun readRemoteSnapshot(
+        config: GitHubSyncConfig,
+        head: HeadState,
+        progress: (Int, String) -> Unit
+    ): RemoteSnapshot {
+        val blobSha = head.snapshotBlobSha ?: return RemoteSnapshot(bytes = null, isRecovery = false)
+        val headBytes = decode(readBlobVerified(config, blobSha))
+        if (validateRemoteSnapshot(headBytes)) {
+            return RemoteSnapshot(bytes = headBytes, isRecovery = false)
+        }
+        progress(44, "Finding GitHub recovery point")
+        return findRecoverySnapshot(config, excludedCommitSha = head.commitSha)?.let { bytes ->
+            RemoteSnapshot(bytes = bytes, isRecovery = true)
+        } ?: throw GitHubTransportException(
+            "GitHub snapshot is damaged and no valid history snapshot was found"
+        )
+    }
+
+    private suspend fun findRecoverySnapshot(
+        config: GitHubSyncConfig,
+        excludedCommitSha: String?
+    ): ByteArray? =
+        api.listCommits(config.owner, config.repo, config.branch, SNAPSHOT_PATH)
+            .asSequence()
+            .filterNot { it.sha == excludedCommitSha }
+            .take(MAX_RECOVERY_COMMITS)
+            .firstNotNullOfOrNull { commit ->
+                runCatching { readSnapshot(config, commit.sha) }
+                    .getOrNull()
+                    ?.takeIf(validateRemoteSnapshot)
+            }
+
     private suspend fun readHead(config: GitHubSyncConfig): HeadState {
         val ref = try {
             api.getRef(config.owner, config.repo, config.branch)
@@ -175,10 +210,16 @@ internal class GitHubSnapshotPublisher(
             commitSha == other.commitSha && treeSha == other.treeSha && snapshotBlobSha == other.snapshotBlobSha
     }
 
+    private data class RemoteSnapshot(
+        val bytes: ByteArray?,
+        val isRecovery: Boolean
+    )
+
     companion object {
         const val SNAPSHOT_PATH = "yata/snapshot.json"
         const val README_PATH = "README.md"
         const val MAX_CAS_ATTEMPTS = 3
+        const val MAX_RECOVERY_COMMITS = 20
 
         val README_TEXT = """
             # YATA sync repository
