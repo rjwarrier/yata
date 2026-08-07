@@ -354,6 +354,7 @@ fun SettingsScreen(
     var showSftpRestoreDialog by remember { mutableStateOf(false) }
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
+    var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
     var sftpBackupList by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
     var isRestoringSftpBackup by remember { mutableStateOf(false) }
@@ -3230,7 +3231,21 @@ fun SettingsScreen(
                         OutlinedTextField(
                             value = draftGitHubToken,
                             onValueChange = { draftGitHubToken = it },
-                            label = { Text("Token") },
+                            label = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Token")
+                                    IconButton(
+                                        onClick = { showGitHubPatHelpDialog = true },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = "How to create a GitHub token",
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            },
                             placeholder = {
                                 if (githubTokenAlreadySet) Text(savedSecretPlaceholder)
                             },
@@ -3551,6 +3566,31 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showSftpConfigDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+
+    if (showGitHubPatHelpDialog) {
+        AlertDialog(
+            onDismissRequest = { showGitHubPatHelpDialog = false },
+            title = { Text("Create a GitHub token") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Create a fine-grained personal access token for the sync repo.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text("1. Open GitHub > Settings > Developer settings > Personal access tokens > Fine-grained tokens.")
+                    Text("2. Tap Generate new token and name it YATA sync.")
+                    Text("3. Under Repository access, select only your YATA sync repo.")
+                    Text("4. Under Repository permissions, set Contents to Read and write.")
+                    Text("5. Generate the token, copy it, then paste it here.")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showGitHubPatHelpDialog = false }) {
+                    Text(stringResource(R.string.action_close))
+                }
             }
         )
     }
