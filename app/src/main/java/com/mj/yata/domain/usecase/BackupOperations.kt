@@ -70,6 +70,8 @@ class BackupOperations @Inject constructor(
     private val syncStateLock = Any()
     private var activeSyncs = 0
     private var activeSyncFailed = false
+    private var activeSyncFailureLabel: String? = null
+    private var syncFeedbackGeneration = 0
     private val _syncInProgress = MutableStateFlow(false)
     val syncInProgress: StateFlow<Boolean> = _syncInProgress.asStateFlow()
     private val _syncPendingOrInProgress = MutableStateFlow(false)
@@ -190,8 +192,13 @@ class BackupOperations @Inject constructor(
         beginSyncFeedback(labels.preparing)
         return try {
             val result = block(::updateSyncProgress)
-            updateSyncProgress(96, labels.finishing)
-            finishSyncFeedback(success = result.isSuccess)
+            val failure = result.exceptionOrNull()
+            if (failure == null) {
+                updateSyncProgress(96, labels.finishing)
+                finishSyncFeedback(success = true)
+            } else {
+                finishSyncFeedback(success = false, failureLabel = labels.failed.withFailureReason(failure))
+            }
             result.fold(
                 onSuccess = { report -> operationHistoryStore.recordSuccess(operationId, labels.completed.withSyncDetails(report)) },
                 onFailure = { operationHistoryStore.recordFailure(operationId, it) }
@@ -201,7 +208,7 @@ class BackupOperations @Inject constructor(
             finishSyncFeedback(success = false)
             throw e
         } catch (t: Throwable) {
-            finishSyncFeedback(success = false)
+            finishSyncFeedback(success = false, failureLabel = labels.failed.withFailureReason(t))
             operationHistoryStore.recordFailure(operationId, t)
             Result.failure(t)
         }
@@ -219,16 +226,19 @@ class BackupOperations @Inject constructor(
             RemoteBackupProtocol.GITHUB -> RemoteSyncLabels(
                 preparing = "Preparing GitHub sync",
                 finishing = "Finishing GitHub sync",
+                failed = "GitHub sync failed",
                 completed = "GitHub sync completed"
             )
             RemoteBackupProtocol.FTP -> RemoteSyncLabels(
                 preparing = "Preparing FTP sync",
                 finishing = "Finishing FTP sync",
+                failed = "FTP sync failed",
                 completed = "FTP sync completed"
             )
             RemoteBackupProtocol.SFTP -> RemoteSyncLabels(
                 preparing = "Preparing SFTP sync",
                 finishing = "Finishing SFTP sync",
+                failed = "SFTP sync failed",
                 completed = "SFTP sync completed"
             )
         }
@@ -243,8 +253,10 @@ class BackupOperations @Inject constructor(
     private fun beginSyncFeedback(initialLabel: String) {
         synchronized(syncStateLock) {
             activeSyncs++
+            syncFeedbackGeneration++
             if (activeSyncs == 1) {
                 activeSyncFailed = false
+                activeSyncFailureLabel = null
                 _syncInProgress.value = true
                 _syncPendingOrInProgress.value = true
                 _syncProgress.value = SyncProgressState(4, initialLabel)
@@ -252,15 +264,36 @@ class BackupOperations @Inject constructor(
         }
     }
 
-    private fun finishSyncFeedback(success: Boolean) {
+    private fun finishSyncFeedback(success: Boolean, failureLabel: String? = null) {
+        var terminalFailureGeneration: Int? = null
         synchronized(syncStateLock) {
-            if (!success) activeSyncFailed = true
+            if (!success) {
+                activeSyncFailed = true
+                if (activeSyncFailureLabel == null) activeSyncFailureLabel = failureLabel
+            }
             activeSyncs = (activeSyncs - 1).coerceAtLeast(0)
             if (activeSyncs == 0) {
                 _syncInProgress.value = false
                 if (debounceJob?.isActive != true) _syncPendingOrInProgress.value = false
                 _lastSyncSucceeded.value = !activeSyncFailed
-                _syncProgress.value = null
+                val label = activeSyncFailureLabel
+                if (activeSyncFailed && label != null) {
+                    syncFeedbackGeneration++
+                    terminalFailureGeneration = syncFeedbackGeneration
+                    _syncProgress.value = SyncProgressState(100, label)
+                } else {
+                    _syncProgress.value = null
+                }
+            }
+        }
+        terminalFailureGeneration?.let { generation ->
+            debounceScope.launch {
+                delay(8_000L)
+                synchronized(syncStateLock) {
+                    if (activeSyncs == 0 && syncFeedbackGeneration == generation) {
+                        _syncProgress.value = null
+                    }
+                }
             }
         }
     }
@@ -289,6 +322,7 @@ class BackupOperations @Inject constructor(
     private data class RemoteSyncLabels(
         val preparing: String,
         val finishing: String,
+        val failed: String,
         val completed: String
     )
 
@@ -300,6 +334,24 @@ class BackupOperations @Inject constructor(
             addAll(report.details)
         }
         return if (details.isEmpty()) this else "$this; ${details.joinToString("; ")}"
+    }
+
+    private fun String.withFailureReason(error: Throwable): String {
+        val reason = error.reasonForSyncFailure()
+        return if (reason == null) this else "$this: $reason"
+    }
+
+    private fun Throwable.reasonForSyncFailure(): String? {
+        var current: Throwable? = this
+        while (current != null) {
+            current.message
+                ?.replace(Regex("\\s+"), " ")
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+                ?.let { return it.take(180) }
+            current = current.cause
+        }
+        return javaClass.simpleName.takeIf { it.isNotBlank() }
     }
 
     /**
