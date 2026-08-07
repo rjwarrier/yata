@@ -87,6 +87,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -146,6 +147,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mj.yata.BuildConfig
+import com.mj.yata.ui.theme.BodoniModaFamily
 
 private data class SettingsSearchTarget(
     val key: String,
@@ -266,6 +269,7 @@ fun SettingsScreen(
     val taskCardBackground by viewModel.taskCardBackground.collectAsStateWithLifecycle()
     val trashRetentionDays by viewModel.trashRetentionDays.collectAsStateWithLifecycle()
     val autoArchiveDays by viewModel.autoArchiveDays.collectAsStateWithLifecycle()
+    val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
     val dailyAgendaEnabled by viewModel.dailyAgendaEnabled.collectAsStateWithLifecycle()
     val dailyAgendaHour by viewModel.dailyAgendaHour.collectAsStateWithLifecycle()
     val dailyAgendaMinute by viewModel.dailyAgendaMinute.collectAsStateWithLifecycle()
@@ -355,6 +359,7 @@ fun SettingsScreen(
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
+    var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
     var sftpBackupList by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
     var isRestoringSftpBackup by remember { mutableStateOf(false) }
@@ -365,6 +370,12 @@ fun SettingsScreen(
     var sftpInspectError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val settingsListState = rememberLazyListState()
+    LaunchedEffect(demoModeFeedback) {
+        if (demoModeFeedback != null) {
+            kotlinx.coroutines.delay(3_000)
+            demoModeFeedback = null
+        }
+    }
     var settingsSearchQuery by rememberSaveable { mutableStateOf("") }
     var showSettingsMenu by remember { mutableStateOf(false) }
     var showResetSettingsDialog by remember { mutableStateOf(false) }
@@ -2771,6 +2782,30 @@ fun SettingsScreen(
         }
         if (settingsDestination == SettingsDestination.HELP_ABOUT) {
         item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "ABOUT",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                AboutYataCard(
+                    demoModeEnabled = demoModeEnabled,
+                    demoModeFeedback = demoModeFeedback,
+                    onToggleDemoMode = {
+                        viewModel.toggleDemoMode()
+                        demoModeFeedback = if (demoModeEnabled) {
+                            R.string.help_demo_mode_off
+                        } else {
+                            R.string.help_demo_mode_on
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        }
+        if (settingsDestination == SettingsDestination.HELP_ABOUT) {
+        item {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = RoundedCornerShape(16.dp),
@@ -4101,6 +4136,91 @@ private fun BackupDiffTaskSection(label: String, titles: List<String>, totalCoun
                 text = stringResource(R.string.settings_diff_more, totalCount - titles.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AboutYataCard(
+    demoModeEnabled: Boolean,
+    demoModeFeedback: Int?,
+    onToggleDemoMode: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .clickable(onClick = onToggleDemoMode),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.rj_logo_mark),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
+                    modifier = Modifier.size(width = 44.dp, height = 29.dp)
+                )
+            }
+            if (demoModeEnabled) {
+                Text(
+                    text = stringResource(R.string.help_demo_mode_active),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            demoModeFeedback?.let { messageRes ->
+                Text(
+                    text = stringResource(messageRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "yata",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = BodoniModaFamily,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "yet another todo app",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "v${BuildConfig.VERSION_NAME}  ·  Build ${BuildConfig.VERSION_CODE}.${BuildConfig.BUILD_DATE}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "From the Labs of RJ",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Made in 🇮🇳",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

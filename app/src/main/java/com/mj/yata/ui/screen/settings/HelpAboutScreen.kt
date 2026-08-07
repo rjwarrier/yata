@@ -1,17 +1,13 @@
 package com.mj.yata.ui.screen.settings
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,27 +39,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mj.yata.BuildConfig
 import com.mj.yata.R
 import com.mj.yata.ui.screen.main.CustomBottomNav
 import com.mj.yata.ui.screen.main.MainViewModel
-import com.mj.yata.ui.theme.BodoniModaFamily
-import kotlinx.coroutines.delay
 
 private data class HelpSection(
     val title: String,
@@ -108,7 +94,7 @@ private val helpSections = listOf(
         description = "Find anything fast, and jump back to a filtered view in one tap.",
         bullets = listOf(
             "The command palette (drawer > Command palette) reaches every screen, saved filter, and recent task by typing part of its name.",
-            "Save a combination of filters from the Search screen — saved views show up in both the drawer's Custom Views and the command palette.",
+            "Save a combination of filters from the Search screen - saved views show up in both the drawer's Custom Views and the command palette.",
             "One-tap presets like Focus Mode, Assigned to Me, Morning/Evening Review, and Task Health need no setup."
         ),
         icon = Icons.Default.Search
@@ -120,7 +106,7 @@ private val helpSections = listOf(
             "Star important projects or lists to keep them in the drawer.",
             "Archive old containers without deleting their data.",
             "Exclude backlog-style containers from Today when their tasks should stay out of the daily view.",
-            "Give a project user-defined sections (⋮ menu > Manage sections) to group its tasks under headings like Design or Backend.",
+            "Give a project user-defined sections (overflow menu > Manage sections) to group its tasks under headings like Design or Backend.",
             "Long-press a task on any project, list, tag, or person screen to multiselect and bulk complete, tag, assign, move, reschedule, duplicate, or delete."
         ),
         icon = Icons.Default.ViewAgenda
@@ -132,9 +118,9 @@ private val helpSections = listOf(
             "Mark one person as you for assigned-to-me filtering.",
             "Person detail screens show open and completed work for that person.",
             "Team overdue widgets summarize who needs attention.",
-            "The first person assigned to a task is its owner — shown larger in the avatar stack and labeled on the task detail screen; everyone else is a collaborator.",
+            "The first person assigned to a task is its owner - shown larger in the avatar stack and labeled on the task detail screen; everyone else is a collaborator.",
             "Bulk-assigning shows each person's open and overdue count, so you're not delegating blind.",
-            "Delegate a task and set a \"waiting on\" follow-up date from its detail screen — it stays out of Today until that date, then reappears on its own."
+            "Delegate a task and set a \"waiting on\" follow-up date from its detail screen - it stays out of Today until that date, then reappears on its own."
         ),
         icon = Icons.Default.Groups
     ),
@@ -217,15 +203,6 @@ fun HelpAboutScreen(
     val projectsFeatureEnabled = viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle().value
     val todayTabEnabled = viewModel.todayTabEnabled.collectAsStateWithLifecycle().value
     val upcomingTabEnabled = viewModel.upcomingTabEnabled.collectAsStateWithLifecycle().value
-    val demoModeEnabled by viewModel.demoModeEnabled.collectAsStateWithLifecycle()
-    var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
-
-    LaunchedEffect(demoModeFeedback) {
-        if (demoModeFeedback != null) {
-            delay(3_000)
-            demoModeFeedback = null
-        }
-    }
 
     Scaffold(
         bottomBar = {
@@ -279,96 +256,6 @@ fun HelpAboutScreen(
                 HelpSectionCard(section = section)
             }
 
-            item {
-                Text(
-                    text = "ABOUT",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .clickable {
-                                    viewModel.toggleDemoMode()
-                                    demoModeFeedback = if (demoModeEnabled) {
-                                        R.string.help_demo_mode_off
-                                    } else {
-                                        R.string.help_demo_mode_on
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.rj_logo_mark),
-                                contentDescription = null,
-                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
-                                modifier = Modifier.size(width = 44.dp, height = 29.dp)
-                            )
-                        }
-                        if (demoModeEnabled) {
-                            Text(
-                                text = stringResource(R.string.help_demo_mode_active),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        demoModeFeedback?.let { messageRes ->
-                            Text(
-                                text = stringResource(messageRes),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "yata",
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontFamily = BodoniModaFamily,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "yet another todo app",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "v${BuildConfig.VERSION_NAME}  ·  Build ${BuildConfig.VERSION_CODE}.${BuildConfig.BUILD_DATE}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "From the Labs of RJ",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Made in 🇮🇳",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
         }
     }
 }

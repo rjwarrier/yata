@@ -507,7 +507,7 @@
     <string name="entity_editors_tag_label">Tag label</string>
     <string name="entity_editors_what_s_this_project_about">What\'s this project about?</string>
     <string name="export_options_no_limit">No limit</string>
-    <string name="help_about_help_about">Help &amp; About</string>
+    <string name="help_about_help_about">Help</string>
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">All tasks inside this list will be permanently deleted.</string>
     <string name="list_detail_delete_list">Delete list</string>
     <string name="list_detail_delete_list_2">Delete list?</string>
@@ -1011,8 +1011,8 @@
     <string name="settings_restore_local_backup">Restore latest local backup</string>
 
     <!-- Settings: Help, Appearance -->
-    <string name="settings_help_about_title">Help &amp; About</string>
-    <string name="settings_help_about_summary">Feature guide, version, and app identity.</string>
+    <string name="settings_help_about_title">Help</string>
+    <string name="settings_help_about_summary">Feature guide, sync tips, and app basics.</string>
     <string name="settings_theme_color">App theme color</string>
     <string name="settings_theme_color_summary">Pick a seed color to theme the app with - used instead of Material You while it\'s off.</string>
     <string name="settings_seed_default">Default</string>
