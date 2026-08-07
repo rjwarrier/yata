@@ -1042,6 +1042,9 @@ private data class MainNavigationState(
     val lastSyncSucceeded: StateFlow<Boolean?> = backupOperations.lastSyncSucceeded
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val syncProgress: StateFlow<com.mj.yata.domain.model.SyncProgressState?> = backupOperations.syncProgress
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val savedSmartFilterSets: StateFlow<Set<String>> = userPreferences.savedSmartFilterSetsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 

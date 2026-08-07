@@ -108,6 +108,7 @@ fun MainScreen(
     val syncInProgress by viewModel.syncInProgress.collectAsStateWithLifecycle()
     val syncAnimating by viewModel.syncPendingOrInProgress.collectAsStateWithLifecycle()
     val lastSyncSucceeded by viewModel.lastSyncSucceeded.collectAsStateWithLifecycle()
+    val syncProgress by viewModel.syncProgress.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
@@ -744,6 +745,7 @@ fun MainScreen(
                             confettiEnabled = confettiEnabled,
                             syncing = syncAnimating,
                             lastSyncSucceeded = lastSyncSucceeded,
+                            syncProgress = syncProgress,
                             syncButtonEnabled = !syncInProgress,
                             onSyncClick = { runManualSync() },
                             showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty

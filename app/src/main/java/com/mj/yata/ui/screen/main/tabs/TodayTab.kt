@@ -1,6 +1,13 @@
 package com.mj.yata.ui.screen.main.tabs
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -31,6 +38,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +58,8 @@ import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.util.sortedByMode
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.math.PI
+import kotlin.math.sin
 
 private enum class TodayTaskFilter { ALL, ASSIGNED_TO_ME, DELEGATED, HIGH_PRIORITY }
 
@@ -93,6 +105,7 @@ fun TodayTab(
     confettiEnabled: Boolean = true,
     syncing: Boolean = false,
     lastSyncSucceeded: Boolean? = null,
+    syncProgress: SyncProgressState? = null,
     syncButtonEnabled: Boolean = true,
     onSyncClick: () -> Unit = {},
     /** When Today has nothing due, show tomorrow/day-after tasks automatically (dimmed, but fully
@@ -276,17 +289,7 @@ fun TodayTab(
             ) {
                 if (backupSyncEnabled) {
                     com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSyncClick, enabled = syncButtonEnabled) {
-                        if (syncing) {
-                            // Replaces the icon in place rather than sitting next to it, so the
-                            // row doesn't reflow mid-sync. Sized to the icon, not the button.
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            SyncStatusIcon(lastSyncSucceeded = lastSyncSucceeded)
-                        }
+                        SyncStatusIcon(lastSyncSucceeded = if (syncing) null else lastSyncSucceeded)
                     }
                 }
                 com.mj.yata.ui.widgets.TaskSortMenuButton(
@@ -339,6 +342,17 @@ fun TodayTab(
                 }
             }
         }
+        }
+
+        AnimatedVisibility(visible = syncProgress != null && !selectionMode) {
+            syncProgress?.let { progress ->
+                SyncProgressPill(
+                    progress = progress,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 2.dp)
+                )
+            }
         }
 
         // 2. Header row
@@ -735,6 +749,112 @@ fun TodayTab(
             },
             onDismiss = { pendingCommentTask = null }
         )
+    }
+}
+
+@Composable
+private fun SyncProgressPill(
+    progress: SyncProgressState,
+    modifier: Modifier = Modifier
+) {
+    val percent = progress.percent.coerceIn(0, 100)
+    val transition = rememberInfiniteTransition(label = "SyncWave")
+    val phase by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "SyncWavePhase"
+    )
+    val shape = RoundedCornerShape(28.dp)
+    val containerColor = MaterialTheme.colorScheme.primaryContainer
+    val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(containerColor)
+            .semantics { contentDescription = "${progress.label}, $percent percent" }
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = progress.label,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    color = contentColor,
+                    maxLines = 1
+                )
+                Text(
+                    text = "$percent%",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = contentColor
+                )
+            }
+            WavyProgressLine(
+                progress = percent / 100f,
+                phase = phase,
+                contentColor = contentColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(14.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun WavyProgressLine(
+    progress: Float,
+    phase: Float,
+    contentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val trackColor = contentColor.copy(alpha = 0.24f)
+    val progressColor = contentColor
+    Canvas(modifier = modifier) {
+        val baselineY = size.height / 2f
+        val stroke = 4.dp.toPx()
+        drawLine(
+            color = trackColor,
+            start = Offset(0f, baselineY),
+            end = Offset(size.width, baselineY),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+
+        val targetX = size.width * progress.coerceIn(0f, 1f)
+        if (targetX <= 0f) return@Canvas
+
+        val amplitude = 3.dp.toPx()
+        val waveLength = 34.dp.toPx()
+        val step = 3.dp.toPx().coerceAtLeast(1f)
+        var previous = Offset(
+            x = 0f,
+            y = baselineY + sin((phase * 2f * PI).toFloat()) * amplitude
+        )
+        var x = step
+        while (x <= targetX) {
+            val y = baselineY + sin(((x / waveLength) + phase) * 2f * PI).toFloat() * amplitude
+            val current = Offset(x, y)
+            drawLine(
+                color = progressColor,
+                start = previous,
+                end = current,
+                strokeWidth = stroke,
+                cap = StrokeCap.Round
+            )
+            previous = current
+            x += step
+        }
     }
 }
 

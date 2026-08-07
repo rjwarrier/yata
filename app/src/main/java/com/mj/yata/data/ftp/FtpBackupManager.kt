@@ -175,7 +175,7 @@ class FtpBackupManager @Inject constructor(
     }
 
     /** Full two-way sync using only generic FTP/FTPS file operations. */
-    suspend fun syncNow(): Result<Unit> = sessionMutex.withLock {
+    suspend fun syncNow(progress: (Int, String) -> Unit = { _, _ -> }): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -186,8 +186,10 @@ class FtpBackupManager @Inject constructor(
                 val normalizedHost = host.trim().trimEnd('.').lowercase(Locale.ROOT)
 
                 withContext(NonCancellable) {
+                    progress(12, "Connecting to server")
                     val client = connect()
                     try {
+                        progress(24, "Opening remote folder")
                         ensureRemoteDir(client, remoteDir)
                         check(client.changeWorkingDirectory(remoteDir)) {
                             "Could not open remote folder $remoteDir"
@@ -199,9 +201,12 @@ class FtpBackupManager @Inject constructor(
                             ?: error("The FTP server did not report its current folder")
                         val scopeKey =
                             "ftp|$username@$normalizedHost:$port|$canonicalRemoteDir"
+                        progress(34, "Checking sync lock")
                         val lease = acquireSyncLock(client)
                         try {
+                            progress(46, "Reading server changes")
                             val remote = readValidSyncSource(client)
+                            progress(60, "Merging changes")
                             val prepared = snapshotSyncEngine.prepare(
                                 remoteBytes = remote.jsonBytes,
                                 scopeKey = scopeKey,
@@ -216,6 +221,7 @@ class FtpBackupManager @Inject constructor(
                                 null
                             }
                             if (encoded != null) {
+                                progress(76, "Uploading changes")
                                 publishCanonicalSnapshot(
                                     client = client,
                                     bytes = encoded,
@@ -223,10 +229,14 @@ class FtpBackupManager @Inject constructor(
                                     hadCurrent = remote.hadCanonical,
                                     lease = lease
                                 )
+                            } else {
+                                progress(76, "Already up to date")
                             }
+                            progress(86, "Applying updates")
                             snapshotSyncEngine.commit(prepared)
 
                             if (encoded != null) {
+                                progress(92, "Saving backup copy")
                                 val encrypted = credentialsStore.backupPassphrase != null
                                 val backupName = FILENAME_PREFIX +
                                     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +

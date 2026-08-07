@@ -178,7 +178,7 @@ class SftpBackupManager @Inject constructor(
      * result while holding a cross-device lease. Timestamped backups remain recovery points; the
      * fixed canonical file is the only input devices normally synchronize against.
      */
-    suspend fun syncNow(): Result<Unit> = sessionMutex.withLock {
+    suspend fun syncNow(progress: (Int, String) -> Unit = { _, _ -> }): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
@@ -189,16 +189,21 @@ class SftpBackupManager @Inject constructor(
                 val normalizedHost = host.trim().trimEnd('.').lowercase(Locale.ROOT)
 
                 withContext(NonCancellable) {
+                    progress(12, "Connecting to server")
                     buildClient().use { ssh ->
                         ssh.newSFTPClient().use { sftp ->
+                            progress(24, "Opening remote folder")
                             ensureRemoteDir(sftp, remoteDir)
                             val canonicalRemoteDir =
                                 sftp.canonicalize(remoteDir).trimEnd('/').ifEmpty { "/" }
                             val scopeKey =
                                 "sftp|$username@$normalizedHost:$port|$canonicalRemoteDir"
+                            progress(34, "Checking sync lock")
                             val lease = acquireSyncLease(sftp, remoteDir)
                             try {
+                                progress(46, "Reading server changes")
                                 val remote = readSyncSource(sftp, remoteDir)
+                                progress(60, "Merging changes")
                                 val prepared = snapshotSyncEngine.prepare(
                                     remoteBytes = remote.jsonBytes,
                                     scopeKey = scopeKey,
@@ -212,6 +217,7 @@ class SftpBackupManager @Inject constructor(
                                     null
                                 }
                                 if (canonicalBytes != null) {
+                                    progress(76, "Uploading changes")
                                     publishCanonical(
                                         sftp = sftp,
                                         remoteDir = remoteDir,
@@ -219,9 +225,13 @@ class SftpBackupManager @Inject constructor(
                                         previousBytes = remote.encodedBytes,
                                         lease = lease
                                     )
+                                } else {
+                                    progress(76, "Already up to date")
                                 }
+                                progress(86, "Applying updates")
                                 snapshotSyncEngine.commit(prepared)
                                 if (canonicalBytes != null) {
+                                    progress(92, "Saving backup copy")
                                     writeTimestampedBackup(sftp, remoteDir, canonicalBytes)
                                     pruneOldBackups(sftp, remoteDir, keepCount)
                                 }
