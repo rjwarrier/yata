@@ -275,8 +275,9 @@ internal object SnapshotMerger {
         if (!initialJoin && base is JSONObject && local is JSONObject && remote is JSONObject) {
             val merged = JSONObject()
             val conflicts = mutableListOf<ConflictRecord>()
+            val idKey = if (collection == "settings") "name" else "id"
             allKeys(base, local, remote)
-                .filterNot { it == "id" || it == "name" }
+                .filterNot { it == idKey }
                 .sorted()
                 .forEach { key ->
                     val decision = mergeFieldValue(
@@ -298,7 +299,7 @@ internal object SnapshotMerger {
                     }
                     if (decision.value !== Missing) merged.put(key, deepCopyValue(decision.value))
                 }
-            merged.put(if (collection == "settings") "name" else "id", id)
+            merged.put(idKey, id)
             return RecordMerge(merged, conflicts.size, conflicts)
         }
 

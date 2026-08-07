@@ -119,6 +119,18 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun threeWayMerge_preservesNameFieldsOnMergedRecords() {
+        val base = snapshot(personGroups = listOf(personGroup("grp", "Team", "accentA")))
+        val local = snapshot(personGroups = listOf(personGroup("grp", "Team", "accentB")))
+        val remote = snapshot(personGroups = listOf(personGroup("grp", "Team", "accentA")))
+
+        val group = rows(SnapshotMerger.merge(base, local, remote).json, "personGroups").getValue("grp")
+
+        assertEquals("Team", group.getString("name"))
+        assertEquals("accentB", group.getString("color"))
+    }
+
+    @Test
     fun firstJoin_unionsDevicesAndUsesEstablishedServerOnCollision() {
         val local = snapshot(tasks = listOf(task("same", "local"), task("local", "only")))
         val remote = snapshot(tasks = listOf(task("same", "server"), task("remote", "only")))
@@ -271,6 +283,7 @@ class SnapshotSyncTest {
 
     private fun snapshot(
         people: List<JSONObject> = listOf(personMe()),
+        personGroups: List<JSONObject> = emptyList(),
         projects: List<JSONObject> = emptyList(),
         tags: List<JSONObject> = emptyList(),
         tasks: List<JSONObject> = emptyList(),
@@ -280,7 +293,7 @@ class SnapshotSyncTest {
         put("version", 4)
         put("syncVersion", 1)
         put("people", JSONArray(people))
-        put("personGroups", JSONArray())
+        put("personGroups", JSONArray(personGroups))
         put("projects", JSONArray(projects))
         put("lists", JSONArray())
         put("tags", JSONArray(tags))
@@ -298,6 +311,10 @@ class SnapshotSyncTest {
     private fun person(id: String) = JSONObject().apply {
         put("id", id); put("name", id); put("initials", id.take(1).uppercase())
         put("color", "accentA"); put("isMe", false); put("groupId", JSONObject.NULL)
+    }
+
+    private fun personGroup(id: String, name: String, color: String) = JSONObject().apply {
+        put("id", id); put("name", name); put("color", color)
     }
 
     private fun project(id: String) = JSONObject().apply {

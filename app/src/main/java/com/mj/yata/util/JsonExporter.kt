@@ -730,21 +730,24 @@ class JsonExporter @Inject constructor(
         val tagGroups = syncRows(root, "tagGroups")
         val tasks = syncRows(root, "tasks")
         val comments = syncRows(root, "comments")
-        syncRows(root, "settings", idKey = "name")
         portableSettings(root.getJSONArray("settings"))
 
         require(people.values.count { it.optBoolean("isMe", false) } == 1) {
             "A canonical snapshot must contain exactly one current-user person"
         }
 
-        personGroups.values.forEach { row ->
-            row.getString("name"); row.getString("color")
+        personGroups.forEach { (id, row) ->
+            row.requiredString("name", "personGroups[$id]")
+            row.requiredString("color", "personGroups[$id]")
         }
-        tagGroups.values.forEach { row ->
-            row.getString("name"); row.getString("color")
+        tagGroups.forEach { (id, row) ->
+            row.requiredString("name", "tagGroups[$id]")
+            row.requiredString("color", "tagGroups[$id]")
         }
-        people.values.forEach { row ->
-            row.getString("name"); row.getString("initials"); row.getString("color")
+        people.forEach { (id, row) ->
+            row.requiredString("name", "people[$id]")
+            row.requiredString("initials", "people[$id]")
+            row.requiredString("color", "people[$id]")
             row.nullableString("groupId")?.let { require(it in personGroups) }
             row.requireOptionalBoolean("isMe", required = true)
             row.requireOptionalBoolean("starred")
@@ -755,14 +758,17 @@ class JsonExporter @Inject constructor(
                 validatePhoto(row.getString("photoData"), "Person photo")
             }
         }
-        tags.values.forEach { row ->
-            row.getString("name"); row.getString("color")
+        tags.forEach { (id, row) ->
+            row.requiredString("name", "tags[$id]")
+            row.requiredString("color", "tags[$id]")
             row.nullableString("groupId")?.let { require(it in tagGroups) }
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("hideCompletedByDefault")
         }
-        projects.values.forEach { row ->
-            row.getString("name"); row.getString("color"); row.getString("icon")
+        projects.forEach { (id, row) ->
+            row.requiredString("name", "projects[$id]")
+            row.requiredString("color", "projects[$id]")
+            row.requiredString("icon", "projects[$id]")
             row.requireOptionalString("due")
             row.requireOptionalString("defaultReminder")
             row.requireOptionalString("description")
@@ -779,8 +785,10 @@ class JsonExporter @Inject constructor(
                 requireStringIds(ids, allowed = null, label = "project commonTagIds")
             }
         }
-        lists.values.forEach { row ->
-            row.getString("name"); row.getString("color"); row.getString("icon")
+        lists.forEach { (id, row) ->
+            row.requiredString("name", "lists[$id]")
+            row.requiredString("color", "lists[$id]")
+            row.requiredString("icon", "lists[$id]")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("excludeFromToday")
             row.requireOptionalNumber("sortOrder")
@@ -788,8 +796,10 @@ class JsonExporter @Inject constructor(
         }
 
         val allSubtaskIds = mutableSetOf<String>()
-        tasks.values.forEach { row ->
-            row.getString("title"); row.getString("section"); row.getString("priority")
+        tasks.forEach { (id, row) ->
+            row.requiredString("title", "tasks[$id]")
+            row.requiredString("section", "tasks[$id]")
+            row.requiredString("priority", "tasks[$id]")
             row.requireOptionalString("listId")
             row.requireOptionalString("projectId")
             row.requireOptionalString("due")
@@ -818,7 +828,7 @@ class JsonExporter @Inject constructor(
                     ?: error("Task recurrence is not an object")
             }
             recurrence?.let {
-                recurrence.getString("freq")
+                recurrence.requiredString("freq", "tasks[$id].recurrence")
                 require(recurrence.getInt("interval") > 0) { "Recurrence interval must be positive" }
                 recurrence.requireOptionalNumber("bymonthday")
                 recurrence.requireOptionalBoolean("basedOnCompletion")
@@ -827,10 +837,10 @@ class JsonExporter @Inject constructor(
                     for (i in 0 until days.length()) days.getString(i)
                 }
                 val ends = recurrence.getJSONObject("ends")
-                when (ends.getString("type")) {
+                when (ends.requiredString("type", "tasks[$id].recurrence.ends")) {
                     "never" -> Unit
                     "after" -> require(ends.getInt("count") > 0)
-                    "on" -> ends.getString("date")
+                    "on" -> ends.requiredString("date", "tasks[$id].recurrence.ends")
                     else -> error("Unknown recurrence end type")
                 }
             }
@@ -840,10 +850,11 @@ class JsonExporter @Inject constructor(
             val subtaskPositions = mutableMapOf<String, Int>()
             for (i in 0 until subtasks.length()) {
                 val subtask = subtasks.getJSONObject(i)
-                val id = subtask.getString("id").also { require(it.isNotBlank()) }
-                require(idsForTask.add(id) && allSubtaskIds.add(id)) { "Duplicate subtask $id" }
-                subtaskPositions[id] = i
-                subtask.getString("title"); subtask.getBoolean("done")
+                val subtaskId = subtask.requiredString("id", "tasks[$id].subtasks[$i]")
+                require(idsForTask.add(subtaskId) && allSubtaskIds.add(subtaskId)) { "Duplicate subtask $subtaskId" }
+                subtaskPositions[subtaskId] = i
+                subtask.requiredString("title", "tasks[$id].subtasks[$i]")
+                subtask.getBoolean("done")
                 subtask.requireOptionalString("parentSubtaskId")
                 subtask.requireOptionalNumber("sortOrder")
             }
@@ -856,9 +867,9 @@ class JsonExporter @Inject constructor(
                 }
             }
         }
-        comments.values.forEach { row ->
-            row.getString("body")
-            require(row.getString("taskId") in tasks) { "Comment references a missing task" }
+        comments.forEach { (id, row) ->
+            row.requiredString("body", "comments[$id]")
+            require(row.requiredString("taskId", "comments[$id]") in tasks) { "Comment references a missing task" }
             row.getLong("createdAt")
             row.requireOptionalString("authorId")
         }
@@ -873,8 +884,7 @@ class JsonExporter @Inject constructor(
         val rows = linkedMapOf<String, JSONObject>()
         for (i in 0 until array.length()) {
             val row = array.getJSONObject(i)
-            val id = row.getString(idKey)
-            require(id.isNotBlank()) { "Blank $idKey in $collection" }
+            val id = row.requiredString(idKey, "$collection[$i]", allowBlank = false)
             require(rows.put(id, row) == null) { "Duplicate $collection record $id" }
         }
         return rows
@@ -885,25 +895,48 @@ class JsonExporter @Inject constructor(
         return buildList {
             for (i in 0 until array.length()) {
                 val row = array.getJSONObject(i)
-                val name = row.getString("name").also { require(it.isNotBlank()) }
-                val type = row.getString("type")
-                val raw = row.get("value")
-                val value: Any = when (type) {
-                    "bool" -> raw as? Boolean ?: error("Setting $name is not Boolean")
-                    "int", "long", "float", "double" ->
-                        raw as? Number ?: error("Setting $name is not numeric")
-                    "string" -> raw as? String ?: error("Setting $name is not String")
-                    "stringSet" -> {
-                        val values = raw as? JSONArray ?: error("Setting $name is not a string array")
-                        buildSet {
-                            for (j in 0 until values.length()) add(values.getString(j))
-                        }
-                    }
-                    else -> error("Unknown portable setting type $type")
-                }
-                add(com.mj.yata.data.local.datastore.PortableSetting(name, type, value))
+                portableSettingOrNull(row, i)?.let(::add)
             }
         }
+    }
+
+    private fun portableSettingOrNull(
+        row: JSONObject,
+        index: Int
+    ): com.mj.yata.data.local.datastore.PortableSetting? = runCatching {
+        val label = "settings[$index]"
+        val name = row.requiredString("name", label, allowBlank = false)
+        val type = row.requiredString("type", label, allowBlank = false)
+        if (!row.has("value")) error("$label is missing value")
+        val raw = row.get("value")
+        val value: Any = when (type) {
+            "bool" -> raw as? Boolean ?: error("Setting $name is not Boolean")
+            "int", "long", "float", "double" ->
+                raw as? Number ?: error("Setting $name is not numeric")
+            "string" -> raw as? String ?: error("Setting $name is not String")
+            "stringSet" -> {
+                val values = raw as? JSONArray ?: error("Setting $name is not a string array")
+                buildSet {
+                    for (j in 0 until values.length()) add(values.getString(j))
+                }
+            }
+            else -> error("Unknown portable setting type $type")
+        }
+        com.mj.yata.data.local.datastore.PortableSetting(name, type, value)
+    }.onFailure {
+        Log.w("JsonExporter", "Ignoring malformed portable setting during backup/sync import", it)
+    }.getOrNull()
+
+    private fun JSONObject.requiredString(
+        key: String,
+        label: String,
+        allowBlank: Boolean = true
+    ): String {
+        require(has(key) && !isNull(key)) { "Missing $key in $label" }
+        val value = get(key)
+        require(value is String) { "$key in $label is not a string" }
+        if (!allowBlank) require(value.isNotBlank()) { "Blank $key in $label" }
+        return value
     }
 
     private fun requireStringIds(array: JSONArray, allowed: Set<String>?, label: String) {
@@ -998,8 +1031,7 @@ class JsonExporter @Inject constructor(
             val out = linkedMapOf<String, JSONObject>()
             for (i in 0 until array.length()) {
                 val row = array.getJSONObject(i)
-                val id = row.getString(idKey)
-                require(id.isNotBlank()) { "Blank $idKey in $collection" }
+                val id = row.requiredString(idKey, "$collection[$i]", allowBlank = false)
                 require(out.put(id, row) == null) { "Duplicate $collection record $id" }
             }
             return out
@@ -1018,13 +1050,20 @@ class JsonExporter @Inject constructor(
         val tags = rows("tags")
         val tasks = rows("tasks")
         val comments = rows("comments")
-        rows("settings", idKey = "name")
         root.optionalArray("settings")?.let { portableSettings(it) }
 
-        personGroups.values.forEach { it.getString("name"); it.getString("color") }
-        tagGroups.values.forEach { it.getString("name"); it.getString("color") }
-        people.values.forEach { row ->
-            row.getString("name"); row.getString("initials"); row.getString("color")
+        personGroups.forEach { (id, row) ->
+            row.requiredString("name", "personGroups[$id]")
+            row.requiredString("color", "personGroups[$id]")
+        }
+        tagGroups.forEach { (id, row) ->
+            row.requiredString("name", "tagGroups[$id]")
+            row.requiredString("color", "tagGroups[$id]")
+        }
+        people.forEach { (id, row) ->
+            row.requiredString("name", "people[$id]")
+            row.requiredString("initials", "people[$id]")
+            row.requiredString("color", "people[$id]")
             row.nullableString("groupId")?.let { require(it in personGroups) { "Person references missing group $it" } }
             row.requireOptionalBoolean("isMe")
             row.requireOptionalBoolean("starred")
@@ -1033,14 +1072,15 @@ class JsonExporter @Inject constructor(
             row.requireOptionalBoolean("photoIsMaterialGlyph")
             if (row.has("photoData") && !row.isNull("photoData")) validatePhoto(row.getString("photoData"), "Person photo")
         }
-        tags.values.forEach { row ->
-            row.getString("name"); row.getString("color")
+        tags.forEach { (id, row) ->
+            row.requiredString("name", "tags[$id]")
+            row.requiredString("color", "tags[$id]")
             row.nullableString("groupId")?.let { require(it in tagGroups) { "Tag references missing group $it" } }
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("hideCompletedByDefault")
         }
-        projects.values.forEach { row ->
-            row.getString("name")
+        projects.forEach { (id, row) ->
+            row.requiredString("name", "projects[$id]")
             row.requireOptionalString("color")
             row.requireOptionalString("icon")
             row.requireOptionalString("due")
@@ -1055,8 +1095,8 @@ class JsonExporter @Inject constructor(
                 if (tags.isNotEmpty()) require(id in tags) { "Project commonTagIds references missing tag $id" }
             }
         }
-        lists.values.forEach { row ->
-            row.getString("name")
+        lists.forEach { (id, row) ->
+            row.requiredString("name", "lists[$id]")
             row.requireOptionalString("color")
             row.requireOptionalString("icon")
             row.requireOptionalBoolean("starred")
@@ -1066,8 +1106,8 @@ class JsonExporter @Inject constructor(
         }
 
         val subtaskIds = mutableSetOf<String>()
-        tasks.values.forEach { row ->
-            row.getString("title")
+        tasks.forEach { (taskId, row) ->
+            row.requiredString("title", "tasks[$taskId]")
             row.requireOptionalString("section")
             row.requireOptionalString("priority")
             row.requireOptionalString("due")
@@ -1096,16 +1136,18 @@ class JsonExporter @Inject constructor(
             val recurrence = if (!row.has("recurrence") || row.isNull("recurrence")) null else row.get("recurrence") as? JSONObject
                 ?: error("Task recurrence is not an object")
             recurrence?.let {
-                require(it.getString("freq") in setOf("daily", "weekly", "monthly", "yearly")) { "Unknown recurrence frequency" }
+                require(it.requiredString("freq", "tasks[$taskId].recurrence") in setOf("daily", "weekly", "monthly", "yearly")) {
+                    "Unknown recurrence frequency"
+                }
                 require(it.getInt("interval") > 0) { "Recurrence interval must be positive" }
                 it.requireOptionalNumber("bymonthday")
                 it.requireOptionalBoolean("basedOnCompletion")
                 it.requireOptionalStringArray("byday")
                 val ends = it.getJSONObject("ends")
-                when (ends.getString("type")) {
+                when (ends.requiredString("type", "tasks[$taskId].recurrence.ends")) {
                     "never" -> Unit
                     "after" -> require(ends.getInt("count") > 0) { "Recurrence count must be positive" }
-                    "on" -> ends.getString("date")
+                    "on" -> ends.requiredString("date", "tasks[$taskId].recurrence.ends")
                     else -> error("Unknown recurrence end type")
                 }
             }
@@ -1113,19 +1155,18 @@ class JsonExporter @Inject constructor(
                 val idsForTask = mutableSetOf<String>()
                 for (i in 0 until subtasks.length()) {
                     val subtask = subtasks.getJSONObject(i)
-                    val id = subtask.getString("id")
-                    require(id.isNotBlank()) { "Blank subtask ID" }
+                    val id = subtask.requiredString("id", "tasks[$taskId].subtasks[$i]")
                     require(idsForTask.add(id) && subtaskIds.add(id)) { "Duplicate subtask $id" }
-                    subtask.getString("title")
+                    subtask.requiredString("title", "tasks[$taskId].subtasks[$i]")
                     subtask.requireOptionalBoolean("done")
                     subtask.requireOptionalString("parentSubtaskId")
                     subtask.requireOptionalNumber("sortOrder")
                 }
             }
         }
-        comments.values.forEach { row ->
-            row.getString("body")
-            val taskId = row.getString("taskId")
+        comments.forEach { (id, row) ->
+            row.requiredString("body", "comments[$id]")
+            val taskId = row.requiredString("taskId", "comments[$id]")
             require(taskId in tasks) { "Comment references missing task $taskId" }
             row.getLong("createdAt")
             row.requireOptionalString("authorId")
