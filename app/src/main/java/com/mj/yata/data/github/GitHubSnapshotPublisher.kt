@@ -31,18 +31,18 @@ internal class GitHubSnapshotPublisher(
             var attempt = 0
             while (true) {
                 attempt++
-                progress(30, "Reading repo changes")
+                progress(30, "Reading GitHub repo")
                 val head = readHead(config)
                 onHeadObserved(head.commitSha)
                 val remoteBytes = head.snapshotBlobSha?.let { sha ->
                     readBlobVerified(config, sha)
                 }?.let(decode)
 
-                progress(56, "Merging changes")
+                progress(56, "Merging GitHub changes")
                 val prepared = prepare(remoteBytes, scopeKey(config))
 
                 if (prepared.remoteNeedsPublish || head.snapshotBlobSha == null) {
-                    progress(74, "Uploading changes")
+                    progress(74, "Publishing GitHub commit")
                     val encoded = encode(prepared.canonicalBytes)
                     val blobSha = createBlobVerified(config, encoded, "uploaded snapshot")
                     val entries = mutableListOf(GitHubTreeEntry(path = SNAPSHOT_PATH, sha = blobSha))
@@ -81,7 +81,7 @@ internal class GitHubSnapshotPublisher(
                         throw exhaustedConflict()
                     }
                 } else {
-                    progress(74, "Already up to date")
+                    progress(74, "GitHub already up to date")
                     val latestHead = readHead(config)
                     if (!latestHead.sameIdentityAs(head)) {
                         if (attempt < MAX_CAS_ATTEMPTS) continue
@@ -89,7 +89,7 @@ internal class GitHubSnapshotPublisher(
                     }
                 }
 
-                progress(88, "Applying updates")
+                progress(88, "Applying GitHub updates")
                 commit(prepared)
                 return Result.success(Unit)
             }

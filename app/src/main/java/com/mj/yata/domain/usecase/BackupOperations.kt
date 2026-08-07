@@ -176,15 +176,17 @@ class BackupOperations @Inject constructor(
         runReason: String,
         block: suspend ((Int, String) -> Unit) -> Result<Unit>
     ): Result<Unit> {
-        val operationId = currentSelfHostedSyncOperationId()
+        val protocol = userPreferences.remoteBackupProtocolFlow.first()
+        val operationId = syncOperationId(protocol)
+        val labels = syncLabels(protocol)
         operationHistoryStore.recordRun(operationId, runReason)
-        beginSyncFeedback()
+        beginSyncFeedback(labels.preparing)
         return try {
             val result = block(::updateSyncProgress)
-            updateSyncProgress(96, "Finishing sync")
+            updateSyncProgress(96, labels.finishing)
             finishSyncFeedback(success = result.isSuccess)
             result.fold(
-                onSuccess = { operationHistoryStore.recordSuccess(operationId, "Self-hosted sync completed") },
+                onSuccess = { operationHistoryStore.recordSuccess(operationId, labels.completed) },
                 onFailure = { operationHistoryStore.recordFailure(operationId, it) }
             )
             result
@@ -198,11 +200,30 @@ class BackupOperations @Inject constructor(
         }
     }
 
-    private suspend fun currentSelfHostedSyncOperationId(): String =
-        when (userPreferences.remoteBackupProtocolFlow.first()) {
+    private fun syncOperationId(protocol: RemoteBackupProtocol): String =
+        when (protocol) {
             RemoteBackupProtocol.FTP -> OperationHistoryStore.SYNC_FTP_LEGACY
             RemoteBackupProtocol.GITHUB -> OperationHistoryStore.SYNC_GITHUB
             RemoteBackupProtocol.SFTP -> OperationHistoryStore.SYNC_SFTP_LEGACY
+        }
+
+    private fun syncLabels(protocol: RemoteBackupProtocol): RemoteSyncLabels =
+        when (protocol) {
+            RemoteBackupProtocol.GITHUB -> RemoteSyncLabels(
+                preparing = "Preparing GitHub sync",
+                finishing = "Finishing GitHub sync",
+                completed = "GitHub sync completed"
+            )
+            RemoteBackupProtocol.FTP -> RemoteSyncLabels(
+                preparing = "Preparing FTP sync",
+                finishing = "Finishing FTP sync",
+                completed = "FTP sync completed"
+            )
+            RemoteBackupProtocol.SFTP -> RemoteSyncLabels(
+                preparing = "Preparing SFTP sync",
+                finishing = "Finishing SFTP sync",
+                completed = "SFTP sync completed"
+            )
         }
 
     private suspend fun currentTransport(): SyncTransport =
@@ -212,14 +233,14 @@ class BackupOperations @Inject constructor(
             RemoteBackupProtocol.GITHUB -> gitHubSyncManager
         }
 
-    private fun beginSyncFeedback() {
+    private fun beginSyncFeedback(initialLabel: String) {
         synchronized(syncStateLock) {
             activeSyncs++
             if (activeSyncs == 1) {
                 activeSyncFailed = false
                 _syncInProgress.value = true
                 _syncPendingOrInProgress.value = true
-                _syncProgress.value = SyncProgressState(4, "Preparing sync")
+                _syncProgress.value = SyncProgressState(4, initialLabel)
             }
         }
     }
@@ -257,6 +278,12 @@ class BackupOperations @Inject constructor(
         Log.w("BackupOperations", "Backup to $destination failed", t)
         BackupRunResult(destination, t)
     }
+
+    private data class RemoteSyncLabels(
+        val preparing: String,
+        val finishing: String,
+        val completed: String
+    )
 
     /**
      * Backs up everything to Downloads first, and only wipes the database if that backup
@@ -331,8 +358,9 @@ class BackupOperations @Inject constructor(
             .let { transport ->
                 val lockable = transport as? LockableSyncTransport
                     ?: return Result.failure(IllegalStateException("This sync provider does not use a clearable lock"))
-                val operationId = currentSelfHostedSyncOperationId()
-                val protocol = userPreferences.remoteBackupProtocolFlow.first().name
+                val selectedProtocol = userPreferences.remoteBackupProtocolFlow.first()
+                val operationId = syncOperationId(selectedProtocol)
+                val protocol = selectedProtocol.name
                 operationHistoryStore.recordRun(operationId, "Clearing remote $protocol sync lock")
                 lockable.clearSyncLock()
                     .also { result ->
