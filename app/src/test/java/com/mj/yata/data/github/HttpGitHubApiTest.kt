@@ -146,6 +146,51 @@ class HttpGitHubApiTest {
     }
 
     @Test
+    fun getContentEncodesPathAndRefSafely() = runTest {
+        var requestedUrl = ""
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { url ->
+                requestedUrl = url.toString()
+                FakeConnection(
+                    status = 200,
+                    body = """{"path":"yata/snapshot one.json","type":"file","sha":"blob-sha"}"""
+                )
+            },
+            retryDelay = {}
+        )
+
+        val content = api.getContent("my owner", "sync repo", "yata/snapshot one.json", "feature/sync now")
+
+        assertEquals("blob-sha", content?.sha)
+        assertEquals(
+            "https://api.github.com/repos/my%20owner/sync%20repo/contents/yata/snapshot%20one.json?ref=feature%2Fsync%20now",
+            requestedUrl
+        )
+    }
+
+    @Test
+    fun getRefEncodesBranchSegmentsSafely() = runTest {
+        var requestedUrl = ""
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { url ->
+                requestedUrl = url.toString()
+                FakeConnection(status = 200, body = """{"object":{"sha":"commit-sha"}}""")
+            },
+            retryDelay = {}
+        )
+
+        val ref = api.getRef("owner", "repo", "feature/sync now")
+
+        assertEquals("commit-sha", ref.sha)
+        assertEquals(
+            "https://api.github.com/repos/owner/repo/git/ref/heads/feature/sync%20now",
+            requestedUrl
+        )
+    }
+
+    @Test
     fun listCommitsPaginatesUntilShortPage() = runTest {
         val firstPage = (1..100).joinToString(prefix = "[", postfix = "]") { commitJson("sha-$it") }
         val secondPage = (101..102).joinToString(prefix = "[", postfix = "]") { commitJson("sha-$it") }
@@ -174,6 +219,47 @@ class HttpGitHubApiTest {
         assertTrue(requestedUrls[1].contains("page=2"))
     }
 
+    @Test
+    fun listCommitsEncodesQueryValuesSafely() = runTest {
+        var requestedUrl = ""
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { url ->
+                requestedUrl = url.toString()
+                FakeConnection(status = 200, body = "[]")
+            },
+            retryDelay = {}
+        )
+
+        api.listCommits("owner", "repo", "feature/sync now", "yata/snapshot one.json")
+
+        assertEquals(
+            "https://api.github.com/repos/owner/repo/commits?sha=feature%2Fsync%20now&path=yata%2Fsnapshot%20one.json&per_page=100&page=1",
+            requestedUrl
+        )
+    }
+
+    @Test
+    fun updateRefEncodesBranchSegmentsSafely() = runTest {
+        var requestedUrl = ""
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { url ->
+                requestedUrl = url.toString()
+                FakeConnection(status = 200, body = """{"object":{"sha":"commit-sha"}}""")
+            },
+            retryDelay = {}
+        )
+
+        val ref = api.updateRef("owner", "repo", "feature/sync now", "commit-sha")
+
+        assertEquals("commit-sha", ref.sha)
+        assertEquals(
+            "https://api.github.com/repos/owner/repo/git/refs/heads/feature/sync%20now",
+            requestedUrl
+        )
+    }
+
     private fun commitJson(sha: String): String =
         """{"sha":"$sha","commit":{"message":"sync","author":{"date":"2026-01-01T00:00:00Z"}}}"""
 
@@ -186,6 +272,9 @@ class HttpGitHubApiTest {
         override fun disconnect() = Unit
         override fun usingProxy(): Boolean = false
         override fun connect() = Unit
+        override fun setRequestMethod(method: String?) {
+            this.method = method
+        }
         override fun getResponseCode(): Int = status
         override fun getInputStream(): InputStream =
             ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))

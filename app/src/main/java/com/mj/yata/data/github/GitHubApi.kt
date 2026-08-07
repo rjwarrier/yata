@@ -8,6 +8,7 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 import java.time.Instant
 import java.time.format.DateTimeParseException
 import java.util.Base64
@@ -93,7 +94,7 @@ class HttpGitHubApi(
         private set
 
     override suspend fun getRepo(owner: String, repo: String): GitHubRepo {
-        val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}")
+        val json = requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}")
         val permissions = json.optJSONObject("permissions")
         return GitHubRepo(
             owner = json.optJSONObject("owner")?.optString("login").orEmpty().ifBlank { owner },
@@ -119,7 +120,7 @@ class HttpGitHubApi(
 
     override suspend fun getRef(owner: String, repo: String, branch: String): GitHubRef =
         try {
-            GitHubRef(requestJson("GET", "/repos/${path(owner)}/${path(repo)}/git/ref/heads/${path(branch)}")
+            GitHubRef(requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/ref/heads/${pathWithSlashes(branch)}")
                 .getJSONObject("object").getString("sha"))
         } catch (e: GitHubConflictException) {
             // GitHub returns 409, not 404, when an otherwise valid repo has no commits yet.
@@ -128,18 +129,18 @@ class HttpGitHubApi(
 
     override suspend fun createRef(owner: String, repo: String, ref: String, sha: String): GitHubRef {
         val body = JSONObject().put("ref", ref).put("sha", sha)
-        return GitHubRef(requestJson("POST", "/repos/${path(owner)}/${path(repo)}/git/refs", body = body)
+        return GitHubRef(requestJson("POST", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/refs", body = body)
             .getJSONObject("object").getString("sha"))
     }
 
     override suspend fun updateRef(owner: String, repo: String, branch: String, sha: String): GitHubRef {
         val body = JSONObject().put("sha", sha).put("force", false)
-        return GitHubRef(requestJson("PATCH", "/repos/${path(owner)}/${path(repo)}/git/refs/heads/${path(branch)}", body = body)
+        return GitHubRef(requestJson("PATCH", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/refs/heads/${pathWithSlashes(branch)}", body = body)
             .getJSONObject("object").getString("sha"))
     }
 
     override suspend fun getCommit(owner: String, repo: String, sha: String): GitHubCommit {
-        val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}/git/commits/${path(sha)}")
+        val json = requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/commits/${pathSegment(sha)}")
         return GitHubCommit(
             sha = json.getString("sha"),
             treeSha = json.getJSONObject("tree").getString("sha"),
@@ -152,7 +153,7 @@ class HttpGitHubApi(
             .put("message", message)
             .put("tree", treeSha)
             .put("parents", JSONArray(parents))
-        val json = requestJson("POST", "/repos/${path(owner)}/${path(repo)}/git/commits", body = body)
+        val json = requestJson("POST", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/commits", body = body)
         return GitHubCommit(
             sha = json.getString("sha"),
             treeSha = json.getJSONObject("tree").getString("sha"),
@@ -161,7 +162,7 @@ class HttpGitHubApi(
     }
 
     override suspend fun getTree(owner: String, repo: String, treeSha: String): GitHubTree {
-        val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}/git/trees/${path(treeSha)}?recursive=1")
+        val json = requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/trees/${pathSegment(treeSha)}?recursive=1")
         return GitHubTree(
             sha = json.getString("sha"),
             truncated = json.optBoolean("truncated", false),
@@ -186,13 +187,13 @@ class HttpGitHubApi(
                     .put("sha", entry.sha)
             }))
         if (baseTreeSha != null) body.put("base_tree", baseTreeSha)
-        val json = requestJson("POST", "/repos/${path(owner)}/${path(repo)}/git/trees", body = body)
+        val json = requestJson("POST", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/trees", body = body)
         return GitHubTree(sha = json.getString("sha"), entries = emptyList())
     }
 
     override suspend fun getContent(owner: String, repo: String, path: String, ref: String): GitHubContent? =
         try {
-            val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}/contents/${path(path)}?ref=${path(ref)}")
+            val json = requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/contents/${pathWithSlashes(path)}?ref=${queryValue(ref)}")
             GitHubContent(
                 path = json.optString("path", path),
                 type = json.optString("type"),
@@ -203,7 +204,7 @@ class HttpGitHubApi(
         }
 
     override suspend fun getBlob(owner: String, repo: String, sha: String): ByteArray {
-        val json = requestJson("GET", "/repos/${path(owner)}/${path(repo)}/git/blobs/${path(sha)}")
+        val json = requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/blobs/${pathSegment(sha)}")
         return Base64.getMimeDecoder().decode(json.getString("content"))
     }
 
@@ -211,18 +212,17 @@ class HttpGitHubApi(
         val body = JSONObject()
             .put("content", Base64.getEncoder().encodeToString(bytes))
             .put("encoding", "base64")
-        return requestJson("POST", "/repos/${path(owner)}/${path(repo)}/git/blobs", body = body)
+        return requestJson("POST", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/blobs", body = body)
             .getString("sha")
     }
 
     override suspend fun listCommits(owner: String, repo: String, branch: String, path: String): List<GitHubCommitSummary> {
-        val encodedPath = path.replace("/", "%2F")
         val out = mutableListOf<GitHubCommitSummary>()
         var page = 1
         while (true) {
             val array = requestJsonArray(
                 "GET",
-                "/repos/${path(owner)}/${path(repo)}/commits?sha=${path(branch)}&path=$encodedPath&per_page=$COMMITS_PAGE_SIZE&page=$page"
+                "/repos/${pathSegment(owner)}/${pathSegment(repo)}/commits?sha=${queryValue(branch)}&path=${queryValue(path)}&per_page=$COMMITS_PAGE_SIZE&page=$page"
             )
             if (array.length() == 0) break
             out += array.objects().map { json ->
@@ -331,8 +331,17 @@ class HttpGitHubApi(
         return delta.coerceAtLeast(0L).takeIf { it <= MAX_RATE_LIMIT_RETRY_DELAY_MS }
     }
 
-    private fun path(value: String): String =
-        value.trim().replace(" ", "%20")
+    private fun pathSegment(value: String): String =
+        urlEncode(value.trim())
+
+    private fun pathWithSlashes(value: String): String =
+        value.trim().split("/").joinToString("/") { pathSegment(it) }
+
+    private fun queryValue(value: String): String =
+        urlEncode(value.trim())
+
+    private fun urlEncode(value: String): String =
+        URLEncoder.encode(value, Charsets.UTF_8.name()).replace("+", "%20")
 
     private fun HttpURLConnection.tokenExpirationEpochMillis(): Long? =
         getHeaderField("GitHub-Authentication-Token-Expiration")
