@@ -1,6 +1,7 @@
 package com.mj.yata.data.github
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -69,7 +70,9 @@ class GitHubTransportException(message: String = "GitHub request failed") : GitH
 
 class HttpGitHubApi(
     private val tokenProvider: () -> String?,
-    private val apiBaseProvider: () -> String = { "https://api.github.com" }
+    private val apiBaseProvider: () -> String = { "https://api.github.com" },
+    private val connectionFactory: (URL) -> HttpURLConnection = { it.openConnection() as HttpURLConnection },
+    private val retryDelay: suspend (Long) -> Unit = { delay(it) }
 ) : GitHubApi {
 
     override suspend fun getRepo(owner: String, repo: String): GitHubRepo {
@@ -195,7 +198,21 @@ class HttpGitHubApi(
     private suspend fun requestJsonArray(method: String, endpoint: String): JSONArray =
         JSONArray(String(requestBytes(method, endpoint), Charsets.UTF_8))
 
-    private suspend fun requestBytes(method: String, endpoint: String, body: JSONObject? = null): ByteArray =
+    private suspend fun requestBytes(method: String, endpoint: String, body: JSONObject? = null): ByteArray {
+        var attempt = 0
+        while (true) {
+            try {
+                return requestBytesOnce(method, endpoint, body)
+            } catch (e: GitHubException) {
+                val nextAttempt = attempt + 1
+                if (nextAttempt >= MAX_HTTP_ATTEMPTS || !e.isRetryable()) throw e
+                retryDelay(e.retryDelayMillis(attempt))
+                attempt = nextAttempt
+            }
+        }
+    }
+
+    private suspend fun requestBytesOnce(method: String, endpoint: String, body: JSONObject? = null): ByteArray =
         withContext(Dispatchers.IO) {
             val connection = openConnection(endpoint)
             try {
@@ -225,7 +242,7 @@ class HttpGitHubApi(
 
     private fun openConnection(endpoint: String): HttpURLConnection {
         val base = apiBaseProvider().trimEnd('/')
-        val connection = URL(base + endpoint).openConnection() as HttpURLConnection
+        val connection = connectionFactory(URL(base + endpoint))
         connection.connectTimeout = CONNECT_TIMEOUT_MS
         connection.readTimeout = READ_TIMEOUT_MS
         connection.setRequestProperty("Accept", "application/vnd.github+json")
@@ -247,6 +264,23 @@ class HttpGitHubApi(
             status >= 500 -> GitHubTransportException("GitHub is temporarily unavailable")
             else -> GitHubTransportException("GitHub request was rejected")
         }
+
+    private fun GitHubException.isRetryable(): Boolean =
+        this is GitHubTransportException ||
+            (this is GitHubRateLimitException && retryAfterMillis() != null)
+
+    private fun GitHubException.retryDelayMillis(attempt: Int): Long =
+        when (this) {
+            is GitHubRateLimitException -> retryAfterMillis()
+                ?: BASE_RETRY_DELAY_MS
+            else -> BASE_RETRY_DELAY_MS * (1L shl attempt).coerceAtMost(4L)
+        }
+
+    private fun GitHubRateLimitException.retryAfterMillis(): Long? {
+        val resetAt = resetAtEpochSeconds ?: return null
+        val delta = resetAt * 1_000L - System.currentTimeMillis()
+        return delta.coerceAtLeast(0L).takeIf { it <= MAX_RATE_LIMIT_RETRY_DELAY_MS }
+    }
 
     private fun path(value: String): String =
         value.trim().replace(" ", "%20")
@@ -275,5 +309,8 @@ class HttpGitHubApi(
     private companion object {
         const val CONNECT_TIMEOUT_MS = 15_000
         const val READ_TIMEOUT_MS = 60_000
+        const val MAX_HTTP_ATTEMPTS = 3
+        const val BASE_RETRY_DELAY_MS = 500L
+        const val MAX_RATE_LIMIT_RETRY_DELAY_MS = 5_000L
     }
 }

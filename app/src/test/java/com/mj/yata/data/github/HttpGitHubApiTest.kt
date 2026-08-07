@@ -1,0 +1,103 @@
+package com.mj.yata.data.github
+
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+
+class HttpGitHubApiTest {
+
+    @Test
+    fun retriesTransientServerFailure() = runTest {
+        val connections = ArrayDeque(
+            listOf(
+                FakeConnection(status = 503, body = """{"message":"try later"}"""),
+                FakeConnection(status = 200, body = """{"login":"octo"}""")
+            )
+        )
+        val delays = mutableListOf<Long>()
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { connections.removeFirst() },
+            retryDelay = { delays += it }
+        )
+
+        val user = api.getUser()
+
+        assertEquals("octo", user.login)
+        assertEquals(listOf(500L), delays)
+        assertEquals(0, connections.size)
+    }
+
+    @Test
+    fun doesNotRetryAuthFailure() = runTest {
+        var calls = 0
+        val api = HttpGitHubApi(
+            tokenProvider = { "bad-token" },
+            connectionFactory = {
+                calls++
+                FakeConnection(status = 401, body = """{"message":"bad credentials"}""")
+            },
+            retryDelay = {}
+        )
+
+        val result = runCatching { api.getUser() }
+
+        assertTrue(result.exceptionOrNull() is GitHubAuthException)
+        assertEquals(1, calls)
+    }
+
+    @Test
+    fun retriesShortRateLimitDelay() = runTest {
+        val resetNow = System.currentTimeMillis() / 1_000L
+        val connections = ArrayDeque(
+            listOf(
+                FakeConnection(
+                    status = 403,
+                    body = """{"message":"rate limit"}""",
+                    headers = mapOf(
+                        "x-ratelimit-remaining" to "0",
+                        "x-ratelimit-reset" to resetNow.toString()
+                    )
+                ),
+                FakeConnection(status = 200, body = """{"login":"octo"}""")
+            )
+        )
+        val delays = mutableListOf<Long>()
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { connections.removeFirst() },
+            retryDelay = { delays += it }
+        )
+
+        val user = api.getUser()
+
+        assertEquals("octo", user.login)
+        assertEquals(1, delays.size)
+        assertEquals(0, connections.size)
+    }
+
+    private class FakeConnection(
+        url: URL = URL("https://api.github.test/user"),
+        private val status: Int,
+        private val body: String,
+        private val headers: Map<String, String> = emptyMap()
+    ) : HttpURLConnection(url) {
+        override fun disconnect() = Unit
+        override fun usingProxy(): Boolean = false
+        override fun connect() = Unit
+        override fun getResponseCode(): Int = status
+        override fun getInputStream(): InputStream =
+            ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
+        override fun getErrorStream(): InputStream =
+            ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
+        override fun getOutputStream(): OutputStream = ByteArrayOutputStream()
+        override fun getHeaderField(name: String?): String? = headers[name]
+    }
+}
