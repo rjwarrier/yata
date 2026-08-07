@@ -166,17 +166,10 @@ internal object SnapshotMerger {
             for (i in 0 until settings.length()) {
                 val row = settings.optJSONObject(i)
                     ?: throw IllegalArgumentException("Setting row $i is not an object")
-                if (!isDeviceLocalSetting(row.optString("name"))) {
-                    val copy = deepCopy(row)
-                    if (copy.optString("type") == "stringSet") {
-                        copy.optJSONArray("value")?.let { values ->
-                            val sorted = (0 until values.length())
-                                .map { values.getString(it) }
-                                .sorted()
-                            copy.put("value", JSONArray(sorted))
-                        }
+                normalizedPortableSettingOrNull(row)?.let { copy ->
+                    if (!isDeviceLocalSetting(copy.getString("name"))) {
+                        portable.put(copy)
                     }
-                    portable.put(copy)
                 }
             }
             normalized.put("settings", portable)
@@ -238,6 +231,29 @@ internal object SnapshotMerger {
             name.startsWith("sftp_") ||
             name.startsWith("cloud_backup_") ||
             name.startsWith("local_backup_")
+
+    private fun normalizedPortableSettingOrNull(row: JSONObject): JSONObject? {
+        val name = row.optString("name").takeIf { it.isNotBlank() } ?: return null
+        val type = row.optString("type").takeIf { it.isNotBlank() } ?: return null
+        if (!row.has("value")) return null
+        val value = row.get("value")
+        val normalizedValue = when (type) {
+            "bool" -> (value as? Boolean) ?: return null
+            "int",
+            "long",
+            "float" -> (value as? Number) ?: return null
+            "string" -> (value as? String) ?: return null
+            "stringSet" -> {
+                val values = value as? JSONArray ?: return null
+                JSONArray((0 until values.length()).map { values.getString(it) }.sorted())
+            }
+            else -> return null
+        }
+        return JSONObject()
+            .put("name", name)
+            .put("type", type)
+            .put("value", normalizedValue)
+    }
 
     private data class Decision(val value: Any, val conflict: Boolean)
 

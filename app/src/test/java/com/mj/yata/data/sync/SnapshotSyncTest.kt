@@ -176,6 +176,23 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun normalization_dropsMalformedPortableSettings() {
+        val raw = snapshot(
+            settings = listOf(
+                JSONObject().put("type", "string").put("value", "missing-name"),
+                JSONObject().put("name", "missing_type").put("value", "x"),
+                JSONObject().put("name", "bad_set").put("type", "stringSet").put("value", "not-array"),
+                setting("theme_mode", "string", "DARK")
+            )
+        )
+
+        val settings = rows(SnapshotMerger.normalizeForSync(raw), "settings", idKey = "name")
+
+        assertEquals(setOf("theme_mode"), settings.keys)
+        assertEquals("DARK", settings.getValue("theme_mode").getString("value"))
+    }
+
+    @Test
     fun equivalent_ignoresObjectPropertyOrder() {
         val left = JSONObject().put("a", 1).put("b", JSONObject().put("x", true).put("y", 2))
         val right = JSONObject().put("b", JSONObject().put("y", 2).put("x", true)).put("a", 1)
