@@ -179,14 +179,15 @@ private val helpSections = listOf(
         icon = Icons.Default.Widgets
     ),
     HelpSection(
-        title = "Backup & Export",
-        description = "Protect or move your data when you need to.",
+        title = "Backup & Sync",
+        description = "Keep your data recoverable, portable, and in sync across devices.",
         bullets = listOf(
-            "Self-hosted sync keeps encrypted copies on your own server when enabled.",
-            "File backup and restore use JSON for the full YATA dataset.",
-            "Calendar export creates an .ics file, and Markdown export is useful for sharing.",
-            "Choose how many server backups to keep (2–15) with the slider in Settings > Self-hosted sync.",
-            "Pick the backup schedule — right after any change in a task, or every 30, 60, or 120 minutes."
+            "Remote sync can use GitHub, SFTP, FTPS, or FTP; GitHub stores one snapshot in your private repo and uses commit history for restore points.",
+            "For GitHub, use a fine-grained personal access token for the sync repo with Contents set to Read and write; the token field's info button shows the steps.",
+            "Set a backup encryption passphrase if you want remote snapshots encrypted; encrypted files start with YATAENC1 and need the same passphrase to restore.",
+            "YATA merges local and remote changes before publishing, retries GitHub ref conflicts, and creates a local recovery backup before restore.",
+            "SFTP/FTP keep rotated server backup files and may use a clearable sync lock; GitHub has no lock because branch updates are fast-forward checked.",
+            "File backup/restore uses full JSON; Calendar and Markdown exports are for sharing, and the backup schedule can run after task changes or every 30, 60, or 120 minutes."
         ),
         icon = Icons.Default.Backup
     ),
