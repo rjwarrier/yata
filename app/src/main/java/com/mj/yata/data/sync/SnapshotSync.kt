@@ -263,7 +263,8 @@ internal object SnapshotMerger {
                 .filterNot { it == "id" || it == "name" }
                 .sorted()
                 .forEach { key ->
-                    val decision = mergeValue(
+                    val decision = mergeFieldValue(
+                        key = key,
                         base = valueAt(base, key),
                         local = valueAt(local, key),
                         remote = valueAt(remote, key),
@@ -306,6 +307,54 @@ internal object SnapshotMerger {
         )
     }
 
+    private fun mergeFieldValue(
+        key: String,
+        base: Any,
+        local: Any,
+        remote: Any,
+        initialJoin: Boolean
+    ): Decision {
+        if (!initialJoin && key in setLikeIdArrayFields) {
+            mergeSetLikeIdArray(base, local, remote)?.let { return it }
+        }
+        if (!initialJoin && key == "assigneeIds") {
+            mergeAssigneeIds(base, local, remote)?.let { return it }
+        }
+        return mergeValue(base, local, remote, initialJoin)
+    }
+
+    private fun mergeSetLikeIdArray(base: Any, local: Any, remote: Any): Decision? {
+        if (same(local, remote)) return Decision(local, conflict = false)
+        if (same(local, base) || same(remote, base)) return null
+        val baseIds = (base as? JSONArray)?.stringListOrNull() ?: return null
+        val localIds = (local as? JSONArray)?.stringListOrNull() ?: return null
+        val remoteIds = (remote as? JSONArray)?.stringListOrNull() ?: return null
+        val baseSet = baseIds.toSet()
+        val localSet = localIds.toSet()
+        val remoteSet = remoteIds.toSet()
+        val removed = (baseSet - localSet) + (baseSet - remoteSet)
+        val added = (localSet - baseSet) + (remoteSet - baseSet)
+        return Decision(JSONArray(((baseSet - removed) + added).sorted()), conflict = false)
+    }
+
+    private fun mergeAssigneeIds(base: Any, local: Any, remote: Any): Decision? {
+        if (same(local, remote)) return Decision(local, conflict = false)
+        if (same(local, base) || same(remote, base)) return null
+        val baseIds = (base as? JSONArray)?.stringListOrNull() ?: return null
+        val localIds = (local as? JSONArray)?.stringListOrNull() ?: return null
+        val remoteIds = (remote as? JSONArray)?.stringListOrNull() ?: return null
+        val owner = baseIds.firstOrNull()
+        if (owner == null || localIds.firstOrNull() != owner || remoteIds.firstOrNull() != owner) {
+            return null
+        }
+        val baseCollaborators = baseIds.drop(1).toSet()
+        val localCollaborators = localIds.drop(1).toSet()
+        val remoteCollaborators = remoteIds.drop(1).toSet()
+        val removed = (baseCollaborators - localCollaborators) + (baseCollaborators - remoteCollaborators)
+        val added = (localCollaborators - baseCollaborators) + (remoteCollaborators - baseCollaborators)
+        return Decision(JSONArray(listOf(owner) + ((baseCollaborators - removed) + added).sorted()), conflict = false)
+    }
+
     private fun mergeValue(base: Any, local: Any, remote: Any, initialJoin: Boolean): Decision {
         if (same(local, remote)) return Decision(local, conflict = false)
         if (initialJoin) {
@@ -326,6 +375,16 @@ internal object SnapshotMerger {
 
     private fun valueAt(root: JSONObject?, key: String): Any =
         if (root != null && root.has(key)) root.get(key) else Missing
+
+    private val setLikeIdArrayFields = setOf("tagIds", "commonTagIds")
+
+    private fun JSONArray.stringListOrNull(): List<String>? {
+        val out = mutableListOf<String>()
+        for (i in 0 until length()) {
+            out += (get(i) as? String) ?: return null
+        }
+        return out
+    }
 
     private fun rowsById(array: JSONArray?, idKey: String): Map<String, JSONObject> {
         if (array == null) return emptyMap()

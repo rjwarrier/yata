@@ -73,6 +73,34 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun concurrentEdit_mergesIndependentTaskTagChangesAsSet() {
+        val tags = listOf(tag("base"), tag("local"), tag("remote"))
+        val base = snapshot(tags = tags, tasks = listOf(task("t1", "tagged").put("tagIds", JSONArray().put("base"))))
+        val local = snapshot(tags = tags, tasks = listOf(task("t1", "tagged").put("tagIds", JSONArray().put("base").put("local"))))
+        val remote = snapshot(tags = tags, tasks = listOf(task("t1", "tagged").put("tagIds", JSONArray().put("base").put("remote"))))
+
+        val result = SnapshotMerger.merge(base, local, remote)
+        val tagIds = rows(result.json, "tasks").getValue("t1").getJSONArray("tagIds")
+
+        assertEquals(listOf("base", "local", "remote"), (0 until tagIds.length()).map(tagIds::getString))
+        assertEquals(0, result.conflicts)
+    }
+
+    @Test
+    fun concurrentEdit_mergesCollaboratorChangesWithoutChangingOwner() {
+        val people = listOf(personMe(), person("local"), person("remote"))
+        val base = snapshot(people = people, tasks = listOf(task("t1", "assigned").put("assigneeIds", JSONArray().put("me"))))
+        val local = snapshot(people = people, tasks = listOf(task("t1", "assigned").put("assigneeIds", JSONArray().put("me").put("local"))))
+        val remote = snapshot(people = people, tasks = listOf(task("t1", "assigned").put("assigneeIds", JSONArray().put("me").put("remote"))))
+
+        val result = SnapshotMerger.merge(base, local, remote)
+        val assigneeIds = rows(result.json, "tasks").getValue("t1").getJSONArray("assigneeIds")
+
+        assertEquals(listOf("me", "local", "remote"), (0 until assigneeIds.length()).map(assigneeIds::getString))
+        assertEquals(0, result.conflicts)
+    }
+
+    @Test
     fun concurrentEdit_recordsLosingLocalConflictData() {
         val base = snapshot(tasks = listOf(task("t1", "base")))
         val local = snapshot(tasks = listOf(task("t1", "local")))
@@ -225,18 +253,20 @@ class SnapshotSyncTest {
     }
 
     private fun snapshot(
+        people: List<JSONObject> = listOf(personMe()),
         projects: List<JSONObject> = emptyList(),
+        tags: List<JSONObject> = emptyList(),
         tasks: List<JSONObject> = emptyList(),
         comments: List<JSONObject> = emptyList(),
         settings: List<JSONObject> = emptyList()
     ): JSONObject = JSONObject().apply {
         put("version", 4)
         put("syncVersion", 1)
-        put("people", JSONArray().put(personMe()))
+        put("people", JSONArray(people))
         put("personGroups", JSONArray())
         put("projects", JSONArray(projects))
         put("lists", JSONArray())
-        put("tags", JSONArray())
+        put("tags", JSONArray(tags))
         put("tagGroups", JSONArray())
         put("tasks", JSONArray(tasks))
         put("comments", JSONArray(comments))
@@ -248,9 +278,18 @@ class SnapshotSyncTest {
         put("color", "accentC"); put("isMe", true); put("groupId", JSONObject.NULL)
     }
 
+    private fun person(id: String) = JSONObject().apply {
+        put("id", id); put("name", id); put("initials", id.take(1).uppercase())
+        put("color", "accentA"); put("isMe", false); put("groupId", JSONObject.NULL)
+    }
+
     private fun project(id: String) = JSONObject().apply {
         put("id", id); put("name", id); put("color", "accentA"); put("icon", "work")
         put("commonTagIds", JSONArray())
+    }
+
+    private fun tag(id: String) = JSONObject().apply {
+        put("id", id); put("name", id); put("color", "accentB"); put("groupId", JSONObject.NULL)
     }
 
     private fun task(
