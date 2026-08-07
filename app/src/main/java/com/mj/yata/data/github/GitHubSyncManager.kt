@@ -45,6 +45,9 @@ class GitHubSyncManager @Inject constructor(
                     val api = api(config)
                     syncResult = publisher(api, options).sync(config, progress)
                     userPreferences.setGitHubTokenExpiresAt(api.tokenExpiresAtEpochMillis)
+                    syncResult = syncResult?.map { report ->
+                        report.copy(details = report.details + githubSyncDetails(api.tokenExpiresAtEpochMillis))
+                    }
                     if (syncResult?.isSuccess == true) {
                         userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
                     }
@@ -184,6 +187,27 @@ class GitHubSyncManager @Inject constructor(
             tokenProvider = { credentialsStore.githubToken },
             apiBaseProvider = { config.apiBase }
         )
+
+    private suspend fun githubSyncDetails(tokenExpiresAt: Long?): List<String> =
+        buildList {
+            userPreferences.githubLastHeadShaFlow.first()
+                ?.takeIf { it.isNotBlank() }
+                ?.let { add("head ${it.take(12)}") }
+            tokenExpiresAt?.let { add(githubTokenExpiryDetail(it)) }
+        }
+
+    private fun githubTokenExpiryDetail(epochMillis: Long): String {
+        val expiresAt = java.time.Instant.ofEpochMilli(epochMillis)
+        val days = java.time.Duration.between(java.time.Instant.now(), expiresAt).toDays()
+        return when {
+            days < 0 -> "token expired ${expiresAt}"
+            days <= 14 -> "token expires in ${days.coerceAtLeast(0).formatDays()}"
+            else -> "token expires ${expiresAt}"
+        }
+    }
+
+    private fun Long.formatDays(): String =
+        if (this == 1L) "1 day" else "$this days"
 
     private suspend fun config(): GitHubSyncConfig {
         val owner = userPreferences.githubOwnerFlow.first().trim()

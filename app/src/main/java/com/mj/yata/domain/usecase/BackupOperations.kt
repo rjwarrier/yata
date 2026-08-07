@@ -193,7 +193,7 @@ class BackupOperations @Inject constructor(
             updateSyncProgress(96, labels.finishing)
             finishSyncFeedback(success = result.isSuccess)
             result.fold(
-                onSuccess = { report -> operationHistoryStore.recordSuccess(operationId, labels.completed.withConflictCount(report)) },
+                onSuccess = { report -> operationHistoryStore.recordSuccess(operationId, labels.completed.withSyncDetails(report)) },
                 onFailure = { operationHistoryStore.recordFailure(operationId, it) }
             )
             result
@@ -292,12 +292,15 @@ class BackupOperations @Inject constructor(
         val completed: String
     )
 
-    private fun String.withConflictCount(report: SyncRunReport): String =
-        if (report.conflictsResolved > 0) {
-            "$this; ${report.conflictsResolved} conflict(s) resolved"
-        } else {
-            this
+    private fun String.withSyncDetails(report: SyncRunReport): String {
+        val details = buildList {
+            if (report.conflictsResolved > 0) {
+                add("${report.conflictsResolved} conflict(s) resolved")
+            }
+            addAll(report.details)
         }
+        return if (details.isEmpty()) this else "$this; ${details.joinToString("; ")}"
+    }
 
     /**
      * Backs up everything to Downloads first, and only wipes the database if that backup

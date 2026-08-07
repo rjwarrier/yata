@@ -16,7 +16,8 @@ interface SyncTransport {
 }
 
 data class SyncRunReport(
-    val conflictsResolved: Int = 0
+    val conflictsResolved: Int = 0,
+    val details: List<String> = emptyList()
 )
 
 data class SyncRunOptions(
