@@ -189,6 +189,28 @@ private fun Task.matchesSearchText(
     return terms.all { haystack.contains(it.lowercase()) }
 }
 
+@Composable
+private fun CompactSearchFilterChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1
+            )
+        },
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        modifier = modifier.heightIn(min = 32.dp)
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen(
@@ -647,76 +669,79 @@ private fun SearchResultsList(
         item {
             Surface(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
                 tonalElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Surface(
                             color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Tune,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier
-                                    .padding(10.dp)
-                                    .size(20.dp)
+                                    .padding(8.dp)
+                                    .size(16.dp)
                             )
                         }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.search_filters),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = if (activeFilterCount == 0) {
-                                    stringResource(R.string.search_filter_hint)
-                                } else {
-                                    pluralStringResource(R.plurals.search_active_filters_count, activeFilterCount, activeFilterCount)
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.search_filters),
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = if (activeFilterCount == 0) {
+                                stringResource(R.string.search_filter_hint_compact)
+                            } else {
+                                pluralStringResource(R.plurals.search_active_filters_count, activeFilterCount, activeFilterCount)
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         if (canSaveCurrentSmartFilterSet) {
-                            FilledTonalIconButton(onClick = onSaveActiveFilters) {
+                            FilledTonalIconButton(
+                                onClick = onSaveActiveFilters,
+                                modifier = Modifier.size(36.dp)
+                            ) {
                                 Icon(
                                     Icons.Default.BookmarkAdd,
-                                    contentDescription = stringResource(R.string.action_save)
+                                    contentDescription = stringResource(R.string.action_save),
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     }
 
                     androidx.compose.foundation.layout.FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         SmartFilter.entries.forEach { filter ->
-                            FilterChip(
+                            CompactSearchFilterChip(
                                 selected = activeFilters.contains(filter),
                                 onClick = { onToggleFilter(filter) },
-                                label = { Text(stringResource(filter.labelRes)) }
+                                label = stringResource(filter.labelRes)
                             )
                         }
-                        FilterChip(
+                        CompactSearchFilterChip(
                             selected = includeArchived,
                             onClick = onToggleIncludeArchived,
-                            label = { Text(stringResource(R.string.search_filter_archived)) }
+                            label = stringResource(R.string.search_filter_archived)
                         )
-                        FilterChip(
+                        CompactSearchFilterChip(
                             selected = includeTrash,
                             onClick = onToggleIncludeTrash,
-                            label = { Text(stringResource(R.string.search_filter_trash)) }
+                            label = stringResource(R.string.search_filter_trash)
                         )
                     }
                 }

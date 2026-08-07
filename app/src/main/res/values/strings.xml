@@ -138,6 +138,7 @@
     <string name="search_clear">Clear search</string>
     <string name="search_filters">Filters</string>
     <string name="search_filter_hint">Tap a chip to build a focused view.</string>
+    <string name="search_filter_hint_compact">Tap to filter</string>
     <string name="search_saved_views">Saved views</string>
     <string name="search_filter_focus">Focus mode</string>
     <string name="search_filter_morning_review">Morning review</string>
