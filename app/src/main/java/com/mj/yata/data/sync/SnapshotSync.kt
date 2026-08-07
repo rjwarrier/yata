@@ -611,7 +611,7 @@ class SnapshotSyncEngine @Inject constructor(
      * while the network transfer was in flight, merge that edit onto the canonical snapshot and
      * leave it pending for the next sync instead of wiping it.
      */
-    internal suspend fun commit(prepared: PreparedSnapshotSync) = withContext(Dispatchers.IO) {
+    internal suspend fun commit(prepared: PreparedSnapshotSync): Int = withContext(Dispatchers.IO) {
         val current = normalized(jsonExporter.exportToBytes())
         val inFlightMerge = if (SnapshotMerger.equivalent(current, prepared.localAtStart)) {
             null
@@ -647,6 +647,7 @@ class SnapshotSyncEngine @Inject constructor(
         if (totalConflicts > 0) {
             Log.i(TAG, "Resolved $totalConflicts concurrent sync conflict(s) using the server copy")
         }
+        totalConflicts
     }
 
     /** Lets transports reject a damaged head and continue to an older recovery candidate. */

@@ -8,6 +8,7 @@ import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.domain.model.BackupSummary
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.SyncTransport
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
@@ -31,10 +32,10 @@ class GitHubSyncManager @Inject constructor(
 
     private val sessionMutex = Mutex()
 
-    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<Unit> = sessionMutex.withLock {
+    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                var syncResult: Result<Unit>? = null
+                var syncResult: Result<SyncRunReport>? = null
                 withContext(NonCancellable) {
                     val config = config()
                     val api = api(config)
@@ -46,7 +47,7 @@ class GitHubSyncManager @Inject constructor(
                 syncResult ?: Result.failure(IllegalStateException("GitHub sync did not complete"))
             } catch (e: Exception) {
                 Log.w(TAG, "syncNow failed", e)
-                Result.failure<Unit>(e)
+                Result.failure<SyncRunReport>(e)
             }
         }
     }

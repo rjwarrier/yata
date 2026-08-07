@@ -20,6 +20,7 @@ import com.mj.yata.domain.model.SyncProgressState
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.sync.LockableSyncTransport
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.SyncTransport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -169,13 +170,13 @@ class BackupOperations @Inject constructor(
         ) return null
         return syncSelfHostedWithProgress("Syncing after app launch") { progress ->
             currentTransport().syncNow(progress)
-        }
+        }.map { }
     }
 
     private suspend fun syncSelfHostedWithProgress(
         runReason: String,
-        block: suspend ((Int, String) -> Unit) -> Result<Unit>
-    ): Result<Unit> {
+        block: suspend ((Int, String) -> Unit) -> Result<SyncRunReport>
+    ): Result<SyncRunReport> {
         val protocol = userPreferences.remoteBackupProtocolFlow.first()
         val operationId = syncOperationId(protocol)
         val labels = syncLabels(protocol)
@@ -186,7 +187,7 @@ class BackupOperations @Inject constructor(
             updateSyncProgress(96, labels.finishing)
             finishSyncFeedback(success = result.isSuccess)
             result.fold(
-                onSuccess = { operationHistoryStore.recordSuccess(operationId, labels.completed) },
+                onSuccess = { report -> operationHistoryStore.recordSuccess(operationId, labels.completed.withConflictCount(report)) },
                 onFailure = { operationHistoryStore.recordFailure(operationId, it) }
             )
             result
@@ -267,9 +268,9 @@ class BackupOperations @Inject constructor(
     }
 
     /** Catches so a thrown failure is reported like a returned one and the run continues. */
-    private suspend fun attempt(
+    private suspend fun <T> attempt(
         destination: BackupDestination,
-        block: suspend () -> Result<Unit>
+        block: suspend () -> Result<T>
     ): BackupRunResult = try {
         BackupRunResult(destination, block().exceptionOrNull())
     } catch (e: CancellationException) {
@@ -284,6 +285,13 @@ class BackupOperations @Inject constructor(
         val finishing: String,
         val completed: String
     )
+
+    private fun String.withConflictCount(report: SyncRunReport): String =
+        if (report.conflictsResolved > 0) {
+            "$this; ${report.conflictsResolved} conflict(s) resolved"
+        } else {
+            this
+        }
 
     /**
      * Backs up everything to Downloads first, and only wipes the database if that backup
@@ -333,7 +341,7 @@ class BackupOperations @Inject constructor(
     suspend fun sftpBackupNow(): Result<Unit> =
         syncSelfHostedWithProgress("Manual SFTP sync started") { progress ->
             sftpBackupManager.syncNow(progress)
-        }
+        }.map { }
 
     suspend fun listSftpBackups(): Result<List<String>> = sftpBackupManager.listBackups()
 
@@ -374,7 +382,7 @@ class BackupOperations @Inject constructor(
     suspend fun ftpBackupNow(): Result<Unit> =
         syncSelfHostedWithProgress("Manual FTP sync started") { progress ->
             ftpBackupManager.syncNow(progress)
-        }
+        }.map { }
 
     suspend fun listFtpBackups(): Result<List<String>> = ftpBackupManager.listBackups()
 

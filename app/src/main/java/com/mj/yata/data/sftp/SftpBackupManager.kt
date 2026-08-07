@@ -10,6 +10,7 @@ import com.mj.yata.domain.model.SyncLockBusyException
 import com.mj.yata.domain.model.SyncLockInfo
 import com.mj.yata.domain.sync.LockableSyncTransport
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.restorePointFromHistoryName
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
@@ -181,9 +182,10 @@ class SftpBackupManager @Inject constructor(
      * result while holding a cross-device lease. Timestamped backups remain recovery points; the
      * fixed canonical file is the only input devices normally synchronize against.
      */
-    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<Unit> = sessionMutex.withLock {
+    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
+                var conflictsResolved = 0
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
                 val keepCount = userPreferences.sftpKeepCountFlow.first()
                 val host = userPreferences.sftpHostFlow.first()
@@ -232,7 +234,7 @@ class SftpBackupManager @Inject constructor(
                                     progress(76, "Already up to date")
                                 }
                                 progress(86, "Applying updates")
-                                snapshotSyncEngine.commit(prepared)
+                                conflictsResolved = snapshotSyncEngine.commit(prepared)
                                 if (canonicalBytes != null) {
                                     progress(92, "Saving backup copy")
                                     writeTimestampedBackup(sftp, remoteDir, canonicalBytes)
@@ -246,7 +248,7 @@ class SftpBackupManager @Inject constructor(
                 }
 
                 userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
-                Result.success(Unit)
+                Result.success(SyncRunReport(conflictsResolved = conflictsResolved))
             } catch (e: Exception) {
                 Log.w(TAG, "syncNow failed", e)
                 Result.failure(e)

@@ -13,6 +13,7 @@ import com.mj.yata.domain.model.SyncLockBusyException
 import com.mj.yata.domain.model.SyncLockInfo
 import com.mj.yata.domain.sync.LockableSyncTransport
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.restorePointFromHistoryName
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
@@ -178,9 +179,10 @@ class FtpBackupManager @Inject constructor(
     }
 
     /** Full two-way sync using only generic FTP/FTPS file operations. */
-    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<Unit> = sessionMutex.withLock {
+    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
+                var conflictsResolved = 0
                 val remoteDir = userPreferences.sftpRemoteDirFlow.first()
                 val keepCount = userPreferences.sftpKeepCountFlow.first()
                 val host = userPreferences.sftpHostFlow.first()
@@ -236,7 +238,7 @@ class FtpBackupManager @Inject constructor(
                                 progress(76, "Already up to date")
                             }
                             progress(86, "Applying updates")
-                            snapshotSyncEngine.commit(prepared)
+                            conflictsResolved = snapshotSyncEngine.commit(prepared)
 
                             if (encoded != null) {
                                 progress(92, "Saving backup copy")
@@ -256,7 +258,7 @@ class FtpBackupManager @Inject constructor(
                 }
 
                 userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
-                Result.success(Unit)
+                Result.success(SyncRunReport(conflictsResolved = conflictsResolved))
             } catch (e: Exception) {
                 Log.w(TAG, "syncNow failed", e)
                 Result.failure(e)

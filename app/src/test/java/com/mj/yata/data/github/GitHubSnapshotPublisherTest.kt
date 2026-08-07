@@ -69,7 +69,7 @@ class GitHubSnapshotPublisherTest {
                 prepared = true
                 GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             commitMessage = { "test commit" }
@@ -199,7 +199,7 @@ class GitHubSnapshotPublisherTest {
                 assertEquals("server", remoteBytes?.string())
                 GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             commitMessage = { "test commit" },
@@ -230,7 +230,7 @@ class GitHubSnapshotPublisherTest {
                 prepared = true
                 GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             commitMessage = { "test commit" },
@@ -258,7 +258,7 @@ class GitHubSnapshotPublisherTest {
                 assertEquals("server", remoteBytes?.string())
                 GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             commitMessage = { "test commit" }
@@ -283,7 +283,7 @@ class GitHubSnapshotPublisherTest {
                 assertEquals("same", remoteBytes?.string())
                 GitHubPreparedSnapshot(canonicalBytes = "same".bytes(), remoteNeedsPublish = false)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             commitMessage = { "no-op" }
@@ -295,6 +295,27 @@ class GitHubSnapshotPublisherTest {
         assertTrue(committed)
         assertEquals(0, api.createRefCalls)
         assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
+    fun successfulSyncReportsResolvedConflicts() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("server".bytes())
+        }
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _, _ ->
+                GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
+            },
+            commit = { 3 },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "test commit" }
+        )
+
+        val report = publisher.sync(config) { _, _ -> }.getOrThrow()
+
+        assertEquals(3, report.conflictsResolved)
     }
 
     @Test
@@ -313,7 +334,7 @@ class GitHubSnapshotPublisherTest {
                 remoteSnapshots += remoteBytes?.string()
                 GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             commitMessage = { "no-op" }
@@ -342,7 +363,7 @@ class GitHubSnapshotPublisherTest {
             prepare = { remoteBytes, _, _ ->
                 GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             commitMessage = { "no-op" }
@@ -373,7 +394,7 @@ class GitHubSnapshotPublisherTest {
                 preparedWasRecovery = remoteIsRecovery
                 GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             validateRemoteSnapshot = { it.string() != "damaged-head" },
@@ -403,7 +424,7 @@ class GitHubSnapshotPublisherTest {
                 check(!remoteIsRecovery) { "Recovery requires manual restore once a baseline exists" }
                 GitHubPreparedSnapshot(canonicalBytes = "promoted".bytes(), remoteNeedsPublish = true)
             },
-            commit = { committed = true },
+            commit = { committed = true; 0 },
             encode = { it },
             decode = { it },
             validateRemoteSnapshot = { it.string() != "damaged-head" },
@@ -441,7 +462,7 @@ class GitHubSnapshotPublisherTest {
             onPrepare(remoteBytes)
             GitHubPreparedSnapshot(canonicalBytes = canonical, remoteNeedsPublish = true)
         },
-        commit = { onCommit() },
+        commit = { onCommit(); 0 },
         encode = { it },
         decode = { it },
         commitMessage = { "test commit" }

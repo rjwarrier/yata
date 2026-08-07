@@ -1,5 +1,7 @@
 package com.mj.yata.data.github
 
+import com.mj.yata.domain.sync.SyncRunReport
+
 internal data class GitHubSyncConfig(
     val owner: String,
     val repo: String,
@@ -16,7 +18,7 @@ internal data class GitHubPreparedSnapshot(
 internal class GitHubSnapshotPublisher(
     private val api: GitHubApi,
     private val prepare: suspend (remoteBytes: ByteArray?, scopeKey: String, remoteIsRecovery: Boolean) -> GitHubPreparedSnapshot,
-    private val commit: suspend (GitHubPreparedSnapshot) -> Unit,
+    private val commit: suspend (GitHubPreparedSnapshot) -> Int,
     private val encode: (ByteArray) -> ByteArray,
     private val decode: (ByteArray) -> ByteArray,
     private val validateRemoteSnapshot: (ByteArray) -> Boolean = { true },
@@ -25,7 +27,7 @@ internal class GitHubSnapshotPublisher(
     private val onHeadObserved: suspend (String?) -> Unit = {},
     private val onHeadPublished: suspend (String) -> Unit = {}
 ) {
-    suspend fun sync(config: GitHubSyncConfig, progress: (Int, String) -> Unit): Result<Unit> {
+    suspend fun sync(config: GitHubSyncConfig, progress: (Int, String) -> Unit): Result<SyncRunReport> {
         try {
             progress(12, "Connecting to GitHub")
             val repo = api.getRepo(config.owner, config.repo)
@@ -99,8 +101,8 @@ internal class GitHubSnapshotPublisher(
                 }
 
                 progress(88, "Applying GitHub updates")
-                commit(prepared)
-                return Result.success(Unit)
+                val conflictsResolved = commit(prepared)
+                return Result.success(SyncRunReport(conflictsResolved = conflictsResolved))
             }
         } catch (e: Exception) {
             return Result.failure(e)
