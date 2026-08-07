@@ -22,6 +22,17 @@ test-only changes belong in the commit message, not here, unless they change beh
   rotated server files. GitHub sync uses fast-forward-only ref updates, verifies git blob hashes
   on read/write, stores the token in encrypted preferences, keeps GitHub settings device-local,
   and hides SFTP/FTP-only lock and retention controls when GitHub is selected.
+- **GitHub sync recovery guidance.** A first sync that would merge existing device data with an
+  existing repo snapshot now shows a summary and asks for confirmation before applying anything.
+  If GitHub history is rewritten or the branch points at a damaged snapshot, sync stops before
+  changing local data and points the user toward restore/reconnect recovery.
+- **GitHub token expiry awareness.** When GitHub reports an expiry for the token, Settings stores
+  it, shows it in the GitHub sync dialog, and warns when it is expired or close to expiry.
+- **GitHub sync diagnostics.** The sync progress pill now uses GitHub-specific labels, resolved
+  conflicts are reported in operation history, and successful GitHub sync history includes the
+  short head commit plus token-expiry detail when available.
+- **GitHub PAT help.** The GitHub sync dialog has an info button with short steps for creating a
+  fine-grained personal access token with Contents read/write access.
 
 ## [0.90.1 beta] - 2026-08-03
 
