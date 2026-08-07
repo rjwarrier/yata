@@ -8,6 +8,7 @@ import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.domain.model.BackupSummary
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunOptions
 import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.SyncTransport
 import com.mj.yata.util.BackupCrypto
@@ -32,14 +33,17 @@ class GitHubSyncManager @Inject constructor(
 
     private val sessionMutex = Mutex()
 
-    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<SyncRunReport> = sessionMutex.withLock {
+    override suspend fun syncNow(
+        progress: (Int, String) -> Unit,
+        options: SyncRunOptions
+    ): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 var syncResult: Result<SyncRunReport>? = null
                 withContext(NonCancellable) {
                     val config = config()
                     val api = api(config)
-                    syncResult = publisher(api).sync(config, progress)
+                    syncResult = publisher(api, options).sync(config, progress)
                     if (syncResult?.isSuccess == true) {
                         userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
                     }
@@ -144,14 +148,15 @@ class GitHubSyncManager @Inject constructor(
         return "YATA sync from ${deviceLabel()} - $counts"
     }
 
-    private fun publisher(api: GitHubApi): GitHubSnapshotPublisher =
+    private fun publisher(api: GitHubApi, options: SyncRunOptions = SyncRunOptions()): GitHubSnapshotPublisher =
         GitHubSnapshotPublisher(
             api = api,
             prepare = { remoteBytes, scopeKey, remoteIsRecovery ->
                 val prepared = snapshotSyncEngine.prepare(
                     remoteBytes = remoteBytes,
                     scopeKey = scopeKey,
-                    remoteIsRecovery = remoteIsRecovery
+                    remoteIsRecovery = remoteIsRecovery,
+                    allowInitialJoinMerge = options.allowInitialJoinMerge
                 )
                 GitHubPreparedSnapshot(
                     canonicalBytes = prepared.canonicalBytes,

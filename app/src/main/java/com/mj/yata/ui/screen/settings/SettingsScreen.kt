@@ -138,6 +138,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.toArgb
 import com.mj.yata.util.ProfilePhotoUtils
+import com.mj.yata.util.initialSyncConfirmationRequired
 import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
 import com.mj.yata.util.TaskScheduleUtils
@@ -358,6 +359,7 @@ fun SettingsScreen(
     var showSftpRestoreDialog by remember { mutableStateOf(false) }
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
+    var showInitialSyncMergeDialog by remember { mutableStateOf(false) }
     var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
     var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
@@ -2681,9 +2683,12 @@ fun SettingsScreen(
                                 viewModel.backupAllNow { results ->
                                     isBackingUp = false
                                     val syncLockFailure = results.selfHostedSyncLockFailure()
+                                    val initialJoinFailure = results.initialSyncConfirmationRequired()
                                     if (syncLockFailure != null) {
                                         clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
                                         showClearSyncLockDialog = true
+                                    } else if (initialJoinFailure != null) {
+                                        showInitialSyncMergeDialog = true
                                     } else {
                                         scope.launch {
                                             reportBackupResults(results, snackbarHostState, context)
@@ -3063,6 +3068,39 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRestoreLocalDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+
+    if (showInitialSyncMergeDialog) {
+        AlertDialog(
+            onDismissRequest = { showInitialSyncMergeDialog = false },
+            title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
+            text = {
+                Text(
+                    stringResource(R.string.settings_initial_sync_merge_body)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showInitialSyncMergeDialog = false
+                        isBackingUp = true
+                        viewModel.backupAllNow(allowInitialJoinMerge = true) { results ->
+                            isBackingUp = false
+                            scope.launch {
+                                reportBackupResults(results, snackbarHostState, context)
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_initial_sync_merge_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showInitialSyncMergeDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             }
         )
     }

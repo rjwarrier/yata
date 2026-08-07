@@ -579,13 +579,14 @@ class SnapshotSyncEngine @Inject constructor(
     internal suspend fun prepare(
         remoteBytes: ByteArray?,
         scopeKey: String,
-        remoteIsRecovery: Boolean = false
+        remoteIsRecovery: Boolean = false,
+        allowInitialJoinMerge: Boolean = false
     ): PreparedSnapshotSync =
         withContext(Dispatchers.IO) {
             val local = normalized(jsonExporter.exportToBytes())
             val observedRemote = remoteBytes?.let(::normalized)
             val base = readBaseline(scopeKey)
-            checkInitialJoinIsExplicit(base, local, observedRemote)
+            checkInitialJoinIsExplicit(base, local, observedRemote, allowInitialJoinMerge)
             // A previous/history file is necessarily older than a missing or corrupt canonical.
             // Once this device has a baseline, auto-promoting such a copy could make a newer
             // device accept a rollback. Before the first baseline exists, though, those history
@@ -665,8 +666,13 @@ class SnapshotSyncEngine @Inject constructor(
     private fun normalized(bytes: ByteArray): JSONObject =
         SnapshotMerger.normalizeForSync(JSONObject(String(bytes, Charsets.UTF_8)))
 
-    private fun checkInitialJoinIsExplicit(base: JSONObject?, local: JSONObject, remote: JSONObject?) {
-        if (base != null || remote == null) return
+    private fun checkInitialJoinIsExplicit(
+        base: JSONObject?,
+        local: JSONObject,
+        remote: JSONObject?,
+        allowInitialJoinMerge: Boolean
+    ) {
+        if (base != null || remote == null || allowInitialJoinMerge) return
         if (hasUserData(local) && hasUserData(remote)) {
             throw InitialSyncConfirmationRequiredException()
         }

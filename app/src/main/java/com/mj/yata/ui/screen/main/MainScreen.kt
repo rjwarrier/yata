@@ -3,6 +3,7 @@ package com.mj.yata.ui.screen.main
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.platform.LocalContext
 import com.mj.yata.util.backupResultMessage
+import com.mj.yata.util.initialSyncConfirmationRequired
 import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -112,20 +113,24 @@ fun MainScreen(
     val context = LocalContext.current
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
+    var showInitialSyncMergeDialog by remember { mutableStateOf(false) }
     var isClearingSyncLock by remember { mutableStateOf(false) }
 
-    fun runManualSync() {
+    fun runManualSync(allowInitialJoinMerge: Boolean = false) {
         // Guarded rather than queued: repeated taps during a slow upload should do nothing, not
         // stack up duplicate backups of the same data.
         if (syncInProgress) return
         // Every configured destination runs from this one button. The message
         // names whichever ones failed rather than a blanket "sync failed" that would be wrong for
         // the destinations that did succeed.
-        viewModel.backupAllNow { results ->
+        viewModel.backupAllNow(allowInitialJoinMerge = allowInitialJoinMerge) { results ->
             val syncLockFailure = results.selfHostedSyncLockFailure()
+            val initialJoinFailure = results.initialSyncConfirmationRequired()
             if (syncLockFailure != null) {
                 clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
                 showClearSyncLockDialog = true
+            } else if (initialJoinFailure != null && !allowInitialJoinMerge) {
+                showInitialSyncMergeDialog = true
             } else {
                 scope.launch {
                     snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
@@ -1013,6 +1018,33 @@ fun MainScreen(
         )
     }
 
+
+    if (showInitialSyncMergeDialog) {
+        AlertDialog(
+            onDismissRequest = { showInitialSyncMergeDialog = false },
+            title = { Text(stringResource(R.string.settings_initial_sync_merge_title)) },
+            text = {
+                Text(
+                    stringResource(R.string.settings_initial_sync_merge_body)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showInitialSyncMergeDialog = false
+                        runManualSync(allowInitialJoinMerge = true)
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_initial_sync_merge_action))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showInitialSyncMergeDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
 
     if (showClearSyncLockDialog) {
         AlertDialog(

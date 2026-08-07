@@ -10,6 +10,7 @@ import com.mj.yata.domain.model.SyncLockBusyException
 import com.mj.yata.domain.model.SyncLockInfo
 import com.mj.yata.domain.sync.LockableSyncTransport
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunOptions
 import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.restorePointFromHistoryName
 import com.mj.yata.util.BackupCrypto
@@ -182,7 +183,10 @@ class SftpBackupManager @Inject constructor(
      * result while holding a cross-device lease. Timestamped backups remain recovery points; the
      * fixed canonical file is the only input devices normally synchronize against.
      */
-    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<SyncRunReport> = sessionMutex.withLock {
+    override suspend fun syncNow(
+        progress: (Int, String) -> Unit,
+        options: SyncRunOptions
+    ): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 var conflictsResolved = 0
@@ -213,7 +217,8 @@ class SftpBackupManager @Inject constructor(
                                     remoteBytes = remote.jsonBytes,
                                     scopeKey = scopeKey,
                                     remoteIsRecovery =
-                                        remote.jsonBytes != null && !remote.canonicalHeadValid
+                                        remote.jsonBytes != null && !remote.canonicalHeadValid,
+                                    allowInitialJoinMerge = options.allowInitialJoinMerge
                                 )
                                 val publish = prepared.remoteNeedsPublish || !remote.canonicalHeadValid
                                 val canonicalBytes = if (publish) {

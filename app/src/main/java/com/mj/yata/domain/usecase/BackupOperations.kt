@@ -20,6 +20,7 @@ import com.mj.yata.domain.model.SyncProgressState
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.sync.LockableSyncTransport
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunOptions
 import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.SyncTransport
 import kotlinx.coroutines.CancellationException
@@ -90,7 +91,9 @@ class BackupOperations @Inject constructor(
      * verdict that's wrong for at least one of them. Destinations that are switched off aren't
      * attempted and don't appear in the list.
      */
-    suspend fun backupAllConfigured(): List<BackupRunResult> = buildList {
+    suspend fun backupAllConfigured(
+        allowInitialJoinMerge: Boolean = false
+    ): List<BackupRunResult> = buildList {
         // Host check as well as the toggle: the switch can be on with the server dialog never
         // filled in, and an attempt that can only fail would report a backup failure for something
         // the user never actually set up. Sync first so any pulled changes are included in the
@@ -101,7 +104,10 @@ class BackupOperations @Inject constructor(
             add(
                 attempt(BackupDestination.SELF_HOSTED) {
                     syncSelfHostedWithProgress("Syncing before scheduled backup") { progress ->
-                        currentTransport().syncNow(progress)
+                        currentTransport().syncNow(
+                            progress,
+                            SyncRunOptions(allowInitialJoinMerge = allowInitialJoinMerge)
+                        )
                     }
                 }
             )

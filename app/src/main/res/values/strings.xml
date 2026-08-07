@@ -452,6 +452,9 @@
     <string name="settings_backup_none_configured">No backup destinations are switched on.</string>
     <string name="settings_backup_all_failed">Backup failed — %1$s</string>
     <string name="settings_backup_partial">Backed up %1$d, but failed for %2$s</string>
+    <string name="settings_initial_sync_merge_title">Review first sync</string>
+    <string name="settings_initial_sync_merge_body">This device and the remote sync snapshot both contain data. YATA will merge them, keep a recovery backup before applying changes, and use the remote copy for any direct conflicts.</string>
+    <string name="settings_initial_sync_merge_action">Merge now</string>
     <string name="settings_backup_interval">Backup frequency</string>
     <string name="settings_backup_interval_summary">Every configured destination is backed up on this schedule.</string>
     <plurals name="settings_backup_all_ok">

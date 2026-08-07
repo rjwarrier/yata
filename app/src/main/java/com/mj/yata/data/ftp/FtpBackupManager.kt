@@ -13,6 +13,7 @@ import com.mj.yata.domain.model.SyncLockBusyException
 import com.mj.yata.domain.model.SyncLockInfo
 import com.mj.yata.domain.sync.LockableSyncTransport
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncRunOptions
 import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.restorePointFromHistoryName
 import com.mj.yata.util.BackupCrypto
@@ -179,7 +180,10 @@ class FtpBackupManager @Inject constructor(
     }
 
     /** Full two-way sync using only generic FTP/FTPS file operations. */
-    override suspend fun syncNow(progress: (Int, String) -> Unit): Result<SyncRunReport> = sessionMutex.withLock {
+    override suspend fun syncNow(
+        progress: (Int, String) -> Unit,
+        options: SyncRunOptions
+    ): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
                 var conflictsResolved = 0
@@ -216,7 +220,8 @@ class FtpBackupManager @Inject constructor(
                                 remoteBytes = remote.jsonBytes,
                                 scopeKey = scopeKey,
                                 remoteIsRecovery =
-                                    remote.jsonBytes != null && !remote.canonicalHeadValid
+                                    remote.jsonBytes != null && !remote.canonicalHeadValid,
+                                allowInitialJoinMerge = options.allowInitialJoinMerge
                             )
                             val publish =
                                 prepared.remoteNeedsPublish || !remote.canonicalHeadValid

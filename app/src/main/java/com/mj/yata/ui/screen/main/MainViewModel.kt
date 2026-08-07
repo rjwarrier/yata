@@ -2079,9 +2079,14 @@ private data class MainNavigationState(
     }
 
     /** Backs up every enabled destination; one result per attempted destination. */
-    fun backupAllNow(onResult: (List<com.mj.yata.domain.model.BackupRunResult>) -> Unit) {
+    fun backupAllNow(
+        allowInitialJoinMerge: Boolean = false,
+        onResult: (List<com.mj.yata.domain.model.BackupRunResult>) -> Unit
+    ) {
         backupOperations.cancelDebouncedBackup()
-        safeLaunch { onResult(backupOperations.backupAllConfigured()) }
+        safeLaunch {
+            onResult(backupOperations.backupAllConfigured(allowInitialJoinMerge = allowInitialJoinMerge))
+        }
     }
 
     fun setBackupIntervalMinutes(minutes: Long) {

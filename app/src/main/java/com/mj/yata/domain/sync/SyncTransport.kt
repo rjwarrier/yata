@@ -4,7 +4,10 @@ import com.mj.yata.domain.model.BackupSummary
 import java.time.Instant
 
 interface SyncTransport {
-    suspend fun syncNow(progress: (Int, String) -> Unit = { _, _ -> }): Result<SyncRunReport>
+    suspend fun syncNow(
+        progress: (Int, String) -> Unit = { _, _ -> },
+        options: SyncRunOptions = SyncRunOptions()
+    ): Result<SyncRunReport>
     suspend fun listRestorePoints(): Result<List<RestorePoint>>
     suspend fun restore(id: String): Result<Unit>
     suspend fun inspect(id: String): Result<BackupSummary>
@@ -14,6 +17,10 @@ interface SyncTransport {
 
 data class SyncRunReport(
     val conflictsResolved: Int = 0
+)
+
+data class SyncRunOptions(
+    val allowInitialJoinMerge: Boolean = false
 )
 
 /** Lease-based transports only; GitHub uses fast-forward refs rather than a remote lock. */
