@@ -84,6 +84,59 @@ class HttpGitHubApiTest {
     }
 
     @Test
+    fun secondaryRateLimitDoesNotSurfaceAsPermissionFailure() = runTest {
+        // GitHub's abuse-detection (secondary) rate limit returns 403 with Retry-After but no
+        // x-ratelimit-remaining header. Misreading it as GitHubPermissionException would make the
+        // scheduled worker give up permanently and tell the user their token lost write access,
+        // for a throttle that clears itself.
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = {
+                FakeConnection(
+                    status = 403,
+                    body = """{"message":"You have exceeded a secondary rate limit"}""",
+                    headers = mapOf("retry-after" to "30")
+                )
+            },
+            retryDelay = {}
+        )
+
+        val result = runCatching { api.getUser() }
+
+        assertTrue(result.exceptionOrNull() is GitHubRateLimitException)
+    }
+
+    @Test
+    fun plainForbiddenStaysPermissionFailure() = runTest {
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = {
+                FakeConnection(status = 403, body = """{"message":"no access"}""")
+            },
+            retryDelay = {}
+        )
+
+        val result = runCatching { api.getUser() }
+
+        assertTrue(result.exceptionOrNull() is GitHubPermissionException)
+    }
+
+    @Test
+    fun networkFailureSurfacesSpecificReason() = runTest {
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { ThrowingConnection(java.net.UnknownHostException("api.github.com")) },
+            retryDelay = {}
+        )
+
+        val result = runCatching { api.getUser() }
+
+        val error = result.exceptionOrNull()
+        assertTrue(error is GitHubTransportException)
+        assertEquals("No internet connection or GitHub is unreachable", error?.message)
+    }
+
+    @Test
     fun capturesTokenExpirationHeader() = runTest {
         val api = HttpGitHubApi(
             tokenProvider = { "token" },
@@ -282,5 +335,18 @@ class HttpGitHubApiTest {
             ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
         override fun getOutputStream(): OutputStream = ByteArrayOutputStream()
         override fun getHeaderField(name: String?): String? = headers[name]
+    }
+
+    private class ThrowingConnection(
+        private val failure: java.io.IOException,
+        url: URL = URL("https://api.github.test/user")
+    ) : HttpURLConnection(url) {
+        override fun disconnect() = Unit
+        override fun usingProxy(): Boolean = false
+        override fun connect() = Unit
+        override fun setRequestMethod(method: String?) {
+            this.method = method
+        }
+        override fun getResponseCode(): Int = throw failure
     }
 }

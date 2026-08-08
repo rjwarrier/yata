@@ -72,7 +72,7 @@ data class GitHubCommitSummary(
     val authoredAt: Instant?
 )
 
-sealed class GitHubException(message: String) : Exception(message)
+sealed class GitHubException(message: String, cause: Throwable? = null) : Exception(message, cause)
 class GitHubAuthException(message: String = "GitHub token is invalid or expired") : GitHubException(message)
 class GitHubRateLimitException(val resetAtEpochSeconds: Long?) : GitHubException("GitHub rate limit reached")
 class GitHubPermissionException(message: String = "GitHub token does not have write access to this repo") : GitHubException(message)
@@ -82,7 +82,7 @@ class GitHubHistoryRewrittenException(
         "GitHub branch history changed outside YATA. Restore a snapshot from GitHub history, or reconnect this repo after confirming the current snapshot is correct."
 ) : GitHubException(message)
 class GitHubNotFoundException(message: String = "GitHub resource was not found") : GitHubException(message)
-class GitHubTransportException(message: String = "GitHub request failed") : GitHubException(message)
+class GitHubTransportException(message: String = "GitHub request failed", cause: Throwable? = null) : GitHubException(message, cause)
 
 class HttpGitHubApi(
     private val tokenProvider: () -> String?,
@@ -282,8 +282,17 @@ class HttpGitHubApi(
                 bytes
             } catch (e: GitHubException) {
                 throw e
+            } catch (e: java.net.UnknownHostException) {
+                throw GitHubTransportException("No internet connection or GitHub is unreachable", e)
+            } catch (e: java.net.SocketTimeoutException) {
+                throw GitHubTransportException("GitHub request timed out", e)
+            } catch (e: javax.net.ssl.SSLException) {
+                throw GitHubTransportException("Secure connection to GitHub failed", e)
             } catch (e: Exception) {
-                throw GitHubTransportException()
+                throw GitHubTransportException(
+                    e.message?.let { "GitHub request failed: $it" } ?: "GitHub request failed",
+                    e
+                )
             } finally {
                 connection.disconnect()
             }
@@ -307,11 +316,23 @@ class HttpGitHubApi(
             status == 401 -> GitHubAuthException()
             status == 403 && connection.getHeaderField("x-ratelimit-remaining") == "0" ->
                 GitHubRateLimitException(connection.getHeaderField("x-ratelimit-reset")?.toLongOrNull())
+            // GitHub's secondary (abuse-detection) rate limit also returns 403, but signals via
+            // Retry-After instead of the primary limit's x-ratelimit-remaining header. Without this
+            // check it fell through to GitHubPermissionException, which UnifiedBackupWorker treats
+            // as permanent and stops retrying - wrongly telling the user their token lost write
+            // access for what is actually a transient throttle that clears itself.
+            status == 403 && connection.getHeaderField("retry-after") != null ->
+                GitHubRateLimitException(connection.secondaryRateLimitResetEpochSeconds())
             status == 403 -> GitHubPermissionException()
             status == 404 -> GitHubNotFoundException()
             status == 409 || status == 422 -> GitHubConflictException()
             status >= 500 -> GitHubTransportException("GitHub is temporarily unavailable")
             else -> GitHubTransportException("GitHub request was rejected")
+        }
+
+    private fun HttpURLConnection.secondaryRateLimitResetEpochSeconds(): Long? =
+        getHeaderField("retry-after")?.toLongOrNull()?.let { retryAfterSeconds ->
+            System.currentTimeMillis() / 1_000 + retryAfterSeconds
         }
 
     private fun GitHubException.isRetryable(): Boolean =
