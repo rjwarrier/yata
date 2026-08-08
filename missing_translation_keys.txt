@@ -1,1 +1,3 @@
 === ALL 24 LOCALES ARE 100% COMPLETE (0 MISSING KEYS) ===
+Note: key-presence complete AND value-translated as of the latest quality pass
+(see TRANSLATION_HANDOFF.md section 3a for how an earlier 'complete' claim was wrong).

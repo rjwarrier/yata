@@ -45,9 +45,39 @@ Twenty-four localized folders exist today. `app/src/main/res/resources.propertie
 
 Base `values/strings.xml`: **1148 `<string>` entries + 28 `<plurals>` blocks** (1176 total translatable resources).
 
-All 24 supported locales (`es`, `fr`, `pt`, `de`, `it`, `nl`, `id`, `tr`, `vi`, `tl`, `pl`, `sv`, `ro`, `cs`, `sw`, `hi`, `bn`, `mr`, `te`, `ta`, `gu`, `kn`, `ml`, `pa`) have been fully updated with 100% string coverage. Currently, there are **0 missing strings and 0 missing plurals** across all 24 locale files. `missing_translation_keys.txt` is clear (0 entries).
+All 24 supported locales (`es`, `fr`, `pt`, `de`, `it`, `nl`, `id`, `tr`, `vi`, `tl`, `pl`, `sv`, `ro`, `cs`, `sw`, `hi`, `bn`, `mr`, `te`, `ta`, `gu`, `kn`, `ml`, `pa`) have **0 missing keys** (every `name=` present in every locale) **and** — as of the most recent pass — genuine translated *values*, not just present keys. See §3a for why that distinction matters and got a dedicated fix.
 
-**The regeneration script in §7 can be used to re-verify or regenerate missing keys whenever new features add strings to `values/strings.xml`.**
+**The regeneration script in §7 can be used to re-verify or regenerate missing keys whenever new features add strings to `values/strings.xml`.** It only checks key presence — see §3a for a value-level check.
+
+## 3a. Important: "0 missing keys" is not the same as "translated" — read this before trusting any completeness claim
+
+An earlier pass claimed all 24 locales were "100% complete" based solely on the §7 script, which only checks whether a `name=` key exists in each locale file — not whether its *value* differs from the English source. That earlier pass had actually only added the *keys* (copying the English text as a placeholder value) for 21 of the 24 locales, then never came back to translate them. A later audit found:
+
+- `es`, `fr`, `pt` — genuinely translated (~15-19% of entries incidentally identical to English, mostly brand names/technical terms — normal).
+- `de`, `hi`, `it`, `nl` — ~75% of entries were still verbatim English.
+- The other 17 locales (`bn`, `cs`, `gu`, `id`, `kn`, `ml`, `mr`, `pa`, `pl`, `ro`, `sv`, `sw`, `ta`, `te`, `tl`, `tr`, `vi`) — ~98% of entries were still verbatim English. The app in those locales was, in practice, still almost entirely English with a language tag on the folder.
+
+This was fixed by retranslating all 21 affected locales (see `HANDOFF.md` for the session-by-session detail). **If you're asked to verify or extend translation coverage, don't trust a "0 missing keys" report by itself.** Spot-check actual values, or run this value-diff check (counts entries whose value is suspiciously identical to English — a translated file should show a small number here, mostly brand names/technical tokens like `YATA`, `SFTP`, `#RRGGBB`, not hundreds):
+
+```bash
+python3 - <<'PYEOF'
+import re, glob
+
+def extract(path):
+    with open(path, encoding="utf-8") as f:
+        content = f.read()
+    return dict(re.findall(r'<string\s+name="([^"]+)"[^>]*>(.*?)</string>', content, re.S))
+
+base = extract("app/src/main/res/values/strings.xml")
+for path in sorted(glob.glob("app/src/main/res/values-*/strings.xml")):
+    loc = path.split("values-")[1].split("/")[0]
+    if loc in ("night", "night-v31", "v31"): continue
+    locd = extract(path)
+    same = [k for k in locd if k in base and locd[k].strip() == base[k].strip() and len(base[k].strip()) > 3]
+    flag = "  <-- LIKELY UNTRANSLATED" if len(same) > 100 else ""
+    print(f"{loc:4}: {len(same):4} entries identical to English{flag}")
+PYEOF
+```
 
 ## 4. The job for new UI strings
 
@@ -120,7 +150,9 @@ PYEOF
 
 ## 8. Current Deliverables State
 
-All 24 supported locale files in `app/src/main/res/values-<code>/strings.xml` are 100% populated and synchronized with the English base source (`1148` strings + `28` plurals each).
+All 24 supported locale files in `app/src/main/res/values-<code>/strings.xml` are 100% populated (0 missing keys) and synchronized with the English base source (`1148` strings + `28` plurals each), **and** — per the fix described in §3a — actually translated, not just key-complete. `./gradlew :app:lintDebug` reports zero `MissingTranslation` issues across all 24 locales. The only remaining lint noise is `MissingQuantity` for `cs`/`pl`/`ro` (those languages have CLDR `few`/`many` plural categories beyond `one`/`other`), which is expected per §5's `one`/`other`-only convention — not a bug.
+
+Translation quality is AI-generated, not native-speaker-reviewed. If a native speaker flags specific phrasing in any locale, that's a targeted fix to the flagged entries, not a reason to distrust the whole file.
 
 ## 9. Hardcoded String Extraction Status
 

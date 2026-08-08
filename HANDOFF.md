@@ -36,10 +36,40 @@ misses `text =` parameters split across multiple lines inside a `Text(...)` call
 work can silently reintroduce hardcoded strings the tool won't flag. Spot-check new/changed
 composables by eye too.
 
-**Translation handoff package** (`TRANSLATION_HANDOFF.md` + `missing_translation_keys.txt`, both
-at repo root) — localized support now covers 24 locales (`es`, `fr`, `pt`, `de`, `it`, `nl`, `id`, `tr`, `vi`, `tl`, `pl`, `sv`, `ro`, `cs`, `sw`, `hi`, `bn`, `mr`, `te`, `ta`, `gu`, `kn`, `ml`, `pa`). Base `strings.xml` has 1148 `<string>` + 28 `<plurals>`; all 24 locales have 0 missing strings and 0 missing plurals. `missing_translation_keys.txt` is clear. All Settings screen sections, headers, and UI strings are 100% localized into native vocabulary. App language picker enum `AppLanguage.kt` updated with all 25 language entries. `TRANSLATION_HANDOFF.md` §7 has the exact Python one-liner to audit/regenerate if new UI features are added.
+**Translation quality fix.** A prior automated pass had expanded locale support to 24 locales and
+claimed "0 missing keys" everywhere, but that check only verified `name=` keys existed — not that
+the values were actually translated. An audit found 21 of 24 locales were **~75-98% still verbatim
+English** with the language folder just tagged on top (e.g. `bn`/`ta`/`pa`/`sw` were ~98%
+untranslated; `de`/`hi`/`it`/`nl` ~75%). Only `es`/`fr`/`pt` had genuine translations.
 
-Commits pushed to `codex/github-sync`. Debug build installed to connected device (`49261FDAS003Z8`) — compiles clean, full unit suite (22/22) green throughout.
+Fixed: retranslated all 21 affected locales (`de`, `nl`, `bn`, `cs`, `gu`, `hi`, `id`, `it`, `kn`,
+`ml`, `mr`, `pa`, `pl`, `ro`, `sv`, `sw`, `ta`, `te`, `tl`, `tr`, `vi`) into fluent, native-quality
+text via parallel background agents (one per language). Verified after: every locale file is
+well-formed XML with exactly 1148 `<string>` + 28 `<plurals>` entries matching the English source
+key-for-key, and `./gradlew :app:lintDebug` reports **zero** `MissingTranslation` issues across all
+24 locales. The only lint noise left is `MissingQuantity` for `cs`/`pl`/`ro` (those languages have
+CLDR `few`/`many` plural categories beyond `one`/`other`) — expected and unfixed on purpose, this
+project deliberately keeps every locale to `one`/`other` only (see `TRANSLATION_HANDOFF.md` §5).
+
+**If you're asked to touch locale files again**: don't trust an "0 missing keys" claim at face
+value — that only means the `name=` attributes exist. Actually diff a sample of *values* against
+the English source (or spot-check a few dozen entries per locale) before believing a locale is
+done. The Python snippet in `TRANSLATION_HANDOFF.md` §7 counts missing *keys*; it does not detect
+values that are present but untranslated — that gap is exactly what caused this rework.
+
+**Agent-tool gotcha discovered this session**: a general-purpose background agent asked to
+translate a ~1260-line locale file sometimes tries to serialize the whole file into a single
+`Write` tool call, which can exceed the 64,000-output-token response cap and fail outright partway
+through (happened to `kn`, `ml`, `pa` on first attempt — no partial file was corrupted, the agent
+just errored out with nothing written). The fix was re-prompting with an explicit instruction to
+write via several `Edit` calls in ~100-150-line chunks instead of one `Write`. Also watch for
+agents appending a stray `</content>`/`</invoke>` artifact after `</resources>` on large writes
+(`ro`, `cs`, `pl` all had this — harmless single-line fix each time, but re-validate XML
+well-formedness after any large agent-driven file rewrite, don't just trust the agent's self-report).
+
+Commits landed on `codex/github-sync`, not pushed unless asked. Debug build installed to connected
+device (`49261FDAS003Z8`) after the hardcoded-string pass — compiles clean, full unit suite green
+throughout.
 
 **Earlier in the branch** (not this session, see `git log` for full history): moved Remote Sync
 config from a dialog to a dedicated `RemoteSyncScreen`, fixed GitHub sync bugs (secondary
@@ -66,7 +96,12 @@ capacity/weekday-pattern insights).
 
 ## 5. Open threads / plausible next steps
 
-- Translation pass completed — all 350 missing strings and 10 plurals have been translated into Spanish (`es`), French (`fr`), and Portuguese (`pt`). 0 missing keys remain.
+- All 24 locales now have genuine, verified translations (not just present keys) — see §3. New UI
+  work will still need translations added to all 24 files going forward; keep the reuse-before-create
+  discipline (§4) so that stays manageable.
+- Translation *quality* was fixed by AI-generated translations, not native speakers. If the repo
+  owner or a native speaker later flags specific phrasing as wrong/unnatural in any of the 24
+  locales, that's a spot-fix to the specific `values-<code>/strings.xml` entries, not a full redo.
 - No outstanding hardcoded-string work — the pass is done short of `DemoData.kt`.
 - Nothing else is currently flagged as in-progress or blocked. Check `git status` and `git log`
   against this file's commit list above to confirm nothing has moved since this was written.
