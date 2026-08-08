@@ -23,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -170,7 +171,12 @@ fun AnalyticsScreen(
                             type = "text/plain"
                             putExtra(android.content.Intent.EXTRA_TEXT, markdown)
                         }
-                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share analytics"))
+                        context.startActivity(
+                            android.content.Intent.createChooser(
+                                shareIntent,
+                                context.getString(R.string.analytics_share_analytics)
+                            )
+                        )
                     }) {
                         Icon(Icons.Default.IosShare, contentDescription = stringResource(R.string.analytics_share_analytics))
                     }
@@ -220,14 +226,14 @@ fun AnalyticsScreen(
                     icon = Icons.Default.LocalFireDepartment,
                     iconTint = MaterialTheme.colorScheme.tertiary,
                     value = "$streak",
-                    label = "day streak"
+                    label = stringResource(R.string.analytics_day_streak)
                 )
                 InsightChip(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.WarningAmber,
                     iconTint = if (overdue > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     value = "$overdue",
-                    label = if (overdue == 1) "overdue task" else "overdue tasks",
+                    label = pluralStringResource(R.plurals.analytics_overdue_tasks_label, overdue),
                     onClick = if (overdue > 0) {
                         { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) }
                     } else null,
@@ -238,7 +244,7 @@ fun AnalyticsScreen(
                     icon = Icons.Default.LocalFireDepartment,
                     iconTint = MaterialTheme.colorScheme.primary,
                     value = "$zeroOverdueStreak",
-                    label = "days clean"
+                    label = stringResource(R.string.analytics_days_clean)
                 )
             }
 
@@ -252,7 +258,7 @@ fun AnalyticsScreen(
                     icon = Icons.Default.WarningAmber,
                     iconTint = MaterialTheme.colorScheme.primary,
                     value = overallOnTimeRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
-                    label = "on-time rate",
+                    label = stringResource(R.string.analytics_on_time_rate),
                     trend = stats.onTimeRateTrend,
                     trendUnit = "pp"
                 )
@@ -261,14 +267,14 @@ fun AnalyticsScreen(
                     icon = Icons.Default.ArrowUpward,
                     iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                     value = "$dueNext7",
-                    label = "due in 7 days"
+                    label = stringResource(R.string.analytics_due_in_7_days)
                 )
                 InsightChip(
                     modifier = Modifier.weight(1f),
                     icon = Icons.Default.ArrowUpward,
                     iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
                     value = "$dueNext30",
-                    label = "due in 30 days"
+                    label = stringResource(R.string.analytics_due_in_30_days)
                 )
             }
 
@@ -277,9 +283,11 @@ fun AnalyticsScreen(
             // timestamps existed are silently excluded with no way to tell.
             if (overallOnTimeRate != null) {
                 Text(
-                    text = "On-time rate from ${stats.onTimeRateSampleSize} finished " +
-                        (if (stats.onTimeRateSampleSize == 1) "task that had" else "tasks that had") +
-                        " a due date",
+                    text = pluralStringResource(
+                        R.plurals.analytics_finished_with_due_date,
+                        stats.onTimeRateSampleSize,
+                        stats.onTimeRateSampleSize
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -291,7 +299,7 @@ fun AnalyticsScreen(
             stats.capacity?.let { capacity ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "PLANNED EFFORT",
+                        text = stringResource(R.string.analytics_planned_effort),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -308,18 +316,18 @@ fun AnalyticsScreen(
                                 MiniStat(
                                     modifier = Modifier.weight(1f),
                                     value = EstimateUtils.format(capacity.openMinutes),
-                                    label = "still open"
+                                    label = stringResource(R.string.analytics_still_open)
                                 )
                                 MiniStat(
                                     modifier = Modifier.weight(1f),
                                     value = EstimateUtils.format(capacity.dueNext7Minutes),
-                                    label = "due in 7 days"
+                                    label = stringResource(R.string.analytics_due_in_7_days)
                                 )
                                 if (capacity.overdueMinutes > 0) {
                                     MiniStat(
                                         modifier = Modifier.weight(1f),
                                         value = EstimateUtils.format(capacity.overdueMinutes),
-                                        label = "already late",
+                                        label = stringResource(R.string.analytics_already_late),
                                         emphasise = true,
                                         onClick = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) }
                                     )
@@ -329,12 +337,17 @@ fun AnalyticsScreen(
                             // backlog it actually saw rather than implying it saw all of it.
                             Text(
                                 text = if (capacity.unestimatedOpenCount == 0) {
-                                    "Every open task is estimated"
+                                    stringResource(R.string.analytics_every_open_task_estimated)
                                 } else {
-                                    "From ${capacity.estimatedOpenCount} estimated " +
-                                        "${if (capacity.estimatedOpenCount == 1) "task" else "tasks"} · " +
-                                        "${capacity.unestimatedOpenCount} open " +
-                                        "${if (capacity.unestimatedOpenCount == 1) "task has" else "tasks have"} no estimate"
+                                    pluralStringResource(
+                                        R.plurals.analytics_estimated_tasks,
+                                        capacity.estimatedOpenCount,
+                                        capacity.estimatedOpenCount
+                                    ) + " · " + pluralStringResource(
+                                        R.plurals.analytics_unestimated_tasks,
+                                        capacity.unestimatedOpenCount,
+                                        capacity.unestimatedOpenCount
+                                    )
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -358,11 +371,15 @@ fun AnalyticsScreen(
                     ProgressRing(progress = completionPct, size = 72.dp, strokeWidth = 6.dp)
                     Column {
                         Text(
-                            text = "$doneCount of $totalCount completed",
+                            text = stringResource(R.string.analytics_done_of_total, doneCount, totalCount),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = if (totalCount == 0) "No tasks due in this period." else "${totalCount - doneCount} still open",
+                            text = if (totalCount == 0) {
+                                stringResource(R.string.analytics_no_tasks_due_in_period)
+                            } else {
+                                stringResource(R.string.analytics_count_still_open, totalCount - doneCount)
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -384,7 +401,10 @@ fun AnalyticsScreen(
                                     )
                                 }
                                 Text(
-                                    text = "${if (deltaPoints > 0) "+" else ""}$deltaPoints pp vs previous period",
+                                    text = stringResource(
+                                        R.string.analytics_delta_pp_vs_previous,
+                                        "${if (deltaPoints > 0) "+" else ""}$deltaPoints"
+                                    ),
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = trendColor
                                 )
@@ -397,7 +417,7 @@ fun AnalyticsScreen(
             if (dailyActivity.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "DAILY ACTIVITY",
+                        text = stringResource(R.string.analytics_daily_activity),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -415,7 +435,13 @@ fun AnalyticsScreen(
                             val completedTotal = dailyActivity.sumOf { it.completedCount }
                             val showCreated = createdTotal > 0
                             Text(
-                                text = if (showCreated) "Tasks completed vs created, by day" else "Tasks completed, by day",
+                                text = stringResource(
+                                    if (showCreated) {
+                                        R.string.analytics_tasks_completed_vs_created_by_day
+                                    } else {
+                                        R.string.analytics_tasks_completed_by_day
+                                    }
+                                ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -442,9 +468,9 @@ fun AnalyticsScreen(
                                 val net = completedTotal - createdTotal
                                 Text(
                                     text = when {
-                                        net > 0 -> "$net more finished than created"
-                                        net < 0 -> "${-net} more created than finished"
-                                        else -> "As much finished as came in"
+                                        net > 0 -> stringResource(R.string.analytics_more_finished_than_created, net)
+                                        net < 0 -> stringResource(R.string.analytics_more_created_than_finished, -net)
+                                        else -> stringResource(R.string.analytics_as_much_finished_as_came_in)
                                     },
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = when {
@@ -462,7 +488,7 @@ fun AnalyticsScreen(
             if (priorityStats.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "BY PRIORITY",
+                        text = stringResource(R.string.analytics_by_priority),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -496,7 +522,7 @@ fun AnalyticsScreen(
             if (agingBuckets.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "OVERDUE AGING",
+                        text = stringResource(R.string.analytics_overdue_aging),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -535,7 +561,7 @@ fun AnalyticsScreen(
             if (peopleFeatureEnabled && delegationSummary.totalOpen > 0) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "DELEGATION",
+                        text = stringResource(R.string.analytics_delegation),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -550,17 +576,17 @@ fun AnalyticsScreen(
                                 MiniStat(
                                     modifier = Modifier.weight(1f),
                                     value = "${delegationSummary.delegatedOpen}",
-                                    label = "delegated"
+                                    label = stringResource(R.string.analytics_delegated)
                                 )
                                 MiniStat(
                                     modifier = Modifier.weight(1f),
                                     value = "${delegationSummary.selfOpen}",
-                                    label = "yours"
+                                    label = stringResource(R.string.analytics_yours)
                                 )
                                 MiniStat(
                                     modifier = Modifier.weight(1f),
                                     value = "${delegationSummary.unassignedOpen}",
-                                    label = "unassigned",
+                                    label = stringResource(R.string.analytics_unassigned),
                                     emphasise = delegationSummary.unassignedOpen > 0
                                 )
                             }
@@ -568,16 +594,16 @@ fun AnalyticsScreen(
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                     stats.medianTurnaroundDays?.let {
-                                        MiniStat(modifier = Modifier.weight(1f), value = "${it}d", label = "median turnaround")
+                                        MiniStat(modifier = Modifier.weight(1f), value = "${it}d", label = stringResource(R.string.analytics_median_turnaround))
                                     }
                                     stats.oldestOpenAgeDays?.let {
-                                        MiniStat(modifier = Modifier.weight(1f), value = "${it}d", label = "oldest open")
+                                        MiniStat(modifier = Modifier.weight(1f), value = "${it}d", label = stringResource(R.string.analytics_oldest_open))
                                     }
                                     if (stats.openWithoutDueDate > 0) {
                                         MiniStat(
                                             modifier = Modifier.weight(1f),
                                             value = "${stats.openWithoutDueDate}",
-                                            label = "open, no date",
+                                            label = stringResource(R.string.analytics_open_no_date),
                                             onClick = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_NO_DUE_DATE) }
                                         )
                                     }
@@ -594,7 +620,7 @@ fun AnalyticsScreen(
             if (peopleFeatureEnabled && delegationStats.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "PER ASSIGNEE",
+                        text = stringResource(R.string.analytics_per_assignee),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -624,7 +650,7 @@ fun AnalyticsScreen(
             if (peopleFeatureEnabled && workloadShares.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "WORKLOAD SHARE",
+                        text = stringResource(R.string.analytics_workload_share),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -656,7 +682,7 @@ fun AnalyticsScreen(
             // Each breakdown row names an entity that already has a detail screen listing exactly
             // the tasks it counted, so the row is a link to it rather than a dead number.
             if (projectsFeatureEnabled) {
-                AnalyticsSection(title = "By Project", stats = projectStats) { stat ->
+                AnalyticsSection(title = stringResource(R.string.analytics_by_project), stats = projectStats) { stat ->
                     val accents = LocalYataAccents.current
                     EntityStatRow(
                         stat = stat,
@@ -667,7 +693,7 @@ fun AnalyticsScreen(
             }
 
             if (peopleFeatureEnabled) {
-                AnalyticsSection(title = "By Person", stats = personStats) { stat ->
+                AnalyticsSection(title = stringResource(R.string.analytics_by_person), stats = personStats) { stat ->
                     val accents = LocalYataAccents.current
                     EntityStatRow(
                         stat = stat,
@@ -686,7 +712,7 @@ fun AnalyticsScreen(
             }
 
             if (tagsFeatureEnabled) {
-                AnalyticsSection(title = "By Tag", stats = tagStats) { stat ->
+                AnalyticsSection(title = stringResource(R.string.analytics_by_tag), stats = tagStats) { stat ->
                     val accents = LocalYataAccents.current
                     val color = if (stat.colorKey == "error") MaterialTheme.colorScheme.error else accents.getAccent(stat.colorKey)
                     EntityStatRow(
@@ -700,7 +726,7 @@ fun AnalyticsScreen(
 
             // Lists had no breakdown at all, despite being one of the three organising axes
             // alongside projects and tags. Not feature-flagged — lists can't be switched off.
-            AnalyticsSection(title = "By List", stats = listStats) { stat ->
+            AnalyticsSection(title = stringResource(R.string.analytics_by_list), stats = listStats) { stat ->
                 val accents = LocalYataAccents.current
                 EntityStatRow(
                     stat = stat,
@@ -783,8 +809,14 @@ private fun TrendLabel(trend: com.mj.yata.util.MetricTrend, unit: String) {
 @Composable
 private fun ChartLegend(completedTotal: Int, createdTotal: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-        LegendSwatch(color = MaterialTheme.colorScheme.primary, label = "$completedTotal completed")
-        LegendSwatch(color = MaterialTheme.colorScheme.tertiary, label = "$createdTotal created")
+        LegendSwatch(
+            color = MaterialTheme.colorScheme.primary,
+            label = stringResource(R.string.analytics_completed_count, completedTotal)
+        )
+        LegendSwatch(
+            color = MaterialTheme.colorScheme.tertiary,
+            label = stringResource(R.string.analytics_created_count, createdTotal)
+        )
     }
 }
 
@@ -888,10 +920,10 @@ private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean, sho
 private fun PriorityStatRow(stat: PriorityStat, onClick: (() -> Unit)? = null) {
     val accents = LocalYataAccents.current
     val (label, color) = when (stat.priority) {
-        "high" -> "High" to MaterialTheme.colorScheme.error
-        "med" -> "Medium" to accents.accentD
-        "low" -> "Low" to accents.accentE
-        else -> "No priority" to MaterialTheme.colorScheme.onSurfaceVariant
+        "high" -> stringResource(R.string.analytics_priority_high) to MaterialTheme.colorScheme.error
+        "med" -> stringResource(R.string.analytics_priority_medium) to accents.accentD
+        "low" -> stringResource(R.string.analytics_priority_low) to accents.accentE
+        else -> stringResource(R.string.analytics_priority_none) to MaterialTheme.colorScheme.onSurfaceVariant
     }
     val animatedPct by animateFloatAsState(
         targetValue = stat.pct,
@@ -924,7 +956,7 @@ private fun PriorityStatRow(stat: PriorityStat, onClick: (() -> Unit)? = null) {
             )
         }
         Text(
-            text = "${stat.done}/${stat.total}",
+            text = stringResource(R.string.analytics_ratio, stat.done, stat.total),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -974,7 +1006,7 @@ private fun AgingBucketRow(
             )
         }
         Text(
-            text = "${bucket.count}",
+            text = bucket.count.toString(),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1023,7 +1055,7 @@ private fun WorkloadShareRow(
             )
         }
         Text(
-            text = "${share.openCount} (${(share.share * 100).roundToInt()}%)",
+            text = stringResource(R.string.analytics_count_percent, share.openCount, (share.share * 100).roundToInt()),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1050,7 +1082,7 @@ private fun AnalyticsSection(
         ) {
             if (stats.isEmpty()) {
                 Text(
-                    text = "Nothing in this period.",
+                    text = stringResource(R.string.analytics_nothing_in_period),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp)
@@ -1075,10 +1107,11 @@ private fun AnalyticsSection(
 /** "N overdue" (if any) plus the on-time completion rate, e.g. "1 overdue · 80% on-time" —
  * null pieces (no overdue work, or nothing in the period has a completion timestamp to judge)
  * are dropped rather than shown as zero. */
+@Composable
 private fun insightSubtitle(stat: EntityStat): String? {
     val parts = mutableListOf<String>()
-    if (stat.overdue > 0) parts += if (stat.overdue == 1) "1 overdue" else "${stat.overdue} overdue"
-    stat.onTimeRate?.let { parts += "${(it * 100).roundToInt()}% on-time" }
+    if (stat.overdue > 0) parts += stringResource(R.string.analytics_overdue_count, stat.overdue)
+    stat.onTimeRate?.let { parts += stringResource(R.string.analytics_on_time_percent, (it * 100).roundToInt()) }
     return parts.joinToString(" · ").ifEmpty { null }
 }
 
@@ -1145,7 +1178,7 @@ private fun EntityStatRow(
             }
         }
         Text(
-            text = "${stat.done}/${stat.total}",
+            text = stringResource(R.string.analytics_ratio, stat.done, stat.total),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1316,7 +1349,7 @@ private fun DelegationStatRow(
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
-                    text = "${stat.overdueCount} late",
+                    text = stringResource(R.string.analytics_count_late, stat.overdueCount),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

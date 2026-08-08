@@ -207,7 +207,7 @@ fun RemoteSyncScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Remote sync") },
+                title = { Text(stringResource(R.string.remote_sync_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
@@ -252,8 +252,8 @@ fun RemoteSyncScreen(
             ) { isGitHub ->
             if (isGitHub) {
                 RemoteConfigGroup(
-                    title = "Repository access",
-                    summary = "Limit the token to this private sync repo.",
+                    title = stringResource(R.string.remote_sync_repository_access),
+                    summary = stringResource(R.string.remote_sync_repository_access_summary),
                     icon = ImageVector.vectorResource(id = R.drawable.ic_github)
                 ) {
                     TextField(
@@ -261,14 +261,14 @@ fun RemoteSyncScreen(
                         onValueChange = { draftGitHubToken = it },
                         label = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Token")
+                                Text(stringResource(R.string.remote_sync_token_label))
                                 IconButton(
                                     onClick = { showGitHubPatHelpDialog = true },
                                     modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Info,
-                                        contentDescription = "How to create a GitHub token",
+                                        contentDescription = stringResource(R.string.cd_remote_sync_token_help),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -298,8 +298,8 @@ fun RemoteSyncScreen(
                     TextField(
                         value = draftGitHubRepo,
                         onValueChange = { draftGitHubRepo = it },
-                        label = { Text("Repo") },
-                        placeholder = { Text("owner/repo") },
+                        label = { Text(stringResource(R.string.remote_sync_repo_label)) },
+                        placeholder = { Text(stringResource(R.string.remote_sync_repo_placeholder)) },
                         singleLine = true,
                         shape = YataCompactFieldShape,
                         colors = yataFieldColors(),
@@ -308,7 +308,7 @@ fun RemoteSyncScreen(
                     TextField(
                         value = draftGitHubBranch,
                         onValueChange = { draftGitHubBranch = it },
-                        label = { Text("Branch") },
+                        label = { Text(stringResource(R.string.remote_sync_branch_label)) },
                         singleLine = true,
                         shape = YataCompactFieldShape,
                         colors = yataFieldColors(),
@@ -317,7 +317,7 @@ fun RemoteSyncScreen(
                     TextField(
                         value = draftGitHubApiBase,
                         onValueChange = { draftGitHubApiBase = it },
-                        label = { Text("API base URL") },
+                        label = { Text(stringResource(R.string.remote_sync_api_base_label)) },
                         singleLine = true,
                         shape = YataCompactFieldShape,
                         colors = yataFieldColors(),
@@ -330,7 +330,7 @@ fun RemoteSyncScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "Fine-grained token: Contents read/write. Stored encrypted on this device.",
+                            text = stringResource(R.string.remote_sync_token_scope_hint),
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(12.dp)
                         )
@@ -338,8 +338,12 @@ fun RemoteSyncScreen(
                 }
             } else {
                 RemoteConfigGroup(
-                    title = "Server location",
-                    summary = if (draftIsFtp) "Point YATA at an FTP or FTPS folder." else "Point YATA at an SSH/SFTP folder.",
+                    title = stringResource(R.string.remote_sync_server_location),
+                    summary = if (draftIsFtp) {
+                        stringResource(R.string.remote_sync_server_location_summary_ftp)
+                    } else {
+                        stringResource(R.string.remote_sync_server_location_summary_sftp)
+                    },
                     icon = if (draftIsFtp) Icons.Default.Dns else Icons.Default.Storage
                 ) {
                     TextField(
@@ -391,8 +395,8 @@ fun RemoteSyncScreen(
             ) { protocol ->
             if (protocol == RemoteBackupProtocol.FTP) {
                 RemoteConfigGroup(
-                    title = "Credentials",
-                    summary = "Saved secrets are kept encrypted on this device.",
+                    title = stringResource(R.string.remote_sync_credentials),
+                    summary = stringResource(R.string.remote_sync_credentials_summary_encrypted),
                     icon = Icons.Default.Lock
                 ) {
                     TextField(
@@ -406,7 +410,7 @@ fun RemoteSyncScreen(
                         // label alone sits in that space, so an already-saved password otherwise
                         // looks empty until tapped. supportingText has no such quirk.
                         supportingText = {
-                            if (passwordAlreadySet) Text("Password saved -- leave blank to keep it")
+                            if (passwordAlreadySet) Text(stringResource(R.string.remote_sync_password_saved_hint))
                         },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
@@ -449,8 +453,8 @@ fun RemoteSyncScreen(
                 }
             } else if (protocol != RemoteBackupProtocol.GITHUB) {
                 RemoteConfigGroup(
-                    title = "Credentials",
-                    summary = "Use a password or private key for this SFTP server.",
+                    title = stringResource(R.string.remote_sync_credentials),
+                    summary = stringResource(R.string.remote_sync_credentials_summary_password_or_key),
                     icon = Icons.Default.Lock
                 ) {
                     val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
@@ -481,7 +485,7 @@ fun RemoteSyncScreen(
                                 if (keyPassphraseAlreadySet) Text(savedSecretPlaceholder)
                             },
                             supportingText = {
-                                if (keyPassphraseAlreadySet) Text("Passphrase saved -- leave blank to keep it")
+                                if (keyPassphraseAlreadySet) Text(stringResource(R.string.remote_sync_passphrase_saved_hint))
                             },
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
@@ -498,7 +502,7 @@ fun RemoteSyncScreen(
                                 if (passwordAlreadySet) Text(savedSecretPlaceholder)
                             },
                             supportingText = {
-                                if (passwordAlreadySet) Text("Password saved -- leave blank to keep it")
+                                if (passwordAlreadySet) Text(stringResource(R.string.remote_sync_password_saved_hint))
                             },
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
@@ -515,8 +519,8 @@ fun RemoteSyncScreen(
             // FtpBackupManager all encrypt with the same stored passphrase before upload, so it
             // isn't provider-specific credentials and belongs outside the per-protocol groups.
             RemoteConfigGroup(
-                title = "Backup encryption",
-                summary = "Optional passphrase used to encrypt every backup, whichever provider you use.",
+                title = stringResource(R.string.remote_sync_backup_encryption),
+                summary = stringResource(R.string.remote_sync_backup_encryption_summary),
                 icon = Icons.Default.Lock
             ) {
                 TextField(
@@ -727,18 +731,18 @@ fun RemoteSyncScreen(
     if (showGitHubPatHelpDialog) {
         AlertDialog(
             onDismissRequest = { showGitHubPatHelpDialog = false },
-            title = { Text("Create a GitHub token") },
+            title = { Text(stringResource(R.string.remote_sync_pat_help_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Create a fine-grained personal access token for the sync repo.",
+                        stringResource(R.string.remote_sync_pat_help_intro),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    Text("1. Open GitHub > Settings > Developer settings > Personal access tokens > Fine-grained tokens.")
-                    Text("2. Tap Generate new token and name it YATA sync.")
-                    Text("3. Under Repository access, select only your YATA sync repo.")
-                    Text("4. Under Repository permissions, set Contents to Read and write.")
-                    Text("5. Generate the token, copy it, then paste it here.")
+                    Text(stringResource(R.string.remote_sync_pat_help_step1))
+                    Text(stringResource(R.string.remote_sync_pat_help_step2))
+                    Text(stringResource(R.string.remote_sync_pat_help_step3))
+                    Text(stringResource(R.string.remote_sync_pat_help_step4))
+                    Text(stringResource(R.string.remote_sync_pat_help_step5))
                 }
             },
             confirmButton = {
@@ -771,18 +775,18 @@ private fun RemoteConfigHeader(
         ) { animatedProtocol ->
             val (title, body, icon) = when (animatedProtocol) {
                 RemoteBackupProtocol.GITHUB -> Triple(
-                    "GitHub sync",
-                    "Sync through a private repository with commit history as restore points.",
+                    stringResource(R.string.remote_sync_github_title),
+                    stringResource(R.string.remote_sync_github_body),
                     ImageVector.vectorResource(id = R.drawable.ic_github)
                 )
                 RemoteBackupProtocol.FTP -> Triple(
-                    "FTP / FTPS sync",
-                    "Use your own server folder with rotated backup files.",
+                    stringResource(R.string.remote_sync_ftp_title),
+                    stringResource(R.string.remote_sync_ftp_body),
                     Icons.Default.Dns
                 )
                 RemoteBackupProtocol.SFTP -> Triple(
-                    "SFTP sync",
-                    "Use SSH-backed storage with host-key trust and rotated backups.",
+                    stringResource(R.string.remote_sync_sftp_title),
+                    stringResource(R.string.remote_sync_sftp_body),
                     Icons.Default.Storage
                 )
             }
@@ -828,19 +832,25 @@ private fun RemoteProviderPicker(
     // needs to be a compact switch, not another set of icon cards repeating that description.
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = "Provider",
+            text = stringResource(R.string.remote_sync_provider),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.primary
         )
+        // labelProvider isn't @Composable (SegmentedControl is generic over T and shared with the
+        // Password/Private-key choice, which has no strings to resolve at all), so the labels are
+        // resolved here and captured rather than called from inside the lambda.
+        val githubLabel = stringResource(R.string.remote_sync_provider_github)
+        val sftpLabel = stringResource(R.string.remote_sync_provider_sftp)
+        val ftpLabel = stringResource(R.string.remote_sync_provider_ftp)
         SegmentedControl(
             items = listOf(RemoteBackupProtocol.GITHUB, RemoteBackupProtocol.SFTP, RemoteBackupProtocol.FTP),
             selectedItem = selectedProtocol,
             onItemSelected = onProtocolSelected,
             labelProvider = {
                 when (it) {
-                    RemoteBackupProtocol.GITHUB -> "GitHub"
-                    RemoteBackupProtocol.SFTP -> "SFTP"
-                    RemoteBackupProtocol.FTP -> "FTP/FTPS"
+                    RemoteBackupProtocol.GITHUB -> githubLabel
+                    RemoteBackupProtocol.SFTP -> sftpLabel
+                    RemoteBackupProtocol.FTP -> ftpLabel
                 }
             }
         )
