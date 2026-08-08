@@ -96,7 +96,7 @@ fun CircularImageCropper(
                 Spacer(modifier = Modifier.weight(1f))
 
                 Text(
-                    text = "Drag to reposition, pinch to zoom",
+                    text = stringResource(R.string.image_cropper_hint),
                     color = Color.White.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 4.dp)

@@ -21,10 +21,12 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.ui.theme.LocalYataAccents
 
@@ -170,7 +172,7 @@ fun AssigneeStack(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "+$remaining",
+                    text = stringResource(R.string.export_hidden_count, remaining),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,

@@ -1342,6 +1342,7 @@
     <string name="team_overdue_widget_empty">Nobody\'s behind. 🎉</string>
     <string name="tasker_create_task_hint">Fields accept Tasker variables (%var). Leave blank to skip.</string>
     <string name="archive_section_header">%1$s - %2$d</string>
+    <string name="image_cropper_hint">Drag to reposition, pinch to zoom</string>
 
     <!-- Shared task filters and empty states -->
     <string name="task_filter_all">All</string>
