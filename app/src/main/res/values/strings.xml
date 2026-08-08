@@ -745,6 +745,16 @@
     <string name="person_analytics_no_tasks">No tasks assigned yet.</string>
     <string name="person_analytics_open_overdue">%1$d open - %2$d overdue</string>
     <string name="person_analytics_done_total">%1$d/%2$d done</string>
+    <string name="staff_analytics_title">Staff Analytics</string>
+    <string name="staff_analytics_subtitle">Team performance</string>
+    <string name="staff_analytics_team_snapshot">TEAM SNAPSHOT</string>
+    <string name="staff_analytics_staff">staff</string>
+    <string name="staff_analytics_attention">ATTENTION</string>
+    <string name="staff_analytics_people_with_overdue">People with overdue work</string>
+    <string name="staff_analytics_heaviest_load">Heaviest open load</string>
+    <string name="staff_analytics_lowest_on_time">Lowest on-time rate</string>
+    <string name="staff_analytics_staff_table">STAFF TABLE</string>
+    <string name="staff_analytics_no_staff_work">No active staff work yet.</string>
     <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Their past assigned tasks and stats stay. They\'re hidden from the People tab — you can unarchive them anytime from this same menu.</string>
     <string name="project_detail_archive_project">Archive project</string>
     <string name="project_detail_archive_project_2">Archive project?</string>

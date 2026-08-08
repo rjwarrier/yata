@@ -35,6 +35,7 @@ import com.mj.yata.ui.screen.taskdetail.TaskDetailScreen
 import com.mj.yata.ui.screen.project.ProjectDetailScreen
 import com.mj.yata.ui.screen.person.PersonAnalyticsScreen
 import com.mj.yata.ui.screen.person.PersonDetailScreen
+import com.mj.yata.ui.screen.person.StaffAnalyticsScreen
 import com.mj.yata.ui.screen.tag.TagDetailScreen
 import com.mj.yata.ui.screen.list.ListDetailScreen
 import com.mj.yata.ui.screen.search.SearchScreen
@@ -141,6 +142,7 @@ fun AppNavigation(
                 initialQuickAddListId = initialQuickAddListId,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigateToAnalytics = { navController.navigate(Screen.Analytics.route) },
+                onNavigateToStaffAnalytics = { navController.navigate(Screen.StaffAnalytics.route) },
                 onNavigateToNextDays = { navController.navigate(Screen.NextDays.route) },
                 onNavigateToSearch = { navController.navigate(Screen.Search.createRoute()) },
                 onNavigateToSavedSearch = { filters -> navController.navigate(Screen.Search.createRoute(filters)) },
@@ -235,6 +237,18 @@ fun AppNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                },
+                onNavigateToTab = onNavigateToTab
+            )
+        }
+
+        composable(Screen.StaffAnalytics.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            StaffAnalyticsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPerson = { personId ->
+                    navController.navigate(Screen.PersonAnalytics.createRoute(personId))
                 },
                 onNavigateToTab = onNavigateToTab
             )

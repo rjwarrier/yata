@@ -83,6 +83,7 @@ fun MainScreen(
     navController: NavController,
     onNavigateToSettings: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
+    onNavigateToStaffAnalytics: () -> Unit,
     onNavigateToNextDays: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToSavedSearch: (String) -> Unit = {},
@@ -784,6 +785,7 @@ fun MainScreen(
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onPersonClick = onNavigateToPersonDetail,
+                            onAnalyticsClick = onNavigateToStaffAnalytics,
                             onAddPersonClick = { activeSheet = MainSheetType.NewPerson },
                             onAssignGroup = { personIds, groupId -> viewModel.setPeopleGroup(personIds, groupId) },
                             onCreateGroupAndAssign = { id, name, personIds ->

@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
@@ -57,6 +58,7 @@ fun PeopleTab(
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onPersonClick: (String) -> Unit,
+    onAnalyticsClick: () -> Unit,
     onAddPersonClick: () -> Unit,
     onAssignGroup: (personIds: List<String>, groupId: String) -> Unit,
     onCreateGroupAndAssign: (id: String, name: String, personIds: List<String>) -> Unit,
@@ -109,6 +111,12 @@ fun PeopleTab(
                     contentDescription = stringResource(R.string.people_sort_people),
                     filledContainer = true
                 )
+                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onAnalyticsClick) {
+                    Icon(
+                        imageVector = Icons.Default.Analytics,
+                        contentDescription = stringResource(R.string.staff_analytics_title)
+                    )
+                }
                 com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { selectModeOn = true }) {
                     Icon(
                         imageVector = Icons.Default.Check,
