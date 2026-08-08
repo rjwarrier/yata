@@ -121,6 +121,7 @@ fun TaskRow(
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
     val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
+    val soundEnabled = com.mj.yata.ui.theme.LocalCompletionSoundEnabled.current
     val taskSwipeActionsEnabled = com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled.current
     val swipeRightAction = com.mj.yata.ui.theme.LocalSwipeRightAction.current
     val swipeLeftAction = com.mj.yata.ui.theme.LocalSwipeLeftAction.current
@@ -185,6 +186,7 @@ fun TaskRow(
         // dots. IntrinsicSize.Min on this Box lets fillMaxHeight() below resolve against the
         // Row's own (otherwise unbounded, LazyColumn-item) height.
         val isEnhancedM3 = com.mj.yata.ui.theme.LocalEnhancedM3Theming.current
+        val soundEnabled = com.mj.yata.ui.theme.LocalCompletionSoundEnabled.current
         if (!task.done && task.priority != "none") {
             val priorityStripeColor = when (task.priority) {
                 "low" -> accents.accentE
@@ -595,13 +597,16 @@ fun TaskRow(
                 // scrolling with a thumb that grazes a row) settle back instead of registering.
                 positionalThreshold = { totalDistance -> totalDistance * 0.75f },
                 confirmValueChange = { value ->
-                    val handler = when (value) {
-                        SwipeToDismissBoxValue.EndToStart -> leftHandler
-                        SwipeToDismissBoxValue.StartToEnd -> rightHandler
-                        SwipeToDismissBoxValue.Settled -> null
+                    val (action, handler) = when (value) {
+                        SwipeToDismissBoxValue.EndToStart -> swipeLeftAction to leftHandler
+                        SwipeToDismissBoxValue.StartToEnd -> swipeRightAction to rightHandler
+                        SwipeToDismissBoxValue.Settled -> SwipeAction.NONE to null
                     }
                     if (handler != null) {
                         if (hapticsEnabled) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                        if (action == SwipeAction.COMPLETE && soundEnabled) {
+                            com.mj.yata.ui.util.CompletionSoundPlayer.playCompletionChime()
+                        }
                         handler()
                     }
                     false

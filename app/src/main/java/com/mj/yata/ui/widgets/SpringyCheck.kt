@@ -43,18 +43,19 @@ fun SpringyCheck(
     color: Color = MaterialTheme.colorScheme.primary,
     size: Dp = 24.dp
 ) {
-    val scale = remember { Animatable(1f) }
+    val scale = remember { Animatable(if (checked) 1f else 1f) }
     val iconScale = remember { Animatable(if (checked) 1f else 0f) }
     val rippleScale = remember { Animatable(0f) }
     val rippleAlpha = remember { Animatable(0f) }
     val soundEnabled = com.mj.yata.ui.theme.LocalCompletionSoundEnabled.current
-    var isFirstComposition by remember { mutableStateOf(true) }
+    var initialCheckedState by remember { mutableStateOf(checked) }
 
     LaunchedEffect(checked) {
-        if (isFirstComposition) {
-            isFirstComposition = false
+        if (checked == initialCheckedState) {
             return@LaunchedEffect
         }
+        initialCheckedState = checked
+
         if (YataDur.modeState == MotionMode.OFF) {
             scale.snapTo(1f)
             iconScale.snapTo(if (checked) 1f else 0f)
@@ -96,6 +97,9 @@ fun SpringyCheck(
                 if (hapticsEnabled) {
                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                 }
+                if (!checked && soundEnabled) {
+                    com.mj.yata.ui.util.CompletionSoundPlayer.playCompletionChime()
+                }
                 onCheckedChange(!checked)
             },
         contentAlignment = Alignment.Center
@@ -131,7 +135,7 @@ fun SpringyCheck(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            if (checked) {
+            if (checked || iconScale.value > 0f) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = stringResource(R.string.springy_check_check),
