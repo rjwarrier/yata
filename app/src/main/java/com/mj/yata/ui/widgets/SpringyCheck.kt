@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mj.yata.domain.model.MotionMode
+import com.mj.yata.ui.theme.YataDur
 
 import kotlinx.coroutines.launch
 
@@ -53,6 +55,13 @@ fun SpringyCheck(
             isFirstComposition = false
             return@LaunchedEffect
         }
+        if (YataDur.modeState == MotionMode.OFF) {
+            scale.snapTo(1f)
+            iconScale.snapTo(if (checked) 1f else 0f)
+            rippleAlpha.snapTo(0f)
+            return@LaunchedEffect
+        }
+
         if (checked) {
             if (soundEnabled) {
                 com.mj.yata.ui.util.CompletionSoundPlayer.playCompletionChime()

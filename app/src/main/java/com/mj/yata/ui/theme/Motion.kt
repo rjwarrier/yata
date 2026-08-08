@@ -1,12 +1,24 @@
 package com.mj.yata.ui.theme
 
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import com.mj.yata.domain.model.MotionMode
 
@@ -18,11 +30,25 @@ object YataEase {
     val spring: Easing = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
 }
 
-/** Snapshot state (not plain `var`s) so [applyReduceMotion] mutating them registers as a state
- * change — a composable that already read `YataDur.nav` etc. recomposes with the new value
- * instead of keeping whatever spec it started with until it happens to recompose for another
- * reason. Every consumer still just reads `YataDur.nav` fresh each call, so toggling Reduce
- * Motion in Settings takes effect app-wide with no changes needed at any of those call sites. */
+/** Expressive spring specs for Material 3 responsive micro-animations */
+object YataSpring {
+    val bouncy: AnimationSpec<Float> = spring(
+        dampingRatio = Spring.DampingRatioMediumBouncy,
+        stiffness = Spring.StiffnessMediumLow
+    )
+
+    val press: AnimationSpec<Float> = spring(
+        dampingRatio = 0.75f,
+        stiffness = Spring.StiffnessMedium
+    )
+
+    val checkmark: AnimationSpec<Float> = spring(
+        dampingRatio = 0.55f,
+        stiffness = Spring.StiffnessLow
+    )
+}
+
+/** Snapshot state so [applyMotionMode] registers as a state change app-wide. */
 object YataDur {
     private const val defaultNav = 380
     private const val defaultSheet = 340
@@ -38,11 +64,15 @@ object YataDur {
     var micro by mutableIntStateOf(defaultMicro)
         private set
 
+    var modeState by mutableStateOf(MotionMode.FULL)
+        private set
+
     fun applyReduceMotion(enabled: Boolean) {
         applyMotionMode(if (enabled) MotionMode.REDUCED else MotionMode.FULL)
     }
 
     fun applyMotionMode(mode: MotionMode) {
+        modeState = mode
         when (mode) {
             MotionMode.FULL -> {
                 nav = defaultNav
@@ -66,18 +96,54 @@ object YataDur {
     }
 }
 
-/**
- * Specs for `Modifier.animateItem` in the task lists — how a row slides when the rows above it
- * change, and how one fades in and out as it arrives or leaves.
- *
- * Every list already passed a tokenised `placementSpec` and left the fades to take their default,
- * which is a framework spring. So with Reduce Motion on a row's *movement* shortened threefold
- * while its *fade* carried on at full length — the one setting whose whole job is to be applied
- * uniformly. Reading [YataDur] at call time (hence `get()`, not a stored value) is what keeps them
- * in step, matching how every other consumer of these tokens works.
- */
 val yataItemPlacement: FiniteAnimationSpec<IntOffset>
     get() = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
 
 val yataItemFade: FiniteAnimationSpec<Float>
     get() = tween(durationMillis = YataDur.fade, easing = YataEase.emphasized)
+
+/**
+ * Reusable M3 Expressive touch feedback modifier that shrinks slightly on press (0.96f)
+ * with bouncy spring recovery upon release, automatically respecting current [MotionMode].
+ */
+fun Modifier.bounceClickable(
+    enabled: Boolean = true,
+    pressedScale: Float = 0.96f,
+    onClick: () -> Unit
+): Modifier = composed {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val targetScale = when {
+        !enabled || YataDur.modeState == MotionMode.OFF -> 1f
+        isPressed && YataDur.modeState == MotionMode.REDUCED -> 0.99f
+        isPressed -> pressedScale
+        else -> 1f
+    }
+
+    val animSpec: AnimationSpec<Float> = when (YataDur.modeState) {
+        MotionMode.FULL -> YataSpring.press
+        MotionMode.REDUCED -> tween(durationMillis = YataDur.micro)
+        MotionMode.OFF -> snap()
+    }
+
+    val animatedScale by animateFloatAsState(
+        targetValue = targetScale,
+        animationSpec = animSpec,
+        label = "bounce-scale"
+    )
+
+    this
+        .graphicsLayer {
+            scaleX = animatedScale
+            scaleY = animatedScale
+        }
+        .clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            enabled = enabled,
+            onClick = onClick
+        )
+}
+
+private fun <T> snap(): AnimationSpec<T> = tween(0)
