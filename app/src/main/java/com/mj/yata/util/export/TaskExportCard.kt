@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
@@ -141,7 +142,7 @@ fun TaskExportCard(
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "YATA",
+                            text = stringResource(R.string.export_yata_wordmark),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 2.sp
@@ -149,7 +150,7 @@ fun TaskExportCard(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.weight(1f))
-                        ExportBadge(text = "TASK", color = accentColor)
+                        ExportBadge(text = stringResource(R.string.export_task_badge), color = accentColor)
                     }
                     Spacer(modifier = Modifier.height(18.dp))
                     Text(
@@ -164,7 +165,7 @@ fun TaskExportCard(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ExportBadge(
-                            text = if (done) "DONE" else "OPEN",
+                            text = stringResource(if (done) R.string.export_done_badge else R.string.export_open_badge),
                             color = if (done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (priority != "none") {
@@ -173,20 +174,20 @@ fun TaskExportCard(
                                 "med" -> LightAccents.accentD
                                 else -> LightAccents.accentE
                             }
-                            ExportBadge(text = "${priority.uppercase()} PRIORITY", color = priorityColor)
+                            ExportBadge(text = stringResource(R.string.export_priority_badge, priority.uppercase()), color = priorityColor)
                         }
                         if (flagged) {
-                            ExportBadge(text = "FLAGGED", color = MaterialTheme.colorScheme.error)
+                            ExportBadge(text = stringResource(R.string.export_flagged_badge), color = MaterialTheme.colorScheme.error)
                         }
                         if (overdue && !done) {
-                            ExportBadge(text = "OVERDUE", color = MaterialTheme.colorScheme.error)
+                            ExportBadge(text = stringResource(R.string.export_overdue_badge), color = MaterialTheme.colorScheme.error)
                         }
                     }
 
                     if (completedAtLabel != null || dueLabel != null) {
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = completedAtLabel ?: "Due $dueLabel",
+                            text = completedAtLabel ?: stringResource(R.string.task_export_due_label, dueLabel ?: ""),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -209,12 +210,12 @@ fun TaskExportCard(
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         projectName?.let {
-                            ExportLabeledPills(label = "Project") {
+                            ExportLabeledPills(label = stringResource(R.string.export_project_label)) {
                                 ExportPill(text = it, color = accentColor, fontSize = 10.sp)
                             }
                         }
                         listName?.let {
-                            ExportLabeledPills(label = "List") {
+                            ExportLabeledPills(label = stringResource(R.string.export_list_label)) {
                                 ExportPill(
                                     text = it,
                                     color = MaterialTheme.colorScheme.secondary,
@@ -223,10 +224,10 @@ fun TaskExportCard(
                             }
                         }
                         if (assigneeNames.isNotEmpty()) {
-                            ExportLabeledPills(label = "Assigned to") {
+                            ExportLabeledPills(label = stringResource(R.string.export_assigned_to_label)) {
                                 assigneeNames.forEach { name ->
                                     ExportPill(
-                                        text = "@$name",
+                                        text = stringResource(R.string.export_assignee_pill, name),
                                         color = MaterialTheme.colorScheme.tertiary,
                                         fontSize = 10.sp
                                     )
@@ -234,14 +235,14 @@ fun TaskExportCard(
                             }
                         }
                         if (tagChips.isNotEmpty()) {
-                            ExportLabeledPills(label = "Tags") {
+                            ExportLabeledPills(label = stringResource(R.string.export_tags_label)) {
                                 tagChips.forEach { chip ->
                                     ExportPill(text = chip.name, color = chip.color, fontSize = 10.sp)
                                 }
                             }
                         }
                         if (showScheduleDetails) {
-                            ExportLabeledPills(label = "Schedule") {
+                            ExportLabeledPills(label = stringResource(R.string.export_schedule_label)) {
                                 recurrenceLabel?.let {
                                     ExportPill(
                                         text = it,
@@ -251,7 +252,7 @@ fun TaskExportCard(
                                 }
                                 reminderLabel?.let {
                                     ExportPill(
-                                        text = "Reminder: $it",
+                                        text = stringResource(R.string.export_reminder_pill, it),
                                         color = MaterialTheme.colorScheme.tertiary,
                                         fontSize = 10.sp
                                     )
@@ -270,7 +271,7 @@ fun TaskExportCard(
                     ) {
                         val doneSubtasks = subtasks.count { it.done }
                         Text(
-                            text = "SUBTASKS ($doneSubtasks/${subtasks.size})",
+                            text = stringResource(R.string.export_subtasks_heading, doneSubtasks, subtasks.size),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -312,7 +313,7 @@ fun TaskExportCard(
                             .onGloballyPositioned { onRowBoundary(it.boundsInRoot().bottom) }
                     ) {
                         Text(
-                            text = "NOTES",
+                            text = stringResource(R.string.export_notes_heading),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -335,7 +336,7 @@ fun TaskExportCard(
                 if (showComments) {
                     Column(modifier = Modifier.padding(horizontal = 28.dp, vertical = 20.dp)) {
                         Text(
-                            text = "COMMENTS (${comments.size})",
+                            text = stringResource(R.string.export_comments_heading, comments.size),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -387,13 +388,13 @@ fun TaskExportCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Made with YATA",
+                            text = stringResource(R.string.export_made_with_yata),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Generated $generatedOn",
+                            text = stringResource(R.string.export_generated_on, generatedOn),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )

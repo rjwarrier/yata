@@ -203,7 +203,7 @@ fun VoiceTaskOverlay(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "ON-DEVICE VOICE INPUT",
+                        text = stringResource(R.string.voice_task_overlay_heading),
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -264,7 +264,7 @@ fun VoiceTaskOverlay(
 
     if (!hasMicPermission) {
         Text(
-            text = "Microphone permission required for voice task creation.",
+            text = stringResource(R.string.voice_task_overlay_mic_permission_required),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Center,
@@ -273,7 +273,7 @@ fun VoiceTaskOverlay(
     } else when (val state = voiceState) {
         is VoiceState.Listening -> {
             Text(
-                text = "Listening... Speak your task naturally\n(e.g., 'Buy groceries tomorrow at 5pm')",
+                text = stringResource(R.string.voice_task_overlay_listening),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -337,43 +337,46 @@ fun VoiceTaskOverlay(
                             ) {
                                 parsedInfo.due?.let { dueDate ->
                                     VoiceChip(
-                                        label = "Due: ${dueDate}${parsedInfo.time?.let { " $it" } ?: ""}",
+                                        label = stringResource(
+                                            R.string.voice_task_overlay_due_chip,
+                                            "${dueDate}${parsedInfo.time?.let { " $it" } ?: ""}"
+                                        ),
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 parsedInfo.priority?.let { priority ->
                                     VoiceChip(
-                                        label = "Priority: ${priority.uppercase()}",
+                                        label = stringResource(R.string.voice_task_overlay_priority_chip, priority.uppercase()),
                                         color = MaterialTheme.colorScheme.tertiary
                                     )
                                 }
                                 if (parsedInfo.flag) {
                                     VoiceChip(
-                                        label = "Flagged",
+                                        label = stringResource(R.string.quick_add_preview_flagged),
                                         color = MaterialTheme.colorScheme.error
                                     )
                                 }
                                 parsedInfo.projectName?.let { proj ->
                                     VoiceChip(
-                                        label = "Project: $proj",
+                                        label = stringResource(R.string.voice_task_overlay_project_chip, proj),
                                         color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
                                 parsedInfo.listName?.let { list ->
                                     VoiceChip(
-                                        label = "List: $list",
+                                        label = stringResource(R.string.voice_task_overlay_list_chip, list),
                                         color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
                                 parsedInfo.tagNames.forEach { tag ->
                                     VoiceChip(
-                                        label = "#$tag",
+                                        label = stringResource(R.string.voice_task_overlay_tag_chip, tag),
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 parsedInfo.assigneeNames.forEach { assignee ->
                                     VoiceChip(
-                                        label = "@$assignee",
+                                        label = stringResource(R.string.voice_task_overlay_assignee_chip, assignee),
                                         color = MaterialTheme.colorScheme.tertiary
                                     )
                                 }
@@ -438,7 +441,7 @@ fun VoiceTaskOverlay(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Create Task",
+                                text = stringResource(R.string.voice_task_overlay_create_task),
                                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                 color = buttonContentColor
                             )

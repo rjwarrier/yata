@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
@@ -183,7 +184,7 @@ fun BrandedExportCard(
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "YATA",
+                            text = stringResource(R.string.export_yata_wordmark),
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 2.sp
@@ -213,10 +214,10 @@ fun BrandedExportCard(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ExportStatChip(label = "Total", value = "$totalCount")
-                        ExportStatChip(label = "Done", value = "$doneCount", accentColor = MaterialTheme.colorScheme.primary)
+                        ExportStatChip(label = stringResource(R.string.export_total_label), value = "$totalCount")
+                        ExportStatChip(label = stringResource(R.string.export_done_label), value = "$doneCount", accentColor = MaterialTheme.colorScheme.primary)
                         if (overdueCount > 0) {
-                            ExportStatChip(label = "Overdue", value = "$overdueCount", accentColor = MaterialTheme.colorScheme.error)
+                            ExportStatChip(label = stringResource(R.string.export_overdue_label), value = "$overdueCount", accentColor = MaterialTheme.colorScheme.error)
                         }
                     }
                     Spacer(modifier = Modifier.height(14.dp))
@@ -227,12 +228,12 @@ fun BrandedExportCard(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Progress",
+                            text = stringResource(R.string.export_progress_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "${(progress * 100).toInt()}% complete",
+                            text = stringResource(R.string.export_percent_complete, (progress * 100).toInt()),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = accentColor
                         )
@@ -267,7 +268,7 @@ fun BrandedExportCard(
                 Column(modifier = Modifier.padding(horizontal = 28.dp, vertical = spacing.listVerticalPadding)) {
                     if (tasks.isEmpty()) {
                         Text(
-                            text = "No tasks.",
+                            text = stringResource(R.string.export_no_tasks),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -312,7 +313,7 @@ fun BrandedExportCard(
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = "(${rows.size})",
+                                            text = stringResource(R.string.export_rows_count, rows.size),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -364,13 +365,13 @@ fun BrandedExportCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Made with YATA",
+                            text = stringResource(R.string.export_made_with_yata),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Generated $generatedOn",
+                            text = stringResource(R.string.export_generated_on, generatedOn),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -442,7 +443,7 @@ private fun ExportTaskLine(
             if (row.done && row.completedAtLabel != null) {
                 Spacer(modifier = Modifier.height(3.dp))
                 Text(
-                    text = "Completed ${row.completedAtLabel}",
+                    text = stringResource(R.string.export_completed_at, row.completedAtLabel ?: ""),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
@@ -464,7 +465,7 @@ private fun ExportTaskLine(
                                 .padding(horizontal = 5.dp, vertical = 1.dp)
                         ) {
                             Text(
-                                text = "OVERDUE",
+                                text = stringResource(R.string.export_overdue_badge),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.error
                             )
