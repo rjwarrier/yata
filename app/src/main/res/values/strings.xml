@@ -637,6 +637,11 @@
     <string name="entity_editors_group_name">Group name</string>
     <string name="entity_editors_list_name">List name</string>
     <string name="entity_editors_new_group">New group</string>
+    <string name="mention_hint_tag">Type to search or create a tag</string>
+    <string name="mention_hint_person">Type to search or create a person</string>
+    <string name="mention_create_tag">Create tag \"%1$s\"</string>
+    <string name="mention_create_person">Create person \"%1$s\"</string>
+    <string name="mention_you">You</string>
     <string name="entity_editors_exclude_from_today">Exclude from Today</string>
     <string name="entity_editors_exclude_from_today_summary">Tasks here never show on the Today screen, even if overdue — for a backlog you\'ll schedule later.</string>
     <string name="entity_editors_project_due_date">Project Due Date</string>
@@ -1129,6 +1134,10 @@
         <item quantity="one">Create %1$d task</item>
         <item quantity="other">Create %1$d tasks</item>
     </plurals>
+    <plurals name="new_task_bulk_lines_detected">
+        <item quantity="one">%1$d task detected — each line becomes its own task, parsed separately</item>
+        <item quantity="other">%1$d tasks detected — each line becomes its own task, parsed separately</item>
+    </plurals>
     <plurals name="new_task_schedule_conflict">
         <item quantity="one">%1$d open task is already scheduled at %2$s</item>
         <item quantity="other">%1$d open tasks are already scheduled at %2$s</item>
@@ -1329,6 +1338,10 @@
     <string name="widget_no_tasks_here">No tasks here.</string>
     <string name="widget_more_in_app">+%1$d more in the app</string>
     <string name="widget_nothing_due_today">Nothing due today.</string>
+    <string name="team_overdue_widget_title">Team Overdue</string>
+    <string name="team_overdue_widget_empty">Nobody\'s behind. 🎉</string>
+    <string name="tasker_create_task_hint">Fields accept Tasker variables (%var). Leave blank to skip.</string>
+    <string name="archive_section_header">%1$s - %2$d</string>
 
     <!-- Shared task filters and empty states -->
     <string name="task_filter_all">All</string>

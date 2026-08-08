@@ -22,7 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import com.mj.yata.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -179,7 +181,7 @@ internal fun MentionSuggestions(
             } else if (mention.trigger == TRIGGER_TAG) {
                 val matches = tags.filter { it.name.contains(query, ignoreCase = true) }.sortedBy { it.name.lowercase() }
                 if (matches.isEmpty() && query.isBlank()) {
-                    MentionPanelHint("Type to search or create a tag")
+                    MentionPanelHint(stringResource(R.string.mention_hint_tag))
                 }
                 matches.take(5).forEach { tag ->
                     val color = accents.getAccent(tag.color)
@@ -191,7 +193,7 @@ internal fun MentionSuggestions(
                 }
                 if (query.isNotBlank() && matches.none { it.name.equals(query, ignoreCase = true) }) {
                     MentionRow(
-                        label = "Create tag \"$query\"",
+                        label = stringResource(R.string.mention_create_tag, query),
                         onClick = { onCreateTag(query) },
                         leading = { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) },
                         labelColor = MaterialTheme.colorScheme.primary
@@ -200,11 +202,11 @@ internal fun MentionSuggestions(
             } else {
                 val matches = people.filter { it.name.contains(query, ignoreCase = true) }.sortedBy { it.name.lowercase() }
                 if (matches.isEmpty() && query.isBlank()) {
-                    MentionPanelHint("Type to search or create a person")
+                    MentionPanelHint(stringResource(R.string.mention_hint_person))
                 }
                 matches.take(5).forEach { person ->
                     MentionRow(
-                        label = if (person.isMe) "You" else person.name,
+                        label = if (person.isMe) stringResource(R.string.mention_you) else person.name,
                         onClick = { onSelectPerson(person) },
                         leading = {
                             com.mj.yata.ui.widgets.PersonAvatar(
@@ -218,7 +220,7 @@ internal fun MentionSuggestions(
                 }
                 if (query.isNotBlank() && matches.none { it.name.equals(query, ignoreCase = true) }) {
                     MentionRow(
-                        label = "Create person \"$query\"",
+                        label = stringResource(R.string.mention_create_person, query),
                         onClick = { onCreatePerson(query) },
                         leading = { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp)) },
                         labelColor = MaterialTheme.colorScheme.primary

@@ -180,7 +180,7 @@ fun ArchiveScreen(
 @Composable
 private fun ArchiveSectionHeader(label: String, count: Int) {
     Text(
-        text = "$label - $count",
+        text = stringResource(R.string.archive_section_header, label, count),
         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)

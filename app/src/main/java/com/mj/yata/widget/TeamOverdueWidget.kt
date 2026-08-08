@@ -13,6 +13,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.appWidgetBackground
+import com.mj.yata.R
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
@@ -101,6 +102,7 @@ private fun TeamOverdueContent(
     accentOverride: androidx.compose.ui.graphics.Color?,
     health: WidgetHealth?
 ) {
+    val context = androidx.glance.LocalContext.current
     val maxRows = if (LocalSize.current.height > 180.dp) 8 else 5
     Box(
         modifier = GlanceModifier
@@ -112,13 +114,13 @@ private fun TeamOverdueContent(
             .clickable(openAppAction())
     ) {
         Column(modifier = GlanceModifier.fillMaxSize()) {
-            WidgetSectionHeader(customLabel ?: "Team Overdue", ColorProvider(accentOverride ?: colors.error))
+            WidgetSectionHeader(customLabel ?: context.getString(R.string.team_overdue_widget_title), ColorProvider(accentOverride ?: colors.error))
             WidgetStaleBadge(health)
             Spacer(modifier = GlanceModifier.height(8.dp))
             if (overdueByPerson.isEmpty()) {
                 Box(modifier = GlanceModifier.fillMaxWidth().defaultWeight(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "Nobody's behind. 🎉",
+                        text = context.getString(R.string.team_overdue_widget_empty),
                         style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurfaceVariant)
                     )
                 }
@@ -137,7 +139,7 @@ private fun TeamOverdueContent(
                                 modifier = GlanceModifier.defaultWeight()
                             )
                             Text(
-                                text = "$count overdue",
+                                text = context.getString(R.string.people_tab_overdue_count, count),
                                 style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(accentOverride ?: colors.error))
                             )
                         }

@@ -118,7 +118,7 @@ class CreateTaskConfigActivity : ComponentActivity(), TaskerPluginConfig<CreateT
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = "Fields accept Tasker variables (%var). Leave blank to skip.",
+                            text = stringResource(R.string.tasker_create_task_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

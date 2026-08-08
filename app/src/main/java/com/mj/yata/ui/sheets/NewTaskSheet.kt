@@ -939,7 +939,7 @@ fun NewTaskSheet(
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = "${bulkTaskLines.size} tasks detected — each line becomes its own task, parsed separately",
+                        text = pluralStringResource(R.plurals.new_task_bulk_lines_detected, bulkTaskLines.size, bulkTaskLines.size),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)

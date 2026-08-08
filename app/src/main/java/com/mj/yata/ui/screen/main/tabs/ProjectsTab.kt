@@ -293,7 +293,7 @@ fun ProjectCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "$doneTasks/$totalTasks done",
+                            text = stringResource(R.string.widget_done_ratio, doneTasks, totalTasks),
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 13.sp
