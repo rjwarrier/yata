@@ -16,7 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -33,6 +33,9 @@ import com.joaomgcd.taskerpluginlibrary.config.TaskerPluginConfigHelperNoOutput
 import com.joaomgcd.taskerpluginlibrary.input.TaskerInput
 import com.mj.yata.R
 import com.mj.yata.ui.theme.YataTheme
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.YataFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 
 class CreateTaskConfigHelper(config: TaskerPluginConfig<CreateTaskInput>) :
     TaskerPluginConfigHelperNoOutput<CreateTaskInput, CreateTaskRunner>(config) {
@@ -140,11 +143,13 @@ class CreateTaskConfigActivity : ComponentActivity(), TaskerPluginConfig<CreateT
 
 @Composable
 private fun LabeledField(label: String, value: String?, singleLine: Boolean = true, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
+    TextField(
         value = value ?: "",
         onValueChange = onValueChange,
         label = { Text(label) },
         singleLine = singleLine,
+        shape = if (singleLine) YataCompactFieldShape else YataFieldShape,
+        colors = yataFieldColors(),
         modifier = Modifier.fillMaxWidth()
     )
 }

@@ -29,7 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,6 +56,8 @@ import com.mj.yata.MainActivity
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.ui.theme.YataTheme
+import com.mj.yata.ui.widgets.YataFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
@@ -323,7 +325,7 @@ private fun QuickAddDialogContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                OutlinedTextField(
+                TextField(
                     value = title,
                     onValueChange = { title = it },
                     placeholder = { Text(stringResource(R.string.quick_add_dialog_what_needs_doing)) },
@@ -340,6 +342,8 @@ private fun QuickAddDialogContent(
                             Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.cd_add_task_by_voice))
                         }
                     },
+                    shape = YataFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester)

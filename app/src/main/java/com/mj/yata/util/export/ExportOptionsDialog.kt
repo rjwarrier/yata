@@ -16,7 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,11 +112,13 @@ fun ExportOptionsDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 SectionLabel(stringResource(R.string.export_section_file))
-                OutlinedTextField(
+                TextField(
                     value = fileNameText,
                     onValueChange = { fileNameText = it.take(64) },
                     label = { Text(stringResource(R.string.export_filename)) },
                     singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -143,12 +147,14 @@ fun ExportOptionsDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                    OutlinedTextField(
+                    TextField(
                         value = daysText,
                         onValueChange = { value -> if (value.all { it.isDigit() } && value.length <= 4) daysText = value },
                         placeholder = { Text(stringResource(R.string.export_options_no_limit)) },
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(4.dp))

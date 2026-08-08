@@ -69,6 +69,8 @@ import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.PressableScaleBox
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.ui.sheets.*
 import kotlinx.coroutines.launch
 
@@ -1189,12 +1191,14 @@ private fun CommandPaletteDialog(
         title = { Text(stringResource(R.string.main_command_palette)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                TextField(
                     value = query,
                     onValueChange = { query = it },
                     singleLine = true,
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     placeholder = { Text(stringResource(R.string.main_search_actions_or_tasks)) },
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 LazyColumn(

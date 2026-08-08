@@ -130,6 +130,8 @@ import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.CircularImageCropper
 import com.mj.yata.ui.widgets.CustomColorPickerDialog
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.ui.widgets.showSuccess
 import com.mj.yata.ui.widgets.showError
@@ -231,6 +233,7 @@ fun SettingsScreen(
     onNavigateToWelcome: () -> Unit,
     onNavigateToHelpAbout: () -> Unit,
     onNavigateToCrashLog: () -> Unit,
+    onNavigateToRemoteSync: () -> Unit,
     settingsDestination: SettingsDestination? = null,
     onNavigateToSettingsDestination: (SettingsDestination) -> Unit = {},
     modifier: Modifier = Modifier
@@ -356,12 +359,10 @@ fun SettingsScreen(
     var isDeletingAll by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showSftpConfigDialog by remember { mutableStateOf(false) }
     var showSftpRestoreDialog by remember { mutableStateOf(false) }
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
-    var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
     var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
     var sftpBackupList by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
@@ -1441,12 +1442,14 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedTextField(
+                        TextField(
                             value = newDateAlias,
                             onValueChange = { newDateAlias = it },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            label = { Text("Word") }
+                            label = { Text("Word") },
+                            shape = YataCompactFieldShape,
+                            colors = yataFieldColors()
                         )
                         Box {
                             AssistChip(
@@ -2429,13 +2432,13 @@ fun SettingsScreen(
                             )
                         }
 
-                        if (sftpBackupEnabled) {
+                        run {
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { showSftpConfigDialog = true }
+                                    .clickable { onNavigateToRemoteSync() }
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -2468,6 +2471,11 @@ fun SettingsScreen(
                                 )
                             }
 
+                            // Compare/restore/clear-lock are gated on the toggle, not just on being
+                            // configured -- when it's off, cloud sync is meant to be fully paused,
+                            // not just "no longer automatic." Configure server above stays reachable
+                            // either way so turning it on doesn't require re-entering credentials.
+                            if (sftpBackupEnabled) {
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                             Row(
@@ -2616,6 +2624,7 @@ fun SettingsScreen(
                                         }
                                     }
                                 }
+                            }
                             }
                         }
                     }
@@ -2897,15 +2906,17 @@ fun SettingsScreen(
             title = { Text("Edit profile") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
+                    TextField(
                         value = profileDraftName,
                         onValueChange = { profileDraftName = it },
                         singleLine = true,
                         label = { Text("Name") },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = profileDraftEmail,
                         onValueChange = { profileDraftEmail = it },
                         singleLine = true,
@@ -2915,6 +2926,8 @@ fun SettingsScreen(
                             imeAction = ImeAction.Done
                         ),
                         keyboardActions = KeyboardActions(onDone = { saveProfile() }),
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
@@ -2953,11 +2966,13 @@ fun SettingsScreen(
             onDismissRequest = { showThemePresetDialog = false },
             title = { Text("Save theme preset") },
             text = {
-                OutlinedTextField(
+                TextField(
                     value = themePresetName,
                     onValueChange = { themePresetName = it },
                     singleLine = true,
                     label = { Text("Name") },
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -3150,569 +3165,6 @@ fun SettingsScreen(
                     enabled = !isClearingSyncLock
                 ) {
                     Text(stringResource(R.string.action_cancel))
-                }
-            }
-        )
-    }
-
-    if (showSftpConfigDialog) {
-        var draftProtocol by remember { mutableStateOf(remoteBackupProtocol) }
-        var draftHost by remember { mutableStateOf(sftpHost) }
-        var draftPort by remember { mutableStateOf(sftpPort.toString()) }
-        var draftUsername by remember { mutableStateOf(sftpUsername) }
-        var draftRemoteDir by remember { mutableStateOf(sftpRemoteDir) }
-        var draftAuthMethod by remember { mutableStateOf(sftpAuthMethod) }
-        var draftPassword by remember { mutableStateOf("") }
-        var draftPrivateKey by remember { mutableStateOf("") }
-        var draftPassphrase by remember { mutableStateOf("") }
-        var draftFtpUseTls by remember { mutableStateOf(ftpUseTls) }
-        var draftGitHubRepo by remember { mutableStateOf(listOf(githubOwner, githubRepo).filter { it.isNotBlank() }.joinToString("/")) }
-        var draftGitHubBranch by remember { mutableStateOf(githubBranch.ifBlank { "main" }) }
-        var draftGitHubApiBase by remember { mutableStateOf(githubApiBase) }
-        // Never pre-filled with the stored value — the passphrase is write-only from the UI's
-        // point of view, same as the password fields. Blank therefore means "leave as-is".
-        var draftBackupPassphrase by remember { mutableStateOf("") }
-        val passwordAlreadySet = remember { viewModel.hasRemoteBackupPassword() }
-        val githubTokenAlreadySet = remember { viewModel.hasGitHubToken() }
-        val keyPassphraseAlreadySet = remember { viewModel.hasSftpKeyPassphrase() }
-        val backupPassphraseAlreadySet = remember { viewModel.hasRemoteBackupPassphrase() }
-        val savedSecretPlaceholder = "••••••••"
-        var draftGitHubToken by remember {
-            mutableStateOf(if (githubTokenAlreadySet) savedSecretPlaceholder else "")
-        }
-        var isTestingConnection by remember { mutableStateOf(false) }
-        // null = untested this session, true/false = last test's outcome. A successful SFTP test
-        // with no fingerprint pinned yet, or a failed one where the failure is a host-key
-        // mismatch, both surface a trust prompt via pendingTrustFingerprint instead of a plain
-        // result line. FTP/FTPS has no equivalent -- pendingTrustFingerprint stays null there and
-        // every test outcome goes straight to testResultMessage.
-        var testResultOk by remember { mutableStateOf<Boolean?>(null) }
-        var testResultMessage by remember { mutableStateOf<String?>(null) }
-        var pendingTrustFingerprint by remember { mutableStateOf<String?>(null) }
-        var isHostKeyMismatch by remember { mutableStateOf(false) }
-        val draftIsFtp = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP
-        val draftIsGitHub = draftProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB
-        val tokenExpiryStatus = githubTokenExpiryStatus(githubTokenExpiresAt)
-        fun enteredGitHubToken(): String =
-            draftGitHubToken.takeUnless { githubTokenAlreadySet && it == savedSecretPlaceholder }.orEmpty()
-
-        fun parseGitHubRepoDraft(): Pair<String, String>? {
-            val parts = draftGitHubRepo.trim().split("/", limit = 2)
-            return if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) {
-                parts[0] to parts[1]
-            } else {
-                null
-            }
-        }
-
-        fun saveServerConfiguration(onSaved: () -> Unit = {}) {
-            if (draftIsGitHub) {
-                enteredGitHubToken().takeIf { it.isNotBlank() }?.let(viewModel::setGitHubToken)
-                val repoParts = parseGitHubRepoDraft()
-                if (repoParts != null) {
-                    viewModel.saveGitHubConfiguration(
-                        owner = repoParts.first,
-                        repo = repoParts.second,
-                        branch = draftGitHubBranch,
-                        apiBase = draftGitHubApiBase,
-                        onSaved = onSaved
-                    )
-                } else {
-                    testResultOk = false
-                    testResultMessage = "Enter the repo as owner/name"
-                    isTestingConnection = false
-                }
-                return
-            }
-            if (draftIsFtp) {
-                if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
-                // Blank means "keep whatever is stored" rather than "remove encryption" — silently
-                // dropping to unencrypted uploads because a field was left empty is not a default
-                // anyone would want.
-                if (draftBackupPassphrase.isNotBlank()) {
-                    viewModel.setRemoteBackupPassphrase(draftBackupPassphrase)
-                }
-            } else {
-                viewModel.setSftpAuthMethod(draftAuthMethod)
-                if (draftAuthMethod == "PRIVATE_KEY") {
-                    if (draftPrivateKey.isNotBlank() || draftPassphrase.isNotBlank()) {
-                        viewModel.setSftpPrivateKey(draftPrivateKey, draftPassphrase)
-                    }
-                } else {
-                    if (draftPassword.isNotBlank()) viewModel.setSftpPassword(draftPassword)
-                }
-            }
-            viewModel.saveRemoteBackupConfiguration(
-                protocol = draftProtocol,
-                useTls = draftFtpUseTls,
-                host = draftHost,
-                port = draftPort.toIntOrNull() ?: sftpPort,
-                username = draftUsername,
-                remoteDir = draftRemoteDir,
-                authMethod = draftAuthMethod,
-                onSaved = onSaved
-            )
-        }
-
-        AlertDialog(
-            onDismissRequest = { showSftpConfigDialog = false },
-            title = { Text("Remote sync") },
-            text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    RemoteConfigHeader(protocol = draftProtocol)
-                    RemoteProviderPicker(
-                        selectedProtocol = draftProtocol,
-                        onProtocolSelected = { newProtocol ->
-                            // Only nudge the port if it's still sitting at the *other* protocol's
-                            // default -- a custom port the user already typed must survive a
-                            // protocol switch.
-                            if (newProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP && draftPort == "22") {
-                                draftPort = "21"
-                            } else if (newProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP && draftPort == "21") {
-                                draftPort = "22"
-                            }
-                            draftProtocol = newProtocol
-                        }
-                    )
-                    if (draftIsGitHub) {
-                        RemoteConfigGroup(
-                            title = "Repository access",
-                            summary = "Limit the token to this private sync repo.",
-                            icon = Icons.Default.Code
-                        ) {
-                            OutlinedTextField(
-                                value = draftGitHubToken,
-                                onValueChange = { draftGitHubToken = it },
-                                label = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Token")
-                                        IconButton(
-                                            onClick = { showGitHubPatHelpDialog = true },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Info,
-                                                contentDescription = "How to create a GitHub token",
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                    }
-                                },
-                                placeholder = {
-                                    if (githubTokenAlreadySet) Text(savedSecretPlaceholder)
-                                },
-                                singleLine = true,
-                                visualTransformation = PasswordVisualTransformation(),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            tokenExpiryStatus?.let { status ->
-                                Text(
-                                    text = status.label,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (status.warning) {
-                                        MaterialTheme.colorScheme.error
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                            OutlinedTextField(
-                                value = draftGitHubRepo,
-                                onValueChange = { draftGitHubRepo = it },
-                                label = { Text("Repo") },
-                                placeholder = { Text("owner/repo") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            OutlinedTextField(
-                                value = draftGitHubBranch,
-                                onValueChange = { draftGitHubBranch = it },
-                                label = { Text("Branch") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            OutlinedTextField(
-                                value = draftGitHubApiBase,
-                                onValueChange = { draftGitHubApiBase = it },
-                                label = { Text("API base URL") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Surface(
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = "Fine-grained token: Contents read/write. Stored encrypted on this device.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.padding(12.dp)
-                                )
-                            }
-                        }
-                    } else {
-                        RemoteConfigGroup(
-                            title = "Server location",
-                            summary = if (draftIsFtp) "Point YATA at an FTP or FTPS folder." else "Point YATA at an SSH/SFTP folder.",
-                            icon = if (draftIsFtp) Icons.Default.Dns else Icons.Default.Storage
-                        ) {
-                            OutlinedTextField(
-                                value = draftHost,
-                                onValueChange = { draftHost = it },
-                                label = { Text(stringResource(R.string.settings_sftp_host)) },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                                OutlinedTextField(
-                                    value = draftPort,
-                                    onValueChange = { new -> if (new.length <= 5 && new.all { it.isDigit() }) draftPort = new },
-                                    label = { Text(stringResource(R.string.settings_sftp_port)) },
-                                    singleLine = true,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(0.38f)
-                                )
-                                OutlinedTextField(
-                                    value = draftUsername,
-                                    onValueChange = { draftUsername = it },
-                                    label = { Text(stringResource(R.string.settings_sftp_username)) },
-                                    singleLine = true,
-                                    modifier = Modifier.weight(0.62f)
-                                )
-                            }
-                            OutlinedTextField(
-                                value = draftRemoteDir,
-                                onValueChange = { draftRemoteDir = it },
-                                label = { Text(stringResource(R.string.settings_sftp_remote_dir)) },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                    if (draftIsFtp) {
-                        RemoteConfigGroup(
-                            title = "Credentials",
-                            summary = "Saved secrets are kept encrypted on this device.",
-                            icon = Icons.Default.Lock
-                        ) {
-                        OutlinedTextField(
-                            value = draftPassword,
-                            onValueChange = { draftPassword = it },
-                            label = { Text(stringResource(R.string.settings_sftp_password)) },
-                            placeholder = {
-                                if (passwordAlreadySet) Text(savedSecretPlaceholder)
-                            },
-                            singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_ftp_use_tls),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Switch(checked = draftFtpUseTls, onCheckedChange = { draftFtpUseTls = it })
-                        }
-                        if (!draftFtpUseTls) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.settings_ftp_plain_warning),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.padding(10.dp)
-                                )
-                            }
-                        }
-                        OutlinedTextField(
-                            value = draftBackupPassphrase,
-                            onValueChange = { draftBackupPassphrase = it },
-                            label = { Text(stringResource(R.string.settings_backup_passphrase)) },
-                            placeholder = {
-                                if (backupPassphraseAlreadySet) Text(savedSecretPlaceholder)
-                            },
-                            singleLine = true,
-                            visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Text(
-                            text = if (backupPassphraseAlreadySet) {
-                                stringResource(R.string.settings_backup_passphrase_set)
-                            } else {
-                                stringResource(R.string.settings_backup_passphrase_hint)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        }
-                    } else if (!draftIsGitHub) {
-                        RemoteConfigGroup(
-                            title = "Credentials",
-                            summary = "Use a password or private key for this SFTP server.",
-                            icon = Icons.Default.Lock
-                        ) {
-                        val authPasswordLabel = stringResource(R.string.settings_sftp_auth_password)
-                        val authKeyLabel = stringResource(R.string.settings_sftp_auth_key)
-                        SegmentedControl(
-                            items = listOf("PASSWORD", "PRIVATE_KEY"),
-                            selectedItem = draftAuthMethod,
-                            onItemSelected = { draftAuthMethod = it },
-                            labelProvider = { if (it == "PASSWORD") authPasswordLabel else authKeyLabel }
-                        )
-                        if (draftAuthMethod == "PRIVATE_KEY") {
-                            OutlinedTextField(
-                                value = draftPrivateKey,
-                                onValueChange = { draftPrivateKey = it },
-                                label = { Text(stringResource(R.string.settings_sftp_private_key)) },
-                                placeholder = { Text(stringResource(R.string.settings_sftp_private_key_placeholder), style = MaterialTheme.typography.bodySmall) },
-                                minLines = 3,
-                                maxLines = 6,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            OutlinedTextField(
-                                value = draftPassphrase,
-                                onValueChange = { draftPassphrase = it },
-                                label = { Text(stringResource(R.string.settings_sftp_passphrase)) },
-                                placeholder = {
-                                    if (keyPassphraseAlreadySet) Text(savedSecretPlaceholder)
-                                },
-                                singleLine = true,
-                                visualTransformation = PasswordVisualTransformation(),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            OutlinedTextField(
-                                value = draftPassword,
-                                onValueChange = { draftPassword = it },
-                                label = { Text(stringResource(R.string.settings_sftp_password)) },
-                                placeholder = {
-                                    if (passwordAlreadySet) Text(savedSecretPlaceholder)
-                                },
-                                singleLine = true,
-                                visualTransformation = PasswordVisualTransformation(),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                        }
-                    }
-
-                    FilledTonalButton(
-                        onClick = {
-                            testResultOk = null
-                            testResultMessage = null
-                            pendingTrustFingerprint = null
-                            isHostKeyMismatch = false
-                            isTestingConnection = true
-                            if (draftIsGitHub) {
-                                viewModel.connectGitHubConfiguration(
-                                    repoText = draftGitHubRepo,
-                                    token = enteredGitHubToken(),
-                                    apiBase = draftGitHubApiBase
-                                ) { result ->
-                                    isTestingConnection = false
-                                    testResultOk = result.isSuccess
-                                    testResultMessage = if (result.isSuccess) {
-                                        "GitHub connected"
-                                    } else {
-                                        result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
-                                    }
-                                }
-                            } else {
-                                saveServerConfiguration {
-                                    if (draftIsFtp) {
-                                        viewModel.testFtpConnection { result ->
-                                            isTestingConnection = false
-                                            testResultOk = result.isSuccess
-                                            testResultMessage = if (result.isSuccess) {
-                                                context.getString(R.string.settings_sftp_connection_ok)
-                                            } else {
-                                                result.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
-                                            }
-                                        }
-                                    } else {
-                                        viewModel.testSftpConnection { result ->
-                                            isTestingConnection = false
-                                            testResultOk = result.success
-                                            val firstObservedKey = sftpHostKeyFingerprint == null &&
-                                                result.fingerprint != null &&
-                                                result.fingerprint.isNotBlank()
-                                            if (firstObservedKey) {
-                                                // The transport intentionally stopped before authentication.
-                                                // Confirming below pins the key, then runs the real auth test.
-                                                pendingTrustFingerprint = result.fingerprint
-                                            } else if (result.success) {
-                                                testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
-                                            } else {
-                                                val mismatch = sftpHostKeyFingerprint != null &&
-                                                    result.fingerprint != null &&
-                                                    result.fingerprint != sftpHostKeyFingerprint
-                                                if (mismatch) {
-                                                    isHostKeyMismatch = true
-                                                    pendingTrustFingerprint = result.fingerprint
-                                                } else {
-                                                    testResultMessage = result.error?.message
-                                                        ?: context.getString(R.string.export_failed)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        enabled = !isTestingConnection,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (isTestingConnection) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(
-                                imageVector = if (draftIsGitHub) Icons.Default.Code else Icons.Default.CloudSync,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            if (draftIsGitHub) {
-                                if (isTestingConnection) "Connecting..." else "Connect GitHub"
-                            } else if (isTestingConnection) {
-                                stringResource(R.string.settings_sftp_testing_connection)
-                            } else {
-                                stringResource(R.string.settings_sftp_test_connection)
-                            }
-                        )
-                    }
-
-                    pendingTrustFingerprint?.let { fingerprint ->
-                        Surface(
-                            color = if (isHostKeyMismatch) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = stringResource(
-                                        if (isHostKeyMismatch) R.string.settings_sftp_host_key_changed else R.string.settings_sftp_trust_prompt,
-                                        fingerprint
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isHostKeyMismatch) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Button(
-                                    onClick = {
-                                        pendingTrustFingerprint = null
-                                        isHostKeyMismatch = false
-                                        testResultMessage = null
-                                        isTestingConnection = true
-                                        viewModel.pinAndTestSftpConnection(fingerprint) { result ->
-                                            isTestingConnection = false
-                                            testResultOk = result.success
-                                            if (result.success) {
-                                                testResultMessage = context.getString(R.string.settings_sftp_connection_ok)
-                                            } else {
-                                                val changedAgain = result.fingerprint != null &&
-                                                    result.fingerprint != fingerprint
-                                                if (changedAgain) {
-                                                    isHostKeyMismatch = true
-                                                    pendingTrustFingerprint = result.fingerprint
-                                                } else {
-                                                    testResultMessage = result.error?.message
-                                                        ?: context.getString(R.string.export_failed)
-                                                }
-                                            }
-                                        }
-                                    },
-                                    colors = if (isHostKeyMismatch) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error) else ButtonDefaults.buttonColors()
-                                ) {
-                                    Text(
-                                        stringResource(
-                                            if (isHostKeyMismatch) R.string.settings_sftp_trust_new_key else R.string.settings_sftp_trust_and_save
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    testResultMessage?.let { message ->
-                        Surface(
-                            color = if (testResultOk == true) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
-                            contentColor = if (testResultOk == true) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer,
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (testResultOk == true) Icons.Default.CheckCircle else Icons.Default.Info,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Text(
-                                    text = message,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (draftIsGitHub && parseGitHubRepoDraft() == null) {
-                        testResultOk = false
-                        testResultMessage = "Enter the repo as owner/name"
-                    } else {
-                        saveServerConfiguration()
-                        showSftpConfigDialog = false
-                    }
-                }) {
-                    Text(stringResource(R.string.action_save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSftpConfigDialog = false }) { Text(stringResource(R.string.action_cancel)) }
-            }
-        )
-    }
-
-    if (showGitHubPatHelpDialog) {
-        AlertDialog(
-            onDismissRequest = { showGitHubPatHelpDialog = false },
-            title = { Text("Create a GitHub token") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Create a fine-grained personal access token for the sync repo.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text("1. Open GitHub > Settings > Developer settings > Personal access tokens > Fine-grained tokens.")
-                    Text("2. Tap Generate new token and name it YATA sync.")
-                    Text("3. Under Repository access, select only your YATA sync repo.")
-                    Text("4. Under Repository permissions, set Contents to Read and write.")
-                    Text("5. Generate the token, copy it, then paste it here.")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showGitHubPatHelpDialog = false }) {
-                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -4099,29 +3551,6 @@ private fun formatAbsoluteBackupTime(epochMillis: Long?): String? {
     return java.time.Instant.ofEpochMilli(epochMillis).localized()
 }
 
-private data class GitHubTokenExpiryStatus(
-    val label: String,
-    val warning: Boolean
-)
-
-private fun githubTokenExpiryStatus(epochMillis: Long?): GitHubTokenExpiryStatus? {
-    if (epochMillis == null) return null
-    val expiresAt = java.time.Instant.ofEpochMilli(epochMillis)
-    val days = java.time.Duration.between(java.time.Instant.now(), expiresAt).toDays()
-    val formatted = expiresAt.localized()
-    return when {
-        days < 0 -> GitHubTokenExpiryStatus("GitHub token expired on $formatted", warning = true)
-        days <= 14 -> GitHubTokenExpiryStatus(
-            "GitHub token expires in ${days.coerceAtLeast(0).formatDays()}: $formatted",
-            warning = true
-        )
-        else -> GitHubTokenExpiryStatus("GitHub token expires on $formatted", warning = false)
-    }
-}
-
-private fun Long.formatDays(): String =
-    if (this == 1L) "1 day" else "$this days"
-
 private fun formatBackupTimestamp(isoCreatedTime: String): String {
     return try {
         val instant = java.time.Instant.parse(isoCreatedTime)
@@ -4290,189 +3719,6 @@ private fun AboutYataCard(
     }
 }
 
-@Composable
-private fun RemoteConfigHeader(
-    protocol: com.mj.yata.domain.model.RemoteBackupProtocol,
-    modifier: Modifier = Modifier
-) {
-    val (title, body, icon) = when (protocol) {
-        com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB -> Triple(
-            "GitHub sync",
-            "Sync through a private repository with commit history as restore points.",
-            Icons.Default.Code
-        )
-        com.mj.yata.domain.model.RemoteBackupProtocol.FTP -> Triple(
-            "FTP / FTPS sync",
-            "Use your own server folder with rotated backup files.",
-            Icons.Default.Dns
-        )
-        com.mj.yata.domain.model.RemoteBackupProtocol.SFTP -> Triple(
-            "SFTP sync",
-            "Use SSH-backed storage with host-key trust and rotated backups.",
-            Icons.Default.Storage
-        )
-    }
-    Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shape = RoundedCornerShape(24.dp),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.64f),
-                modifier = Modifier.size(46.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
-                }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                Text(body, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
-private fun RemoteProviderPicker(
-    selectedProtocol: com.mj.yata.domain.model.RemoteBackupProtocol,
-    onProtocolSelected: (com.mj.yata.domain.model.RemoteBackupProtocol) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = "Provider",
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary
-        )
-        RemoteProviderOption(
-            selected = selectedProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB,
-            icon = Icons.Default.Code,
-            title = "GitHub",
-            summary = "Private repo, PAT, commit history",
-            onClick = { onProtocolSelected(com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB) }
-        )
-        RemoteProviderOption(
-            selected = selectedProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
-            icon = Icons.Default.Storage,
-            title = "SFTP",
-            summary = "SSH server with host-key trust",
-            onClick = { onProtocolSelected(com.mj.yata.domain.model.RemoteBackupProtocol.SFTP) }
-        )
-        RemoteProviderOption(
-            selected = selectedProtocol == com.mj.yata.domain.model.RemoteBackupProtocol.FTP,
-            icon = Icons.Default.Dns,
-            title = "FTP / FTPS",
-            summary = "Server folder with optional TLS",
-            onClick = { onProtocolSelected(com.mj.yata.domain.model.RemoteBackupProtocol.FTP) }
-        )
-    }
-}
-
-@Composable
-private fun RemoteProviderOption(
-    selected: Boolean,
-    icon: ImageVector,
-    title: String,
-    summary: String,
-    onClick: () -> Unit
-) {
-    val container = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-    val content = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    Surface(
-        color = container,
-        contentColor = content,
-        shape = RoundedCornerShape(18.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(
-                color = content.copy(alpha = 0.12f),
-                shape = CircleShape,
-                modifier = Modifier.size(38.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-                }
-            }
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
-                Text(summary, style = MaterialTheme.typography.bodySmall, color = content.copy(alpha = 0.78f))
-            }
-            if (selected) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun RemoteConfigGroup(
-    title: String,
-    summary: String? = null,
-    icon: ImageVector,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(22.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    shape = CircleShape,
-                    modifier = Modifier.size(34.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-                    }
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                    summary?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-            content()
-        }
-    }
-}
-
 private fun formatBackupInterval(minutes: Long): String {
     val (value, unit) = minutesToIntervalDisplay(minutes)
     val label = if (value == 1L) unit.dropLast(1).lowercase() else unit.lowercase()
@@ -4493,21 +3739,25 @@ private fun PinSetupDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         title = { Text(stringResource(R.string.settings_set_pin)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                TextField(
                     value = newPin,
                     onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) { newPin = it; error = null } },
                     label = { Text(stringResource(R.string.settings_new_pin_4_8_digits)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true
+                    singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors()
                 )
-                OutlinedTextField(
+                TextField(
                     value = confirmPin,
                     onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) { confirmPin = it; error = null } },
                     label = { Text(stringResource(R.string.action_confirm_pin)) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                    singleLine = true
+                    singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors()
                 )
                 error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)

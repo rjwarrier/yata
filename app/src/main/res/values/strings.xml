@@ -431,8 +431,8 @@
 
     <!-- Self-hosted (SFTP) backup -->
     <string name="settings_section_sftp_backup">Self-Hosted Sync &amp; Backup</string>
-    <string name="settings_sftp_backup">Self-hosted server</string>
-    <string name="settings_sftp_backup_summary">Sync across devices and keep versioned backups on your own server. Use the same protocol, folder, and encryption passphrase on each device.</string>
+    <string name="settings_sftp_backup">Cloud sync</string>
+    <string name="settings_sftp_backup_summary">Sync across devices and keep versioned backups via GitHub or your own server. Use the same provider, credentials, and encryption passphrase on each device.</string>
     <string name="settings_sftp_configure_server">Server</string>
     <string name="settings_sftp_not_configured">Not configured</string>
     <!-- %1$s is a formatted relative time, e.g. "2 hours ago". -->

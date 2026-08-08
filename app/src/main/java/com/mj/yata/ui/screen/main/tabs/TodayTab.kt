@@ -1,6 +1,10 @@
 package com.mj.yata.ui.screen.main.tabs
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -870,7 +874,17 @@ private fun SyncStatusIcon(lastSyncSucceeded: Boolean?) {
             imageVector = Icons.Default.CloudSync,
             contentDescription = stringResource(R.string.cd_sync_now)
         )
-        lastSyncSucceeded?.let { success ->
+        // Pops in with a slight overshoot rather than appearing instantly -- this badge lands
+        // right after a sync finishes, in the one spot on Today that's visible at a glance, so
+        // it's worth the badge-arriving feel instead of a flat cut.
+        AnimatedVisibility(
+            visible = lastSyncSucceeded != null,
+            modifier = Modifier.align(Alignment.TopEnd),
+            enter = scaleIn(tween(YataDur.micro, easing = YataEase.spring)) +
+                fadeIn(tween(YataDur.micro)),
+            exit = scaleOut(tween(YataDur.micro)) + fadeOut(tween(YataDur.micro))
+        ) {
+            val success = lastSyncSucceeded == true
             val containerColor = if (success) {
                 MaterialTheme.colorScheme.primaryContainer
             } else {
@@ -886,7 +900,6 @@ private fun SyncStatusIcon(lastSyncSucceeded: Boolean?) {
             )
             Box(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
                     .offset(x = 3.dp, y = (-3).dp)
                     .size(12.dp)
                     .clip(CircleShape)

@@ -31,7 +31,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -49,6 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mj.yata.R
 import com.mj.yata.domain.model.AppLanguage
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,7 +168,7 @@ private fun LanguagePickerSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
+            TextField(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
@@ -177,7 +179,9 @@ private fun LanguagePickerSheet(
                         contentDescription = null
                     )
                 },
-                placeholder = { Text(stringResource(R.string.settings_language_search_placeholder)) }
+                placeholder = { Text(stringResource(R.string.settings_language_search_placeholder)) },
+                shape = YataCompactFieldShape,
+                colors = yataFieldColors()
             )
             Spacer(modifier = Modifier.height(12.dp))
             LazyColumn {

@@ -20,7 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -82,7 +82,7 @@ fun CustomColorPickerDialog(
                             .background(currentColor)
                             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                     )
-                    OutlinedTextField(
+                    TextField(
                         value = hexText,
                         onValueChange = { text ->
                             hexText = text
@@ -99,6 +99,8 @@ fun CustomColorPickerDialog(
                         label = { Text(stringResource(R.string.custom_color_picker_hex)) },
                         singleLine = true,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Text),
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
                         modifier = Modifier.weight(1f)
                     )
                 }

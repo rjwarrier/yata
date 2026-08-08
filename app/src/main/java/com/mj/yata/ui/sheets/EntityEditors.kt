@@ -949,12 +949,14 @@ fun ManageSectionsSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
+                    TextField(
                         value = section,
                         onValueChange = { updated ->
                             sections = sections.toMutableList().apply { set(index, updated) }
                         },
                         singleLine = true,
+                        shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                        colors = com.mj.yata.ui.widgets.yataFieldColors(),
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = { sections = sections.toMutableList().apply { removeAt(index) } }) {
@@ -968,11 +970,13 @@ fun ManageSectionsSheet(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            OutlinedTextField(
+            TextField(
                 value = newSectionName,
                 onValueChange = { newSectionName = it },
                 singleLine = true,
                 placeholder = { Text(stringResource(R.string.project_section_new)) },
+                shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+                colors = com.mj.yata.ui.widgets.yataFieldColors(),
                 modifier = Modifier.weight(1f)
             )
             IconButton(

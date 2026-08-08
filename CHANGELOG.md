@@ -36,6 +36,85 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Scheduled backup no longer repeatedly retries permanent GitHub sync setup failures such as an
   expired token, missing repo access, or a detected history rewrite; those failures are recorded
   for the user to fix, while transient GitHub conflicts/network errors still retry.
+- **Analytics numbers are now tappable, and take you to the tasks behind them.** Project, person,
+  tag and list rows open that entity; the per-assignee and workload rows open the person; the
+  overdue count, overdue-aging rows, the high-priority row, the "open, no date" figure and the
+  overdue callout all open a filtered search. Rows with no exact destination stay as they were,
+  rather than landing you on an almost-right list.
+- **The daily chart now shows tasks created alongside tasks completed**, with a "4 more finished
+  than created" summary underneath — a run of completed tasks means something different depending
+  on how much new work arrived in the same days. The created series only appears once there are
+  tasks recorded with a creation date, so an older database shows the original completed-only
+  chart instead of a misleading row of zeroes.
+- **The overdue count and on-time rate now show which way they're moving**, as a coloured arrow
+  against where they stood one period ago — "9 overdue" reads differently when it's down from 15
+  than when it's up from 2. Shown only when the figure actually moved, and not on All Time, which
+  has no previous period to compare against.
+- **Analytics now calls out what changed, not just what is.** New callouts fire when overdue rises
+  or falls sharply, when the on-time rate shifts by 10 points or more, and when tasks are being
+  taken on faster than they're finished. Each has a materiality threshold, so an ordinary week's
+  drift doesn't produce a banner — the section stays worth reading.
+- **A Planned Effort section on Analytics**, using the time estimates on your tasks: how much work
+  is still open, how much of it is due in the next seven days, and how much is already late, in
+  hours rather than task counts. It says how many open tasks it couldn't see, so a total isn't
+  mistaken for the whole picture, and the section is hidden entirely when nothing open carries an
+  estimate rather than claiming "0h".
+- **Analytics names the weekday your work actually gets finished on**, when one clearly leads.
+  Needs a fortnight's worth of completions behind it before it will say so.
+- The on-time rate now states how many finished tasks it was measured from — the same percentage
+  means very different things over four tasks and over four hundred, and tasks completed before
+  the app recorded completion times are excluded from it with no other way to tell.
+
+### Fixed
+
+- The "days clean" (zero-overdue) streak no longer sits at 0 forever for anyone whose database
+  predates the completion-timestamp column. A task completed before that column existed carries no
+  timestamp, and was being counted as still-overdue on every past day; it now counts as finished,
+  which is what it is.
+
+### Changed
+
+- Remote sync now shows `....` instead of a row of bullet dots as the placeholder for a password,
+  key passphrase, backup passphrase, or GitHub token that's already saved.
+- **Remote sync configuration is now its own screen** instead of a scrolling `AlertDialog`. Opening
+  "Configure server" from Settings → Backup & Sync navigates to a dedicated Remote sync screen with
+  the provider picker, credentials, and test/connect action; the checkmark in its top bar saves,
+  and the back button discards unsaved changes, same as before. The GitHub/SFTP/FTP provider picker
+  is now a horizontal row instead of a stacked list.
+- "Configure server" is reachable even when Cloud sync is off, so turning it on doesn't require
+  re-entering credentials. Compare/Restore/Clear sync lock stay gated behind the toggle, same as
+  before — turning Cloud sync off pauses those too, not just scheduled backups.
+- Remote sync's text fields switched from outlined to the app's filled/tonal Expressive style
+  (same look as every other input in the app), instead of the default M3 outline treatment.
+- The GitHub/SFTP/FTP provider picker is now a compact sliding-pill segmented control (same style
+  as the Password/Private-key choice below it) instead of three oversized icon cards.
+- **Backup encryption passphrase moved out of the FTP-only credentials section into its own group
+  shown for every provider.** It encrypts the backup file the same way regardless of transport, but
+  the field previously only appeared when FTP was selected — GitHub and SFTP had no way to set it
+  from this screen at all, even though both use it too.
+- **Fixed:** the FTP/SFTP password, SFTP key-passphrase, and backup encryption passphrase fields
+  were still reading as empty at rest, same root cause as the GitHub token fix -- `TextField`'s
+  placeholder only renders while focused. They now pre-fill with `....` the same way the GitHub
+  token field already did, so a saved secret is visibly there without needing to tap in, on top of
+  the "saved -- leave blank to keep it" supporting text added earlier.
+- Settings → Backup & Sync's "Self-hosted server" section is now labeled "Cloud sync" — the old
+  name predates the GitHub provider and no longer fit once GitHub joined SFTP/FTP as an option.
+- **Remote sync screen now animates provider switches and status banners** using the app's existing
+  Expressive motion tokens (respects Settings → Motion, same as everywhere else): the header and the
+  provider-specific fields crossfade/rise when you switch GitHub/SFTP/FTP, and the TLS warning,
+  host-key trust prompt, and test-connection result banner expand/fade in and out instead of
+  popping.
+- The GitHub header, "Repository access" card, and "Connect GitHub" button now use the actual
+  GitHub mark instead of a generic `</>` code icon.
+- **Every remaining outlined text field in the app switched to the filled/tonal Expressive style**
+  (profile name/email, PIN setup, date alias word, theme preset name, export filename and day
+  limit, project section names, hex color inputs, task inline-rename, global search, language
+  search, Quick Add widget title, home-screen widget label, and the Tasker "Create Task" action's
+  fields) — matching the standard already documented in `YataInputField.kt` and applied to Remote
+  sync, instead of the default M3 outline treatment mixed in throughout the rest of the app.
+- Today's sync-status badge now pops in with a slight overshoot instead of appearing instantly, and
+  the reminder validation warning in the New Task sheet now expands/fades in and out instead of
+  popping — same Expressive motion treatment as Remote sync's banners.
 
 ## [0.90.1 beta] - 2026-08-03
 

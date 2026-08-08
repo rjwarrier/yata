@@ -46,6 +46,8 @@ import com.mj.yata.ui.theme.ALL_ACCENT_KEYS
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -422,11 +424,13 @@ private fun WidgetCustomizerScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(stringResource(R.string.widget_config_custom_header_label), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
+                    TextField(
                         value = label,
                         onValueChange = { label = it },
                         placeholder = { Text(stringResource(R.string.widget_config_e_g_work_today_quick_add)) },
                         singleLine = true,
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

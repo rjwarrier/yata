@@ -673,10 +673,12 @@ fun TaskRow(
             onDismissRequest = { showRenameDialog = false },
             title = { Text(stringResource(R.string.task_row_edit_title)) },
             text = {
-                OutlinedTextField(
+                TextField(
                     value = title,
                     onValueChange = { title = it },
                     singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
             },

@@ -41,6 +41,7 @@ import com.mj.yata.ui.screen.settings.HelpAboutScreen
 import com.mj.yata.ui.screen.settings.SettingsDestination
 import com.mj.yata.ui.screen.settings.SettingsScreen
 import com.mj.yata.ui.screen.archive.ArchiveScreen
+import com.mj.yata.ui.screen.remotesync.RemoteSyncScreen
 import com.mj.yata.ui.screen.trash.TrashScreen
 import com.mj.yata.ui.screen.welcome.WelcomeScreen
 import com.mj.yata.ui.theme.YataDur
@@ -301,6 +302,7 @@ fun AppNavigation(
                 onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
                 onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
                 onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
+                onNavigateToRemoteSync = { navController.navigate(Screen.RemoteSync.route) },
                 onNavigateToSettingsDestination = { destination ->
                     navController.navigate(Screen.SettingsSection.createRoute(destination.routeSegment))
                 }
@@ -328,6 +330,7 @@ fun AppNavigation(
                 onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
                 onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
                 onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
+                onNavigateToRemoteSync = { navController.navigate(Screen.RemoteSync.route) },
                 settingsDestination = destination
             )
         }
@@ -357,7 +360,22 @@ fun AppNavigation(
             AnalyticsScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToTab = onNavigateToTab
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToSearch = { filters ->
+                    navController.navigate(Screen.Search.createRoute(filters))
+                },
+                onNavigateToProject = { projectId ->
+                    navController.navigate(Screen.ProjectDetail.createRoute(projectId))
+                },
+                onNavigateToPerson = { personId ->
+                    navController.navigate(Screen.PersonDetail.createRoute(personId))
+                },
+                onNavigateToTag = { tagId ->
+                    navController.navigate(Screen.TagDetail.createRoute(tagId))
+                },
+                onNavigateToList = { listId ->
+                    navController.navigate(Screen.ListDetail.createRoute(listId))
+                }
             )
         }
 
@@ -384,6 +402,15 @@ fun AppNavigation(
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 }
+            )
+        }
+
+        // ── Remote sync ──────────────────────────────────────────────────────
+        composable(Screen.RemoteSync.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            RemoteSyncScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

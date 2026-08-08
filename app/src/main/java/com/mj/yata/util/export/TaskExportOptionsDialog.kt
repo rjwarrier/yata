@@ -16,7 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.YataCompactFieldShape
+import com.mj.yata.ui.widgets.yataFieldColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,11 +113,13 @@ fun TaskExportOptionsDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 SectionLabel(stringResource(R.string.export_section_file))
-                OutlinedTextField(
+                TextField(
                     value = fileNameText,
                     onValueChange = { fileNameText = it.take(64) },
                     label = { Text(stringResource(R.string.export_filename)) },
                     singleLine = true,
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))

@@ -1437,7 +1437,14 @@ fun NewTaskSheet(
             Spacer(modifier = Modifier.size(12.dp))
         }
 
-        reminderValidationMessage?.let { message ->
+        AnimatedVisibility(
+            visible = reminderValidationMessage != null,
+            enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) +
+                expandVertically(tween(YataDur.sheet, easing = YataEase.emphasized)),
+            exit = fadeOut(tween(YataDur.fade)) +
+                shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
+        ) {
+            val message = reminderValidationMessage.orEmpty()
             Surface(
                 color = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer,

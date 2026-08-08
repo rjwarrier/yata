@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.Colorize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -113,12 +113,14 @@ fun ColorPicker(
             title = { Text(stringResource(R.string.action_custom_color)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
+                    TextField(
                         value = hexInput,
                         onValueChange = { hexInput = it.uppercase() },
                         placeholder = { Text(stringResource(R.string.color_picker_rrggbb)) },
                         singleLine = true,
-                        isError = hexInput.isNotEmpty() && !isValid
+                        isError = hexInput.isNotEmpty() && !isValid,
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors()
                     )
                     Box(
                         modifier = Modifier
