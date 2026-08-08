@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-YATA ("Yet Another Task App") — a Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt. Gradle root project name is `TodoExpressive` (legacy); package/app id is `com.mj.yata`. Two modules:
+YATA ("Yet Another Task App", pronounced **"YAH-tuh"** — *ya* as in *yard*, *ta* as in *factory*) — a Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt. Gradle root project name is `TodoExpressive` (legacy); package/app id is `com.mj.yata`. Two modules:
 - `:app` — the phone app (`com.mj.yata`, minSdk 26, compileSdk/targetSdk 35).
 - `:baselineprofile` — a `com.android.test` module that records the ART baseline profile packaged with the app.
 

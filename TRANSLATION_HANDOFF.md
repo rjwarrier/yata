@@ -14,9 +14,30 @@ app/src/main/res/
   values-es/strings.xml       <- Spanish
   values-fr/strings.xml       <- French
   values-pt/strings.xml       <- Portuguese
+  values-de/strings.xml       <- German
+  values-it/strings.xml       <- Italian
+  values-nl/strings.xml       <- Dutch
+  values-id/strings.xml       <- Indonesian
+  values-tr/strings.xml       <- Turkish
+  values-vi/strings.xml       <- Vietnamese
+  values-tl/strings.xml       <- Tagalog / Filipino
+  values-pl/strings.xml       <- Polish
+  values-sv/strings.xml       <- Swedish
+  values-ro/strings.xml       <- Romanian
+  values-cs/strings.xml       <- Czech
+  values-sw/strings.xml       <- Swahili
+  values-hi/strings.xml       <- Hindi
+  values-bn/strings.xml       <- Bengali
+  values-mr/strings.xml       <- Marathi
+  values-te/strings.xml       <- Telugu
+  values-ta/strings.xml       <- Tamil
+  values-gu/strings.xml       <- Gujarati
+  values-kn/strings.xml       <- Kannada
+  values-ml/strings.xml       <- Malayalam
+  values-pa/strings.xml       <- Punjabi
 ```
 
-That's it — three locales exist today. No other `values-<code>/` folders. `app/src/main/res/resources.properties` declares `unqualifiedResLocale=en-US`, telling the build system the unqualified `values/` folder *is* the English source (not "the fallback for everything").
+Twenty-four localized folders exist. `app/src/main/res/resources.properties` declares `unqualifiedResLocale=en-US`, telling the build system the unqualified `values/` folder *is* the English source (not "the fallback for everything").
 
 `androidResources.generateLocaleConfig = true` in `app/build.gradle.kts` means the Android per-app language picker is generated automatically from whichever `values-<code>/` folders exist. **You never need to register a new locale anywhere else** — just create the folder and file, matching the pattern above, and it's picked up.
 
@@ -24,9 +45,9 @@ That's it — three locales exist today. No other `values-<code>/` folders. `app
 
 Base `values/strings.xml`: **1148 `<string>` entries + 28 `<plurals>` blocks** (1176 total translatable resources).
 
-Each of `es`, `fr`, `pt` is missing the **same 350 strings and 10 plurals** — these are recent additions (an ongoing hardcoded-string-extraction pass has pulled ~200 literal strings out of Kotlin UI code into `strings.xml` across several sessions; the translated locale files were never updated to match). No stale/orphaned keys exist in the translated files (nothing to *remove*), only things to *add*. The gap is still growing — extraction is not finished (see §9) — so if you're picking this up some time after this handoff was written, **regenerate the diff before starting** (§7 has the one-liner) rather than trusting these exact counts.
+All 24 supported locales (`es`, `fr`, `pt`, `de`, `it`, `nl`, `id`, `tr`, `vi`, `tl`, `pl`, `sv`, `ro`, `cs`, `sw`, `hi`, `bn`, `mr`, `te`, `ta`, `gu`, `kn`, `ml`, `pa`) have been fully updated. Currently, there are **0 missing strings and 0 missing plurals** across all locale files. `missing_translation_keys.txt` is clear (0 entries).
 
-**The exact list of missing keys, with their English source values, is in `missing_translation_keys.txt` next to this file** — that's the actual work list. It's organized as two sections: `<string>` entries to add, then `<plurals>` blocks to add. Every key in that file needs a corresponding entry added to **all three** locale files (`values-es`, `values-fr`, `values-pt`) with translated values.
+**The regeneration script in §7 can be used to re-verify or regenerate missing keys whenever new features add strings to `values/strings.xml`.**
 
 ## 4. The job
 
