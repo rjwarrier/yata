@@ -248,11 +248,11 @@ fun ProjectEditorSheet(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Exclude from Today",
+                    text = stringResource(R.string.entity_editors_exclude_from_today),
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                 )
                 Text(
-                    text = "Tasks here never show on the Today screen, even if overdue — for a backlog you'll schedule later.",
+                    text = stringResource(R.string.entity_editors_exclude_from_today_summary),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -263,7 +263,7 @@ fun ProjectEditorSheet(
         // Project Due Date Section
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "Project Due Date",
+                text = stringResource(R.string.entity_editors_project_due_date),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -272,22 +272,22 @@ fun ProjectEditorSheet(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 com.mj.yata.ui.widgets.YataSelectChip(
-                    label = "No due date",
+                    label = stringResource(R.string.date_no_due),
                     selected = dueDate == null,
                     onClick = { dueDate = null }
                 )
                 com.mj.yata.ui.widgets.YataSelectChip(
-                    label = "Today",
+                    label = stringResource(R.string.date_today),
                     selected = dueDate == LocalDate.now().toString(),
                     onClick = { dueDate = LocalDate.now().toString() }
                 )
                 com.mj.yata.ui.widgets.YataSelectChip(
-                    label = "Tomorrow",
+                    label = stringResource(R.string.date_tomorrow),
                     selected = dueDate == LocalDate.now().plusDays(1).toString(),
                     onClick = { dueDate = LocalDate.now().plusDays(1).toString() }
                 )
                 com.mj.yata.ui.widgets.YataSelectChip(
-                    label = if (dueDate != null && dueDate != LocalDate.now().toString() && dueDate != LocalDate.now().plusDays(1).toString()) TaskScheduleUtils.formatDueDate(dueDate) else "Pick date...",
+                    label = if (dueDate != null && dueDate != LocalDate.now().toString() && dueDate != LocalDate.now().plusDays(1).toString()) TaskScheduleUtils.formatDueDate(dueDate) else stringResource(R.string.entity_editors_pick_date),
                     selected = dueDate != null && dueDate != LocalDate.now().toString() && dueDate != LocalDate.now().plusDays(1).toString(),
                     onClick = { showDatePicker = true }
                 )
@@ -296,12 +296,12 @@ fun ProjectEditorSheet(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "Default reminder",
+                text = stringResource(R.string.entity_editors_default_reminder),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Pre-fills the reminder on new tasks created in this project.",
+                text = stringResource(R.string.entity_editors_default_reminder_summary),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -309,7 +309,7 @@ fun ProjectEditorSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                com.mj.yata.ui.widgets.YataSelectChip("None", defaultReminder == null, { defaultReminder = null })
+                com.mj.yata.ui.widgets.YataSelectChip(stringResource(R.string.settings_none), defaultReminder == null, { defaultReminder = null })
                 TaskScheduleUtils.reminderOptions.forEach { option ->
                     com.mj.yata.ui.widgets.YataSelectChip(option, defaultReminder == option, { defaultReminder = option })
                 }
@@ -319,12 +319,12 @@ fun ProjectEditorSheet(
         if (tags.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Common tags",
+                    text = stringResource(R.string.entity_editors_common_tags),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Every task in this project always carries these tags, live-synced.",
+                    text = stringResource(R.string.entity_editors_common_tags_summary),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -352,7 +352,7 @@ fun ProjectEditorSheet(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "Project color",
+                text = stringResource(R.string.entity_editors_project_color),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -364,7 +364,7 @@ fun ProjectEditorSheet(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "Project icon",
+                text = stringResource(R.string.projects_project_icon),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -469,7 +469,7 @@ private fun <G> GroupPickerSection(
                 )
             } else {
                 com.mj.yata.ui.widgets.YataDashedAddChip(
-                    label = "New group",
+                    label = stringResource(R.string.entity_editors_new_group),
                     onClick = { showNewGroupField = true }
                 )
             }
@@ -623,7 +623,7 @@ fun PersonEditorSheet(
         }
 
         GroupPickerSection(
-            label = "Group",
+            label = stringResource(R.string.entity_editors_group_label),
             groups = groups,
             groupId = { it.id },
             groupName = { it.name },
@@ -731,7 +731,7 @@ fun TagEditorSheet(
         }
 
         GroupPickerSection(
-            label = "Group",
+            label = stringResource(R.string.entity_editors_group_label),
             groups = groups,
             groupId = { it.id },
             groupName = { it.name },
@@ -754,11 +754,11 @@ fun TagEditorSheet(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Hide completed by default",
+                    text = stringResource(R.string.entity_editors_hide_completed_by_default),
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                 )
                 Text(
-                    text = "This tag's detail screen opens with completed tasks hidden.",
+                    text = stringResource(R.string.entity_editors_hide_completed_by_default_summary),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -838,7 +838,7 @@ fun ListEditorSheet(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "List color",
+                text = stringResource(R.string.entity_editors_list_color),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -850,7 +850,7 @@ fun ListEditorSheet(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "List icon",
+                text = stringResource(R.string.entity_editors_list_icon),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -871,11 +871,11 @@ fun ListEditorSheet(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Exclude from Today",
+                    text = stringResource(R.string.entity_editors_exclude_from_today),
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                 )
                 Text(
-                    text = "Tasks here never show on the Today screen, even if overdue — for a backlog you'll schedule later.",
+                    text = stringResource(R.string.entity_editors_exclude_from_today_summary),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

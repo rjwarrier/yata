@@ -818,11 +818,11 @@ fun SettingsScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Theme presets",
+                                    text = stringResource(R.string.settings_theme_presets),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                                 )
                                 Text(
-                                    text = "Save this color, font, and theme combination.",
+                                    text = stringResource(R.string.settings_theme_presets_summary),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -831,7 +831,7 @@ fun SettingsScreen(
                                 themePresetName = ""
                                 showThemePresetDialog = true
                             }) {
-                                Text("Save")
+                                Text(stringResource(R.string.action_save))
                             }
                         }
                         val savedPresets = savedThemePresetDefinitions.mapNotNull(SavedThemePreset::decode).sortedBy { it.name }
@@ -848,7 +848,7 @@ fun SettingsScreen(
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.Close,
-                                                    contentDescription = "Remove ${preset.name}",
+                                                    contentDescription = stringResource(R.string.cd_remove_preset, preset.name),
                                                     modifier = Modifier.size(16.dp)
                                                 )
                                             }
@@ -1051,11 +1051,11 @@ fun SettingsScreen(
 
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Motion mode",
+                            text = stringResource(R.string.settings_motion_mode),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                         )
                         Text(
-                            text = "Control app animations without changing other visual settings.",
+                            text = stringResource(R.string.settings_motion_mode_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1247,8 +1247,8 @@ fun SettingsScreen(
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 SettingsToggleRow(
-                    title = "Tasker integration",
-                    subtitle = "Allow Tasker profiles to create tasks through the Yata plugin.",
+                    title = stringResource(R.string.settings_tasker_integration),
+                    subtitle = stringResource(R.string.settings_tasker_integration_summary),
                     checked = taskerIntegrationEnabled,
                     onCheckedChange = { viewModel.setTaskerIntegrationEnabled(it) }
                 )
@@ -1429,11 +1429,11 @@ fun SettingsScreen(
 
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "Date aliases",
+                        text = stringResource(R.string.settings_date_aliases),
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                     )
                     Text(
-                        text = "Teach quick add your own date words.",
+                        text = stringResource(R.string.settings_date_aliases_summary),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1447,7 +1447,7 @@ fun SettingsScreen(
                             onValueChange = { newDateAlias = it },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            label = { Text("Word") },
+                            label = { Text(stringResource(R.string.settings_date_alias_word_label)) },
                             shape = YataCompactFieldShape,
                             colors = yataFieldColors()
                         )
@@ -1479,7 +1479,7 @@ fun SettingsScreen(
                         },
                         enabled = newDateAlias.isNotBlank()
                     ) {
-                        Text("Add alias")
+                        Text(stringResource(R.string.settings_add_alias))
                     }
                     val aliases = dateAliasDefinitions.mapNotNull(DateAliasDefinition::decode).sortedBy { it.alias }
                     if (aliases.isNotEmpty()) {
@@ -1487,7 +1487,7 @@ fun SettingsScreen(
                             items(aliases, key = { it.encode() }) { alias ->
                                 AssistChip(
                                     onClick = {},
-                                    label = { Text("${alias.alias} -> ${alias.target.label}") },
+                                    label = { Text(stringResource(R.string.settings_date_alias_mapping, alias.alias, alias.target.label)) },
                                     trailingIcon = {
                                         IconButton(
                                             onClick = { viewModel.removeDateAlias(alias.encode()) },
@@ -1495,7 +1495,7 @@ fun SettingsScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Close,
-                                                contentDescription = "Remove ${alias.alias}",
+                                                contentDescription = stringResource(R.string.cd_remove_alias, alias.alias),
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
@@ -1839,19 +1839,19 @@ fun SettingsScreen(
                         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                             AnimatedManageRow(
                                 visible = projectsFeatureEnabled,
-                                title = "Projects",
+                                title = stringResource(R.string.tab_projects),
                                 onClick = { onNavigateToTab(1) }
                             )
                             AnimatedDivider(visible = projectsFeatureEnabled && (peopleFeatureEnabled || tagsFeatureEnabled))
                             AnimatedManageRow(
                                 visible = peopleFeatureEnabled,
-                                title = "People",
+                                title = stringResource(R.string.tab_people),
                                 onClick = { onNavigateToTab(2) }
                             )
                             AnimatedDivider(visible = peopleFeatureEnabled && tagsFeatureEnabled)
                             AnimatedManageRow(
                                 visible = tagsFeatureEnabled,
-                                title = "Tags",
+                                title = stringResource(R.string.tab_tags),
                                 onClick = { onNavigateToTab(3) }
                             )
                         }
@@ -2903,14 +2903,14 @@ fun SettingsScreen(
         }
         AlertDialog(
             onDismissRequest = { showProfileDialog = false },
-            title = { Text("Edit profile") },
+            title = { Text(stringResource(R.string.settings_edit_profile)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextField(
                         value = profileDraftName,
                         onValueChange = { profileDraftName = it },
                         singleLine = true,
-                        label = { Text("Name") },
+                        label = { Text(stringResource(R.string.settings_profile_name_label)) },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         shape = YataCompactFieldShape,
                         colors = yataFieldColors(),
@@ -2920,7 +2920,7 @@ fun SettingsScreen(
                         value = profileDraftEmail,
                         onValueChange = { profileDraftEmail = it },
                         singleLine = true,
-                        label = { Text("Email") },
+                        label = { Text(stringResource(R.string.settings_profile_email_label)) },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Done
@@ -2931,7 +2931,7 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "Avatar",
+                        text = stringResource(R.string.settings_profile_avatar_label),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -2950,7 +2950,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = saveProfile) {
-                    Text("Save")
+                    Text(stringResource(R.string.action_save))
                 }
             },
             dismissButton = {
@@ -2964,13 +2964,13 @@ fun SettingsScreen(
     if (showThemePresetDialog) {
         AlertDialog(
             onDismissRequest = { showThemePresetDialog = false },
-            title = { Text("Save theme preset") },
+            title = { Text(stringResource(R.string.settings_save_theme_preset)) },
             text = {
                 TextField(
                     value = themePresetName,
                     onValueChange = { themePresetName = it },
                     singleLine = true,
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.settings_theme_preset_name_label)) },
                     shape = YataCompactFieldShape,
                     colors = yataFieldColors(),
                     modifier = Modifier.fillMaxWidth()
@@ -2992,7 +2992,7 @@ fun SettingsScreen(
                     },
                     enabled = themePresetName.isNotBlank()
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.action_save))
                 }
             },
             dismissButton = {
@@ -3684,7 +3684,7 @@ private fun AboutYataCard(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "yata",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontFamily = BodoniModaFamily,
                     fontWeight = FontWeight.Bold
@@ -3692,13 +3692,17 @@ private fun AboutYataCard(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "yet another todo app",
+                text = stringResource(R.string.settings_about_tagline),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "v${BuildConfig.VERSION_NAME}  ·  Build ${BuildConfig.VERSION_CODE}.${BuildConfig.BUILD_DATE}",
+                text = stringResource(
+                    R.string.settings_about_version,
+                    BuildConfig.VERSION_NAME,
+                    "${BuildConfig.VERSION_CODE}.${BuildConfig.BUILD_DATE}"
+                ),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -3706,12 +3710,12 @@ private fun AboutYataCard(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "From the Labs of RJ",
+                text = stringResource(R.string.settings_about_credit),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Made in 🇮🇳",
+                text = stringResource(R.string.settings_about_made_in),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

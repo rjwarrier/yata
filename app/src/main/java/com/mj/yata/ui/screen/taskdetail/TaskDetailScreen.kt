@@ -551,7 +551,7 @@ fun TaskDetailScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     MetaRowItem(
                         icon = Icons.Default.Today,
-                        label = "Due Date",
+                        label = stringResource(R.string.task_detail_due_date),
                         value = com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time),
                         accentColor = MaterialTheme.colorScheme.primary,
                         onClick = { activeSheet = DetailSheetType.ScheduleEditor }
@@ -563,7 +563,7 @@ fun TaskDetailScreen(
                         task.due <= java.time.LocalDate.now().toString()
                     if (canCarryForward) {
                         YataSelectChip(
-                            label = "Carry forward to next day",
+                            label = stringResource(R.string.task_detail_carry_forward),
                             selected = true,
                             onClick = {
                                 viewModel.upsertTask(task.copy(due = java.time.LocalDate.now().plusDays(1).toString()))
@@ -595,7 +595,7 @@ fun TaskDetailScreen(
 
                     MetaRowItem(
                         icon = Icons.Default.Notifications,
-                        label = "Reminder",
+                        label = stringResource(R.string.task_detail_reminder),
                         value = com.mj.yata.util.TaskScheduleUtils.formatReminder(task.reminder),
                         accentColor = if (task.reminder != null) MaterialTheme.colorScheme.secondary else null,
                         onClick = { activeSheet = DetailSheetType.ReminderPicker }
@@ -606,7 +606,7 @@ fun TaskDetailScreen(
                     } ?: "Does not repeat"
                     MetaRowItem(
                         icon = Icons.Default.Repeat,
-                        label = "Repeats",
+                        label = stringResource(R.string.task_detail_repeats),
                         value = repeatsVal,
                         accentColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else null,
                         onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
@@ -625,7 +625,7 @@ fun TaskDetailScreen(
                     }
                     if (task.recurrence != null && streak >= 2) {
                         Text(
-                            text = "🔥 $streak-day streak",
+                            text = stringResource(R.string.task_detail_streak_days, streak),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.padding(start = 4.dp)
@@ -642,7 +642,7 @@ fun TaskDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Recurring history",
+                                text = stringResource(R.string.task_detail_recurring_history),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -670,16 +670,16 @@ fun TaskDetailScreen(
                     if (projectsFeatureEnabled) {
                         MetaRowItem(
                             icon = Icons.Default.Layers,
-                            label = "Project",
-                            value = project?.name ?: "None",
+                            label = stringResource(R.string.entity_project),
+                            value = project?.name ?: stringResource(R.string.task_detail_none),
                             onClick = { activeSheet = DetailSheetType.ProjectPicker }
                         )
                     }
 
                     MetaRowItem(
                         icon = Icons.Default.Folder,
-                        label = "List",
-                        value = taskList?.name ?: "None",
+                        label = stringResource(R.string.entity_list),
+                        value = taskList?.name ?: stringResource(R.string.task_detail_none),
                         swatchColor = listColor,
                         onClick = { activeSheet = DetailSheetType.ListPicker }
                     )
@@ -687,7 +687,7 @@ fun TaskDetailScreen(
                     // Priority
                     MetaRowItem(
                         icon = Icons.Default.Flag,
-                        label = "Priority",
+                        label = stringResource(R.string.new_task_priority),
                         value = task.priority.uppercase(),
                         rightContent = { PriorityBars(priority = task.priority) },
                         onClick = { viewModel.cycleTaskPriority(task.id) }
@@ -699,7 +699,7 @@ fun TaskDetailScreen(
             if (peopleFeatureEnabled) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Assigned to",
+                        text = stringResource(R.string.new_task_assigned_to),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -853,7 +853,7 @@ fun TaskDetailScreen(
             if (tagsFeatureEnabled) item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Tags",
+                        text = stringResource(R.string.tab_tags),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -886,7 +886,7 @@ fun TaskDetailScreen(
                     }
                     if (inheritedTags.isNotEmpty()) {
                         Text(
-                            text = "Tags with no ✕ come from this task's project and stay in sync automatically.",
+                            text = stringResource(R.string.task_detail_tags_sync_hint),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -901,9 +901,9 @@ fun TaskDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SectionToggleChip("Subtasks", showSubtasks, { showSubtasks = !showSubtasks }, Modifier.weight(1f), count = task.subtasks.size)
-                    SectionToggleChip("Notes", showNotes, { showNotes = !showNotes }, Modifier.weight(1f), count = if (!task.notes.isNullOrBlank()) 1 else 0)
-                    SectionToggleChip("Comments", showComments, { showComments = !showComments; userToggledComments = true }, Modifier.weight(1f), count = comments.size)
+                    SectionToggleChip(stringResource(R.string.new_task_subtasks), showSubtasks, { showSubtasks = !showSubtasks }, Modifier.weight(1f), count = task.subtasks.size)
+                    SectionToggleChip(stringResource(R.string.new_task_notes), showNotes, { showNotes = !showNotes }, Modifier.weight(1f), count = if (!task.notes.isNullOrBlank()) 1 else 0)
+                    SectionToggleChip(stringResource(R.string.task_detail_comments), showComments, { showComments = !showComments; userToggledComments = true }, Modifier.weight(1f), count = comments.size)
                 }
             }
 
@@ -931,12 +931,12 @@ fun TaskDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Subtasks",
+                            text = stringResource(R.string.new_task_subtasks),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "$subDone/$subTotal done",
+                            text = stringResource(R.string.task_detail_subtasks_progress, subDone, subTotal),
                             style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                         )
                     }
@@ -1118,7 +1118,7 @@ fun TaskDetailScreen(
                 val notesFocusRequester = remember(task.id) { FocusRequester() }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Notes",
+                        text = stringResource(R.string.new_task_notes),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1193,7 +1193,7 @@ fun TaskDetailScreen(
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Comments",
+                        text = stringResource(R.string.task_detail_comments),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1337,7 +1337,7 @@ fun TaskDetailScreen(
                             LocalPanelHint("Pick a due date to unlock time and reminder options.")
                         } else {
                             Text(
-                                text = "Time",
+                                text = stringResource(R.string.new_task_time),
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1419,7 +1419,7 @@ fun TaskDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             YataSelectChip(
-                                label = "None",
+                                label = stringResource(R.string.task_detail_none),
                                 selected = task.listId == null,
                                 onClick = {
                                     viewModel.upsertTask(task.copy(listId = null))
@@ -1450,7 +1450,7 @@ fun TaskDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             YataSelectChip(
-                                label = "None",
+                                label = stringResource(R.string.task_detail_none),
                                 selected = task.projectId == null,
                                 onClick = {
                                     viewModel.upsertTask(task.copy(projectId = null))
