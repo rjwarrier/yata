@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">YATA</string>
+    <string name="app_name">yata</string>
     <string name="share_to_task_label">Aggiungi to Yata</string>
     <string name="qs_tile_quick_add_label">Quick add task</string>
     <string name="tasker_field_title">Title</string>
     <string name="tasker_field_project">Progetto (name)</string>
     <string name="tasker_field_list">Elenco (name)</string>
-    <string name="tasker_field_tags">Tags (comma-separated)</string>
+    <string name="tasker_field_tags">Tag (comma-separated)</string>
     <string name="tasker_field_assignees">Assign to (comma-separated names)</string>
     <string name="tasker_field_due">Due date (e.g. 2026-07-10, tomorrow, next monday)</string>
     <string name="tasker_field_time">Time (e.g. 3:00 PM, 15:00, evening)</string>
@@ -58,35 +58,35 @@
     <string name="settings_startup_last_used">Last used</string>
     <string name="tab_today">Oggi</string>
     <string name="tab_projects">Progettos</string>
-    <string name="tab_people">People</string>
-    <string name="tab_tags">Tags</string>
+    <string name="tab_people">Persone</string>
+    <string name="tab_tags">Tag</string>
     <string name="tab_upcoming">In arrivo</string>
     <string name="drawer_custom_views">CUSTOM VIEWS</string>
     <string name="drawer_starred">STARRED</string>
     <string name="drawer_lists">LISTS</string>
-    <string name="people_empty_title">Nessuna people yet</string>
+    <string name="people_empty_title">Nessun people yet</string>
     <string name="people_empty_subtitle">Aggiungi people to assign tasks and track who\'s doing what.</string>
     <string name="people_ungrouped">Ungrouped</string>
     <string name="people_archived">Archived</string>
     <string name="people_you_badge">YOU</string>
-    <string name="projects_empty_title">Nessuna projects yet</string>
+    <string name="projects_empty_title">Nessun projects yet</string>
     <string name="projects_empty_subtitle">Group related tasks into a project to track progress together.</string>
     <string name="projects_new_project">New project</string>
     <string name="projects_archived_header">ARCHIVED</string>
-    <string name="tags_empty_title">Nessuna tags yet</string>
+    <string name="tags_empty_title">Nessun tags yet</string>
     <string name="tags_empty_subtitle">Tag tasks to group them by topic, client, or anything you like.</string>
     <string name="today_stat_overdue">In ritardo</string>
     <string name="today_stat_high_priority">High priority</string>
     <string name="today_stat_due_today">Due today</string>
-    <string name="today_all_caught_up">All caught up</string>
-    <string name="upcoming_clear_day">Clear day</string>
+    <string name="today_all_caught_up">Tutti caught up</string>
+    <string name="upcoming_clear_day">Cancella day</string>
     <string name="upcoming_nothing_scheduled">Nothing scheduled.</string>
     <string name="search_prompt_empty">Type something to search, or pick a filter above.</string>
     <string name="search_prompt_empty_subtitle">Use text, smart filters, or saved views to narrow your tasks.</string>
-    <string name="search_no_matches">Nessuna matches</string>
+    <string name="search_no_matches">Nessun matches</string>
     <string name="search_no_matches_subtitle">Try a different query or loosen the active filters.</string>
-    <string name="search_clear">Clear search</string>
-    <string name="search_filters">Filters</string>
+    <string name="search_clear">Cancella search</string>
+    <string name="search_filters">Filtras</string>
     <string name="search_filter_hint">Tap a chip to build a focused view.</string>
     <string name="search_filter_hint_compact">Tap to filter</string>
     <string name="search_saved_views">Salvad views</string>
@@ -100,7 +100,7 @@
     <string name="search_filter_high_priority">High priority</string>
     <string name="search_filter_flagged">Flagged</string>
     <string name="search_filter_due_today">Due today</string>
-    <string name="search_filter_no_due_date">Nessuna due date</string>
+    <string name="search_filter_no_due_date">Nessun due date</string>
     <string name="search_filter_saved_view">Salvad view</string>
     <string name="search_filter_archived">Archived</string>
     <string name="search_filter_trash">Trash</string>
@@ -119,7 +119,7 @@
     <string name="settings_motion_mode">Motion mode</string>
     <string name="settings_motion_mode_summary">Control app animations without changing other visual settings.</string>
     <string name="settings_tasker_integration">Attivitàer integration</string>
-    <string name="settings_tasker_integration_summary">Allow Attivitàer profiles to create tasks through the Yata plugin.</string>
+    <string name="settings_tasker_integration_summary">Tuttiow Attivitàer profiles to create tasks through the Yata plugin.</string>
     <string name="settings_date_aliases">Date aliases</string>
     <string name="settings_date_aliases_summary">Teach quick add your own date words.</string>
     <string name="settings_date_alias_word_label">Word</string>
@@ -173,16 +173,16 @@
     <string name="settings_start_week_sunday_desc">App agendas will start on Sunday instead of Monday.</string>
     <string name="settings_voice_input_language">Voice input language</string>
     <string name="settings_voice_system_default">System Default (Auto)</string>
-    <string name="settings_none">None</string>
+    <string name="settings_none">Nessuno</string>
     <string name="settings_auto_assign">Auto-assign new tasks to you</string>
     <string name="settings_auto_assign_desc">New tasks start assigned to you. Turn this off to have them start unassigned - you can still pick an assignee on any task.</string>
     <string name="settings_default_due_date">Default due date</string>
     <string name="settings_default_due_date_desc">What a new task is due when you don\'t pick a date yourself.</string>
     <string name="settings_due_today">Oggi</string>
     <string name="settings_due_tomorrow">Domani</string>
-    <string name="settings_due_none">Nessuna date</string>
+    <string name="settings_due_none">Nessun date</string>
     <string name="settings_default_priority">Default priority</string>
-    <string name="settings_priority_none">None</string>
+    <string name="settings_priority_none">Nessuno</string>
     <string name="settings_priority_low">Low</string>
     <string name="settings_priority_med">Medium</string>
     <string name="settings_priority_high">High</string>
@@ -198,7 +198,7 @@
     <string name="settings_language_system_default">System default</string>
     <string name="settings_language_picker_title">Choose language</string>
     <string name="settings_language_picker_subtitle">Switch YATA immediately. System follows your device language.</string>
-    <string name="settings_language_search_placeholder">Search languages</string>
+    <string name="settings_language_search_placeholder">Cerca languages</string>
     <string name="settings_language_selected">Selected</string>
     <string name="settings_task_lifecycle">Attività lifecycle</string>
     <string name="settings_task_lifecycle_desc">Trash deletes tasks after a retention window; Archive only hides tasks and keeps them intact.</string>
@@ -210,8 +210,8 @@
     <string name="settings_trash_kept_forever">Eliminad tasks are kept here until you remove them.</string>
     <string name="action_cancel">Annulla</string>
     <string name="action_save">Salva</string>
-    <string name="action_none_remove_from_project">None (remove from project)</string>
-    <string name="action_none_remove_from_list">None (remove from list)</string>
+    <string name="action_none_remove_from_project">Nessuno (remove from project)</string>
+    <string name="action_none_remove_from_list">Nessuno (remove from list)</string>
     <string name="press_back_again_to_exit">Press back again to exit</string>
     <string name="cd_back">Back</string>
     <string name="cd_delete">Elimina</string>
@@ -228,7 +228,7 @@
     <string name="cd_trash_restore">Restore</string>
     <string name="cd_trash_delete_forever">Elimina forever</string>
     <string name="archive_title">Archive</string>
-    <string name="archive_empty_state">Nessuna shelved tasks in Archive.</string>
+    <string name="archive_empty_state">Nessun shelved tasks in Archive.</string>
     <string name="archive_empty_state_desc">Archived tasks will appear here. Use Archive when you want to hide a task without deleting it.</string>
     <string name="archive_empty_state_action">Go to Oggi</string>
     <string name="archive_notice">Archive shelves tasks without deleting them. They stay hidden from normal lists, never expire, and can be unarchived anytime.</string>
@@ -246,10 +246,10 @@
     <string name="cd_task_add_comment">Aggiungi comment</string>
     <string name="cd_task_edit_title">Modifica title</string>
     <string name="cd_task_snooze">Snooze</string>
-    <string name="search_in_list">Search in %1$s</string>
-    <string name="search_in_project">Search in %1$s</string>
-    <string name="search_in_tag">Search in #%1$s</string>
-    <string name="search_person_tasks">Search %1$s\'s tasks</string>
+    <string name="search_in_list">Cerca in %1$s</string>
+    <string name="search_in_project">Cerca in %1$s</string>
+    <string name="search_in_tag">Cerca in #%1$s</string>
+    <string name="search_person_tasks">Cerca %1$s\'s tasks</string>
     <string name="cd_add_task_for_person">Aggiungi task for %1$s</string>
     <string name="cd_add_task_tagged">Aggiungi task tagged #%1$s</string>
     <string name="cd_remove_person">Rimuovi %1$s</string>
@@ -271,7 +271,7 @@
     <string name="action_close">Close</string>
     <string name="action_confirm_pin">Confirm PIN</string>
     <string name="action_custom_color">Custom color</string>
-    <string name="action_done">Fatto</string>
+    <string name="action_done">Done</string>
     <string name="action_export">Export</string>
     <string name="action_export_as_image">Export as image</string>
     <string name="action_export_as_pdf">Export as PDF</string>
@@ -316,7 +316,7 @@
     <string name="analytics_priority_high">High</string>
     <string name="analytics_priority_medium">Medium</string>
     <string name="analytics_priority_low">Low</string>
-    <string name="analytics_priority_none">Nessuna priority</string>
+    <string name="analytics_priority_none">Nessun priority</string>
     <string name="analytics_done_of_total">%1$d of %2$d completed</string>
     <string name="analytics_delta_pp_vs_previous">%1$s pp vs previous period</string>
     <string name="analytics_more_finished_than_created">%1$d more finished than created</string>
@@ -369,12 +369,12 @@
     <string name="cd_add_subtask">Aggiungi subtask</string>
     <string name="cd_add_task">Aggiungi task</string>
     <string name="cd_add_task_by_voice">Aggiungi task by voice</string>
-    <string name="cd_clear_search">Clear search</string>
+    <string name="cd_clear_search">Cancella search</string>
     <string name="cd_delete_group">Elimina group</string>
     <string name="cd_more_options">More options</string>
     <string name="cd_open_drawer">Open drawer</string>
     <string name="cd_open_menu">Open menu</string>
-    <string name="cd_search">Search</string>
+    <string name="cd_search">Cerca</string>
     <string name="circular_image_cropper_use_photo">Use photo</string>
     <string name="circular_image_cropper_select_new_image">Select new image</string>
     <string name="circular_image_cropper_transparent_png_hint">Tip: a transparent PNG with a white shape becomes a Material You icon automatically</string>
@@ -396,7 +396,7 @@
     <string name="settings_sftp_backups_to_keep_summary">Keep the last %1$d backups on the server — older ones are pruned automatically.</string>
     <string name="settings_backup_dest_local">this device</string>
     <string name="settings_backup_dest_self_hosted">remote sync</string>
-    <string name="settings_backup_none_configured">Nessuna backup destinations are switched on.</string>
+    <string name="settings_backup_none_configured">Nessun backup destinations are switched on.</string>
     <string name="settings_backup_all_failed">Backup failed — %1$s</string>
     <string name="settings_backup_partial">Backed up %1$d, but failed for %2$s</string>
     <string name="settings_initial_sync_merge_title">Review first sync</string>
@@ -427,20 +427,20 @@
     <string name="settings_sftp_test_connection">Test connection</string>
     <string name="settings_sftp_testing_connection">Testing connection…</string>
     <string name="settings_sftp_connection_ok">Connected successfully.</string>
-    <string name="settings_clear_sync_lock">Clear sync lock</string>
+    <string name="settings_clear_sync_lock">Cancella sync lock</string>
     <string name="settings_clear_sync_lock_summary">Use when sync says another device is syncing but no device is active.</string>
-    <string name="settings_clear_sync_lock_title">Clear stale sync lock?</string>
+    <string name="settings_clear_sync_lock_title">Cancella stale sync lock?</string>
     <string name="settings_clear_sync_lock_confirm">Only continue if no other YATA device is syncing with this server right now. This removes the remote .yata_sync_v1.lock folder and leaves backups untouched.</string>
     <string name="settings_clear_sync_lock_confirm_with_owner">Sync is currently locked by %1$s. Lock age: %2$s.\n\nOnly continue if that device is not syncing right now. This removes the remote .yata_sync_v1.lock folder and leaves backups untouched.</string>
     <string name="settings_clear_sync_lock_confirm_with_age">Sync is currently locked. Lock age: %1$s.\n\nOnly continue if no other YATA device is syncing with this server right now. This removes the remote .yata_sync_v1.lock folder and leaves backups untouched.</string>
-    <string name="settings_clear_sync_lock_action">Clear lock</string>
+    <string name="settings_clear_sync_lock_action">Cancella lock</string>
     <string name="settings_clear_sync_lock_success">Sync lock cleared.</string>
     <string name="settings_clear_sync_lock_failed">Couldn\'t clear the sync lock.</string>
     <string name="settings_sftp_trust_prompt">First time connecting to this server. Its key fingerprint is:\n\n%1$s\n\nOnly trust this if you recognize it.</string>
     <string name="settings_sftp_trust_and_save">Trust and save</string>
     <string name="settings_sftp_host_key_changed">The server\'s key fingerprint has changed since it was trusted:\n\n%1$s\n\nThis can happen after a legitimate server rebuild — or it can mean someone is intercepting the connection. Only continue if you\'re sure.</string>
     <string name="settings_sftp_trust_new_key">Trust new key anyway</string>
-    <string name="settings_sftp_no_backups_found">Nessuna backups found on the server yet.</string>
+    <string name="settings_sftp_no_backups_found">Nessun backups found on the server yet.</string>
     <string name="settings_sftp_restore_title">Restore from server</string>
     <string name="settings_sftp_restore_confirm_title">Restore this backup?</string>
     <string name="settings_sftp_restore_confirm_body">This replaces everything currently in the app with the contents of this backup. This can\'t be undone.</string>
@@ -482,22 +482,22 @@
     <string name="entity_editors_separate_multiple_tags_with_commas_to_crea">Separate multiple tags with commas to create several at once.</string>
     <string name="entity_editors_tag_label">Tag label</string>
     <string name="entity_editors_what_s_this_project_about">What\'s this project about?</string>
-    <string name="export_options_no_limit">Nessuna limit</string>
+    <string name="export_options_no_limit">Nessun limit</string>
     <string name="help_about_help_about">Help</string>
     <string name="help_about_heading">HELP</string>
     <string name="help_about_upcoming_calendar">In arrivo &amp; Calendar</string>
     <string name="help_about_quick_add">Quick Aggiungi</string>
-    <string name="help_about_search_saved_views">Search &amp; Salvad Views</string>
+    <string name="help_about_search_saved_views">Cerca &amp; Salvad Views</string>
     <string name="help_about_projects_lists">Progettos &amp; Elencos</string>
     <string name="help_about_reminders">Reminders</string>
     <string name="help_about_widgets">Widgets</string>
     <string name="help_about_backup_sync">Backup &amp; Sync</string>
     <string name="help_about_trash">Trash</string>
-    <string name="list_detail_all_tasks_inside_this_list_will_be_permane">All tasks inside this list will be permanently deleted.</string>
+    <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Tutti tasks inside this list will be permanently deleted.</string>
     <string name="list_detail_delete_list">Elimina list</string>
     <string name="list_detail_delete_list_2">Elimina list?</string>
     <string name="list_detail_edit_list">Modifica list</string>
-    <string name="list_detail_search_in_list">Search in list</string>
+    <string name="list_detail_search_in_list">Cerca in list</string>
     <string name="lock_backspace">Backspace</string>
     <string name="lock_unlock">Unlock</string>
     <string name="lock_use_biometric_instead">Use biometric instead</string>
@@ -511,7 +511,7 @@
     <string name="lock_biometric_negative">Use PIN</string>
     <string name="main_command_palette">Command palette</string>
     <string name="main_new_list">New list</string>
-    <string name="main_search_actions_or_tasks">Search actions or tasks</string>
+    <string name="main_search_actions_or_tasks">Cerca actions or tasks</string>
     <string name="main_palette_new_task_subtitle">Crea a task</string>
     <string name="main_palette_search_subtitle">Find tasks and saved filters</string>
     <string name="main_palette_today_subtitle">Open today\'s tasks</string>
@@ -545,11 +545,11 @@
     <string name="person_detail_expand">Expand</string>
     <string name="person_detail_overdue_trend">OVERDUE TREND (7 DAYS)</string>
     <string name="person_detail_pending">In attesa</string>
-    <string name="person_detail_no_open_tasks">Nessuna open tasks assigned.</string>
+    <string name="person_detail_no_open_tasks">Nessun open tasks assigned.</string>
     <string name="person_detail_completed_tasks">Completata Attività</string>
-    <string name="person_detail_no_completed_tasks">Nessuna completed tasks.</string>
-    <string name="person_detail_search_this_person_s_tasks">Search this person\'s tasks</string>
-    <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Their past assigned tasks and stats stay. They\'re hidden from the People tab — you can unarchive them anytime from this same menu.</string>
+    <string name="person_detail_no_completed_tasks">Nessun completed tasks.</string>
+    <string name="person_detail_search_this_person_s_tasks">Cerca this person\'s tasks</string>
+    <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Their past assigned tasks and stats stay. They\'re hidden from the Persone tab — you can unarchive them anytime from this same menu.</string>
     <string name="project_detail_archive_project">Archive project</string>
     <string name="project_detail_archive_project_2">Archive project?</string>
     <string name="project_detail_delete_archived_project">Elimina archived project?</string>
@@ -568,7 +568,7 @@
     <string name="project_detail_roll_over_open_tasks_2">Roll over open tasks?</string>
     <string name="project_detail_roll_overdue_forward">Roll overdue forward</string>
     <string name="project_detail_roll_overdue_tasks_forward">Roll overdue tasks forward?</string>
-    <string name="project_detail_search_in_project">Search in project</string>
+    <string name="project_detail_search_in_project">Cerca in project</string>
     <string name="project_detail_tasks_inside_stay_linked_the_project_is_hi">Attività inside stay linked. The project is hidden from active project surfaces until you restore it.</string>
     <string name="projects_add_project">Aggiungi project</string>
     <string name="projects_archive_selected">Archive selected</string>
@@ -580,7 +580,7 @@
     <string name="quick_comment_write_a_comment">Write a comment...</string>
     <string name="recurrence_badge_repeats">Repeats</string>
     <string name="search_remove_saved_filter">Rimuovi saved filter</string>
-    <string name="search_search_or_try_overdue_flagged">Search, or try \"overdue\", \"flagged\"...</string>
+    <string name="search_search_or_try_overdue_flagged">Cerca, or try \"overdue\", \"flagged\"...</string>
     <string name="settings_back_up_now">Back up now</string>
     <string name="settings_sync_and_backup_now">Sync &amp; back up now</string>
     <string name="settings_backup_frequency">Backup frequency</string>
@@ -607,7 +607,7 @@
     <string name="profile_add_name">Aggiungi your name</string>
     <string name="main_drawer_version">yata %1$s</string>
     <string name="entity_hero_showing_filter">Showing: %1$s</string>
-    <string name="entity_hero_clear_filter">Clear ✕</string>
+    <string name="entity_hero_clear_filter">Cancella ✕</string>
     <string name="today_progress_cd">%1$s, %2$d percent</string>
     <string name="today_progress_percent">%1$d%%</string>
     <string name="profile_add_email">Aggiungi your email</string>
@@ -615,9 +615,9 @@
     <string name="bulk_section_project">PROJECT</string>
     <string name="bulk_section_list">LIST</string>
     <string name="bulk_add_tag_title">Aggiungi tag to selected tasks</string>
-    <string name="bulk_no_tags">Nessuna tags yet - create one from the Tags tab first.</string>
+    <string name="bulk_no_tags">Nessun tags yet - create one from the Tag tab first.</string>
     <string name="bulk_assign_title">Assign selected tasks to</string>
-    <string name="bulk_no_people">Nessuna people yet - add one from the People tab first.</string>
+    <string name="bulk_no_people">Nessun people yet - add one from the Persone tab first.</string>
     <string name="today_show_completed">Show completed tasks</string>
     <string name="today_hide_completed">Hide completed tasks</string>
     <string name="cd_open_profile">Open profile and settings</string>
@@ -630,7 +630,7 @@
     <string name="sync_status_failed">Last sync failed</string>
     <string name="diagnostics_title">Diagnostics</string>
     <string name="diagnostics_operation_history">Operation history</string>
-    <string name="diagnostics_operation_history_empty">Nessuna background operation history yet.</string>
+    <string name="diagnostics_operation_history_empty">Nessun background operation history yet.</string>
     <string name="diagnostics_crash_reports">Crash reports</string>
     <string name="diagnostics_crash_clusters">Repeated failure groups</string>
     <string name="diagnostics_crash_cluster_count">%1$d times</string>
@@ -650,12 +650,12 @@
     <string name="operation_history_last_failure">Last failure</string>
     <string name="operation_history_retry_count">Retry count</string>
     <string name="operation_history_never">Never</string>
-    <string name="crash_log_empty_title">Nessuna crash reports</string>
+    <string name="crash_log_empty_title">Nessun crash reports</string>
     <string name="crash_log_empty_body">Nothing has gone wrong since the last time these were cleared. Reports show up here on their own — there is nothing to turn on.</string>
     <string name="crash_log_fatal">Crash</string>
     <string name="crash_log_handled">Handled</string>
-    <string name="crash_log_clear_all">Clear all</string>
-    <string name="crash_log_clear_confirm_title">Clear all reports?</string>
+    <string name="crash_log_clear_all">Cancella all</string>
+    <string name="crash_log_clear_confirm_title">Cancella all reports?</string>
     <string name="crash_log_clear_confirm_body">Eliminas every saved report. This can\'t be undone, and reports aren\'t backed up.</string>
     <string name="crash_log_copy">Copy</string>
     <string name="crash_log_share">Share</string>
@@ -664,9 +664,9 @@
     <string name="cd_delete_crash_log">Elimina this report</string>
     <string name="task_starts_on">Starts %1$s</string>
     <string name="task_start_date">Start date</string>
-    <string name="task_start_date_none">Nessuna start date</string>
+    <string name="task_start_date_none">Nessun start date</string>
     <string name="cd_pick_start_date">Pick start date</string>
-    <string name="cd_clear_start_date">Clear start date</string>
+    <string name="cd_clear_start_date">Cancella start date</string>
     <string name="task_start_date_hint">Hidden from Oggi until this date</string>
     <string name="smart_add_starts">Starts %1$s</string>
     <string name="new_task_ignore_field">Ignore %1$s</string>
@@ -682,7 +682,7 @@
     <string name="tag_detail_delete_tag">Elimina tag</string>
     <string name="tag_detail_delete_tag_2">Elimina tag?</string>
     <string name="tag_detail_edit_tag">Modifica tag</string>
-    <string name="tag_detail_search_in_tag">Search in tag</string>
+    <string name="tag_detail_search_in_tag">Cerca in tag</string>
     <string name="tag_detail_this_tag_will_be_removed_from_all_tasks">This tag will be removed from all tasks.</string>
     <string name="tags_delete_selected">Elimina selected</string>
     <string name="tags_new_tag">New tag</string>
@@ -713,8 +713,8 @@
     <string name="task_detail_repeats">Repeats</string>
     <string name="task_detail_streak_days">🔥 %1$d-day streak</string>
     <string name="task_detail_recurring_history">Recurring history</string>
-    <string name="task_detail_none">None</string>
-    <string name="task_detail_tags_sync_hint">Tags with no ✕ come from this task\'s project and stay in sync automatically.</string>
+    <string name="task_detail_none">Nessuno</string>
+    <string name="task_detail_tags_sync_hint">Tag with no ✕ come from this task\'s project and stay in sync automatically.</string>
     <string name="task_detail_subtasks_progress">%1$d/%2$d done</string>
     <string name="task_detail_comments">Comments</string>
     <string name="task_detail_select_list">Select list</string>
@@ -732,7 +732,7 @@
     <string name="sort_fewest_tasks">Fewest tasks</string>
     <string name="sort_starred_first">Starred first</string>
     <string name="today_next_10_days">Next 10 days</string>
-    <string name="today_search_tasks">Search tasks</string>
+    <string name="today_search_tasks">Cerca tasks</string>
     <string name="upcoming_next_month">Next month</string>
     <string name="upcoming_previous_month">Previous month</string>
     <string name="voice_task_overlay_speak_again">Speak Again</string>
@@ -750,8 +750,8 @@
     <string name="welcome_skip">Skip</string>
     <string name="welcome_title_intro">Welcome to YATA</string>
     <string name="welcome_title_projects_lists">Progettos &amp; Elencos</string>
-    <string name="welcome_title_people_delegation">People &amp; Delegation</string>
-    <string name="welcome_title_tags">Tags</string>
+    <string name="welcome_title_people_delegation">Persone &amp; Delegation</string>
+    <string name="welcome_title_tags">Tag</string>
     <string name="welcome_title_today_upcoming">Oggi &amp; In arrivo</string>
     <string name="welcome_title_analytics">Analytics</string>
     <string name="widget_config_widget_customizer">Widget Customizer</string>
@@ -764,8 +764,8 @@
     <string name="widget_config_widget_accent_color">Widget Accent Color</string>
     <string name="widget_config_overrides_the_app_s_default_accent_for_thi">Overrides the app\'s default accent for this widget only.</string>
     <string name="widget_config_app_default">App default</string>
-    <string name="widget_config_clear_preset">Clear Preset</string>
-    <string name="widget_config_no_items_available_in_this_category">Nessuna items available in this category.</string>
+    <string name="widget_config_clear_preset">Cancella Preset</string>
+    <string name="widget_config_no_items_available_in_this_category">Nessun items available in this category.</string>
     <string name="widget_config_save_changes">Salva Changes</string>
     <string name="content_not_found_title">%1$s not found</string>
     <string name="content_not_found_body">It may have been deleted, archived, or removed on another device.</string>
@@ -779,9 +779,9 @@
     <string name="discard_task_draft_body">Your title, schedule, notes, subtasks, and selections will be lost.</string>
     <string name="action_discard">Discard</string>
     <string name="action_keep_editing">Keep editing</string>
-    <string name="settings_search_label">Search settings</string>
+    <string name="settings_search_label">Cerca settings</string>
     <string name="settings_search_placeholder">Try “reminders”, “theme”, or “backup”</string>
-    <string name="settings_search_no_results">Nessuna matching settings</string>
+    <string name="settings_search_no_results">Nessun matching settings</string>
     <string name="settings_search_profile_summary">Name, email, and profile photo</string>
     <string name="settings_search_appearance_display_summary">Theme, color, font, scale, and density</string>
     <string name="settings_search_appearance_summary">Theme, color, font, and motion</string>
@@ -805,10 +805,10 @@
     <string name="settings_today_show_upcoming_when_empty">Show upcoming tasks when Oggi is empty</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Automatically preview tomorrow\'s and the day after\'s tasks (dimmed) instead of showing a "Show upcoming tasks" button.</string>
     <string name="settings_search_help_summary">Feature guide, version, and app information</string>
-    <string name="settings_reset_settings">Reset app settings</string>
-    <string name="settings_reset_dialog_title">Reset app settings?</string>
+    <string name="settings_reset_settings">Reimposta app settings</string>
+    <string name="settings_reset_dialog_title">Reimposta app settings?</string>
     <string name="settings_reset_dialog_body">Appearance, navigation, feedback, task defaults, and notification preferences will return to their defaults. Your profile, backups, security PIN, saved searches, and tasks stay untouched.</string>
-    <string name="settings_reset_action">Reset settings</string>
+    <string name="settings_reset_action">Reimposta settings</string>
     <string name="settings_reset_success">App settings reset</string>
     <string name="settings_reminder_health_ready">Reminder delivery is ready</string>
     <string name="settings_reminder_health_attention">Reminder delivery needs attention</string>
@@ -841,7 +841,7 @@
     <string name="export_task_title">Export task</string>
     <string name="export_section_file">File</string>
     <string name="export_filename">Filename</string>
-    <string name="action_share">Condividi</string>
+    <string name="action_share">Share</string>
     <string name="export_section_completed_tasks">Completata tasks</string>
     <string name="export_include_completed">Include completed tasks</string>
     <string name="export_exclude_completed_older_than">Exclude completed tasks done more than this many days ago</string>
@@ -874,7 +874,7 @@
     <string name="export_list_label">Elenco</string>
     <string name="export_assigned_to_label">Assigned to</string>
     <string name="export_assignee_pill">@%1$s</string>
-    <string name="export_tags_label">Tags</string>
+    <string name="export_tags_label">Tag</string>
     <string name="export_schedule_label">Schedule</string>
     <string name="export_reminder_pill">Reminder: %1$s</string>
     <string name="export_subtasks_heading">SUBTASKS (%1$d/%2$d)</string>
@@ -906,27 +906,27 @@
     <string name="new_task_time">Time</string>
     <string name="new_task_assigned_to">Assigned to</string>
     <string name="new_task_assign">Assign</string>
-    <string name="new_task_tags">Tags</string>
+    <string name="new_task_tags">Tag</string>
     <string name="new_task_tag">Tag</string>
     <string name="new_task_notes">Notes</string>
     <string name="new_task_subtasks">Subtasks</string>
     <string name="new_task_create_another">Crea another</string>
     <string name="new_task_keep_open">Keep this screen open after saving.</string>
-    <string name="new_task_no_container">Nessuna project or list</string>
+    <string name="new_task_no_container">Nessun project or list</string>
     <string name="new_task_create_task">Crea task</string>
     <string name="new_task_similar_open_task">Similar open task: %1$s</string>
     <string name="date_today">Oggi</string>
     <string name="date_tomorrow">Domani</string>
     <string name="date_next_week">Next week</string>
     <string name="date_next_month">Next month</string>
-    <string name="date_no_due">Nessuna due date</string>
+    <string name="date_no_due">Nessun due date</string>
     <string name="date_pick">Pick date</string>
     <string name="time_requires_due_date">Aggiungi a due date first so the time has something to attach to.</string>
     <string name="time_custom">Custom time</string>
-    <string name="action_clear">Clear</string>
+    <string name="action_clear">Cancella</string>
     <string name="reminder_requires_due_date">Pick a due date before setting a reminder.</string>
-    <string name="new_task_no_lists">Nessuna lists yet — create one from the drawer.</string>
-    <string name="new_task_no_projects">Nessuna projects yet — create one from the Progettos tab.</string>
+    <string name="new_task_no_lists">Nessun lists yet — create one from the drawer.</string>
+    <string name="new_task_no_projects">Nessun projects yet — create one from the Progettos tab.</string>
     <string name="person_you">You</string>
     <string name="recurrence_daily">Daily</string>
     <string name="recurrence_weekdays">Weekdays</string>
@@ -991,8 +991,8 @@
     <string name="settings_today_tab">Oggi tab</string>
     <string name="settings_upcoming_tab">In arrivo tab</string>
     <string name="settings_projects">Progettos</string>
-    <string name="settings_people">People</string>
-    <string name="settings_tags">Tags</string>
+    <string name="settings_people">Persone</string>
+    <string name="settings_tags">Tag</string>
     <string name="help_demo_mode_on">Demo mode on - showing sample data for screenshots</string>
     <string name="help_demo_mode_off">Demo mode off - showing your real data</string>
     <string name="help_demo_mode_active">DEMO MODE - tap logo to switch back</string>
@@ -1034,12 +1034,12 @@
     <string name="settings_sync_after_change">Right after any change in a task</string>
     <string name="settings_sync_every_minutes">Every %1$d minutes</string>
     <string name="task_waiting_on">Waiting on</string>
-    <string name="task_waiting_on_none">Nessuna follow-up</string>
+    <string name="task_waiting_on_none">Nessun follow-up</string>
     <string name="task_waiting_on_set_hint">Hidden from Oggi until this date, since it\'s on someone else\'s plate.</string>
     <string name="task_waiting_on_unset_hint">Delegated task — set a date to hide it from Oggi until then.</string>
     <string name="task_assignee_owner">%1$s · Owner</string>
     <string name="task_section">Section</string>
-    <string name="task_section_none">Nessuna section</string>
+    <string name="task_section_none">Nessun section</string>
     <string name="section_header_no_section">NO SECTION</string>
     <string name="project_manage_sections">Manage sections</string>
     <string name="project_manage_sections_hint">Group this project\'s tasks under headings like \"Design\" or \"Backend\". Leave empty to keep the plain In attesa/Completata list.</string>
@@ -1047,7 +1047,7 @@
     <string name="cd_section_add">Aggiungi section</string>
     <string name="cd_section_remove">Rimuovi section</string>
     <string name="task_estimate">Estimate</string>
-    <string name="task_estimate_none">Nessuna estimate</string>
+    <string name="task_estimate_none">Nessun estimate</string>
     <string name="task_estimate_hint">Counts toward the planned total on Oggi.</string>
     <string name="today_planned">%1$s planned</string>
     <string name="today_planned_with_unestimated">%1$s planned · %2$d unestimated</string>
@@ -1080,11 +1080,11 @@
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">Drag to reposition, pinch to zoom</string>
     <string name="entity_report_pdf_title">%1$s — YATA %2$s Report</string>
-    <string name="task_filter_all">All</string>
+    <string name="task_filter_all">Tutti</string>
     <string name="task_filter_delegated">Delegated</string>
     <string name="task_filter_no_matches">Nessuna attività match this filter.</string>
     <string name="today_no_tasks">Nessuna attività for today.</string>
-    <string name="today_all_caught_up_bang">All caught up!</string>
+    <string name="today_all_caught_up_bang">Tutti caught up!</string>
     <string name="today_pending_header">PENDING</string>
     <string name="today_completed_header">COMPLETED</string>
     <string name="action_show_all">Show all</string>
@@ -1094,8 +1094,8 @@
     <string name="people_tab_overdue_count">%1$d overdue</string>
     <string name="detail_search_prompt_project">Type to search tasks in this project.</string>
     <string name="detail_search_prompt_list">Type to search tasks in this list.</string>
-    <string name="detail_search_no_matches">Nessuna matching tasks.</string>
-    <string name="next_days_all_clear">All clear</string>
+    <string name="detail_search_no_matches">Nessun matching tasks.</string>
+    <string name="next_days_all_clear">Tutti clear</string>
     <string name="next_days_nothing_due">Nothing due in the next %1$d days.</string>
     <string name="upcoming_view_mode_upcoming">In arrivo</string>
     <string name="upcoming_view_mode_calendar">Calendar</string>
@@ -1107,7 +1107,7 @@
     <string name="diagnostics_test_reminder_failed">Couldn\'t send the test reminder.</string>
     <string name="diagnostics_refresh_checks">Refresh checks</string>
     <string name="diagnostics_backup_health">Backup Health</string>
-    <string name="diagnostics_backup_health_empty">Nessuna backup or sync operation has run yet.</string>
+    <string name="diagnostics_backup_health_empty">Nessun backup or sync operation has run yet.</string>
     <string name="diagnostics_latest_success">Latest success</string>
     <string name="diagnostics_latest_failure">Latest failure</string>
     <string name="diagnostics_retrying">Retrying</string>
@@ -1120,7 +1120,7 @@
     <string name="diagnostics_background_delivery">Background delivery</string>
     <string name="diagnostics_enabled">Enabled</string>
     <string name="diagnostics_disabled_tap_to_fix">Disabled - tap to fix</string>
-    <string name="diagnostics_allowed">Allowed</string>
+    <string name="diagnostics_allowed">Tuttiowed</string>
     <string name="diagnostics_not_allowed_tap_to_fix">Not allowed - tap to fix</string>
     <string name="diagnostics_unrestricted">Unrestricted</string>
     <string name="diagnostics_optimized_tap_to_fix">Optimized - tap to fix</string>
@@ -1132,7 +1132,7 @@
     <string name="widget_config_last_failure">Last failure: %1$s</string>
     <string name="widget_config_retry_count">Retry count: %1$d</string>
     <string name="widget_config_refresh_reason">Reason: %1$s</string>
-    <string name="widget_config_never_refreshed">Nessuna widget refresh has been recorded yet.</string>
+    <string name="widget_config_never_refreshed">Nessun widget refresh has been recorded yet.</string>
     <string name="widget_config_refresh_started">Refreshing widget...</string>
     <string name="widget_config_refresh_succeeded">Widget refreshed.</string>
     <string name="widget_config_refresh_failed">Widget refresh failed.</string>
@@ -1149,80 +1149,80 @@
     <string name="cd_expand_section">Expand section</string>
     <string name="cd_collapse_section">Collapse section</string>
     <plurals name="people_add_to_group_title">
-        <item quantity="one">Add %1$d person to group</item>
-        <item quantity="other">Add %1$d people to group</item>
+        <item quantity="one">Aggiungi %1$d person to group</item>
+        <item quantity="other">Aggiungi %1$d people to group</item>
     </plurals>
     <plurals name="search_active_filters_count">
-        <item quantity="one">%d filtro attivo</item>
-        <item quantity="other">%d filtro attivos</item>
+        <item quantity="one">%d active filter</item>
+        <item quantity="other">%d active filters</item>
     </plurals>
     <plurals name="search_results_count">
-        <item quantity="one">%d risultato</item>
-        <item quantity="other">%d risultatos</item>
+        <item quantity="one">%d result</item>
+        <item quantity="other">%d results</item>
     </plurals>
     <plurals name="settings_undo_window_value">
         <item quantity="one">%1$ds</item>
         <item quantity="other">%1$ds</item>
     </plurals>
     <plurals name="settings_auto_archive_value">
-        <item quantity="one">%1$d giorno</item>
-        <item quantity="other">%1$d giornos</item>
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
     </plurals>
     <plurals name="settings_trash_kept_days">
-        <item quantity="one">Deleted attivitàs are kept here for %1$d giorno.</item>
-        <item quantity="other">Deleted attivitàs are kept here for %1$d giornos.</item>
+        <item quantity="one">Eliminad tasks are kept here for %1$d day.</item>
+        <item quantity="other">Eliminad tasks are kept here for %1$d days.</item>
     </plurals>
     <plurals name="settings_trash_days_value">
-        <item quantity="one">%1$d giorno</item>
-        <item quantity="other">%1$d giornos</item>
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
     </plurals>
     <plurals name="trash_retention_notice_days">
-        <item quantity="one">Deleted attivitàs stay in Trash for %1$d giorno, then are permanently removed.</item>
-        <item quantity="other">Deleted attivitàs stay in Trash for %1$d giornos, then are permanently removed.</item>
+        <item quantity="one">Eliminad tasks stay in Trash for %1$d day, then are permanently removed.</item>
+        <item quantity="other">Eliminad tasks stay in Trash for %1$d days, then are permanently removed.</item>
     </plurals>
     <plurals name="trash_empty_confirm_body">
-        <item quantity="one">Permanently deletes the %1$d attività in Trash. This can\'t be undone.</item>
-        <item quantity="other">Permanently deletes all %1$d attivitàs in Trash. This can\'t be undone.</item>
+        <item quantity="one">Permanently deletes the %1$d task in Trash. This can\'t be undone.</item>
+        <item quantity="other">Permanently deletes all %1$d tasks in Trash. This can\'t be undone.</item>
     </plurals>
     <plurals name="confirm_delete_tasks_title">
-        <item quantity="one">Delete %1$d attività?</item>
-        <item quantity="other">Delete %1$d attivitàs?</item>
+        <item quantity="one">Elimina %1$d task?</item>
+        <item quantity="other">Elimina %1$d tasks?</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Archive %1$d project?</item>
         <item quantity="other">Archive %1$d projects?</item>
     </plurals>
     <plurals name="confirm_delete_tags_title">
-        <item quantity="one">Delete %1$d tag?</item>
-        <item quantity="other">Delete %1$d tags?</item>
+        <item quantity="one">Elimina %1$d tag?</item>
+        <item quantity="other">Elimina %1$d tags?</item>
     </plurals>
     <plurals name="project_rollover_body">
-        <item quantity="one">Duplicates %1$d open attività with its due date shifted one month forward. Recurring attivitàs are skipped since they already advance on their own.</item>
-        <item quantity="other">Duplicates %1$d open attivitàs with due dates shifted one month forward. Recurring attivitàs are skipped since they already advance on their own.</item>
+        <item quantity="one">Duplicates %1$d open task with its due date shifted one month forward. Recurring tasks are skipped since they already advance on their own.</item>
+        <item quantity="other">Duplicates %1$d open tasks with due dates shifted one month forward. Recurring tasks are skipped since they already advance on their own.</item>
     </plurals>
     <plurals name="project_rollover_overdue_body">
-        <item quantity="one">Duplicates %1$d overdue open attività, moving its due date forward by month until it lands in the future. Recurring attivitàs are skipped.</item>
-        <item quantity="other">Duplicates %1$d overdue open attivitàs, moving each due date forward by month until it lands in the future. Recurring attivitàs are skipped.</item>
+        <item quantity="one">Duplicates %1$d overdue open task, moving its due date forward by month until it lands in the future. Recurring tasks are skipped.</item>
+        <item quantity="other">Duplicates %1$d overdue open tasks, moving each due date forward by month until it lands in the future. Recurring tasks are skipped.</item>
     </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Next %1$d Day</item>
         <item quantity="other">Next %1$d Days</item>
     </plurals>
     <plurals name="analytics_overdue_tasks_label">
-        <item quantity="one">attività in ritardo</item>
-        <item quantity="other">attività in ritardos</item>
+        <item quantity="one">overdue task</item>
+        <item quantity="other">overdue tasks</item>
     </plurals>
     <plurals name="analytics_finished_with_due_date">
-        <item quantity="one">On-time rate from %d finished attività that had a due date</item>
-        <item quantity="other">On-time rate from %d finished attivitàs that had a due date</item>
+        <item quantity="one">On-time rate from %d finished task that had a due date</item>
+        <item quantity="other">On-time rate from %d finished tasks that had a due date</item>
     </plurals>
     <plurals name="analytics_estimated_tasks">
-        <item quantity="one">From %d estimated attività</item>
-        <item quantity="other">From %d estimated attivitàs</item>
+        <item quantity="one">From %d estimated task</item>
+        <item quantity="other">From %d estimated tasks</item>
     </plurals>
     <plurals name="analytics_unestimated_tasks">
-        <item quantity="one">%d open attività has no estimate</item>
-        <item quantity="other">%d open attivitàs have no estimate</item>
+        <item quantity="one">%d open task has no estimate</item>
+        <item quantity="other">%d open tasks have no estimate</item>
     </plurals>
     <plurals name="settings_backup_all_ok">
         <item quantity="one">Backed up to %1$d destination</item>
@@ -1237,27 +1237,27 @@
         <item quantity="other">%1$d reports</item>
     </plurals>
     <plurals name="new_task_create_tasks">
-        <item quantity="one">Create %1$d attività</item>
-        <item quantity="other">Create %1$d attivitàs</item>
+        <item quantity="one">Crea %1$d task</item>
+        <item quantity="other">Crea %1$d tasks</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
-        <item quantity="one">%1$d attività detected — each line becomes its own attività, parsed separately</item>
-        <item quantity="other">%1$d attivitàs detected — each line becomes its own attività, parsed separately</item>
+        <item quantity="one">%1$d task detected — each line becomes its own task, parsed separately</item>
+        <item quantity="other">%1$d tasks detected — each line becomes its own task, parsed separately</item>
     </plurals>
     <plurals name="new_task_schedule_conflict">
-        <item quantity="one">%1$d open attività is already scheduled at %2$s</item>
-        <item quantity="other">%1$d open attivitàs are already scheduled at %2$s</item>
+        <item quantity="one">%1$d open task is already scheduled at %2$s</item>
+        <item quantity="other">%1$d open tasks are already scheduled at %2$s</item>
     </plurals>
     <plurals name="today_to_go">
         <item quantity="one">%1$d to go</item>
         <item quantity="other">%1$d to go</item>
     </plurals>
     <plurals name="task_count_lower">
-        <item quantity="one">%1$d attività</item>
-        <item quantity="other">%1$d attivitàs</item>
+        <item quantity="one">%1$d task</item>
+        <item quantity="other">%1$d tasks</item>
     </plurals>
     <plurals name="notification_due_today_title">
-        <item quantity="one">%1$d attività due togiorno</item>
-        <item quantity="other">%1$d attivitàs due togiorno</item>
+        <item quantity="one">%1$d task due today</item>
+        <item quantity="other">%1$d tasks due today</item>
     </plurals>
 </resources>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">YATA</string>
+    <string name="app_name">yata</string>
     <string name="share_to_task_label">যোগ করুন to Yata</string>
     <string name="qs_tile_quick_add_label">Quick add task</string>
     <string name="tasker_field_title">Title</string>
@@ -58,7 +58,7 @@
     <string name="settings_startup_last_used">Last used</string>
     <string name="tab_today">আজ</string>
     <string name="tab_projects">প্রকল্পs</string>
-    <string name="tab_people">People</string>
+    <string name="tab_people">মানুষ</string>
     <string name="tab_tags">ট্যাগs</string>
     <string name="tab_upcoming">আসন্ন</string>
     <string name="drawer_custom_views">CUSTOM VIEWS</string>
@@ -78,7 +78,7 @@
     <string name="today_stat_overdue">মেয়াদোত্তীর্ণ</string>
     <string name="today_stat_high_priority">High priority</string>
     <string name="today_stat_due_today">Due today</string>
-    <string name="today_all_caught_up">All caught up</string>
+    <string name="today_all_caught_up">সব caught up</string>
     <string name="upcoming_clear_day">Clear day</string>
     <string name="upcoming_nothing_scheduled">Nothing scheduled.</string>
     <string name="search_prompt_empty">Type something to search, or pick a filter above.</string>
@@ -86,7 +86,7 @@
     <string name="search_no_matches">কোন নেই matches</string>
     <string name="search_no_matches_subtitle">Try a different query or loosen the active filters.</string>
     <string name="search_clear">Clear search</string>
-    <string name="search_filters">Filters</string>
+    <string name="search_filters">ফিল্টারs</string>
     <string name="search_filter_hint">Tap a chip to build a focused view.</string>
     <string name="search_filter_hint_compact">Tap to filter</string>
     <string name="search_saved_views">সংরক্ষণd views</string>
@@ -119,7 +119,7 @@
     <string name="settings_motion_mode">Motion mode</string>
     <string name="settings_motion_mode_summary">Control app animations without changing other visual settings.</string>
     <string name="settings_tasker_integration">কাজer integration</string>
-    <string name="settings_tasker_integration_summary">Allow কাজer profiles to create tasks through the Yata plugin.</string>
+    <string name="settings_tasker_integration_summary">সবow কাজer profiles to create tasks through the Yata plugin.</string>
     <string name="settings_date_aliases">Date aliases</string>
     <string name="settings_date_aliases_summary">Teach quick add your own date words.</string>
     <string name="settings_date_alias_word_label">Word</string>
@@ -173,7 +173,7 @@
     <string name="settings_start_week_sunday_desc">App agendas will start on Sunday instead of Monday.</string>
     <string name="settings_voice_input_language">Voice input language</string>
     <string name="settings_voice_system_default">System Default (Auto)</string>
-    <string name="settings_none">None</string>
+    <string name="settings_none">কোনটিই নয়</string>
     <string name="settings_auto_assign">Auto-assign new tasks to you</string>
     <string name="settings_auto_assign_desc">New tasks start assigned to you. Turn this off to have them start unassigned - you can still pick an assignee on any task.</string>
     <string name="settings_default_due_date">Default due date</string>
@@ -182,7 +182,7 @@
     <string name="settings_due_tomorrow">আগামীকাল</string>
     <string name="settings_due_none">কোন নেই date</string>
     <string name="settings_default_priority">Default priority</string>
-    <string name="settings_priority_none">None</string>
+    <string name="settings_priority_none">কোনটিই নয়</string>
     <string name="settings_priority_low">Low</string>
     <string name="settings_priority_med">Medium</string>
     <string name="settings_priority_high">High</string>
@@ -198,7 +198,7 @@
     <string name="settings_language_system_default">System default</string>
     <string name="settings_language_picker_title">Choose language</string>
     <string name="settings_language_picker_subtitle">Switch YATA immediately. System follows your device language.</string>
-    <string name="settings_language_search_placeholder">Search languages</string>
+    <string name="settings_language_search_placeholder">সন্ধান languages</string>
     <string name="settings_language_selected">Selected</string>
     <string name="settings_task_lifecycle">কাজ lifecycle</string>
     <string name="settings_task_lifecycle_desc">Trash deletes tasks after a retention window; Archive only hides tasks and keeps them intact.</string>
@@ -208,10 +208,10 @@
     <string name="settings_trash_retention">Keep deleted tasks for</string>
     <string name="settings_trash_forever">Forever</string>
     <string name="settings_trash_kept_forever">মুছুনd tasks are kept here until you remove them.</string>
-    <string name="action_cancel">বাতিল করুন</string>
-    <string name="action_save">সংরক্ষণ করুন</string>
-    <string name="action_none_remove_from_project">None (remove from project)</string>
-    <string name="action_none_remove_from_list">None (remove from list)</string>
+    <string name="action_cancel">বাতিল</string>
+    <string name="action_save">সংরক্ষণ</string>
+    <string name="action_none_remove_from_project">কোনটিই নয় (remove from project)</string>
+    <string name="action_none_remove_from_list">কোনটিই নয় (remove from list)</string>
     <string name="press_back_again_to_exit">Press back again to exit</string>
     <string name="cd_back">Back</string>
     <string name="cd_delete">মুছুন</string>
@@ -246,10 +246,10 @@
     <string name="cd_task_add_comment">যোগ করুন comment</string>
     <string name="cd_task_edit_title">সম্পাদনা title</string>
     <string name="cd_task_snooze">Snooze</string>
-    <string name="search_in_list">Search in %1$s</string>
-    <string name="search_in_project">Search in %1$s</string>
-    <string name="search_in_tag">Search in #%1$s</string>
-    <string name="search_person_tasks">Search %1$s\'s tasks</string>
+    <string name="search_in_list">সন্ধান in %1$s</string>
+    <string name="search_in_project">সন্ধান in %1$s</string>
+    <string name="search_in_tag">সন্ধান in #%1$s</string>
+    <string name="search_person_tasks">সন্ধান %1$s\'s tasks</string>
     <string name="cd_add_task_for_person">যোগ করুন task for %1$s</string>
     <string name="cd_add_task_tagged">যোগ করুন task tagged #%1$s</string>
     <string name="cd_remove_person">সরান %1$s</string>
@@ -271,7 +271,7 @@
     <string name="action_close">Close</string>
     <string name="action_confirm_pin">Confirm PIN</string>
     <string name="action_custom_color">Custom color</string>
-    <string name="action_done">সম্পন্ন</string>
+    <string name="action_done">Done</string>
     <string name="action_export">Export</string>
     <string name="action_export_as_image">Export as image</string>
     <string name="action_export_as_pdf">Export as PDF</string>
@@ -374,7 +374,7 @@
     <string name="cd_more_options">More options</string>
     <string name="cd_open_drawer">Open drawer</string>
     <string name="cd_open_menu">Open menu</string>
-    <string name="cd_search">Search</string>
+    <string name="cd_search">সন্ধান</string>
     <string name="circular_image_cropper_use_photo">Use photo</string>
     <string name="circular_image_cropper_select_new_image">Select new image</string>
     <string name="circular_image_cropper_transparent_png_hint">Tip: a transparent PNG with a white shape becomes a Material You icon automatically</string>
@@ -487,17 +487,17 @@
     <string name="help_about_heading">HELP</string>
     <string name="help_about_upcoming_calendar">আসন্ন &amp; Calendar</string>
     <string name="help_about_quick_add">Quick যোগ করুন</string>
-    <string name="help_about_search_saved_views">Search &amp; সংরক্ষণd Views</string>
+    <string name="help_about_search_saved_views">সন্ধান &amp; সংরক্ষণd Views</string>
     <string name="help_about_projects_lists">প্রকল্পs &amp; তালিকাs</string>
     <string name="help_about_reminders">Reminders</string>
     <string name="help_about_widgets">Widgets</string>
     <string name="help_about_backup_sync">Backup &amp; Sync</string>
     <string name="help_about_trash">Trash</string>
-    <string name="list_detail_all_tasks_inside_this_list_will_be_permane">All tasks inside this list will be permanently deleted.</string>
+    <string name="list_detail_all_tasks_inside_this_list_will_be_permane">সব tasks inside this list will be permanently deleted.</string>
     <string name="list_detail_delete_list">মুছুন list</string>
     <string name="list_detail_delete_list_2">মুছুন list?</string>
     <string name="list_detail_edit_list">সম্পাদনা list</string>
-    <string name="list_detail_search_in_list">Search in list</string>
+    <string name="list_detail_search_in_list">সন্ধান in list</string>
     <string name="lock_backspace">Backspace</string>
     <string name="lock_unlock">Unlock</string>
     <string name="lock_use_biometric_instead">Use biometric instead</string>
@@ -511,7 +511,7 @@
     <string name="lock_biometric_negative">Use PIN</string>
     <string name="main_command_palette">Command palette</string>
     <string name="main_new_list">New list</string>
-    <string name="main_search_actions_or_tasks">Search actions or tasks</string>
+    <string name="main_search_actions_or_tasks">সন্ধান actions or tasks</string>
     <string name="main_palette_new_task_subtitle">তৈরি করুন a task</string>
     <string name="main_palette_search_subtitle">Find tasks and saved filters</string>
     <string name="main_palette_today_subtitle">Open today\'s tasks</string>
@@ -548,8 +548,8 @@
     <string name="person_detail_no_open_tasks">কোন নেই open tasks assigned.</string>
     <string name="person_detail_completed_tasks">সম্পন্ন কাজসমূহ</string>
     <string name="person_detail_no_completed_tasks">কোন নেই completed tasks.</string>
-    <string name="person_detail_search_this_person_s_tasks">Search this person\'s tasks</string>
-    <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Their past assigned tasks and stats stay. They\'re hidden from the People tab — you can unarchive them anytime from this same menu.</string>
+    <string name="person_detail_search_this_person_s_tasks">সন্ধান this person\'s tasks</string>
+    <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Their past assigned tasks and stats stay. They\'re hidden from the মানুষ tab — you can unarchive them anytime from this same menu.</string>
     <string name="project_detail_archive_project">Archive project</string>
     <string name="project_detail_archive_project_2">Archive project?</string>
     <string name="project_detail_delete_archived_project">মুছুন archived project?</string>
@@ -568,7 +568,7 @@
     <string name="project_detail_roll_over_open_tasks_2">Roll over open tasks?</string>
     <string name="project_detail_roll_overdue_forward">Roll overdue forward</string>
     <string name="project_detail_roll_overdue_tasks_forward">Roll overdue tasks forward?</string>
-    <string name="project_detail_search_in_project">Search in project</string>
+    <string name="project_detail_search_in_project">সন্ধান in project</string>
     <string name="project_detail_tasks_inside_stay_linked_the_project_is_hi">কাজসমূহ inside stay linked. The project is hidden from active project surfaces until you restore it.</string>
     <string name="projects_add_project">যোগ করুন project</string>
     <string name="projects_archive_selected">Archive selected</string>
@@ -580,7 +580,7 @@
     <string name="quick_comment_write_a_comment">Write a comment...</string>
     <string name="recurrence_badge_repeats">Repeats</string>
     <string name="search_remove_saved_filter">সরান saved filter</string>
-    <string name="search_search_or_try_overdue_flagged">Search, or try \"overdue\", \"flagged\"...</string>
+    <string name="search_search_or_try_overdue_flagged">সন্ধান, or try \"overdue\", \"flagged\"...</string>
     <string name="settings_back_up_now">Back up now</string>
     <string name="settings_sync_and_backup_now">Sync &amp; back up now</string>
     <string name="settings_backup_frequency">Backup frequency</string>
@@ -617,7 +617,7 @@
     <string name="bulk_add_tag_title">যোগ করুন tag to selected tasks</string>
     <string name="bulk_no_tags">কোন নেই tags yet - create one from the ট্যাগs tab first.</string>
     <string name="bulk_assign_title">Assign selected tasks to</string>
-    <string name="bulk_no_people">কোন নেই people yet - add one from the People tab first.</string>
+    <string name="bulk_no_people">কোন নেই people yet - add one from the মানুষ tab first.</string>
     <string name="today_show_completed">Show completed tasks</string>
     <string name="today_hide_completed">Hide completed tasks</string>
     <string name="cd_open_profile">Open profile and settings</string>
@@ -682,7 +682,7 @@
     <string name="tag_detail_delete_tag">মুছুন tag</string>
     <string name="tag_detail_delete_tag_2">মুছুন tag?</string>
     <string name="tag_detail_edit_tag">সম্পাদনা tag</string>
-    <string name="tag_detail_search_in_tag">Search in tag</string>
+    <string name="tag_detail_search_in_tag">সন্ধান in tag</string>
     <string name="tag_detail_this_tag_will_be_removed_from_all_tasks">This tag will be removed from all tasks.</string>
     <string name="tags_delete_selected">মুছুন selected</string>
     <string name="tags_new_tag">New tag</string>
@@ -713,7 +713,7 @@
     <string name="task_detail_repeats">Repeats</string>
     <string name="task_detail_streak_days">🔥 %1$d-day streak</string>
     <string name="task_detail_recurring_history">Recurring history</string>
-    <string name="task_detail_none">None</string>
+    <string name="task_detail_none">কোনটিই নয়</string>
     <string name="task_detail_tags_sync_hint">ট্যাগs with no ✕ come from this task\'s project and stay in sync automatically.</string>
     <string name="task_detail_subtasks_progress">%1$d/%2$d done</string>
     <string name="task_detail_comments">Comments</string>
@@ -732,7 +732,7 @@
     <string name="sort_fewest_tasks">Fewest tasks</string>
     <string name="sort_starred_first">Starred first</string>
     <string name="today_next_10_days">Next 10 days</string>
-    <string name="today_search_tasks">Search tasks</string>
+    <string name="today_search_tasks">সন্ধান tasks</string>
     <string name="upcoming_next_month">Next month</string>
     <string name="upcoming_previous_month">Previous month</string>
     <string name="voice_task_overlay_speak_again">Speak Again</string>
@@ -750,7 +750,7 @@
     <string name="welcome_skip">Skip</string>
     <string name="welcome_title_intro">Welcome to YATA</string>
     <string name="welcome_title_projects_lists">প্রকল্পs &amp; তালিকাs</string>
-    <string name="welcome_title_people_delegation">People &amp; Delegation</string>
+    <string name="welcome_title_people_delegation">মানুষ &amp; Delegation</string>
     <string name="welcome_title_tags">ট্যাগs</string>
     <string name="welcome_title_today_upcoming">আজ &amp; আসন্ন</string>
     <string name="welcome_title_analytics">Analytics</string>
@@ -779,7 +779,7 @@
     <string name="discard_task_draft_body">Your title, schedule, notes, subtasks, and selections will be lost.</string>
     <string name="action_discard">Discard</string>
     <string name="action_keep_editing">Keep editing</string>
-    <string name="settings_search_label">Search settings</string>
+    <string name="settings_search_label">সন্ধান settings</string>
     <string name="settings_search_placeholder">Try “reminders”, “theme”, or “backup”</string>
     <string name="settings_search_no_results">কোন নেই matching settings</string>
     <string name="settings_search_profile_summary">Name, email, and profile photo</string>
@@ -841,7 +841,7 @@
     <string name="export_task_title">Export task</string>
     <string name="export_section_file">File</string>
     <string name="export_filename">Filename</string>
-    <string name="action_share">শেয়ার করুন</string>
+    <string name="action_share">Share</string>
     <string name="export_section_completed_tasks">সম্পন্ন tasks</string>
     <string name="export_include_completed">Include completed tasks</string>
     <string name="export_exclude_completed_older_than">Exclude completed tasks done more than this many days ago</string>
@@ -991,7 +991,7 @@
     <string name="settings_today_tab">আজ tab</string>
     <string name="settings_upcoming_tab">আসন্ন tab</string>
     <string name="settings_projects">প্রকল্পs</string>
-    <string name="settings_people">People</string>
+    <string name="settings_people">মানুষ</string>
     <string name="settings_tags">ট্যাগs</string>
     <string name="help_demo_mode_on">Demo mode on - showing sample data for screenshots</string>
     <string name="help_demo_mode_off">Demo mode off - showing your real data</string>
@@ -1080,11 +1080,11 @@
     <string name="archive_section_header">%1$s - %2$d</string>
     <string name="image_cropper_hint">Drag to reposition, pinch to zoom</string>
     <string name="entity_report_pdf_title">%1$s — YATA %2$s Report</string>
-    <string name="task_filter_all">All</string>
+    <string name="task_filter_all">সব</string>
     <string name="task_filter_delegated">Delegated</string>
     <string name="task_filter_no_matches">কোন কাজ নেই match this filter.</string>
     <string name="today_no_tasks">কোন কাজ নেই for today.</string>
-    <string name="today_all_caught_up_bang">All caught up!</string>
+    <string name="today_all_caught_up_bang">সব caught up!</string>
     <string name="today_pending_header">PENDING</string>
     <string name="today_completed_header">COMPLETED</string>
     <string name="action_show_all">Show all</string>
@@ -1095,7 +1095,7 @@
     <string name="detail_search_prompt_project">Type to search tasks in this project.</string>
     <string name="detail_search_prompt_list">Type to search tasks in this list.</string>
     <string name="detail_search_no_matches">কোন নেই matching tasks.</string>
-    <string name="next_days_all_clear">All clear</string>
+    <string name="next_days_all_clear">সব clear</string>
     <string name="next_days_nothing_due">Nothing due in the next %1$d days.</string>
     <string name="upcoming_view_mode_upcoming">আসন্ন</string>
     <string name="upcoming_view_mode_calendar">Calendar</string>
@@ -1120,7 +1120,7 @@
     <string name="diagnostics_background_delivery">Background delivery</string>
     <string name="diagnostics_enabled">Enabled</string>
     <string name="diagnostics_disabled_tap_to_fix">Disabled - tap to fix</string>
-    <string name="diagnostics_allowed">Allowed</string>
+    <string name="diagnostics_allowed">সবowed</string>
     <string name="diagnostics_not_allowed_tap_to_fix">Not allowed - tap to fix</string>
     <string name="diagnostics_unrestricted">Unrestricted</string>
     <string name="diagnostics_optimized_tap_to_fix">Optimized - tap to fix</string>
@@ -1149,16 +1149,16 @@
     <string name="cd_expand_section">Expand section</string>
     <string name="cd_collapse_section">Collapse section</string>
     <plurals name="people_add_to_group_title">
-        <item quantity="one">Add %1$d person to group</item>
-        <item quantity="other">Add %1$d people to group</item>
+        <item quantity="one">যোগ করুন %1$d person to group</item>
+        <item quantity="other">যোগ করুন %1$d people to group</item>
     </plurals>
     <plurals name="search_active_filters_count">
         <item quantity="one">%d active filter</item>
         <item quantity="other">%d active filters</item>
     </plurals>
     <plurals name="search_results_count">
-        <item quantity="one">%d ফলাফল</item>
-        <item quantity="other">%d ফলাফলs</item>
+        <item quantity="one">%d result</item>
+        <item quantity="other">%d results</item>
     </plurals>
     <plurals name="settings_undo_window_value">
         <item quantity="one">%1$ds</item>
@@ -1169,60 +1169,60 @@
         <item quantity="other">%1$d days</item>
     </plurals>
     <plurals name="settings_trash_kept_days">
-        <item quantity="one">Deleted কাজs are kept here for %1$d day.</item>
-        <item quantity="other">Deleted কাজs are kept here for %1$d days.</item>
+        <item quantity="one">মুছুনd tasks are kept here for %1$d day.</item>
+        <item quantity="other">মুছুনd tasks are kept here for %1$d days.</item>
     </plurals>
     <plurals name="settings_trash_days_value">
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
     <plurals name="trash_retention_notice_days">
-        <item quantity="one">Deleted কাজs stay in Trash for %1$d day, then are permanently removed.</item>
-        <item quantity="other">Deleted কাজs stay in Trash for %1$d days, then are permanently removed.</item>
+        <item quantity="one">মুছুনd tasks stay in Trash for %1$d day, then are permanently removed.</item>
+        <item quantity="other">মুছুনd tasks stay in Trash for %1$d days, then are permanently removed.</item>
     </plurals>
     <plurals name="trash_empty_confirm_body">
-        <item quantity="one">Permanently deletes the %1$d কাজ in Trash. This can\'t be undone.</item>
-        <item quantity="other">Permanently deletes all %1$d কাজs in Trash. This can\'t be undone.</item>
+        <item quantity="one">Permanently deletes the %1$d task in Trash. This can\'t be undone.</item>
+        <item quantity="other">Permanently deletes all %1$d tasks in Trash. This can\'t be undone.</item>
     </plurals>
     <plurals name="confirm_delete_tasks_title">
-        <item quantity="one">Delete %1$d কাজ?</item>
-        <item quantity="other">Delete %1$d কাজs?</item>
+        <item quantity="one">মুছুন %1$d task?</item>
+        <item quantity="other">মুছুন %1$d tasks?</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Archive %1$d project?</item>
         <item quantity="other">Archive %1$d projects?</item>
     </plurals>
     <plurals name="confirm_delete_tags_title">
-        <item quantity="one">Delete %1$d tag?</item>
-        <item quantity="other">Delete %1$d tags?</item>
+        <item quantity="one">মুছুন %1$d tag?</item>
+        <item quantity="other">মুছুন %1$d tags?</item>
     </plurals>
     <plurals name="project_rollover_body">
-        <item quantity="one">Duplicates %1$d open কাজ with its due date shifted one month forward. Recurring কাজs are skipped since they already advance on their own.</item>
-        <item quantity="other">Duplicates %1$d open কাজs with due dates shifted one month forward. Recurring কাজs are skipped since they already advance on their own.</item>
+        <item quantity="one">Duplicates %1$d open task with its due date shifted one month forward. Recurring tasks are skipped since they already advance on their own.</item>
+        <item quantity="other">Duplicates %1$d open tasks with due dates shifted one month forward. Recurring tasks are skipped since they already advance on their own.</item>
     </plurals>
     <plurals name="project_rollover_overdue_body">
-        <item quantity="one">Duplicates %1$d overdue open কাজ, moving its due date forward by month until it lands in the future. Recurring কাজs are skipped.</item>
-        <item quantity="other">Duplicates %1$d overdue open কাজs, moving each due date forward by month until it lands in the future. Recurring কাজs are skipped.</item>
+        <item quantity="one">Duplicates %1$d overdue open task, moving its due date forward by month until it lands in the future. Recurring tasks are skipped.</item>
+        <item quantity="other">Duplicates %1$d overdue open tasks, moving each due date forward by month until it lands in the future. Recurring tasks are skipped.</item>
     </plurals>
     <plurals name="next_days_title">
         <item quantity="one">Next %1$d Day</item>
         <item quantity="other">Next %1$d Days</item>
     </plurals>
     <plurals name="analytics_overdue_tasks_label">
-        <item quantity="one">overdue কাজ</item>
-        <item quantity="other">overdue কাজs</item>
+        <item quantity="one">overdue task</item>
+        <item quantity="other">overdue tasks</item>
     </plurals>
     <plurals name="analytics_finished_with_due_date">
-        <item quantity="one">On-time rate from %d finished কাজ that had a due date</item>
-        <item quantity="other">On-time rate from %d finished কাজs that had a due date</item>
+        <item quantity="one">On-time rate from %d finished task that had a due date</item>
+        <item quantity="other">On-time rate from %d finished tasks that had a due date</item>
     </plurals>
     <plurals name="analytics_estimated_tasks">
-        <item quantity="one">From %d estimated কাজ</item>
-        <item quantity="other">From %d estimated কাজs</item>
+        <item quantity="one">From %d estimated task</item>
+        <item quantity="other">From %d estimated tasks</item>
     </plurals>
     <plurals name="analytics_unestimated_tasks">
-        <item quantity="one">%d open কাজ has no estimate</item>
-        <item quantity="other">%d open কাজs have no estimate</item>
+        <item quantity="one">%d open task has no estimate</item>
+        <item quantity="other">%d open tasks have no estimate</item>
     </plurals>
     <plurals name="settings_backup_all_ok">
         <item quantity="one">Backed up to %1$d destination</item>
@@ -1237,27 +1237,27 @@
         <item quantity="other">%1$d reports</item>
     </plurals>
     <plurals name="new_task_create_tasks">
-        <item quantity="one">Create %1$d কাজ</item>
-        <item quantity="other">Create %1$d কাজs</item>
+        <item quantity="one">তৈরি করুন %1$d task</item>
+        <item quantity="other">তৈরি করুন %1$d tasks</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
-        <item quantity="one">%1$d কাজ detected — each line becomes its own কাজ, parsed separately</item>
-        <item quantity="other">%1$d কাজs detected — each line becomes its own কাজ, parsed separately</item>
+        <item quantity="one">%1$d task detected — each line becomes its own task, parsed separately</item>
+        <item quantity="other">%1$d tasks detected — each line becomes its own task, parsed separately</item>
     </plurals>
     <plurals name="new_task_schedule_conflict">
-        <item quantity="one">%1$d open কাজ is already scheduled at %2$s</item>
-        <item quantity="other">%1$d open কাজs are already scheduled at %2$s</item>
+        <item quantity="one">%1$d open task is already scheduled at %2$s</item>
+        <item quantity="other">%1$d open tasks are already scheduled at %2$s</item>
     </plurals>
     <plurals name="today_to_go">
         <item quantity="one">%1$d to go</item>
         <item quantity="other">%1$d to go</item>
     </plurals>
     <plurals name="task_count_lower">
-        <item quantity="one">%1$d কাজ</item>
-        <item quantity="other">%1$d কাজs</item>
+        <item quantity="one">%1$d task</item>
+        <item quantity="other">%1$d tasks</item>
     </plurals>
     <plurals name="notification_due_today_title">
-        <item quantity="one">%1$d কাজ due today</item>
-        <item quantity="other">%1$d কাজs due today</item>
+        <item quantity="one">%1$d task due today</item>
+        <item quantity="other">%1$d tasks due today</item>
     </plurals>
 </resources>
