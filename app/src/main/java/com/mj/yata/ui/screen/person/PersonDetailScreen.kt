@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
@@ -67,6 +68,7 @@ fun PersonDetailScreen(
     personId: String,
     onNavigateBack: () -> Unit,
     onNavigateToTaskDetail: (String) -> Unit,
+    onNavigateToPersonAnalytics: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -281,6 +283,9 @@ fun PersonDetailScreen(
                     } else {
                         com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { searchActive = true }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.person_detail_search_this_person_s_tasks))
+                        }
+                        com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onNavigateToPersonAnalytics) {
+                            Icon(Icons.Default.Analytics, contentDescription = stringResource(R.string.person_analytics_title))
                         }
                         com.mj.yata.ui.widgets.TaskSortMenuButton(
                             current = sortMode,

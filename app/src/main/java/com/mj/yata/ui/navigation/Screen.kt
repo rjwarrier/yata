@@ -39,6 +39,10 @@ sealed class Screen(val route: String) {
         fun createRoute(personId: String) = "person_detail/$personId"
     }
 
+    object PersonAnalytics : Screen("person_analytics/{personId}") {
+        fun createRoute(personId: String) = "person_analytics/$personId"
+    }
+
     object TagDetail : Screen("tag_detail/{tagId}") {
         fun createRoute(tagId: String) = "tag_detail/$tagId"
     }

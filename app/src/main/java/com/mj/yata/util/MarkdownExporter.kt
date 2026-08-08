@@ -14,11 +14,9 @@ fun buildAnalyticsMarkdown(
     overdueCount: Int,
     priorityStats: List<PriorityStat>,
     projectStats: List<EntityStat>,
-    personStats: List<EntityStat>,
     tagStats: List<EntityStat>,
     overallOnTimeRate: Float? = null,
     agingBuckets: List<AgingBucket> = emptyList(),
-    workloadShares: List<WorkloadShare> = emptyList(),
     dueNext7: Int = 0,
     dueNext30: Int = 0
 ): String {
@@ -33,11 +31,6 @@ fun buildAnalyticsMarkdown(
         agingBuckets.forEach { sb.append("- ${it.label}: ${it.count}\n") }
         sb.append("\n")
     }
-    if (workloadShares.isNotEmpty()) {
-        sb.append("## Workload Share\n")
-        workloadShares.forEach { sb.append("- ${it.person.name}: ${it.openCount} open (${(it.share * 100).toInt()}%)\n") }
-        sb.append("\n")
-    }
     if (priorityStats.isNotEmpty()) {
         sb.append("## By Priority\n")
         priorityStats.forEach { sb.append("- ${it.priority}: ${it.done}/${it.total}\n") }
@@ -46,14 +39,6 @@ fun buildAnalyticsMarkdown(
     if (projectStats.isNotEmpty()) {
         sb.append("## By Project\n")
         projectStats.forEach { sb.append("- ${it.name}: ${it.done}/${it.total}\n") }
-        sb.append("\n")
-    }
-    if (personStats.isNotEmpty()) {
-        sb.append("## By Person\n")
-        personStats.forEach { stat ->
-            val onTime = stat.onTimeRate?.let { " · ${(it * 100).toInt()}% on-time" } ?: ""
-            sb.append("- ${stat.name}: ${stat.done}/${stat.total}, ${stat.overdue} overdue$onTime\n")
-        }
         sb.append("\n")
     }
     if (tagStats.isNotEmpty()) {

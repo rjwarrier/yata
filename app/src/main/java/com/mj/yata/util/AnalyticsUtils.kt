@@ -308,8 +308,6 @@ object AnalyticsUtils {
             onTimeRateSampleSize = onTimeRateSampleSize(tasks),
             insights = buildInsights(
                 tasks = tasks,
-                delegationStats = delegationStats,
-                summary = delegationSummary,
                 projectStats = projectStats,
                 tagStats = tagStats,
                 listStats = listStats,
@@ -860,8 +858,6 @@ object AnalyticsUtils {
      */
     fun buildInsights(
         tasks: List<Task>,
-        delegationStats: List<DelegationStat>,
-        summary: DelegationSummary,
         projectStats: List<EntityStat>,
         tagStats: List<EntityStat>,
         listStats: List<EntityStat>,
@@ -931,44 +927,6 @@ object AnalyticsUtils {
                 }
             }
         }
-
-        // Whoever is furthest behind, by count rather than ratio — one overdue out of one task is
-        // a worse ratio than eight out of twenty but not the thing to act on first.
-        delegationStats.firstOrNull { it.overdueCount > 0 }?.let { worst ->
-            insights += AnalyticsInsight(
-                headline = "${worst.person.name} has ${worst.overdueCount} overdue",
-                detail = "of ${worst.openCount} open " +
-                    (worst.oldestOpenAgeDays?.let { "· oldest is $it days old" } ?: "tasks"),
-                severity = InsightSeverity.WARN,
-                searchFilter = SEARCH_FILTER_OVERDUE
-            )
-        }
-
-        // Workload imbalance, stated as a multiple of the median so it reads as "is this fair"
-        // rather than needing the reader to compare two raw counts.
-        val openCounts = delegationStats.map { it.openCount }.filter { it > 0 }.sorted()
-        if (openCounts.size >= 3) {
-            val median = openCounts[openCounts.size / 2]
-            val top = delegationStats.maxByOrNull { it.openCount }
-            if (top != null && median > 0 && top.openCount >= median * 2) {
-                val multiple = top.openCount.toFloat() / median
-                insights += AnalyticsInsight(
-                    headline = "${top.person.name} is carrying ${"%.1f".format(multiple)}× the median",
-                    detail = "${top.openCount} open vs a team median of $median",
-                    severity = InsightSeverity.WARN
-                )
-            }
-        }
-
-        if (summary.unassignedOpen > 0) {
-            insights += AnalyticsInsight(
-                headline = "${summary.unassignedOpen} open ${if (summary.unassignedOpen == 1) "task has" else "tasks have"} no assignee",
-                detail = summary.delegationRate?.let { "${(it * 100).toInt()}% of open work is delegated" }
-                    ?: "Nothing is assigned yet",
-                severity = InsightSeverity.NEUTRAL
-            )
-        }
-
         // The worst-performing grouping across all three organising axes, so the callout points at
         // whichever axis actually explains the problem rather than always naming a project.
         val worstCluster = (projectStats.map { "Project" to it } +

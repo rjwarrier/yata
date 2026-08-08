@@ -736,6 +736,19 @@
     <string name="person_detail_edit_person">Editar persona</string>
     <string name="person_detail_expand">Expandir</string>
     <string name="person_detail_search_this_person_s_tasks">Buscar tareas de esta persona</string>
+    <string name="person_analytics_title">Performance</string>
+    <string name="person_analytics_summary">PERFORMANCE SUMMARY</string>
+    <string name="person_analytics_completed_period">done in period</string>
+    <string name="person_analytics_on_time_sample">On-time rate from %1$d completed tasks with due dates</string>
+    <string name="person_analytics_planned_open">planned open</string>
+    <string name="person_analytics_unestimated">unestimated</string>
+    <string name="person_analytics_activity">COMPLETIONS</string>
+    <string name="person_analytics_breakdown">BREAKDOWN</string>
+    <string name="person_analytics_no_breakdown">No tasks in this group.</string>
+    <string name="person_analytics_overdue_tasks">OVERDUE TASKS</string>
+    <string name="person_analytics_no_tasks">No tasks assigned yet.</string>
+    <string name="person_analytics_open_overdue">%1$d open - %2$d overdue</string>
+    <string name="person_analytics_done_total">%1$d/%2$d done</string>
     <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Sus tareas asignadas anteriores y estadísticas permanecen. Se oculta de la pestaña Personas; puedes desarchivarla en cualquier momento desde este mismo menú.</string>
 
     <string name="project_detail_archive_project">Archivar proyecto</string>

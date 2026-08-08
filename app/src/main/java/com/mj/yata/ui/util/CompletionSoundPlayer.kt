@@ -14,10 +14,10 @@ object CompletionSoundPlayer {
     private fun getToneGenerator(): ToneGenerator? {
         if (toneGenerator == null) {
             try {
-                toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, 85)
+                toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 85)
             } catch (_: Exception) {
                 try {
-                    toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 85)
+                    toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, 85)
                 } catch (_: Exception) {
                     toneGenerator = null
                 }

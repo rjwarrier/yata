@@ -64,9 +64,6 @@ fun SpringyCheck(
         }
 
         if (checked) {
-            if (soundEnabled) {
-                com.mj.yata.ui.util.CompletionSoundPlayer.playCompletionChime()
-            }
             rippleScale.snapTo(1f)
             rippleAlpha.snapTo(0.45f)
             scale.snapTo(0.4f)

@@ -33,6 +33,7 @@ import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.screen.nextdays.NextDaysScreen
 import com.mj.yata.ui.screen.taskdetail.TaskDetailScreen
 import com.mj.yata.ui.screen.project.ProjectDetailScreen
+import com.mj.yata.ui.screen.person.PersonAnalyticsScreen
 import com.mj.yata.ui.screen.person.PersonDetailScreen
 import com.mj.yata.ui.screen.tag.TagDetailScreen
 import com.mj.yata.ui.screen.list.ListDetailScreen
@@ -214,11 +215,31 @@ fun AppNavigation(
                 onNavigateToTaskDetail = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
+                onNavigateToPersonAnalytics = {
+                    navController.navigate(Screen.PersonAnalytics.createRoute(personId))
+                },
                 onNavigateToTab = onNavigateToTab
             )
         }
 
         // ── Tag Detail ───────────────────────────────────────────────────────
+        composable(
+            route = Screen.PersonAnalytics.route,
+            arguments = listOf(navArgument("personId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val personId = backStackEntry.arguments?.getString("personId") ?: ""
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            PersonAnalyticsScreen(
+                viewModel = viewModel,
+                personId = personId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                },
+                onNavigateToTab = onNavigateToTab
+            )
+        }
+
         composable(
             route = Screen.TagDetail.route,
             arguments = listOf(navArgument("tagId") { type = NavType.StringType }),

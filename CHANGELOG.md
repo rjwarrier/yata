@@ -17,6 +17,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Person performance analytics.** Each person detail screen now has a Performance button opening
+  an in-depth staff dashboard with open/overdue load, completions for the selected period,
+  on-time rate, turnaround, planned effort, completion trend, project/list/tag breakdowns, and a
+  tappable overdue-task list.
 - **GitHub sync foundation.** Remote sync can now be configured for a private GitHub repository
   using a pasted token and `owner/repo`, with restore history backed by commits instead of
   rotated server files. GitHub sync uses fast-forward-only ref updates, verifies git blob hashes
@@ -74,6 +78,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Changed
 
+- Person-specific analytics moved out of the global Analytics screen so team performance review
+  happens from each staff member's own page.
 - Remote sync now shows `....` instead of a row of bullet dots as the placeholder for a password,
   key passphrase, backup passphrase, or GitHub token that's already saved.
 - **Remote sync configuration is now its own screen** instead of a scrolling `AlertDialog`. Opening
