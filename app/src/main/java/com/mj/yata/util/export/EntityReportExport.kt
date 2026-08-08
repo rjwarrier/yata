@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
+import com.mj.yata.R
 import com.mj.yata.util.localized
 
 private fun cardWidth(scale: ExportImageScale) = scale.widthDp.dp
@@ -72,7 +73,7 @@ suspend fun exportEntityReport(
             applyPdfMetadata(
                 context = context,
                 file = file,
-                title = "$entityName — YATA $entityKind Report",
+                title = context.getString(R.string.entity_report_pdf_title, entityName, entityKind),
                 subject = "$entityKind task report for $entityName ($doneCount/$totalCount done)",
                 keywords = "YATA, $entityKind, $entityName, tasks, report"
             )
