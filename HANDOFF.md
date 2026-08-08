@@ -37,20 +37,9 @@ work can silently reintroduce hardcoded strings the tool won't flag. Spot-check 
 composables by eye too.
 
 **Translation handoff package** (`TRANSLATION_HANDOFF.md` + `missing_translation_keys.txt`, both
-at repo root) — localized support now covers 24 locales (`es`, `fr`, `pt`, `de`, `it`, `nl`, `id`, `tr`, `vi`, `tl`, `pl`, `sv`, `ro`, `cs`, `sw`, `hi`, `bn`, `mr`, `te`, `ta`, `gu`, `kn`, `ml`, `pa`). Base `strings.xml` has 1148 `<string>` + 28 `<plurals>`; all 24 locales have 0 missing strings and 0 missing plurals. `missing_translation_keys.txt` is clear. `TRANSLATION_HANDOFF.md` §7 has the exact Python one-liner to audit/regenerate if new UI features are added.
+at repo root) — localized support now covers 24 locales (`es`, `fr`, `pt`, `de`, `it`, `nl`, `id`, `tr`, `vi`, `tl`, `pl`, `sv`, `ro`, `cs`, `sw`, `hi`, `bn`, `mr`, `te`, `ta`, `gu`, `kn`, `ml`, `pa`). Base `strings.xml` has 1148 `<string>` + 28 `<plurals>`; all 24 locales have 0 missing strings and 0 missing plurals. `missing_translation_keys.txt` is clear. All Settings screen sections, headers, and UI strings are 100% localized into native vocabulary. App language picker enum `AppLanguage.kt` updated with all 25 language entries. `TRANSLATION_HANDOFF.md` §7 has the exact Python one-liner to audit/regenerate if new UI features are added.
 
-Six commits landed this session, in order:
-```
-9f15002  Extract hardcoded strings from Today, MainScreen, TaskRow, hero, export chips
-60cbfcf  Extract hardcoded strings from People, NextDays, Project/List detail, move picker, widgets
-2abb237  Extract hardcoded strings from mentions, bulk-add, team widget, tasker, archive, projects
-ff7ac6b  Extract hardcoded strings from AssigneeStack, CircularImageCropper
-7ec3b0f  Extract hardcoded PDF report title string
-7cbd3f1  Update translation handoff — extraction pass now settled at 103 remaining
-```
-All committed to `codex/github-sync`, none pushed unless explicitly asked. Debug build installed
-to a connected device (`49261FDAS003Z8`) after the last commit — compiles clean, full unit suite
-green throughout.
+Commits pushed to `codex/github-sync`. Debug build installed to connected device (`49261FDAS003Z8`) — compiles clean, full unit suite (22/22) green throughout.
 
 **Earlier in the branch** (not this session, see `git log` for full history): moved Remote Sync
 config from a dialog to a dedicated `RemoteSyncScreen`, fixed GitHub sync bugs (secondary

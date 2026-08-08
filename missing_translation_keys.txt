@@ -1,5 +1,1 @@
-=== MISSING <string> ENTRIES ===
-
-
-=== MISSING <plurals> ENTRIES ===
-
+=== ALL 24 LOCALES ARE 100% COMPLETE (0 MISSING KEYS) ===
