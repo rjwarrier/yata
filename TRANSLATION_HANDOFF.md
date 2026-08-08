@@ -22,9 +22,9 @@ That's it — three locales exist today. No other `values-<code>/` folders. `app
 
 ## 3. Current state (as of this handoff)
 
-Base `values/strings.xml`: **1117 `<string>` entries + 27 `<plurals>` blocks** (1144 total translatable resources).
+Base `values/strings.xml`: **1148 `<string>` entries + 28 `<plurals>` blocks** (1176 total translatable resources).
 
-Each of `es`, `fr`, `pt` is missing the **same 319 strings and 9 plurals** — these are recent additions (an ongoing hardcoded-string-extraction pass has pulled ~200 literal strings out of Kotlin UI code into `strings.xml` across several sessions; the translated locale files were never updated to match). No stale/orphaned keys exist in the translated files (nothing to *remove*), only things to *add*. The gap is still growing — extraction is not finished (see §9) — so if you're picking this up some time after this handoff was written, **regenerate the diff before starting** (§7 has the one-liner) rather than trusting these exact counts.
+Each of `es`, `fr`, `pt` is missing the **same 350 strings and 10 plurals** — these are recent additions (an ongoing hardcoded-string-extraction pass has pulled ~200 literal strings out of Kotlin UI code into `strings.xml` across several sessions; the translated locale files were never updated to match). No stale/orphaned keys exist in the translated files (nothing to *remove*), only things to *add*. The gap is still growing — extraction is not finished (see §9) — so if you're picking this up some time after this handoff was written, **regenerate the diff before starting** (§7 has the one-liner) rather than trusting these exact counts.
 
 **The exact list of missing keys, with their English source values, is in `missing_translation_keys.txt` next to this file** — that's the actual work list. It's organized as two sections: `<string>` entries to add, then `<plurals>` blocks to add. Every key in that file needs a corresponding entry added to **all three** locale files (`values-es`, `values-fr`, `values-pt`) with translated values.
 
@@ -108,10 +108,10 @@ Three modified files:
 - `app/src/main/res/values-fr/strings.xml`
 - `app/src/main/res/values-pt/strings.xml`
 
-Each with the strings + plurals from `missing_translation_keys.txt` (319 strings + 9 plurals as of this handoff — regenerate to confirm, see §7) added, translated, following the rules in §5. No other files should change.
+Each with the strings + plurals from `missing_translation_keys.txt` (350 strings + 10 plurals as of this handoff — regenerate to confirm, see §7) added, translated, following the rules in §5. No other files should change.
 
 ## 9. Context: this is a moving target
 
-Separately from translation, another pass is incrementally extracting hardcoded string literals out of Kotlin Compose UI code and into `values/strings.xml` (tracked via `./gradlew :app:lintHardcodedStrings`, currently down to 146 remaining across the app, 28 of which are in the deliberately-excluded `DemoData.kt`). Every string that pass adds to the English source becomes a new translation gap the moment it lands — that's what happened between this handoff's first draft (284 missing) and this revision (319 missing), with zero translation work done in between.
+Separately from translation, another pass is incrementally extracting hardcoded string literals out of Kotlin Compose UI code and into `values/strings.xml` (tracked via `./gradlew :app:lintHardcodedStrings`). That pass is now effectively **done** — 103 hits remain, all either the deliberately-excluded `DemoData.kt` (28) or confirmed non-UI false positives (`animateFloatAsState`/`AnimatedContent` debug `label=` params, internal validation labels in `JsonExporter.kt`, a dynamic `@`-prefix concatenation in `ExportChips.kt` that carries no literal text). Every string that pass added to the English source became a new translation gap the moment it landed — that's what happened between this handoff's first draft (284 missing) and this revision (350 missing), with zero translation work done in between. With extraction now settled, the gap should stop growing from that source; the remaining variable is translation work itself.
 
 **Practical implication:** if extraction work is still landing in parallel with translation work, `missing_translation_keys.txt` can go stale within the same day. Regenerate it (§7) immediately before starting a translation session rather than assuming the copy you were handed is current — and if you're doing both jobs across sessions, translate *after* a given extraction pass settles, not concurrently with it, to avoid translating a list that's already grown.

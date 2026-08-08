@@ -1,4 +1,4 @@
-=== MISSING <string> ENTRIES (add to values-es, values-fr, values-pt) ===
+=== MISSING <string> ENTRIES ===
 
 <string name="search_prompt_empty_subtitle">Use text, smart filters, or saved views to narrow your tasks.</string>
 <string name="search_filters">Filters</string>
@@ -125,6 +125,11 @@
 <string name="settings_clear_sync_lock_action">Clear lock</string>
 <string name="settings_clear_sync_lock_success">Sync lock cleared.</string>
 <string name="settings_clear_sync_lock_failed">Couldn\'t clear the sync lock.</string>
+<string name="mention_hint_tag">Type to search or create a tag</string>
+<string name="mention_hint_person">Type to search or create a person</string>
+<string name="mention_create_tag">Create tag \"%1$s\"</string>
+<string name="mention_create_person">Create person \"%1$s\"</string>
+<string name="mention_you">You</string>
 <string name="entity_editors_exclude_from_today">Exclude from Today</string>
 <string name="entity_editors_exclude_from_today_summary">Tasks here never show on the Today screen, even if overdue — for a backlog you\'ll schedule later.</string>
 <string name="entity_editors_project_due_date">Project Due Date</string>
@@ -153,6 +158,11 @@
 <string name="person_detail_no_open_tasks">No open tasks assigned.</string>
 <string name="person_detail_completed_tasks">Completed Tasks</string>
 <string name="person_detail_no_completed_tasks">No completed tasks.</string>
+<string name="main_drawer_version">yata %1$s</string>
+<string name="entity_hero_showing_filter">Showing: %1$s</string>
+<string name="entity_hero_clear_filter">Clear ✕</string>
+<string name="today_progress_cd">%1$s, %2$d percent</string>
+<string name="today_progress_percent">%1$d%%</string>
 <string name="sync_status_finished">Last sync finished</string>
 <string name="sync_status_failed">Last sync failed</string>
 <string name="diagnostics_title">Diagnostics</string>
@@ -208,6 +218,8 @@
 <string name="export_open_badge">OPEN</string>
 <string name="export_priority_badge">%1$s PRIORITY</string>
 <string name="export_flagged_badge">FLAGGED</string>
+<string name="export_hidden_count">+%1$d</string>
+<string name="export_labeled_pills_colon">%1$s:</string>
 <string name="export_project_label">Project</string>
 <string name="export_list_label">List</string>
 <string name="export_assigned_to_label">Assigned to</string>
@@ -260,6 +272,16 @@
 <string name="quick_add_widget_add_task">Add a task...</string>
 <string name="quick_add_widget_preset_deleted">Preset deleted - long-press to reconfigure</string>
 <string name="quick_add_widget_destination">Destination:</string>
+<string name="widget_done_ratio">%1$d/%2$d done</string>
+<string name="widget_no_tasks_here">No tasks here.</string>
+<string name="widget_more_in_app">+%1$d more in the app</string>
+<string name="widget_nothing_due_today">Nothing due today.</string>
+<string name="team_overdue_widget_title">Team Overdue</string>
+<string name="team_overdue_widget_empty">Nobody\'s behind. 🎉</string>
+<string name="tasker_create_task_hint">Fields accept Tasker variables (%var). Leave blank to skip.</string>
+<string name="archive_section_header">%1$s - %2$d</string>
+<string name="image_cropper_hint">Drag to reposition, pinch to zoom</string>
+<string name="entity_report_pdf_title">%1$s — YATA %2$s Report</string>
 <string name="task_filter_all">All</string>
 <string name="task_filter_delegated">Delegated</string>
 <string name="task_filter_no_matches">No tasks match this filter.</string>
@@ -268,6 +290,15 @@
 <string name="today_pending_header">PENDING</string>
 <string name="today_completed_header">COMPLETED</string>
 <string name="action_show_all">Show all</string>
+<string name="task_move_to_picker_title">Move task to...</string>
+<string name="task_move_to_picker_projects">PROJECTS</string>
+<string name="people_tab_assigned_done">%1$d assigned · %2$d done</string>
+<string name="people_tab_overdue_count">%1$d overdue</string>
+<string name="detail_search_prompt_project">Type to search tasks in this project.</string>
+<string name="detail_search_prompt_list">Type to search tasks in this list.</string>
+<string name="detail_search_no_matches">No matching tasks.</string>
+<string name="next_days_all_clear">All clear</string>
+<string name="next_days_nothing_due">Nothing due in the next %1$d days.</string>
 <string name="upcoming_view_mode_upcoming">Upcoming</string>
 <string name="upcoming_view_mode_calendar">Calendar</string>
 <string name="diagnostics_reminder_health">Reminder Health</string>
@@ -350,6 +381,11 @@
 <plurals name="analytics_unestimated_tasks">
 <item quantity="one">%d open task has no estimate</item>
         <item quantity="other">%d open tasks have no estimate</item>
+</plurals>
+
+<plurals name="new_task_bulk_lines_detected">
+<item quantity="one">%1$d task detected — each line becomes its own task, parsed separately</item>
+        <item quantity="other">%1$d tasks detected — each line becomes its own task, parsed separately</item>
 </plurals>
 
 <plurals name="today_to_go">
