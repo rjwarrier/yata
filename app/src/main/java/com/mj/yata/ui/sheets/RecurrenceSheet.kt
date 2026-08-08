@@ -127,7 +127,7 @@ fun RecurrenceSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Repeat task",
+                text = stringResource(R.string.recurrence_repeat_task),
                 style = MaterialTheme.typography.titleMedium
             )
             Switch(checked = enabled, onCheckedChange = { enabled = it })
@@ -139,7 +139,7 @@ fun RecurrenceSheet(
             // Frequency
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Frequency",
+                    text = stringResource(R.string.recurrence_frequency),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -158,7 +158,7 @@ fun RecurrenceSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Every",
+                    text = stringResource(R.string.recurrence_every),
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                 )
                 YataStepper(
@@ -173,7 +173,7 @@ fun RecurrenceSheet(
             if (r.freq == "weekly") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "On days",
+                        text = stringResource(R.string.recurrence_on_days),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -229,7 +229,7 @@ fun RecurrenceSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Day of month",
+                            text = stringResource(R.string.recurrence_day_of_month),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                         )
                         if (!isLastDay) {
@@ -252,7 +252,7 @@ fun RecurrenceSheet(
                     ) {
                         Checkbox(checked = isLastDay, onCheckedChange = { r = r.copy(bymonthday = if (it) -1 else 1) })
                         Text(
-                            text = "Last day of month",
+                            text = stringResource(R.string.recurrence_last_day_of_month),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -264,7 +264,7 @@ fun RecurrenceSheet(
             // Schedule basis: fixed calendar schedule vs. counted from completion date
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Repeat from",
+                    text = stringResource(R.string.recurrence_repeat_from),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -275,15 +275,19 @@ fun RecurrenceSheet(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (r.basedOnCompletion) "When you finish it" else "Fixed schedule",
+                            text = stringResource(
+                                if (r.basedOnCompletion) R.string.recurrence_when_you_finish_it else R.string.recurrence_fixed_schedule
+                            ),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                         )
                         Text(
-                            text = if (r.basedOnCompletion) {
-                                "Next due date starts counting the day you mark it done"
-                            } else {
-                                "Next due date is always on the same schedule, done or not"
-                            },
+                            text = stringResource(
+                                if (r.basedOnCompletion) {
+                                    R.string.recurrence_completion_based_hint
+                                } else {
+                                    R.string.recurrence_fixed_schedule_hint
+                                }
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -300,19 +304,19 @@ fun RecurrenceSheet(
             // Ends Criteria
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Ends",
+                    text = stringResource(R.string.recurrence_ends),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 EndsOptionCard(
-                    label = "Never ends",
+                    label = stringResource(R.string.recurrence_never_ends),
                     selected = r.ends is RecurrenceEnds.Never,
                     onClick = { r = r.copy(ends = RecurrenceEnds.Never) }
                 )
 
                 EndsOptionCard(
-                    label = "Ends after",
+                    label = stringResource(R.string.recurrence_ends_after),
                     selected = r.ends is RecurrenceEnds.After,
                     onClick = { r = r.copy(ends = RecurrenceEnds.After((r.ends as? RecurrenceEnds.After)?.count ?: 5)) }
                 ) {
@@ -326,7 +330,7 @@ fun RecurrenceSheet(
                 }
 
                 EndsOptionCard(
-                    label = "Ends on date",
+                    label = stringResource(R.string.recurrence_ends_on_date),
                     selected = r.ends is RecurrenceEnds.On,
                     onClick = {
                         val nextDate = (r.ends as? RecurrenceEnds.On)?.date ?: LocalDate.now().plusMonths(1).toString()

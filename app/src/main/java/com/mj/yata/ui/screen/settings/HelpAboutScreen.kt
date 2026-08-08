@@ -52,7 +52,7 @@ import com.mj.yata.ui.screen.main.CustomBottomNav
 import com.mj.yata.ui.screen.main.MainViewModel
 
 private data class HelpSection(
-    val title: String,
+    @androidx.annotation.StringRes val title: Int,
     val description: String,
     val bullets: List<String>,
     val icon: ImageVector
@@ -60,7 +60,7 @@ private data class HelpSection(
 
 private val helpSections = listOf(
     HelpSection(
-        title = "Today",
+        title = R.string.tab_today,
         description = "Your day view combines overdue work and tasks due today.",
         bullets = listOf(
             "The progress ring counts tasks that were pending at the start of today.",
@@ -70,7 +70,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Today
     ),
     HelpSection(
-        title = "Upcoming & Calendar",
+        title = R.string.help_about_upcoming_calendar,
         description = "Plan across the next week or switch to a full month calendar.",
         bullets = listOf(
             "The date strip starts from today and shows task dots by list color.",
@@ -80,7 +80,7 @@ private val helpSections = listOf(
         icon = Icons.Default.CalendarMonth
     ),
     HelpSection(
-        title = "Quick Add",
+        title = R.string.help_about_quick_add,
         description = "Create tasks quickly with natural language.",
         bullets = listOf(
             "Try text like \"call Priya tomorrow 3pm high priority\".",
@@ -90,7 +90,7 @@ private val helpSections = listOf(
         icon = Icons.Default.PostAdd
     ),
     HelpSection(
-        title = "Search & Saved Views",
+        title = R.string.help_about_search_saved_views,
         description = "Find anything fast, and jump back to a filtered view in one tap.",
         bullets = listOf(
             "The command palette (drawer > Command palette) reaches every screen, saved filter, and recent task by typing part of its name.",
@@ -100,7 +100,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Search
     ),
     HelpSection(
-        title = "Projects & Lists",
+        title = R.string.help_about_projects_lists,
         description = "Use projects for larger outcomes and lists for reusable buckets.",
         bullets = listOf(
             "Star important projects or lists to keep them in the drawer.",
@@ -112,7 +112,7 @@ private val helpSections = listOf(
         icon = Icons.Default.ViewAgenda
     ),
     HelpSection(
-        title = "People",
+        title = R.string.tab_people,
         description = "Assign tasks and track delegated work.",
         bullets = listOf(
             "Mark one person as you for assigned-to-me filtering.",
@@ -125,7 +125,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Groups
     ),
     HelpSection(
-        title = "Tags",
+        title = R.string.tab_tags,
         description = "Add flexible labels that cut across lists and projects.",
         bullets = listOf(
             "Group tags for cleaner browsing.",
@@ -135,7 +135,7 @@ private val helpSections = listOf(
         icon = Icons.AutoMirrored.Filled.Label
     ),
     HelpSection(
-        title = "Analytics",
+        title = R.string.analytics_analytics,
         description = "Review progress patterns and workload health.",
         bullets = listOf(
             "Track completions, streaks, on-time rate, and aging buckets.",
@@ -145,7 +145,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Analytics
     ),
     HelpSection(
-        title = "Reminders",
+        title = R.string.help_about_reminders,
         description = "Set per-task alerts that survive device reboots.",
         bullets = listOf(
             "Reminders use Android alarms and are rescheduled after reboot.",
@@ -155,7 +155,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Notifications
     ),
     HelpSection(
-        title = "Widgets",
+        title = R.string.help_about_widgets,
         description = "Keep YATA visible outside the phone app.",
         bullets = listOf(
             "Home widgets cover today, upcoming, progress, quick add, team overdue, and one pinned list.",
@@ -165,7 +165,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Widgets
     ),
     HelpSection(
-        title = "Backup & Sync",
+        title = R.string.help_about_backup_sync,
         description = "Keep your data recoverable, portable, and in sync across devices.",
         bullets = listOf(
             "Remote sync can use GitHub, SFTP, FTPS, or FTP; GitHub stores one snapshot in your private repo and uses commit history for restore points.",
@@ -178,7 +178,7 @@ private val helpSections = listOf(
         icon = Icons.Default.Backup
     ),
     HelpSection(
-        title = "Trash",
+        title = R.string.help_about_trash,
         description = "Deleted tasks are recoverable before they are permanently removed.",
         bullets = listOf(
             "Task deletes are soft deletes with Undo where available.",
@@ -246,7 +246,7 @@ fun HelpAboutScreen(
         ) {
             item {
                 Text(
-                    text = "HELP",
+                    text = stringResource(R.string.help_about_heading),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -291,7 +291,7 @@ private fun HelpSectionCard(section: HelpSection) {
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = section.title,
+                        text = stringResource(section.title),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )

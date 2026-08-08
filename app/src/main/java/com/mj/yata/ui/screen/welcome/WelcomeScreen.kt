@@ -42,39 +42,39 @@ import kotlinx.coroutines.launch
 
 private data class WelcomePage(
     val icon: ImageVector,
-    val title: String,
+    @androidx.annotation.StringRes val title: Int,
     val description: String
 )
 
 private val pages = listOf(
     WelcomePage(
         icon = Icons.Default.TaskAlt,
-        title = "Welcome to YATA",
+        title = R.string.welcome_title_intro,
         description = "Yet Another Task App — organize your day, delegate to your team, and see everything at a glance. Natural-language quick add (\"call Priya tomorrow 3pm high priority\"), home-screen widgets, a Quick Settings tile, and self-hosted sync all come built in. A quick tour of the basics — replay it anytime from Settings → About."
     ),
     WelcomePage(
         icon = Icons.Default.Layers,
-        title = "Projects & Lists",
+        title = R.string.welcome_title_projects_lists,
         description = "Projects group related tasks and track their combined progress — good for something like a client engagement with a deadline. Lists are simpler flat groupings for anything that doesn't need project-level tracking. Star either one for quick access from the drawer, give it an accent color, and mark it \"Exclude from Today\" if it's backlog you don't want cluttering your daily view."
     ),
     WelcomePage(
         icon = Icons.Default.People,
-        title = "People & Delegation",
+        title = R.string.welcome_title_people_delegation,
         description = "Assign tasks to yourself or teammates, and reassign as work shifts. The People tab shows who's carrying how much, including a 7-day overdue trend per person — so you can see who's falling behind before it becomes a problem. Add the Team Overdue widget to your home screen to keep an eye on it without opening the app."
     ),
     WelcomePage(
         icon = Icons.Default.Label,
-        title = "Tags",
+        title = R.string.welcome_title_tags,
         description = "Flexible labels that cut across projects and lists — group by category, client type, or anything else that doesn't map to a single project. A task on a tagged project or list picks up that tag automatically, so you don't have to tag everything by hand. Star your most-used tags to pin them in the drawer."
     ),
     WelcomePage(
         icon = Icons.Default.CalendarMonth,
-        title = "Today & Upcoming",
+        title = R.string.welcome_title_today_upcoming,
         description = "Today shows what's due now or overdue, with a progress ring based on what was actually pending when the day started — clearing old backlog doesn't inflate it. Upcoming gives you a week strip or full month view, and Next 10 Days lays out everything ahead in one scrollable, date-sorted list. Delete anything with a swipe — you get an Undo snackbar before it's gone for good."
     ),
     WelcomePage(
         icon = Icons.Default.Analytics,
-        title = "Analytics",
+        title = R.string.welcome_title_analytics,
         description = "Completion streaks, overdue aging buckets, on-time delivery rate, and per-project/person/tag breakdowns — the numbers behind how you and your team are actually doing, not just what's on today's list. Switch between week and month views to spot trends early."
     )
 )
@@ -133,7 +133,7 @@ fun WelcomeScreen(onFinish: () -> Unit) {
                     }
                     Spacer(modifier = Modifier.height(28.dp))
                     Text(
-                        text = item.title,
+                        text = stringResource(item.title),
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         textAlign = TextAlign.Center
                     )

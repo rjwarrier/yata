@@ -452,7 +452,7 @@ fun PersonDetailScreen(
                         .padding(horizontal = 20.dp, vertical = 12.dp)
                 ) {
                     Text(
-                        text = "OVERDUE TREND (7 DAYS)",
+                        text = stringResource(R.string.person_detail_overdue_trend),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -494,7 +494,7 @@ fun PersonDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Pending",
+                            text = stringResource(R.string.person_detail_pending),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Surface(
@@ -537,7 +537,7 @@ fun PersonDetailScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No open tasks assigned.",
+                                text = stringResource(R.string.person_detail_no_open_tasks),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
@@ -603,7 +603,7 @@ fun PersonDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Completed Tasks",
+                            text = stringResource(R.string.person_detail_completed_tasks),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Surface(
@@ -637,7 +637,7 @@ fun PersonDetailScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No completed tasks.",
+                                text = stringResource(R.string.person_detail_no_completed_tasks),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
