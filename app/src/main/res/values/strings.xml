@@ -788,6 +788,11 @@
          a zero-height Text, which is also its own tap-to-edit target — invisible and untappable,
          so an unset name could never be set. -->
     <string name="profile_add_name">Add your name</string>
+    <string name="main_drawer_version">yata %1$s</string>
+    <string name="entity_hero_showing_filter">Showing: %1$s</string>
+    <string name="entity_hero_clear_filter">Clear ✕</string>
+    <string name="today_progress_cd">%1$s, %2$d percent</string>
+    <string name="today_progress_percent">%1$d%%</string>
     <string name="profile_add_email">Add your email</string>
 
     <!-- Multi-select bars. One plural shared by every tab and the bulk task action bar — the
@@ -1072,6 +1077,8 @@
     <string name="export_open_badge">OPEN</string>
     <string name="export_priority_badge">%1$s PRIORITY</string>
     <string name="export_flagged_badge">FLAGGED</string>
+    <string name="export_hidden_count">+%1$d</string>
+    <string name="export_labeled_pills_colon">%1$s:</string>
     <string name="export_project_label">Project</string>
     <string name="export_list_label">List</string>
     <string name="export_assigned_to_label">Assigned to</string>

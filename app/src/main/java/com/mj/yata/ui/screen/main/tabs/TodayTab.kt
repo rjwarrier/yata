@@ -776,11 +776,14 @@ private fun SyncProgressPill(
     val shape = RoundedCornerShape(28.dp)
     val containerColor = MaterialTheme.colorScheme.primaryContainer
     val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    // Resolved here rather than inline in `.semantics { }`, which is a plain SemanticsPropertyReceiver
+    // lambda, not @Composable -- stringResource can't be called from inside it.
+    val progressCd = stringResource(R.string.today_progress_cd, progress.label, percent)
     Box(
         modifier = modifier
             .clip(shape)
             .background(containerColor)
-            .semantics { contentDescription = "${progress.label}, $percent percent" }
+            .semantics { contentDescription = progressCd }
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -800,7 +803,7 @@ private fun SyncProgressPill(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "$percent%",
+                    text = stringResource(R.string.today_progress_percent, percent),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = contentColor
                 )

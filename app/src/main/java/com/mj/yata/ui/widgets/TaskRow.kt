@@ -371,7 +371,7 @@ fun TaskRow(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "Overdue",
+                                text = stringResource(R.string.search_filter_overdue),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
@@ -443,7 +443,7 @@ fun TaskRow(
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = "$doneSubtasks/${task.subtasks.size}",
+                                text = stringResource(R.string.analytics_ratio, doneSubtasks, task.subtasks.size),
                                 color = if (allDone) listColor else MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Medium,

@@ -16,10 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mj.yata.R
 
 @Composable
 internal fun ExportPill(
@@ -62,7 +64,7 @@ internal fun ExportTagPills(
         }
         if (hiddenCount > 0) {
             ExportPill(
-                text = "+$hiddenCount",
+                text = stringResource(R.string.export_hidden_count, hiddenCount),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = fontSize
             )
@@ -92,7 +94,7 @@ internal fun ExportNamePills(
         }
         if (hiddenCount > 0) {
             ExportPill(
-                text = "+$hiddenCount",
+                text = stringResource(R.string.export_hidden_count, hiddenCount),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = fontSize
             )
@@ -112,7 +114,7 @@ internal fun ExportLabeledPills(
         verticalAlignment = Alignment.Top
     ) {
         Text(
-            text = "$label:",
+            text = stringResource(R.string.export_labeled_pills_colon, label),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

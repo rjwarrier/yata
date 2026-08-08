@@ -338,7 +338,7 @@ fun MainScreen(
                             )
                             Column {
                                 Text(
-                                    text = "yata ${BuildConfig.VERSION_NAME}",
+                                    text = stringResource(R.string.main_drawer_version, BuildConfig.VERSION_NAME),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
