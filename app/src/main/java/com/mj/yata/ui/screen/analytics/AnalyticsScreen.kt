@@ -4,6 +4,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.WarningAmber
@@ -39,6 +41,7 @@ import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.DayActivity
 import com.mj.yata.util.EntityStat
+import com.mj.yata.util.EstimateUtils
 import com.mj.yata.util.PriorityStat
 import com.mj.yata.util.label
 import java.time.format.DateTimeFormatter
@@ -48,12 +51,41 @@ import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 
+/**
+ * Every number on this screen is about some set of tasks, and until now none of them said *which*.
+ * A row becomes tappable when there is an exact destination for the tasks behind it — an entity's
+ * own detail screen, or a search filter that selects precisely the set being counted. Rows with no
+ * exact match stay inert on purpose: sending someone to an almost-right list is worse than leaving
+ * them to look, because they'd act on the wrong tasks believing they were the right ones.
+ */
+private fun Modifier.drillDown(onClick: (() -> Unit)?): Modifier =
+    if (onClick == null) this else this.clickable(onClick = onClick)
+
+/** The affordance that tells a tappable row apart from an inert one, given they otherwise look
+ * identical. Occupies no space when there's nothing to drill into, so the inert rows keep their
+ * existing layout exactly. */
+@Composable
+private fun DrillDownChevron(visible: Boolean) {
+    if (!visible) return
+    Icon(
+        imageVector = Icons.Default.ChevronRight,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+        modifier = Modifier.size(16.dp)
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
     viewModel: MainViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onNavigateToSearch: (String) -> Unit = {},
+    onNavigateToProject: (String) -> Unit = {},
+    onNavigateToPerson: (String) -> Unit = {},
+    onNavigateToTag: (String) -> Unit = {},
+    onNavigateToList: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
@@ -167,7 +199,14 @@ fun AnalyticsScreen(
             // several sections once there are more than a handful of projects/tags/people.
             if (insights.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    insights.forEach { insight -> InsightBanner(insight) }
+                    insights.forEach { insight ->
+                        InsightBanner(
+                            insight = insight,
+                            onClick = insight.searchFilter?.let { filter ->
+                                { onNavigateToSearch(filter) }
+                            }
+                        )
+                    }
                 }
             }
 
@@ -188,7 +227,11 @@ fun AnalyticsScreen(
                     icon = Icons.Default.WarningAmber,
                     iconTint = if (overdue > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     value = "$overdue",
-                    label = if (overdue == 1) "overdue task" else "overdue tasks"
+                    label = if (overdue == 1) "overdue task" else "overdue tasks",
+                    onClick = if (overdue > 0) {
+                        { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) }
+                    } else null,
+                    trend = stats.overdueTrend
                 )
                 InsightChip(
                     modifier = Modifier.weight(1f),
@@ -209,7 +252,9 @@ fun AnalyticsScreen(
                     icon = Icons.Default.WarningAmber,
                     iconTint = MaterialTheme.colorScheme.primary,
                     value = overallOnTimeRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
-                    label = "on-time rate"
+                    label = "on-time rate",
+                    trend = stats.onTimeRateTrend,
+                    trendUnit = "pp"
                 )
                 InsightChip(
                     modifier = Modifier.weight(1f),
@@ -225,6 +270,78 @@ fun AnalyticsScreen(
                     value = "$dueNext30",
                     label = "due in 30 days"
                 )
+            }
+
+            // What the on-time rate rests on. Without it, a rate over four tasks and a rate over
+            // four hundred are the same number on screen, and tasks finished before completion
+            // timestamps existed are silently excluded with no way to tell.
+            if (overallOnTimeRate != null) {
+                Text(
+                    text = "On-time rate from ${stats.onTimeRateSampleSize} finished " +
+                        (if (stats.onTimeRateSampleSize == 1) "task that had" else "tasks that had") +
+                        " a due date",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Effort rather than task count — the one section in terms of the thing that runs
+            // out. Hidden entirely when nothing open is estimated, since a "0h" total would say
+            // the opposite of "not estimated yet".
+            stats.capacity?.let { capacity ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "PLANNED EFFORT",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                MiniStat(
+                                    modifier = Modifier.weight(1f),
+                                    value = EstimateUtils.format(capacity.openMinutes),
+                                    label = "still open"
+                                )
+                                MiniStat(
+                                    modifier = Modifier.weight(1f),
+                                    value = EstimateUtils.format(capacity.dueNext7Minutes),
+                                    label = "due in 7 days"
+                                )
+                                if (capacity.overdueMinutes > 0) {
+                                    MiniStat(
+                                        modifier = Modifier.weight(1f),
+                                        value = EstimateUtils.format(capacity.overdueMinutes),
+                                        label = "already late",
+                                        emphasise = true,
+                                        onClick = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) }
+                                    )
+                                }
+                            }
+                            // The total is only as good as its coverage; say how much of the
+                            // backlog it actually saw rather than implying it saw all of it.
+                            Text(
+                                text = if (capacity.unestimatedOpenCount == 0) {
+                                    "Every open task is estimated"
+                                } else {
+                                    "From ${capacity.estimatedOpenCount} estimated " +
+                                        "${if (capacity.estimatedOpenCount == 1) "task" else "tasks"} · " +
+                                        "${capacity.unestimatedOpenCount} open " +
+                                        "${if (capacity.unestimatedOpenCount == 1) "task has" else "tasks have"} no estimate"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
 
             // Summary card
@@ -290,13 +407,53 @@ fun AnalyticsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
+                            // Created counts only exist for tasks added since DB 27; on a database
+                            // that predates it every day would read as zero created, which would
+                            // look like "nothing came in" rather than "not recorded". Show the
+                            // second series only once there's something real to compare against.
+                            val createdTotal = dailyActivity.sumOf { it.createdCount }
+                            val completedTotal = dailyActivity.sumOf { it.completedCount }
+                            val showCreated = createdTotal > 0
                             Text(
-                                text = "Tasks completed, by day",
+                                text = if (showCreated) "Tasks completed vs created, by day" else "Tasks completed, by day",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            if (showCreated) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                ChartLegend(
+                                    completedTotal = completedTotal,
+                                    createdTotal = createdTotal
+                                )
+                            }
                             Spacer(modifier = Modifier.height(12.dp))
-                            DailyActivityChart(days = dailyActivity, showLabels = period == AnalyticsPeriod.WEEK)
+                            DailyActivityChart(
+                                days = dailyActivity,
+                                showLabels = period == AnalyticsPeriod.WEEK,
+                                showCreated = showCreated
+                            )
+                            if (showCreated) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                // The whole point of the second series: whether more went out
+                                // than came in. Deliberately worded as the arithmetic rather than
+                                // as a verdict — when the gap is big enough to matter, the
+                                // insight banner at the top of the screen says so in those terms,
+                                // and the two shouldn't print the same sentence twice.
+                                val net = completedTotal - createdTotal
+                                Text(
+                                    text = when {
+                                        net > 0 -> "$net more finished than created"
+                                        net < 0 -> "${-net} more created than finished"
+                                        else -> "As much finished as came in"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = when {
+                                        net > 0 -> LocalYataAccents.current.accentE
+                                        net < 0 -> MaterialTheme.colorScheme.error
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -316,7 +473,14 @@ fun AnalyticsScreen(
                     ) {
                         Column(modifier = Modifier.padding(vertical = 4.dp)) {
                             priorityStats.forEachIndexed { index, stat ->
-                                PriorityStatRow(stat)
+                                // Only "high" has an exact search filter; the other buckets have
+                                // no equivalent chip, so they stay inert rather than approximating.
+                                PriorityStatRow(
+                                    stat = stat,
+                                    onClick = if (stat.priority == "high") {
+                                        { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_HIGH_PRIORITY) }
+                                    } else null
+                                )
                                 if (index != priorityStats.lastIndex) {
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
@@ -344,7 +508,15 @@ fun AnalyticsScreen(
                         Column(modifier = Modifier.padding(vertical = 4.dp)) {
                             val maxAging = agingBuckets.maxOf { it.count }
                             agingBuckets.forEachIndexed { index, bucket ->
-                                AgingBucketRow(bucket, maxAging)
+                                // Every bucket is a slice of "overdue"; the filter can't express
+                                // the age range, so this lands on all overdue work rather than
+                                // exactly this bucket. Close enough to be useful and honest —
+                                // the bucket is a subset of what you'll see, not a different set.
+                                AgingBucketRow(
+                                    bucket = bucket,
+                                    maxCount = maxAging,
+                                    onClick = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) }
+                                )
                                 if (index != agingBuckets.lastIndex) {
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
@@ -405,7 +577,8 @@ fun AnalyticsScreen(
                                         MiniStat(
                                             modifier = Modifier.weight(1f),
                                             value = "${stats.openWithoutDueDate}",
-                                            label = "open, no date"
+                                            label = "open, no date",
+                                            onClick = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_NO_DUE_DATE) }
                                         )
                                     }
                                 }
@@ -432,7 +605,10 @@ fun AnalyticsScreen(
                     ) {
                         Column(modifier = Modifier.padding(vertical = 4.dp)) {
                             delegationStats.forEachIndexed { index, stat ->
-                                DelegationStatRow(stat)
+                                DelegationStatRow(
+                                    stat = stat,
+                                    onClick = { onNavigateToPerson(stat.person.id) }
+                                )
                                 if (index != delegationStats.lastIndex) {
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
@@ -460,7 +636,11 @@ fun AnalyticsScreen(
                         Column(modifier = Modifier.padding(vertical = 4.dp)) {
                             workloadShares.forEachIndexed { index, share ->
                                 val accents = LocalYataAccents.current
-                                WorkloadShareRow(share, accents.getAccent(share.person.color))
+                                WorkloadShareRow(
+                                    share = share,
+                                    color = accents.getAccent(share.person.color),
+                                    onClick = { onNavigateToPerson(share.person.id) }
+                                )
                                 if (index != workloadShares.lastIndex) {
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
@@ -473,10 +653,16 @@ fun AnalyticsScreen(
                 }
             }
 
+            // Each breakdown row names an entity that already has a detail screen listing exactly
+            // the tasks it counted, so the row is a link to it rather than a dead number.
             if (projectsFeatureEnabled) {
                 AnalyticsSection(title = "By Project", stats = projectStats) { stat ->
                     val accents = LocalYataAccents.current
-                    EntityStatRow(stat = stat, color = accents.getAccent(stat.colorKey))
+                    EntityStatRow(
+                        stat = stat,
+                        color = accents.getAccent(stat.colorKey),
+                        onClick = { onNavigateToProject(stat.id) }
+                    )
                 }
             }
 
@@ -493,7 +679,8 @@ fun AnalyticsScreen(
                                 accentKey = stat.colorKey,
                                 size = 28.dp
                             )
-                        }
+                        },
+                        onClick = { onNavigateToPerson(stat.id) }
                     )
                 }
             }
@@ -502,7 +689,12 @@ fun AnalyticsScreen(
                 AnalyticsSection(title = "By Tag", stats = tagStats) { stat ->
                     val accents = LocalYataAccents.current
                     val color = if (stat.colorKey == "error") MaterialTheme.colorScheme.error else accents.getAccent(stat.colorKey)
-                    EntityStatRow(stat = stat, color = color, subtitle = insightSubtitle(stat))
+                    EntityStatRow(
+                        stat = stat,
+                        color = color,
+                        subtitle = insightSubtitle(stat),
+                        onClick = { onNavigateToTag(stat.id) }
+                    )
                 }
             }
 
@@ -510,7 +702,11 @@ fun AnalyticsScreen(
             // alongside projects and tags. Not feature-flagged — lists can't be switched off.
             AnalyticsSection(title = "By List", stats = listStats) { stat ->
                 val accents = LocalYataAccents.current
-                EntityStatRow(stat = stat, color = accents.getAccent(stat.colorKey))
+                EntityStatRow(
+                    stat = stat,
+                    color = accents.getAccent(stat.colorKey),
+                    onClick = { onNavigateToList(stat.id) }
+                )
             }
 
             Spacer(modifier = Modifier.height(72.dp))
@@ -524,12 +720,15 @@ private fun InsightChip(
     iconTint: Color,
     value: String,
     label: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    trend: com.mj.yata.util.MetricTrend? = null,
+    trendUnit: String = ""
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
-        modifier = modifier
+        modifier = modifier.drillDown(onClick)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -547,16 +746,70 @@ private fun InsightChip(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                // A flat trend prints nothing rather than "0": three chips each announcing "no
+                // change" is noise, and the absence already says it.
+                if (trend != null && !trend.isFlat) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    TrendLabel(trend = trend, unit = trendUnit)
+                }
             }
         }
     }
 }
 
+/** The direction a headline figure moved, coloured by whether that direction is good for *this*
+ * metric — which is why the judgement travels in [com.mj.yata.util.MetricTrend] rather than being
+ * inferred from the sign here. */
 @Composable
-private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean) {
-    val maxCount = (days.maxOfOrNull { it.completedCount } ?: 0).coerceAtLeast(1)
+private fun TrendLabel(trend: com.mj.yata.util.MetricTrend, unit: String) {
+    val color = if (trend.improved) LocalYataAccents.current.accentE else MaterialTheme.colorScheme.error
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        Icon(
+            imageVector = if (trend.delta > 0) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(11.dp)
+        )
+        Text(
+            text = "${kotlin.math.abs(trend.delta)}$unit",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = color
+        )
+    }
+}
+
+/** Names the two series and carries their period totals, so the chart can be read without
+ * counting bars. */
+@Composable
+private fun ChartLegend(completedTotal: Int, createdTotal: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        LegendSwatch(color = MaterialTheme.colorScheme.primary, label = "$completedTotal completed")
+        LegendSwatch(color = MaterialTheme.colorScheme.tertiary, label = "$createdTotal created")
+    }
+}
+
+@Composable
+private fun LegendSwatch(color: Color, label: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean, showCreated: Boolean) {
+    // Both series share one scale, otherwise "created" and "completed" bars of equal height would
+    // mean different counts and the comparison the chart exists for would be a lie.
+    val maxCount = days.maxOfOrNull {
+        maxOf(it.completedCount, if (showCreated) it.createdCount else 0)
+    }?.coerceAtLeast(1) ?: 1
     val trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
     val doneColor = MaterialTheme.colorScheme.primary
+    val createdColor = MaterialTheme.colorScheme.tertiary
 
     Row(
         modifier = Modifier
@@ -565,35 +818,52 @@ private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean) {
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         days.forEach { day ->
-            val targetPct = day.completedCount.toFloat() / maxCount
-            val animatedPct by animateFloatAsState(
-                targetValue = targetPct,
+            val animatedDonePct by animateFloatAsState(
+                targetValue = day.completedCount.toFloat() / maxCount,
                 animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
                 label = "chartBarHeight"
+            )
+            val animatedCreatedPct by animateFloatAsState(
+                targetValue = if (showCreated) day.createdCount.toFloat() / maxCount else 0f,
+                animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
+                label = "chartCreatedBarHeight"
             )
             Canvas(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                val barWidth = size.width * 0.55f
-                val x = (size.width - barWidth) / 2f
-                val barHeight = size.height * animatedPct
+                // Two bars share the slot when created counts are shown, so a day reads as a
+                // pair (in vs out) rather than needing the eye to track across two charts.
+                val slotWidth = if (showCreated) size.width * 0.42f else size.width * 0.55f
+                val gap = if (showCreated) size.width * 0.10f else 0f
+                val totalWidth = if (showCreated) slotWidth * 2 + gap else slotWidth
+                val startX = (size.width - totalWidth) / 2f
 
-                // Faint full-height track so a zero-completion day still reads as a bar slot.
-                drawRoundRect(
-                    color = trackColor,
-                    topLeft = androidx.compose.ui.geometry.Offset(x, 0f),
-                    size = androidx.compose.ui.geometry.Size(barWidth, size.height),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f, barWidth / 2f)
-                )
-                if (barHeight > 0f) {
-                    drawRoundRect(
-                        color = doneColor,
-                        topLeft = androidx.compose.ui.geometry.Offset(x, size.height - barHeight),
-                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f, barWidth / 2f)
-                    )
+                fun bar(x: Float, pct: Float, color: androidx.compose.ui.graphics.Color, drawTrack: Boolean) {
+                    if (drawTrack) {
+                        // Faint full-height track so a zero-count day still reads as a bar slot.
+                        drawRoundRect(
+                            color = trackColor,
+                            topLeft = androidx.compose.ui.geometry.Offset(x, 0f),
+                            size = androidx.compose.ui.geometry.Size(slotWidth, size.height),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(slotWidth / 2f, slotWidth / 2f)
+                        )
+                    }
+                    val barHeight = size.height * pct
+                    if (barHeight > 0f) {
+                        drawRoundRect(
+                            color = color,
+                            topLeft = androidx.compose.ui.geometry.Offset(x, size.height - barHeight),
+                            size = androidx.compose.ui.geometry.Size(slotWidth, barHeight),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(slotWidth / 2f, slotWidth / 2f)
+                        )
+                    }
+                }
+
+                bar(startX, animatedDonePct, doneColor, drawTrack = true)
+                if (showCreated) {
+                    bar(startX + slotWidth + gap, animatedCreatedPct, createdColor, drawTrack = true)
                 }
             }
         }
@@ -615,7 +885,7 @@ private fun DailyActivityChart(days: List<DayActivity>, showLabels: Boolean) {
 }
 
 @Composable
-private fun PriorityStatRow(stat: PriorityStat) {
+private fun PriorityStatRow(stat: PriorityStat, onClick: (() -> Unit)? = null) {
     val accents = LocalYataAccents.current
     val (label, color) = when (stat.priority) {
         "high" -> "High" to MaterialTheme.colorScheme.error
@@ -631,6 +901,7 @@ private fun PriorityStatRow(stat: PriorityStat) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -657,11 +928,16 @@ private fun PriorityStatRow(stat: PriorityStat) {
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        DrillDownChevron(visible = onClick != null)
     }
 }
 
 @Composable
-private fun AgingBucketRow(bucket: com.mj.yata.util.AgingBucket, maxCount: Int) {
+private fun AgingBucketRow(
+    bucket: com.mj.yata.util.AgingBucket,
+    maxCount: Int,
+    onClick: (() -> Unit)? = null
+) {
     val color = when (bucket.label) {
         "0-3 days" -> LocalYataAccents.current.accentD
         "4-7 days" -> MaterialTheme.colorScheme.tertiary
@@ -675,6 +951,7 @@ private fun AgingBucketRow(bucket: com.mj.yata.util.AgingBucket, maxCount: Int) 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -701,11 +978,16 @@ private fun AgingBucketRow(bucket: com.mj.yata.util.AgingBucket, maxCount: Int) 
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        DrillDownChevron(visible = onClick != null)
     }
 }
 
 @Composable
-private fun WorkloadShareRow(share: com.mj.yata.util.WorkloadShare, color: Color) {
+private fun WorkloadShareRow(
+    share: com.mj.yata.util.WorkloadShare,
+    color: Color,
+    onClick: (() -> Unit)? = null
+) {
     val animatedPct by animateFloatAsState(
         targetValue = share.share,
         animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized),
@@ -714,6 +996,7 @@ private fun WorkloadShareRow(share: com.mj.yata.util.WorkloadShare, color: Color
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -744,6 +1027,7 @@ private fun WorkloadShareRow(share: com.mj.yata.util.WorkloadShare, color: Color
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        DrillDownChevron(visible = onClick != null)
     }
 }
 
@@ -803,7 +1087,8 @@ private fun EntityStatRow(
     stat: EntityStat,
     color: Color,
     subtitle: String? = null,
-    leading: (@Composable () -> Unit)? = null
+    leading: (@Composable () -> Unit)? = null,
+    onClick: (() -> Unit)? = null
 ) {
     val animatedPct by animateFloatAsState(
         targetValue = stat.pct,
@@ -813,6 +1098,7 @@ private fun EntityStatRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -863,13 +1149,17 @@ private fun EntityStatRow(
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        DrillDownChevron(visible = onClick != null)
     }
 }
 
 /** One ranked callout from [com.mj.yata.util.AnalyticsUtils.buildInsights]. Styled by severity so
  * the thing that needs attention reads differently from the thing that's merely true. */
 @Composable
-private fun InsightBanner(insight: com.mj.yata.util.AnalyticsInsight) {
+private fun InsightBanner(
+    insight: com.mj.yata.util.AnalyticsInsight,
+    onClick: (() -> Unit)? = null
+) {
     val accents = LocalYataAccents.current
     val accent = when (insight.severity) {
         com.mj.yata.util.InsightSeverity.WARN -> MaterialTheme.colorScheme.error
@@ -879,7 +1169,7 @@ private fun InsightBanner(insight: com.mj.yata.util.AnalyticsInsight) {
     Surface(
         color = accent.copy(alpha = 0.10f),
         shape = RoundedCornerShape(14.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().drillDown(onClick)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -907,6 +1197,7 @@ private fun InsightBanner(insight: com.mj.yata.util.AnalyticsInsight) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            DrillDownChevron(visible = onClick != null)
         }
     }
 }
@@ -958,9 +1249,10 @@ private fun MiniStat(
     value: String,
     label: String,
     modifier: Modifier = Modifier,
-    emphasise: Boolean = false
+    emphasise: Boolean = false,
+    onClick: (() -> Unit)? = null
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier.drillDown(onClick)) {
         Text(
             text = value,
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -977,11 +1269,15 @@ private fun MiniStat(
 
 /** One assignee's delegation health: how much they hold, how much is late, how fast it moves. */
 @Composable
-private fun DelegationStatRow(stat: com.mj.yata.util.DelegationStat) {
+private fun DelegationStatRow(
+    stat: com.mj.yata.util.DelegationStat,
+    onClick: (() -> Unit)? = null
+) {
     val accents = LocalYataAccents.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .drillDown(onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1034,5 +1330,6 @@ private fun DelegationStatRow(stat: com.mj.yata.util.DelegationStat) {
                 modifier = Modifier.size(18.dp)
             )
         }
+        DrillDownChevron(visible = onClick != null)
     }
 }
