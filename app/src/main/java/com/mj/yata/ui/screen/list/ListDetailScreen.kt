@@ -470,7 +470,7 @@ fun ListDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Type to search tasks in this list.",
+                            text = stringResource(R.string.detail_search_prompt_list),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
@@ -481,7 +481,7 @@ fun ListDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No matching tasks.",
+                            text = stringResource(R.string.detail_search_no_matches),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )

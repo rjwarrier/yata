@@ -476,7 +476,7 @@ fun ProjectDetailScreen(
                     }
                     if (project.due != null) {
                         Text(
-                            text = "Due " + com.mj.yata.util.TaskScheduleUtils.formatDueDate(project.due),
+                            text = stringResource(R.string.quick_add_preview_due, com.mj.yata.util.TaskScheduleUtils.formatDueDate(project.due)),
                             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -559,7 +559,7 @@ fun ProjectDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Type to search tasks in this project.",
+                            text = stringResource(R.string.detail_search_prompt_project),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
@@ -570,7 +570,7 @@ fun ProjectDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No matching tasks.",
+                            text = stringResource(R.string.detail_search_no_matches),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )

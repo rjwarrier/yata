@@ -390,7 +390,7 @@ fun PersonRow(
                 }
 
                 Text(
-                    text = "$totalTasks assigned · $doneTasks done",
+                    text = stringResource(R.string.people_tab_assigned_done, totalTasks, doneTasks),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
@@ -398,7 +398,7 @@ fun PersonRow(
                 )
                 if (overdueTasks > 0) {
                     Text(
-                        text = "$overdueTasks overdue",
+                        text = stringResource(R.string.people_tab_overdue_count, overdueTasks),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.SemiBold,

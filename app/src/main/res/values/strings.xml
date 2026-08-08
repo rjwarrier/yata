@@ -1325,6 +1325,10 @@
     <string name="quick_add_widget_add_task">Add a task...</string>
     <string name="quick_add_widget_preset_deleted">Preset deleted - long-press to reconfigure</string>
     <string name="quick_add_widget_destination">Destination:</string>
+    <string name="widget_done_ratio">%1$d/%2$d done</string>
+    <string name="widget_no_tasks_here">No tasks here.</string>
+    <string name="widget_more_in_app">+%1$d more in the app</string>
+    <string name="widget_nothing_due_today">Nothing due today.</string>
 
     <!-- Shared task filters and empty states -->
     <string name="task_filter_all">All</string>
@@ -1343,6 +1347,15 @@
         <item quantity="one">%1$d task</item>
         <item quantity="other">%1$d tasks</item>
     </plurals>
+    <string name="task_move_to_picker_title">Move task to...</string>
+    <string name="task_move_to_picker_projects">PROJECTS</string>
+    <string name="people_tab_assigned_done">%1$d assigned · %2$d done</string>
+    <string name="people_tab_overdue_count">%1$d overdue</string>
+    <string name="detail_search_prompt_project">Type to search tasks in this project.</string>
+    <string name="detail_search_prompt_list">Type to search tasks in this list.</string>
+    <string name="detail_search_no_matches">No matching tasks.</string>
+    <string name="next_days_all_clear">All clear</string>
+    <string name="next_days_nothing_due">Nothing due in the next %1$d days.</string>
     <string name="upcoming_view_mode_upcoming">Upcoming</string>
     <string name="upcoming_view_mode_calendar">Calendar</string>
 

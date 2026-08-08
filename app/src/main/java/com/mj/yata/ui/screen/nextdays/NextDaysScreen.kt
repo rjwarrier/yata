@@ -144,8 +144,8 @@ fun NextDaysScreen(
             ) {
                 com.mj.yata.ui.widgets.TabEmptyState(
                     icon = Icons.Outlined.EventAvailable,
-                    title = "All clear",
-                    subtitle = "Nothing due in the next $WINDOW_DAYS days."
+                    title = stringResource(R.string.next_days_all_clear),
+                    subtitle = stringResource(R.string.next_days_nothing_due, WINDOW_DAYS)
                 )
             }
         } else {
@@ -171,7 +171,7 @@ fun NextDaysScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${dateTasks.size} ${if (dateTasks.size == 1) "task" else "tasks"}",
+                                text = pluralStringResource(R.plurals.task_count_lower, dateTasks.size, dateTasks.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
