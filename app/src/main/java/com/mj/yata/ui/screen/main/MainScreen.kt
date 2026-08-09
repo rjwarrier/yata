@@ -82,6 +82,7 @@ fun MainScreen(
     viewModel: MainViewModel,
     navController: NavController,
     onNavigateToSettings: () -> Unit,
+    onNavigateToHelpAbout: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToStaffAnalytics: () -> Unit,
     onNavigateToNextDays: () -> Unit,
@@ -576,6 +577,10 @@ fun MainScreen(
                     }
                     DrawerItem(stringResource(R.string.settings_settings), Icons.Default.Settings, false) {
                         onNavigateToSettings()
+                        scope.launch { drawerState.close() }
+                    }
+                    DrawerItem(stringResource(R.string.settings_section_help_about), Icons.AutoMirrored.Filled.HelpOutline, false) {
+                        onNavigateToHelpAbout()
                         scope.launch { drawerState.close() }
                     }
                 }
