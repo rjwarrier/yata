@@ -998,7 +998,7 @@ private fun GitHubConfigPasswordDialog(
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     shape = YataCompactFieldShape,
-                    colors = yataFieldColors(),
+                    colors = githubConfigPasswordFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (isExport) {
@@ -1011,7 +1011,7 @@ private fun GitHubConfigPasswordDialog(
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         shape = YataCompactFieldShape,
-                        colors = yataFieldColors(),
+                        colors = githubConfigPasswordFieldColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
                     if (passwordsMismatch) {
@@ -1036,6 +1036,22 @@ private fun GitHubConfigPasswordDialog(
         }
     )
 }
+
+@Composable
+private fun githubConfigPasswordFieldColors(): TextFieldColors = TextFieldDefaults.colors(
+    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+    errorContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+    disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+    errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedSupportingTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    unfocusedSupportingTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+)
 
 @Composable
 private fun RemoteConfigHeader(
