@@ -425,8 +425,8 @@ class SftpBackupManager @Inject constructor(
             .map { remotePath(remoteDir, it.name) }
             .sortedDescending()
             .toList()
-        val recoveryCandidates = historyPaths.asSequence() +
-            sequenceOf(remotePath(remoteDir, SYNC_PREVIOUS_FILENAME))
+        val recoveryCandidates = sequenceOf(remotePath(remoteDir, SYNC_PREVIOUS_FILENAME)) +
+            historyPaths.asSequence()
 
         for (candidate in recoveryCandidates) {
             val bytes = try {
@@ -546,7 +546,7 @@ class SftpBackupManager @Inject constructor(
             }
 
             val lockAttributes = sftp.statExistence(lockPath) ?: throw mkdirFailure
-            val leaseInfo = readSyncLeaseInfo(sftp, leasePath)
+            val leaseInfo = readSyncLeaseInfoOrEmpty(sftp, leasePath)
             val observedAt = leaseInfo.lockedAt ?: lockAttributes.mtime * 1000L
             val ageMillis = System.currentTimeMillis() - observedAt
             if (ageMillis < SYNC_LOCK_STALE_MILLIS) {
@@ -647,6 +647,14 @@ class SftpBackupManager @Inject constructor(
             ?.toString(Charsets.UTF_8)
             ?.let(::parseLeaseInfo)
             ?: RemoteLeaseInfo()
+
+    private fun readSyncLeaseInfoOrEmpty(sftp: SFTPClient, leasePath: String): RemoteLeaseInfo =
+        try {
+            readSyncLeaseInfo(sftp, leasePath)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read SFTP sync lease; falling back to lock directory age", e)
+            RemoteLeaseInfo()
+        }
 
     private data class RemoteLeaseInfo(
         val lockedAt: Long? = null,

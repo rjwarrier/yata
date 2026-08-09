@@ -387,6 +387,9 @@ class FtpBackupManager @Inject constructor(
 
         acceptIfValid(SYNC_FILENAME, currentPayload)?.let { return it }
 
+        val previousPayload = readRemoteBytesOrNull(client, SYNC_PREVIOUS_FILENAME)
+        acceptIfValid(SYNC_PREVIOUS_FILENAME, previousPayload)?.let { return it }
+
         listHistoryBackupNames(client).forEach { filename ->
             // The listing itself observed a candidate. If it disappears before RETR, fail closed
             // rather than reclassifying a raced/unstable remote as a brand-new empty server.
@@ -394,9 +397,6 @@ class FtpBackupManager @Inject constructor(
             val payload = readRemoteBytesOrNull(client, filename)
             acceptIfValid(filename, payload)?.let { return it }
         }
-
-        val previousPayload = readRemoteBytesOrNull(client, SYNC_PREVIOUS_FILENAME)
-        acceptIfValid(SYNC_PREVIOUS_FILENAME, previousPayload)?.let { return it }
 
         check(!sawCandidate) {
             "The server contains sync/backup files, but none is a valid YATA snapshot"
@@ -502,7 +502,7 @@ class FtpBackupManager @Inject constructor(
 
     private fun acquireSyncLock(client: FTPClient): SyncLease {
         if (!client.makeDirectory(SYNC_LOCK_DIR)) {
-            val leaseInfo = readLeaseInfo(client)
+            val leaseInfo = readLeaseInfoOrEmpty(client)
             val directoryMillis = runCatching {
                 client.mlistFile(SYNC_LOCK_DIR)?.timestamp?.timeInMillis
             }.getOrNull()
@@ -570,6 +570,14 @@ class FtpBackupManager @Inject constructor(
             ?.toString(Charsets.UTF_8)
             ?.let(::parseLeaseInfo)
             ?: RemoteLeaseInfo()
+
+    private fun readLeaseInfoOrEmpty(client: FTPClient): RemoteLeaseInfo =
+        try {
+            readLeaseInfo(client)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read FTP sync lease; falling back to lock directory age", e)
+            RemoteLeaseInfo()
+        }
 
     private fun releaseSyncLock(client: FTPClient, lease: SyncLease) {
         try {
