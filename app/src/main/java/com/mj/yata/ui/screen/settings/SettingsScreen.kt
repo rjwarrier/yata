@@ -3724,8 +3724,8 @@ private fun AboutYataCard(
                         BuildConfig.VERSION_NAME,
                         "${BuildConfig.VERSION_CODE}.${BuildInfo.BUILD_DATE}"
                     ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                 )
             }
