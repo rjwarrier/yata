@@ -18,10 +18,10 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Calendar
 
-private fun exportsDir(context: Context): File =
+internal fun exportsDir(context: Context): File =
     File(context.cacheDir, "exports").apply { mkdirs() }
 
-private fun shareUriFor(context: Context, file: File) =
+internal fun shareUriFor(context: Context, file: File) =
     FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
 /** Strips a tag/person name down to a safe export filename fragment. */

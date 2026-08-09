@@ -6,6 +6,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -149,6 +150,10 @@ import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.localized
+import com.mj.yata.util.export.exportsDir
+import com.mj.yata.util.export.shareUriFor
+import java.io.File
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -2897,10 +2902,14 @@ fun SettingsScreen(
             )
         }
         item {
-            OtherAppsCard(modifier = Modifier.fillMaxWidth())
+            AboutEntrance(delayMillis = 0) {
+                OtherAppsCard(modifier = Modifier.fillMaxWidth())
+            }
         }
         item {
-            GitHubAndShareRow(modifier = Modifier.fillMaxWidth())
+            AboutEntrance(delayMillis = 60) {
+                GitHubAndShareRow(modifier = Modifier.fillMaxWidth())
+            }
         }
         }
     }
@@ -3742,6 +3751,24 @@ private val otherApps = listOf(
     OtherApp("Ultra", "Smart reminders", "https://play.google.com/store/apps/details?id=com.ultra.reminders")
 )
 
+/** Fades and rises the About screen's new link cards into place on first composition, staggered
+ * by [delayMillis] so the two rows settle one after another rather than popping in together. */
+@Composable
+private fun AboutEntrance(delayMillis: Int, content: @Composable () -> Unit) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(delayMillis.toLong())
+        visible = true
+    }
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel)) +
+            slideInVertically(tween(YataDur.nav, easing = YataEase.emphDecel)) { it / 4 }
+    ) {
+        content()
+    }
+}
+
 @Composable
 private fun OtherAppsCard(modifier: Modifier = Modifier) {
     val uriHandler = LocalUriHandler.current
@@ -3762,7 +3789,9 @@ private fun OtherAppsCard(modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Max),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 otherApps.forEach { app ->
@@ -3770,26 +3799,27 @@ private fun OtherAppsCard(modifier: Modifier = Modifier) {
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         shape = RoundedCornerShape(10.dp),
                         onClick = { uriHandler.openUri(app.playStoreUrl) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
                     ) {
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxSize()
                                 .padding(horizontal = 8.dp, vertical = 10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                            verticalArrangement = Arrangement.Center
                         ) {
                             Text(
                                 text = app.name,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Text(
                                 text = app.tagline,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }
@@ -3809,12 +3839,14 @@ private fun GitHubAndShareRow(modifier: Modifier = Modifier) {
     val shareText = stringResource(R.string.settings_about_share_text)
     val shareTitle = stringResource(R.string.settings_about_share)
     Row(
-        modifier = modifier,
+        modifier = modifier.height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedButton(
             onClick = { uriHandler.openUri(YATA_GITHUB_URL) },
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
@@ -3825,18 +3857,26 @@ private fun GitHubAndShareRow(modifier: Modifier = Modifier) {
             Text(
                 text = stringResource(R.string.settings_about_github),
                 style = MaterialTheme.typography.labelLarge,
-                maxLines = 1
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
         OutlinedButton(
             onClick = {
+                val imageFile = File(exportsDir(context), "yata_share.png")
+                context.resources.openRawResource(R.drawable.share_promo).use { input ->
+                    imageFile.outputStream().use { output -> input.copyTo(output) }
+                }
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
+                    type = "image/png"
+                    putExtra(Intent.EXTRA_STREAM, shareUriFor(context, imageFile))
                     putExtra(Intent.EXTRA_TEXT, shareText)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 context.startActivity(Intent.createChooser(shareIntent, shareTitle))
             },
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
         ) {
             Icon(
                 imageVector = Icons.Default.IosShare,
@@ -3847,7 +3887,7 @@ private fun GitHubAndShareRow(modifier: Modifier = Modifier) {
             Text(
                 text = shareTitle,
                 style = MaterialTheme.typography.labelLarge,
-                maxLines = 1
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }

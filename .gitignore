@@ -37,3 +37,6 @@ FEE_TRACKER_*.md
 
 # Design handoff reference (non-executable HTML/JSX prototype, not project source)
 design_handoff_yata/
+
+# Source image for app/src/main/res/drawable-nodpi/share_promo.png, dropped at repo root
+/Share.png

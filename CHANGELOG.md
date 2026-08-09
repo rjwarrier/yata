@@ -19,7 +19,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 - **Other apps, GitHub link, and Share on the About screen.** Settings → Help & About now lists
   the developer's other apps (yaja, Assetrack, Ultra) linking to their Play Store pages, a link to
-  the YATA GitHub repo, and a Share button that shares a one-line blurb with the releases link.
+  the YATA GitHub repo, and a Share button that shares a promo image alongside a one-line blurb
+  pointing to the releases page.
 - **Person performance analytics.** Each person detail screen now has a Performance button opening
   an in-depth staff dashboard with open/overdue load, completions for the selected period,
   on-time rate, turnaround, planned effort, completion trend, project/list/tag breakdowns, and a
