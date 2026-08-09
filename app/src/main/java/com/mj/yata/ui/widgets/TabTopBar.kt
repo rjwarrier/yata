@@ -48,6 +48,7 @@ fun TabTopBar(
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier,
     menuContentDescription: String? = null,
+    showNavigationIcon: Boolean = true,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val menuLabel = menuContentDescription ?: stringResource(R.string.cd_open_drawer)
@@ -59,8 +60,10 @@ fun TabTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        YataTopBarIconButton(onClick = onMenuClick) {
-            Icon(imageVector = Icons.Default.Menu, contentDescription = menuLabel)
+        if (showNavigationIcon) {
+            YataTopBarIconButton(onClick = onMenuClick) {
+                Icon(imageVector = Icons.Default.Menu, contentDescription = menuLabel)
+            }
         }
         Text(
             text = title,

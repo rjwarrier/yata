@@ -57,6 +57,8 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import androidx.compose.ui.draw.rotate
 import androidx.compose.animation.core.animateFloatAsState
 import kotlinx.coroutines.launch
@@ -191,13 +193,14 @@ fun PersonDetailScreen(
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
         },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = 2,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -386,11 +389,14 @@ fun PersonDetailScreen(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding),
+                .padding(innerPadding)
+        ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
             // 1. Hero section — bigger avatar + progress ring, plus overdue/high-priority/due-today
@@ -689,6 +695,7 @@ fun PersonDetailScreen(
             }
             } // !hideCompleted
         }
+        }
     }
 
     if (isNewTaskSheetOpen) {
@@ -722,6 +729,7 @@ fun PersonDetailScreen(
                     viewModel.upsertPerson(Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false))
                 },
                 onDismiss = { isNewTaskSheetOpen = false },
+                modifier = Modifier.widthIn(max = 720.dp),
                 projectsEnabled = projectsFeatureEnabled,
                 tagsEnabled = tagsFeatureEnabled,
                 peopleEnabled = peopleFeatureEnabled,
@@ -735,7 +743,8 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isEditSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             PersonEditorSheet(
                 initialName = person.name,
@@ -800,7 +809,8 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
@@ -818,7 +828,8 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkAssignPersonSheet(
                 people = people,
@@ -838,7 +849,8 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkMoveSheet(
                 projects = projects,
@@ -863,7 +875,8 @@ fun PersonDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkRescheduleSheet(
                 onSelectPreset = { preset ->

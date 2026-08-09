@@ -56,6 +56,8 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -169,6 +171,7 @@ fun ListDetailScreen(
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
@@ -180,7 +183,7 @@ fun ListDetailScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -364,11 +367,14 @@ fun ListDetailScreen(
         val todayStr = com.mj.yata.util.AppClock.todayString
         val dueTodayCount = remember(listTasks, todayStr) { listTasks.count { !it.done && it.due == todayStr } }
 
-        Column(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
             // 1. Hero header — icon tile, list name, progress ring, plus overdue/high-priority/
             // due-today stats (per handoff's List Detail, extended to match Person/Project/Tag).
@@ -560,13 +566,15 @@ fun ListDetailScreen(
                 ) { task -> taskRowFor(task) }
             }
         }
+        }
     }
 
     pendingMoveTask?.let { task ->
         ModalBottomSheet(
             onDismissRequest = { pendingMoveTask = null },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskMoveToPickerSheet(
                 lists = lists.filter { it.id != list.id },
@@ -598,7 +606,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
@@ -616,7 +625,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkAssignPersonSheet(
                 people = people,
@@ -636,7 +646,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkMoveSheet(
                 projects = projects,
@@ -661,7 +672,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkRescheduleSheet(
                 onSelectPreset = { preset ->
@@ -698,7 +710,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             NewTaskSheet(
                 lists = listOf(list), // Force this list
@@ -738,7 +751,8 @@ fun ListDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isEditSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             ListEditorSheet(
                 initialName = list.name,

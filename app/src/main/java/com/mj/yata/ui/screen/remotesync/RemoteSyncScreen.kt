@@ -44,6 +44,7 @@ import com.mj.yata.domain.model.RemoteBackupProtocol
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.YataFieldShape
@@ -221,10 +222,14 @@ fun RemoteSyncScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        AdaptiveContentBox(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -725,6 +730,7 @@ fun RemoteSyncScreen(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
+        }
         }
     }
 

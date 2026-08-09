@@ -61,6 +61,7 @@ fun TagsTab(
     userName: String,
     userPhotoUri: String? = null,
     onMenuClick: () -> Unit,
+    showMenuButton: Boolean = true,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onTagClick: (String) -> Unit,
@@ -71,6 +72,7 @@ fun TagsTab(
     sortMode: com.mj.yata.util.EntitySortMode = com.mj.yata.util.EntitySortMode.NAME_ASC,
     onSortModeChange: (com.mj.yata.util.EntitySortMode) -> Unit = {},
     tagsEnabled: Boolean = true,
+    useWideLayout: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -99,7 +101,8 @@ fun TagsTab(
                 onMenuClick = onMenuClick,
                 userName = userName,
                 userPhotoUri = userPhotoUri,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                showNavigationIcon = showMenuButton
             ) {
                 com.mj.yata.ui.widgets.EntitySortMenuButton(
                     current = sortMode,
@@ -127,7 +130,7 @@ fun TagsTab(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .padding(horizontal = if (useWideLayout) 24.dp else 20.dp, vertical = 8.dp)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
@@ -207,7 +210,8 @@ fun TagsTab(
                                     selectedIds = selectedIds,
                                     expanded = expandedGroups[group.id] ?: true,
                                     onToggle = { expandedGroups[group.id] = !(expandedGroups[group.id] ?: true) },
-                                    onDelete = { onDeleteGroup(group) }
+                                    onDelete = { onDeleteGroup(group) },
+                                    useWideLayout = useWideLayout
                                 )
                             }
                         }
@@ -221,7 +225,8 @@ fun TagsTab(
                             selectionMode = selectionMode,
                             selectedIds = selectedIds,
                             expanded = expandedGroups["ungrouped"] ?: true,
-                            onToggle = { expandedGroups["ungrouped"] = !(expandedGroups["ungrouped"] ?: true) }
+                            onToggle = { expandedGroups["ungrouped"] = !(expandedGroups["ungrouped"] ?: true) },
+                            useWideLayout = useWideLayout
                         )
                     }
                 }
@@ -242,7 +247,8 @@ fun TagsTab(
                             onTagClick = ::onTagTap,
                             onToggleStar = onToggleStar,
                             selectionMode = selectionMode,
-                            selectedIds = selectedIds
+                            selectedIds = selectedIds,
+                            useWideLayout = useWideLayout
                         )
                     }
                 }
@@ -333,7 +339,8 @@ private fun TagGroupSection(
     onToggle: () -> Unit = {},
     onDelete: (() -> Unit)? = null,
     selectionMode: Boolean = false,
-    selectedIds: List<String> = emptyList()
+    selectedIds: List<String> = emptyList(),
+    useWideLayout: Boolean = false
 ) {
     if (tags.isEmpty()) return
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -389,17 +396,42 @@ private fun TagGroupSection(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                tags.forEach { tag ->
-                    val (total, done) = taskCounts[tag.id] ?: (0 to 0)
-                    TagRow(
-                        tag = tag,
-                        totalTasks = total,
-                        doneTasks = done,
-                        onClick = { onTagClick(tag.id) },
-                        onToggleStar = { onToggleStar(tag.id) },
-                        selectionMode = selectionMode,
-                        selected = selectedIds.contains(tag.id)
-                    )
+                tags.chunked(if (useWideLayout) 2 else 1).forEach { row ->
+                    if (useWideLayout) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            row.forEach { tag ->
+                                val (total, done) = taskCounts[tag.id] ?: (0 to 0)
+                                TagRow(
+                                    tag = tag,
+                                    totalTasks = total,
+                                    doneTasks = done,
+                                    onClick = { onTagClick(tag.id) },
+                                    onToggleStar = { onToggleStar(tag.id) },
+                                    selectionMode = selectionMode,
+                                    selected = selectedIds.contains(tag.id),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (row.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    } else {
+                        val tag = row.first()
+                        val (total, done) = taskCounts[tag.id] ?: (0 to 0)
+                        TagRow(
+                            tag = tag,
+                            totalTasks = total,
+                            doneTasks = done,
+                            onClick = { onTagClick(tag.id) },
+                            onToggleStar = { onToggleStar(tag.id) },
+                            selectionMode = selectionMode,
+                            selected = selectedIds.contains(tag.id)
+                        )
+                    }
                 }
             }
         }
@@ -423,7 +455,8 @@ private fun TagRow(
     onClick: () -> Unit,
     onToggleStar: () -> Unit = {},
     selectionMode: Boolean = false,
-    selected: Boolean = false
+    selected: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
     val openTasks = totalTasks - doneTasks
     val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
@@ -431,7 +464,7 @@ private fun TagRow(
     val tagColor = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),

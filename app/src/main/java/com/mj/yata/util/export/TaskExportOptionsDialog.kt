@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
@@ -77,7 +78,8 @@ fun TaskExportOptionsDialog(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        sheetMaxWidth = rememberAdaptiveSheetMaxWidth()
     ) {
         // Outer column pins the action row; the options scroll above it. Without the split the
         // options were measured first and the button row got whatever height was left over — on a

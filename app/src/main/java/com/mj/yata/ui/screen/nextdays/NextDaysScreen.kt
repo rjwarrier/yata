@@ -27,6 +27,7 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.TaskRow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -104,7 +105,7 @@ fun NextDaysScreen(
             SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
         },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -134,12 +135,15 @@ fun NextDaysScreen(
             )
         }
     ) { innerPadding ->
+        AdaptiveContentBox(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(innerPadding)
+        ) {
         if (upcomingTasks.isEmpty()) {
             Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 com.mj.yata.ui.widgets.TabEmptyState(
@@ -150,10 +154,7 @@ fun NextDaysScreen(
             }
         } else {
             LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 groupedByDate.forEach { (dateStr, dateTasks) ->
@@ -203,6 +204,7 @@ fun NextDaysScreen(
                     }
                 }
             }
+        }
         }
     }
 }

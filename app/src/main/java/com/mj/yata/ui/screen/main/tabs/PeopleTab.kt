@@ -43,6 +43,7 @@ import com.mj.yata.ui.sheets.GroupAssignSheet
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 
@@ -55,6 +56,7 @@ fun PeopleTab(
     userName: String,
     userPhotoUri: String? = null,
     onMenuClick: () -> Unit,
+    showMenuButton: Boolean = true,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onPersonClick: (String) -> Unit,
@@ -66,6 +68,7 @@ fun PeopleTab(
     onDeleteGroup: (PersonGroup) -> Unit = {},
     sortMode: com.mj.yata.util.EntitySortMode = com.mj.yata.util.EntitySortMode.NAME_ASC,
     onSortModeChange: (com.mj.yata.util.EntitySortMode) -> Unit = {},
+    useWideLayout: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val tasksByPerson = remember(tasks) {
@@ -81,6 +84,7 @@ fun PeopleTab(
     var selectModeOn by remember { mutableStateOf(false) }
     val selectionMode = selectModeOn
     var showGroupPicker by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     Column(
         modifier = modifier
@@ -103,7 +107,8 @@ fun PeopleTab(
                 onMenuClick = onMenuClick,
                 userName = userName,
                 userPhotoUri = userPhotoUri,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                showNavigationIcon = showMenuButton
             ) {
                 com.mj.yata.ui.widgets.EntitySortMenuButton(
                     current = sortMode,
@@ -148,7 +153,12 @@ fun PeopleTab(
 
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 88.dp),
+            contentPadding = PaddingValues(
+                start = if (useWideLayout) 24.dp else 20.dp,
+                top = 8.dp,
+                end = if (useWideLayout) 24.dp else 20.dp,
+                bottom = 88.dp
+            ),
             // Single source of spacing between cards. The rows used to carry a 12dp bottom padding
             // of their own on top of this, so every gap was really 24dp — twice what either value
             // suggested when read on its own. 10dp matches the tag rows on the Tags tab.
@@ -178,15 +188,18 @@ fun PeopleTab(
                         )
                     }
                     if (expanded) {
-                        items(groupPeople, key = { "person_${it.id}" }) { person ->
-                            PersonListRow(
-                                person = person,
-                                tasksByPerson = tasksByPerson,
-                                selectionMode = selectionMode,
-                                selectedIds = selectedIds,
-                                onPersonClick = onPersonClick,
-                                onToggleStar = onToggleStar
-                            )
+                        items(groupPeople.chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "person_${it.id}" } }) { row ->
+                            PersonRowGroup(row = row, useWideLayout = useWideLayout) { person, itemModifier ->
+                                PersonListRow(
+                                    person = person,
+                                    tasksByPerson = tasksByPerson,
+                                    selectionMode = selectionMode,
+                                    selectedIds = selectedIds,
+                                    onPersonClick = onPersonClick,
+                                    onToggleStar = onToggleStar,
+                                    modifier = itemModifier
+                                )
+                            }
                         }
                     }
                 }
@@ -204,15 +217,18 @@ fun PeopleTab(
                     }
                 }
                 if (ungroupedExpanded) {
-                    items(ungrouped, key = { "person_${it.id}" }) { person ->
-                        PersonListRow(
-                            person = person,
-                            tasksByPerson = tasksByPerson,
-                            selectionMode = selectionMode,
-                            selectedIds = selectedIds,
-                            onPersonClick = onPersonClick,
-                            onToggleStar = onToggleStar
-                        )
+                    items(ungrouped.chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "person_${it.id}" } }) { row ->
+                        PersonRowGroup(row = row, useWideLayout = useWideLayout) { person, itemModifier ->
+                            PersonListRow(
+                                person = person,
+                                tasksByPerson = tasksByPerson,
+                                selectionMode = selectionMode,
+                                selectedIds = selectedIds,
+                                onPersonClick = onPersonClick,
+                                onToggleStar = onToggleStar,
+                                modifier = itemModifier
+                            )
+                        }
                     }
                 }
             }
@@ -227,14 +243,17 @@ fun PeopleTab(
                     )
                 }
                 if (archivedExpanded) {
-                    items(archivedPeople.sorted(), key = { "archived_${it.id}" }) { person ->
-                        PersonRow(
-                            person = person,
-                            totalTasks = 0,
-                            doneTasks = 0,
-                            progress = 0f,
-                            onClick = { onPersonClick(person.id) }
-                        )
+                    items(archivedPeople.sorted().chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "archived_${it.id}" } }) { row ->
+                        PersonRowGroup(row = row, useWideLayout = useWideLayout) { person, itemModifier ->
+                            PersonRow(
+                                person = person,
+                                totalTasks = 0,
+                                doneTasks = 0,
+                                progress = 0f,
+                                onClick = { onPersonClick(person.id) },
+                                modifier = itemModifier
+                            )
+                        }
                     }
                 }
             }
@@ -245,7 +264,8 @@ fun PeopleTab(
         ModalBottomSheet(
             onDismissRequest = { showGroupPicker = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             GroupAssignSheet(
                 title = pluralStringResource(R.plurals.people_add_to_group_title, selectedIds.size, selectedIds.size),
@@ -277,7 +297,8 @@ private fun PersonListRow(
     selectionMode: Boolean,
     selectedIds: MutableList<String>,
     onPersonClick: (String) -> Unit,
-    onToggleStar: (String) -> Unit
+    onToggleStar: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val personTasks = remember(tasksByPerson, person.id) {
         tasksByPerson[person.id] ?: emptyList()
@@ -299,8 +320,32 @@ private fun PersonListRow(
                 onPersonClick(person.id)
             }
         },
-        onToggleStar = { onToggleStar(person.id) }
+        onToggleStar = { onToggleStar(person.id) },
+        modifier = modifier
     )
+}
+
+@Composable
+private fun PersonRowGroup(
+    row: List<Person>,
+    useWideLayout: Boolean,
+    content: @Composable (Person, Modifier) -> Unit
+) {
+    if (!useWideLayout) {
+        content(row.first(), Modifier.fillMaxWidth())
+        return
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        row.forEach { person ->
+            content(person, Modifier.weight(1f))
+        }
+        if (row.size == 1) {
+            Spacer(modifier = Modifier.weight(1f))
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)

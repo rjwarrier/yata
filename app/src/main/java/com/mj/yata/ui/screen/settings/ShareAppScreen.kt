@@ -4,11 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.mj.yata.R
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.util.export.exportsDir
 import java.io.File
 
@@ -70,9 +73,15 @@ fun ShareAppScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) {
             )
         }
     ) { padding ->
+        AdaptiveContentBox(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(padding)
+        ) {
         Column(
             modifier = Modifier
-                .padding(padding)
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -139,6 +148,7 @@ fun ShareAppScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) {
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(stringResource(R.string.share_app_button, stringResource(R.string.app_name)))
             }
+        }
         }
     }
 }

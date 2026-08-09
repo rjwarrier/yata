@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mj.yata.R
 import com.mj.yata.domain.model.AppLanguage
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
 
@@ -147,7 +148,8 @@ private fun LanguagePickerSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
+        sheetMaxWidth = rememberAdaptiveSheetMaxWidth()
     ) {
         Column(
             modifier = Modifier

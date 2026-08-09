@@ -48,8 +48,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
-import com.mj.yata.ui.screen.main.CustomBottomNav
+import com.mj.yata.ui.screen.main.AdaptiveBottomNav
 import com.mj.yata.ui.screen.main.MainViewModel
+import com.mj.yata.ui.util.AdaptiveContentBox
 
 private data class HelpSection(
     @androidx.annotation.StringRes val title: Int,
@@ -206,7 +207,7 @@ fun HelpAboutScreen(
 
     Scaffold(
         bottomBar = {
-            CustomBottomNav(
+            AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -235,11 +236,15 @@ fun HelpAboutScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(horizontal = 20.dp),
             contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -256,6 +261,7 @@ fun HelpAboutScreen(
                 HelpSectionCard(section = section)
             }
 
+        }
         }
     }
 }

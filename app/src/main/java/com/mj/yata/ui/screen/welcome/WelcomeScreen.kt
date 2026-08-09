@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.ui.util.AdaptiveContentBox
 import kotlinx.coroutines.launch
 
 private data class WelcomePage(
@@ -110,6 +111,7 @@ fun WelcomeScreen(onFinish: () -> Unit) {
                 modifier = Modifier.weight(1f)
             ) { page ->
                 val item = pages[page]
+                AdaptiveContentBox {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -145,6 +147,7 @@ fun WelcomeScreen(onFinish: () -> Unit) {
                         textAlign = TextAlign.Center
                     )
                 }
+                }
             }
 
             Row(
@@ -176,21 +179,27 @@ fun WelcomeScreen(onFinish: () -> Unit) {
                 }
             }
 
-            Button(
-                onClick = {
-                    if (pagerState.currentPage < pages.lastIndex) {
-                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                    } else {
-                        onFinish()
-                    }
-                },
+            AdaptiveContentBox(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 24.dp)
-                    .height(52.dp)
+                    .height(76.dp)
             ) {
-                Text(if (pagerState.currentPage < pages.lastIndex) "Next" else "Get Started")
+                Button(
+                    onClick = {
+                        if (pagerState.currentPage < pages.lastIndex) {
+                            scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                        } else {
+                            onFinish()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 24.dp)
+                        .height(52.dp)
+                ) {
+                    Text(if (pagerState.currentPage < pages.lastIndex) "Next" else "Get Started")
+                }
             }
         }
     }

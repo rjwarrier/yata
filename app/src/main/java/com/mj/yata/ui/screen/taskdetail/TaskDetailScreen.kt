@@ -60,6 +60,9 @@ import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import java.util.UUID
 
 /** Equal-width rectangular (not pill-shaped) toggle for the Subtasks/Notes/Comments chip row —
@@ -149,6 +152,7 @@ fun TaskDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val useWideDetail = rememberAdaptiveLayoutInfo().isWide
 
     val accents = LocalYataAccents.current
 
@@ -254,7 +258,7 @@ fun TaskDetailScreen(
             SnackbarHost(snackbarHostState) { data -> YataSnackbar(data) }
         },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -405,16 +409,20 @@ fun TaskDetailScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            state = listState,
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 32.dp)
         ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 32.dp)
+            ) {
             // 1. Check + Title Row — tap the title to rename it in place. Also the one place
             // this screen recognizes inline #tag/@person mentions while editing (matching
             // NewTaskSheet's own title field) — previously silently ignored here entirely.
@@ -548,14 +556,96 @@ fun TaskDetailScreen(
 
             // 2. Meta rows — each its own surfaceContainerLow card (per handoff's MetaRow)
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                @Composable
+                fun CoreMetaRows(itemModifier: Modifier = Modifier) {
                     MetaRowItem(
                         icon = Icons.Default.Today,
                         label = stringResource(R.string.task_detail_due_date),
                         value = com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time),
                         accentColor = MaterialTheme.colorScheme.primary,
+                        modifier = itemModifier,
                         onClick = { activeSheet = DetailSheetType.ScheduleEditor }
                     )
+
+                    // Only shown once a start date exists. An always-present "No start date" row
+                    // would put a field most tasks never use above Reminder and Repeat, which
+                    // nearly all of them do — it's set from the schedule editor instead.
+                    if (task.startDate != null) {
+                        MetaRowItem(
+                            icon = Icons.Default.EventAvailable,
+                            label = stringResource(R.string.task_start_date),
+                            value = com.mj.yata.util.TaskScheduleUtils.formatDueDate(task.startDate),
+                            accentColor = MaterialTheme.colorScheme.secondary,
+                            modifier = itemModifier,
+                            onClick = { activeSheet = DetailSheetType.ScheduleEditor }
+                        )
+                    }
+
+                    MetaRowItem(
+                        icon = Icons.Default.Notifications,
+                        label = stringResource(R.string.task_detail_reminder),
+                        value = com.mj.yata.util.TaskScheduleUtils.formatReminder(task.reminder),
+                        accentColor = if (task.reminder != null) MaterialTheme.colorScheme.secondary else null,
+                        modifier = itemModifier,
+                        onClick = { activeSheet = DetailSheetType.ReminderPicker }
+                    )
+
+                    val repeatsVal = task.recurrence?.let {
+                        com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)
+                    } ?: "Does not repeat"
+                    MetaRowItem(
+                        icon = Icons.Default.Repeat,
+                        label = stringResource(R.string.task_detail_repeats),
+                        value = repeatsVal,
+                        accentColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else null,
+                        modifier = itemModifier,
+                        onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
+                    )
+                    if (projectsFeatureEnabled) {
+                        MetaRowItem(
+                            icon = Icons.Default.Layers,
+                            label = stringResource(R.string.entity_project),
+                            value = project?.name ?: stringResource(R.string.task_detail_none),
+                            modifier = itemModifier,
+                            onClick = { activeSheet = DetailSheetType.ProjectPicker }
+                        )
+                    }
+
+                    MetaRowItem(
+                        icon = Icons.Default.Folder,
+                        label = stringResource(R.string.entity_list),
+                        value = taskList?.name ?: stringResource(R.string.task_detail_none),
+                        swatchColor = listColor,
+                        modifier = itemModifier,
+                        onClick = { activeSheet = DetailSheetType.ListPicker }
+                    )
+
+                    // Priority
+                    MetaRowItem(
+                        icon = Icons.Default.Flag,
+                        label = stringResource(R.string.new_task_priority),
+                        value = task.priority.uppercase(),
+                        rightContent = { PriorityBars(priority = task.priority) },
+                        modifier = itemModifier,
+                        onClick = { viewModel.cycleTaskPriority(task.id) }
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (useWideDetail) {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            maxItemsInEachRow = 2
+                        ) {
+                            CoreMetaRows(Modifier.weight(1f))
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            CoreMetaRows()
+                        }
+                    }
 
                     // Carry forward — only makes sense for an open task that's already due
                     // today or overdue, not one that's done or scheduled for the future.
@@ -579,38 +669,6 @@ fun TaskDetailScreen(
                             showCheck = false
                         )
                     }
-
-                    // Only shown once a start date exists. An always-present "No start date" row
-                    // would put a field most tasks never use above Reminder and Repeat, which
-                    // nearly all of them do — it's set from the schedule editor instead.
-                    if (task.startDate != null) {
-                        MetaRowItem(
-                            icon = Icons.Default.EventAvailable,
-                            label = stringResource(R.string.task_start_date),
-                            value = com.mj.yata.util.TaskScheduleUtils.formatDueDate(task.startDate),
-                            accentColor = MaterialTheme.colorScheme.secondary,
-                            onClick = { activeSheet = DetailSheetType.ScheduleEditor }
-                        )
-                    }
-
-                    MetaRowItem(
-                        icon = Icons.Default.Notifications,
-                        label = stringResource(R.string.task_detail_reminder),
-                        value = com.mj.yata.util.TaskScheduleUtils.formatReminder(task.reminder),
-                        accentColor = if (task.reminder != null) MaterialTheme.colorScheme.secondary else null,
-                        onClick = { activeSheet = DetailSheetType.ReminderPicker }
-                    )
-
-                    val repeatsVal = task.recurrence?.let {
-                        com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)
-                    } ?: "Does not repeat"
-                    MetaRowItem(
-                        icon = Icons.Default.Repeat,
-                        label = stringResource(R.string.task_detail_repeats),
-                        value = repeatsVal,
-                        accentColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else null,
-                        onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
-                    )
 
                     // Reliable streak (linked via TaskEntity.seriesId, not the title-heuristic
                     // recurrenceHistory below) — only counts completions since seriesId tracking
@@ -666,32 +724,6 @@ fun TaskDetailScreen(
                             }
                         }
                     }
-
-                    if (projectsFeatureEnabled) {
-                        MetaRowItem(
-                            icon = Icons.Default.Layers,
-                            label = stringResource(R.string.entity_project),
-                            value = project?.name ?: stringResource(R.string.task_detail_none),
-                            onClick = { activeSheet = DetailSheetType.ProjectPicker }
-                        )
-                    }
-
-                    MetaRowItem(
-                        icon = Icons.Default.Folder,
-                        label = stringResource(R.string.entity_list),
-                        value = taskList?.name ?: stringResource(R.string.task_detail_none),
-                        swatchColor = listColor,
-                        onClick = { activeSheet = DetailSheetType.ListPicker }
-                    )
-
-                    // Priority
-                    MetaRowItem(
-                        icon = Icons.Default.Flag,
-                        label = stringResource(R.string.new_task_priority),
-                        value = task.priority.uppercase(),
-                        rightContent = { PriorityBars(priority = task.priority) },
-                        onClick = { viewModel.cycleTaskPriority(task.id) }
-                    )
                 }
             }
 
@@ -1264,6 +1296,7 @@ fun TaskDetailScreen(
                 }
             }
         }
+        }
     }
 
     // Sheets Router
@@ -1271,7 +1304,8 @@ fun TaskDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { activeSheet = DetailSheetType.None },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = rememberAdaptiveSheetMaxWidth()
         ) {
             when (activeSheet) {
                 DetailSheetType.ScheduleEditor -> {

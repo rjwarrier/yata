@@ -34,6 +34,7 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -62,7 +63,7 @@ fun TrashScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -103,12 +104,15 @@ fun TrashScreen(
             )
         }
     ) { innerPadding ->
+        AdaptiveContentBox(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(innerPadding)
+        ) {
         if (deletedTasks.isEmpty()) {
             Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -119,10 +123,7 @@ fun TrashScreen(
             }
         } else {
             LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -165,6 +166,7 @@ fun TrashScreen(
                     )
                 }
             }
+        }
         }
     }
 

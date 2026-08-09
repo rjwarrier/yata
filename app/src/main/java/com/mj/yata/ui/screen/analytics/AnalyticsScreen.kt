@@ -49,6 +49,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
 
 /**
  * Every number on this screen is about some set of tasks, and until now none of them said *which*.
@@ -117,7 +118,7 @@ fun AnalyticsScreen(
 
     Scaffold(
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -176,11 +177,15 @@ fun AnalyticsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -589,6 +594,8 @@ fun AnalyticsScreen(
     }
 }
 
+}
+
 @Composable
 private fun InsightChip(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -631,7 +638,6 @@ private fun InsightChip(
         }
     }
 }
-
 /** The direction a headline figure moved, coloured by whether that direction is good for *this*
  * metric — which is why the judgement travels in [com.mj.yata.util.MetricTrend] rather than being
  * inferred from the sign here. */

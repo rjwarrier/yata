@@ -47,6 +47,7 @@ import com.mj.yata.data.local.operationhistory.OperationStatus
 import com.mj.yata.notification.NotificationHelper
 import com.mj.yata.notification.NotificationPermissionUtils
 import com.mj.yata.ui.screen.main.MainViewModel
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.widget.resolveNotificationAccentColor
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -124,10 +125,13 @@ fun CrashLogScreen(
             )
         }
     ) { padding ->
-        LazyColumn(
+        AdaptiveContentBox(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+        ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -196,6 +200,7 @@ fun CrashLogScreen(
                     }
                 )
             }
+        }
         }
     }
 

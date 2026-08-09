@@ -158,6 +158,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.BuildConfig
 import com.mj.yata.BuildInfo
 import com.mj.yata.ui.theme.BodoniModaFamily
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 
 private data class SettingsSearchTarget(
     val key: String,
@@ -486,6 +488,7 @@ fun SettingsScreen(
             settingsHubDestinations.firstOrNull { it.destination == destination }?.title
         } ?: stringResource(R.string.settings_settings)
     val isSettingsRoot = settingsDestination == null
+    val useWideSettings = rememberAdaptiveLayoutInfo().isWide
     var pickedPhotoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
@@ -508,7 +511,7 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
             if (isSettingsRoot) {
-                com.mj.yata.ui.screen.main.CustomBottomNav(
+                com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                     selectedTab = -1,
                     todayBadgeCount = todayBadgeCount,
                     peopleEnabled = peopleFeatureEnabled,
@@ -555,16 +558,20 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            state = settingsListState,
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            LazyColumn(
+                state = settingsListState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp),
+                contentPadding = PaddingValues(top = 20.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
             if (isSettingsRoot) {
                 item(key = "settings_search") {
                     SettingsSearchField(
@@ -725,13 +732,35 @@ fun SettingsScreen(
                     }
                 }
             }
-            items(settingsHubDestinations, key = { it.destination.routeSegment }) { target ->
-                SettingsDestinationCard(
-                    icon = target.icon,
-                    title = target.title,
-                    summary = target.summary,
-                    onClick = { onNavigateToSettingsDestination(target.destination) }
-                )
+            if (useWideSettings) {
+                items(settingsHubDestinations.chunked(2), key = { row -> row.joinToString { it.destination.routeSegment } }) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        row.forEach { target ->
+                            SettingsDestinationCard(
+                                icon = target.icon,
+                                title = target.title,
+                                summary = target.summary,
+                                onClick = { onNavigateToSettingsDestination(target.destination) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (row.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            } else {
+                items(settingsHubDestinations, key = { it.destination.routeSegment }) { target ->
+                    SettingsDestinationCard(
+                        icon = target.icon,
+                        title = target.title,
+                        summary = target.summary,
+                        onClick = { onNavigateToSettingsDestination(target.destination) }
+                    )
+                }
             }
             }
         if (settingsDestination == SettingsDestination.APPEARANCE_DISPLAY) {
@@ -2908,7 +2937,6 @@ fun SettingsScreen(
                 GitHubAndShareRow(onNavigateToShareApp = onNavigateToShareApp, modifier = Modifier.fillMaxWidth())
             }
         }
-        }
     }
 }
 
@@ -3546,6 +3574,10 @@ fun SettingsScreen(
     }
 }
 
+}
+
+}
+
 private fun formatRelativeBackupTime(epochMillis: Long?): String {
     if (epochMillis == null) return "never"
     val diffMs = System.currentTimeMillis() - epochMillis
@@ -3650,7 +3682,6 @@ private fun BackupDiffTaskSection(label: String, titles: List<String>, totalCoun
         }
     }
 }
-
 @Composable
 private fun AboutYataCard(
     demoModeEnabled: Boolean,
@@ -4017,12 +4048,13 @@ private fun SettingsDestinationCard(
     icon: ImageVector,
     title: String,
     summary: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {

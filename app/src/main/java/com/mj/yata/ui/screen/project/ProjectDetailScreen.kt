@@ -58,6 +58,8 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -180,6 +182,7 @@ fun ProjectDetailScreen(
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     val totalTasks = projectTasks.size
     val doneTasks = projectTasks.count { it.done }
@@ -204,7 +207,7 @@ fun ProjectDetailScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = 1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -432,11 +435,14 @@ fun ProjectDetailScreen(
         }
     ) { innerPadding ->
         val listsById = remember(lists) { lists.associateBy { it.id } }
-        Column(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
             // 1. Hero section — icon tile + stats + assignees, with overdue/high-priority/
             // due-today alongside the completed count. All derived from projectTasks (not
@@ -679,13 +685,15 @@ fun ProjectDetailScreen(
                 ) { task -> taskRowFor(task) }
             }
         }
+        }
     }
 
     pendingMoveTask?.let { task ->
         ModalBottomSheet(
             onDismissRequest = { pendingMoveTask = null },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskMoveToPickerSheet(
                 lists = lists,
@@ -717,7 +725,8 @@ fun ProjectDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkTagPickerSheet(
                 tags = tags,
@@ -735,7 +744,8 @@ fun ProjectDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkAssignPersonSheet(
                 people = people,
@@ -755,7 +765,8 @@ fun ProjectDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkMoveSheet(
                 projects = projects,
@@ -780,7 +791,8 @@ fun ProjectDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             TaskBulkRescheduleSheet(
                 onSelectPreset = { preset ->
@@ -877,7 +889,8 @@ fun ProjectDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isNewTaskSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             NewTaskSheet(
                 lists = lists,
@@ -917,7 +930,8 @@ fun ProjectDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isManageSectionsSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             ManageSectionsSheet(
                 initialSections = project.sectionNames,
@@ -934,7 +948,8 @@ fun ProjectDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { isEditSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             ProjectEditorSheet(
                 initialName = project.name,

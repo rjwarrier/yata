@@ -78,6 +78,7 @@ import androidx.core.content.ContextCompat
 import com.mj.yata.R
 import com.mj.yata.data.voice.OnDeviceVoiceRecognizer
 import com.mj.yata.data.voice.VoiceState
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.ParsedQuickAdd
 import kotlin.math.PI
@@ -144,6 +145,7 @@ fun VoiceTaskOverlay(
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        sheetMaxWidth = rememberAdaptiveSheetMaxWidth(),
         modifier = modifier
     ) {
         Column(

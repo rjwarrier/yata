@@ -49,8 +49,10 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.SegmentedControl
+import com.mj.yata.ui.widgets.TaskPreviewPane
 import com.mj.yata.ui.widgets.TaskRow
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -83,6 +85,7 @@ fun UpcomingTab(
     onSelectedDayChange: (LocalDate) -> Unit,
     startOfWeekSunday: Boolean = true,
     onMenuClick: () -> Unit,
+    showMenuButton: Boolean = true,
     onSearchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onTaskClick: (String) -> Unit,
@@ -103,6 +106,7 @@ fun UpcomingTab(
     tagsEnabled: Boolean = true,
     projectsEnabled: Boolean = true,
     taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    useWideLayout: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -113,6 +117,8 @@ fun UpcomingTab(
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
+    var previewTaskId by remember { mutableStateOf<String?>(null) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     var viewMode by remember { mutableStateOf(ScheduleViewMode.WEEK) }
     val today = com.mj.yata.util.AppClock.today
@@ -181,6 +187,16 @@ fun UpcomingTab(
     val selectedDayTasks = remember(tasksByDate, selectedDay, selectedFilter, myId) {
         applyFilter(tasksByDate[selectedDay.toString()].orEmpty())
     }
+    val previewTask = remember(selectedDayTasks, previewTaskId) {
+        selectedDayTasks.find { it.id == previewTaskId }
+    }
+    LaunchedEffect(selectedDayTasks, useWideLayout) {
+        if (!useWideLayout) {
+            previewTaskId = null
+        } else if (previewTaskId != null && selectedDayTasks.none { it.id == previewTaskId }) {
+            previewTaskId = selectedDayTasks.firstOrNull()?.id
+        }
+    }
 
     val isSelectedToday = selectedDay == today
     val agendaLabel = remember(selectedDay) {
@@ -217,14 +233,16 @@ fun UpcomingTab(
                     .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                com.mj.yata.ui.widgets.YataTopBarIconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = stringResource(R.string.cd_open_drawer)
-                    )
+                if (showMenuButton) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = stringResource(R.string.cd_open_drawer)
+                        )
+                    }
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -292,14 +310,58 @@ fun UpcomingTab(
             }
         }
 
-        // 2. Upcoming / Calendar segmented control
-        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
-            SegmentedControl(
-                items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
-                selectedItem = viewMode,
-                onItemSelected = { viewMode = it },
-                labelProvider = { if (it == ScheduleViewMode.WEEK) upcomingModeLabel else calendarModeLabel }
-            )
+        // 2. Upcoming / Calendar controls. On tablets, the mode switch and agenda filters share
+        // one row so the selected day's tasks start higher and the extra width does useful work.
+        if (useWideLayout && !selectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SegmentedControl(
+                    items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
+                    selectedItem = viewMode,
+                    onItemSelected = { viewMode = it },
+                    labelProvider = { if (it == ScheduleViewMode.WEEK) upcomingModeLabel else calendarModeLabel },
+                    modifier = Modifier.weight(0.7f)
+                )
+                Row(
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    listOfNotNull(
+                        UpcomingTaskFilter.ALL,
+                        if (peopleEnabled) UpcomingTaskFilter.ASSIGNED_TO_ME else null,
+                        if (peopleEnabled) UpcomingTaskFilter.DELEGATED else null,
+                        UpcomingTaskFilter.HIGH_PRIORITY
+                    ).forEach { filter ->
+                        val isSelected = filter == selectedFilter
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedFilter = filter },
+                            label = { Text(text = upcomingTaskFilterLabel(filter)) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        )
+                    }
+                }
+            }
+        } else {
+            Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
+                SegmentedControl(
+                    items = listOf(ScheduleViewMode.WEEK, ScheduleViewMode.MONTH),
+                    selectedItem = viewMode,
+                    onItemSelected = { viewMode = it },
+                    labelProvider = { if (it == ScheduleViewMode.WEEK) upcomingModeLabel else calendarModeLabel }
+                )
+            }
         }
 
         // 3. Day strip (Upcoming) or month grid (Calendar) — both slide up on mode switch
@@ -436,6 +498,7 @@ fun UpcomingTab(
         )
 
         // 3.5 Filter chips — same set as Today, scoped to the agenda for the selected day
+        if (!useWideLayout || selectionMode) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -461,6 +524,7 @@ fun UpcomingTab(
                     )
                 )
             }
+        }
         }
 
         val peopleById = remember(people) { people.associateBy { it.id } }
@@ -516,8 +580,9 @@ fun UpcomingTab(
                     }
                 }
 
+                Row(modifier = Modifier.weight(1f)) {
                 LazyColumn(
-                    modifier = Modifier.weight(1f),
+                    modifier = if (useWideLayout && !selectionMode) Modifier.weight(1f) else Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) {
                     if (dayTasks.isEmpty()) {
@@ -541,6 +606,8 @@ fun UpcomingTab(
                                 onTaskClick = {
                                     if (selectionMode) {
                                         if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                                    } else if (useWideLayout) {
+                                        previewTaskId = task.id
                                     } else {
                                         onTaskClick(task.id)
                                     }
@@ -559,6 +626,23 @@ fun UpcomingTab(
                         }
                     }
                 }
+                if (useWideLayout && !selectionMode) {
+                    VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    TaskPreviewPane(
+                        task = previewTask,
+                        list = previewTask?.listId?.let { listsById[it] },
+                        project = previewTask?.projectId?.let { projectsById[it] },
+                        people = previewTask?.assigneeIds?.mapNotNull { peopleById[it] }.orEmpty(),
+                        tags = previewTask?.effectiveTags(projectsById, tagsById).orEmpty(),
+                        onOpenTask = onTaskClick,
+                        onToggleTask = { task -> onToggleDone(task.id) },
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .widthIn(min = 320.dp, max = 380.dp),
+                        emptySubtitle = "Preview the selected day's tasks without leaving the planner."
+                    )
+                }
+                }
             }
         }
     }
@@ -567,7 +651,8 @@ fun UpcomingTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
@@ -585,7 +670,8 @@ fun UpcomingTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
                 people = people,
@@ -605,7 +691,8 @@ fun UpcomingTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkMoveSheet(
                 projects = projects,
@@ -630,7 +717,8 @@ fun UpcomingTab(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkRescheduleSheet(
                 onSelectPreset = { preset ->

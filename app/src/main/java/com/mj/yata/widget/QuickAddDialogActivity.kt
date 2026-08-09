@@ -311,6 +311,7 @@ private fun QuickAddDialogContent(
             modifier = Modifier
                 .padding(horizontal = 24.dp)
                 .fillMaxWidth()
+                .widthIn(max = 560.dp)
                 .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { /* swallow — don't dismiss */ },
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,

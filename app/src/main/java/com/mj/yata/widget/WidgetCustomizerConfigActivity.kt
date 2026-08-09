@@ -45,6 +45,7 @@ import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.ui.theme.ALL_ACCENT_KEYS
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataTheme
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
@@ -385,11 +386,8 @@ private fun WidgetCustomizerScreen(
             TopAppBar(title = { Text(stringResource(R.string.widget_config_widget_customizer), fontWeight = FontWeight.Bold) })
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+        AdaptiveContentBox(modifier = Modifier.padding(innerPadding), contentMaxWidth = 760.dp) {
+            Column(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -701,6 +699,7 @@ private fun WidgetCustomizerScreen(
             ) {
                 Text(stringResource(R.string.widget_config_save_changes), fontWeight = FontWeight.Bold)
             }
+        }
         }
     }
 }

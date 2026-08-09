@@ -24,6 +24,7 @@ import com.mj.yata.R
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
 import kotlinx.coroutines.launch
 
 /**
@@ -54,7 +55,7 @@ fun ArchiveScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) } },
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = -1,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -84,12 +85,15 @@ fun ArchiveScreen(
             )
         }
     ) { innerPadding ->
+        AdaptiveContentBox(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(innerPadding)
+        ) {
         if (archivedTasks.isEmpty()) {
             Box(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -113,10 +117,7 @@ fun ArchiveScreen(
             }
         } else {
             LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -173,6 +174,7 @@ fun ArchiveScreen(
                     }
                 }
             }
+        }
         }
     }
 }

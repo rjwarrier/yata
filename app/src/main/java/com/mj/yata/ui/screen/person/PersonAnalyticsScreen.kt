@@ -61,6 +61,7 @@ import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.StatusBarColor
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.SegmentedControl
@@ -163,7 +164,7 @@ fun PersonAnalyticsScreen(
     StatusBarColor(personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background))
     Scaffold(
         bottomBar = {
-            com.mj.yata.ui.screen.main.CustomBottomNav(
+            com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                 selectedTab = 2,
                 todayBadgeCount = todayBadgeCount,
                 peopleEnabled = peopleFeatureEnabled,
@@ -205,11 +206,15 @@ fun PersonAnalyticsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
@@ -361,6 +366,7 @@ fun PersonAnalyticsScreen(
                     )
                 }
             }
+        }
         }
     }
 }

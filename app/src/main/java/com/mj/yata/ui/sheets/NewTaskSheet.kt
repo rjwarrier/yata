@@ -53,6 +53,7 @@ import androidx.compose.material.icons.filled.Mic
 import com.mj.yata.R
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.PressableScaleBox
 import com.mj.yata.util.findBestEntityMatch
 import com.mj.yata.util.toProperCase
@@ -1618,7 +1619,8 @@ fun NewTaskSheet(
 
     if (showRecurrenceSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showRecurrenceSheet = false }
+            onDismissRequest = { showRecurrenceSheet = false },
+            sheetMaxWidth = rememberAdaptiveSheetMaxWidth()
         ) {
             RecurrenceSheet(
                 initialRecurrence = selectedRecurrence,

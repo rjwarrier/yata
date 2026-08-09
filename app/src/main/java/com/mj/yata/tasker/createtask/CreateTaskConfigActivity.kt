@@ -33,6 +33,7 @@ import com.joaomgcd.taskerpluginlibrary.config.TaskerPluginConfigHelperNoOutput
 import com.joaomgcd.taskerpluginlibrary.input.TaskerInput
 import com.mj.yata.R
 import com.mj.yata.ui.theme.YataTheme
+import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.YataFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
@@ -109,31 +110,32 @@ class CreateTaskConfigActivity : ComponentActivity(), TaskerPluginConfig<CreateT
                         )
                     }
                 ) { innerPadding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .verticalScroll(rememberScrollState())
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.tasker_create_task_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        LabeledField("Title *", title) { title = it }
-                        LabeledField("Project (name)", project) { project = it }
-                        LabeledField("List (name)", list) { list = it }
-                        LabeledField("Tags (comma-separated)", tags) { tags = it }
-                        LabeledField("Assign to (comma-separated names)", assignees) { assignees = it }
-                        LabeledField("Due (e.g. 2026-07-10, tomorrow, next monday)", due) { due = it }
-                        LabeledField("Time (e.g. 3:00 PM, 15:00, evening)", time) { time = it }
-                        LabeledField("Reminder (e.g. 15 min before)", reminder) { reminder = it }
-                        LabeledField("Priority (none, low, med, high)", priority) { priority = it }
-                        LabeledField("Section (Morning or Afternoon)", section) { section = it }
-                        LabeledField("Repeat (e.g. daily, every monday, every 2 weeks)", repeat) { repeat = it }
-                        LabeledField("Notes", notes, singleLine = false) { notes = it }
+                    AdaptiveContentBox(modifier = Modifier.padding(innerPadding), contentMaxWidth = 720.dp) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.tasker_create_task_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            LabeledField("Title *", title) { title = it }
+                            LabeledField("Project (name)", project) { project = it }
+                            LabeledField("List (name)", list) { list = it }
+                            LabeledField("Tags (comma-separated)", tags) { tags = it }
+                            LabeledField("Assign to (comma-separated names)", assignees) { assignees = it }
+                            LabeledField("Due (e.g. 2026-07-10, tomorrow, next monday)", due) { due = it }
+                            LabeledField("Time (e.g. 3:00 PM, 15:00, evening)", time) { time = it }
+                            LabeledField("Reminder (e.g. 15 min before)", reminder) { reminder = it }
+                            LabeledField("Priority (none, low, med, high)", priority) { priority = it }
+                            LabeledField("Section (Morning or Afternoon)", section) { section = it }
+                            LabeledField("Repeat (e.g. daily, every monday, every 2 weeks)", repeat) { repeat = it }
+                            LabeledField("Notes", notes, singleLine = false) { notes = it }
+                        }
                     }
                 }
             }

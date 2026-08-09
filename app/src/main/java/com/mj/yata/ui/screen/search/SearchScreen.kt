@@ -39,6 +39,10 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
+import com.mj.yata.ui.widgets.TaskPreviewPane
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** One-tap filters shown before/alongside a text query — each is a self-contained predicate so
@@ -265,6 +269,10 @@ fun SearchScreen(
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    var previewTaskId by remember { mutableStateOf<String?>(null) }
+    val adaptiveLayout = rememberAdaptiveLayoutInfo()
+    val useWideSearch = adaptiveLayout.isWide
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
     var includeArchived by remember { mutableStateOf(false) }
     var includeTrash by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -330,6 +338,16 @@ fun SearchScreen(
             }
         }
     }
+    val previewTask = remember(filteredTasks, previewTaskId) {
+        filteredTasks.find { it.id == previewTaskId }
+    }
+    LaunchedEffect(filteredTasks, useWideSearch) {
+        if (!useWideSearch) {
+            previewTaskId = null
+        } else if (previewTaskId != null && filteredTasks.none { it.id == previewTaskId }) {
+            previewTaskId = filteredTasks.firstOrNull()?.id
+        }
+    }
 
     fun toggleTaskWithUndo(task: Task) {
         viewModel.toggleTaskDone(task.id) {}
@@ -361,7 +379,7 @@ fun SearchScreen(
                 SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
             },
             bottomBar = {
-                com.mj.yata.ui.screen.main.CustomBottomNav(
+                com.mj.yata.ui.screen.main.AdaptiveBottomNav(
                     selectedTab = -1,
                     todayBadgeCount = todayBadgeCount,
                     peopleEnabled = peopleFeatureEnabled,
@@ -389,6 +407,12 @@ fun SearchScreen(
                 )
             }
         ) { innerPadding ->
+            AdaptiveContentBox(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(innerPadding)
+            ) {
             SearchResultsList(
                 query = query,
                 activeFilters = activeFilters,
@@ -429,13 +453,13 @@ fun SearchScreen(
                 onToggleTask = ::toggleTaskWithUndo,
                 onSwipeToDelete = ::deleteTaskWithUndo,
                 tagsEnabled = tagsFeatureEnabled,
-                peopleEnabled = peopleFeatureEnabled,
-                modifier = modifier.padding(innerPadding)
+                peopleEnabled = peopleFeatureEnabled
             )
+            }
         }
     } else {
         // M3 SearchBar, permanently expanded since this is a dedicated search destination.
-        Box(
+        AdaptiveContentBox(
             modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -465,7 +489,67 @@ fun SearchScreen(
                     }
                 }
             ) {
-                SearchResultsList(
+                if (useWideSearch) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        SearchResultsList(
+                            query = query,
+                            activeFilters = activeFilters,
+                            onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
+                            savedSmartFilterSets = savedSmartFilterSets,
+                            canSaveCurrentSmartFilterSet = canSaveCurrentSmartFilterSet,
+                            onSaveActiveFilters = { viewModel.saveSmartFilterSet(currentSmartFilterSet) },
+                            onApplySavedFilter = { encoded ->
+                                activeFilters.clear()
+                                activeFilters.addAll(encoded.toSmartFilters())
+                            },
+                            onRemoveSavedFilter = { encoded -> viewModel.removeSmartFilterSet(encoded) },
+                            onClearSearchFilters = {
+                                query = ""
+                                activeFilters.clear()
+                                includeArchived = false
+                                includeTrash = false
+                            },
+                            includeArchived = includeArchived,
+                            includeTrash = includeTrash,
+                            onToggleIncludeArchived = { includeArchived = !includeArchived },
+                            onToggleIncludeTrash = { includeTrash = !includeTrash },
+                            filteredTasks = filteredTasks,
+                            lists = lists,
+                            projects = projects,
+                            tags = tags,
+                            listsById = listsById,
+                            peopleById = peopleById,
+                            projectsById = projectsById,
+                            tagsById = tagsById,
+                            archivedTaskIds = archivedTaskIds,
+                            deletedTaskIds = deletedTaskIds,
+                            archivedProjectIds = archivedProjectIds,
+                            viewModel = viewModel,
+                            selectionMode = selectionMode,
+                            selectedIds = selectedIds,
+                            onTaskClick = { previewTaskId = it },
+                            onToggleTask = ::toggleTaskWithUndo,
+                            onSwipeToDelete = ::deleteTaskWithUndo,
+                            tagsEnabled = tagsFeatureEnabled,
+                            peopleEnabled = peopleFeatureEnabled,
+                            modifier = Modifier.weight(1f)
+                        )
+                        VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        TaskPreviewPane(
+                            task = previewTask,
+                            list = previewTask?.listId?.let { listsById[it] },
+                            project = previewTask?.projectId?.let { projectsById[it] },
+                            people = previewTask?.assigneeIds?.mapNotNull { peopleById[it] }.orEmpty(),
+                            tags = previewTask?.effectiveTags(projectsById, tagsById).orEmpty(),
+                            onOpenTask = { taskId -> onNavigateToTaskDetail(taskId) },
+                            onToggleTask = { task -> toggleTaskWithUndo(task) },
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .widthIn(min = 320.dp, max = 380.dp)
+                        )
+                    }
+                } else {
+                    SearchResultsList(
                     query = query,
                     activeFilters = activeFilters,
                     onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
@@ -507,6 +591,7 @@ fun SearchScreen(
                     tagsEnabled = tagsFeatureEnabled,
                     peopleEnabled = peopleFeatureEnabled
                 )
+                }
             }
         }
     }
@@ -515,7 +600,8 @@ fun SearchScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkTagSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkTagPickerSheet(
                 tags = tags,
@@ -533,7 +619,8 @@ fun SearchScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkAssignSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkAssignPersonSheet(
                 people = people,
@@ -553,7 +640,8 @@ fun SearchScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkMoveSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkMoveSheet(
                 projects = projects,
@@ -578,7 +666,8 @@ fun SearchScreen(
         ModalBottomSheet(
             onDismissRequest = { showBulkRescheduleSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             com.mj.yata.ui.sheets.TaskBulkRescheduleSheet(
                 onSelectPreset = { preset ->

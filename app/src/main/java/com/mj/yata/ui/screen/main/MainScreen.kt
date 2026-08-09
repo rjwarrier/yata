@@ -67,6 +67,8 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.PressableScaleBox
 import com.mj.yata.ui.widgets.YataCompactFieldShape
@@ -115,6 +117,8 @@ fun MainScreen(
     val lastSyncSucceeded by viewModel.lastSyncSucceeded.collectAsStateWithLifecycle()
     val syncProgress by viewModel.syncProgress.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val adaptiveLayout = rememberAdaptiveLayoutInfo()
+    val useWideNavigation = adaptiveLayout.isWide
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
@@ -280,6 +284,7 @@ fun MainScreen(
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -588,7 +593,25 @@ fun MainScreen(
             }
         }
     ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (useWideNavigation) {
+                MainNavigationRail(
+                    selectedTab = selectedTab,
+                    todayBadgeCount = todayBadgeCount,
+                    peopleEnabled = peopleFeatureEnabled,
+                    tagsEnabled = tagsFeatureEnabled,
+                    projectsEnabled = projectsFeatureEnabled,
+                    todayEnabled = todayTabEnabled,
+                    upcomingEnabled = upcomingTabEnabled,
+                    onTabSelected = { selectedTab = it },
+                    onMenuClick = { scope.launch { drawerState.open() } },
+                    onSearchClick = onNavigateToSearch,
+                    onSettingsClick = onNavigateToSettings
+                )
+                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
+            }
         Scaffold(
+            modifier = Modifier.weight(1f),
             snackbarHost = {
                 SnackbarHost(snackbarHostState) { data -> com.mj.yata.ui.widgets.YataSnackbar(data) }
             },
@@ -598,16 +621,18 @@ fun MainScreen(
                 androidx.compose.material3.FabPosition.End
             },
             bottomBar = {
-                CustomBottomNav(
-                    selectedTab = selectedTab,
-                    todayBadgeCount = todayBadgeCount,
-                    peopleEnabled = peopleFeatureEnabled,
-                    tagsEnabled = tagsFeatureEnabled,
-                    projectsEnabled = projectsFeatureEnabled,
-                    todayEnabled = todayTabEnabled,
-                    upcomingEnabled = upcomingTabEnabled,
-                    onTabSelected = { selectedTab = it }
-                )
+                if (!useWideNavigation) {
+                    CustomBottomNav(
+                        selectedTab = selectedTab,
+                        todayBadgeCount = todayBadgeCount,
+                        peopleEnabled = peopleFeatureEnabled,
+                        tagsEnabled = tagsFeatureEnabled,
+                        projectsEnabled = projectsFeatureEnabled,
+                        todayEnabled = todayTabEnabled,
+                        upcomingEnabled = upcomingTabEnabled,
+                        onTabSelected = { selectedTab = it }
+                    )
+                }
             },
             floatingActionButton = {
                 // Each tab offers its own primary creation action; others show no FAB.
@@ -696,8 +721,10 @@ fun MainScreen(
                             false
                         }
                     }
-                    .padding(bottom = innerPadding.calculateBottomPadding())
+                    .padding(bottom = innerPadding.calculateBottomPadding()),
+                contentAlignment = Alignment.TopCenter
             ) {
+                AdaptiveContentBox(contentMaxWidth = adaptiveLayout.contentMaxWidth) {
                 // Tab switcher with dynamic M3 slide-fade animations
                 androidx.compose.animation.AnimatedContent(
                     targetState = selectedTab,
@@ -728,6 +755,7 @@ fun MainScreen(
                             userName = userName,
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onNextDaysClick = onNavigateToNextDays,
                             onNewTaskClick = { activeSheet = MainSheetType.NewTask },
@@ -761,7 +789,8 @@ fun MainScreen(
                             syncProgress = syncProgress,
                             syncButtonEnabled = !syncInProgress,
                             onSyncClick = { runManualSync() },
-                            showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty
+                            showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty,
+                            useWideLayout = useWideNavigation
                         )
                         1 -> ProjectsTab(
                             projects = projects,
@@ -771,6 +800,7 @@ fun MainScreen(
                             userName = userName,
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onProjectClick = onNavigateToProjectDetail,
@@ -778,7 +808,8 @@ fun MainScreen(
                             onToggleProjectStar = { viewModel.toggleProjectStarred(it) },
                             onProjectsReordered = { viewModel.commitProjectOrder(it) },
                             onBulkArchiveProjects = { viewModel.bulkArchiveProjects(it) },
-                            peopleEnabled = peopleFeatureEnabled
+                            peopleEnabled = peopleFeatureEnabled,
+                            useWideLayout = useWideNavigation
                         )
                         2 -> PeopleTab(
                             people = people,
@@ -787,6 +818,7 @@ fun MainScreen(
                             userName = userName,
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onPersonClick = onNavigateToPersonDetail,
@@ -800,7 +832,8 @@ fun MainScreen(
                             onToggleStar = { viewModel.togglePersonStarred(it) },
                             onDeleteGroup = { viewModel.deletePersonGroup(it) },
                             sortMode = sortModePeopleTab,
-                            onSortModeChange = { viewModel.setSortModePeopleTab(it) }
+                            onSortModeChange = { viewModel.setSortModePeopleTab(it) },
+                            useWideLayout = useWideNavigation
                         )
                         3 -> TagsTab(
                             tags = tags,
@@ -811,6 +844,7 @@ fun MainScreen(
                             userName = userName,
                             userPhotoUri = userPhotoUri,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onTagClick = onNavigateToTagDetail,
@@ -820,7 +854,8 @@ fun MainScreen(
                             onBulkDeleteTags = { viewModel.bulkDeleteTags(it) },
                             tagsEnabled = tagsFeatureEnabled,
                             sortMode = sortModeTagsTab,
-                            onSortModeChange = { viewModel.setSortModeTagsTab(it) }
+                            onSortModeChange = { viewModel.setSortModeTagsTab(it) },
+                            useWideLayout = useWideNavigation
                         )
                         4 -> UpcomingTab(
                             tasks = tasks,
@@ -834,6 +869,8 @@ fun MainScreen(
                             onSelectedDayChange = { calendarSelectedDay = it },
                             startOfWeekSunday = startOfWeekSunday,
                             onMenuClick = { scope.launch { drawerState.open() } },
+                            showMenuButton = !useWideNavigation,
+                            useWideLayout = useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
@@ -857,8 +894,11 @@ fun MainScreen(
                         )
                     }
                 }
+                }
             }
         }
+        }
+    }
     }
 
     if (showCommandPalette) {
@@ -919,6 +959,15 @@ fun MainScreen(
                     decorFitsSystemWindows = false
                 )
             ) {
+                val newTaskSheetModifier = if (useWideNavigation) {
+                    Modifier.widthIn(max = 720.dp)
+                } else {
+                    Modifier
+                }
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = if (useWideNavigation) Alignment.Center else Alignment.TopStart
+                ) {
                 NewTaskSheet(
                     lists = lists,
                     projects = activeProjects,
@@ -956,15 +1005,18 @@ fun MainScreen(
                     voiceLanguage = voiceLanguage,
                     defaultDueDate = defaultDueDate,
                     defaultPriority = defaultPriority,
-                    onDraftStateChanged = { newTaskHasDraft = it }
+                    onDraftStateChanged = { newTaskHasDraft = it },
+                    modifier = newTaskSheetModifier
                 )
+                }
             }
         } else {
             ModalBottomSheet(
                 onDismissRequest = { activeSheet = MainSheetType.None },
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                 shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                sheetMaxWidth = if (useWideNavigation) 640.dp else BottomSheetDefaults.SheetMaxWidth
             ) {
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
@@ -1114,7 +1166,8 @@ fun MainScreen(
         ModalBottomSheet(
             onDismissRequest = { isNewListSheetOpen = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = if (useWideNavigation) 640.dp else BottomSheetDefaults.SheetMaxWidth
         ) {
             ListEditorSheet(
                 onSave = { name, color, icon, excludeFromToday ->
@@ -1317,6 +1370,112 @@ fun DrawerItem(
 
 
 private data class NavIcon(val id: Int, val label: String, val outlined: ImageVector, val filled: ImageVector)
+
+@Composable
+private fun MainNavigationRail(
+    selectedTab: Int,
+    todayBadgeCount: Int,
+    peopleEnabled: Boolean,
+    tagsEnabled: Boolean,
+    projectsEnabled: Boolean,
+    todayEnabled: Boolean,
+    upcomingEnabled: Boolean,
+    onTabSelected: (Int) -> Unit,
+    onMenuClick: () -> Unit,
+    onSearchClick: () -> Unit,
+    onSettingsClick: () -> Unit
+) {
+    val items = listOfNotNull(
+        if (todayEnabled) NavIcon(0, "Today", Icons.Outlined.Today, Icons.Filled.Today) else null,
+        if (projectsEnabled) NavIcon(1, "Projects", Icons.Outlined.Layers, Icons.Filled.Layers) else null,
+        if (peopleEnabled) NavIcon(2, "People", Icons.Outlined.People, Icons.Filled.People) else null,
+        if (tagsEnabled) NavIcon(3, "Tags", Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
+        if (upcomingEnabled) NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
+    )
+
+    NavigationRail(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(92.dp)
+            .statusBarsPadding(),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        header = {
+            IconButton(
+                onClick = onMenuClick,
+                modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = stringResource(R.string.cd_open_drawer)
+                )
+            }
+        }
+    ) {
+        items.forEach { navIcon ->
+            NavigationRailItem(
+                selected = navIcon.id == selectedTab,
+                onClick = { onTabSelected(navIcon.id) },
+                icon = {
+                    if (navIcon.id == 0 && todayBadgeCount > 0) {
+                        BadgedBox(badge = { Badge { Text(todayBadgeCount.coerceAtMost(99).toString()) } }) {
+                            Icon(
+                                imageVector = if (navIcon.id == selectedTab) navIcon.filled else navIcon.outlined,
+                                contentDescription = navIcon.label
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = if (navIcon.id == selectedTab) navIcon.filled else navIcon.outlined,
+                            contentDescription = navIcon.label
+                        )
+                    }
+                },
+                label = { Text(navIcon.label, maxLines = 1) },
+                alwaysShowLabel = false
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        NavigationRailItem(
+            selected = false,
+            onClick = onSearchClick,
+            icon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.cd_search)) },
+            label = { Text(stringResource(R.string.cd_search), maxLines = 1) },
+            alwaysShowLabel = false
+        )
+        NavigationRailItem(
+            selected = false,
+            onClick = onSettingsClick,
+            icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_settings)) },
+            label = { Text(stringResource(R.string.settings_settings), maxLines = 1) },
+            alwaysShowLabel = false
+        )
+    }
+}
+
+@Composable
+fun AdaptiveBottomNav(
+    selectedTab: Int,
+    todayBadgeCount: Int = 0,
+    peopleEnabled: Boolean = true,
+    tagsEnabled: Boolean = true,
+    projectsEnabled: Boolean = true,
+    todayEnabled: Boolean = true,
+    upcomingEnabled: Boolean = true,
+    onTabSelected: (Int) -> Unit
+) {
+    if (!rememberAdaptiveLayoutInfo().isWide) {
+        CustomBottomNav(
+            selectedTab = selectedTab,
+            todayBadgeCount = todayBadgeCount,
+            peopleEnabled = peopleEnabled,
+            tagsEnabled = tagsEnabled,
+            projectsEnabled = projectsEnabled,
+            todayEnabled = todayEnabled,
+            upcomingEnabled = upcomingEnabled,
+            onTabSelected = onTabSelected
+        )
+    }
+}
 
 @Composable
 fun CustomBottomNav(
