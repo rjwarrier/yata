@@ -141,7 +141,9 @@ fun AppNavigation(
                 initialShowNewTaskSheet = initialShowNewTaskSheet,
                 initialQuickAddListId = initialQuickAddListId,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
+                onNavigateToHelpAbout = {
+                    navController.navigate(Screen.SettingsSection.createRoute(SettingsDestination.HELP_ABOUT.routeSegment))
+                },
                 onNavigateToAnalytics = { navController.navigate(Screen.Analytics.route) },
                 onNavigateToStaffAnalytics = { navController.navigate(Screen.StaffAnalytics.route) },
                 onNavigateToNextDays = { navController.navigate(Screen.NextDays.route) },
