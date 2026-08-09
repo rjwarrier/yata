@@ -195,7 +195,7 @@
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
     <string name="settings_about_credit">From the Labs of RJ</string>
     <string name="settings_about_made_in">Made in 🇮🇳</string>
-    <string name="settings_about_other_apps">Other apps by RJ</string>
+    <string name="settings_about_other_apps">Other apps by developers</string>
     <string name="settings_about_github">View source on GitHub</string>
     <string name="settings_about_share">Share YATA</string>
     <string name="settings_about_share_text">YATA is a Material 3 Expressive task manager for Android — check it out: https://github.com/rjwarrier/yata/releases</string>
