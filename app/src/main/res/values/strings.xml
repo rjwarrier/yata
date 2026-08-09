@@ -199,6 +199,13 @@
     <string name="settings_about_github">View source on GitHub</string>
     <string name="settings_about_share">Share YATA</string>
     <string name="settings_about_share_text">YATA is a Material 3 Expressive task manager for Android — check it out: https://github.com/rjwarrier/yata/releases</string>
+    <string name="share_app_title">Share YATA</string>
+    <string name="share_app_default_message">YATA is a Material 3 Expressive task manager for Android — check it out!</string>
+    <string name="share_app_include_image">Include image</string>
+    <string name="share_app_include_image_subtitle">Attach the promo image along with your message</string>
+    <string name="share_app_message_label">Message</string>
+    <string name="share_app_link_note">This link is added at the end automatically:</string>
+    <string name="share_app_button">Share %1$s</string>
     <string name="settings_swipe_action_edit">Edit title</string>
     <!-- Confetti -->
     <string name="settings_confetti">Confetti</string>

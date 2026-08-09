@@ -30,7 +30,6 @@ import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.IosShare
-import android.content.Intent
 // Section-heading icons.
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudSync
@@ -150,9 +149,6 @@ import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.localized
-import com.mj.yata.util.export.exportsDir
-import com.mj.yata.util.export.shareUriFor
-import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
@@ -243,6 +239,7 @@ fun SettingsScreen(
     onNavigateToWelcome: () -> Unit,
     onNavigateToHelpAbout: () -> Unit,
     onNavigateToCrashLog: () -> Unit,
+    onNavigateToShareApp: () -> Unit,
     onNavigateToRemoteSync: () -> Unit,
     settingsDestination: SettingsDestination? = null,
     onNavigateToSettingsDestination: (SettingsDestination) -> Unit = {},
@@ -2908,7 +2905,7 @@ fun SettingsScreen(
         }
         item {
             AboutEntrance(delayMillis = 60) {
-                GitHubAndShareRow(modifier = Modifier.fillMaxWidth())
+                GitHubAndShareRow(onNavigateToShareApp = onNavigateToShareApp, modifier = Modifier.fillMaxWidth())
             }
         }
         }
@@ -3833,10 +3830,8 @@ private fun OtherAppsCard(modifier: Modifier = Modifier) {
 private const val YATA_GITHUB_URL = "https://github.com/rjwarrier/yata"
 
 @Composable
-private fun GitHubAndShareRow(modifier: Modifier = Modifier) {
+private fun GitHubAndShareRow(onNavigateToShareApp: () -> Unit, modifier: Modifier = Modifier) {
     val uriHandler = LocalUriHandler.current
-    val context = LocalContext.current
-    val shareText = stringResource(R.string.settings_about_share_text)
     val shareTitle = stringResource(R.string.settings_about_share)
     Row(
         modifier = modifier.height(IntrinsicSize.Max),
@@ -3861,19 +3856,7 @@ private fun GitHubAndShareRow(modifier: Modifier = Modifier) {
             )
         }
         OutlinedButton(
-            onClick = {
-                val imageFile = File(exportsDir(context), "yata_share.png")
-                context.resources.openRawResource(R.drawable.share_promo).use { input ->
-                    imageFile.outputStream().use { output -> input.copyTo(output) }
-                }
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "image/png"
-                    putExtra(Intent.EXTRA_STREAM, shareUriFor(context, imageFile))
-                    putExtra(Intent.EXTRA_TEXT, shareText)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                context.startActivity(Intent.createChooser(shareIntent, shareTitle))
-            },
+            onClick = onNavigateToShareApp,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()

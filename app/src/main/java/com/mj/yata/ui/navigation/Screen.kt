@@ -68,5 +68,6 @@ sealed class Screen(val route: String) {
     object Archive : Screen("archive")
     object NextDays : Screen("next_days")
     object CrashLog : Screen("crash_log")
+    object ShareApp : Screen("share_app")
     object RemoteSync : Screen("remote_sync")
 }

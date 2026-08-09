@@ -337,6 +337,7 @@ fun AppNavigation(
                 onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
                 onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
                 onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
+                onNavigateToShareApp = { navController.navigate(Screen.ShareApp.route) },
                 onNavigateToRemoteSync = { navController.navigate(Screen.RemoteSync.route) },
                 onNavigateToSettingsDestination = { destination ->
                     navController.navigate(Screen.SettingsSection.createRoute(destination.routeSegment))
@@ -365,6 +366,7 @@ fun AppNavigation(
                 onNavigateToWelcome = { navController.navigate(Screen.Welcome.route) },
                 onNavigateToHelpAbout = { navController.navigate(Screen.HelpAbout.route) },
                 onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
+                onNavigateToShareApp = { navController.navigate(Screen.ShareApp.route) },
                 onNavigateToRemoteSync = { navController.navigate(Screen.RemoteSync.route) },
                 settingsDestination = destination
             )
@@ -375,6 +377,13 @@ fun AppNavigation(
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             com.mj.yata.ui.screen.crashlog.CrashLogScreen(
                 viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // -- Share app --------------------------------------------------------
+        composable(Screen.ShareApp.route) {
+            com.mj.yata.ui.screen.settings.ShareAppScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
