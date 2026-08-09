@@ -1,6 +1,7 @@
 package com.mj.yata.data.github
 
 import com.mj.yata.domain.sync.SyncRunReport
+import kotlinx.coroutines.delay
 
 internal data class GitHubSyncConfig(
     val owner: String,
@@ -25,7 +26,8 @@ internal class GitHubSnapshotPublisher(
     private val commitMessage: (ByteArray) -> String,
     private val lastObservedHead: suspend () -> String? = { null },
     private val onHeadObserved: suspend (String?) -> Unit = {},
-    private val onHeadPublished: suspend (String) -> Unit = {}
+    private val onHeadPublished: suspend (String) -> Unit = {},
+    private val retryDelay: suspend (Long) -> Unit = { delay(it) }
 ) {
     suspend fun sync(config: GitHubSyncConfig, progress: (Int, String) -> Unit): Result<SyncRunReport> {
         try {
@@ -87,17 +89,34 @@ internal class GitHubSnapshotPublisher(
                                 "GitHub moved the branch to a different commit than the uploaded snapshot"
                             )
                         }
-                        verifyPublishedHead(config, expectedCommitSha = newCommit.sha, expectedBlobSha = blobSha)
+                        val publishStillCurrent = verifyPublishedHead(
+                            config,
+                            expectedCommitSha = newCommit.sha,
+                            expectedBlobSha = blobSha
+                        )
                         onHeadPublished(newCommit.sha)
+                        if (!publishStillCurrent) {
+                            if (attempt < MAX_CAS_ATTEMPTS) {
+                                delayBeforeRetry(attempt)
+                                continue
+                            }
+                            throw exhaustedConflict()
+                        }
                     } catch (e: GitHubConflictException) {
-                        if (attempt < MAX_CAS_ATTEMPTS) continue
+                        if (attempt < MAX_CAS_ATTEMPTS) {
+                            delayBeforeRetry(attempt)
+                            continue
+                        }
                         throw exhaustedConflict()
                     }
                 } else {
                     progress(74, "GitHub already up to date")
                     val latestHead = readHead(config)
                     if (!latestHead.sameIdentityAs(head)) {
-                        if (attempt < MAX_CAS_ATTEMPTS) continue
+                        if (attempt < MAX_CAS_ATTEMPTS) {
+                            delayBeforeRetry(attempt)
+                            continue
+                        }
                         throw exhaustedConflict()
                     }
                 }
@@ -195,13 +214,22 @@ internal class GitHubSnapshotPublisher(
         config: GitHubSyncConfig,
         expectedCommitSha: String,
         expectedBlobSha: String
-    ) {
+    ): Boolean {
         val publishedHead = readHead(config)
-        if (publishedHead.commitSha != expectedCommitSha || publishedHead.snapshotBlobSha != expectedBlobSha) {
-            throw GitHubTransportException(
-                "GitHub did not retain the uploaded snapshot at the branch head"
-            )
+        if (publishedHead.commitSha == expectedCommitSha) {
+            if (publishedHead.snapshotBlobSha != expectedBlobSha) {
+                throw GitHubTransportException(
+                    "GitHub did not retain the uploaded snapshot at the branch head"
+                )
+            }
+            return true
         }
+        val actualHeadSha = publishedHead.commitSha
+            ?: throw GitHubHistoryRewrittenException()
+        if (isAncestor(config, ancestorSha = expectedCommitSha, descendantSha = actualHeadSha)) {
+            return false
+        }
+        throw GitHubHistoryRewrittenException()
     }
 
     private suspend fun ensureHeadHasNotRewound(config: GitHubSyncConfig, currentHeadSha: String?) {
@@ -237,6 +265,10 @@ internal class GitHubSnapshotPublisher(
     private fun exhaustedConflict(): GitHubConflictException =
         GitHubConflictException("GitHub repository kept changing during sync; try again")
 
+    private suspend fun delayBeforeRetry(attempt: Int) {
+        retryDelay(CAS_RETRY_BASE_DELAY_MS * (1L shl (attempt - 1).coerceAtLeast(0)).coerceAtMost(8L))
+    }
+
     private fun scopeKey(config: GitHubSyncConfig): String =
         "github|${config.owner}/${config.repo}@${config.branch}:$SNAPSHOT_PATH"
 
@@ -258,7 +290,8 @@ internal class GitHubSnapshotPublisher(
     companion object {
         const val SNAPSHOT_PATH = "yata/snapshot.json"
         const val README_PATH = "README.md"
-        const val MAX_CAS_ATTEMPTS = 3
+        const val MAX_CAS_ATTEMPTS = 6
+        private const val CAS_RETRY_BASE_DELAY_MS = 150L
         const val MAX_RECOVERY_COMMITS = 20
         const val MAX_ANCESTRY_COMMITS = 250
 

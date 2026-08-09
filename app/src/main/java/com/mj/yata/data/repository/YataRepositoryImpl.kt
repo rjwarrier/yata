@@ -81,11 +81,9 @@ class YataRepositoryImpl @Inject constructor(
         preserveExistingCreatedAt: Boolean
     ) {
         if (tasks.isEmpty()) return
-        val sanitizedTasks = withContext(Dispatchers.IO) {
-            tasks.map { sanitizeTaskForWrite(it) }
-        }
 
-        db.withTransaction {
+        val sanitizedTasks = db.withTransaction {
+            val sanitizedTasks = tasks.map { sanitizeTaskForWrite(it) }
             // Batch-fetch existing cross-refs for every task up front — 3 queries total instead
             // of 3 per task — then diff each task against its slice of these in-memory maps.
             val taskIds = sanitizedTasks.map { it.id }
@@ -147,6 +145,7 @@ class YataRepositoryImpl @Inject constructor(
                     }
                 }
             }
+            sanitizedTasks
         }
 
         if (resyncReminder) {

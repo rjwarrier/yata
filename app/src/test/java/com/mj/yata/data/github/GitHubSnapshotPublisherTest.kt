@@ -167,7 +167,7 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
-    fun branchMovesAfterRefUpdate_failsBeforeLocalCommit() = runTest {
+    fun branchMovesAfterRefUpdateToUnrelatedCommit_failsBeforeLocalCommit() = runTest {
         val api = FakeGitHubApi().apply {
             seedHead("server".bytes())
             headCommitShaAfterRefWrite = seedCommit("external".bytes())
@@ -178,9 +178,52 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.exceptionOrNull() is GitHubTransportException)
+        assertTrue(result.exceptionOrNull() is GitHubHistoryRewrittenException)
         assertFalse(committed)
         assertEquals(1, api.updateRefCalls)
+    }
+
+    @Test
+    fun branchAdvancesAfterPublish_reReadsMergesAndCommitsLatestSnapshot() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("server".bytes())
+            beforeGetRef = { call, fake ->
+                if (call == 2) {
+                    fake.seedHead("other-device".bytes(), parents = listOf(fake.headCommitSha!!))
+                }
+            }
+            createdCommitParents.clear()
+        }
+        val remoteSnapshots = mutableListOf<String?>()
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { remoteBytes, _, _ ->
+                remoteSnapshots += remoteBytes?.string()
+                GitHubPreparedSnapshot(
+                    canonicalBytes = when (remoteBytes?.string()) {
+                        "other-device" -> "merged-latest".bytes()
+                        else -> "merged-first".bytes()
+                    },
+                    remoteNeedsPublish = true
+                )
+            },
+            commit = { prepared ->
+                committed = true
+                assertEquals("merged-latest", prepared.canonicalBytes.string())
+                0
+            },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "test commit" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.isSuccess)
+        assertTrue(committed)
+        assertEquals(listOf("server", "other-device"), remoteSnapshots)
+        assertEquals(2, api.updateRefCalls)
     }
 
     @Test
