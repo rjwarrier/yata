@@ -41,6 +41,9 @@ object GitHubConfigTransfer {
     private const val KEY_BITS = 256
     private const val GCM_TAG_BITS = 128
     private const val PBKDF2_ITERATIONS = 150_000
+    private const val MIN_SUPPORTED_ITERATIONS = 100_000
+    private const val MAX_SUPPORTED_ITERATIONS = 500_000
+    private const val MAX_CIPHERTEXT_BYTES = 64 * 1024
 
     private val random = SecureRandom()
     private val base64: Base64.Encoder = Base64.getEncoder()
@@ -69,7 +72,7 @@ object GitHubConfigTransfer {
             .put("salt", base64.encodeToString(salt))
             .put("iv", base64.encodeToString(iv))
             .put("ciphertext", base64.encodeToString(ciphertext))
-            .toString(2)
+            .toString()
     }
 
     fun decryptFromJson(exportText: String, password: String): GitHubConfigTransferPayload {
@@ -82,11 +85,16 @@ object GitHubConfigTransfer {
         require(envelope.optString("kdf") == KDF) { "Unsupported GitHub config key format" }
         require(envelope.optString("cipher") == CIPHER_LABEL) { "Unsupported GitHub config cipher" }
         val iterations = envelope.optInt("iterations")
-        require(iterations >= 100_000) { "Unsupported GitHub config key strength" }
+        require(iterations in MIN_SUPPORTED_ITERATIONS..MAX_SUPPORTED_ITERATIONS) {
+            "Unsupported GitHub config key strength"
+        }
 
         val salt = decodeBase64(envelope, "salt")
         val iv = decodeBase64(envelope, "iv")
         val ciphertext = decodeBase64(envelope, "ciphertext")
+        require(salt.size == SALT_BYTES && iv.size == IV_BYTES && ciphertext.size <= MAX_CIPHERTEXT_BYTES) {
+            "Damaged GitHub config export"
+        }
         val plain = try {
             val cipher = Cipher.getInstance(CIPHER)
             cipher.init(

@@ -57,6 +57,7 @@ import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.YataFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.util.localized
+import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -127,7 +128,8 @@ fun RemoteSyncScreen(
     var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
     var gitHubConfigTransferMode by remember { mutableStateOf<GitHubConfigTransferMode?>(null) }
     var pendingExportPassword by remember { mutableStateOf<String?>(null) }
-    var pendingImportPassword by remember { mutableStateOf<String?>(null) }
+    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+    var isTransferringGitHubConfig by remember { mutableStateOf(false) }
     var isTestingConnection by remember { mutableStateOf(false) }
     // null = untested this session, true/false = last test's outcome. A successful SFTP test
     // with no fingerprint pinned yet, or a failed one where the failure is a host-key
@@ -159,11 +161,16 @@ fun RemoteSyncScreen(
             scope.launch {
                 testResultOk = null
                 testResultMessage = null
-                val exportResult = viewModel.exportGitHubConfiguration(password)
-                val writeResult = if (exportResult.isSuccess) {
-                    runCatching { writeTextToUri(context, uri, exportResult.getOrThrow()) }
-                } else {
-                    Result.failure(exportResult.exceptionOrNull() ?: IllegalStateException(context.getString(R.string.export_failed)))
+                isTransferringGitHubConfig = true
+                val writeResult = try {
+                    val exportResult = viewModel.exportGitHubConfiguration(password)
+                    if (exportResult.isSuccess) {
+                        runCatching { writeTextToUri(context, uri, exportResult.getOrThrow()) }
+                    } else {
+                        Result.failure(exportResult.exceptionOrNull() ?: IllegalStateException(context.getString(R.string.export_failed)))
+                    }
+                } finally {
+                    isTransferringGitHubConfig = false
                 }
                 testResultOk = writeResult.isSuccess
                 testResultMessage = if (writeResult.isSuccess) {
@@ -178,36 +185,9 @@ fun RemoteSyncScreen(
     val openGitHubConfigImport = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
-        val password = pendingImportPassword
-        pendingImportPassword = null
-        if (uri != null && password != null) {
-            scope.launch {
-                testResultOk = null
-                testResultMessage = null
-                val readResult = runCatching { readTextFromUri(context, uri) }
-                val importResult = if (readResult.isSuccess) {
-                    viewModel.importGitHubConfiguration(readResult.getOrThrow(), password)
-                } else {
-                    Result.failure(readResult.exceptionOrNull() ?: IllegalStateException(context.getString(R.string.export_failed)))
-                }
-                importResult
-                    .onSuccess { summary ->
-                        draftProtocol = RemoteBackupProtocol.GITHUB
-                        draftGitHubRepo = summary.repoLabel
-                        draftGitHubBranch = summary.branch
-                        draftGitHubApiBase = summary.apiBase
-                        githubTokenAlreadySet = true
-                        draftGitHubToken = savedSecretPlaceholder
-                        backupPassphraseAlreadySet = summary.hasBackupPassphrase
-                        draftBackupPassphrase = if (summary.hasBackupPassphrase) savedSecretPlaceholder else ""
-                        testResultOk = true
-                        testResultMessage = context.getString(R.string.remote_sync_github_config_imported, summary.repoLabel)
-                    }
-                    .onFailure { error ->
-                        testResultOk = false
-                        testResultMessage = error.message ?: context.getString(R.string.export_failed)
-                    }
-            }
+        if (uri != null) {
+            pendingImportUri = uri
+            gitHubConfigTransferMode = GitHubConfigTransferMode.IMPORT
         }
     }
 
@@ -277,6 +257,20 @@ fun RemoteSyncScreen(
         )
     }
 
+    fun requestGitHubConfigExport() {
+        if (parseGitHubRepoDraft() == null) {
+            testResultOk = false
+            testResultMessage = "Enter the repo as owner/name"
+            return
+        }
+        if (!githubTokenAlreadySet && enteredGitHubToken().isBlank()) {
+            testResultOk = false
+            testResultMessage = context.getString(R.string.remote_sync_github_config_export_missing)
+            return
+        }
+        gitHubConfigTransferMode = GitHubConfigTransferMode.EXPORT
+    }
+
     fun beginGitHubConfigExport(password: String) {
         val repoParts = parseGitHubRepoDraft()
         if (repoParts == null) {
@@ -295,9 +289,50 @@ fun RemoteSyncScreen(
         }
     }
 
-    fun beginGitHubConfigImport(password: String) {
-        pendingImportPassword = password
+    fun chooseGitHubConfigImportFile() {
         openGitHubConfigImport.launch(arrayOf("application/json", "text/*", "application/octet-stream", "*/*"))
+    }
+
+    fun importGitHubConfig(password: String) {
+        val uri = pendingImportUri
+        pendingImportUri = null
+        if (uri == null) {
+            testResultOk = false
+            testResultMessage = context.getString(R.string.remote_sync_github_config_import_missing_file)
+            return
+        }
+        scope.launch {
+            testResultOk = null
+            testResultMessage = null
+            isTransferringGitHubConfig = true
+            val importResult = try {
+                val readResult = runCatching { readTextFromUri(context, uri) }
+                if (readResult.isSuccess) {
+                    viewModel.importGitHubConfiguration(readResult.getOrThrow(), password)
+                } else {
+                    Result.failure(readResult.exceptionOrNull() ?: IllegalStateException(context.getString(R.string.export_failed)))
+                }
+            } finally {
+                isTransferringGitHubConfig = false
+            }
+            importResult
+                .onSuccess { summary ->
+                    draftProtocol = RemoteBackupProtocol.GITHUB
+                    draftGitHubRepo = summary.repoLabel
+                    draftGitHubBranch = summary.branch
+                    draftGitHubApiBase = summary.apiBase
+                    githubTokenAlreadySet = true
+                    draftGitHubToken = savedSecretPlaceholder
+                    backupPassphraseAlreadySet = summary.hasBackupPassphrase
+                    draftBackupPassphrase = if (summary.hasBackupPassphrase) savedSecretPlaceholder else ""
+                    testResultOk = true
+                    testResultMessage = context.getString(R.string.remote_sync_github_config_imported, summary.repoLabel)
+                }
+                .onFailure { error ->
+                    testResultOk = false
+                    testResultMessage = error.message ?: context.getString(R.string.export_failed)
+                }
+        }
     }
 
     fun save() {
@@ -447,8 +482,10 @@ fun RemoteSyncScreen(
                         )
                     }
                     GitHubConfigTransferActions(
-                        onExport = { gitHubConfigTransferMode = GitHubConfigTransferMode.EXPORT },
-                        onImport = { gitHubConfigTransferMode = GitHubConfigTransferMode.IMPORT }
+                        onExport = ::requestGitHubConfigExport,
+                        onImport = ::chooseGitHubConfigImportFile,
+                        enabled = !isTransferringGitHubConfig,
+                        isBusy = isTransferringGitHubConfig
                     )
                 }
             } else {
@@ -877,7 +914,7 @@ fun RemoteSyncScreen(
                 gitHubConfigTransferMode = null
                 when (mode) {
                     GitHubConfigTransferMode.EXPORT -> beginGitHubConfigExport(password)
-                    GitHubConfigTransferMode.IMPORT -> beginGitHubConfigImport(password)
+                    GitHubConfigTransferMode.IMPORT -> importGitHubConfig(password)
                 }
             }
         )
@@ -893,6 +930,8 @@ private enum class GitHubConfigTransferMode {
 private fun GitHubConfigTransferActions(
     onExport: () -> Unit,
     onImport: () -> Unit,
+    enabled: Boolean,
+    isBusy: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -902,16 +941,19 @@ private fun GitHubConfigTransferActions(
             color = MaterialTheme.colorScheme.primary
         )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = onExport, modifier = Modifier.weight(1f)) {
+            OutlinedButton(onClick = onExport, enabled = enabled, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.remote_sync_export_github_config))
             }
-            OutlinedButton(onClick = onImport, modifier = Modifier.weight(1f)) {
+            OutlinedButton(onClick = onImport, enabled = enabled, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.remote_sync_import_github_config))
             }
+        }
+        AnimatedVisibility(visible = isBusy) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -1167,14 +1209,29 @@ private fun githubTokenExpiryStatus(epochMillis: Long?): GitHubTokenExpiryStatus
 private fun Long.formatDays(): String =
     if (this == 1L) "1 day" else "$this days"
 
+private const val MAX_GITHUB_CONFIG_TRANSFER_BYTES = 128 * 1024
+
 private suspend fun writeTextToUri(context: Context, uri: Uri, text: String) = withContext(Dispatchers.IO) {
     context.contentResolver.openOutputStream(uri)?.use { output ->
         output.write(text.toByteArray(Charsets.UTF_8))
+        output.flush()
     } ?: throw IllegalStateException("Could not open export file")
 }
 
 private suspend fun readTextFromUri(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
-    context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { input ->
-        input.readText()
+    context.contentResolver.openInputStream(uri)?.use { input ->
+        val output = ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0
+        while (true) {
+            val read = input.read(buffer)
+            if (read == -1) break
+            total += read
+            if (total > MAX_GITHUB_CONFIG_TRANSFER_BYTES) {
+                throw IllegalStateException(context.getString(R.string.remote_sync_github_config_import_too_large))
+            }
+            output.write(buffer, 0, read)
+        }
+        output.toString(Charsets.UTF_8.name())
     } ?: throw IllegalStateException("Could not open import file")
 }

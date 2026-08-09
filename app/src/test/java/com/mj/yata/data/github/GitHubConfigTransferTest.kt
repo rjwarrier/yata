@@ -29,6 +29,7 @@ class GitHubConfigTransferTest {
     fun exportDoesNotExposeSensitiveFieldsAsPlaintext() {
         val exportText = GitHubConfigTransfer.encryptToJson(payload, "transfer password")
 
+        assertFalse(exportText.contains("\n"))
         assertFalse(exportText.contains(payload.owner))
         assertFalse(exportText.contains(payload.repo))
         assertFalse(exportText.contains(payload.token))
@@ -40,6 +41,14 @@ class GitHubConfigTransferTest {
         val exportText = GitHubConfigTransfer.encryptToJson(payload, "right password")
 
         GitHubConfigTransfer.decryptFromJson(exportText, "wrong password")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun excessiveIterationsAreRejected() {
+        val exportText = GitHubConfigTransfer.encryptToJson(payload, "transfer password")
+            .replace("\"iterations\":150000", "\"iterations\":2147483647")
+
+        GitHubConfigTransfer.decryptFromJson(exportText, "transfer password")
     }
 
     @Test
