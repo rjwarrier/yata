@@ -1,0 +1,52 @@
+package com.mj.yata.data.github
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class GitHubConfigTransferTest {
+
+    private val payload = GitHubConfigTransferPayload(
+        owner = "owner",
+        repo = "sync-repo",
+        branch = "main",
+        apiBase = "https://api.github.com",
+        token = "github_pat_secret_token",
+        tokenExpiresAt = 1_826_000_000_000L,
+        backupPassphrase = "backup secret"
+    )
+
+    @Test
+    fun roundTripsGitHubConfig() {
+        val exportText = GitHubConfigTransfer.encryptToJson(payload, "transfer password")
+        val imported = GitHubConfigTransfer.decryptFromJson(exportText, "transfer password")
+
+        assertEquals(payload, imported)
+    }
+
+    @Test
+    fun exportDoesNotExposeSensitiveFieldsAsPlaintext() {
+        val exportText = GitHubConfigTransfer.encryptToJson(payload, "transfer password")
+
+        assertFalse(exportText.contains(payload.owner))
+        assertFalse(exportText.contains(payload.repo))
+        assertFalse(exportText.contains(payload.token))
+        assertFalse(exportText.contains(payload.backupPassphrase!!))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun wrongPasswordFails() {
+        val exportText = GitHubConfigTransfer.encryptToJson(payload, "right password")
+
+        GitHubConfigTransfer.decryptFromJson(exportText, "wrong password")
+    }
+
+    @Test
+    fun missingBackupPassphraseStaysMissing() {
+        val noPassphrase = payload.copy(backupPassphrase = null)
+        val exportText = GitHubConfigTransfer.encryptToJson(noPassphrase, "transfer password")
+
+        assertNull(GitHubConfigTransfer.decryptFromJson(exportText, "transfer password").backupPassphrase)
+    }
+}

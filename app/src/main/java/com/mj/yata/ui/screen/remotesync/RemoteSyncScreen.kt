@@ -1,5 +1,9 @@
 package com.mj.yata.ui.screen.remotesync
 
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -21,7 +25,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
@@ -40,6 +46,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
+import com.mj.yata.data.github.GitHubConfigTransfer
 import com.mj.yata.domain.model.RemoteBackupProtocol
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
@@ -50,6 +57,9 @@ import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.YataFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.util.localized
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Full-screen remote sync configuration — provider picker, credentials, and test/connect. Used to
@@ -66,6 +76,7 @@ fun RemoteSyncScreen(
 ) {
     val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val remoteBackupProtocol = uiState.remoteBackupProtocol
     val sftpHost = uiState.sftpHost
@@ -93,9 +104,9 @@ fun RemoteSyncScreen(
     var draftGitHubBranch by remember { mutableStateOf(githubBranch.ifBlank { "main" }) }
     var draftGitHubApiBase by remember { mutableStateOf(githubApiBase) }
     val passwordAlreadySet = remember { viewModel.hasRemoteBackupPassword() }
-    val githubTokenAlreadySet = remember { viewModel.hasGitHubToken() }
+    var githubTokenAlreadySet by remember { mutableStateOf(viewModel.hasGitHubToken()) }
     val keyPassphraseAlreadySet = remember { viewModel.hasSftpKeyPassphrase() }
-    val backupPassphraseAlreadySet = remember { viewModel.hasRemoteBackupPassphrase() }
+    var backupPassphraseAlreadySet by remember { mutableStateOf(viewModel.hasRemoteBackupPassphrase()) }
     val savedSecretPlaceholder = "...."
     // Secret fields are otherwise write-only from the UI's point of view -- typing nothing means
     // "leave as-is". Pre-filling with the placeholder itself (rather than relying on TextField's
@@ -114,6 +125,9 @@ fun RemoteSyncScreen(
         mutableStateOf(if (backupPassphraseAlreadySet) savedSecretPlaceholder else "")
     }
     var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
+    var gitHubConfigTransferMode by remember { mutableStateOf<GitHubConfigTransferMode?>(null) }
+    var pendingExportPassword by remember { mutableStateOf<String?>(null) }
+    var pendingImportPassword by remember { mutableStateOf<String?>(null) }
     var isTestingConnection by remember { mutableStateOf(false) }
     // null = untested this session, true/false = last test's outcome. A successful SFTP test
     // with no fingerprint pinned yet, or a failed one where the failure is a host-key
@@ -136,6 +150,67 @@ fun RemoteSyncScreen(
     fun enteredBackupPassphrase(): String =
         draftBackupPassphrase.takeUnless { backupPassphraseAlreadySet && it == savedSecretPlaceholder }.orEmpty()
 
+    val createGitHubConfigExport = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        val password = pendingExportPassword
+        pendingExportPassword = null
+        if (uri != null && password != null) {
+            scope.launch {
+                testResultOk = null
+                testResultMessage = null
+                val exportResult = viewModel.exportGitHubConfiguration(password)
+                val writeResult = if (exportResult.isSuccess) {
+                    runCatching { writeTextToUri(context, uri, exportResult.getOrThrow()) }
+                } else {
+                    Result.failure(exportResult.exceptionOrNull() ?: IllegalStateException(context.getString(R.string.export_failed)))
+                }
+                testResultOk = writeResult.isSuccess
+                testResultMessage = if (writeResult.isSuccess) {
+                    context.getString(R.string.remote_sync_github_config_exported)
+                } else {
+                    writeResult.exceptionOrNull()?.message ?: context.getString(R.string.export_failed)
+                }
+            }
+        }
+    }
+
+    val openGitHubConfigImport = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        val password = pendingImportPassword
+        pendingImportPassword = null
+        if (uri != null && password != null) {
+            scope.launch {
+                testResultOk = null
+                testResultMessage = null
+                val readResult = runCatching { readTextFromUri(context, uri) }
+                val importResult = if (readResult.isSuccess) {
+                    viewModel.importGitHubConfiguration(readResult.getOrThrow(), password)
+                } else {
+                    Result.failure(readResult.exceptionOrNull() ?: IllegalStateException(context.getString(R.string.export_failed)))
+                }
+                importResult
+                    .onSuccess { summary ->
+                        draftProtocol = RemoteBackupProtocol.GITHUB
+                        draftGitHubRepo = summary.repoLabel
+                        draftGitHubBranch = summary.branch
+                        draftGitHubApiBase = summary.apiBase
+                        githubTokenAlreadySet = true
+                        draftGitHubToken = savedSecretPlaceholder
+                        backupPassphraseAlreadySet = summary.hasBackupPassphrase
+                        draftBackupPassphrase = if (summary.hasBackupPassphrase) savedSecretPlaceholder else ""
+                        testResultOk = true
+                        testResultMessage = context.getString(R.string.remote_sync_github_config_imported, summary.repoLabel)
+                    }
+                    .onFailure { error ->
+                        testResultOk = false
+                        testResultMessage = error.message ?: context.getString(R.string.export_failed)
+                    }
+            }
+        }
+    }
+
     fun parseGitHubRepoDraft(): Pair<String, String>? {
         val parts = draftGitHubRepo.trim().split("/", limit = 2)
         return if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) {
@@ -150,9 +225,17 @@ fun RemoteSyncScreen(
         // dropping to unencrypted uploads because a field was left empty is not a default anyone
         // would want. Shared across all three transports, so this runs before the per-provider
         // branches below (one of which returns early for GitHub).
-        enteredBackupPassphrase().takeIf { it.isNotBlank() }?.let(viewModel::setRemoteBackupPassphrase)
+        enteredBackupPassphrase().takeIf { it.isNotBlank() }?.let { passphrase ->
+            viewModel.setRemoteBackupPassphrase(passphrase)
+            backupPassphraseAlreadySet = true
+            draftBackupPassphrase = savedSecretPlaceholder
+        }
         if (draftIsGitHub) {
-            enteredGitHubToken().takeIf { it.isNotBlank() }?.let(viewModel::setGitHubToken)
+            enteredGitHubToken().takeIf { it.isNotBlank() }?.let { token ->
+                viewModel.setGitHubToken(token)
+                githubTokenAlreadySet = true
+                draftGitHubToken = savedSecretPlaceholder
+            }
             val repoParts = parseGitHubRepoDraft()
             if (repoParts != null) {
                 viewModel.saveGitHubConfiguration(
@@ -192,6 +275,29 @@ fun RemoteSyncScreen(
             authMethod = draftAuthMethod,
             onSaved = onSaved
         )
+    }
+
+    fun beginGitHubConfigExport(password: String) {
+        val repoParts = parseGitHubRepoDraft()
+        if (repoParts == null) {
+            testResultOk = false
+            testResultMessage = "Enter the repo as owner/name"
+            return
+        }
+        if (!githubTokenAlreadySet && enteredGitHubToken().isBlank()) {
+            testResultOk = false
+            testResultMessage = context.getString(R.string.remote_sync_github_config_export_missing)
+            return
+        }
+        saveServerConfiguration {
+            pendingExportPassword = password
+            createGitHubConfigExport.launch(GitHubConfigTransfer.DEFAULT_FILENAME)
+        }
+    }
+
+    fun beginGitHubConfigImport(password: String) {
+        pendingImportPassword = password
+        openGitHubConfigImport.launch(arrayOf("application/json", "text/*", "application/octet-stream", "*/*"))
     }
 
     fun save() {
@@ -340,6 +446,10 @@ fun RemoteSyncScreen(
                             modifier = Modifier.padding(12.dp)
                         )
                     }
+                    GitHubConfigTransferActions(
+                        onExport = { gitHubConfigTransferMode = GitHubConfigTransferMode.EXPORT },
+                        onImport = { gitHubConfigTransferMode = GitHubConfigTransferMode.IMPORT }
+                    )
                 }
             } else {
                 RemoteConfigGroup(
@@ -758,6 +868,131 @@ fun RemoteSyncScreen(
             }
         )
     }
+
+    gitHubConfigTransferMode?.let { mode ->
+        GitHubConfigPasswordDialog(
+            mode = mode,
+            onDismiss = { gitHubConfigTransferMode = null },
+            onConfirm = { password ->
+                gitHubConfigTransferMode = null
+                when (mode) {
+                    GitHubConfigTransferMode.EXPORT -> beginGitHubConfigExport(password)
+                    GitHubConfigTransferMode.IMPORT -> beginGitHubConfigImport(password)
+                }
+            }
+        )
+    }
+}
+
+private enum class GitHubConfigTransferMode {
+    EXPORT,
+    IMPORT
+}
+
+@Composable
+private fun GitHubConfigTransferActions(
+    onExport: () -> Unit,
+    onImport: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.remote_sync_github_config_transfer_title),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onExport, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.remote_sync_export_github_config))
+            }
+            OutlinedButton(onClick = onImport, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.remote_sync_import_github_config))
+            }
+        }
+    }
+}
+
+@Composable
+private fun GitHubConfigPasswordDialog(
+    mode: GitHubConfigTransferMode,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var password by remember(mode) { mutableStateOf("") }
+    var confirmPassword by remember(mode) { mutableStateOf("") }
+    val isExport = mode == GitHubConfigTransferMode.EXPORT
+    val passwordsMismatch = isExport && confirmPassword.isNotEmpty() && password != confirmPassword
+    val confirmEnabled = password.isNotBlank() && (!isExport || password == confirmPassword)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                stringResource(
+                    if (isExport) {
+                        R.string.remote_sync_github_config_export_password_title
+                    } else {
+                        R.string.remote_sync_github_config_import_password_title
+                    }
+                )
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = stringResource(R.string.remote_sync_github_config_password_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.remote_sync_github_config_password_label)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    shape = YataCompactFieldShape,
+                    colors = yataFieldColors(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (isExport) {
+                    TextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text(stringResource(R.string.remote_sync_github_config_confirm_password_label)) },
+                        singleLine = true,
+                        isError = passwordsMismatch,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        shape = YataCompactFieldShape,
+                        colors = yataFieldColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (passwordsMismatch) {
+                        Text(
+                            text = stringResource(R.string.remote_sync_github_config_password_mismatch),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(password) }, enabled = confirmEnabled) {
+                Text(stringResource(if (isExport) R.string.action_export else R.string.action_import))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
+    )
 }
 
 @Composable
@@ -931,3 +1166,15 @@ private fun githubTokenExpiryStatus(epochMillis: Long?): GitHubTokenExpiryStatus
 
 private fun Long.formatDays(): String =
     if (this == 1L) "1 day" else "$this days"
+
+private suspend fun writeTextToUri(context: Context, uri: Uri, text: String) = withContext(Dispatchers.IO) {
+    context.contentResolver.openOutputStream(uri)?.use { output ->
+        output.write(text.toByteArray(Charsets.UTF_8))
+    } ?: throw IllegalStateException("Could not open export file")
+}
+
+private suspend fun readTextFromUri(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
+    context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { input ->
+        input.readText()
+    } ?: throw IllegalStateException("Could not open import file")
+}

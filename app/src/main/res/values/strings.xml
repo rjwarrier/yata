@@ -442,6 +442,7 @@
     <string name="action_export">Export</string>
     <string name="action_export_as_image">Export as image</string>
     <string name="action_export_as_pdf">Export as PDF</string>
+    <string name="action_import">Import</string>
     <string name="action_go_to_existing_task">Go to existing task</string>
     <string name="action_ignore_and_create">Ignore and create</string>
     <string name="action_select_tags">Select tags</string>
@@ -507,6 +508,18 @@
     <string name="remote_sync_branch_label">Branch</string>
     <string name="remote_sync_api_base_label">API base URL</string>
     <string name="remote_sync_token_scope_hint">Fine-grained token: Contents read/write. Stored encrypted on this device.</string>
+    <string name="remote_sync_github_config_transfer_title">Config transfer</string>
+    <string name="remote_sync_export_github_config">Export config</string>
+    <string name="remote_sync_import_github_config">Import config</string>
+    <string name="remote_sync_github_config_export_password_title">Encrypt GitHub config</string>
+    <string name="remote_sync_github_config_import_password_title">Decrypt GitHub config</string>
+    <string name="remote_sync_github_config_password_hint">Use a separate transfer password. It is not saved by YATA.</string>
+    <string name="remote_sync_github_config_password_label">Transfer password</string>
+    <string name="remote_sync_github_config_confirm_password_label">Confirm password</string>
+    <string name="remote_sync_github_config_password_mismatch">Passwords do not match.</string>
+    <string name="remote_sync_github_config_export_missing">Save a GitHub repo and token before exporting.</string>
+    <string name="remote_sync_github_config_exported">GitHub config exported.</string>
+    <string name="remote_sync_github_config_imported">GitHub config imported for %1$s.</string>
     <string name="remote_sync_server_location">Server location</string>
     <string name="remote_sync_server_location_summary_ftp">Point YATA at an FTP or FTPS folder.</string>
     <string name="remote_sync_server_location_summary_sftp">Point YATA at an SSH/SFTP folder.</string>

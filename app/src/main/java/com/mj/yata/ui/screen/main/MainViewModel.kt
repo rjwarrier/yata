@@ -13,6 +13,8 @@ import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.data.github.GitHubNotFoundException
 import com.mj.yata.data.github.GitHubPermissionException
+import com.mj.yata.data.github.GitHubConfigTransfer
+import com.mj.yata.data.github.GitHubConfigTransferPayload
 import com.mj.yata.data.github.HttpGitHubApi
 import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpConnectionTestResult
@@ -221,6 +223,16 @@ data class SettingsUiState(
     val taskerIntegrationEnabled: Boolean = true,
     val todayRemainingCount: Int = 0
 )
+
+data class GitHubConfigTransferSummary(
+    val owner: String,
+    val repo: String,
+    val branch: String,
+    val apiBase: String,
+    val hasBackupPassphrase: Boolean
+) {
+    val repoLabel: String = "$owner/$repo"
+}
 
 data class MainScreenUiState(
     val tasks: List<Task> = emptyList(),
@@ -2103,6 +2115,53 @@ private data class MainNavigationState(
     }
 
     fun hasGitHubToken(): Boolean = remoteBackupCredentialsStore.githubToken != null
+
+    suspend fun exportGitHubConfiguration(password: String): Result<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val owner = userPreferences.githubOwnerFlow.first().trim()
+            val repo = userPreferences.githubRepoFlow.first().trim()
+            val branch = userPreferences.githubBranchFlow.first().trim().ifBlank { "main" }
+            val apiBase = userPreferences.githubApiBaseFlow.first().trim().ifBlank { "https://api.github.com" }
+            val token = remoteBackupCredentialsStore.githubToken.orEmpty()
+            GitHubConfigTransfer.encryptToJson(
+                GitHubConfigTransferPayload(
+                    owner = owner,
+                    repo = repo,
+                    branch = branch,
+                    apiBase = apiBase,
+                    token = token,
+                    tokenExpiresAt = userPreferences.githubTokenExpiresAtFlow.first(),
+                    backupPassphrase = remoteBackupCredentialsStore.backupPassphrase
+                ),
+                password
+            )
+        }
+    }
+
+    suspend fun importGitHubConfiguration(
+        exportText: String,
+        password: String
+    ): Result<GitHubConfigTransferSummary> = withContext(Dispatchers.IO) {
+        runCatching {
+            val payload = GitHubConfigTransfer.decryptFromJson(exportText, password)
+            remoteBackupCredentialsStore.githubToken = payload.token
+            remoteBackupCredentialsStore.backupPassphrase = payload.backupPassphrase
+            userPreferences.setGitHubConfiguration(
+                owner = payload.owner,
+                repo = payload.repo,
+                branch = payload.branch,
+                apiBase = payload.apiBase
+            )
+            userPreferences.setGitHubTokenExpiresAt(payload.tokenExpiresAt)
+            GitHubConfigTransferSummary(
+                owner = payload.owner,
+                repo = payload.repo,
+                branch = payload.branch,
+                apiBase = payload.apiBase,
+                hasBackupPassphrase = payload.backupPassphrase != null
+            )
+        }
+    }
 
     fun saveGitHubConfiguration(
         owner: String,
