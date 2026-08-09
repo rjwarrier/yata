@@ -74,6 +74,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- The build number in Settings → Help & About now updates on every build again. Configuration
+  cache had been freezing the timestamp at whatever it was when the cache entry was first stored,
+  so every subsequent build showed the same stale minute; it's now generated fresh at build-execution
+  time instead of at Gradle configuration time.
 - The "days clean" (zero-overdue) streak no longer sits at 0 forever for anyone whose database
   predates the completion-timestamp column. A task completed before that column existed carries no
   timestamp, and was being counted as still-overdue on every past day; it now counts as finished,

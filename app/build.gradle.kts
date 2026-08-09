@@ -33,16 +33,6 @@ android {
         versionCode = 17
         versionName = "0.92 beta"
 
-        // Stamped fresh into every build (not just release) so Help & About's "Build N.DDMMYYYYHHmm"
-        // line reflects exactly when this particular APK was assembled, not just the day — the
-        // minute resolution is what actually tells apart two same-versionCode debug builds from
-        // the same dev loop. HHmm is 24-hour (SimpleDateFormat's H, not h).
-        buildConfigField(
-            "String",
-            "BUILD_DATE",
-            "\"" + SimpleDateFormat("ddMMyyyyHHmm").format(Date()) + "\""
-        )
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -227,6 +217,42 @@ ksp {
  *
  *   ./gradlew :app:connectedDebugAndroidTest -PdisposableDevice
  */
+// Stamped fresh into every build (not just release) so Help & About's "Build N.DDMMYYYYHHmm" line
+// reflects exactly when this particular APK was assembled, not just the day. This has to be a
+// task's doLast, not a value computed in the `android {}` block above: with configuration cache
+// enabled, configuration-time code runs once when the cache entry is stored and is skipped on
+// every reused build, freezing whatever Date() returned at that moment. Task actions still run
+// every build regardless of the config cache, so the timestamp is generated as source here instead
+// of via buildConfigField. HHmm is 24-hour (SimpleDateFormat's H, not h).
+val generatedBuildInfoDir = layout.buildDirectory.dir("generated/buildInfo/main/kotlin")
+val generateBuildInfo by tasks.registering {
+    // `outputDir` is captured from this task-local val, not the outer script-level
+    // `generatedBuildInfoDir` — referencing the latter from inside doLast would pull the whole
+    // build-script object into configuration-cache serialization, which Gradle rejects.
+    val outputDir = layout.buildDirectory.dir("generated/buildInfo/main/kotlin")
+    outputs.dir(outputDir)
+    outputs.upToDateWhen { false }
+    doLast {
+        val timestamp = SimpleDateFormat("ddMMyyyyHHmm").format(Date())
+        val packageDir = outputDir.get().asFile.resolve("com/mj/yata")
+        packageDir.mkdirs()
+        packageDir.resolve("BuildInfo.kt").writeText(
+            """
+            package com.mj.yata
+
+            internal object BuildInfo {
+                const val BUILD_DATE = "$timestamp"
+            }
+
+            """.trimIndent()
+        )
+    }
+}
+android.sourceSets.getByName("main").kotlin.srcDir(generatedBuildInfoDir)
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    dependsOn(generateBuildInfo)
+}
+
 // Both values are read here, at configuration time. Touching `project` from inside doFirst is an
 // error under the configuration cache, which this build has enabled.
 val deviceIsDisposable = project.hasProperty("disposableDevice")

@@ -155,6 +155,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.BuildConfig
+import com.mj.yata.BuildInfo
 import com.mj.yata.ui.theme.BodoniModaFamily
 
 private data class SettingsSearchTarget(
@@ -2899,10 +2900,7 @@ fun SettingsScreen(
             OtherAppsCard(modifier = Modifier.fillMaxWidth())
         }
         item {
-            GitHubLinkCard(modifier = Modifier.fillMaxWidth())
-        }
-        item {
-            ShareYataCard(modifier = Modifier.fillMaxWidth())
+            GitHubAndShareRow(modifier = Modifier.fillMaxWidth())
         }
         }
     }
@@ -3714,7 +3712,7 @@ private fun AboutYataCard(
                 text = stringResource(
                     R.string.settings_about_version,
                     BuildConfig.VERSION_NAME,
-                    "${BuildConfig.VERSION_CODE}.${BuildConfig.BUILD_DATE}"
+                    "${BuildConfig.VERSION_CODE}.${BuildInfo.BUILD_DATE}"
                 ),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -3766,33 +3764,33 @@ private fun OtherAppsCard(modifier: Modifier = Modifier) {
             otherApps.forEach { app ->
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                     onClick = { uriHandler.openUri(app.playStoreUrl) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column {
-                            Text(
-                                text = app.name,
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = app.tagline,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = app.name,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "· ${app.tagline}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
@@ -3804,68 +3802,51 @@ private fun OtherAppsCard(modifier: Modifier = Modifier) {
 private const val YATA_GITHUB_URL = "https://github.com/rjwarrier/yata"
 
 @Composable
-private fun GitHubLinkCard(modifier: Modifier = Modifier) {
+private fun GitHubAndShareRow(modifier: Modifier = Modifier) {
     val uriHandler = LocalUriHandler.current
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(16.dp),
-        onClick = { uriHandler.openUri(YATA_GITHUB_URL) },
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = stringResource(R.string.settings_about_github),
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun ShareYataCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val shareText = stringResource(R.string.settings_about_share_text)
     val shareTitle = stringResource(R.string.settings_about_share)
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(16.dp),
-        onClick = {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, shareText)
-            }
-            context.startActivity(Intent.createChooser(shareIntent, shareTitle))
-        },
-        modifier = modifier
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        OutlinedButton(
+            onClick = { uriHandler.openUri(YATA_GITHUB_URL) },
+            modifier = Modifier.weight(1f)
         ) {
-            Text(
-                text = shareTitle,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
             )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.settings_about_github),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1
+            )
+        }
+        OutlinedButton(
+            onClick = {
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                }
+                context.startActivity(Intent.createChooser(shareIntent, shareTitle))
+            },
+            modifier = Modifier.weight(1f)
+        ) {
             Icon(
                 imageVector = Icons.Default.IosShare,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = shareTitle,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1
             )
         }
     }
