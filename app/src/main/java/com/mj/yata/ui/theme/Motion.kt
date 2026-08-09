@@ -33,17 +33,17 @@ object YataEase {
 /** Expressive spring specs for Material 3 responsive micro-animations */
 object YataSpring {
     val bouncy: AnimationSpec<Float> = spring(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = Spring.StiffnessMediumLow
+        dampingRatio = Spring.DampingRatioHighBouncy,
+        stiffness = Spring.StiffnessLow
     )
 
     val press: AnimationSpec<Float> = spring(
-        dampingRatio = 0.75f,
-        stiffness = Spring.StiffnessMedium
+        dampingRatio = 0.6f,
+        stiffness = Spring.StiffnessMediumLow
     )
 
     val checkmark: AnimationSpec<Float> = spring(
-        dampingRatio = 0.55f,
+        dampingRatio = 0.45f,
         stiffness = Spring.StiffnessLow
     )
 }
@@ -108,7 +108,7 @@ val yataItemFade: FiniteAnimationSpec<Float>
  */
 fun Modifier.bounceClickable(
     enabled: Boolean = true,
-    pressedScale: Float = 0.96f,
+    pressedScale: Float = 0.93f,
     onClick: () -> Unit
 ): Modifier = composed {
     val interactionSource = remember { MutableInteractionSource() }

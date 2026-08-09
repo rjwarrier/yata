@@ -78,6 +78,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Changed
 
+- Tap and press feedback across the app is bouncier — buttons, checkmarks and other pressable
+  elements squish more and spring back with more energy.
 - Person-specific analytics moved out of the global Analytics screen so team performance review
   happens from each staff member's own page.
 - Remote sync now shows `....` instead of a row of bullet dots as the placeholder for a password,
