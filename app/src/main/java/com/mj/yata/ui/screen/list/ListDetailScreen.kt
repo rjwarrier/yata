@@ -57,7 +57,9 @@ import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
+import com.mj.yata.ui.widgets.TaskPreviewPane
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -172,6 +174,33 @@ fun ListDetailScreen(
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
+    val useWideDetail = rememberAdaptiveLayoutInfo().isWide
+    var previewTaskId by remember { mutableStateOf<String?>(null) }
+    val previewTasks = remember(
+        pendingListTasks,
+        completedListTasks,
+        searchFilteredTasks,
+        statFilteredTasks,
+        searchActive,
+        searchQuery,
+        activeStatFilter
+    ) {
+        when {
+            searchActive && searchQuery.isNotBlank() -> searchFilteredTasks
+            activeStatFilter != null -> statFilteredTasks
+            else -> pendingListTasks + completedListTasks
+        }
+    }
+    val previewTask = remember(previewTasks, previewTaskId) {
+        previewTasks.find { it.id == previewTaskId }
+    }
+    LaunchedEffect(previewTasks, useWideDetail) {
+        if (!useWideDetail) {
+            previewTaskId = null
+        } else if (previewTaskId != null && previewTasks.none { it.id == previewTaskId }) {
+            previewTaskId = previewTasks.firstOrNull()?.id
+        }
+    }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
@@ -429,6 +458,8 @@ fun ListDetailScreen(
                     onTaskClick = {
                         if (selectionMode) {
                             if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                        } else if (useWideDetail) {
+                            previewTaskId = task.id
                         } else {
                             onNavigateToTaskDetail(task.id)
                         }
@@ -453,6 +484,8 @@ fun ListDetailScreen(
                 )
             }
 
+            Row(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f)) {
             if (selectionMode) {
                 // See ProjectDetailScreen for why selection mode falls back to a flat,
                 // non-draggable list instead of DragDropReorderableColumn.
@@ -564,6 +597,27 @@ fun ListDetailScreen(
                         }
                     }
                 ) { task -> taskRowFor(task) }
+            }
+            }
+            if (useWideDetail && !selectionMode) {
+                VerticalDivider(
+                    modifier = Modifier.fillMaxHeight(),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+                TaskPreviewPane(
+                    task = previewTask,
+                    list = list,
+                    project = previewTask?.projectId?.let { projectsById[it] },
+                    people = previewTask?.assigneeIds?.mapNotNull { peopleById[it] }.orEmpty(),
+                    tags = previewTask?.effectiveTags(projectsById, tagsById).orEmpty(),
+                    onOpenTask = onNavigateToTaskDetail,
+                    onToggleTask = { task -> viewModel.toggleTaskDone(task.id) {} },
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .widthIn(min = 320.dp, max = 380.dp),
+                    emptySubtitle = "Preview list tasks without leaving this list."
+                )
+            }
             }
         }
         }

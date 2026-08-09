@@ -42,6 +42,8 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
 
     fun startListening(useStrictOffline: Boolean = true, language: String = "default") {
         isListeningActive = true
+        accumulatedText = ""
+        _rmsDb.value = 0f
         lastLanguage = language
         lastStrictOffline = useStrictOffline
         restartInternal()
@@ -101,8 +103,10 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
                     override fun onError(error: Int) {
                         if (!isListeningActive) return
 
-                        // Fallback once if strict offline engine is unavailable
-                        if (lastStrictOffline && (error == SpeechRecognizer.ERROR_CLIENT || error == SpeechRecognizer.ERROR_NETWORK)) {
+                        // Fallback once if strict/offline recognition cannot handle the device,
+                        // selected language, or local model. Several engines report these as
+                        // server/support errors rather than the older client/network pair.
+                        if (lastStrictOffline && shouldRetryOnline(error)) {
                             lastStrictOffline = false
                             restartInternal()
                             return
@@ -125,9 +129,14 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
                             SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
                             SpeechRecognizer.ERROR_CLIENT -> "Speech client error. Please check mic permissions."
                             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission denied."
+                            SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "Selected voice language is not supported on this device."
+                            SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> "Selected voice language is not available on this device."
                             SpeechRecognizer.ERROR_NETWORK -> "Network connection required for online speech engine."
                             SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Speech recognition network timeout."
                             SpeechRecognizer.ERROR_SERVER -> "Speech server error."
+                            SpeechRecognizer.ERROR_SERVER_DISCONNECTED -> "Speech service disconnected."
+                            SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "Speech service is busy. Please try again."
+                            SpeechRecognizer.ERROR_CANNOT_CHECK_SUPPORT -> "Could not check speech support on this device."
                             else -> "Voice recognition error (code $error)"
                         }
 
@@ -200,6 +209,17 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
             speechRecognizer?.destroy()
         } catch (_: Exception) {}
         speechRecognizer = null
+    }
+
+    private fun shouldRetryOnline(error: Int): Boolean {
+        return error == SpeechRecognizer.ERROR_CLIENT ||
+            error == SpeechRecognizer.ERROR_NETWORK ||
+            error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT ||
+            error == SpeechRecognizer.ERROR_SERVER ||
+            error == SpeechRecognizer.ERROR_SERVER_DISCONNECTED ||
+            error == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED ||
+            error == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE ||
+            error == SpeechRecognizer.ERROR_CANNOT_CHECK_SUPPORT
     }
 
     fun stopListening() {

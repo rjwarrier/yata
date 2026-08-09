@@ -103,6 +103,7 @@ fun VoiceTaskOverlay(
     val voiceRecognizer = remember(context) { OnDeviceVoiceRecognizer(context) }
     val voiceState by voiceRecognizer.state.collectAsStateWithLifecycle()
     val rmsDb by voiceRecognizer.rmsDb.collectAsStateWithLifecycle()
+    var manualText by remember { mutableStateOf("") }
 
     var hasMicPermission by remember {
         mutableStateOf(
@@ -110,19 +111,24 @@ fun VoiceTaskOverlay(
         )
     }
 
+    fun restartInAppVoice() {
+        manualText = ""
+        voiceRecognizer.startListening(language = voiceLanguage)
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         hasMicPermission = granted
         if (granted) {
-            voiceRecognizer.startListening(language = voiceLanguage)
+            restartInAppVoice()
         }
     }
 
     LaunchedEffect(isOpen) {
         if (isOpen) {
             if (hasMicPermission) {
-                voiceRecognizer.startListening(language = voiceLanguage)
+                restartInAppVoice()
             } else {
                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
@@ -241,29 +247,6 @@ fun VoiceTaskOverlay(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-    var manualText by remember { mutableStateOf("") }
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val matches = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
-            val spoken = matches?.firstOrNull() ?: ""
-            if (spoken.isNotBlank()) {
-                manualText = spoken
-            }
-        }
-    }
-
-    val launchSystemDictation = {
-        val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Speak your task")
-        }
-        try {
-            speechLauncher.launch(intent)
-        } catch (_: Exception) {}
-    }
-
     if (!hasMicPermission) {
         Text(
             text = stringResource(R.string.voice_task_overlay_mic_permission_required),
@@ -291,8 +274,8 @@ fun VoiceTaskOverlay(
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                androidx.compose.material3.TextButton(onClick = { launchSystemDictation() }) {
-                    Text(stringResource(R.string.voice_task_overlay_tap_to_use_system_voice_dialog))
+                androidx.compose.material3.TextButton(onClick = { restartInAppVoice() }) {
+                    Text(stringResource(R.string.voice_task_overlay_speak_again))
                 }
             }
         }
@@ -397,7 +380,7 @@ fun VoiceTaskOverlay(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = { launchSystemDictation() },
+                    onClick = { restartInAppVoice() },
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)

@@ -50,6 +50,7 @@ import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.AssigneeStack
 import com.mj.yata.ui.widgets.DragDropReorderableColumn
+import com.mj.yata.ui.widgets.TaskPreviewPane
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.sheets.*
@@ -59,6 +60,7 @@ import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import kotlinx.coroutines.launch
 
@@ -183,6 +185,33 @@ fun ProjectDetailScreen(
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
+    val useWideDetail = rememberAdaptiveLayoutInfo().isWide
+    var previewTaskId by remember { mutableStateOf<String?>(null) }
+    val previewTasks = remember(
+        pendingProjectTasks,
+        completedProjectTasks,
+        searchFilteredTasks,
+        statFilteredTasks,
+        searchActive,
+        searchQuery,
+        activeStatFilter
+    ) {
+        when {
+            searchActive && searchQuery.isNotBlank() -> searchFilteredTasks
+            activeStatFilter != null -> statFilteredTasks
+            else -> pendingProjectTasks + completedProjectTasks
+        }
+    }
+    val previewTask = remember(previewTasks, previewTaskId) {
+        previewTasks.find { it.id == previewTaskId }
+    }
+    LaunchedEffect(previewTasks, useWideDetail) {
+        if (!useWideDetail) {
+            previewTaskId = null
+        } else if (previewTaskId != null && previewTasks.none { it.id == previewTaskId }) {
+            previewTaskId = previewTasks.firstOrNull()?.id
+        }
+    }
 
     val totalTasks = projectTasks.size
     val doneTasks = projectTasks.count { it.done }
@@ -518,6 +547,8 @@ fun ProjectDetailScreen(
                     onTaskClick = {
                         if (selectionMode) {
                             if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                        } else if (useWideDetail) {
+                            previewTaskId = task.id
                         } else {
                             onNavigateToTaskDetail(task.id)
                         }
@@ -541,6 +572,8 @@ fun ProjectDetailScreen(
                 )
             }
 
+            Row(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f)) {
             if (selectionMode) {
                 // Selection mode falls back to a flat, non-draggable list — long-press drag
                 // reorder and long-press-to-select both claim the initial press, so they can't
@@ -683,6 +716,27 @@ fun ProjectDetailScreen(
                         }
                     }
                 ) { task -> taskRowFor(task) }
+            }
+            }
+            if (useWideDetail && !selectionMode) {
+                VerticalDivider(
+                    modifier = Modifier.fillMaxHeight(),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+                TaskPreviewPane(
+                    task = previewTask,
+                    list = previewTask?.listId?.let { listsById[it] },
+                    project = project,
+                    people = previewTask?.assigneeIds?.mapNotNull { peopleById[it] }.orEmpty(),
+                    tags = previewTask?.effectiveTags(projectsById, tagsById).orEmpty(),
+                    onOpenTask = onNavigateToTaskDetail,
+                    onToggleTask = { task -> viewModel.toggleTaskDone(task.id) {} },
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .widthIn(min = 320.dp, max = 380.dp),
+                    emptySubtitle = "Preview project tasks without leaving this project."
+                )
+            }
             }
         }
         }
