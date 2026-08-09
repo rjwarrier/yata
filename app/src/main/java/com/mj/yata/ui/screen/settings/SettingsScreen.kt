@@ -3714,15 +3714,21 @@ private fun AboutYataCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(
-                    R.string.settings_about_version,
-                    BuildConfig.VERSION_NAME,
-                    "${BuildConfig.VERSION_CODE}.${BuildInfo.BUILD_DATE}"
-                ),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                shape = CircleShape
+            ) {
+                Text(
+                    text = stringResource(
+                        R.string.settings_about_version,
+                        BuildConfig.VERSION_NAME,
+                        "${BuildConfig.VERSION_CODE}.${BuildInfo.BUILD_DATE}"
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             Spacer(modifier = Modifier.height(8.dp))
