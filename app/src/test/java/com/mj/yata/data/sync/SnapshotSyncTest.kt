@@ -256,8 +256,8 @@ class SnapshotSyncTest {
                     "t1",
                     "nested",
                     subtasks = JSONArray()
-                        .put(subtask("child", "parent"))
-                        .put(subtask("parent"))
+                        .put(subtask("child", "parent", sortOrder = 0))
+                        .put(subtask("parent", sortOrder = 1))
                 )
             )
         )
@@ -266,6 +266,8 @@ class SnapshotSyncTest {
 
         assertEquals("parent", ordered.getJSONObject(0).getString("id"))
         assertEquals("child", ordered.getJSONObject(1).getString("id"))
+        assertEquals(0, ordered.getJSONObject(0).getInt("sortOrder"))
+        assertEquals(1, ordered.getJSONObject(1).getInt("sortOrder"))
 
         val cyclic = snapshot(
             tasks = listOf(
@@ -338,8 +340,8 @@ class SnapshotSyncTest {
         put("tagIds", JSONArray()); put("subtasks", subtasks)
     }
 
-    private fun subtask(id: String, parentId: String? = null) = JSONObject().apply {
-        put("id", id); put("title", id); put("done", false); put("sortOrder", 0)
+    private fun subtask(id: String, parentId: String? = null, sortOrder: Int = 0) = JSONObject().apply {
+        put("id", id); put("title", id); put("done", false); put("sortOrder", sortOrder)
         put("parentSubtaskId", parentId ?: JSONObject.NULL)
     }
 

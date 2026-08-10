@@ -222,6 +222,9 @@ internal object SnapshotMerger {
     fun equivalent(left: JSONObject, right: JSONObject): Boolean =
         canonical(left) == canonical(right)
 
+    fun differenceSummary(left: JSONObject, right: JSONObject): String? =
+        firstDifference(left, right, "$")
+
     internal fun isDeviceLocalSetting(name: String): Boolean =
         name == "backup_interval_minutes" ||
             name == "remote_backup_protocol" ||
@@ -393,6 +396,45 @@ internal object SnapshotMerger {
     private fun valueAt(root: JSONObject?, key: String): Any =
         if (root != null && root.has(key)) root.get(key) else Missing
 
+    private fun firstDifference(left: Any, right: Any, path: String): String? {
+        if (same(left, right)) return null
+        if (left === Missing || right === Missing) {
+            return "$path is ${if (left === Missing) "missing locally" else "extra locally"}"
+        }
+        if (left is JSONObject && right is JSONObject) {
+            val keys = (left.keys().asSequence().toSet() + right.keys().asSequence().toSet()).sorted()
+            keys.forEach { key ->
+                firstDifference(valueAt(left, key), valueAt(right, key), "$path/$key")?.let { return it }
+            }
+            return null
+        }
+        if (left is JSONArray && right is JSONArray) {
+            if (left.length() != right.length()) {
+                return "$path has ${left.length()} item(s) locally, expected ${right.length()}"
+            }
+            for (i in 0 until left.length()) {
+                firstDifference(left.get(i), right.get(i), "$path[$i]")?.let { return it }
+            }
+            return null
+        }
+        return "$path changed after local apply (${left.safeJsonType()} vs ${right.safeJsonType()})"
+    }
+
+    private fun Iterator<String>.asSequence(): Sequence<String> = sequence {
+        while (hasNext()) yield(next())
+    }
+
+    private fun Any.safeJsonType(): String =
+        when (this) {
+            JSONObject.NULL -> "null"
+            is JSONObject -> "object"
+            is JSONArray -> "array"
+            is String -> "string"
+            is Boolean -> "boolean"
+            is Number -> "number"
+            else -> javaClass.simpleName.ifBlank { "value" }
+        }
+
     private val setLikeIdArrayFields = setOf("tagIds", "commonTagIds")
 
     private fun JSONArray.stringListOrNull(): List<String>? {
@@ -455,6 +497,11 @@ internal object SnapshotMerger {
                 visit(parentId)
             }
             state[id] = 2
+            // The repository sanitizes subtasks by sortOrder, then rewrites sortOrder to the
+            // resulting array index. If canonical sync JSON only moves a parent before its child
+            // but leaves stale sortOrder values behind, importing and re-exporting that snapshot
+            // mutates it and post-apply verification fails even though the server publish landed.
+            row.put("sortOrder", ordered.length())
             ordered.put(row)
         }
         rows.keys
@@ -680,8 +727,10 @@ class SnapshotSyncEngine @Inject constructor(
                 "The server snapshot was published, but applying it locally failed; sync again to retry"
             }
             val applied = normalized(jsonExporter.exportToBytes())
-            check(SnapshotMerger.equivalent(applied, localTarget)) {
-                "The server snapshot was published, but local verification failed; sync again to retry"
+            SnapshotMerger.differenceSummary(applied, localTarget)?.let { difference ->
+                throw IllegalStateException(
+                    "The server snapshot was published, but local verification failed at $difference; sync again to retry"
+                )
             }
         }
         writeBaseline(prepared.scopeKey, prepared.canonical)

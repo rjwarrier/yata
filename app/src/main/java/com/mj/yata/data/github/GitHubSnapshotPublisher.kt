@@ -150,26 +150,37 @@ internal class GitHubSnapshotPublisher(
             return RemoteSnapshot(bytes = headBytes, isRecovery = false)
         }
         progress(44, "Finding GitHub recovery point")
-        return findRecoverySnapshot(config, excludedCommitSha = head.commitSha)?.let { bytes ->
+        val recovery = findRecoverySnapshot(config, excludedCommitSha = head.commitSha)
+        return recovery.bytes?.let { bytes ->
             RemoteSnapshot(bytes = bytes, isRecovery = true)
-        } ?: throw GitHubTransportException(
-            "GitHub snapshot is damaged and no valid history snapshot was found"
-        )
+        } ?: throw GitHubTransportException(recovery.failureMessage())
     }
 
     private suspend fun findRecoverySnapshot(
         config: GitHubSyncConfig,
         excludedCommitSha: String?
-    ): ByteArray? =
+    ): RecoverySearchResult {
+        val failures = mutableListOf<String>()
+        var checked = 0
         api.listCommits(config.owner, config.repo, config.branch, SNAPSHOT_PATH)
             .asSequence()
             .filterNot { it.sha == excludedCommitSha }
             .take(MAX_RECOVERY_COMMITS)
-            .firstNotNullOfOrNull { commit ->
-                runCatching { readSnapshot(config, commit.sha) }
-                    .getOrNull()
-                    ?.takeIf(validateRemoteSnapshot)
+            .forEach { commit ->
+                checked++
+                val bytes = try {
+                    readSnapshot(config, commit.sha)
+                } catch (e: Exception) {
+                    failures += "${commit.sha.take(12)}: ${e.safeReason()}"
+                    return@forEach
+                }
+                if (validateRemoteSnapshot(bytes)) {
+                    return RecoverySearchResult(bytes = bytes, checked = checked, failures = failures)
+                }
+                failures += "${commit.sha.take(12)}: snapshot did not validate"
             }
+        return RecoverySearchResult(bytes = null, checked = checked, failures = failures)
+    }
 
     private suspend fun readHead(config: GitHubSyncConfig): HeadState {
         val ref = try {
@@ -286,6 +297,31 @@ internal class GitHubSnapshotPublisher(
         val bytes: ByteArray?,
         val isRecovery: Boolean
     )
+
+    private data class RecoverySearchResult(
+        val bytes: ByteArray?,
+        val checked: Int,
+        val failures: List<String>
+    ) {
+        fun failureMessage(): String = buildString {
+            append("GitHub snapshot is damaged and no valid history snapshot was found")
+            append("; checked ").append(checked).append(" recovery commit(s)")
+            failures.lastOrNull()?.let { append("; latest recovery failure: ").append(it) }
+        }
+    }
+
+    private fun Throwable.safeReason(): String {
+        var current: Throwable? = this
+        while (current != null) {
+            current.message
+                ?.replace(Regex("\\s+"), " ")
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+                ?.let { return it.take(160) }
+            current = current.cause
+        }
+        return javaClass.simpleName.takeIf { it.isNotBlank() } ?: "failed"
+    }
 
     companion object {
         const val SNAPSHOT_PATH = "yata/snapshot.json"
