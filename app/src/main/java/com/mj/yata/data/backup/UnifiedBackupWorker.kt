@@ -64,7 +64,9 @@ class UnifiedBackupWorker(
         tag = TAG,
         runReason = "Scheduled backup started"
     ) {
-            val results = backupOperations.backupAllConfigured()
+            val results = backupOperations.backupAllConfigured(
+                remoteSyncRunReason = "Automatic scheduled backup sync"
+            )
             if (results.isEmpty()) {
                 operationHistoryStore.recordSkipped(OperationHistoryStore.BACKUP_UNIFIED, "No backup destinations are enabled")
                 return@runOperationSafely Result.success()

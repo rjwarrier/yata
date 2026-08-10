@@ -98,6 +98,7 @@ fun CrashLogScreen(
     }
 
     val copiedMessage = stringResource(R.string.crash_log_copied)
+    val operationLogCopiedMessage = "Log copied"
     val shareSubject = stringResource(R.string.crash_log_share_subject)
     val testSentMessage = stringResource(R.string.diagnostics_test_reminder_sent)
     val testFailedMessage = stringResource(R.string.diagnostics_test_reminder_failed)
@@ -160,7 +161,13 @@ fun CrashLogScreen(
                 BackupHealthCard(entries = operationHistory.filter { it.category == "Backup" || it.category == "Sync" })
             }
             item {
-                OperationHistoryPanel(entries = operationHistory)
+                OperationHistoryPanel(
+                    entries = operationHistory,
+                    onCopyLog = { log ->
+                        clipboard.setText(AnnotatedString(log))
+                        scope.launch { snackbarHostState.showSnackbar(operationLogCopiedMessage) }
+                    }
+                )
             }
             item {
                 CrashReportsSummary(logCount = logs.size)
@@ -251,7 +258,10 @@ private fun CrashReportsSummary(logCount: Int) {
 }
 
 @Composable
-private fun OperationHistoryPanel(entries: List<OperationHistoryEntry>) {
+private fun OperationHistoryPanel(
+    entries: List<OperationHistoryEntry>,
+    onCopyLog: (String) -> Unit
+) {
     val groupedEntries = remember(entries) { entries.groupBy { it.category }.entries.toList() }
 
     Surface(
@@ -281,7 +291,7 @@ private fun OperationHistoryPanel(entries: List<OperationHistoryEntry>) {
                     )
                     for (index in categoryEntries.indices) {
                         val entry = categoryEntries[index]
-                        OperationHistoryRow(entry = entry)
+                        OperationHistoryRow(entry = entry, onCopyLog = onCopyLog)
                         if (index != categoryEntries.lastIndex) {
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
                         }
@@ -293,8 +303,12 @@ private fun OperationHistoryPanel(entries: List<OperationHistoryEntry>) {
 }
 
 @Composable
-private fun OperationHistoryRow(entry: OperationHistoryEntry) {
+private fun OperationHistoryRow(
+    entry: OperationHistoryEntry,
+    onCopyLog: (String) -> Unit
+) {
     var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
+    val copyableLog = entry.copyableLog?.takeIf { it.isNotBlank() }
 
     Column(
         modifier = Modifier
@@ -359,6 +373,36 @@ private fun OperationHistoryRow(entry: OperationHistoryEntry) {
                 value = entry.retryCount.toString(),
                 modifier = Modifier.fillMaxWidth()
             )
+            copyableLog?.let { log ->
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Shareable GitHub sync log",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                    TextButton(onClick = { onCopyLog(log) }) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.crash_log_copy))
+                    }
+                }
+                Text(
+                    text = log,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 220.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f))
+                        .verticalScroll(rememberScrollState())
+                        .horizontalScroll(rememberScrollState())
+                        .padding(10.dp)
+                )
+            }
         }
     }
 }

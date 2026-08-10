@@ -94,7 +94,8 @@ class BackupOperations @Inject constructor(
      * attempted and don't appear in the list.
      */
     suspend fun backupAllConfigured(
-        allowInitialJoinMerge: Boolean = false
+        allowInitialJoinMerge: Boolean = false,
+        remoteSyncRunReason: String = "Automatic sync before backup"
     ): List<BackupRunResult> = buildList {
         // Host check as well as the toggle: the switch can be on with the server dialog never
         // filled in, and an attempt that can only fail would report a backup failure for something
@@ -105,7 +106,7 @@ class BackupOperations @Inject constructor(
         ) {
             add(
                 attempt(BackupDestination.SELF_HOSTED) {
-                    syncSelfHostedWithProgress("Syncing before scheduled backup") { progress ->
+                    syncSelfHostedWithProgress(remoteSyncRunReason) { progress ->
                         currentTransport().syncNow(
                             progress,
                             SyncRunOptions(allowInitialJoinMerge = allowInitialJoinMerge)

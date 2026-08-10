@@ -2097,7 +2097,12 @@ private data class MainNavigationState(
     ) {
         backupOperations.cancelDebouncedBackup()
         safeLaunch {
-            onResult(backupOperations.backupAllConfigured(allowInitialJoinMerge = allowInitialJoinMerge))
+            onResult(
+                backupOperations.backupAllConfigured(
+                    allowInitialJoinMerge = allowInitialJoinMerge,
+                    remoteSyncRunReason = "Manual sync & backup started by user"
+                )
+            )
         }
     }
 
