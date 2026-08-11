@@ -551,6 +551,24 @@ class YataRepositoryImpl @Inject constructor(
         widgetUpdater.notifyTasksChanged()
     }
 
+    override suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?) {
+        if (tags.isEmpty()) return
+        db.withTransaction {
+            pendingGroup?.let { db.tagGroupDao().insert(it.toEntity()) }
+            db.tagDao().insertAll(tags.map { it.toEntity() })
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?) {
+        if (tagIds.isEmpty()) return
+        db.withTransaction {
+            pendingGroup?.let { db.tagGroupDao().insert(it.toEntity()) }
+            db.tagDao().setGroup(tagIds, groupId)
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
     override suspend fun deleteTag(tag: Tag) {
         db.tagDao().delete(tag.toEntity())
         widgetUpdater.notifyTasksChanged()

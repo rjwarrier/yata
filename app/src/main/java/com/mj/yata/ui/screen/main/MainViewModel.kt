@@ -1606,7 +1606,6 @@ private data class MainNavigationState(
         pendingGroup: TagGroup? = null
     ) {
         safeLaunch {
-            pendingGroup?.let { repository.upsertTagGroup(it) }
             val tag = Tag(
                 id = "tag_" + UUID.randomUUID().toString(),
                 name = name.lowercase().trim(),
@@ -1614,7 +1613,7 @@ private data class MainNavigationState(
                 groupId = groupId,
                 hideCompletedByDefault = hideCompletedByDefault
             )
-            repository.upsertTag(tag)
+            repository.upsertTags(listOf(tag), pendingGroup)
         }
     }
 
@@ -1626,8 +1625,7 @@ private data class MainNavigationState(
 
     fun upsertTag(tag: Tag, pendingGroup: TagGroup?) {
         safeLaunch {
-            pendingGroup?.let { repository.upsertTagGroup(it) }
-            repository.upsertTag(tag)
+            repository.upsertTags(listOf(tag), pendingGroup)
         }
     }
 
@@ -1646,20 +1644,13 @@ private data class MainNavigationState(
 
     fun setTagsGroup(tagIds: List<String>, groupId: String?) {
         safeLaunch {
-            val byId = tags.value.associateBy { it.id }
-            tagIds.forEach { id ->
-                byId[id]?.let { repository.upsertTag(it.copy(groupId = groupId)) }
-            }
+            repository.setTagsGroup(tagIds, groupId, pendingGroup = null)
         }
     }
 
     fun createTagGroupAndAssign(group: TagGroup, tagIds: List<String>) {
         safeLaunch {
-            repository.upsertTagGroup(group)
-            val byId = tags.value.associateBy { it.id }
-            tagIds.forEach { id ->
-                byId[id]?.let { repository.upsertTag(it.copy(groupId = group.id)) }
-            }
+            repository.setTagsGroup(tagIds, group.id, pendingGroup = group)
         }
     }
 

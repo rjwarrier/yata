@@ -107,6 +107,8 @@ interface YataRepository {
     fun getTags(): Flow<List<Tag>>
     fun getTagById(id: String): Flow<Tag?>
     suspend fun upsertTag(tag: Tag)
+    suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?)
+    suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?)
     suspend fun deleteTag(tag: Tag)
 
     // Tag groups

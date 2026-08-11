@@ -114,6 +114,8 @@ class RoutingYataRepository @Inject constructor(
     override fun getTags(): Flow<List<Tag>> = routed(real.getTags(), demo.getTags())
     override fun getTagById(id: String): Flow<Tag?> = routed(real.getTagById(id), demo.getTagById(id))
     override suspend fun upsertTag(tag: Tag) = write { real.upsertTag(tag) }
+    override suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?) = write { real.upsertTags(tags, pendingGroup) }
+    override suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?) = write { real.setTagsGroup(tagIds, groupId, pendingGroup) }
     override suspend fun deleteTag(tag: Tag) = write { real.deleteTag(tag) }
 
     override fun getTagGroups(): Flow<List<TagGroup>> = routed(real.getTagGroups(), demo.getTagGroups())

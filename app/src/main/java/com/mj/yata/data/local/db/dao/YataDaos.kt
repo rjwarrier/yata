@@ -114,6 +114,9 @@ interface TagDao {
     @Delete
     suspend fun delete(tag: TagEntity)
 
+    @Query("UPDATE tags SET groupId = :groupId WHERE id IN (:tagIds)")
+    suspend fun setGroup(tagIds: List<String>, groupId: String?)
+
     @Query("UPDATE tags SET groupId = NULL WHERE groupId = :groupId")
     suspend fun clearGroup(groupId: String)
 }

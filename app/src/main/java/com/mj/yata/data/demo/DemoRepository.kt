@@ -98,6 +98,8 @@ class DemoRepository @Inject constructor() : YataRepository {
     override fun getTags(): Flow<List<Tag>> = dataset.map { it.tags }
     override fun getTagById(id: String): Flow<Tag?> = dataset.map { d -> d.tags.find { it.id == id } }
     override suspend fun upsertTag(tag: Tag) = Unit
+    override suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?) = Unit
+    override suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?) = Unit
     override suspend fun deleteTag(tag: Tag) = Unit
 
     override fun getTagGroups(): Flow<List<TagGroup>> = dataset.map { it.tagGroups }
