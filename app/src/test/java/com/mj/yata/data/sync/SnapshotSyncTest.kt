@@ -226,6 +226,44 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun normalization_treatsMissingOptionalFieldsAsNull() {
+        val missing = snapshot(
+            projects = listOf(project("p1")),
+            tasks = listOf(task("t1", "undated"))
+        )
+        val explicitNulls = snapshot(
+            projects = listOf(
+                project("p1")
+                    .put("due", JSONObject.NULL)
+                    .put("defaultReminder", JSONObject.NULL)
+                    .put("description", JSONObject.NULL)
+            ),
+            tasks = listOf(
+                task("t1", "undated")
+                    .put("due", JSONObject.NULL)
+                    .put("startDate", JSONObject.NULL)
+                    .put("time", JSONObject.NULL)
+                    .put("reminder", JSONObject.NULL)
+                    .put("notes", JSONObject.NULL)
+                    .put("seriesId", JSONObject.NULL)
+                    .put("recurrence", JSONObject.NULL)
+                    .put("completedAt", JSONObject.NULL)
+                    .put("createdAt", JSONObject.NULL)
+                    .put("deletedAt", JSONObject.NULL)
+                    .put("followUpAt", JSONObject.NULL)
+                    .put("estimateMinutes", JSONObject.NULL)
+            )
+        )
+
+        assertTrue(
+            SnapshotMerger.equivalent(
+                SnapshotMerger.normalizeForSync(missing),
+                SnapshotMerger.normalizeForSync(explicitNulls)
+            )
+        )
+    }
+
+    @Test
     fun normalization_preservesOwnerAndCanonicalizesCollaboratorOrder() {
         val raw = snapshot(tasks = listOf(task("t1", "assigned")))
         raw.getJSONArray("tasks").getJSONObject(0).put(

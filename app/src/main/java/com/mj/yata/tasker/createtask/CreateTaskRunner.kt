@@ -136,10 +136,9 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
         val names = raw?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: return emptyList()
         val existingTags = repository.getTags().first()
         return names.map { name ->
-            val normalized = name.lowercase(Locale.getDefault())
-            existingTags.find { it.name.equals(normalized, ignoreCase = true) }?.id ?: run {
+            existingTags.find { it.name.equals(name, ignoreCase = true) }?.id ?: run {
                 val id = "tag_" + UUID.randomUUID().toString()
-                repository.upsertTag(Tag(id = id, name = normalized, color = accentFor(normalized)))
+                repository.upsertTag(Tag(id = id, name = name, color = accentFor(name)))
                 id
             }
         }

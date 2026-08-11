@@ -205,6 +205,7 @@
     <string name="settings_about_made_in">Made in 🇮🇳</string>
     <string name="settings_about_other_apps">Other apps by developers</string>
     <string name="settings_about_github">View source on GitHub</string>
+    <string name="settings_about_website">Yata website</string>
     <string name="settings_about_share">Share YATA</string>
     <string name="settings_about_share_text">YATA is a Material 3 Expressive task manager for Android — check it out: https://github.com/rjwarrier/yata/releases</string>
     <string name="share_app_title">Share YATA</string>
@@ -251,8 +252,15 @@
     <string name="settings_swipe_actions">Swipe actions</string>
     <string name="settings_swipe_actions_desc">Swipe rows to complete or delete tasks.</string>
 
-    <string name="settings_default_list">Default list for new tasks</string>
-    <string name="settings_default_reminder_time">Default reminder time</string>
+    <string name="settings_defaults_group">Defaults</string>
+    <string name="settings_default_list">List</string>
+    <string name="settings_default_project">Project</string>
+    <string name="settings_default_tags">Tags</string>
+    <string name="settings_default_tags_desc">Automatically apply these tags to new tasks.</string>
+    <string name="settings_default_tags_empty">No tags yet.</string>
+    <string name="settings_default_tags_clear">Clear tags</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_default_reminder_time">Reminder time</string>
     <string name="settings_start_week_sunday">Start week on Sunday</string>
     <string name="settings_start_week_sunday_desc">App agendas will start on Sunday instead of Monday.</string>
     <string name="settings_voice_input_language">Voice input language</string>
@@ -262,16 +270,27 @@
     <!-- New-task defaults -->
     <string name="settings_auto_assign">Auto-assign new tasks to you</string>
     <string name="settings_auto_assign_desc">New tasks start assigned to you. Turn this off to have them start unassigned - you can still pick an assignee on any task.</string>
-    <string name="settings_default_due_date">Default due date</string>
+    <string name="settings_default_due_date">Due date</string>
     <string name="settings_default_due_date_desc">What a new task is due when you don\'t pick a date yourself.</string>
     <string name="settings_due_today">Today</string>
     <string name="settings_due_tomorrow">Tomorrow</string>
     <string name="settings_due_none">No date</string>
-    <string name="settings_default_priority">Default priority</string>
+    <string name="settings_default_priority">Priority</string>
+    <string name="settings_default_estimate">Estimate</string>
+    <string name="settings_default_estimate_desc">Planned effort added to new tasks by default.</string>
+    <string name="settings_default_estimate_custom_title">Estimate</string>
+    <string name="settings_default_estimate_custom_label">Minutes</string>
+    <string name="settings_default_estimate_custom_error">Enter 1-1440 minutes.</string>
+    <string name="settings_custom">Custom</string>
     <string name="settings_priority_none">None</string>
     <string name="settings_priority_low">Low</string>
     <string name="settings_priority_med">Medium</string>
     <string name="settings_priority_high">High</string>
+    <string name="settings_subtask_completion_action">When all subtasks are done</string>
+    <string name="settings_subtask_completion_action_desc">Choose whether the main task finishes automatically, asks first, or stays open.</string>
+    <string name="settings_subtask_completion_ask">Ask</string>
+    <string name="settings_subtask_completion_auto">Auto</string>
+    <string name="settings_subtask_completion_nothing">Nothing</string>
 
     <!-- Undo window -->
     <string name="settings_undo_window">Undo window</string>
@@ -929,6 +948,15 @@
     <!-- Start date ("not actionable before"). %1$s is an already-formatted date. -->
     <string name="task_starts_on">Starts %1$s</string>
     <string name="task_start_date">Start date</string>
+    <string name="task_start_date_day_before_due">Day before due</string>
+    <string name="task_start_date_custom_days_chip">Custom days before</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">%1$d day before due</item>
+        <item quantity="other">%1$d days before due</item>
+    </plurals>
+    <string name="task_start_date_custom_days_title">Start before due date</string>
+    <string name="task_start_date_custom_days_label">Days before due date</string>
+    <string name="task_start_date_custom_days_error">Enter 1-3650 days.</string>
     <string name="task_start_date_none">No start date</string>
     <string name="cd_pick_start_date">Pick start date</string>
     <string name="cd_clear_start_date">Clear start date</string>

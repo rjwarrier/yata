@@ -27,6 +27,19 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun preservesTypedCaseInTitleAndExtractedNames() {
+        val result = NaturalLanguageParser.parse(
+            "tomorrow Review iPhone Quote for eBay project ClientCRM list Q3Board tag DeepWork assign to JaneDoe",
+            ref
+        )
+        assertEquals("Review iPhone Quote for eBay", result.title)
+        assertEquals("ClientCRM", result.projectName)
+        assertEquals("Q3Board", result.listName)
+        assertEquals(listOf("DeepWork"), result.tagNames)
+        assertEquals(listOf("JaneDoe"), result.assigneeNames)
+    }
+
+    @Test
     fun parsesSpanishTomorrowAndTime() {
         val result = NaturalLanguageParser.parse("mañana a las 15:30 comprar leche", ref)
         assertEquals("2026-07-05", result.due)

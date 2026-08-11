@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -53,6 +54,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.ChildCare
@@ -98,6 +100,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -115,6 +118,7 @@ import com.mj.yata.domain.model.FabPosition
 import com.mj.yata.domain.model.MotionMode
 import com.mj.yata.domain.model.SavedThemePreset
 import com.mj.yata.domain.model.StartupTab
+import com.mj.yata.domain.model.SubtaskCompletionAction
 import com.mj.yata.domain.model.SwipeAction
 import com.mj.yata.domain.model.TaskRowDensity
 import com.mj.yata.domain.model.TimeFormat
@@ -144,6 +148,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.toArgb
 import com.mj.yata.util.ProfilePhotoUtils
+import com.mj.yata.util.EstimateUtils
 import com.mj.yata.util.initialSyncConfirmationRequired
 import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
@@ -255,6 +260,9 @@ fun SettingsScreen(
     val userEmail = uiState.userEmail
     val userPhotoUri = uiState.userPhotoUri
     val defaultListId = uiState.defaultListId
+    val defaultProjectId = uiState.defaultProjectId
+    val defaultTagIds = uiState.defaultTagIds
+    val defaultEstimateMinutes = uiState.defaultEstimateMinutes
     val startOfWeekSunday = uiState.startOfWeekSunday
     val defaultReminderHour = uiState.defaultReminderHour
     val defaultReminderMinute = uiState.defaultReminderMinute
@@ -294,12 +302,15 @@ fun SettingsScreen(
     val snoozeTomorrowMinute by viewModel.snoozeTomorrowMinute.collectAsStateWithLifecycle()
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
+    val subtaskCompletionAction by viewModel.subtaskCompletionAction.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val todayShowUpcomingWhenEmpty by viewModel.todayShowUpcomingWhenEmpty.collectAsStateWithLifecycle()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
     val lists = uiState.lists
+    val activeProjects = uiState.activeProjects
+    val tags = uiState.tags
     val backupIntervalMinutes = uiState.backupIntervalMinutes
     val localBackupEnabled = uiState.localBackupEnabled
     val localBackupLastAt = uiState.localBackupLastAt
@@ -334,6 +345,15 @@ fun SettingsScreen(
     val voiceLanguage by viewModel.voiceRecognitionLanguage.collectAsStateWithLifecycle()
     var showVoiceLanguageMenu by remember { mutableStateOf(false) }
     var showDefaultListMenu by remember { mutableStateOf(false) }
+    var showDefaultProjectMenu by remember { mutableStateOf(false) }
+    var showDefaultTagsMenu by remember { mutableStateOf(false) }
+    var showDefaultEstimateDialog by remember { mutableStateOf(false) }
+    var defaultEstimateText by rememberSaveable { mutableStateOf("") }
+    val defaultListMenuScrollState = rememberScrollState()
+    val defaultProjectMenuScrollState = rememberScrollState()
+    val defaultTagsMenuScrollState = rememberScrollState()
+    val voiceLanguageMenuScrollState = rememberScrollState()
+    val dateAliasTargetMenuScrollState = rememberScrollState()
     var showStartupTabMenu by remember { mutableStateOf(false) }
     var showSwipeRightMenu by remember { mutableStateOf(false) }
     var showSwipeLeftMenu by remember { mutableStateOf(false) }
@@ -395,9 +415,9 @@ fun SettingsScreen(
 
     val settingsHubDestinations = listOf(
         SettingsHubDestination(stringResource(R.string.settings_section_appearance_display), stringResource(R.string.settings_search_appearance_display_summary), SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
+        SettingsHubDestination(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
         SettingsHubDestination(stringResource(R.string.settings_section_navigation_features), stringResource(R.string.settings_search_navigation_features_summary), SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Navigation),
         SettingsHubDestination(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
-        SettingsHubDestination(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
         SettingsHubDestination(stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
         SettingsHubDestination(stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
         SettingsHubDestination(stringResource(R.string.settings_section_data_management), stringResource(R.string.settings_search_data_summary), SettingsDestination.DATA_MANAGEMENT, Icons.Default.Storage),
@@ -416,7 +436,7 @@ fun SettingsScreen(
         SettingsSearchTarget("manage", stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Build),
         SettingsSearchTarget("tasker", "Tasker", "Automation access for creating tasks", "tasker automation plugin create task", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
-        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
+        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me subtask complete completion auto ask", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
         SettingsSearchTarget("date_aliases", "Date aliases", "Custom quick-add words for due dates", "quick add natural language date aliases keywords today tomorrow", SettingsDestination.TASK_DEFAULTS, Icons.Default.CalendarMonth),
         SettingsSearchTarget("notifications", stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
         SettingsSearchTarget("privacy_security", stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
@@ -804,6 +824,30 @@ fun SettingsScreen(
                         }
                     }
 
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_enhanced_theming),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_enhanced_theming_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = enhancedM3ThemingEnabled,
+                            onCheckedChange = { viewModel.setEnhancedM3ThemingEnabled(it) }
+                        )
+                    }
+
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -935,28 +979,6 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_enhanced_theming),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_enhanced_theming_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = enhancedM3ThemingEnabled,
-                            onCheckedChange = { viewModel.setEnhancedM3ThemingEnabled(it) }
-                        )
-                    }
-
                 }
             }
         }
@@ -971,117 +993,41 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_ui_size),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_ui_size_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     var sliderPosition by remember(uiScale) { mutableFloatStateOf(uiScale) }
                     val presets = listOf("Small" to 0.85f, "Normal" to 1.0f, "Large" to 1.3f)
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.settings_font_sample),
-                            fontSize = (28 * sliderPosition).sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Slider(
+                    CompactScaleSliderSetting(
+                        title = stringResource(R.string.settings_ui_size),
+                        description = stringResource(R.string.settings_ui_size_desc),
                         value = sliderPosition,
                         onValueChange = { sliderPosition = it },
                         onValueChangeFinished = { viewModel.setUiScale(sliderPosition) },
                         valueRange = 0.85f..1.3f,
-                        steps = 8 // 10 stops total (min + 8 + max), 0.05 apart
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        presets.forEach { (label, value) ->
-                            TextButton(onClick = {
-                                sliderPosition = value
-                                viewModel.setUiScale(value)
-                            }) {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                            }
+                        steps = 8,
+                        presets = presets,
+                        onPresetSelected = { value ->
+                            sliderPosition = value
+                            viewModel.setUiScale(value)
                         }
-                    }
+                    )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Text(
-                        text = stringResource(R.string.settings_text_size),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_text_size_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     var textSliderPosition by remember(textScale) { mutableFloatStateOf(textScale) }
                     val textPresets = listOf("Small" to 0.85f, "Normal" to 1.0f, "Large" to 1.3f)
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.settings_font_sample),
-                            fontSize = (28 * textSliderPosition).sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Slider(
+                    CompactScaleSliderSetting(
+                        title = stringResource(R.string.settings_text_size),
+                        description = stringResource(R.string.settings_text_size_desc),
                         value = textSliderPosition,
                         onValueChange = { textSliderPosition = it },
                         onValueChangeFinished = { viewModel.setTextScale(textSliderPosition) },
                         valueRange = 0.85f..1.3f,
-                        steps = 8
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        textPresets.forEach { (label, value) ->
-                            TextButton(onClick = {
-                                textSliderPosition = value
-                                viewModel.setTextScale(value)
-                            }) {
-                                Text(
-                                    text = label,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
+                        steps = 8,
+                        presets = textPresets,
+                        onPresetSelected = { value ->
+                            textSliderPosition = value
+                            viewModel.setTextScale(value)
                         }
-                    }
+                    )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -1434,6 +1380,50 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_start_week_sunday),
+                    subtitle = stringResource(R.string.settings_start_week_sunday_desc),
+                    checked = startOfWeekSunday,
+                    onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_subtask_completion_action),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_subtask_completion_action_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val askLabel = stringResource(R.string.settings_subtask_completion_ask)
+                    val autoLabel = stringResource(R.string.settings_subtask_completion_auto)
+                    val nothingLabel = stringResource(R.string.settings_subtask_completion_nothing)
+                    SegmentedControl(
+                        items = listOf(
+                            SubtaskCompletionAction.ASK,
+                            SubtaskCompletionAction.AUTO_COMPLETE,
+                            SubtaskCompletionAction.NOTHING
+                        ),
+                        selectedItem = subtaskCompletionAction,
+                        onItemSelected = { viewModel.setSubtaskCompletionAction(it) },
+                        labelProvider = {
+                            when (it) {
+                                SubtaskCompletionAction.ASK -> askLabel
+                                SubtaskCompletionAction.AUTO_COMPLETE -> autoLabel
+                                SubtaskCompletionAction.NOTHING -> nothingLabel
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                SettingsSubsectionHeader(text = stringResource(R.string.settings_defaults_group))
+
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = stringResource(R.string.settings_default_due_date),
@@ -1463,6 +1453,267 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_default_priority),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    val prioNone = stringResource(R.string.settings_priority_none)
+                    val prioLow = stringResource(R.string.settings_priority_low)
+                    val prioMed = stringResource(R.string.settings_priority_med)
+                    val prioHigh = stringResource(R.string.settings_priority_high)
+                    SegmentedControl(
+                        items = listOf("none", "low", "med", "high"),
+                        selectedItem = defaultPriority,
+                        onItemSelected = { viewModel.setDefaultPriority(it) },
+                        labelProvider = {
+                            when (it) {
+                                "low" -> prioLow
+                                "med" -> prioMed
+                                "high" -> prioHigh
+                                else -> prioNone
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_default_estimate),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_default_estimate_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    val estimateNoneLabel = stringResource(R.string.task_estimate_none)
+                    val estimateCustomLabel = defaultEstimateMinutes
+                        ?.takeIf { it !in setOf(15, 30, 60) }
+                        ?.let(EstimateUtils::format)
+                        ?: stringResource(R.string.settings_custom)
+                    val selectedEstimateItem = when (defaultEstimateMinutes) {
+                        null -> null
+                        15, 30, 60 -> defaultEstimateMinutes
+                        else -> -1
+                    }
+                    SegmentedControl(
+                        items = listOf<Int?>(null, 15, 30, 60, -1),
+                        selectedItem = selectedEstimateItem,
+                        onItemSelected = { minutes ->
+                            when (minutes) {
+                                null -> viewModel.setDefaultEstimateMinutes(null)
+                                -1 -> {
+                                    defaultEstimateText = defaultEstimateMinutes?.toString() ?: "45"
+                                    showDefaultEstimateDialog = true
+                                }
+                                else -> viewModel.setDefaultEstimateMinutes(minutes)
+                            }
+                        },
+                        labelProvider = { minutes ->
+                            when (minutes) {
+                                null -> estimateNoneLabel
+                                -1 -> estimateCustomLabel
+                                else -> EstimateUtils.format(minutes)
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Box {
+                    SettingsPickerSurface(
+                        label = stringResource(R.string.settings_default_list),
+                        value = lists.find { it.id == defaultListId }?.name ?: stringResource(R.string.settings_none),
+                        onClick = { showDefaultListMenu = true }
+                    )
+                    DropdownMenu(
+                        expanded = showDefaultListMenu,
+                        onDismissRequest = { showDefaultListMenu = false },
+                        modifier = Modifier.widthIn(min = 220.dp)
+                    ) {
+                        SettingsScrollableDropdownContent(scrollState = defaultListMenuScrollState) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.settings_none)) },
+                                onClick = {
+                                    viewModel.setDefaultListId("")
+                                    showDefaultListMenu = false
+                                }
+                            )
+                            lists.forEach { list ->
+                                DropdownMenuItem(
+                                    text = { Text(list.name) },
+                                    onClick = {
+                                        viewModel.setDefaultListId(list.id)
+                                        showDefaultListMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                if (projectsFeatureEnabled) {
+                    Box {
+                        SettingsPickerSurface(
+                            label = stringResource(R.string.settings_default_project),
+                            value = activeProjects.find { it.id == defaultProjectId }?.name ?: stringResource(R.string.settings_none),
+                            onClick = { showDefaultProjectMenu = true }
+                        )
+                        DropdownMenu(
+                            expanded = showDefaultProjectMenu,
+                            onDismissRequest = { showDefaultProjectMenu = false },
+                            modifier = Modifier.widthIn(min = 220.dp)
+                        ) {
+                            SettingsScrollableDropdownContent(scrollState = defaultProjectMenuScrollState) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.settings_none)) },
+                                    onClick = {
+                                        viewModel.setDefaultProjectId("")
+                                        showDefaultProjectMenu = false
+                                    }
+                                )
+                                activeProjects.forEach { project ->
+                                    DropdownMenuItem(
+                                        text = { Text(project.name) },
+                                        onClick = {
+                                            viewModel.setDefaultProjectId(project.id)
+                                            showDefaultProjectMenu = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                }
+
+                if (tagsFeatureEnabled) {
+                    val selectedDefaultTags = tags.filter { it.id in defaultTagIds }
+                    val defaultTagsValue = when {
+                        tags.isEmpty() -> stringResource(R.string.settings_default_tags_empty)
+                        selectedDefaultTags.isEmpty() -> stringResource(R.string.settings_none)
+                        selectedDefaultTags.size <= 2 -> selectedDefaultTags.joinToString(", ") { it.name }
+                        else -> stringResource(
+                            R.string.settings_default_tags_value_many,
+                            selectedDefaultTags.take(2).joinToString(", ") { it.name },
+                            selectedDefaultTags.size - 2
+                        )
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box {
+                            SettingsPickerSurface(
+                                label = stringResource(R.string.settings_default_tags),
+                                value = defaultTagsValue,
+                                onClick = {
+                                    if (tags.isNotEmpty()) {
+                                        showDefaultTagsMenu = true
+                                    }
+                                }
+                            )
+                            DropdownMenu(
+                                expanded = showDefaultTagsMenu,
+                                onDismissRequest = { showDefaultTagsMenu = false },
+                                modifier = Modifier.widthIn(min = 240.dp)
+                            ) {
+                                SettingsScrollableDropdownContent(scrollState = defaultTagsMenuScrollState) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.settings_default_tags_clear)) },
+                                        onClick = {
+                                            viewModel.setDefaultTagIds(emptySet())
+                                        }
+                                    )
+                                    tags.forEach { tag ->
+                                        val selected = tag.id in defaultTagIds
+                                        DropdownMenuItem(
+                                            text = { Text(tag.name) },
+                                            leadingIcon = {
+                                                Checkbox(
+                                                    checked = selected,
+                                                    onCheckedChange = null
+                                                )
+                                            },
+                                            onClick = {
+                                                val updated = if (selected) {
+                                                    defaultTagIds - tag.id
+                                                } else {
+                                                    defaultTagIds + tag.id
+                                                }
+                                                viewModel.setDefaultTagIds(updated)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Text(
+                            text = stringResource(R.string.settings_default_tags_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                }
+
+                SettingsRow(
+                    label = stringResource(R.string.settings_default_reminder_time),
+                    value = TaskScheduleUtils.displayTime(defaultReminderHour, defaultReminderMinute),
+                    onClick = { showReminderTimePicker = true }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                val systemDefaultVoiceLabel = stringResource(R.string.settings_voice_system_default)
+                val voiceLanguages = remember(systemDefaultVoiceLabel) {
+                    listOf(
+                        "default" to systemDefaultVoiceLabel,
+                        "en-US" to "English (US)",
+                        "en-IN" to "English (India)",
+                        "en-GB" to "English (UK)",
+                        "es-ES" to "Spanish",
+                        "fr-FR" to "French",
+                        "de-DE" to "German",
+                        "hi-IN" to "Hindi",
+                        "ja-JP" to "Japanese",
+                        "zh-CN" to "Chinese",
+                        "pt-BR" to "Portuguese"
+                    )
+                }
+                Box {
+                    SettingsPickerSurface(
+                        label = stringResource(R.string.settings_voice_input_language),
+                        value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: systemDefaultVoiceLabel,
+                        onClick = { showVoiceLanguageMenu = true }
+                    )
+                    DropdownMenu(
+                        expanded = showVoiceLanguageMenu,
+                        onDismissRequest = { showVoiceLanguageMenu = false },
+                        modifier = Modifier.widthIn(min = 220.dp)
+                    ) {
+                        SettingsScrollableDropdownContent(scrollState = voiceLanguageMenuScrollState) {
+                            voiceLanguages.forEach { (code, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        viewModel.setVoiceRecognitionLanguage(code)
+                                        showVoiceLanguageMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         text = stringResource(R.string.settings_date_aliases),
@@ -1481,29 +1732,56 @@ fun SettingsScreen(
                         TextField(
                             value = newDateAlias,
                             onValueChange = { newDateAlias = it },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(64.dp),
                             singleLine = true,
                             label = { Text(stringResource(R.string.settings_date_alias_word_label)) },
                             shape = YataCompactFieldShape,
                             colors = yataFieldColors()
                         )
-                        Box {
-                            AssistChip(
-                                onClick = { showDateAliasTargetMenu = true },
-                                label = { Text(selectedDateAliasTarget.label) }
-                            )
+                        Box(
+                            modifier = Modifier.height(64.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .height(64.dp)
+                                    .clickable { showDateAliasTargetMenu = true },
+                                shape = YataCompactFieldShape,
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
+                                )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .padding(horizontal = 18.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = selectedDateAliasTarget.label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
                             DropdownMenu(
                                 expanded = showDateAliasTargetMenu,
-                                onDismissRequest = { showDateAliasTargetMenu = false }
+                                onDismissRequest = { showDateAliasTargetMenu = false },
+                                modifier = Modifier.widthIn(min = 168.dp)
                             ) {
-                                DateAliasTarget.entries.forEach { target ->
-                                    DropdownMenuItem(
-                                        text = { Text(target.label) },
-                                        onClick = {
-                                            selectedDateAliasTarget = target
-                                            showDateAliasTargetMenu = false
-                                        }
-                                    )
+                                SettingsScrollableDropdownContent(scrollState = dateAliasTargetMenuScrollState) {
+                                    DateAliasTarget.entries.forEach { target ->
+                                        DropdownMenuItem(
+                                            text = { Text(target.label) },
+                                            onClick = {
+                                                selectedDateAliasTarget = target
+                                                showDateAliasTargetMenu = false
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1538,107 +1816,6 @@ fun SettingsScreen(
                                     }
                                 )
                             }
-                        }
-                    }
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_default_priority),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                    )
-                    val prioNone = stringResource(R.string.settings_priority_none)
-                    val prioLow = stringResource(R.string.settings_priority_low)
-                    val prioMed = stringResource(R.string.settings_priority_med)
-                    val prioHigh = stringResource(R.string.settings_priority_high)
-                    SegmentedControl(
-                        items = listOf("none", "low", "med", "high"),
-                        selectedItem = defaultPriority,
-                        onItemSelected = { viewModel.setDefaultPriority(it) },
-                        labelProvider = {
-                            when (it) {
-                                "low" -> prioLow
-                                "med" -> prioMed
-                                "high" -> prioHigh
-                                else -> prioNone
-                            }
-                        }
-                    )
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                Box {
-                    SettingsRow(
-                        label = stringResource(R.string.settings_default_list),
-                        value = lists.find { it.id == defaultListId }?.name ?: stringResource(R.string.settings_none),
-                        onClick = { showDefaultListMenu = true }
-                    )
-                    DropdownMenu(expanded = showDefaultListMenu, onDismissRequest = { showDefaultListMenu = false }) {
-                        lists.forEach { list ->
-                            DropdownMenuItem(
-                                text = { Text(list.name) },
-                                onClick = {
-                                    viewModel.setDefaultListId(list.id)
-                                    showDefaultListMenu = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                SettingsRow(
-                    label = stringResource(R.string.settings_default_reminder_time),
-                    value = TaskScheduleUtils.displayTime(defaultReminderHour, defaultReminderMinute),
-                    onClick = { showReminderTimePicker = true }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                SettingsToggleRow(
-                    title = stringResource(R.string.settings_start_week_sunday),
-                    subtitle = stringResource(R.string.settings_start_week_sunday_desc),
-                    checked = startOfWeekSunday,
-                    onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                val systemDefaultVoiceLabel = stringResource(R.string.settings_voice_system_default)
-                val voiceLanguages = remember(systemDefaultVoiceLabel) {
-                    listOf(
-                        "default" to systemDefaultVoiceLabel,
-                        "en-US" to "English (US)",
-                        "en-IN" to "English (India)",
-                        "en-GB" to "English (UK)",
-                        "es-ES" to "Spanish",
-                        "fr-FR" to "French",
-                        "de-DE" to "German",
-                        "hi-IN" to "Hindi",
-                        "ja-JP" to "Japanese",
-                        "zh-CN" to "Chinese",
-                        "pt-BR" to "Portuguese"
-                    )
-                }
-                Box {
-                    SettingsRow(
-                        label = stringResource(R.string.settings_voice_input_language),
-                        value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: systemDefaultVoiceLabel,
-                        onClick = { showVoiceLanguageMenu = true }
-                    )
-                    DropdownMenu(expanded = showVoiceLanguageMenu, onDismissRequest = { showVoiceLanguageMenu = false }) {
-                        voiceLanguages.forEach { (code, label) ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    viewModel.setVoiceRecognitionLanguage(code)
-                                    showVoiceLanguageMenu = false
-                                }
-                            )
                         }
                     }
                 }
@@ -3489,6 +3666,61 @@ fun SettingsScreen(
         )
     }
 
+    if (showDefaultEstimateDialog) {
+        val estimateMinutes = defaultEstimateText.toIntOrNull()
+        val estimateValid = estimateMinutes != null && estimateMinutes in 1..1440
+        AlertDialog(
+            onDismissRequest = { showDefaultEstimateDialog = false },
+            title = { Text(stringResource(R.string.settings_default_estimate_custom_title)) },
+            text = {
+                OutlinedTextField(
+                    value = defaultEstimateText,
+                    onValueChange = { value ->
+                        defaultEstimateText = value.filter { it.isDigit() }.take(4)
+                    },
+                    label = { Text(stringResource(R.string.settings_default_estimate_custom_label)) },
+                    singleLine = true,
+                    isError = defaultEstimateText.isNotBlank() && !estimateValid,
+                    supportingText = {
+                        if (defaultEstimateText.isNotBlank() && !estimateValid) {
+                            Text(stringResource(R.string.settings_default_estimate_custom_error))
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (estimateValid) {
+                                viewModel.setDefaultEstimateMinutes(estimateMinutes)
+                                showDefaultEstimateDialog = false
+                            }
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = estimateValid,
+                    onClick = {
+                        if (estimateMinutes != null) {
+                            viewModel.setDefaultEstimateMinutes(estimateMinutes)
+                            showDefaultEstimateDialog = false
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.action_done))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDefaultEstimateDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     YataTimePickerLauncher(
         show = showAgendaTimePicker,
         initialTime = TaskScheduleUtils.formatTime(dailyAgendaHour, dailyAgendaMinute),
@@ -3865,20 +4097,60 @@ private fun OtherAppsCard(modifier: Modifier = Modifier) {
 }
 
 private const val YATA_GITHUB_URL = "https://github.com/rjwarrier/yata"
+private const val YATA_WEBSITE_URL = "https://ranjithj.in/yata/"
 
 @Composable
 private fun GitHubAndShareRow(onNavigateToShareApp: () -> Unit, modifier: Modifier = Modifier) {
     val uriHandler = LocalUriHandler.current
     val shareTitle = stringResource(R.string.settings_about_share)
-    Row(
-        modifier = modifier.height(IntrinsicSize.Max),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        OutlinedButton(
-            onClick = { uriHandler.openUri(YATA_GITHUB_URL) },
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = { uriHandler.openUri(YATA_GITHUB_URL) },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = stringResource(R.string.settings_about_github),
+                    style = MaterialTheme.typography.labelLarge,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+            OutlinedButton(
+                onClick = onNavigateToShareApp,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.IosShare,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = shareTitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+        FilledTonalButton(
+            onClick = { uriHandler.openUri(YATA_WEBSITE_URL) },
+            modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
@@ -3887,25 +4159,7 @@ private fun GitHubAndShareRow(onNavigateToShareApp: () -> Unit, modifier: Modifi
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = stringResource(R.string.settings_about_github),
-                style = MaterialTheme.typography.labelLarge,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-        }
-        OutlinedButton(
-            onClick = onNavigateToShareApp,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        ) {
-            Icon(
-                imageVector = Icons.Default.IosShare,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = shareTitle,
+                text = stringResource(R.string.settings_about_website),
                 style = MaterialTheme.typography.labelLarge,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
@@ -4140,6 +4394,91 @@ private fun SettingsSectionHeader(text: String, icon: ImageVector? = null) {
     }
 }
 
+@Composable
+private fun CompactScaleSliderSetting(
+    title: String,
+    description: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    presets: List<Pair<String, Float>>,
+    onPresetSelected: (Float) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(percent = 50),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Text(
+                    text = "${(value * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+        }
+
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            valueRange = valueRange,
+            steps = steps,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            presets.forEach { (label, presetValue) ->
+                FilterChip(
+                    selected = value in (presetValue - 0.01f)..(presetValue + 0.01f),
+                    onClick = { onPresetSelected(presetValue) },
+                    label = {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSubsectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 2.dp)
+    )
+}
+
 /** The rounded card every settings group sits in. Was copy-pasted per section. */
 @Composable
 private fun SettingsSectionCard(content: @Composable ColumnScope.() -> Unit) {
@@ -4215,6 +4554,103 @@ fun SettingsRow(
             contentDescription = stringResource(R.string.settings_edit),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         )
+    }
+}
+
+@Composable
+private fun SettingsPickerSurface(
+    label: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = YataCompactFieldShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = stringResource(R.string.settings_edit),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsScrollableDropdownContent(
+    scrollState: androidx.compose.foundation.ScrollState,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val density = LocalDensity.current
+    val viewportHeight = 288.dp
+    val scrollbarTrackHeight = viewportHeight - 16.dp
+    Box(modifier = modifier.heightIn(max = viewportHeight)) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(scrollState)
+                .padding(end = if (scrollState.maxValue > 0) 10.dp else 0.dp),
+            content = content
+        )
+        if (scrollState.maxValue > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .height(scrollbarTrackHeight)
+                    .width(8.dp)
+                    .padding(horizontal = 2.dp)
+            ) {
+                val trackHeightPx = with(density) { scrollbarTrackHeight.toPx() }
+                val minThumbPx = with(density) { 36.dp.toPx() }
+                val thumbHeightPx = (
+                    trackHeightPx * trackHeightPx /
+                        (trackHeightPx + scrollState.maxValue)
+                    ).coerceIn(minThumbPx, trackHeightPx)
+                val thumbOffsetPx = (
+                    (trackHeightPx - thumbHeightPx) *
+                        scrollState.value /
+                        scrollState.maxValue
+                    ).coerceAtLeast(0f)
+                Box(
+                    modifier = Modifier
+                        .offset(y = with(density) { thumbOffsetPx.toDp() })
+                        .width(4.dp)
+                        .height(with(density) { thumbHeightPx.toDp() })
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.72f))
+                )
+            }
+        }
     }
 }
 

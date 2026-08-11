@@ -56,7 +56,6 @@ import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.ui.widgets.PressableScaleBox
 import com.mj.yata.util.findBestEntityMatch
-import com.mj.yata.util.toProperCase
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Repeat
@@ -121,6 +120,7 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.domain.model.Person
@@ -189,7 +189,8 @@ data class NewTaskDraft(
     val projectId: String?,
     val notes: String?,
     val subtasks: List<Subtask>,
-    val flag: Boolean
+    val flag: Boolean,
+    val estimateMinutes: Int?
 )
 
 private val stringStateListSaver: Saver<SnapshotStateList<String>, Any> = listSaver(
@@ -258,6 +259,14 @@ private fun decodeRecurrence(value: String): Recurrence? {
     }.getOrNull()
 }
 
+private fun dayBefore(date: String?): String? = date?.let {
+    runCatching { LocalDate.parse(it).minusDays(1).toString() }.getOrNull()
+}
+
+private fun daysBefore(date: String?, days: Int): String? = date?.let {
+    runCatching { LocalDate.parse(it).minusDays(days.toLong()).toString() }.getOrNull()
+}
+
 private val recurrenceSaver = Saver<Recurrence?, String>(
     save = { encodeRecurrence(it) },
     restore = { decodeRecurrence(it) }
@@ -300,11 +309,19 @@ fun NewTaskSheet(
     voiceLanguage: String = "default",
     defaultDueDate: com.mj.yata.domain.model.DefaultDueDate = com.mj.yata.domain.model.DefaultDueDate.TODAY,
     defaultPriority: String = "none",
+    defaultEstimateMinutes: Int? = null,
+    defaultProjectId: String? = null,
+    defaultTagIds: Set<String> = emptySet(),
     onDraftStateChanged: (Boolean) -> Unit = {}
 ) {
     var title by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue("")) }
+    val effectiveInitialProjectId = remember(initialProjectId, defaultProjectId, projectsEnabled, projects) {
+        initialProjectId ?: defaultProjectId?.takeIf { id ->
+            projectsEnabled && projects.any { it.id == id }
+        }
+    }
     var selectedListId by rememberSaveable { mutableStateOf(initialListId) }
-    var selectedProjectId by rememberSaveable { mutableStateOf(initialProjectId) }
+    var selectedProjectId by rememberSaveable { mutableStateOf(effectiveInitialProjectId) }
     var selectedPriority by rememberSaveable { mutableStateOf(defaultPriority) }
     // No manual toggle exists for this yet (unlike due/time/priority below) — quick-add is
     // currently the only way to flag a task before it's created, so there's no "manually set"
@@ -319,11 +336,11 @@ fun NewTaskSheet(
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
     // otherwise the pre-selected project's due date, otherwise the user's configured default
     // (which is TODAY unless changed, preserving the previous hardcoded behavior).
-    val initialDueDate = remember(projects, initialProjectId, initialDueDateOverride, defaultDueDate) {
+    val initialDueDate = remember(projects, effectiveInitialProjectId, initialDueDateOverride, defaultDueDate) {
         if (initialDueDateOverride != null) {
             initialDueDateOverride
-        } else if (initialProjectId != null) {
-            val projectObj = projects.find { it.id == initialProjectId }
+        } else if (effectiveInitialProjectId != null) {
+            val projectObj = projects.find { it.id == effectiveInitialProjectId }
             projectObj?.due
         } else {
             defaultDueDate.resolve()
@@ -337,6 +354,8 @@ fun NewTaskSheet(
     var selectedRecurrence by rememberSaveable(stateSaver = recurrenceSaver) { mutableStateOf<Recurrence?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartDatePicker by remember { mutableStateOf(false) }
+    var showCustomStartOffsetDialog by remember { mutableStateOf(false) }
+    var customStartOffsetText by rememberSaveable { mutableStateOf("") }
     var titleFocused by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
@@ -348,6 +367,7 @@ fun NewTaskSheet(
     // further parsing — see setDueDate/setTime below.
     var dueManuallySet by rememberSaveable { mutableStateOf(initialDueDateOverride != null) }
     var startDateManuallySet by rememberSaveable { mutableStateOf(false) }
+    var startDateDaysBeforeDue by rememberSaveable { mutableStateOf<Int?>(null) }
     var timeManuallySet by rememberSaveable { mutableStateOf(false) }
     var recurrenceManuallySet by rememberSaveable { mutableStateOf(false) }
     var reminderManuallySet by rememberSaveable { mutableStateOf(false) }
@@ -355,8 +375,23 @@ fun NewTaskSheet(
     var quickAddDismissed by rememberSaveable { mutableStateOf(false) }
     var ignoredQuickAddFields by rememberSaveable(stateSaver = stringSetSaver) { mutableStateOf(setOf<String>()) }
     var keepAdding by rememberSaveable { mutableStateOf(false) }
-    val setDueDate: (String?) -> Unit = { selectedDueDate = it; dueManuallySet = true }
-    val setStartDate: (String?) -> Unit = { selectedStartDate = it; startDateManuallySet = true }
+    val setDueDate: (String?) -> Unit = {
+        selectedDueDate = it
+        dueManuallySet = true
+        startDateDaysBeforeDue?.let { daysBeforeDue ->
+            selectedStartDate = daysBefore(it, daysBeforeDue)
+        }
+    }
+    val setStartDate: (String?) -> Unit = {
+        selectedStartDate = it
+        startDateManuallySet = true
+        startDateDaysBeforeDue = null
+    }
+    val setStartDateDaysBeforeDue: (Int) -> Unit = { daysBeforeDue ->
+        selectedStartDate = daysBefore(selectedDueDate, daysBeforeDue)
+        startDateManuallySet = true
+        startDateDaysBeforeDue = daysBeforeDue
+    }
     val setTime: (String?) -> Unit = { selectedTime = it; timeManuallySet = true }
     val setRecurrence: (Recurrence?) -> Unit = { selectedRecurrence = it; recurrenceManuallySet = true }
     val setReminder: (String?) -> Unit = { selectedReminder = it; reminderManuallySet = true }
@@ -375,10 +410,18 @@ fun NewTaskSheet(
         }
     }
 
+    val effectiveInitialTagIds = remember(initialTagId, defaultTagIds, tagsEnabled, tags) {
+        if (!tagsEnabled) {
+            emptySet()
+        } else {
+            val existingTagIds = tags.map { it.id }.toSet()
+            (defaultTagIds.filter { it in existingTagIds } + listOfNotNull(initialTagId)).toSet()
+        }
+    }
     val selectedTagIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf<String>() }
-    LaunchedEffect(initialTagId, tagsEnabled) {
-        if (tagsEnabled && initialTagId != null && !selectedTagIds.contains(initialTagId)) {
-            selectedTagIds.add(initialTagId)
+    LaunchedEffect(effectiveInitialTagIds, tagsEnabled) {
+        if (tagsEnabled && selectedTagIds.isEmpty()) {
+            selectedTagIds.addAll(effectiveInitialTagIds)
         }
     }
     var activePanel by remember { mutableStateOf<String?>(null) }
@@ -401,10 +444,10 @@ fun NewTaskSheet(
     }
     val canCreateTask = title.text.isNotBlank()
     val hasMeaningfulDraft = title.text.isNotBlank() || notes.isNotBlank() || subtasks.isNotEmpty() ||
-        selectedListId != initialListId || selectedProjectId != initialProjectId ||
+        selectedListId != initialListId || selectedProjectId != effectiveInitialProjectId ||
         selectedPriority != defaultPriority || selectedFlag || selectedTime != null ||
         selectedReminder != null || selectedRecurrence != null ||
-        selectedTagIds.any { it != initialTagId } ||
+        selectedTagIds.toSet() != effectiveInitialTagIds ||
         selectedAssigneeIds.any { it != initialAssignee }
     LaunchedEffect(hasMeaningfulDraft) { onDraftStateChanged(hasMeaningfulDraft) }
 
@@ -491,7 +534,7 @@ fun NewTaskSheet(
     // A project with no due date of its own means its tasks default to no due date too — not
     // "today". This used to fall back to today, which clobbered the correct null the initial
     // state above already computed the moment this effect ran on first composition.
-    var lastLoadedProjectId by remember { mutableStateOf<String?>(null) }
+    var lastLoadedProjectId by remember { mutableStateOf(effectiveInitialProjectId) }
     LaunchedEffect(selectedProjectId, projects) {
         val projectObj = projects.find { it.id == selectedProjectId }
         if (projectObj != null && projectObj.id != lastLoadedProjectId) {
@@ -513,8 +556,8 @@ fun NewTaskSheet(
             val spoken = matches?.firstOrNull()?.trim()
             if (!spoken.isNullOrBlank()) {
                 val parsed = NaturalLanguageParser.parse(spoken)
-                val properTitle = parsed.title.toProperCase()
-                title = TextFieldValue(properTitle, TextRange(properTitle.length))
+                val parsedTitle = parsed.title
+                title = TextFieldValue(parsedTitle, TextRange(parsedTitle.length))
                 if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
                 if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
                 if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
@@ -572,6 +615,7 @@ fun NewTaskSheet(
         selectedStartDate = null
         dueManuallySet = initialDueDateOverride != null
         startDateManuallySet = false
+        startDateDaysBeforeDue = null
         timeManuallySet = false
         recurrenceManuallySet = false
         reminderManuallySet = false
@@ -607,12 +651,13 @@ fun NewTaskSheet(
                         projectId = selectedProjectId,
                         notes = notes.trim().ifBlank { null },
                         subtasks = subtasks.toList(),
-                        flag = parsed.flag
+                        flag = parsed.flag,
+                        estimateMinutes = defaultEstimateMinutes
                     )
                 )
             }
         } else {
-            val finalTitle = (if (quickAddMatched) quickAdd.title else title.text.trim()).toProperCase()
+            val finalTitle = if (quickAddMatched) quickAdd.title else title.text.trim()
             val add = if (keepAdding && onAddTaskAndContinue != null) onAddTaskAndContinue else onAddTask
             add(
                 NewTaskDraft(
@@ -630,7 +675,8 @@ fun NewTaskSheet(
                     projectId = selectedProjectId,
                     notes = notes.trim().ifBlank { null },
                     subtasks = subtasks.toList(),
-                    flag = selectedFlag
+                    flag = selectedFlag,
+                    estimateMinutes = defaultEstimateMinutes
                 )
             )
             if (keepAdding && onAddTaskAndContinue != null) {
@@ -1084,7 +1130,7 @@ fun NewTaskSheet(
                         )
                     }
                     Text(
-                        text = stringResource(R.string.new_task_detected_title, quickAdd.title.toProperCase()),
+                        text = stringResource(R.string.new_task_detected_title, quickAdd.title),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -1255,7 +1301,17 @@ fun NewTaskSheet(
                             onPickDate = { showDatePicker = true }
                         )
                         "StartDate" -> StartDatePanel(
+                            dueDate = selectedDueDate,
                             selectedStartDate = selectedStartDate,
+                            daysBeforeDue = startDateDaysBeforeDue,
+                            onPickDaysBeforeDue = setStartDateDaysBeforeDue,
+                            onPickCustomDaysBeforeDue = {
+                                customStartOffsetText = startDateDaysBeforeDue
+                                    ?.takeIf { it != 1 }
+                                    ?.toString()
+                                    ?: "2"
+                                showCustomStartOffsetDialog = true
+                            },
                             onPick = { setStartDate(it) },
                             onClear = { setStartDate(null) },
                             onPickDate = { showStartDatePicker = true }
@@ -1586,6 +1642,62 @@ fun NewTaskSheet(
         )
     }
 
+    if (showCustomStartOffsetDialog) {
+        val customStartOffsetDays = customStartOffsetText.toIntOrNull()
+        val customStartOffsetValid = customStartOffsetDays != null &&
+            customStartOffsetDays in 1..3650 &&
+            daysBefore(selectedDueDate, customStartOffsetDays) != null
+        val confirmCustomStartOffset: () -> Unit = {
+            val daysBeforeDue = customStartOffsetDays
+            if (daysBeforeDue != null && daysBeforeDue in 1..3650) {
+                setStartDateDaysBeforeDue(daysBeforeDue)
+                showCustomStartOffsetDialog = false
+            }
+        }
+        AlertDialog(
+            onDismissRequest = { showCustomStartOffsetDialog = false },
+            title = { Text(stringResource(R.string.task_start_date_custom_days_title)) },
+            text = {
+                OutlinedTextField(
+                    value = customStartOffsetText,
+                    onValueChange = { value ->
+                        customStartOffsetText = value.filter { it.isDigit() }.take(4)
+                    },
+                    label = { Text(stringResource(R.string.task_start_date_custom_days_label)) },
+                    singleLine = true,
+                    isError = customStartOffsetText.isNotBlank() && !customStartOffsetValid,
+                    supportingText = {
+                        if (customStartOffsetText.isNotBlank() && !customStartOffsetValid) {
+                            Text(stringResource(R.string.task_start_date_custom_days_error))
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (customStartOffsetValid) confirmCustomStartOffset()
+                        }
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = customStartOffsetValid,
+                    onClick = confirmCustomStartOffset
+                ) {
+                    Text(stringResource(R.string.action_done))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomStartOffsetDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     YataTimePickerLauncher(
         show = showTimePicker,
         initialTime = selectedTime,
@@ -1640,8 +1752,8 @@ fun NewTaskSheet(
             onDismiss = { isVoiceOverlayOpen = false },
             voiceLanguage = voiceLanguage,
             onTaskRecognized = { parsed ->
-                val properTitle = parsed.title.toProperCase()
-                title = TextFieldValue(properTitle, TextRange(properTitle.length))
+                val parsedTitle = parsed.title
+                title = TextFieldValue(parsedTitle, TextRange(parsedTitle.length))
                 if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
                 if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
                 if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
@@ -1766,17 +1878,33 @@ private fun DueDatePanel(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun StartDatePanel(
+    dueDate: String?,
     selectedStartDate: String?,
+    daysBeforeDue: Int?,
+    onPickDaysBeforeDue: (Int) -> Unit,
+    onPickCustomDaysBeforeDue: () -> Unit,
     onPick: (String?) -> Unit,
     onClear: () -> Unit,
     onPickDate: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            YataSelectChip(stringResource(R.string.date_tomorrow), selectedStartDate == LocalDate.now().plusDays(1).toString(), { onPick(LocalDate.now().plusDays(1).toString()) })
-            YataSelectChip(stringResource(R.string.date_next_week), selectedStartDate == LocalDate.now().plusWeeks(1).toString(), { onPick(LocalDate.now().plusWeeks(1).toString()) })
-            YataSelectChip(stringResource(R.string.date_next_month), selectedStartDate == LocalDate.now().plusMonths(1).toString(), { onPick(LocalDate.now().plusMonths(1).toString()) })
-            YataSelectChip(stringResource(R.string.task_start_date_none), selectedStartDate == null, { onClear() })
+            val canFollowDueDate = dayBefore(dueDate) != null
+            val startDateIsFollowingDue = daysBeforeDue != null && canFollowDueDate
+
+            if (canFollowDueDate) {
+                val customDaysBeforeDue = daysBeforeDue?.takeIf { it != 1 }
+                val customDaysLabel = customDaysBeforeDue?.let {
+                    pluralStringResource(R.plurals.task_start_date_n_days_before_due, it, it)
+                } ?: stringResource(R.string.task_start_date_custom_days_chip)
+
+                YataSelectChip(stringResource(R.string.task_start_date_day_before_due), daysBeforeDue == 1, { onPickDaysBeforeDue(1) })
+                YataSelectChip(customDaysLabel, customDaysBeforeDue != null, onPickCustomDaysBeforeDue)
+            }
+            YataSelectChip(stringResource(R.string.date_tomorrow), !startDateIsFollowingDue && selectedStartDate == LocalDate.now().plusDays(1).toString(), { onPick(LocalDate.now().plusDays(1).toString()) })
+            YataSelectChip(stringResource(R.string.date_next_week), !startDateIsFollowingDue && selectedStartDate == LocalDate.now().plusWeeks(1).toString(), { onPick(LocalDate.now().plusWeeks(1).toString()) })
+            YataSelectChip(stringResource(R.string.date_next_month), !startDateIsFollowingDue && selectedStartDate == LocalDate.now().plusMonths(1).toString(), { onPick(LocalDate.now().plusMonths(1).toString()) })
+            YataSelectChip(stringResource(R.string.task_start_date_none), !startDateIsFollowingDue && selectedStartDate == null, { onClear() })
             YataSelectChip(stringResource(R.string.date_pick), false, { onPickDate() })
         }
         Text(

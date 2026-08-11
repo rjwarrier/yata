@@ -181,9 +181,36 @@ internal object SnapshotMerger {
                 people.optJSONObject(i)?.remove("photoUri")
             }
         }
+        normalized.optJSONArray("projects")?.let { projects ->
+            for (i in 0 until projects.length()) {
+                projects.optJSONObject(i)?.let { project ->
+                    project.normalizeNullableFields(
+                        "due",
+                        "defaultReminder",
+                        "description"
+                    )
+                }
+            }
+        }
         normalized.optJSONArray("tasks")?.let { tasks ->
             for (i in 0 until tasks.length()) {
                 val task = tasks.optJSONObject(i) ?: continue
+                task.normalizeNullableFields(
+                    "listId",
+                    "projectId",
+                    "due",
+                    "startDate",
+                    "time",
+                    "reminder",
+                    "completedAt",
+                    "createdAt",
+                    "deletedAt",
+                    "notes",
+                    "seriesId",
+                    "recurrence",
+                    "followUpAt",
+                    "estimateMinutes"
+                )
                 task.optJSONArray("tagIds")?.let { ids ->
                     task.put("tagIds", JSONArray((0 until ids.length()).map { ids.getString(it) }.sorted()))
                 }
@@ -217,6 +244,12 @@ internal object SnapshotMerger {
         normalized.put("version", CURRENT_BACKUP_VERSION)
         normalized.put("syncVersion", SYNC_FORMAT_VERSION)
         return normalized
+    }
+
+    private fun JSONObject.normalizeNullableFields(vararg keys: String) {
+        keys.forEach { key ->
+            if (!has(key)) put(key, JSONObject.NULL)
+        }
     }
 
     fun equivalent(left: JSONObject, right: JSONObject): Boolean =

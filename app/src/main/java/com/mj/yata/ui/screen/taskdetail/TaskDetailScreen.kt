@@ -48,6 +48,7 @@ import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.R
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.Subtask
+import com.mj.yata.domain.model.SubtaskCompletionAction
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.inheritedTagIds
 import com.mj.yata.ui.screen.main.MainViewModel
@@ -253,6 +254,7 @@ fun TaskDetailScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
+    val subtaskCompletionAction by viewModel.subtaskCompletionAction.collectAsStateWithLifecycle()
 
     Scaffold(
         snackbarHost = {
@@ -990,10 +992,22 @@ fun TaskDetailScreen(
                     fun toggleSubtask(id: String, done: Boolean) {
                         val wasAllDone = subtasks.isNotEmpty() && subtasks.all { it.done }
                         val updated = subtasks.map { if (it.id == id) it.copy(done = done) else it }
-                        viewModel.upsertTask(task.copy(subtasks = updated))
                         val isAllDone = updated.isNotEmpty() && updated.all { it.done }
                         if (done && !task.done && !wasAllDone && isAllDone) {
-                            pendingParentCompletionSubtasks = updated
+                            when (subtaskCompletionAction) {
+                                SubtaskCompletionAction.AUTO_COMPLETE -> {
+                                    viewModel.completeTaskAfterSavingSubtasks(task, updated) {}
+                                }
+                                SubtaskCompletionAction.ASK -> {
+                                    viewModel.upsertTask(task.copy(subtasks = updated))
+                                    pendingParentCompletionSubtasks = updated
+                                }
+                                SubtaskCompletionAction.NOTHING -> {
+                                    viewModel.upsertTask(task.copy(subtasks = updated))
+                                }
+                            }
+                        } else {
+                            viewModel.upsertTask(task.copy(subtasks = updated))
                         }
                     }
 

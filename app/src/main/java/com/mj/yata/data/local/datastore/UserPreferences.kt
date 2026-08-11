@@ -13,6 +13,7 @@ import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DefaultDueDate
 import com.mj.yata.domain.model.MotionMode
 import com.mj.yata.domain.model.SavedThemePreset
+import com.mj.yata.domain.model.SubtaskCompletionAction
 import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.util.decodeSalt
 import com.mj.yata.util.encodeSalt
@@ -128,6 +129,9 @@ class UserPreferences @Inject constructor(
         val USER_EMAIL              = stringPreferencesKey("user_email")
         val USER_PHOTO_URI          = stringPreferencesKey("user_photo_uri")
         val DEFAULT_LIST_ID         = stringPreferencesKey("default_list_id")
+        val DEFAULT_PROJECT_ID      = stringPreferencesKey("default_project_id")
+        val DEFAULT_TAG_IDS         = stringSetPreferencesKey("default_tag_ids")
+        val DEFAULT_ESTIMATE_MINUTES = intPreferencesKey("default_estimate_minutes")
         val START_OF_WEEK_SUNDAY    = booleanPreferencesKey("start_of_week_sunday")
         val DEFAULT_REMINDER_HOUR   = intPreferencesKey("default_reminder_hour")
         val DEFAULT_REMINDER_MINUTE = intPreferencesKey("default_reminder_minute")
@@ -223,6 +227,7 @@ class UserPreferences @Inject constructor(
         val SORT_MODE_PERSON      = stringPreferencesKey("sort_mode_person")
         val DEFAULT_DUE_DATE      = stringPreferencesKey("default_due_date")
         val DEFAULT_PRIORITY      = stringPreferencesKey("default_priority")
+        val SUBTASK_COMPLETION_ACTION = stringPreferencesKey("subtask_completion_action")
         // Days a soft-deleted task stays in Trash before purgeOldTrash removes it. 0 = keep
         // forever; the purge is skipped entirely rather than treating 0 as "delete immediately".
         val TRASH_RETENTION_DAYS  = intPreferencesKey("trash_retention_days")
@@ -438,6 +443,15 @@ class UserPreferences @Inject constructor(
     val defaultPriorityFlow: Flow<String> = prefsFlow.map { prefs ->
         prefs[DEFAULT_PRIORITY]?.takeIf { it in setOf("none", "low", "med", "high") } ?: "none"
     }
+    val defaultProjectIdFlow: Flow<String> = prefsFlow.map { prefs -> prefs[DEFAULT_PROJECT_ID] ?: "" }
+    val defaultTagIdsFlow: Flow<Set<String>> = prefsFlow.map { prefs -> prefs[DEFAULT_TAG_IDS] ?: emptySet() }
+    val defaultEstimateMinutesFlow: Flow<Int?> = prefsFlow.map { prefs ->
+        prefs[DEFAULT_ESTIMATE_MINUTES]?.takeIf { it > 0 }
+    }
+    val subtaskCompletionActionFlow: Flow<SubtaskCompletionAction> = prefsFlow.map { prefs ->
+        SubtaskCompletionAction.entries.firstOrNull { it.name == prefs[SUBTASK_COMPLETION_ACTION] }
+            ?: SubtaskCompletionAction.ASK
+    }
     val trashRetentionDaysFlow: Flow<Int> = prefsFlow.map { it[TRASH_RETENTION_DAYS] ?: 30 }
     val autoArchiveDaysFlow: Flow<Int> = prefsFlow.map { it[AUTO_ARCHIVE_DAYS] ?: 0 }
     val dailyAgendaEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DAILY_AGENDA_ENABLED] ?: true }
@@ -620,6 +634,26 @@ class UserPreferences @Inject constructor(
         dataStore.edit { it[DEFAULT_LIST_ID] = id }
     }
 
+    suspend fun setDefaultProjectId(id: String) {
+        dataStore.edit { it[DEFAULT_PROJECT_ID] = id }
+    }
+
+    suspend fun setDefaultTagIds(ids: Set<String>) {
+        dataStore.edit { prefs ->
+            if (ids.isEmpty()) prefs.remove(DEFAULT_TAG_IDS) else prefs[DEFAULT_TAG_IDS] = ids
+        }
+    }
+
+    suspend fun setDefaultEstimateMinutes(minutes: Int?) {
+        dataStore.edit { prefs ->
+            if (minutes == null || minutes <= 0) {
+                prefs.remove(DEFAULT_ESTIMATE_MINUTES)
+            } else {
+                prefs[DEFAULT_ESTIMATE_MINUTES] = minutes.coerceAtMost(24 * 60)
+            }
+        }
+    }
+
     suspend fun setStartOfWeekSunday(sunday: Boolean) {
         dataStore.edit { it[START_OF_WEEK_SUNDAY] = sunday }
     }
@@ -693,6 +727,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setDefaultPriority(priority: String) {
         dataStore.edit { it[DEFAULT_PRIORITY] = priority }
+    }
+
+    suspend fun setSubtaskCompletionAction(action: SubtaskCompletionAction) {
+        dataStore.edit { it[SUBTASK_COMPLETION_ACTION] = action.name }
     }
 
     suspend fun setDailyAgendaEnabled(enabled: Boolean) {
@@ -1153,6 +1191,7 @@ class UserPreferences @Inject constructor(
     suspend fun resetAppSettings() {
         dataStore.edit { prefs ->
             prefs.remove(THEME_MODE); prefs.remove(APP_FONT); prefs.remove(DEFAULT_LIST_ID)
+            prefs.remove(DEFAULT_PROJECT_ID); prefs.remove(DEFAULT_TAG_IDS); prefs.remove(DEFAULT_ESTIMATE_MINUTES)
             prefs.remove(COLOR_INTENSITY); prefs.remove(BACKGROUND_TINT)
             prefs.remove(START_OF_WEEK_SUNDAY); prefs.remove(DEFAULT_REMINDER_HOUR); prefs.remove(DEFAULT_REMINDER_MINUTE)
             prefs.remove(UI_SCALE); prefs.remove(TEXT_SCALE); prefs.remove(DYNAMIC_COLOR_ENABLED)
@@ -1162,7 +1201,7 @@ class UserPreferences @Inject constructor(
             prefs.remove(HAPTICS_ENABLED); prefs.remove(TASK_SWIPE_ACTIONS_ENABLED); prefs.remove(TASK_ROW_DENSITY)
             prefs.remove(TASK_CARD_BACKGROUND)
             prefs.remove(TODAY_TAB_ENABLED); prefs.remove(UPCOMING_TAB_ENABLED); prefs.remove(FAB_POSITION)
-            prefs.remove(DEFAULT_DUE_DATE); prefs.remove(DEFAULT_PRIORITY); prefs.remove(DAILY_AGENDA_ENABLED)
+            prefs.remove(DEFAULT_DUE_DATE); prefs.remove(DEFAULT_PRIORITY); prefs.remove(SUBTASK_COMPLETION_ACTION); prefs.remove(DAILY_AGENDA_ENABLED)
             prefs.remove(DAILY_AGENDA_HOUR); prefs.remove(DAILY_AGENDA_MINUTE); prefs.remove(OVERDUE_NUDGES_ENABLED)
             prefs.remove(UNDO_WINDOW_SECONDS); prefs.remove(TRASH_RETENTION_DAYS); prefs.remove(AUTO_ARCHIVE_DAYS)
             prefs.remove(SNOOZE_TONIGHT_HOUR); prefs.remove(SNOOZE_TONIGHT_MINUTE)

@@ -40,19 +40,6 @@ data class ParsedQuickAdd(
  * sunday" is claimed whole by the recurrence rule, so the later bare-weekday rule doesn't
  * also treat "sunday" as a one-off due date).
  */
-fun String.toProperCase(): String {
-    if (this.isBlank()) return this
-    return this.split(" ")
-        .filter { it.isNotEmpty() }
-        .joinToString(" ") { word ->
-            if (word.length > 1 && word.all { it.isUpperCase() }) {
-                word
-            } else {
-                word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-            }
-        }
-}
-
 object NaturalLanguageParser {
 
     // Deliberately fixed at 12-hour, and not routed through the user's clock preference: what this

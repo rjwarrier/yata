@@ -190,7 +190,7 @@ class CrashLogStore @Inject constructor(
             .map { line ->
                 line.trim()
                     .replace(Regex("""\([^)]*:\d+\)"""), "(source)")
-                    .replace(Regex("""\$\d+"""), "$")
+                    .let { Regex("""\$\d+""").replace(it) { "$" } }
             }
             .take(24)
             .joinToString("\n")

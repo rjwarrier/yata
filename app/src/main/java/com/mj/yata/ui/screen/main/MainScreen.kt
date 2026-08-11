@@ -106,6 +106,9 @@ fun MainScreen(
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
+    val defaultProjectId by viewModel.defaultProjectId.collectAsStateWithLifecycle()
+    val defaultTagIds by viewModel.defaultTagIds.collectAsStateWithLifecycle()
+    val defaultEstimateMinutes by viewModel.defaultEstimateMinutes.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -1009,6 +1012,9 @@ fun MainScreen(
                     voiceLanguage = voiceLanguage,
                     defaultDueDate = defaultDueDate,
                     defaultPriority = defaultPriority,
+                    defaultProjectId = defaultProjectId,
+                    defaultTagIds = defaultTagIds,
+                    defaultEstimateMinutes = defaultEstimateMinutes,
                     onDraftStateChanged = { newTaskHasDraft = it },
                     modifier = newTaskSheetModifier
                 )

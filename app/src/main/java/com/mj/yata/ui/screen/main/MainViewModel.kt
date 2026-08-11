@@ -172,6 +172,9 @@ data class SettingsUiState(
     val userEmail: String = "",
     val userPhotoUri: String? = null,
     val defaultListId: String = "",
+    val defaultProjectId: String = "",
+    val defaultTagIds: Set<String> = emptySet(),
+    val defaultEstimateMinutes: Int? = null,
     val startOfWeekSunday: Boolean = true,
     val defaultReminderHour: Int = 9,
     val defaultReminderMinute: Int = 0,
@@ -197,6 +200,8 @@ data class SettingsUiState(
     val tagsFeatureEnabled: Boolean = true,
     val projectsFeatureEnabled: Boolean = true,
     val lists: List<YataList> = emptyList(),
+    val activeProjects: List<Project> = emptyList(),
+    val tags: List<Tag> = emptyList(),
     val backupIntervalMinutes: Long = 1440L,
     val localBackupEnabled: Boolean = false,
     val localBackupLastAt: Long? = null,
@@ -269,6 +274,9 @@ private data class SettingsProfileState(
 
 private data class SettingsReminderState(
     val defaultListId: String,
+    val defaultProjectId: String,
+    val defaultTagIds: Set<String>,
+    val defaultEstimateMinutes: Int?,
     val startOfWeekSunday: Boolean,
     val defaultReminderHour: Int,
     val defaultReminderMinute: Int
@@ -319,6 +327,8 @@ private data class SettingsVisualFeatureState(
 
 private data class SettingsBackupState(
     val lists: List<YataList>,
+    val activeProjects: List<Project>,
+    val tags: List<Tag>,
     val backupIntervalMinutes: Long,
     val localBackupEnabled: Boolean,
     val localBackupLastAt: Long?
@@ -514,12 +524,31 @@ private data class MainNavigationState(
             SettingsProfileState(themeMode, appFont, userName, userEmail, userPhotoUri)
         },
         combine(
-            userPreferences.defaultListIdFlow,
+            combine(
+                userPreferences.defaultListIdFlow,
+                userPreferences.defaultProjectIdFlow,
+                userPreferences.defaultTagIdsFlow,
+                userPreferences.defaultEstimateMinutesFlow
+            ) { defaultListId, defaultProjectId, defaultTagIds, defaultEstimateMinutes ->
+                SettingsReminderState(
+                    defaultListId = defaultListId,
+                    defaultProjectId = defaultProjectId,
+                    defaultTagIds = defaultTagIds,
+                    defaultEstimateMinutes = defaultEstimateMinutes,
+                    startOfWeekSunday = true,
+                    defaultReminderHour = 9,
+                    defaultReminderMinute = 0
+                )
+            },
             userPreferences.startOfWeekSundayFlow,
             userPreferences.defaultReminderHourFlow,
             userPreferences.defaultReminderMinuteFlow
-        ) { defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute ->
-            SettingsReminderState(defaultListId, startOfWeekSunday, defaultReminderHour, defaultReminderMinute)
+        ) { defaults, startOfWeekSunday, defaultReminderHour, defaultReminderMinute ->
+            defaults.copy(
+                startOfWeekSunday = startOfWeekSunday,
+                defaultReminderHour = defaultReminderHour,
+                defaultReminderMinute = defaultReminderMinute
+            )
         },
         combine(
             combine(
@@ -589,12 +618,21 @@ private data class MainNavigationState(
     val settingsUiState: StateFlow<SettingsUiState> = combine(
         settingsCoreFlow,
         combine(
-            lists,
+            combine(lists, activeProjects, tags) { lists, activeProjects, tags ->
+                Triple(lists, activeProjects, tags)
+            },
             userPreferences.backupIntervalMinutesFlow,
             userPreferences.localBackupEnabledFlow,
             userPreferences.localBackupLastAtFlow
-        ) { lists, backupIntervalMinutes, localBackupEnabled, localBackupLastAt ->
-            SettingsBackupState(lists, backupIntervalMinutes, localBackupEnabled, localBackupLastAt)
+        ) { data, backupIntervalMinutes, localBackupEnabled, localBackupLastAt ->
+            SettingsBackupState(
+                lists = data.first,
+                activeProjects = data.second,
+                tags = data.third,
+                backupIntervalMinutes = backupIntervalMinutes,
+                localBackupEnabled = localBackupEnabled,
+                localBackupLastAt = localBackupLastAt
+            )
         },
         combine(
             combine(
@@ -651,6 +689,9 @@ private data class MainNavigationState(
             userEmail = core.profile.userEmail,
             userPhotoUri = core.profile.userPhotoUri,
             defaultListId = core.reminder.defaultListId,
+            defaultProjectId = core.reminder.defaultProjectId,
+            defaultTagIds = core.reminder.defaultTagIds,
+            defaultEstimateMinutes = core.reminder.defaultEstimateMinutes,
             startOfWeekSunday = core.reminder.startOfWeekSunday,
             defaultReminderHour = core.reminder.defaultReminderHour,
             defaultReminderMinute = core.reminder.defaultReminderMinute,
@@ -676,6 +717,8 @@ private data class MainNavigationState(
             tagsFeatureEnabled = core.visualFeature.tagsFeatureEnabled,
             projectsFeatureEnabled = core.visualFeature.projectsFeatureEnabled,
             lists = backup.lists,
+            activeProjects = backup.activeProjects,
+            tags = backup.tags,
             backupIntervalMinutes = backup.backupIntervalMinutes,
             localBackupEnabled = backup.localBackupEnabled,
             localBackupLastAt = backup.localBackupLastAt,
@@ -828,6 +871,15 @@ private data class MainNavigationState(
     val defaultListId: StateFlow<String> = userPreferences.defaultListIdFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val defaultProjectId: StateFlow<String> = userPreferences.defaultProjectIdFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val defaultTagIds: StateFlow<Set<String>> = userPreferences.defaultTagIdsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
+    val defaultEstimateMinutes: StateFlow<Int?> = userPreferences.defaultEstimateMinutesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val startOfWeekSunday: StateFlow<Boolean> = userPreferences.startOfWeekSundayFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -849,6 +901,14 @@ private data class MainNavigationState(
 
     val defaultPriority: StateFlow<String> = userPreferences.defaultPriorityFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "none")
+
+    val subtaskCompletionAction: StateFlow<com.mj.yata.domain.model.SubtaskCompletionAction> =
+        userPreferences.subtaskCompletionActionFlow
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                com.mj.yata.domain.model.SubtaskCompletionAction.ASK
+            )
 
     val trashRetentionDays: StateFlow<Int> = userPreferences.trashRetentionDaysFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 30)
@@ -957,6 +1017,22 @@ private data class MainNavigationState(
 
     fun setDefaultPriority(priority: String) {
         safeLaunch { userPreferences.setDefaultPriority(priority) }
+    }
+
+    fun setDefaultProjectId(id: String) {
+        safeLaunch { userPreferences.setDefaultProjectId(id) }
+    }
+
+    fun setDefaultTagIds(ids: Set<String>) {
+        safeLaunch { userPreferences.setDefaultTagIds(ids) }
+    }
+
+    fun setDefaultEstimateMinutes(minutes: Int?) {
+        safeLaunch { userPreferences.setDefaultEstimateMinutes(minutes) }
+    }
+
+    fun setSubtaskCompletionAction(action: com.mj.yata.domain.model.SubtaskCompletionAction) {
+        safeLaunch { userPreferences.setSubtaskCompletionAction(action) }
     }
 
     fun setTrashRetentionDays(days: Int) {
@@ -1281,7 +1357,8 @@ private data class MainNavigationState(
         section = draft.section,
         projectId = draft.projectId,
         subtasks = draft.subtasks,
-        flag = draft.flag
+        flag = draft.flag,
+        estimateMinutes = draft.estimateMinutes
     )
 
     fun addTask(
@@ -1299,7 +1376,8 @@ private data class MainNavigationState(
         section: String = "",
         projectId: String? = null,
         subtasks: List<Subtask> = emptyList(),
-        flag: Boolean = false
+        flag: Boolean = false,
+        estimateMinutes: Int? = null
     ) {
         safeLaunch {
             val newTask = Task(
@@ -1319,7 +1397,8 @@ private data class MainNavigationState(
                 tagIds = tagIds,
                 recurrence = recurrence,
                 subtasks = subtasks,
-                notes = notes
+                notes = notes,
+                estimateMinutes = estimateMinutes
             )
             repository.upsertTask(newTask)
         }
@@ -1619,7 +1698,7 @@ private data class MainNavigationState(
         safeLaunch {
             val tag = Tag(
                 id = "tag_" + UUID.randomUUID().toString(),
-                name = name.lowercase().trim(),
+                name = name.trim(),
                 color = color,
                 groupId = groupId,
                 hideCompletedByDefault = hideCompletedByDefault
