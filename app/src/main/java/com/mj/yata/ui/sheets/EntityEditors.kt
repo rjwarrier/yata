@@ -419,6 +419,7 @@ private fun <G> GroupPickerSection(
     selectedGroupId: String?,
     onSelect: (String?) -> Unit,
     onCreateGroup: (name: String) -> Unit,
+    onNewGroupDraftChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val accents = com.mj.yata.ui.theme.LocalYataAccents.current
@@ -450,7 +451,10 @@ private fun <G> GroupPickerSection(
             if (showNewGroupField) {
                 TextField(
                     value = newGroupName,
-                    onValueChange = { newGroupName = it },
+                    onValueChange = {
+                        newGroupName = it
+                        onNewGroupDraftChange(it)
+                    },
                     placeholder = { Text(stringResource(R.string.entity_editors_group_name)) },
                     singleLine = true,
                     shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
@@ -460,6 +464,7 @@ private fun <G> GroupPickerSection(
                             if (newGroupName.isNotBlank()) {
                                 onCreateGroup(newGroupName.trim())
                                 newGroupName = ""
+                                onNewGroupDraftChange("")
                                 showNewGroupField = false
                             }
                         }) {
@@ -681,6 +686,7 @@ fun TagEditorSheet(
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     var hideCompletedByDefault by remember { mutableStateOf(initialHideCompletedByDefault) }
     var pendingCreatedGroup by remember { mutableStateOf<com.mj.yata.domain.model.TagGroup?>(null) }
+    var newGroupDraftName by remember { mutableStateOf("") }
     val visibleGroups = remember(groups, pendingCreatedGroup) {
         (groups + listOfNotNull(pendingCreatedGroup))
             .distinctBy { it.id }
@@ -750,7 +756,8 @@ fun TagEditorSheet(
                 pendingCreatedGroup = com.mj.yata.domain.model.TagGroup(id = id, name = groupName, color = selectedColor)
                 onCreateGroup(id, groupName, selectedColor)
                 selectedGroupId = id
-            }
+            },
+            onNewGroupDraftChange = { newGroupDraftName = it }
         )
 
         Row(
@@ -785,11 +792,23 @@ fun TagEditorSheet(
             Spacer(modifier = Modifier.width(8.dp))
             Button(
                 onClick = {
-                    val selectedPendingGroup = pendingCreatedGroup?.takeIf { it.id == selectedGroupId }
+                    val draftedName = newGroupDraftName.trim()
+                    val existingDraftGroup = visibleGroups.firstOrNull { it.name.equals(draftedName, ignoreCase = true) }
+                    val draftedGroup = if (draftedName.isNotEmpty() && existingDraftGroup == null) {
+                        com.mj.yata.domain.model.TagGroup(
+                            id = "tg_" + java.util.UUID.randomUUID().toString(),
+                            name = draftedName,
+                            color = selectedColor
+                        )
+                    } else {
+                        null
+                    }
+                    val groupIdToSave = existingDraftGroup?.id ?: draftedGroup?.id ?: selectedGroupId
+                    val selectedPendingGroup = draftedGroup ?: pendingCreatedGroup?.takeIf { it.id == groupIdToSave }
                     if (isCreateMode) {
-                        bulkNames.forEach { onSave(it, selectedColor, selectedGroupId, hideCompletedByDefault, selectedPendingGroup) }
+                        bulkNames.forEach { onSave(it, selectedColor, groupIdToSave, hideCompletedByDefault, selectedPendingGroup) }
                     } else if (name.isNotBlank()) {
-                        onSave(name, selectedColor, selectedGroupId, hideCompletedByDefault, selectedPendingGroup)
+                        onSave(name, selectedColor, groupIdToSave, hideCompletedByDefault, selectedPendingGroup)
                     }
                 },
                 enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()

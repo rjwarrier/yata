@@ -82,6 +82,8 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- Typing a new group name in the tag editor and pressing the sheet's main Save/Create button now
+  creates and applies that group; you no longer have to tap the small inline checkmark first.
 - Creating a tag group from the tag editor now saves before the tag references it, so existing
   groups appear reliably and newly-created groups are not lost when saving immediately.
 
