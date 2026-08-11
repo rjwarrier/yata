@@ -671,7 +671,7 @@ fun TagEditorSheet(
     initialHideCompletedByDefault: Boolean = false,
     groups: List<com.mj.yata.domain.model.TagGroup> = emptyList(),
     existingNames: List<String> = emptyList(),
-    onSave: (String, String, String?, Boolean) -> Unit,
+    onSave: (String, String, String?, Boolean, com.mj.yata.domain.model.TagGroup?) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -680,6 +680,12 @@ fun TagEditorSheet(
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     var hideCompletedByDefault by remember { mutableStateOf(initialHideCompletedByDefault) }
+    var pendingCreatedGroup by remember { mutableStateOf<com.mj.yata.domain.model.TagGroup?>(null) }
+    val visibleGroups = remember(groups, pendingCreatedGroup) {
+        (groups + listOfNotNull(pendingCreatedGroup))
+            .distinctBy { it.id }
+            .sortedBy { it.name.lowercase() }
+    }
     val isCreateMode = initialName.isEmpty()
     val bulkNames = remember(name, isCreateMode, existingNames) {
         if (isCreateMode) parseBulkNames(name).excludingExisting(existingNames) else emptyList()
@@ -733,7 +739,7 @@ fun TagEditorSheet(
 
         GroupPickerSection(
             label = stringResource(R.string.entity_editors_group_label),
-            groups = groups,
+            groups = visibleGroups,
             groupId = { it.id },
             groupName = { it.name },
             groupColorKey = { it.color },
@@ -741,6 +747,7 @@ fun TagEditorSheet(
             onSelect = { selectedGroupId = it },
             onCreateGroup = { groupName ->
                 val id = "tg_" + java.util.UUID.randomUUID().toString()
+                pendingCreatedGroup = com.mj.yata.domain.model.TagGroup(id = id, name = groupName, color = selectedColor)
                 onCreateGroup(id, groupName, selectedColor)
                 selectedGroupId = id
             }
@@ -778,10 +785,11 @@ fun TagEditorSheet(
             Spacer(modifier = Modifier.width(8.dp))
             Button(
                 onClick = {
+                    val selectedPendingGroup = pendingCreatedGroup?.takeIf { it.id == selectedGroupId }
                     if (isCreateMode) {
-                        bulkNames.forEach { onSave(it, selectedColor, selectedGroupId, hideCompletedByDefault) }
+                        bulkNames.forEach { onSave(it, selectedColor, selectedGroupId, hideCompletedByDefault, selectedPendingGroup) }
                     } else if (name.isNotBlank()) {
-                        onSave(name, selectedColor, selectedGroupId, hideCompletedByDefault)
+                        onSave(name, selectedColor, selectedGroupId, hideCompletedByDefault, selectedPendingGroup)
                     }
                 },
                 enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()

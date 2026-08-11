@@ -569,8 +569,11 @@ fun TagDetailScreen(
                 initialGroupId = tag.groupId,
                 initialHideCompletedByDefault = tag.hideCompletedByDefault,
                 groups = tagGroups,
-                onSave = { newName, newColor, newGroupId, newHideCompletedByDefault ->
-                    viewModel.upsertTag(tag.copy(name = newName.lowercase().trim(), color = newColor, groupId = newGroupId, hideCompletedByDefault = newHideCompletedByDefault))
+                onSave = { newName, newColor, newGroupId, newHideCompletedByDefault, pendingGroup ->
+                    viewModel.upsertTag(
+                        tag.copy(name = newName.lowercase().trim(), color = newColor, groupId = newGroupId, hideCompletedByDefault = newHideCompletedByDefault),
+                        pendingGroup
+                    )
                     isEditSheetOpen = false
                 },
                 onCreateGroup = { id, name, color ->

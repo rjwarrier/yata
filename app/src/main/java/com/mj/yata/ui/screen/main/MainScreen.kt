@@ -852,8 +852,7 @@ fun MainScreen(
                             onToggleStar = { viewModel.toggleTagStarred(it) },
                             onAssignGroup = { tagIds, groupId -> viewModel.setTagsGroup(tagIds, groupId) },
                             onCreateGroupAndAssign = { id, name, tagIds ->
-                                viewModel.upsertTagGroup(com.mj.yata.domain.model.TagGroup(id = id, name = name, color = "accentJ"))
-                                viewModel.setTagsGroup(tagIds, id)
+                                viewModel.createTagGroupAndAssign(com.mj.yata.domain.model.TagGroup(id = id, name = name, color = "accentJ"), tagIds)
                             },
                             onDeleteGroup = { viewModel.deleteTagGroup(it) },
                             onBulkDeleteTags = { viewModel.bulkDeleteTags(it) },
@@ -1047,8 +1046,8 @@ fun MainScreen(
                     MainSheetType.NewTag -> TagEditorSheet(
                         groups = tagGroups,
                         existingNames = tags.map { it.name },
-                        onSave = { name, color, groupId, hideCompletedByDefault ->
-                            viewModel.addTag(name, color, groupId, hideCompletedByDefault)
+                        onSave = { name, color, groupId, hideCompletedByDefault, pendingGroup ->
+                            viewModel.addTag(name, color, groupId, hideCompletedByDefault, pendingGroup)
                             activeSheet = MainSheetType.None
                         },
                         onCreateGroup = { id, name, color ->

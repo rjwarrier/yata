@@ -82,6 +82,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Fixed
 
+- Creating a tag group from the tag editor now saves before the tag references it, so existing
+  groups appear reliably and newly-created groups are not lost when saving immediately.
+
 - The build number in Settings → Help & About now updates on every build again. Configuration
   cache had been freezing the timestamp at whatever it was when the cache entry was first stored,
   so every subsequent build showed the same stale minute; it's now generated fresh at build-execution
