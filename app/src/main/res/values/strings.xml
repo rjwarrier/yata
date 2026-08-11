@@ -323,6 +323,7 @@
 
     <!-- Shared actions -->
     <string name="action_cancel">Cancel</string>
+    <string name="action_not_now">Not now</string>
     <string name="action_save">Save</string>
     <string name="action_none_remove_from_project">None (remove from project)</string>
     <string name="action_none_remove_from_list">None (remove from list)</string>
@@ -988,6 +989,9 @@
     <string name="task_detail_skip_this_occurrence">Skip this occurrence</string>
     <string name="task_detail_tag">Tag...</string>
     <string name="task_detail_tap_to_add_notes_supports_markdown">Tap to add notes... (supports markdown)</string>
+    <string name="task_detail_all_subtasks_done_title">All subtasks done?</string>
+    <string name="task_detail_all_subtasks_done_body">Do you want to mark "%1$s" as done too?</string>
+    <string name="task_detail_mark_task_done">Mark task done</string>
     <!-- The markdown hint belongs in the field's supportingText slot, not crammed into the
          placeholder: a placeholder disappears the moment you start typing, which is exactly when
          knowing markdown is accepted becomes useful. -->

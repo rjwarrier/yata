@@ -166,6 +166,7 @@ fun TaskDetailScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
     var showFollowUpPicker by remember { mutableStateOf(false) }
+    var pendingParentCompletionSubtasks by remember(taskId) { mutableStateOf<List<Subtask>?>(null) }
 
     val task = taskState
     val showMissingTask = com.mj.yata.ui.widgets.rememberMissingContentVisible(taskId, task == null)
@@ -987,8 +988,13 @@ fun TaskDetailScreen(
                     val childrenByParent = remember(subtasks) { subtasks.filter { it.parentSubtaskId != null }.groupBy { it.parentSubtaskId } }
 
                     fun toggleSubtask(id: String, done: Boolean) {
+                        val wasAllDone = subtasks.isNotEmpty() && subtasks.all { it.done }
                         val updated = subtasks.map { if (it.id == id) it.copy(done = done) else it }
                         viewModel.upsertTask(task.copy(subtasks = updated))
+                        val isAllDone = updated.isNotEmpty() && updated.all { it.done }
+                        if (done && !task.done && !wasAllDone && isAllDone) {
+                            pendingParentCompletionSubtasks = updated
+                        }
                     }
 
                     fun deleteSubtask(id: String) {
@@ -1699,6 +1705,29 @@ fun TaskDetailScreen(
     }
     if (exportInProgress) {
         com.mj.yata.util.export.ExportProgressDialog()
+    }
+
+    pendingParentCompletionSubtasks?.let { completedSubtasks ->
+        AlertDialog(
+            onDismissRequest = { pendingParentCompletionSubtasks = null },
+            title = { Text(stringResource(R.string.task_detail_all_subtasks_done_title)) },
+            text = { Text(stringResource(R.string.task_detail_all_subtasks_done_body, task.title)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingParentCompletionSubtasks = null
+                        viewModel.completeTaskAfterSavingSubtasks(task, completedSubtasks) {}
+                    }
+                ) {
+                    Text(stringResource(R.string.task_detail_mark_task_done))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingParentCompletionSubtasks = null }) {
+                    Text(stringResource(R.string.action_not_now))
+                }
+            }
+        )
     }
 
     YataTimePickerLauncher(

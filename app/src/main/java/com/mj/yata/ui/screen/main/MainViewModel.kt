@@ -1147,6 +1147,17 @@ private data class MainNavigationState(
         }
     }
 
+    fun completeTaskAfterSavingSubtasks(task: Task, subtasks: List<Subtask>, onDoneCallback: () -> Unit) {
+        safeLaunch {
+            repository.upsertTask(task.copy(subtasks = subtasks), notify = false, resyncReminder = false)
+            val latestTask = tasks.value.find { it.id == task.id }
+            if (latestTask?.done != true) {
+                repository.toggleTaskDone(task.id)
+                onDoneCallback()
+            }
+        }
+    }
+
     fun skipTaskOccurrence(id: String) {
         safeLaunch {
             repository.skipTaskOccurrence(id)
