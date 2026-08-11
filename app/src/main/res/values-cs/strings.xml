@@ -1165,6 +1165,14 @@
         <item quantity="one">Přidat %1$d osobu do skupiny</item>
         <item quantity="other">Přidat %1$d osob do skupiny</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">Přidat %1$d štítek do skupiny</item>
+        <item quantity="other">Přidat %1$d štítků do skupiny</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d otevřený úkol</item>
+        <item quantity="other">%1$d otevřených úkolů</item>
+    </plurals>
     <plurals name="search_active_filters_count">
         <item quantity="one">%d aktivní filtr</item>
         <item quantity="other">%d aktivních filtrů</item>

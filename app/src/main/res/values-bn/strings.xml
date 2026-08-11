@@ -1165,6 +1165,14 @@
         <item quantity="one">গ্রুপে %1$d জন যোগ করুন</item>
         <item quantity="other">গ্রুপে %1$d জন যোগ করুন</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">%1$d ট্যাগ গ্রুপে যোগ করুন</item>
+        <item quantity="other">%1$d ট্যাগ গ্রুপে যোগ করুন</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d খোলা কাজ</item>
+        <item quantity="other">%1$d খোলা কাজ</item>
+    </plurals>
     <plurals name="search_active_filters_count">
         <item quantity="one">%d সক্রিয় ফিল্টার</item>
         <item quantity="other">%d সক্রিয় ফিল্টার</item>

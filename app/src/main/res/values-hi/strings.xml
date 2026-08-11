@@ -73,6 +73,14 @@
         <item quantity="one">समूह में %1$d व्यक्ति जोड़ें</item>
         <item quantity="other">समूह में %1$d लोग जोड़ें</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">%1$d टैग को समूह में जोड़ें</item>
+        <item quantity="other">%1$d टैग को समूह में जोड़ें</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d खुला कार्य</item>
+        <item quantity="other">%1$d खुले कार्य</item>
+    </plurals>
     <string name="projects_empty_title">अभी तक कोई परियोजना नहीं</string>
     <string name="projects_empty_subtitle">प्रगति एक साथ ट्रैक करने के लिए संबंधित कार्यों को एक परियोजना में समूहित करें।</string>
     <string name="projects_new_project">नई परियोजना</string>

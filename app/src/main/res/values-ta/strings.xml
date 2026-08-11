@@ -1165,6 +1165,14 @@
         <item quantity="one">%1$d நபரை குழுவில் சேர்</item>
         <item quantity="other">%1$d நபர்களை குழுவில் சேர்</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">%1$d குறிச்சொல்லை குழுவில் சேர்</item>
+        <item quantity="other">%1$d குறிச்சொற்களை குழுவில் சேர்</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d திறந்த பணி</item>
+        <item quantity="other">%1$d திறந்த பணிகள்</item>
+    </plurals>
     <plurals name="search_active_filters_count">
         <item quantity="one">%d செயலில் உள்ள வடிகட்டி</item>
         <item quantity="other">%d செயலில் உள்ள வடிகட்டிகள்</item>

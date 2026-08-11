@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -45,12 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.domain.model.*
+import com.mj.yata.ui.sheets.GroupAssignSheet
 import com.mj.yata.util.sortedByEntityMode
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
-import com.mj.yata.ui.widgets.PersonAvatar
+import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TagsTab(
     tags: List<Tag>,
@@ -67,6 +68,8 @@ fun TagsTab(
     onTagClick: (String) -> Unit,
     onNewTagClick: () -> Unit,
     onToggleStar: (String) -> Unit = {},
+    onAssignGroup: (tagIds: List<String>, groupId: String) -> Unit = { _, _ -> },
+    onCreateGroupAndAssign: (id: String, name: String, tagIds: List<String>) -> Unit = { _, _, _ -> },
     onDeleteGroup: (TagGroup) -> Unit = {},
     onBulkDeleteTags: (List<String>) -> Unit = {},
     sortMode: com.mj.yata.util.EntitySortMode = com.mj.yata.util.EntitySortMode.NAME_ASC,
@@ -79,6 +82,8 @@ fun TagsTab(
     var selectModeOn by remember { mutableStateOf(false) }
     val selectionMode = selectModeOn
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
+    var showGroupPicker by remember { mutableStateOf(false) }
+    val adaptiveSheetMaxWidth = rememberAdaptiveSheetMaxWidth()
 
     Column(
         modifier = modifier
@@ -91,6 +96,9 @@ fun TagsTab(
                 selectedCount = selectedIds.size,
                 onCancel = { selectedIds.clear(); selectModeOn = false }
             ) {
+                TextButton(onClick = { showGroupPicker = true }, enabled = selectedIds.isNotEmpty()) {
+                    Text(stringResource(R.string.people_add_to_group))
+                }
                 IconButton(onClick = { showBulkDeleteDialog = true }, enabled = selectedIds.isNotEmpty()) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.tags_delete_selected), tint = MaterialTheme.colorScheme.error)
                 }
@@ -136,6 +144,7 @@ fun TagsTab(
         ) {
             val expandedGroups = remember { mutableStateMapOf<String, Boolean>() }
             val groupedIds = tagGroups.map { it.id }.toSet()
+            val sortedTagGroups = remember(tagGroups) { tagGroups.sortedBy { it.name.lowercase() } }
             // Defense-in-depth: this tab is never routed to while tags are disabled, but if it
             // ever were, this keeps it from computing/showing tag-task associations anyway —
             // matching the pattern TodayTab/UpcomingTab already use for their cross-feature reads.
@@ -197,9 +206,10 @@ fun TagsTab(
                     // Groups keep their own subsections inside Open, so grouping and the
                     // open/closed split compose rather than one replacing the other.
                     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                        tagGroups.forEach { group ->
+                        sortedTagGroups.forEach { group ->
                             val groupTags = openTags.filter { it.groupId == group.id }.sorted()
                             if (groupTags.isNotEmpty()) {
+                                val expansionKey = "open_${group.id}"
                                 TagGroupSection(
                                     title = group.name,
                                     tags = groupTags,
@@ -208,8 +218,8 @@ fun TagsTab(
                                     onToggleStar = onToggleStar,
                                     selectionMode = selectionMode,
                                     selectedIds = selectedIds,
-                                    expanded = expandedGroups[group.id] ?: true,
-                                    onToggle = { expandedGroups[group.id] = !(expandedGroups[group.id] ?: true) },
+                                    expanded = expandedGroups[expansionKey] ?: true,
+                                    onToggle = { expandedGroups[expansionKey] = !(expandedGroups[expansionKey] ?: true) },
                                     onDelete = { onDeleteGroup(group) },
                                     useWideLayout = useWideLayout
                                 )
@@ -217,7 +227,7 @@ fun TagsTab(
                         }
                         val ungrouped = openTags.filter { it.groupId == null || it.groupId !in groupedIds }.sorted()
                         TagGroupSection(
-                            title = if (tagGroups.isEmpty()) null else "Ungrouped",
+                            title = if (tagGroups.isEmpty()) null else stringResource(R.string.people_ungrouped),
                             tags = ungrouped,
                             taskCounts = tagTaskCounts,
                             onTagClick = ::onTagTap,
@@ -238,18 +248,40 @@ fun TagsTab(
                         expanded = closedExpanded,
                         onToggle = { closedExpanded = !closedExpanded }
                     ) {
-                        // Flat regardless of grouping: these are inactive, so a second level of
-                        // group headers would be structure nobody needs to navigate.
-                        TagGroupSection(
-                            title = null,
-                            tags = closedTags,
-                            taskCounts = tagTaskCounts,
-                            onTagClick = ::onTagTap,
-                            onToggleStar = onToggleStar,
-                            selectionMode = selectionMode,
-                            selectedIds = selectedIds,
-                            useWideLayout = useWideLayout
-                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                            sortedTagGroups.forEach { group ->
+                                val groupTags = closedTags.filter { it.groupId == group.id }.sorted()
+                                if (groupTags.isNotEmpty()) {
+                                    val expansionKey = "closed_${group.id}"
+                                    TagGroupSection(
+                                        title = group.name,
+                                        tags = groupTags,
+                                        taskCounts = tagTaskCounts,
+                                        onTagClick = ::onTagTap,
+                                        onToggleStar = onToggleStar,
+                                        selectionMode = selectionMode,
+                                        selectedIds = selectedIds,
+                                        expanded = expandedGroups[expansionKey] ?: true,
+                                        onToggle = { expandedGroups[expansionKey] = !(expandedGroups[expansionKey] ?: true) },
+                                        onDelete = { onDeleteGroup(group) },
+                                        useWideLayout = useWideLayout
+                                    )
+                                }
+                            }
+                            val ungroupedClosed = closedTags.filter { it.groupId == null || it.groupId !in groupedIds }.sorted()
+                            TagGroupSection(
+                                title = if (tagGroups.isEmpty()) null else stringResource(R.string.people_ungrouped),
+                                tags = ungroupedClosed,
+                                taskCounts = tagTaskCounts,
+                                onTagClick = ::onTagTap,
+                                onToggleStar = onToggleStar,
+                                selectionMode = selectionMode,
+                                selectedIds = selectedIds,
+                                expanded = expandedGroups["closed_ungrouped"] ?: true,
+                                onToggle = { expandedGroups["closed_ungrouped"] = !(expandedGroups["closed_ungrouped"] ?: true) },
+                                useWideLayout = useWideLayout
+                            )
+                        }
                     }
                 }
             }
@@ -275,6 +307,37 @@ fun TagsTab(
                 TextButton(onClick = { showBulkDeleteDialog = false }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
+    }
+
+    if (showGroupPicker) {
+        ModalBottomSheet(
+            onDismissRequest = { showGroupPicker = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            GroupAssignSheet(
+                title = pluralStringResource(R.plurals.tags_add_to_group_title, selectedIds.size, selectedIds.size),
+                groups = tagGroups.sortedBy { it.name.lowercase() },
+                groupId = { it.id },
+                groupName = { it.name },
+                groupColorKey = { it.color },
+                onSelectGroup = { groupId ->
+                    onAssignGroup(selectedIds.toList(), groupId)
+                    selectedIds.clear()
+                    selectModeOn = false
+                    showGroupPicker = false
+                },
+                onCreateGroup = { id, name ->
+                    onCreateGroupAndAssign(id, name, selectedIds.toList())
+                    selectedIds.clear()
+                    selectModeOn = false
+                    showGroupPicker = false
+                },
+                onDismiss = { showGroupPicker = false },
+                newGroupIdPrefix = "tg_"
+            )
+        }
     }
 }
 
@@ -440,7 +503,7 @@ private fun TagGroupSection(
     if (showDeleteDialog && onDelete != null && title != null) {
         com.mj.yata.ui.widgets.GroupDeleteConfirmDialog(
             groupTitle = title,
-            entityLabel = "Tags",
+            entityLabel = stringResource(R.string.tab_tags),
             onConfirm = { showDeleteDialog = false; onDelete() },
             onDismiss = { showDeleteDialog = false }
         )
@@ -510,7 +573,7 @@ private fun TagRow(
                     style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onSurface)
                 )
                 Text(
-                    text = if (openTasks == 1) "1 open" else "$openTasks open",
+                    text = pluralStringResource(R.plurals.tags_open_task_count, openTasks, openTasks),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp

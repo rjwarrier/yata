@@ -1630,6 +1630,15 @@ private data class MainNavigationState(
         }
     }
 
+    fun setTagsGroup(tagIds: List<String>, groupId: String?) {
+        safeLaunch {
+            val byId = tags.value.associateBy { it.id }
+            tagIds.forEach { id ->
+                byId[id]?.let { repository.upsertTag(it.copy(groupId = groupId)) }
+            }
+        }
+    }
+
     fun toggleTagStarred(id: String) {
         safeLaunch {
             val tag = tags.value.find { it.id == id } ?: return@safeLaunch

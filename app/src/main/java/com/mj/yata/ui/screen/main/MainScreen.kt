@@ -850,6 +850,11 @@ fun MainScreen(
                             onTagClick = onNavigateToTagDetail,
                             onNewTagClick = { activeSheet = MainSheetType.NewTag },
                             onToggleStar = { viewModel.toggleTagStarred(it) },
+                            onAssignGroup = { tagIds, groupId -> viewModel.setTagsGroup(tagIds, groupId) },
+                            onCreateGroupAndAssign = { id, name, tagIds ->
+                                viewModel.upsertTagGroup(com.mj.yata.domain.model.TagGroup(id = id, name = name, color = "accentJ"))
+                                viewModel.setTagsGroup(tagIds, id)
+                            },
                             onDeleteGroup = { viewModel.deleteTagGroup(it) },
                             onBulkDeleteTags = { viewModel.bulkDeleteTags(it) },
                             tagsEnabled = tagsFeatureEnabled,

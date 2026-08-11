@@ -283,7 +283,8 @@ fun PeopleTab(
                     selectedIds.clear()
                     showGroupPicker = false
                 },
-                onDismiss = { showGroupPicker = false }
+                onDismiss = { showGroupPicker = false },
+                newGroupIdPrefix = "pg_"
             )
         }
     }

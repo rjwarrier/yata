@@ -17,6 +17,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Tag grouping on Android now matches the grouped web workflow.** Selected tags can be moved into
+  an existing or newly-created group from the Tags tab, and grouped tag rows use localized task
+  counts and delete confirmations.
+
 - **Other apps, GitHub link, and Share on the About screen.** Settings → Help & About now lists
   the developer's other apps (yaja, Assetrack, Ultra) linking to their Play Store pages and a link
   to the YATA GitHub repo.

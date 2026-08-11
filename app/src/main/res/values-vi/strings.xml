@@ -1165,6 +1165,14 @@
         <item quantity="one">Thêm %1$d người vào nhóm</item>
         <item quantity="other">Thêm %1$d người vào nhóm</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">Thêm %1$d thẻ vào nhóm</item>
+        <item quantity="other">Thêm %1$d thẻ vào nhóm</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d nhiệm vụ đang mở</item>
+        <item quantity="other">%1$d nhiệm vụ đang mở</item>
+    </plurals>
     <plurals name="search_active_filters_count">
         <item quantity="one">%d bộ lọc đang áp dụng</item>
         <item quantity="other">%d bộ lọc đang áp dụng</item>

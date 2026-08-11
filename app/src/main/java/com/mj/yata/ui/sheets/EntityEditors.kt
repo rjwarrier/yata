@@ -59,6 +59,7 @@ fun <G> GroupAssignSheet(
     onSelectGroup: (String) -> Unit,
     onCreateGroup: (id: String, name: String) -> Unit,
     onDismiss: () -> Unit,
+    newGroupIdPrefix: String = "grp_",
     modifier: Modifier = Modifier
 ) {
     val accents = com.mj.yata.ui.theme.LocalYataAccents.current
@@ -110,7 +111,7 @@ fun <G> GroupAssignSheet(
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = {
                     if (newGroupName.isNotBlank()) {
-                        val id = "grp_" + java.util.UUID.randomUUID().toString()
+                        val id = newGroupIdPrefix + java.util.UUID.randomUUID().toString()
                         onCreateGroup(id, newGroupName.trim())
                         newGroupName = ""
                     }

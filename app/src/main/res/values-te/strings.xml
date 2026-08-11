@@ -1165,6 +1165,14 @@
         <item quantity="one">సమూహానికి %1$d వ్యక్తిని జోడించండి</item>
         <item quantity="other">సమూహానికి %1$d మంది వ్యక్తులను జోడించండి</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">%1$d ట్యాగ్‌ను సమూహానికి జోడించండి</item>
+        <item quantity="other">%1$d ట్యాగ్‌లను సమూహానికి జోడించండి</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d ఓపెన్ పని</item>
+        <item quantity="other">%1$d ఓపెన్ పనులు</item>
+    </plurals>
     <plurals name="search_active_filters_count">
         <item quantity="one">%d క్రియాశీల ఫిల్టర్</item>
         <item quantity="other">%d క్రియాశీల ఫిల్టర్‌లు</item>

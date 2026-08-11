@@ -1165,6 +1165,14 @@
         <item quantity="one">જૂથમાં %1$d વ્યક્તિ ઉમેરો</item>
         <item quantity="other">જૂથમાં %1$d લોકો ઉમેરો</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">%1$d ટૅગને જૂથમાં ઉમેરો</item>
+        <item quantity="other">%1$d ટૅગને જૂથમાં ઉમેરો</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d ખુલ્લું કાર્ય</item>
+        <item quantity="other">%1$d ખુલ્લાં કાર્યો</item>
+    </plurals>
     <plurals name="search_active_filters_count">
         <item quantity="one">%d સક્રિય ફિલ્ટર</item>
         <item quantity="other">%d સક્રિય ફિલ્ટર</item>

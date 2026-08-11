@@ -85,6 +85,14 @@
         <item quantity="one">Añadir %1$d persona al grupo</item>
         <item quantity="other">Añadir %1$d personas al grupo</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">Añadir %1$d etiqueta al grupo</item>
+        <item quantity="other">Añadir %1$d etiquetas al grupo</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d tarea abierta</item>
+        <item quantity="other">%1$d tareas abiertas</item>
+    </plurals>
     <string name="projects_empty_title">Aún no hay proyectos</string>
     <string name="projects_empty_subtitle">Agrupa tareas relacionadas en un proyecto para seguir el progreso.</string>
     <string name="projects_new_project">Nuevo proyecto</string>

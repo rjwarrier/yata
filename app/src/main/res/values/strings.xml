@@ -119,6 +119,14 @@
         <item quantity="one">Add %1$d person to group</item>
         <item quantity="other">Add %1$d people to group</item>
     </plurals>
+    <plurals name="tags_add_to_group_title">
+        <item quantity="one">Add %1$d tag to group</item>
+        <item quantity="other">Add %1$d tags to group</item>
+    </plurals>
+    <plurals name="tags_open_task_count">
+        <item quantity="one">%1$d open task</item>
+        <item quantity="other">%1$d open tasks</item>
+    </plurals>
     <string name="projects_empty_title">No projects yet</string>
     <string name="projects_empty_subtitle">Group related tasks into a project to track progress together.</string>
     <string name="projects_new_project">New project</string>
