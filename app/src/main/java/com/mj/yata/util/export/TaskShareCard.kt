@@ -120,7 +120,7 @@ fun TaskShareCard(
                             text = title,
                             style = MaterialTheme.typography.headlineLarge.copy(
                                 fontSize = 64.sp,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.Bold,
                                 lineHeight = 73.sp,
                                 letterSpacing = (-0.015).em,
                                 textDecoration = if (done) TextDecoration.LineThrough else TextDecoration.None

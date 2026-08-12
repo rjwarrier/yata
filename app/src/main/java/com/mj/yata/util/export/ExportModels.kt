@@ -47,7 +47,8 @@ data class TaskExportOptions(
     val destination: ExportDestination,
     val fileNameBase: String,
     val pdfPageSize: ExportPdfPageSize,
-    val imageScale: ExportImageScale
+    val imageScale: ExportImageScale,
+    val imageDarkTheme: Boolean = false
 )
 
 data class ExportOutcome(
@@ -81,6 +82,8 @@ private object ExportPrefKeys {
     const val TASK_INCLUDE_COMMENTS = "task_include_comments"
     const val TASK_INCLUDE_SUBTASKS = "task_include_subtasks"
     const val TASK_INCLUDE_SCHEDULE = "task_include_schedule"
+    const val TASK_IMAGE_DARK_THEME = "task_image_dark_theme"
+    const val TASK_IMAGE_DARK_THEME_SET = "task_image_dark_theme_set"
 }
 
 internal fun defaultEntityExportOptions(context: Context, entityName: String): EntityExportOptions {
@@ -102,9 +105,21 @@ internal fun defaultEntityExportOptions(context: Context, entityName: String): E
     )
 }
 
-internal fun defaultTaskExportOptions(context: Context, title: String): TaskExportOptions {
+/**
+ * [systemDarkTheme] is the exporting screen's own currently-resolved theme (light/dark/AMOLED,
+ * whichever the user is actually looking at). It's only the *default* for [TaskExportOptions.imageDarkTheme]
+ * — once the user explicitly flips the dialog's toggle that explicit choice is remembered instead
+ * (via [ExportPrefKeys.TASK_IMAGE_DARK_THEME_SET]), so it doesn't silently flip back the next time
+ * they export from a screen in the other theme.
+ */
+internal fun defaultTaskExportOptions(context: Context, title: String, systemDarkTheme: Boolean): TaskExportOptions {
     val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     val privacy = prefs.getBoolean(ExportPrefKeys.PRIVACY, false)
+    val imageDarkTheme = if (prefs.getBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME_SET, false)) {
+        prefs.getBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME, systemDarkTheme)
+    } else {
+        systemDarkTheme
+    }
     return TaskExportOptions(
         includeNotes = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_NOTES, true),
         includeComments = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_COMMENTS, true),
@@ -115,7 +130,8 @@ internal fun defaultTaskExportOptions(context: Context, title: String): TaskExpo
         destination = enumValueOrDefault(prefs.getString(ExportPrefKeys.DESTINATION, null), ExportDestination.SHARE),
         fileNameBase = "yata_${sanitizeExportFileName(title)}",
         pdfPageSize = enumValueOrDefault(prefs.getString(ExportPrefKeys.PDF_PAGE_SIZE, null), ExportPdfPageSize.A4),
-        imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD)
+        imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD),
+        imageDarkTheme = imageDarkTheme
     )
 }
 
@@ -146,6 +162,8 @@ internal fun rememberTaskExportOptions(context: Context, options: TaskExportOpti
         .putString(ExportPrefKeys.DESTINATION, options.destination.name)
         .putString(ExportPrefKeys.PDF_PAGE_SIZE, options.pdfPageSize.name)
         .putString(ExportPrefKeys.IMAGE_SCALE, options.imageScale.name)
+        .putBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME, options.imageDarkTheme)
+        .putBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME_SET, true)
         .apply()
 }
 

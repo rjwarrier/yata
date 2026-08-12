@@ -906,6 +906,7 @@
     <string name="export_share_tagline">લોકલ-ફર્સ્ટ ટાસ્ક મેનેજર</string>
     <string name="export_shared_on">શેર કર્યું %1$s</string>
     <string name="export_more_count">+%1$d વધુ</string>
+    <string name="export_dark_theme_toggle">ડાર્ક થીમ</string>
     <string name="notification_reminder_title">રિમાઇન્ડર: %1$s</string>
     <string name="notification_action_complete">પૂર્ણ કરો</string>
     <string name="notification_action_snooze_15m">15 મિનિટ સ્નૂઝ કરો</string>

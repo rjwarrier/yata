@@ -906,6 +906,7 @@
     <string name="export_share_tagline">ലോക്കൽ-ഫസ്റ്റ് ടാസ്ക് മാനേജർ</string>
     <string name="export_shared_on">പങ്കിട്ടു %1$s</string>
     <string name="export_more_count">+%1$d കൂടുതൽ</string>
+    <string name="export_dark_theme_toggle">ഡാർക്ക് തീം</string>
     <string name="notification_reminder_title">ഓർമ്മപ്പെടുത്തൽ: %1$s</string>
     <string name="notification_action_complete">പൂർത്തിയാക്കുക</string>
     <string name="notification_action_snooze_15m">15 മിനിറ്റ് മാറ്റിവയ്ക്കുക</string>

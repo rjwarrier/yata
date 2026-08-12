@@ -49,11 +49,12 @@ fun TaskExportOptionsDialog(
     hasComments: Boolean,
     hasSubtasks: Boolean,
     hasScheduleDetails: Boolean,
+    systemDarkTheme: Boolean,
     onDismiss: () -> Unit,
     onConfirm: (TaskExportOptions) -> Unit
 ) {
     val context = LocalContext.current
-    val defaults = remember(taskTitle) { defaultTaskExportOptions(context, taskTitle) }
+    val defaults = remember(taskTitle) { defaultTaskExportOptions(context, taskTitle, systemDarkTheme) }
     var includeNotes by remember { mutableStateOf(defaults.includeNotes) }
     var includeComments by remember { mutableStateOf(defaults.includeComments) }
     var includeSubtasks by remember { mutableStateOf(defaults.includeSubtasks) }
@@ -63,6 +64,7 @@ fun TaskExportOptionsDialog(
     var destination by remember { mutableStateOf(defaults.destination) }
     var pdfPageSize by remember { mutableStateOf(defaults.pdfPageSize) }
     var imageScale by remember { mutableStateOf(defaults.imageScale) }
+    var imageDarkTheme by remember { mutableStateOf(defaults.imageDarkTheme) }
     var fileNameText by remember { mutableStateOf(defaults.fileNameBase) }
 
     // The IMAGE card (TaskShareCard) is a fixed portrait layout matching its reference design and
@@ -194,6 +196,12 @@ fun TaskExportOptionsDialog(
                         onItemSelected = { imageScale = it },
                         labelProvider = { it.label }
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    ToggleRow(
+                        title = stringResource(R.string.export_dark_theme_toggle),
+                        checked = imageDarkTheme,
+                        onCheckedChange = { imageDarkTheme = it }
+                    )
                 }
             }
 
@@ -216,7 +224,8 @@ fun TaskExportOptionsDialog(
                             destination = destination,
                             fileNameBase = fileNameText,
                             pdfPageSize = pdfPageSize,
-                            imageScale = imageScale
+                            imageScale = imageScale,
+                            imageDarkTheme = imageDarkTheme
                         )
                         rememberTaskExportOptions(context, options)
                         onConfirm(options)

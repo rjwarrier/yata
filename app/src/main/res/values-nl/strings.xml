@@ -1002,6 +1002,7 @@
     <string name="export_share_tagline">Local-first taakbeheer</string>
     <string name="export_shared_on">Gedeeld %1$s</string>
     <string name="export_more_count">+%1$d meer</string>
+    <string name="export_dark_theme_toggle">Donker thema</string>
     <string name="notification_reminder_title">Herinnering: %1$s</string>
     <string name="notification_action_complete">Voltooien</string>
     <string name="notification_action_snooze_15m">15 min uitstellen</string>

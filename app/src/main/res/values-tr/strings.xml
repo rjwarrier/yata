@@ -906,6 +906,7 @@
     <string name="export_share_tagline">Yerel öncelikli görev yöneticisi</string>
     <string name="export_shared_on">Paylaşıldı: %1$s</string>
     <string name="export_more_count">+%1$d daha</string>
+    <string name="export_dark_theme_toggle">Koyu tema</string>
     <string name="notification_reminder_title">Hatırlatıcı: %1$s</string>
     <string name="notification_action_complete">Tamamla</string>
     <string name="notification_action_snooze_15m">15 dakika ertele</string>

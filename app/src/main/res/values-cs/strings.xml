@@ -906,6 +906,7 @@
     <string name="export_share_tagline">Správce úkolů local-first</string>
     <string name="export_shared_on">Sdíleno %1$s</string>
     <string name="export_more_count">+%1$d dalších</string>
+    <string name="export_dark_theme_toggle">Tmavý motiv</string>
     <string name="notification_reminder_title">Připomenutí: %1$s</string>
     <string name="notification_action_complete">Dokončit</string>
     <string name="notification_action_snooze_15m">Odložit o 15 min</string>

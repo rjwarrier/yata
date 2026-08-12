@@ -1185,6 +1185,7 @@
     <string name="export_share_tagline">Gestor de tareas local-first</string>
     <string name="export_shared_on">Compartido %1$s</string>
     <string name="export_more_count">+%1$d más</string>
+    <string name="export_dark_theme_toggle">Tema oscuro</string>
     <string name="recurrence_repeat_task">Repeat task</string>
     <string name="recurrence_frequency">Frequency</string>
     <string name="recurrence_every">Every</string>

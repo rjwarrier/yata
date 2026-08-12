@@ -906,6 +906,7 @@
     <string name="export_share_tagline">Kidhibiti kazi cha local-first</string>
     <string name="export_shared_on">Imeshirikiwa %1$s</string>
     <string name="export_more_count">+%1$d zaidi</string>
+    <string name="export_dark_theme_toggle">Mandhari nyeusi</string>
     <string name="notification_reminder_title">Ukumbusho: %1$s</string>
     <string name="notification_action_complete">Kamilisha</string>
     <string name="notification_action_snooze_15m">Ahirisha dakika 15</string>

@@ -906,6 +906,7 @@
     <string name="export_share_tagline">Local-first uppgiftshanterare</string>
     <string name="export_shared_on">Delad %1$s</string>
     <string name="export_more_count">+%1$d till</string>
+    <string name="export_dark_theme_toggle">Mörkt tema</string>
     <string name="notification_reminder_title">Påminnelse: %1$s</string>
     <string name="notification_action_complete">Slutför</string>
     <string name="notification_action_snooze_15m">Snooza 15 min</string>

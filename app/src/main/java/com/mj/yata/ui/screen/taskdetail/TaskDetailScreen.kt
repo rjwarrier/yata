@@ -256,6 +256,7 @@ fun TaskDetailScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
     val subtaskCompletionAction by viewModel.subtaskCompletionAction.collectAsStateWithLifecycle()
+    val profileUserName by viewModel.userName.collectAsStateWithLifecycle()
 
     Scaffold(
         snackbarHost = {
@@ -1644,11 +1645,17 @@ fun TaskDetailScreen(
             )
         }
         val peopleById = remember(people) { people.associateBy { it.id } }
-        val exportComments = remember(comments, people) {
+        // The People-tab "me" row is literally named "You" by default (see
+        // YataRepositoryImpl.seedInitialDataIfNeeded) — that reads fine on-screen but is
+        // meaningless to whoever receives the shared image/PDF. Prefer the Settings > Profile
+        // name when it's been filled in, since that's the field actually meant to be your name.
+        fun exportNameFor(person: com.mj.yata.domain.model.Person): String =
+            if (person.isMe && profileUserName.isNotBlank()) profileUserName else person.name
+        val exportComments = remember(comments, people, profileUserName) {
             comments.map { comment ->
                 val author = comment.authorId?.let { peopleById[it] }
                 com.mj.yata.util.export.ExportCommentRow(
-                    authorLabel = author?.let { if (it.isMe) "You" else it.name },
+                    authorLabel = author?.let { exportNameFor(it) },
                     timestampLabel = com.mj.yata.util.TaskScheduleUtils.formatDueDate(
                         java.time.Instant.ofEpochMilli(comment.createdAt)
                             .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
@@ -1687,7 +1694,7 @@ fun TaskDetailScreen(
                         } else {
                             taskAssignees.map { person ->
                                 com.mj.yata.util.export.ExportPersonChip(
-                                    name = if (person.isMe) "You" else person.name,
+                                    name = exportNameFor(person),
                                     initials = person.initials,
                                     accentKey = person.color,
                                     photoUri = person.photoUri
@@ -1704,11 +1711,15 @@ fun TaskDetailScreen(
                         subtasks = exportSubtasks,
                         includeSubtasks = options.includeSubtasks,
                         includeScheduleDetails = options.includeScheduleDetails,
-                        sharedByName = "You",
+                        sharedByName = if (options.privacyMode) {
+                            "You"
+                        } else {
+                            exportedBy?.let { exportNameFor(it) } ?: profileUserName.ifBlank { "You" }
+                        },
                         sharedByInitials = exportedBy?.initials ?: "Y",
                         sharedByAccentKey = exportedBy?.color ?: "accentA",
                         sharedByPhotoUri = if (options.privacyMode) null else exportedBy?.photoUri,
-                        darkTheme = exportDarkTheme,
+                        darkTheme = options.imageDarkTheme,
                         accentColor = exportAccentColor,
                         showMadeWithFooter = options.showMadeWithFooter,
                         destination = options.destination,
@@ -1733,6 +1744,7 @@ fun TaskDetailScreen(
             hasComments = hasComments,
             hasSubtasks = hasSubtasks,
             hasScheduleDetails = hasScheduleDetails,
+            systemDarkTheme = exportDarkTheme,
             onDismiss = { exportFormatPending = null },
             onConfirm = { options ->
                 runExport(options)

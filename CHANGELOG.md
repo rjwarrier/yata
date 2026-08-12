@@ -21,9 +21,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   portrait card sized for chat-app previews (WhatsApp/Telegram/Instagram) instead of the old wide
   report layout: brand header, title, status/priority pills, a due-date + list strip, assignees
   shown with their real avatars alongside tags in an equal-billing two-column block, then optional
-  notes and up to 3 recent comments, and a footer crediting who shared it and when. Follows the
-  app's light/dark color scheme and exports as a JPEG. PDF export is unchanged. New strings
-  translated across all 24 locales.
+  notes and up to 3 recent comments, and a footer crediting who shared it and when. Defaults to
+  the app's current light/dark theme, with a Dark theme toggle in the export sheet to override it
+  per-export (remembered for next time once changed) — handy for sharing a light card outside a
+  dark app, or vice versa. Exports as a JPEG; PDF export is unchanged. New strings translated
+  across all 24 locales.
 - **15 more locales translated.** German, Spanish, French, Italian, Portuguese, Dutch, Swedish,
   Romanian, Turkish, Vietnamese, Indonesian, Czech, Polish, Hindi and Bengali now have translations
   for GitHub config transfer, Share YATA, Staff Analytics, task defaults, the subtask-completion

@@ -906,6 +906,7 @@
     <string name="export_share_tagline">ಲೋಕಲ್-ಫಸ್ಟ್ ಟಾಸ್ಕ್ ಮ್ಯಾನೇಜರ್</string>
     <string name="export_shared_on">ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ %1$s</string>
     <string name="export_more_count">+%1$d ಇನ್ನಷ್ಟು</string>
+    <string name="export_dark_theme_toggle">ಡಾರ್ಕ್ ಥೀಮ್</string>
     <string name="notification_reminder_title">ಜ್ಞಾಪನೆ: %1$s</string>
     <string name="notification_action_complete">ಪೂರ್ಣಗೊಳಿಸಿ</string>
     <string name="notification_action_snooze_15m">15 ನಿಮಿಷ ಸ್ನೂಜ್</string>

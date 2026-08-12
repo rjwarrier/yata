@@ -906,6 +906,7 @@
     <string name="export_share_tagline">லோக்கல்-ஃபர்ஸ்ட் பணி மேலாளர்</string>
     <string name="export_shared_on">பகிரப்பட்டது %1$s</string>
     <string name="export_more_count">+%1$d மேலும்</string>
+    <string name="export_dark_theme_toggle">இருண்ட தீம்</string>
     <string name="notification_reminder_title">நினைவூட்டல்: %1$s</string>
     <string name="notification_action_complete">முடி</string>
     <string name="notification_action_snooze_15m">15 நிமிடம் ஒத்திவை</string>

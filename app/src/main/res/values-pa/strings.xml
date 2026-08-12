@@ -906,6 +906,7 @@
     <string name="export_share_tagline">ਲੋਕਲ-ਫਸਟ ਟਾਸਕ ਮੈਨੇਜਰ</string>
     <string name="export_shared_on">ਸਾਂਝਾ ਕੀਤਾ %1$s</string>
     <string name="export_more_count">+%1$d ਹੋਰ</string>
+    <string name="export_dark_theme_toggle">ਡਾਰਕ ਥੀਮ</string>
     <string name="notification_reminder_title">ਰੀਮਾਈਂਡਰ: %1$s</string>
     <string name="notification_action_complete">ਪੂਰਾ ਕਰੋ</string>
     <string name="notification_action_snooze_15m">15 ਮਿੰਟ ਸਨੂਜ਼ ਕਰੋ</string>

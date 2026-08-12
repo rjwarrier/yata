@@ -906,6 +906,7 @@
     <string name="export_share_tagline">Gestore attività local-first</string>
     <string name="export_shared_on">Condiviso %1$s</string>
     <string name="export_more_count">+%1$d altri</string>
+    <string name="export_dark_theme_toggle">Tema scuro</string>
     <string name="notification_reminder_title">Promemoria: %1$s</string>
     <string name="notification_action_complete">Completa</string>
     <string name="notification_action_snooze_15m">Rinvia di 15 min</string>

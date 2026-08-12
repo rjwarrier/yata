@@ -906,6 +906,7 @@
     <string name="export_share_tagline">लोकल-फर्स्ट टास्क मॅनेजर</string>
     <string name="export_shared_on">शेअर केले %1$s</string>
     <string name="export_more_count">+%1$d अधिक</string>
+    <string name="export_dark_theme_toggle">डार्क थीम</string>
     <string name="notification_reminder_title">स्मरणपत्र: %1$s</string>
     <string name="notification_action_complete">पूर्ण करा</string>
     <string name="notification_action_snooze_15m">15 मिनिटे स्नूझ करा</string>

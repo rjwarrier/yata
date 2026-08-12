@@ -906,6 +906,7 @@
     <string name="export_share_tagline">Local-first na task manager</string>
     <string name="export_shared_on">Ibinahagi %1$s</string>
     <string name="export_more_count">+%1$d pa</string>
+    <string name="export_dark_theme_toggle">Madilim na tema</string>
     <string name="notification_reminder_title">Paalala: %1$s</string>
     <string name="notification_action_complete">Tapusin</string>
     <string name="notification_action_snooze_15m">I-snooze ng 15 minuto</string>

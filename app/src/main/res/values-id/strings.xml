@@ -906,6 +906,7 @@
     <string name="export_share_tagline">Pengelola tugas local-first</string>
     <string name="export_shared_on">Dibagikan %1$s</string>
     <string name="export_more_count">+%1$d lainnya</string>
+    <string name="export_dark_theme_toggle">Tema gelap</string>
     <string name="notification_reminder_title">Pengingat: %1$s</string>
     <string name="notification_action_complete">Selesai</string>
     <string name="notification_action_snooze_15m">Tunda 15 menit</string>

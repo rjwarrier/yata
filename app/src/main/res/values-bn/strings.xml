@@ -906,6 +906,7 @@
     <string name="export_share_tagline">লোকাল-ফার্স্ট টাস্ক ম্যানেজার</string>
     <string name="export_shared_on">শেয়ার করা হয়েছে %1$s</string>
     <string name="export_more_count">+%1$d আরও</string>
+    <string name="export_dark_theme_toggle">ডার্ক থিম</string>
     <string name="notification_reminder_title">রিমাইন্ডার: %1$s</string>
     <string name="notification_action_complete">সম্পন্ন</string>
     <string name="notification_action_snooze_15m">১৫ মিনিট পিছিয়ে দিন</string>

@@ -1115,6 +1115,7 @@
     <string name="export_share_tagline">Lokal-first Aufgabenmanager</string>
     <string name="export_shared_on">Geteilt %1$s</string>
     <string name="export_more_count">+%1$d weitere</string>
+    <string name="export_dark_theme_toggle">Dunkles Design</string>
     <string name="notification_reminder_title">Erinnerung: %1$s</string>
     <string name="notification_action_complete">Erledigen</string>
     <string name="notification_action_snooze_15m">15 Min. verschieben</string>

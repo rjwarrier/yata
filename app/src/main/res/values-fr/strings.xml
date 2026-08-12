@@ -1136,6 +1136,7 @@
     <string name="export_share_tagline">Gestionnaire de tâches local-first</string>
     <string name="export_shared_on">Partagé %1$s</string>
     <string name="export_more_count">+%1$d de plus</string>
+    <string name="export_dark_theme_toggle">Thème sombre</string>
     <string name="recurrence_repeat_task">Repeat task</string>
     <string name="recurrence_frequency">Frequency</string>
     <string name="recurrence_every">Every</string>
