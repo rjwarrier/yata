@@ -139,7 +139,7 @@
     <string name="settings_theme_preset_name_label">Nama</string>
     <string name="settings_about_tagline">aplikasi todo lainnya</string>
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
-    <string name="settings_about_credit">Dari Labs RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Dibuat di 🇮🇳</string>
     <string name="settings_swipe_action_edit">Edit judul</string>
     <string name="settings_confetti">Konfeti</string>

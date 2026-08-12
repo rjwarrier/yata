@@ -134,7 +134,7 @@
     <string name="settings_theme_preset_name_label">Pangalan</string>
     <string name="settings_about_tagline">isa pang todo app</string>
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
-    <string name="settings_about_credit">Mula sa Labs ni RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Ginawa sa 🇮🇳</string>
     <string name="settings_swipe_action_edit">I-edit ang pamagat</string>
     <string name="settings_confetti">Confetti</string>

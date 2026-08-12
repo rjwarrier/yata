@@ -924,7 +924,7 @@
     <string name="settings_theme_preset_name_label">Nome</string>
     <string name="settings_about_tagline">yet another todo app</string>
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
-    <string name="settings_about_credit">Dos laboratórios de RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Feito na 🇮🇳</string>
     <string name="analytics_day_streak">sequência de dias</string>
     <string name="analytics_days_clean">dias limpos</string>

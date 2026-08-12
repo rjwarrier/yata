@@ -139,7 +139,7 @@
     <string name="settings_theme_preset_name_label">Ad</string>
     <string name="settings_about_tagline">bir başka yapılacaklar uygulaması</string>
     <string name="settings_about_version">v%1$s  ·  Sürüm %2$s</string>
-    <string name="settings_about_credit">RJ\'nin Laboratuvarlarından</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">🇮🇳\'de yapıldı</string>
     <string name="settings_swipe_action_edit">Başlığı düzenle</string>
     <string name="settings_confetti">Konfeti</string>

@@ -201,7 +201,7 @@
     <string name="settings_theme_preset_name_label">Name</string>
     <string name="settings_about_tagline">yet another todo app</string>
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
-    <string name="settings_about_credit">From the Labs of RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Made in 🇮🇳</string>
     <string name="settings_about_other_apps">Other apps by developers</string>
     <string name="settings_about_github">View source on GitHub</string>

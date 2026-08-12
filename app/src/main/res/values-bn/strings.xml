@@ -139,7 +139,7 @@
     <string name="settings_theme_preset_name_label">নাম</string>
     <string name="settings_about_tagline">আরও একটি টুডু অ্যাপ</string>
     <string name="settings_about_version">v%1$s  ·  বিল্ড %2$s</string>
-    <string name="settings_about_credit">RJ-এর ল্যাব থেকে</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">তৈরি 🇮🇳-তে</string>
     <string name="settings_swipe_action_edit">শিরোনাম সম্পাদনা করুন</string>
     <string name="settings_confetti">কনফেটি</string>

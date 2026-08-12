@@ -139,7 +139,7 @@
     <string name="settings_theme_preset_name_label">Namn</string>
     <string name="settings_about_tagline">ännu en att-göra-app</string>
     <string name="settings_about_version">v%1$s  ·  Bygge %2$s</string>
-    <string name="settings_about_credit">Från RJ:s labb</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Tillverkad i 🇮🇳</string>
     <string name="settings_swipe_action_edit">Redigera titel</string>
     <string name="settings_confetti">Konfetti</string>

@@ -159,7 +159,7 @@
     <string name="settings_theme_preset_name_label">Naam</string>
     <string name="settings_about_tagline">nog een taken-app</string>
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
-    <string name="settings_about_credit">Uit de labs van RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Gemaakt in 🇮🇳</string>
     <string name="settings_swipe_action_edit">Titel bewerken</string>
     <string name="settings_confetti">Confetti</string>

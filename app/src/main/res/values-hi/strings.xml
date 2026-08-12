@@ -159,7 +159,7 @@
     <string name="settings_theme_preset_name_label">नाम</string>
     <string name="settings_about_tagline">एक और टूडू ऐप</string>
     <string name="settings_about_version">v%1$s  ·  बिल्ड %2$s</string>
-    <string name="settings_about_credit">RJ की लैब से</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">🇮🇳 में बनाया गया</string>
     <string name="settings_swipe_action_edit">शीर्षक संपादित करें</string>
     <string name="settings_confetti">कंफ़ेटी</string>

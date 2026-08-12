@@ -139,7 +139,7 @@
     <string name="settings_theme_preset_name_label">Nome</string>
     <string name="settings_about_tagline">solo un\'altra app per attività</string>
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
-    <string name="settings_about_credit">Dai Labs di RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Realizzato in 🇮🇳</string>
     <string name="settings_swipe_action_edit">Modifica titolo</string>
     <string name="settings_confetti">Coriandoli</string>

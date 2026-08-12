@@ -134,7 +134,7 @@
     <string name="settings_theme_preset_name_label">பெயர்</string>
     <string name="settings_about_tagline">இன்னொரு செய்ய வேண்டியவை ஆப்ஸ்</string>
     <string name="settings_about_version">v%1$s  ·  பதிப்பு %2$s</string>
-    <string name="settings_about_credit">RJ இன் ஆய்வகத்திலிருந்து</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">🇮🇳 இல் தயாரிக்கப்பட்டது</string>
     <string name="settings_swipe_action_edit">தலைப்பைத் திருத்து</string>
     <string name="settings_confetti">கான்·பெட்டி</string>

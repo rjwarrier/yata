@@ -139,7 +139,7 @@
     <string name="settings_theme_preset_name_label">Nume</string>
     <string name="settings_about_tagline">încă o aplicație de sarcini</string>
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
-    <string name="settings_about_credit">Din laboratoarele lui RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Făcută în 🇮🇳</string>
     <string name="settings_swipe_action_edit">Editează titlul</string>
     <string name="settings_confetti">Confetti</string>

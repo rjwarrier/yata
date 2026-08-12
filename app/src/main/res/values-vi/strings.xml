@@ -139,7 +139,7 @@
     <string name="settings_theme_preset_name_label">Tên</string>
     <string name="settings_about_tagline">một ứng dụng việc cần làm khác</string>
     <string name="settings_about_version">v%1$s  ·  Bản dựng %2$s</string>
-    <string name="settings_about_credit">Từ Labs của RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Sản xuất tại 🇮🇳</string>
     <string name="settings_swipe_action_edit">Sửa tiêu đề</string>
     <string name="settings_confetti">Pháo giấy</string>

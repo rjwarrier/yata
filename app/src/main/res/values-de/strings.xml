@@ -188,7 +188,7 @@
     <string name="settings_theme_preset_name_label">Name</string>
     <string name="settings_about_tagline">noch eine To-do-App</string>
     <string name="settings_about_version">v%1$s  ·  Build %2$s</string>
-    <string name="settings_about_credit">Aus den Labs von RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Made in 🇮🇳</string>
     <string name="settings_swipe_action_edit">Titel bearbeiten</string>
     <!-- Confetti -->

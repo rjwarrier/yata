@@ -139,7 +139,7 @@
     <string name="settings_theme_preset_name_label">Nazwa</string>
     <string name="settings_about_tagline">jeszcze jedna aplikacja do zadań</string>
     <string name="settings_about_version">w%1$s  ·  Kompilacja %2$s</string>
-    <string name="settings_about_credit">Z laboratorium RJ</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">Wykonano w 🇮🇳</string>
     <string name="settings_swipe_action_edit">Edytuj tytuł</string>
     <string name="settings_confetti">Konfetti</string>

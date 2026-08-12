@@ -134,7 +134,7 @@
     <string name="settings_theme_preset_name_label">పేరు</string>
     <string name="settings_about_tagline">మరో టోడో యాప్</string>
     <string name="settings_about_version">v%1$s  ·  బిల్డ్ %2$s</string>
-    <string name="settings_about_credit">RJ ల్యాబ్స్ నుండి</string>
+    <string name="settings_about_credit">From the Labs of RJ | Vibe Coded</string>
     <string name="settings_about_made_in">🇮🇳లో తయారైంది</string>
     <string name="settings_swipe_action_edit">శీర్షిక సవరించండి</string>
     <string name="settings_confetti">కన్ఫెట్టి</string>
