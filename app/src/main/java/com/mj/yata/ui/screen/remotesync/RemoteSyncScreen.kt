@@ -127,9 +127,11 @@ fun RemoteSyncScreen(
     }
     var showGitHubPatHelpDialog by remember { mutableStateOf(false) }
     var gitHubConfigTransferMode by remember { mutableStateOf<GitHubConfigTransferMode?>(null) }
+    var showGitHubForceDownloadDialog by remember { mutableStateOf(false) }
     var pendingExportPassword by remember { mutableStateOf<String?>(null) }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     var isTransferringGitHubConfig by remember { mutableStateOf(false) }
+    var isDownloadingGitHubSnapshot by remember { mutableStateOf(false) }
     var isTestingConnection by remember { mutableStateOf(false) }
     // null = untested this session, true/false = last test's outcome. A successful SFTP test
     // with no fingerprint pinned yet, or a failed one where the failure is a host-key
@@ -486,6 +488,10 @@ fun RemoteSyncScreen(
                         onImport = ::chooseGitHubConfigImportFile,
                         enabled = !isTransferringGitHubConfig,
                         isBusy = isTransferringGitHubConfig
+                    )
+                    GitHubRecoveryActions(
+                        onDownloadLatest = { showGitHubForceDownloadDialog = true },
+                        enabled = !isDownloadingGitHubSnapshot && !isTestingConnection
                     )
                 }
             } else {
@@ -919,11 +925,112 @@ fun RemoteSyncScreen(
             }
         )
     }
+
+    if (showGitHubForceDownloadDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                if (!isDownloadingGitHubSnapshot) showGitHubForceDownloadDialog = false
+            },
+            title = { Text(stringResource(R.string.remote_sync_github_force_download_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(stringResource(R.string.remote_sync_github_force_download_body))
+                    if (isDownloadingGitHubSnapshot) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                stringResource(R.string.remote_sync_github_force_download_progress),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !isDownloadingGitHubSnapshot,
+                    onClick = {
+                        if (parseGitHubRepoDraft() == null) {
+                            testResultOk = false
+                            testResultMessage = "Enter the repo as owner/name"
+                            showGitHubForceDownloadDialog = false
+                            return@TextButton
+                        }
+                        testResultOk = null
+                        testResultMessage = null
+                        isDownloadingGitHubSnapshot = true
+                        saveServerConfiguration {
+                            viewModel.restoreLatestRemoteSnapshot { result ->
+                                isDownloadingGitHubSnapshot = false
+                                showGitHubForceDownloadDialog = false
+                                testResultOk = result.isSuccess
+                                testResultMessage = result.fold(
+                                    onSuccess = { restorePoint ->
+                                        context.getString(
+                                            R.string.remote_sync_github_force_download_success,
+                                            restorePoint.label
+                                        )
+                                    },
+                                    onFailure = { error ->
+                                        error.message ?: context.getString(R.string.export_failed)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text(
+                        stringResource(R.string.remote_sync_github_force_download_confirm),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showGitHubForceDownloadDialog = false },
+                    enabled = !isDownloadingGitHubSnapshot
+                ) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
 }
 
 private enum class GitHubConfigTransferMode {
     EXPORT,
     IMPORT
+}
+
+@Composable
+private fun GitHubRecoveryActions(
+    onDownloadLatest: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.remote_sync_github_recovery_title),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary
+        )
+        OutlinedButton(
+            onClick = onDownloadLatest,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+        ) {
+            Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.remote_sync_github_force_download_action))
+        }
+        Text(
+            text = stringResource(R.string.remote_sync_github_force_download_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 @Composable

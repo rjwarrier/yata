@@ -94,6 +94,7 @@ class GitHubSyncManager @Inject constructor(
                     )
                 }
                 if (jsonExporter.importBytes(bytes)) {
+                    userPreferences.setGitHubLastHeadSha(id)
                     Result.success(Unit)
                 } else {
                     Result.failure(IllegalStateException("Restore failed - backup file unreadable"))

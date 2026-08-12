@@ -2456,6 +2456,11 @@ private data class MainNavigationState(
         safeLaunch { onResult(backupOperations.restoreRemoteSnapshot(id)) }
     }
 
+    fun restoreLatestRemoteSnapshot(onResult: (Result<RestorePoint>) -> Unit) {
+        backupOperations.cancelDebouncedBackup()
+        safeLaunch { onResult(backupOperations.restoreLatestRemoteSnapshot()) }
+    }
+
     fun inspectRemoteSnapshot(id: String, onResult: (Result<com.mj.yata.domain.model.BackupSummary>) -> Unit) {
         safeLaunch { onResult(backupOperations.inspectRemoteSnapshot(id)) }
     }

@@ -418,6 +418,14 @@ class BackupOperations @Inject constructor(
     suspend fun restoreRemoteSnapshot(id: String): Result<Unit> =
         currentTransport().restore(id)
 
+    suspend fun restoreLatestRemoteSnapshot(): Result<RestorePoint> {
+        val transport = currentTransport()
+        val restorePoints = transport.listRestorePoints().getOrElse { return Result.failure(it) }
+        val latest = restorePoints.firstOrNull()
+            ?: return Result.failure(IllegalStateException("No server backups found yet"))
+        return transport.restore(latest.id).map { latest }
+    }
+
     suspend fun inspectRemoteSnapshot(id: String): Result<BackupSummary> =
         currentTransport().inspect(id)
 
