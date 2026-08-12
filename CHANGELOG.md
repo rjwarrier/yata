@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.92.2] - 2026-08-13
+
+`versionCode 19`. Upgrades in place over 0.92.1.
+
 ### Added
 
 - **Redesigned "Share task as image".** The image export from a task's Share sheet is now a
@@ -724,7 +728,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.90.1-beta...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.92.2...HEAD
+[0.92.2]: https://github.com/rjwarrier/yata/releases/tag/v0.92.2
 [0.90.1 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90.1-beta
 [0.90 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90-beta
 [0.89 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.89-beta
