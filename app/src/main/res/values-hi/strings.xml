@@ -19,6 +19,11 @@
     <string name="shortcut_quick_add_long">नया कार्य जोड़ें</string>
     <string name="shortcut_today_short">आज</string>
     <string name="shortcut_today_long">आज खोलें</string>
+    <string-array name="quick_add_synonyms">
+        <item>क्विक ऐड</item>
+        <item>कार्य जोड़ें</item>
+        <item>नया कार्य</item>
+    </string-array>
     <string name="widget_today_label">YATA: आज के कार्य</string>
     <string name="widget_today_description">आज देय खुले कार्य, झटपट चेक-ऑफ और प्रगति रिंग के साथ।</string>
     <string name="widget_quick_add_label">YATA: झटपट जोड़ें</string>
@@ -1299,6 +1304,14 @@
     <string name="remote_sync_github_config_import_password_title">GitHub कॉन्फ़िग डिक्रिप्ट करें</string>
     <string name="remote_sync_github_config_import_too_large">यह फ़ाइल GitHub कॉन्फ़िग निर्यात होने के लिए बहुत बड़ी है।</string>
     <string name="remote_sync_github_config_imported">%1$s के लिए GitHub कॉन्फ़िग आयात किया गया।</string>
+    <string name="remote_sync_github_recovery_title">रिकवरी</string>
+    <string name="remote_sync_github_force_download_action">नवीनतम GitHub स्नैपशॉट उपयोग करें</string>
+    <string name="remote_sync_github_force_download_hint">यह डिवाइस कॉन्फ़िगर की गई GitHub ब्रांच के नवीनतम स्नैपशॉट से बदल दिया जाएगा।</string>
+    <string name="remote_sync_github_force_download_title">नवीनतम GitHub स्नैपशॉट उपयोग करें?</string>
+    <string name="remote_sync_github_force_download_body">YATA नवीनतम GitHub स्नैपशॉट डाउनलोड करेगा और इस डिवाइस पर कार्य, सूचियां, टैग, लोग, प्रोजेक्ट और पोर्टेबल सेटिंग्स बदल देगा। पहले एक रिकवरी बैकअप सहेजा जाएगा।</string>
+    <string name="remote_sync_github_force_download_progress">GitHub स्नैपशॉट डाउनलोड हो रहा है…</string>
+    <string name="remote_sync_github_force_download_confirm">यह डिवाइस बदलें</string>
+    <string name="remote_sync_github_force_download_success">नवीनतम GitHub स्नैपशॉट पुनर्स्थापित किया गया: %1$s.</string>
     <string name="remote_sync_github_config_password_hint">एक अलग ट्रांसफर पासवर्ड इस्तेमाल करें। इसे YATA सेव नहीं करता।</string>
     <string name="remote_sync_github_config_password_label">ट्रांसफर पासवर्ड</string>
     <string name="remote_sync_github_config_password_mismatch">पासवर्ड मेल नहीं खाते।</string>

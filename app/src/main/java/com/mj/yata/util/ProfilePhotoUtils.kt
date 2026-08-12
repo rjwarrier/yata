@@ -63,6 +63,52 @@ object ProfilePhotoUtils {
         LEADER("Leader")
     }
 
+    /** Curated display order for the inbuilt-icon avatar picker — shared by Settings' profile
+     * editor and the welcome-screen profile setup step, so both offer the same choices in the
+     * same order rather than drifting independently. */
+    val PROFILE_AVATAR_PRESETS: List<PresetAvatar> = listOf(
+        PresetAvatar.LOOP,
+        PresetAvatar.PERSON,
+        PresetAvatar.SMILE,
+        PresetAvatar.GLASSES,
+        PresetAvatar.FRIENDS,
+        PresetAvatar.TEAM,
+        PresetAvatar.FAMILY,
+        PresetAvatar.HELPER,
+        PresetAvatar.THINKER,
+        PresetAvatar.CHILD,
+        PresetAvatar.GUIDE,
+        PresetAvatar.CREATOR,
+        PresetAvatar.LISTENER,
+        PresetAvatar.LEADER,
+        PresetAvatar.FOCUS,
+        PresetAvatar.STAR,
+        PresetAvatar.HEART,
+        PresetAvatar.ROCKET,
+        PresetAvatar.WORK,
+        PresetAvatar.LEAF,
+        PresetAvatar.SPARK,
+        PresetAvatar.HOME,
+        PresetAvatar.STUDY,
+        PresetAvatar.TRAVEL,
+        PresetAvatar.FITNESS,
+        PresetAvatar.FOOD,
+        PresetAvatar.BOOK,
+        PresetAvatar.MUSIC,
+        PresetAvatar.CODE,
+        PresetAvatar.ART,
+        PresetAvatar.CAMERA,
+        PresetAvatar.IDEA,
+        PresetAvatar.SHIELD,
+        PresetAvatar.CLOUD,
+        PresetAvatar.CHECK,
+        PresetAvatar.COFFEE,
+        PresetAvatar.CALENDAR,
+        PresetAvatar.WAVE,
+        PresetAvatar.ORBIT,
+        PresetAvatar.BLOOM
+    )
+
     /**
      * Whether [uriString] points at a transparent glyph that should be colored at render time.
      * The PNG remains transparent so wallpaper-driven Material colors can change independently

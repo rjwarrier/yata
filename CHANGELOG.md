@@ -31,6 +31,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   for GitHub config transfer, Share YATA, Staff Analytics, task defaults, the subtask-completion
   setting, and start-date custom days — strings that had silently been falling back to English
   since those features shipped.
+- **All remaining locale gaps closed.** Gujarati, Kannada, Malayalam, Marathi, Punjabi, Swahili,
+  Tamil, Telugu and Tagalog were missing the same 74 keys as above (they'd fallen behind since
+  before the previous translation pass), plus every locale — including the 15 just caught up —
+  was still missing the "Use latest GitHub snapshot" recovery strings added this session. All 24
+  locales now have zero missing keys, verified against the English source.
 
 ### Fixed
 

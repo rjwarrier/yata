@@ -19,6 +19,11 @@
     <string name="shortcut_quick_add_long">Aggiungi una nuova attività</string>
     <string name="shortcut_today_short">Oggi</string>
     <string name="shortcut_today_long">Apri Oggi</string>
+    <string-array name="quick_add_synonyms">
+        <item>aggiunta rapida</item>
+        <item>aggiungi un\'attività</item>
+        <item>nuova attività</item>
+    </string-array>
     <string name="widget_today_label">YATA: Attività di oggi</string>
     <string name="widget_today_description">Attività in scadenza oggi, con completamento rapido e anello di avanzamento.</string>
     <string name="widget_quick_add_label">YATA: Aggiunta rapida</string>
@@ -1299,6 +1304,14 @@
     <string name="remote_sync_github_config_import_password_title">Decripta configurazione GitHub</string>
     <string name="remote_sync_github_config_import_too_large">Questo file è troppo grande per essere un\'esportazione della configurazione GitHub.</string>
     <string name="remote_sync_github_config_imported">Configurazione GitHub importata per %1$s.</string>
+    <string name="remote_sync_github_recovery_title">Ripristino</string>
+    <string name="remote_sync_github_force_download_action">Usa l\'ultimo snapshot di GitHub</string>
+    <string name="remote_sync_github_force_download_hint">Sostituisce questo dispositivo con lo snapshot più recente del branch GitHub configurato.</string>
+    <string name="remote_sync_github_force_download_title">Usare l\'ultimo snapshot di GitHub?</string>
+    <string name="remote_sync_github_force_download_body">YATA scaricherà lo snapshot GitHub più recente e sostituirà le attività, gli elenchi, i tag, le persone, i progetti e le impostazioni portabili su questo dispositivo. Prima verrà salvato un backup di ripristino.</string>
+    <string name="remote_sync_github_force_download_progress">Download dello snapshot GitHub…</string>
+    <string name="remote_sync_github_force_download_confirm">Sostituisci questo dispositivo</string>
+    <string name="remote_sync_github_force_download_success">Ultimo snapshot GitHub ripristinato: %1$s.</string>
     <string name="remote_sync_github_config_password_hint">Usa una password di trasferimento separata. Non viene salvata da YATA.</string>
     <string name="remote_sync_github_config_password_label">Password di trasferimento</string>
     <string name="remote_sync_github_config_password_mismatch">Le password non corrispondono.</string>

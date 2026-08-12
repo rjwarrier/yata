@@ -19,6 +19,11 @@
     <string name="shortcut_quick_add_long">Přidat nový úkol</string>
     <string name="shortcut_today_short">Dnes</string>
     <string name="shortcut_today_long">Otevřít Dnes</string>
+    <string-array name="quick_add_synonyms">
+        <item>rychlé přidání</item>
+        <item>přidat úkol</item>
+        <item>nový úkol</item>
+    </string-array>
     <string name="widget_today_label">YATA: Dnešní úkoly</string>
     <string name="widget_today_description">Úkoly s dnešním termínem, s rychlým odškrtáváním a ukazatelem postupu.</string>
     <string name="widget_quick_add_label">YATA: Rychlé přidání</string>
@@ -1299,6 +1304,14 @@
     <string name="remote_sync_github_config_import_password_title">Dešifrovat konfiguraci GitHub</string>
     <string name="remote_sync_github_config_import_too_large">Tento soubor je příliš velký na to, aby byl exportem konfigurace GitHub.</string>
     <string name="remote_sync_github_config_imported">Konfigurace GitHub importována pro %1$s.</string>
+    <string name="remote_sync_github_recovery_title">Obnovení</string>
+    <string name="remote_sync_github_force_download_action">Použít nejnovější snímek GitHub</string>
+    <string name="remote_sync_github_force_download_hint">Nahradí data v tomto zařízení nejnovějším snímkem z nakonfigurované větve GitHub.</string>
+    <string name="remote_sync_github_force_download_title">Použít nejnovější snímek GitHub?</string>
+    <string name="remote_sync_github_force_download_body">YATA stáhne nejnovější snímek GitHub a nahradí úkoly, seznamy, štítky, osoby, projekty a přenosná nastavení v tomto zařízení. Nejprve se uloží záložní obnovovací kopie.</string>
+    <string name="remote_sync_github_force_download_progress">Stahuje se snímek GitHub…</string>
+    <string name="remote_sync_github_force_download_confirm">Nahradit toto zařízení</string>
+    <string name="remote_sync_github_force_download_success">Obnoven nejnovější snímek GitHub: %1$s.</string>
     <string name="remote_sync_github_config_password_hint">Použij samostatné přenosové heslo. YATA ho neukládá.</string>
     <string name="remote_sync_github_config_password_label">Přenosové heslo</string>
     <string name="remote_sync_github_config_password_mismatch">Hesla se neshodují.</string>

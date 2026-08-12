@@ -137,6 +137,7 @@ import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.CircularImageCropper
 import com.mj.yata.ui.widgets.CustomColorPickerDialog
+import com.mj.yata.ui.widgets.PresetAvatarChoice
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
@@ -461,48 +462,7 @@ fun SettingsScreen(
     var backupDiffError by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
-    val profileAvatarPresets = listOf(
-        ProfilePhotoUtils.PresetAvatar.LOOP,
-        ProfilePhotoUtils.PresetAvatar.PERSON,
-        ProfilePhotoUtils.PresetAvatar.SMILE,
-        ProfilePhotoUtils.PresetAvatar.GLASSES,
-        ProfilePhotoUtils.PresetAvatar.FRIENDS,
-        ProfilePhotoUtils.PresetAvatar.TEAM,
-        ProfilePhotoUtils.PresetAvatar.FAMILY,
-        ProfilePhotoUtils.PresetAvatar.HELPER,
-        ProfilePhotoUtils.PresetAvatar.THINKER,
-        ProfilePhotoUtils.PresetAvatar.CHILD,
-        ProfilePhotoUtils.PresetAvatar.GUIDE,
-        ProfilePhotoUtils.PresetAvatar.CREATOR,
-        ProfilePhotoUtils.PresetAvatar.LISTENER,
-        ProfilePhotoUtils.PresetAvatar.LEADER,
-        ProfilePhotoUtils.PresetAvatar.FOCUS,
-        ProfilePhotoUtils.PresetAvatar.STAR,
-        ProfilePhotoUtils.PresetAvatar.HEART,
-        ProfilePhotoUtils.PresetAvatar.ROCKET,
-        ProfilePhotoUtils.PresetAvatar.WORK,
-        ProfilePhotoUtils.PresetAvatar.LEAF,
-        ProfilePhotoUtils.PresetAvatar.SPARK,
-        ProfilePhotoUtils.PresetAvatar.HOME,
-        ProfilePhotoUtils.PresetAvatar.STUDY,
-        ProfilePhotoUtils.PresetAvatar.TRAVEL,
-        ProfilePhotoUtils.PresetAvatar.FITNESS,
-        ProfilePhotoUtils.PresetAvatar.FOOD,
-        ProfilePhotoUtils.PresetAvatar.BOOK,
-        ProfilePhotoUtils.PresetAvatar.MUSIC,
-        ProfilePhotoUtils.PresetAvatar.CODE,
-        ProfilePhotoUtils.PresetAvatar.ART,
-        ProfilePhotoUtils.PresetAvatar.CAMERA,
-        ProfilePhotoUtils.PresetAvatar.IDEA,
-        ProfilePhotoUtils.PresetAvatar.SHIELD,
-        ProfilePhotoUtils.PresetAvatar.CLOUD,
-        ProfilePhotoUtils.PresetAvatar.CHECK,
-        ProfilePhotoUtils.PresetAvatar.COFFEE,
-        ProfilePhotoUtils.PresetAvatar.CALENDAR,
-        ProfilePhotoUtils.PresetAvatar.WAVE,
-        ProfilePhotoUtils.PresetAvatar.ORBIT,
-        ProfilePhotoUtils.PresetAvatar.BLOOM
-    )
+    val profileAvatarPresets = ProfilePhotoUtils.PROFILE_AVATAR_PRESETS
     val currentSettingsTitle =
         settingsDestination?.let { destination ->
             settingsHubDestinations.firstOrNull { it.destination == destination }?.title
@@ -4913,43 +4873,6 @@ private fun ThemeColorPicker(selectedSeedArgb: Int?, onSelect: (Int?) -> Unit) {
                 onSelect(color.toArgb())
                 showCustomPicker = false
             }
-        )
-    }
-}
-
-@Composable
-private fun PresetAvatarChoice(
-    preset: ProfilePhotoUtils.PresetAvatar,
-    label: String,
-    context: android.content.Context,
-    onClick: () -> Unit
-) {
-    val imageBitmap = remember(context, preset) {
-        ProfilePhotoUtils.presetAvatarBitmap(context, preset).asImageBitmap()
-    }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-        Surface(
-            onClick = onClick,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(54.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Image(
-                    bitmap = imageBitmap,
-                    contentDescription = label,
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimaryContainer),
-                    modifier = Modifier.size(34.dp)
-                )
-            }
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

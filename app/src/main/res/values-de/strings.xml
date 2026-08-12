@@ -1461,6 +1461,14 @@
     <string name="remote_sync_github_config_import_password_title">GitHub-Konfiguration entschlüsseln</string>
     <string name="remote_sync_github_config_import_too_large">Diese Datei ist zu groß, um ein GitHub-Konfigurationsexport zu sein.</string>
     <string name="remote_sync_github_config_imported">GitHub-Konfiguration für %1$s importiert.</string>
+    <string name="remote_sync_github_recovery_title">Wiederherstellung</string>
+    <string name="remote_sync_github_force_download_action">Neuesten GitHub-Snapshot verwenden</string>
+    <string name="remote_sync_github_force_download_hint">Ersetzt die Daten auf diesem Gerät durch den neuesten Snapshot aus dem konfigurierten GitHub-Branch.</string>
+    <string name="remote_sync_github_force_download_title">Neuesten GitHub-Snapshot verwenden?</string>
+    <string name="remote_sync_github_force_download_body">YATA lädt den neuesten GitHub-Snapshot herunter und ersetzt die Aufgaben, Listen, Tags, Personen, Projekte und portablen Einstellungen auf diesem Gerät. Zuvor wird ein Wiederherstellungs-Backup gespeichert.</string>
+    <string name="remote_sync_github_force_download_progress">GitHub-Snapshot wird heruntergeladen …</string>
+    <string name="remote_sync_github_force_download_confirm">Dieses Gerät ersetzen</string>
+    <string name="remote_sync_github_force_download_success">Neuesten GitHub-Snapshot wiederhergestellt: %1$s.</string>
     <string name="remote_sync_github_config_password_hint">Verwende ein separates Übertragungspasswort. Es wird nicht von YATA gespeichert.</string>
     <string name="remote_sync_github_config_password_label">Übertragungspasswort</string>
     <string name="remote_sync_github_config_password_mismatch">Passwörter stimmen nicht überein.</string>

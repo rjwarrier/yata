@@ -17,6 +17,44 @@ Compose + Room + Hilt. Package id `com.mj.yata`. Two Gradle modules: `:app` (the
 
 ## 3. What just happened (most recent work, newest first)
 
+**Android tag grouping parity with the web UI.** The repo owner said tag grouping was added in the
+web UI and asked for the Android app to match it. Android already had the data model/Room table
+(`tag_groups`), sync/export support, and some UI display/edit support, but it was incomplete and
+buggy in practice:
+
+- Tags tab can now multi-select tags and move them into an existing or newly-created group.
+- The Tags tab now shows tag groups inside both Open and Closed sections, instead of flattening
+  closed tags. Group headers are alphabetized, collapsible, and deletable; deleting a group
+  ungroups its tags.
+- The tag editor now lists existing groups, keeps newly-created inline groups visible immediately,
+  and treats a typed new-group draft as the intended group when the user taps the main Save/Create
+  button. Before this, typing a group name and pressing Save did nothing unless the tiny inline
+  checkmark was tapped first.
+- Persistence was hardened at the repository layer: creating a tag group and assigning tag(s) now
+  happens in Room transactions (`YataRepository.upsertTags(..., pendingGroup)` and
+  `YataRepository.setTagsGroup(tagIds, groupId, pendingGroup)`). Existing-group assignment uses a
+  direct DAO `UPDATE tags SET groupId = :groupId WHERE id IN (:tagIds)`, so it does not re-upsert
+  placeholder groups or accidentally overwrite group names.
+- Added localized plurals for tag group assignment title and tag open-task counts across all
+  locale files.
+
+Important bug trail: the owner tried assigning group `STPs` to tag `tolydas`/`TolyDas` multiple
+times and it still showed "no group". A read-only DB pull from both connected debug installs showed
+`tag_groups` empty and `tolydas`/`TolyDas` with `groupId = NULL`, confirming the assignment had not
+persisted. The root causes fixed were (1) inline new-group draft not being applied on Save, and
+(2) group creation and tag assignment being separate async writes instead of one transactional
+operation. The latest installed/pushed commit for this is `4829d37 Persist tag group assignments
+transactionally`; earlier related commits are `6df5ac7`, `c0e0453`, and `c1a57c0`.
+
+For updating the web UI/backend: mirror the Android contract, not the earlier broken flow. A tag
+group row must exist before a tag references it, and "create group + assign one/many tags" should be
+atomic/transactional. Pressing the main Save/Create button in a tag editor should apply any typed
+new-group draft; do not require a separate tiny confirm affordance. If a typed group name matches an
+existing group, reuse the existing group instead of creating a duplicate. Bulk assignment should
+update tag `groupId`s directly and durably. After saving, a reopened tag editor should show the
+assigned group selected, and the tags list should render that tag under the group in both open and
+closed/inactive sections.
+
 **Hardcoded-string extraction pass — now effectively complete.** Over several sessions, hardcoded
 UI string literals in Compose code were moved into `app/src/main/res/values/strings.xml` as
 `stringResource`/`pluralStringResource` calls. Started at 351 flagged hits
@@ -71,6 +109,13 @@ Commits landed on `codex/github-sync`, not pushed unless asked. Debug build inst
 device (`49261FDAS003Z8`) after the hardcoded-string pass — compiles clean, full unit suite green
 throughout.
 
+Update after the Android tag-group work: commits `6df5ac7`, `c0e0453`, `c1a57c0`, and `4829d37`
+were pushed to `codex/github-sync`. Debug builds were installed on both connected devices
+(`49261FDAS003Z8`, `IRGUROPJP7TCPFRW`). `./gradlew :app:compileDebugKotlin -q` passed. Full
+`lintDebug` was attempted earlier and hung with no output, so it was stopped; targeted XML/new-key
+checks passed for the new resources. There is still an untracked `yata-debug.apk` in the repo root;
+leave it alone unless the owner asks.
+
 **Earlier in the branch** (not this session, see `git log` for full history): moved Remote Sync
 config from a dialog to a dedicated `RemoteSyncScreen`, fixed GitHub sync bugs (secondary
 rate-limit misclassification, swallowed error causes), added the real GitHub icon, and overhauled
@@ -95,6 +140,11 @@ capacity/weekday-pattern insights).
   build, install, and describe; visual verification is the user's.
 
 ## 5. Open threads / plausible next steps
+
+- Web UI follow-up: update the web implementation to match Android's final tag-group contract in
+  section 3. In particular, Save/Create must apply a typed group draft, existing group names should
+  be reused, and group creation plus tag assignment should be atomic/transactional so assigned
+  groups stick to tags.
 
 - All 24 locales now have genuine, verified translations (not just present keys) — see §3. New UI
   work will still need translations added to all 24 files going forward; keep the reuse-before-create

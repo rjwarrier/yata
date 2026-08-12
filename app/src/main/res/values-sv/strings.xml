@@ -19,6 +19,11 @@
     <string name="shortcut_quick_add_long">Lägg till en ny uppgift</string>
     <string name="shortcut_today_short">Idag</string>
     <string name="shortcut_today_long">Öppna Idag</string>
+    <string-array name="quick_add_synonyms">
+        <item>snabbtillägg</item>
+        <item>lägg till en uppgift</item>
+        <item>ny uppgift</item>
+    </string-array>
     <string name="widget_today_label">YATA: Dagens uppgifter</string>
     <string name="widget_today_description">Öppna uppgifter som förfaller idag, med snabbavbockning och en förloppsring.</string>
     <string name="widget_quick_add_label">YATA: Snabblägg till</string>
@@ -1299,6 +1304,14 @@
     <string name="remote_sync_github_config_import_password_title">Dekryptera GitHub-konfiguration</string>
     <string name="remote_sync_github_config_import_too_large">Den filen är för stor för att vara en GitHub-konfigurationsexport.</string>
     <string name="remote_sync_github_config_imported">GitHub-konfiguration importerad för %1$s.</string>
+    <string name="remote_sync_github_recovery_title">Återställning</string>
+    <string name="remote_sync_github_force_download_action">Använd senaste GitHub-ögonblicksbilden</string>
+    <string name="remote_sync_github_force_download_hint">Ersätter den här enheten med den senaste ögonblicksbilden från den konfigurerade GitHub-grenen.</string>
+    <string name="remote_sync_github_force_download_title">Använda senaste GitHub-ögonblicksbilden?</string>
+    <string name="remote_sync_github_force_download_body">YATA laddar ner den senaste GitHub-ögonblicksbilden och ersätter uppgifter, listor, taggar, personer, projekt och portabla inställningar på den här enheten. En återställningssäkerhetskopia sparas först.</string>
+    <string name="remote_sync_github_force_download_progress">Laddar ner GitHub-ögonblicksbild …</string>
+    <string name="remote_sync_github_force_download_confirm">Ersätt den här enheten</string>
+    <string name="remote_sync_github_force_download_success">Senaste GitHub-ögonblicksbilden återställd: %1$s.</string>
     <string name="remote_sync_github_config_password_hint">Använd ett separat överföringslösenord. Det sparas inte av YATA.</string>
     <string name="remote_sync_github_config_password_label">Överföringslösenord</string>
     <string name="remote_sync_github_config_password_mismatch">Lösenorden matchar inte.</string>

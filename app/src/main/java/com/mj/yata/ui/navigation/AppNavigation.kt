@@ -298,6 +298,7 @@ fun AppNavigation(
         composable(Screen.Welcome.route) { backStackEntry ->
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             WelcomeScreen(
+                viewModel = viewModel,
                 onFinish = {
                     viewModel.setHasSeenWelcome()
                     navController.popBackStack()
