@@ -60,7 +60,6 @@ class RoutingYataRepository @Inject constructor(
     }
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = write { real.toggleTaskDone(id, notify) }
     override suspend fun skipTaskOccurrence(id: String) = write { real.skipTaskOccurrence(id) }
-    override fun searchTasks(query: String): Flow<List<Task>> = routed(real.searchTasks(query), demo.searchTasks(query))
     override suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean) = write { real.setTaskFlag(id, flag, notify) }
     override suspend fun setTaskPriority(id: String, priority: String, notify: Boolean) = write { real.setTaskPriority(id, priority, notify) }
     override suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean) = write { real.setTaskContainer(id, listId, projectId, sortOrder, notify) }

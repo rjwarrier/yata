@@ -42,8 +42,6 @@ class DemoRepository @Inject constructor() : YataRepository {
     ) = Unit
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = Unit
     override suspend fun skipTaskOccurrence(id: String) = Unit
-    override fun searchTasks(query: String): Flow<List<Task>> =
-        dataset.map { d -> d.tasks.filter { it.title.contains(query, ignoreCase = true) } }
     override suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean) = Unit
     override suspend fun setTaskPriority(id: String, priority: String, notify: Boolean) = Unit
     override suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean) = Unit

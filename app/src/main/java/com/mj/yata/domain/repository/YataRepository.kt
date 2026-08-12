@@ -34,7 +34,6 @@ interface YataRepository {
     )
     suspend fun toggleTaskDone(id: String, notify: Boolean = true)
     suspend fun skipTaskOccurrence(id: String)
-    fun searchTasks(query: String): Flow<List<Task>>
     suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean = true)
     suspend fun setTaskPriority(id: String, priority: String, notify: Boolean = true)
     suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean = true)

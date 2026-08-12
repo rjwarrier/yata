@@ -307,16 +307,21 @@ fun SearchScreen(
     val archivedProjectIds = remember(projects) { projects.archivedProjects().map { it.id }.toSet() }
     val archivedTaskIds = remember(archivedTasks) { archivedTasks.map { it.id }.toSet() }
     val deletedTaskIds = remember(deletedTasks) { deletedTasks.map { it.id }.toSet() }
-    val queryTasks by remember(debouncedQuery) {
-        viewModel.searchTasks(debouncedQuery)
-    }.collectAsStateWithLifecycle(initialValue = emptyList())
     val myId = remember(people) { people.find { it.isMe }?.id ?: "me" }
-    val filteredTasks = remember(tasks, queryTasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById) {
+    // Live, archived and trash all run through the same matchesSearchText — they used to diverge:
+    // live tasks went through a SQL FTS query (prefix-token match, no project-inherited tags),
+    // archived/trash went through this substring match, so the same query could find a task in
+    // one bucket and miss its otherwise-identical archived copy. One matcher, one behavior.
+    val filteredTasks = remember(tasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty() && !includeArchived && !includeTrash) {
             emptyList()
         } else {
             val today = LocalDate.now()
-            val activeSource = if (debouncedQuery.isBlank()) tasks else queryTasks
+            val activeSource = if (debouncedQuery.isBlank()) {
+                tasks
+            } else {
+                tasks.filter { it.matchesSearchText(debouncedQuery, peopleById, tagsById, projectsById) }
+            }
             val archivedSource = if (!includeArchived) {
                 emptyList()
             } else if (debouncedQuery.isBlank()) {

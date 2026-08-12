@@ -191,23 +191,6 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE seriesId = :seriesId AND done = 1 ORDER BY completedAt DESC")
     suspend fun getCompletedTasksBySeriesId(seriesId: String): List<TaskEntity>
 
-    @Transaction
-    @Query("""
-        SELECT DISTINCT t.* FROM tasks t
-        LEFT JOIN task_person_cross_ref pRef ON t.id = pRef.taskId
-        LEFT JOIN people p ON pRef.personId = p.id
-        LEFT JOIN task_tag_cross_ref tRef ON t.id = tRef.taskId
-        LEFT JOIN tags tag ON tRef.tagId = tag.id
-        LEFT JOIN subtasks s ON t.id = s.taskId
-        WHERE (
-            t.rowid IN (SELECT rowid FROM tasks_fts WHERE tasks_fts MATCH :searchQuery)
-            OR p.name LIKE '%' || :rawQuery || '%'
-            OR tag.name LIKE '%' || :rawQuery || '%'
-            OR s.title LIKE '%' || :rawQuery || '%'
-        ) AND t.deletedAt IS NULL AND t.archived = 0
-    """)
-    fun searchTasksWithRelations(searchQuery: String, rawQuery: String): Flow<List<TaskWithRelations>>
-
     @Query("SELECT * FROM tasks")
     fun getAll(): Flow<List<TaskEntity>>
 

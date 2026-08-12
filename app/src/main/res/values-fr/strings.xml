@@ -1283,4 +1283,75 @@
         <item quantity="one">%1$d tâche due tojour</item>
         <item quantity="other">%1$d tâches due tojour</item>
     </plurals>
+    <!-- GitHub config transfer, Share YATA, Staff Analytics, task defaults, subtask
+         completion, start-date custom days -->
+    <string name="action_import">Importer</string>
+    <string name="action_not_now">Plus tard</string>
+    <string name="remote_sync_export_github_config">Exporter la configuration</string>
+    <string name="remote_sync_github_config_confirm_password_label">Confirmer le mot de passe</string>
+    <string name="remote_sync_github_config_export_missing">Enregistre un dépôt GitHub et un jeton avant d\'exporter.</string>
+    <string name="remote_sync_github_config_export_password_title">Chiffrer la configuration GitHub</string>
+    <string name="remote_sync_github_config_exported">Configuration GitHub exportée.</string>
+    <string name="remote_sync_github_config_import_missing_file">Choisis d\'abord un export de configuration GitHub.</string>
+    <string name="remote_sync_github_config_import_password_title">Déchiffrer la configuration GitHub</string>
+    <string name="remote_sync_github_config_import_too_large">Ce fichier est trop volumineux pour être un export de configuration GitHub.</string>
+    <string name="remote_sync_github_config_imported">Configuration GitHub importée pour %1$s.</string>
+    <string name="remote_sync_github_config_password_hint">Utilise un mot de passe de transfert distinct. Il n\'est pas enregistré par YATA.</string>
+    <string name="remote_sync_github_config_password_label">Mot de passe de transfert</string>
+    <string name="remote_sync_github_config_password_mismatch">Les mots de passe ne correspondent pas.</string>
+    <string name="remote_sync_github_config_transfer_title">Transfert de configuration</string>
+    <string name="remote_sync_import_github_config">Importer la configuration</string>
+    <string name="settings_about_github">Voir le code source sur GitHub</string>
+    <string name="settings_about_other_apps">Autres applications des développeurs</string>
+    <string name="settings_about_share">Partager YATA</string>
+    <string name="settings_about_share_text">YATA est un gestionnaire de tâches Material 3 Expressive pour Android — jetez-y un œil : https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_website">Site web de YATA</string>
+    <string name="settings_custom">Personnalisé</string>
+    <string name="settings_default_estimate">Estimation</string>
+    <string name="settings_default_estimate_custom_error">Entre 1 à 1440 minutes.</string>
+    <string name="settings_default_estimate_custom_label">Minutes</string>
+    <string name="settings_default_estimate_custom_title">Estimation</string>
+    <string name="settings_default_estimate_desc">Effort prévu ajouté par défaut aux nouvelles tâches.</string>
+    <string name="settings_default_project">Projet</string>
+    <string name="settings_default_tags">Étiquettes</string>
+    <string name="settings_default_tags_clear">Retirer les étiquettes</string>
+    <string name="settings_default_tags_desc">Appliquer automatiquement ces étiquettes aux nouvelles tâches.</string>
+    <string name="settings_default_tags_empty">Aucune étiquette pour le moment.</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_defaults_group">Valeurs par défaut</string>
+    <string name="settings_subtask_completion_action">Quand toutes les sous-tâches sont terminées</string>
+    <string name="settings_subtask_completion_action_desc">Choisis si la tâche principale se termine automatiquement, demande d\'abord, ou reste ouverte.</string>
+    <string name="settings_subtask_completion_ask">Demander</string>
+    <string name="settings_subtask_completion_auto">Auto</string>
+    <string name="settings_subtask_completion_nothing">Rien</string>
+    <string name="share_app_button">Partager %1$s</string>
+    <string name="share_app_default_message">YATA est un gestionnaire de tâches Material 3 Expressive pour Android — jetez-y un œil !</string>
+    <string name="share_app_include_image">Inclure l\'image</string>
+    <string name="share_app_include_image_subtitle">Joindre l\'image promotionnelle avec ton message</string>
+    <string name="share_app_link_note">Ce lien est ajouté automatiquement à la fin :</string>
+    <string name="share_app_message_label">Message</string>
+    <string name="share_app_title">Partager YATA</string>
+    <string name="staff_analytics_attention">ATTENTION</string>
+    <string name="staff_analytics_heaviest_load">Charge ouverte la plus lourde</string>
+    <string name="staff_analytics_lowest_on_time">Taux de ponctualité le plus bas</string>
+    <string name="staff_analytics_no_staff_work">Aucun travail d\'équipe actif pour le moment.</string>
+    <string name="staff_analytics_people_with_overdue">Personnes avec du travail en retard</string>
+    <string name="staff_analytics_staff">équipe</string>
+    <string name="staff_analytics_staff_table">TABLEAU DE L\'ÉQUIPE</string>
+    <string name="staff_analytics_subtitle">Performance de l\'équipe</string>
+    <string name="staff_analytics_team_snapshot">APERÇU DE L\'ÉQUIPE</string>
+    <string name="staff_analytics_title">Analyses de l\'équipe</string>
+    <string name="task_detail_all_subtasks_done_body">Veux-tu aussi marquer « %1$s » comme terminée ?</string>
+    <string name="task_detail_all_subtasks_done_title">Toutes les sous-tâches terminées ?</string>
+    <string name="task_detail_mark_task_done">Marquer la tâche comme terminée</string>
+    <string name="task_start_date_custom_days_chip">Jours personnalisés avant</string>
+    <string name="task_start_date_custom_days_error">Entre 1 à 3650 jours.</string>
+    <string name="task_start_date_custom_days_label">Jours avant l\'échéance</string>
+    <string name="task_start_date_custom_days_title">Commencer avant l\'échéance</string>
+    <string name="task_start_date_day_before_due">Jour avant l\'échéance</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">%1$d jour avant l\'échéance</item>
+        <item quantity="other">%1$d jours avant l\'échéance</item>
+    </plurals>
+
 </resources>

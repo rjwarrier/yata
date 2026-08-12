@@ -1281,4 +1281,75 @@
         <item quantity="one">%1$d việc đến hạn hôm nay</item>
         <item quantity="other">%1$d việc đến hạn hôm nay</item>
     </plurals>
+    <!-- GitHub config transfer, Share YATA, Staff Analytics, task defaults, subtask
+         completion, start-date custom days -->
+    <string name="action_import">Nhập</string>
+    <string name="action_not_now">Không phải bây giờ</string>
+    <string name="remote_sync_export_github_config">Xuất cấu hình</string>
+    <string name="remote_sync_github_config_confirm_password_label">Xác nhận mật khẩu</string>
+    <string name="remote_sync_github_config_export_missing">Lưu một kho GitHub và token trước khi xuất.</string>
+    <string name="remote_sync_github_config_export_password_title">Mã hóa cấu hình GitHub</string>
+    <string name="remote_sync_github_config_exported">Đã xuất cấu hình GitHub.</string>
+    <string name="remote_sync_github_config_import_missing_file">Hãy chọn một bản xuất cấu hình GitHub trước.</string>
+    <string name="remote_sync_github_config_import_password_title">Giải mã cấu hình GitHub</string>
+    <string name="remote_sync_github_config_import_too_large">Tệp đó quá lớn để là một bản xuất cấu hình GitHub.</string>
+    <string name="remote_sync_github_config_imported">Đã nhập cấu hình GitHub cho %1$s.</string>
+    <string name="remote_sync_github_config_password_hint">Sử dụng một mật khẩu chuyển giao riêng. YATA không lưu mật khẩu này.</string>
+    <string name="remote_sync_github_config_password_label">Mật khẩu chuyển giao</string>
+    <string name="remote_sync_github_config_password_mismatch">Mật khẩu không khớp.</string>
+    <string name="remote_sync_github_config_transfer_title">Chuyển giao cấu hình</string>
+    <string name="remote_sync_import_github_config">Nhập cấu hình</string>
+    <string name="settings_about_github">Xem mã nguồn trên GitHub</string>
+    <string name="settings_about_other_apps">Ứng dụng khác của nhà phát triển</string>
+    <string name="settings_about_share">Chia sẻ YATA</string>
+    <string name="settings_about_share_text">YATA là ứng dụng quản lý công việc Material 3 Expressive cho Android — hãy xem thử: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_website">Trang web YATA</string>
+    <string name="settings_custom">Tùy chỉnh</string>
+    <string name="settings_default_estimate">Ước tính</string>
+    <string name="settings_default_estimate_custom_error">Nhập 1-1440 phút.</string>
+    <string name="settings_default_estimate_custom_label">Phút</string>
+    <string name="settings_default_estimate_custom_title">Ước tính</string>
+    <string name="settings_default_estimate_desc">Công sức dự kiến được thêm mặc định vào công việc mới.</string>
+    <string name="settings_default_project">Dự án</string>
+    <string name="settings_default_tags">Thẻ</string>
+    <string name="settings_default_tags_clear">Xóa thẻ</string>
+    <string name="settings_default_tags_desc">Tự động áp dụng các thẻ này cho công việc mới.</string>
+    <string name="settings_default_tags_empty">Chưa có thẻ nào.</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_defaults_group">Mặc định</string>
+    <string name="settings_subtask_completion_action">Khi tất cả công việc con đã hoàn thành</string>
+    <string name="settings_subtask_completion_action_desc">Chọn xem công việc chính có tự động hoàn thành, hỏi trước hay vẫn mở.</string>
+    <string name="settings_subtask_completion_ask">Hỏi</string>
+    <string name="settings_subtask_completion_auto">Tự động</string>
+    <string name="settings_subtask_completion_nothing">Không có gì</string>
+    <string name="share_app_button">Chia sẻ %1$s</string>
+    <string name="share_app_default_message">YATA là ứng dụng quản lý công việc Material 3 Expressive cho Android — hãy xem thử!</string>
+    <string name="share_app_include_image">Kèm hình ảnh</string>
+    <string name="share_app_include_image_subtitle">Đính kèm hình ảnh quảng bá cùng tin nhắn của bạn</string>
+    <string name="share_app_link_note">Liên kết này được tự động thêm vào cuối:</string>
+    <string name="share_app_message_label">Tin nhắn</string>
+    <string name="share_app_title">Chia sẻ YATA</string>
+    <string name="staff_analytics_attention">CHÚ Ý</string>
+    <string name="staff_analytics_heaviest_load">Khối lượng mở nặng nhất</string>
+    <string name="staff_analytics_lowest_on_time">Tỷ lệ đúng hạn thấp nhất</string>
+    <string name="staff_analytics_no_staff_work">Chưa có công việc nhóm nào đang hoạt động.</string>
+    <string name="staff_analytics_people_with_overdue">Người có công việc quá hạn</string>
+    <string name="staff_analytics_staff">nhóm</string>
+    <string name="staff_analytics_staff_table">BẢNG NHÓM</string>
+    <string name="staff_analytics_subtitle">Hiệu suất nhóm</string>
+    <string name="staff_analytics_team_snapshot">TỔNG QUAN NHÓM</string>
+    <string name="staff_analytics_title">Phân tích nhân sự</string>
+    <string name="task_detail_all_subtasks_done_body">Bạn có muốn đánh dấu \"%1$s\" là đã xong không?</string>
+    <string name="task_detail_all_subtasks_done_title">Tất cả công việc con đã xong?</string>
+    <string name="task_detail_mark_task_done">Đánh dấu công việc là đã xong</string>
+    <string name="task_start_date_custom_days_chip">Số ngày tùy chỉnh trước</string>
+    <string name="task_start_date_custom_days_error">Nhập 1-3650 ngày.</string>
+    <string name="task_start_date_custom_days_label">Số ngày trước hạn chót</string>
+    <string name="task_start_date_custom_days_title">Bắt đầu trước hạn chót</string>
+    <string name="task_start_date_day_before_due">Một ngày trước hạn chót</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">%1$d ngày trước hạn chót</item>
+        <item quantity="other">%1$d ngày trước hạn chót</item>
+    </plurals>
+
 </resources>

@@ -1283,4 +1283,75 @@
         <item quantity="one">%1$d tarefa due todia</item>
         <item quantity="other">%1$d tarefas due todia</item>
     </plurals>
+    <!-- GitHub config transfer, Share YATA, Staff Analytics, task defaults, subtask
+         completion, start-date custom days -->
+    <string name="action_import">Importar</string>
+    <string name="action_not_now">Agora não</string>
+    <string name="remote_sync_export_github_config">Exportar configuração</string>
+    <string name="remote_sync_github_config_confirm_password_label">Confirmar senha</string>
+    <string name="remote_sync_github_config_export_missing">Salve um repositório do GitHub e um token antes de exportar.</string>
+    <string name="remote_sync_github_config_export_password_title">Criptografar configuração do GitHub</string>
+    <string name="remote_sync_github_config_exported">Configuração do GitHub exportada.</string>
+    <string name="remote_sync_github_config_import_missing_file">Escolha primeiro uma exportação de configuração do GitHub.</string>
+    <string name="remote_sync_github_config_import_password_title">Descriptografar configuração do GitHub</string>
+    <string name="remote_sync_github_config_import_too_large">Esse arquivo é grande demais para ser uma exportação de configuração do GitHub.</string>
+    <string name="remote_sync_github_config_imported">Configuração do GitHub importada para %1$s.</string>
+    <string name="remote_sync_github_config_password_hint">Use uma senha de transferência separada. Ela não é salva pelo YATA.</string>
+    <string name="remote_sync_github_config_password_label">Senha de transferência</string>
+    <string name="remote_sync_github_config_password_mismatch">As senhas não coincidem.</string>
+    <string name="remote_sync_github_config_transfer_title">Transferência de configuração</string>
+    <string name="remote_sync_import_github_config">Importar configuração</string>
+    <string name="settings_about_github">Ver código-fonte no GitHub</string>
+    <string name="settings_about_other_apps">Outros apps dos desenvolvedores</string>
+    <string name="settings_about_share">Compartilhar YATA</string>
+    <string name="settings_about_share_text">YATA é um gerenciador de tarefas Material 3 Expressive para Android — confira: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_website">Site do YATA</string>
+    <string name="settings_custom">Personalizado</string>
+    <string name="settings_default_estimate">Estimativa</string>
+    <string name="settings_default_estimate_custom_error">Digite 1-1440 minutos.</string>
+    <string name="settings_default_estimate_custom_label">Minutos</string>
+    <string name="settings_default_estimate_custom_title">Estimativa</string>
+    <string name="settings_default_estimate_desc">Esforço planejado adicionado às novas tarefas por padrão.</string>
+    <string name="settings_default_project">Projeto</string>
+    <string name="settings_default_tags">Tags</string>
+    <string name="settings_default_tags_clear">Remover tags</string>
+    <string name="settings_default_tags_desc">Aplicar essas tags automaticamente às novas tarefas.</string>
+    <string name="settings_default_tags_empty">Ainda sem tags.</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_defaults_group">Padrões</string>
+    <string name="settings_subtask_completion_action">Quando todas as subtarefas estiverem concluídas</string>
+    <string name="settings_subtask_completion_action_desc">Escolha se a tarefa principal é concluída automaticamente, pergunta antes ou continua aberta.</string>
+    <string name="settings_subtask_completion_ask">Perguntar</string>
+    <string name="settings_subtask_completion_auto">Automático</string>
+    <string name="settings_subtask_completion_nothing">Nada</string>
+    <string name="share_app_button">Compartilhar %1$s</string>
+    <string name="share_app_default_message">YATA é um gerenciador de tarefas Material 3 Expressive para Android — confira!</string>
+    <string name="share_app_include_image">Incluir imagem</string>
+    <string name="share_app_include_image_subtitle">Anexar a imagem promocional junto com sua mensagem</string>
+    <string name="share_app_link_note">Este link é adicionado automaticamente no final:</string>
+    <string name="share_app_message_label">Mensagem</string>
+    <string name="share_app_title">Compartilhar YATA</string>
+    <string name="staff_analytics_attention">ATENÇÃO</string>
+    <string name="staff_analytics_heaviest_load">Maior carga em aberto</string>
+    <string name="staff_analytics_lowest_on_time">Menor taxa de pontualidade</string>
+    <string name="staff_analytics_no_staff_work">Ainda sem trabalho ativo da equipe.</string>
+    <string name="staff_analytics_people_with_overdue">Pessoas com trabalho atrasado</string>
+    <string name="staff_analytics_staff">equipe</string>
+    <string name="staff_analytics_staff_table">TABELA DA EQUIPE</string>
+    <string name="staff_analytics_subtitle">Desempenho da equipe</string>
+    <string name="staff_analytics_team_snapshot">VISÃO GERAL DA EQUIPE</string>
+    <string name="staff_analytics_title">Análise da equipe</string>
+    <string name="task_detail_all_subtasks_done_body">Deseja marcar \"%1$s\" como concluída também?</string>
+    <string name="task_detail_all_subtasks_done_title">Todas as subtarefas concluídas?</string>
+    <string name="task_detail_mark_task_done">Marcar tarefa como concluída</string>
+    <string name="task_start_date_custom_days_chip">Dias personalizados antes</string>
+    <string name="task_start_date_custom_days_error">Digite 1-3650 dias.</string>
+    <string name="task_start_date_custom_days_label">Dias antes do vencimento</string>
+    <string name="task_start_date_custom_days_title">Iniciar antes do vencimento</string>
+    <string name="task_start_date_day_before_due">Dia antes do vencimento</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">%1$d dia antes do vencimento</item>
+        <item quantity="other">%1$d dias antes do vencimento</item>
+    </plurals>
+
 </resources>

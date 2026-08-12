@@ -862,4 +862,81 @@ class AppDatabaseMigrationTest {
             .create(configuration)
             .writableDatabase
     }
+
+    // MIGRATION_22_23 hand-writes the `tasks_fts` virtual table and its four sync triggers
+    // (Room normally generates these itself for a fresh install). A migrated device and a fresh
+    // install could silently diverge — search would then miss rows on one but not the other with
+    // no error, only fewer results. This exercises insert/update/delete through the actual
+    // triggers and asserts `tasks_fts` mirrors `tasks` exactly, the same way a real upgraded
+    // device's search index would behave.
+    @Test
+    fun migrate22To23_ftsTriggersStayInSyncWithTasksTable() {
+        context.deleteDatabase(TEST_DB)
+        createVersion22TasksOnlyDatabase().apply {
+            execSQL("INSERT INTO `tasks` (`id`, `title`, `notes`) VALUES ('t1', 'Buy milk', 'from the corner shop')")
+            execSQL("INSERT INTO `tasks` (`id`, `title`, `notes`) VALUES ('t2', 'Call dentist', NULL)")
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(23) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_22_23.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            // Backfill from the INSERT..SELECT in the migration covers pre-existing rows.
+            assertFtsMatchesTasks(this)
+
+            // Triggers cover writes made after the migration too, not just the one-time backfill.
+            execSQL("INSERT INTO `tasks` (`id`, `title`, `notes`) VALUES ('t3', 'Renew passport', NULL)")
+            execSQL("UPDATE `tasks` SET `title` = 'Buy oat milk' WHERE `id` = 't1'")
+            execSQL("DELETE FROM `tasks` WHERE `id` = 't2'")
+            assertFtsMatchesTasks(this)
+
+            query("SELECT `rowid` FROM `tasks_fts` WHERE `tasks_fts` MATCH 'oat*'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+            }
+            close()
+        }
+    }
+
+    private fun assertFtsMatchesTasks(db: SupportSQLiteDatabase) {
+        val tasksRows = mutableMapOf<Long, Pair<String, String?>>()
+        db.query("SELECT `rowid`, `title`, `notes` FROM `tasks`").use { cursor ->
+            while (cursor.moveToNext()) {
+                tasksRows[cursor.getLong(0)] = cursor.getString(1) to
+                    if (cursor.isNull(2)) null else cursor.getString(2)
+            }
+        }
+        val ftsRows = mutableMapOf<Long, Pair<String, String?>>()
+        db.query("SELECT `rowid`, `title`, `notes` FROM `tasks_fts`").use { cursor ->
+            while (cursor.moveToNext()) {
+                ftsRows[cursor.getLong(0)] = cursor.getString(1) to
+                    if (cursor.isNull(2)) null else cursor.getString(2)
+            }
+        }
+        assertEquals(tasksRows, ftsRows)
+    }
+
+    private fun createVersion22TasksOnlyDatabase(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(22) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tasks` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `notes` TEXT, PRIMARY KEY(`id`))"
+                    )
+                }
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
 }

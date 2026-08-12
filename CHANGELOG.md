@@ -17,6 +17,24 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **15 more locales translated.** German, Spanish, French, Italian, Portuguese, Dutch, Swedish,
+  Romanian, Turkish, Vietnamese, Indonesian, Czech, Polish, Hindi and Bengali now have translations
+  for GitHub config transfer, Share YATA, Staff Analytics, task defaults, the subtask-completion
+  setting, and start-date custom days — strings that had silently been falling back to English
+  since those features shipped.
+
+### Fixed
+
+- **The Today badge and home-screen widgets could show yesterday's counts after midnight** if the
+  app stayed backgrounded (badge) or no task was written overnight (widgets). Widgets now also
+  refresh once a day on their own.
+- **Search could find a task in one bucket (live/Archived/Trash) but miss its otherwise-identical
+  match in another** — Archived and Trash used a different, looser match than live tasks did
+  (which also couldn't match a tag a task only had by inheriting it from its project). All three
+  now search the same way.
+
+### Added
+
 - **Tag grouping on Android now matches the grouped web workflow.** Selected tags can be moved into
   an existing or newly-created group from the Tags tab, and grouped tag rows use localized task
   counts and delete confirmations.

@@ -111,6 +111,7 @@ class YataApplication : Application(), Configuration.Provider {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     AppClock.refresh()
                 }
+                com.mj.yata.widget.WidgetRefresher.refreshAll(this@YataApplication)
             }
         }
     }
@@ -154,5 +155,10 @@ class YataApplication : Application(), Configuration.Provider {
         } else {
             DailyAgendaWorker.cancel(this)
         }
+
+        // Not user-controllable, so no cancel branch — this repaints widget content that would
+        // otherwise stay stale for a full day if the process dies before any task write happens
+        // to trigger WidgetUpdater's own refresh (see WidgetDailyRefreshWorker's KDoc).
+        com.mj.yata.widget.WidgetDailyRefreshWorker.schedule(this)
     }
 }

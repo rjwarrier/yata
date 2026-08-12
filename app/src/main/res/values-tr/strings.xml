@@ -1281,4 +1281,75 @@
         <item quantity="one">Bugün biten %1$d görev</item>
         <item quantity="other">Bugün biten %1$d görev</item>
     </plurals>
+    <!-- GitHub config transfer, Share YATA, Staff Analytics, task defaults, subtask
+         completion, start-date custom days -->
+    <string name="action_import">İçe aktar</string>
+    <string name="action_not_now">Şimdi değil</string>
+    <string name="remote_sync_export_github_config">Yapılandırmayı dışa aktar</string>
+    <string name="remote_sync_github_config_confirm_password_label">Şifreyi onayla</string>
+    <string name="remote_sync_github_config_export_missing">Dışa aktarmadan önce bir GitHub deposu ve token kaydet.</string>
+    <string name="remote_sync_github_config_export_password_title">GitHub yapılandırmasını şifrele</string>
+    <string name="remote_sync_github_config_exported">GitHub yapılandırması dışa aktarıldı.</string>
+    <string name="remote_sync_github_config_import_missing_file">Önce bir GitHub yapılandırma dışa aktarımı seç.</string>
+    <string name="remote_sync_github_config_import_password_title">GitHub yapılandırmasının şifresini çöz</string>
+    <string name="remote_sync_github_config_import_too_large">Bu dosya bir GitHub yapılandırma dışa aktarımı olamayacak kadar büyük.</string>
+    <string name="remote_sync_github_config_imported">%1$s için GitHub yapılandırması içe aktarıldı.</string>
+    <string name="remote_sync_github_config_password_hint">Ayrı bir aktarım şifresi kullan. YATA tarafından kaydedilmez.</string>
+    <string name="remote_sync_github_config_password_label">Aktarım şifresi</string>
+    <string name="remote_sync_github_config_password_mismatch">Şifreler eşleşmiyor.</string>
+    <string name="remote_sync_github_config_transfer_title">Yapılandırma aktarımı</string>
+    <string name="remote_sync_import_github_config">Yapılandırmayı içe aktar</string>
+    <string name="settings_about_github">GitHub\'da kaynak kodunu görüntüle</string>
+    <string name="settings_about_other_apps">Geliştiricilerin diğer uygulamaları</string>
+    <string name="settings_about_share">YATA\'yı paylaş</string>
+    <string name="settings_about_share_text">YATA, Android için bir Material 3 Expressive görev yöneticisidir — göz atın: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_website">YATA web sitesi</string>
+    <string name="settings_custom">Özel</string>
+    <string name="settings_default_estimate">Tahmin</string>
+    <string name="settings_default_estimate_custom_error">1-1440 dakika girin.</string>
+    <string name="settings_default_estimate_custom_label">Dakika</string>
+    <string name="settings_default_estimate_custom_title">Tahmin</string>
+    <string name="settings_default_estimate_desc">Yeni görevlere varsayılan olarak eklenen planlanan çaba.</string>
+    <string name="settings_default_project">Proje</string>
+    <string name="settings_default_tags">Etiketler</string>
+    <string name="settings_default_tags_clear">Etiketleri temizle</string>
+    <string name="settings_default_tags_desc">Bu etiketleri yeni görevlere otomatik olarak uygula.</string>
+    <string name="settings_default_tags_empty">Henüz etiket yok.</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_defaults_group">Varsayılanlar</string>
+    <string name="settings_subtask_completion_action">Tüm alt görevler tamamlandığında</string>
+    <string name="settings_subtask_completion_action_desc">Ana görevin otomatik olarak bitip bitmeyeceğini, önce sorup sormayacağını ya da açık kalıp kalmayacağını seç.</string>
+    <string name="settings_subtask_completion_ask">Sor</string>
+    <string name="settings_subtask_completion_auto">Otomatik</string>
+    <string name="settings_subtask_completion_nothing">Hiçbiri</string>
+    <string name="share_app_button">%1$s paylaş</string>
+    <string name="share_app_default_message">YATA, Android için bir Material 3 Expressive görev yöneticisidir — göz atın!</string>
+    <string name="share_app_include_image">Görsel ekle</string>
+    <string name="share_app_include_image_subtitle">Tanıtım görselini mesajınızla birlikte ekleyin</string>
+    <string name="share_app_link_note">Bu bağlantı sona otomatik olarak eklenir:</string>
+    <string name="share_app_message_label">Mesaj</string>
+    <string name="share_app_title">YATA\'yı paylaş</string>
+    <string name="staff_analytics_attention">DİKKAT</string>
+    <string name="staff_analytics_heaviest_load">En ağır açık yük</string>
+    <string name="staff_analytics_lowest_on_time">En düşük zamanında tamamlama oranı</string>
+    <string name="staff_analytics_no_staff_work">Henüz aktif ekip çalışması yok.</string>
+    <string name="staff_analytics_people_with_overdue">Gecikmiş işi olan kişiler</string>
+    <string name="staff_analytics_staff">ekip</string>
+    <string name="staff_analytics_staff_table">EKİP TABLOSU</string>
+    <string name="staff_analytics_subtitle">Ekip performansı</string>
+    <string name="staff_analytics_team_snapshot">EKİP ÖZETİ</string>
+    <string name="staff_analytics_title">Personel analizleri</string>
+    <string name="task_detail_all_subtasks_done_body">\"%1$s\" öğesini de tamamlandı olarak işaretlemek ister misin?</string>
+    <string name="task_detail_all_subtasks_done_title">Tüm alt görevler tamamlandı mı?</string>
+    <string name="task_detail_mark_task_done">Görevi tamamlandı olarak işaretle</string>
+    <string name="task_start_date_custom_days_chip">Öncesinde özel gün sayısı</string>
+    <string name="task_start_date_custom_days_error">1-3650 gün girin.</string>
+    <string name="task_start_date_custom_days_label">Son tarihten önceki gün sayısı</string>
+    <string name="task_start_date_custom_days_title">Son tarihten önce başla</string>
+    <string name="task_start_date_day_before_due">Son tarihten bir gün önce</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">Son tarihten %1$d gün önce</item>
+        <item quantity="other">Son tarihten %1$d gün önce</item>
+    </plurals>
+
 </resources>

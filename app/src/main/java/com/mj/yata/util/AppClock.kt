@@ -3,6 +3,8 @@ package com.mj.yata.util
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
 /**
@@ -28,6 +30,10 @@ object AppClock {
 
     /** [today] as an ISO string, for the many call sites that compare dates as strings. */
     val todayString: String get() = today.toString()
+
+    /** [today] as a cold [Flow], for non-Compose collectors (ViewModel `combine` chains) that
+     * would otherwise capture `LocalDate.now()` once inside the chain and never see midnight. */
+    val todayFlow: Flow<LocalDate> = snapshotFlow { today }
 
     fun refresh() {
         today = LocalDate.now()

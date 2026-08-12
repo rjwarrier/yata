@@ -1281,4 +1281,75 @@
         <item quantity="one">%1$d sarcină cu termen azi</item>
         <item quantity="other">%1$d sarcini cu termen azi</item>
     </plurals>
+    <!-- GitHub config transfer, Share YATA, Staff Analytics, task defaults, subtask
+         completion, start-date custom days -->
+    <string name="action_import">Import</string>
+    <string name="action_not_now">Nu acum</string>
+    <string name="remote_sync_export_github_config">Exportă configurația</string>
+    <string name="remote_sync_github_config_confirm_password_label">Confirmă parola</string>
+    <string name="remote_sync_github_config_export_missing">Salvează un depozit GitHub și un token înainte de a exporta.</string>
+    <string name="remote_sync_github_config_export_password_title">Criptează configurația GitHub</string>
+    <string name="remote_sync_github_config_exported">Configurație GitHub exportată.</string>
+    <string name="remote_sync_github_config_import_missing_file">Alege mai întâi un export de configurație GitHub.</string>
+    <string name="remote_sync_github_config_import_password_title">Decriptează configurația GitHub</string>
+    <string name="remote_sync_github_config_import_too_large">Fișierul este prea mare pentru a fi un export de configurație GitHub.</string>
+    <string name="remote_sync_github_config_imported">Configurație GitHub importată pentru %1$s.</string>
+    <string name="remote_sync_github_config_password_hint">Folosește o parolă de transfer separată. Nu este salvată de YATA.</string>
+    <string name="remote_sync_github_config_password_label">Parolă de transfer</string>
+    <string name="remote_sync_github_config_password_mismatch">Parolele nu coincid.</string>
+    <string name="remote_sync_github_config_transfer_title">Transfer configurație</string>
+    <string name="remote_sync_import_github_config">Importă configurația</string>
+    <string name="settings_about_github">Vezi codul sursă pe GitHub</string>
+    <string name="settings_about_other_apps">Alte aplicații ale dezvoltatorilor</string>
+    <string name="settings_about_share">Distribuie YATA</string>
+    <string name="settings_about_share_text">YATA este un manager de sarcini Material 3 Expressive pentru Android — aruncă o privire: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_website">Site-ul YATA</string>
+    <string name="settings_custom">Personalizat</string>
+    <string name="settings_default_estimate">Estimare</string>
+    <string name="settings_default_estimate_custom_error">Introdu 1-1440 minute.</string>
+    <string name="settings_default_estimate_custom_label">Minute</string>
+    <string name="settings_default_estimate_custom_title">Estimare</string>
+    <string name="settings_default_estimate_desc">Efort planificat adăugat implicit la sarcinile noi.</string>
+    <string name="settings_default_project">Proiect</string>
+    <string name="settings_default_tags">Etichete</string>
+    <string name="settings_default_tags_clear">Șterge etichetele</string>
+    <string name="settings_default_tags_desc">Aplică automat aceste etichete sarcinilor noi.</string>
+    <string name="settings_default_tags_empty">Încă nu există etichete.</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_defaults_group">Valori implicite</string>
+    <string name="settings_subtask_completion_action">Când toate subsarcinile sunt finalizate</string>
+    <string name="settings_subtask_completion_action_desc">Alege dacă sarcina principală se finalizează automat, întreabă mai întâi sau rămâne deschisă.</string>
+    <string name="settings_subtask_completion_ask">Întreabă</string>
+    <string name="settings_subtask_completion_auto">Automat</string>
+    <string name="settings_subtask_completion_nothing">Nimic</string>
+    <string name="share_app_button">Distribuie %1$s</string>
+    <string name="share_app_default_message">YATA este un manager de sarcini Material 3 Expressive pentru Android — aruncă o privire!</string>
+    <string name="share_app_include_image">Include imaginea</string>
+    <string name="share_app_include_image_subtitle">Atașează imaginea promoțională împreună cu mesajul tău</string>
+    <string name="share_app_link_note">Acest link este adăugat automat la final:</string>
+    <string name="share_app_message_label">Mesaj</string>
+    <string name="share_app_title">Distribuie YATA</string>
+    <string name="staff_analytics_attention">ATENȚIE</string>
+    <string name="staff_analytics_heaviest_load">Cea mai mare încărcare deschisă</string>
+    <string name="staff_analytics_lowest_on_time">Cea mai mică rată de punctualitate</string>
+    <string name="staff_analytics_no_staff_work">Încă nu există activitate de echipă.</string>
+    <string name="staff_analytics_people_with_overdue">Persoane cu activitate restantă</string>
+    <string name="staff_analytics_staff">echipă</string>
+    <string name="staff_analytics_staff_table">TABEL ECHIPĂ</string>
+    <string name="staff_analytics_subtitle">Performanța echipei</string>
+    <string name="staff_analytics_team_snapshot">PRIVIRE DE ANSAMBLU ECHIPĂ</string>
+    <string name="staff_analytics_title">Analiză personal</string>
+    <string name="task_detail_all_subtasks_done_body">Vrei să marchezi și \"%1$s\" ca finalizată?</string>
+    <string name="task_detail_all_subtasks_done_title">Toate subsarcinile finalizate?</string>
+    <string name="task_detail_mark_task_done">Marchează sarcina ca finalizată</string>
+    <string name="task_start_date_custom_days_chip">Zile personalizate înainte</string>
+    <string name="task_start_date_custom_days_error">Introdu 1-3650 zile.</string>
+    <string name="task_start_date_custom_days_label">Zile înainte de scadență</string>
+    <string name="task_start_date_custom_days_title">Începe înainte de scadență</string>
+    <string name="task_start_date_day_before_due">Ziua dinaintea scadenței</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">%1$d zi înainte de scadență</item>
+        <item quantity="other">%1$d zile înainte de scadență</item>
+    </plurals>
+
 </resources>

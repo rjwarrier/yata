@@ -160,17 +160,6 @@ class YataRepositoryImpl @Inject constructor(
         if (notify) widgetUpdater.notifyTasksChanged()
     }
 
-    override fun searchTasks(query: String): Flow<List<Task>> {
-        if (query.isBlank()) return kotlinx.coroutines.flow.flowOf(emptyList())
-        val ftsQuery = query.split(Regex("[^\\p{L}\\p{N}_]+"))
-            .filter { it.isNotBlank() }
-            .joinToString(" ") { "${it.replace("\"", "")}*" }
-            .ifBlank { "__yata_no_match__*" }
-        return db.taskDao().searchTasksWithRelations(ftsQuery, query).map { list ->
-            list.map { it.toDomain() }
-        }
-    }
-
     override suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean) = withContext(Dispatchers.IO) {
         db.taskDao().updateFlag(id, flag)
         if (notify) widgetUpdater.notifyTasksChanged()

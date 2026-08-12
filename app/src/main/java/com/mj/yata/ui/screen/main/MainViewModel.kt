@@ -474,9 +474,10 @@ private data class MainNavigationState(
         tasks,
         projects,
         lists,
-        people
-    ) { list, projectList, listList, peopleList ->
-        val todayStr = LocalDate.now().toString()
+        people,
+        com.mj.yata.util.AppClock.todayFlow
+    ) { list, projectList, listList, peopleList, today ->
+        val todayStr = today.toString()
         val myId = peopleList.firstOrNull { it.isMe }?.id
         val excludedProjectIds = projectList.hiddenFromMainTaskProjectIds()
         val excludedListIds = listList.hiddenFromMainTaskListIds()
@@ -510,8 +511,6 @@ private data class MainNavigationState(
     fun getTasksForProject(projectId: String): Flow<List<Task>> = repository.getTasksForProject(projectId)
 
     fun getTasksForPerson(personId: String): Flow<List<Task>> = repository.getTasksForPerson(personId)
-
-    fun searchTasks(query: String): Flow<List<Task>> = repository.searchTasks(query)
 
     private val settingsCoreFlow = combine(
         combine(

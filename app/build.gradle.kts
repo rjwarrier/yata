@@ -187,6 +187,58 @@ tasks.register("lintHardcodedStrings") {
     }
 }
 
+/**
+ * Fails the build when a string/plural key in the source `values/strings.xml` is missing from one
+ * of the 24 translated `values-<code>/` locales. Unlike [lintHardcodedStrings] this isn't
+ * incremental progress that can sit unfinished — CLAUDE.md's rule is that a new string is added to
+ * all 24 locale files in the same change, and lint's own `MissingTranslation` check exists but is
+ * silenced (`abortOnError = false`) so it doesn't block anything on its own. A key present in
+ * `values/` and absent everywhere else usually means a locale file was missed while adding a
+ * feature, not a translation still pending — those fall back to English silently, so nothing else
+ * catches it.
+ *
+ * Not wired into [releaseGate] yet: running this today reports a real, pre-existing gap — 65 keys
+ * from several recent features (GitHub config transfer, Share YATA, Staff Analytics, task
+ * defaults, subtask-completion setting, start-date custom days) were never propagated to any of
+ * the 24 locales. Add it to releaseGate's dependsOn once that backlog is translated and closed —
+ * the same staged approach [lintHardcodedStrings] uses for its own incremental debt.
+ */
+tasks.register("lintLocaleParity") {
+    group = "verification"
+    description = "Fails if a strings.xml/plurals key is missing from any translated values-<code> locale."
+    val valuesDir = file("src/main/res")
+    doLast {
+        val nameAttr = Regex("""<(?:string|plurals)\s+name="([^"]+)"""")
+        fun keysIn(f: java.io.File): Set<String> =
+            if (f.exists()) nameAttr.findAll(f.readText()).map { it.groupValues[1] }.toSet() else emptySet()
+
+        val sourceFile = valuesDir.resolve("values/strings.xml")
+        val sourceKeys = keysIn(sourceFile)
+        check(sourceKeys.isNotEmpty()) { "No keys found in ${sourceFile.path} — check the file exists." }
+
+        val localeDirs = valuesDir.listFiles { f ->
+            f.isDirectory && f.name.startsWith("values-") && !f.name.startsWith("values-night") && !f.name.startsWith("values-v")
+        }.orEmpty().sortedBy { it.name }
+
+        val missingByLocale = sortedMapOf<String, Set<String>>()
+        localeDirs.forEach { dir ->
+            val localeKeys = keysIn(dir.resolve("strings.xml"))
+            val missing = sourceKeys - localeKeys
+            if (missing.isNotEmpty()) missingByLocale[dir.name] = missing
+        }
+
+        if (missingByLocale.isEmpty()) {
+            logger.lifecycle("All ${sourceKeys.size} keys present across ${localeDirs.size} locale(s).")
+        } else {
+            val report = missingByLocale.entries.joinToString("\n") { (locale, missing) ->
+                "  $locale: ${missing.size} missing — ${missing.sorted().take(10).joinToString(", ")}" +
+                    if (missing.size > 10) ", …" else ""
+            }
+            throw GradleException("Locale parity check failed:\n$report")
+        }
+    }
+}
+
 tasks.register("releaseGate") {
     group = "verification"
     description = "Runs the local pre-release stability gate: compile, JVM tests, Android test compile, lint, and hardcoded-string audit."

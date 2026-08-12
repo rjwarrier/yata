@@ -1281,4 +1281,75 @@
         <item quantity="one">%1$d úkol má dnes termín</item>
         <item quantity="other">%1$d úkolů má dnes termín</item>
     </plurals>
+    <!-- GitHub config transfer, Share YATA, Staff Analytics, task defaults, subtask
+         completion, start-date custom days -->
+    <string name="action_import">Importovat</string>
+    <string name="action_not_now">Teď ne</string>
+    <string name="remote_sync_export_github_config">Exportovat konfiguraci</string>
+    <string name="remote_sync_github_config_confirm_password_label">Potvrdit heslo</string>
+    <string name="remote_sync_github_config_export_missing">Před exportem ulož GitHub repozitář a token.</string>
+    <string name="remote_sync_github_config_export_password_title">Zašifrovat konfiguraci GitHub</string>
+    <string name="remote_sync_github_config_exported">Konfigurace GitHub exportována.</string>
+    <string name="remote_sync_github_config_import_missing_file">Nejprve vyber export konfigurace GitHub.</string>
+    <string name="remote_sync_github_config_import_password_title">Dešifrovat konfiguraci GitHub</string>
+    <string name="remote_sync_github_config_import_too_large">Tento soubor je příliš velký na to, aby byl exportem konfigurace GitHub.</string>
+    <string name="remote_sync_github_config_imported">Konfigurace GitHub importována pro %1$s.</string>
+    <string name="remote_sync_github_config_password_hint">Použij samostatné přenosové heslo. YATA ho neukládá.</string>
+    <string name="remote_sync_github_config_password_label">Přenosové heslo</string>
+    <string name="remote_sync_github_config_password_mismatch">Hesla se neshodují.</string>
+    <string name="remote_sync_github_config_transfer_title">Přenos konfigurace</string>
+    <string name="remote_sync_import_github_config">Importovat konfiguraci</string>
+    <string name="settings_about_github">Zobrazit zdrojový kód na GitHubu</string>
+    <string name="settings_about_other_apps">Další aplikace od vývojářů</string>
+    <string name="settings_about_share">Sdílet YATA</string>
+    <string name="settings_about_share_text">YATA je správce úkolů Material 3 Expressive pro Android — podívej se: https://github.com/rjwarrier/yata/releases</string>
+    <string name="settings_about_website">Web YATA</string>
+    <string name="settings_custom">Vlastní</string>
+    <string name="settings_default_estimate">Odhad</string>
+    <string name="settings_default_estimate_custom_error">Zadej 1-1440 minut.</string>
+    <string name="settings_default_estimate_custom_label">Minuty</string>
+    <string name="settings_default_estimate_custom_title">Odhad</string>
+    <string name="settings_default_estimate_desc">Plánované úsilí ve výchozím nastavení přidané k novým úkolům.</string>
+    <string name="settings_default_project">Projekt</string>
+    <string name="settings_default_tags">Štítky</string>
+    <string name="settings_default_tags_clear">Odebrat štítky</string>
+    <string name="settings_default_tags_desc">Automaticky použít tyto štítky na nové úkoly.</string>
+    <string name="settings_default_tags_empty">Zatím žádné štítky.</string>
+    <string name="settings_default_tags_value_many">%1$s +%2$d</string>
+    <string name="settings_defaults_group">Výchozí hodnoty</string>
+    <string name="settings_subtask_completion_action">Když jsou všechny podúkoly hotové</string>
+    <string name="settings_subtask_completion_action_desc">Vyber, zda se hlavní úkol dokončí automaticky, nejprve se zeptá, nebo zůstane otevřený.</string>
+    <string name="settings_subtask_completion_ask">Zeptat se</string>
+    <string name="settings_subtask_completion_auto">Automaticky</string>
+    <string name="settings_subtask_completion_nothing">Nic</string>
+    <string name="share_app_button">Sdílet %1$s</string>
+    <string name="share_app_default_message">YATA je správce úkolů Material 3 Expressive pro Android — podívej se!</string>
+    <string name="share_app_include_image">Zahrnout obrázek</string>
+    <string name="share_app_include_image_subtitle">Přiložit propagační obrázek spolu se zprávou</string>
+    <string name="share_app_link_note">Tento odkaz se automaticky přidá na konec:</string>
+    <string name="share_app_message_label">Zpráva</string>
+    <string name="share_app_title">Sdílet YATA</string>
+    <string name="staff_analytics_attention">POZOR</string>
+    <string name="staff_analytics_heaviest_load">Nejtěžší otevřená zátěž</string>
+    <string name="staff_analytics_lowest_on_time">Nejnižší míra včasnosti</string>
+    <string name="staff_analytics_no_staff_work">Zatím žádná aktivní práce týmu.</string>
+    <string name="staff_analytics_people_with_overdue">Lidé se zpožděnou prací</string>
+    <string name="staff_analytics_staff">tým</string>
+    <string name="staff_analytics_staff_table">TABULKA TÝMU</string>
+    <string name="staff_analytics_subtitle">Výkon týmu</string>
+    <string name="staff_analytics_team_snapshot">PŘEHLED TÝMU</string>
+    <string name="staff_analytics_title">Analýzy personálu</string>
+    <string name="task_detail_all_subtasks_done_body">Chceš označit i \"%1$s\" jako hotové?</string>
+    <string name="task_detail_all_subtasks_done_title">Všechny podúkoly hotové?</string>
+    <string name="task_detail_mark_task_done">Označit úkol jako hotový</string>
+    <string name="task_start_date_custom_days_chip">Vlastní počet dní předem</string>
+    <string name="task_start_date_custom_days_error">Zadej 1-3650 dní.</string>
+    <string name="task_start_date_custom_days_label">Dní před termínem</string>
+    <string name="task_start_date_custom_days_title">Začít před termínem</string>
+    <string name="task_start_date_day_before_due">Den před termínem</string>
+    <plurals name="task_start_date_n_days_before_due">
+        <item quantity="one">%1$d den před termínem</item>
+        <item quantity="other">%1$d dní před termínem</item>
+    </plurals>
+
 </resources>
