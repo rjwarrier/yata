@@ -17,6 +17,13 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ### Added
 
+- **Redesigned "Share task as image".** The image export from a task's Share sheet is now a
+  portrait card sized for chat-app previews (WhatsApp/Telegram/Instagram) instead of the old wide
+  report layout: brand header, title, status/priority pills, a due-date + list strip, assignees
+  shown with their real avatars alongside tags in an equal-billing two-column block, then optional
+  notes and up to 3 recent comments, and a footer crediting who shared it and when. Follows the
+  app's light/dark color scheme and exports as a JPEG. PDF export is unchanged. New strings
+  translated across all 24 locales.
 - **15 more locales translated.** German, Spanish, French, Italian, Portuguese, Dutch, Swedish,
   Romanian, Turkish, Vietnamese, Indonesian, Czech, Polish, Hindi and Bengali now have translations
   for GitHub config transfer, Share YATA, Staff Analytics, task defaults, the subtask-completion

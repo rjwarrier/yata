@@ -902,6 +902,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">Ukończono %1$s</string>
     <string name="task_export_due_label">Termin %1$s</string>
+    <string name="export_due_label">Termin</string>
+    <string name="export_share_tagline">Menedżer zadań local-first</string>
+    <string name="export_shared_on">Udostępniono %1$s</string>
+    <string name="export_more_count">+%1$d więcej</string>
     <string name="notification_reminder_title">Przypomnienie: %1$s</string>
     <string name="notification_action_complete">Ukończ</string>
     <string name="notification_action_snooze_15m">Drzemka 15 min</string>

@@ -34,6 +34,15 @@ fun saveBitmapAsPng(context: Context, bitmap: Bitmap, fileName: String): File {
     return file
 }
 
+/** JPEG has no alpha channel, so a fully opaque card (the task-share image) compresses smaller
+ * than the PNG path above at a visually lossless quality — worth it since these are sized for
+ * chat-app share sheets (WhatsApp/Telegram/Instagram) that re-compress anyway. */
+fun saveBitmapAsJpeg(context: Context, bitmap: Bitmap, fileName: String, quality: Int = 92): File {
+    val file = File(exportsDir(context), fileName)
+    FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, quality, out) }
+    return file
+}
+
 private data class PdfSlice(val startY: Int, val height: Int)
 
 /**

@@ -998,6 +998,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">Voltooid %1$s</string>
     <string name="task_export_due_label">Vervalt %1$s</string>
+    <string name="export_due_label">Vervalt</string>
+    <string name="export_share_tagline">Local-first taakbeheer</string>
+    <string name="export_shared_on">Gedeeld %1$s</string>
+    <string name="export_more_count">+%1$d meer</string>
     <string name="notification_reminder_title">Herinnering: %1$s</string>
     <string name="notification_action_complete">Voltooien</string>
     <string name="notification_action_snooze_15m">15 min uitstellen</string>

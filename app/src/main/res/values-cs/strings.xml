@@ -902,6 +902,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">Dokončeno %1$s</string>
     <string name="task_export_due_label">Termín %1$s</string>
+    <string name="export_due_label">Termín</string>
+    <string name="export_share_tagline">Správce úkolů local-first</string>
+    <string name="export_shared_on">Sdíleno %1$s</string>
+    <string name="export_more_count">+%1$d dalších</string>
     <string name="notification_reminder_title">Připomenutí: %1$s</string>
     <string name="notification_action_complete">Dokončit</string>
     <string name="notification_action_snooze_15m">Odložit o 15 min</string>

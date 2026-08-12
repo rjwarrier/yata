@@ -65,12 +65,17 @@ fun TaskExportOptionsDialog(
     var imageScale by remember { mutableStateOf(defaults.imageScale) }
     var fileNameText by remember { mutableStateOf(defaults.fileNameBase) }
 
+    // The IMAGE card (TaskShareCard) is a fixed portrait layout matching its reference design and
+    // has no schedule/subtasks sections to toggle — those rows only apply to the PDF report card.
+    val showScheduleToggle = format == ExportFormat.PDF && hasScheduleDetails
+    val showSubtasksToggle = format == ExportFormat.PDF && hasSubtasks
+
     val privateNotes = if (privacyMode) false else includeNotes
     val privateComments = if (privacyMode) false else includeComments
     val contentParts = listOfNotNull(
         "details",
-        "schedule".takeIf { hasScheduleDetails && includeScheduleDetails },
-        "subtasks".takeIf { hasSubtasks && includeSubtasks },
+        "schedule".takeIf { showScheduleToggle && includeScheduleDetails },
+        "subtasks".takeIf { showSubtasksToggle && includeSubtasks },
         "notes".takeIf { hasNotes && privateNotes },
         "comments".takeIf { hasComments && privateComments }
     )
@@ -138,14 +143,14 @@ fun TaskExportOptionsDialog(
 
                 SectionLabel(stringResource(R.string.export_section_content))
                 ToggleRow(title = stringResource(R.string.export_privacy_mode), checked = privacyMode, onCheckedChange = { privacyMode = it })
-                if (hasScheduleDetails) {
+                if (showScheduleToggle) {
                     ToggleRow(
                         title = stringResource(R.string.export_include_schedule),
                         checked = includeScheduleDetails,
                         onCheckedChange = { includeScheduleDetails = it }
                     )
                 }
-                if (hasSubtasks) {
+                if (showSubtasksToggle) {
                     ToggleRow(title = stringResource(R.string.export_include_subtasks), checked = includeSubtasks, onCheckedChange = { includeSubtasks = it })
                 }
                 if (hasNotes) {
@@ -204,8 +209,8 @@ fun TaskExportOptionsDialog(
                         val options = TaskExportOptions(
                             includeNotes = hasNotes && privateNotes,
                             includeComments = hasComments && privateComments,
-                            includeSubtasks = hasSubtasks && includeSubtasks,
-                            includeScheduleDetails = hasScheduleDetails && includeScheduleDetails,
+                            includeSubtasks = showSubtasksToggle && includeSubtasks,
+                            includeScheduleDetails = showScheduleToggle && includeScheduleDetails,
                             showMadeWithFooter = showMadeWithFooter,
                             privacyMode = privacyMode,
                             destination = destination,

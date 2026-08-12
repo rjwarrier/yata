@@ -998,6 +998,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">%1$s को पूर्ण हुआ</string>
     <string name="task_export_due_label">%1$s को देय</string>
+    <string name="export_due_label">देय</string>
+    <string name="export_share_tagline">लोकल-फर्स्ट टास्क मैनेजर</string>
+    <string name="export_shared_on">साझा किया गया %1$s</string>
+    <string name="export_more_count">+%1$d और</string>
     <string name="notification_reminder_title">रिमाइंडर: %1$s</string>
     <string name="notification_action_complete">पूर्ण करें</string>
     <string name="notification_action_snooze_15m">15 मिनट स्नूज़ करें</string>

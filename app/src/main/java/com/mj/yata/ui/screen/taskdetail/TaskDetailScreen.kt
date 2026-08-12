@@ -35,6 +35,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -1652,12 +1653,17 @@ fun TaskDetailScreen(
                         java.time.Instant.ofEpochMilli(comment.createdAt)
                             .atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
                     ),
-                    body = comment.body
+                    body = comment.body,
+                    authorInitials = author?.initials,
+                    authorAccentKey = author?.color,
+                    authorPhotoUri = author?.photoUri
                 )
             }
         }
 
         val exportSubtasks = remember(task.subtasks) { task.subtasks.toExportSubtaskRows() }
+        val exportedBy = remember(people) { people.firstOrNull { it.isMe } }
+        val exportDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
         fun runExport(options: com.mj.yata.util.export.TaskExportOptions) {
             exportFormatPending = null
@@ -1676,7 +1682,18 @@ fun TaskDetailScreen(
                         completedAtLabel = if (task.done) com.mj.yata.util.TaskScheduleUtils.formatCompletedAt(task.completedAt) else null,
                         projectName = project?.name,
                         listName = taskList?.name,
-                        assigneeNames = if (options.privacyMode) emptyList() else taskAssignees.map { if (it.isMe) "You" else it.name },
+                        assignees = if (options.privacyMode) {
+                            emptyList()
+                        } else {
+                            taskAssignees.map { person ->
+                                com.mj.yata.util.export.ExportPersonChip(
+                                    name = if (person.isMe) "You" else person.name,
+                                    initials = person.initials,
+                                    accentKey = person.color,
+                                    photoUri = person.photoUri
+                                )
+                            }
+                        },
                         tagChips = if (options.privacyMode) emptyList() else exportTagChips,
                         notes = task.notes,
                         includeNotes = options.includeNotes,
@@ -1687,6 +1704,11 @@ fun TaskDetailScreen(
                         subtasks = exportSubtasks,
                         includeSubtasks = options.includeSubtasks,
                         includeScheduleDetails = options.includeScheduleDetails,
+                        sharedByName = "You",
+                        sharedByInitials = exportedBy?.initials ?: "Y",
+                        sharedByAccentKey = exportedBy?.color ?: "accentA",
+                        sharedByPhotoUri = if (options.privacyMode) null else exportedBy?.photoUri,
+                        darkTheme = exportDarkTheme,
                         accentColor = exportAccentColor,
                         showMadeWithFooter = options.showMadeWithFooter,
                         destination = options.destination,

@@ -36,17 +36,30 @@ import com.mj.yata.ui.theme.createTypography
 
 /** One resolved comment ready to render — author display name (null if the comment has no
  * resolvable author) and a pre-formatted timestamp, matching how TaskDetailScreen's own
- * comment list resolves `authorId` before display. */
+ * comment list resolves `authorId` before display. The author avatar fields are all null when
+ * the comment has no resolvable author, same as [authorLabel]. */
 data class ExportCommentRow(
     val authorLabel: String?,
     val timestampLabel: String,
-    val body: String
+    val body: String,
+    val authorInitials: String? = null,
+    val authorAccentKey: String? = null,
+    val authorPhotoUri: String? = null
 )
 
 data class ExportSubtaskRow(
     val title: String,
     val done: Boolean,
     val depth: Int = 0
+)
+
+/** A person rendered with their avatar (photo, else initials on their accent color) rather than
+ * just a name pill — used by [TaskShareCard]'s Assigned To block and its footer. */
+data class ExportPersonChip(
+    val name: String,
+    val initials: String,
+    val accentKey: String,
+    val photoUri: String? = null
 )
 
 private val CardWidth = 420.dp

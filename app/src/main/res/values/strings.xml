@@ -1200,6 +1200,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">Completed %1$s</string>
     <string name="task_export_due_label">Due %1$s</string>
+    <string name="export_due_label">Due</string>
+    <string name="export_share_tagline">Local-first task manager</string>
+    <string name="export_shared_on">Shared %1$s</string>
+    <string name="export_more_count">+%1$d more</string>
     <string name="notification_reminder_title">Reminder: %1$s</string>
     <string name="notification_action_complete">Complete</string>
     <string name="notification_action_snooze_15m">Snooze 15 min</string>

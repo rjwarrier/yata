@@ -902,6 +902,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">Slutförd %1$s</string>
     <string name="task_export_due_label">Förfaller %1$s</string>
+    <string name="export_due_label">Förfaller</string>
+    <string name="export_share_tagline">Local-first uppgiftshanterare</string>
+    <string name="export_shared_on">Delad %1$s</string>
+    <string name="export_more_count">+%1$d till</string>
     <string name="notification_reminder_title">Påminnelse: %1$s</string>
     <string name="notification_action_complete">Slutför</string>
     <string name="notification_action_snooze_15m">Snooza 15 min</string>

@@ -902,6 +902,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">%1$s ના રોજ પૂર્ણ થયું</string>
     <string name="task_export_due_label">%1$s નિયત</string>
+    <string name="export_due_label">નિયત</string>
+    <string name="export_share_tagline">લોકલ-ફર્સ્ટ ટાસ્ક મેનેજર</string>
+    <string name="export_shared_on">શેર કર્યું %1$s</string>
+    <string name="export_more_count">+%1$d વધુ</string>
     <string name="notification_reminder_title">રિમાઇન્ડર: %1$s</string>
     <string name="notification_action_complete">પૂર્ણ કરો</string>
     <string name="notification_action_snooze_15m">15 મિનિટ સ્નૂઝ કરો</string>

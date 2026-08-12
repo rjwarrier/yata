@@ -902,6 +902,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">%1$s പൂർത്തിയാക്കി</string>
     <string name="task_export_due_label">%1$s സമയപരിധി</string>
+    <string name="export_due_label">അവസാന തീയതി</string>
+    <string name="export_share_tagline">ലോക്കൽ-ഫസ്റ്റ് ടാസ്ക് മാനേജർ</string>
+    <string name="export_shared_on">പങ്കിട്ടു %1$s</string>
+    <string name="export_more_count">+%1$d കൂടുതൽ</string>
     <string name="notification_reminder_title">ഓർമ്മപ്പെടുത്തൽ: %1$s</string>
     <string name="notification_action_complete">പൂർത്തിയാക്കുക</string>
     <string name="notification_action_snooze_15m">15 മിനിറ്റ് മാറ്റിവയ്ക്കുക</string>

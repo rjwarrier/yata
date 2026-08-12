@@ -1132,6 +1132,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">Concluída %1$s</string>
     <string name="task_export_due_label">Due %1$s</string>
+    <string name="export_due_label">Vencimento</string>
+    <string name="export_share_tagline">Gerenciador de tarefas local-first</string>
+    <string name="export_shared_on">Compartilhado %1$s</string>
+    <string name="export_more_count">+%1$d mais</string>
     <string name="recurrence_repeat_task">Repeat task</string>
     <string name="recurrence_frequency">Frequency</string>
     <string name="recurrence_every">Every</string>

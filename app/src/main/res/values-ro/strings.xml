@@ -902,6 +902,10 @@
     <string name="export_rows_count">(%1$d)</string>
     <string name="export_completed_at">Finalizată %1$s</string>
     <string name="task_export_due_label">Termen %1$s</string>
+    <string name="export_due_label">Scadență</string>
+    <string name="export_share_tagline">Manager de sarcini local-first</string>
+    <string name="export_shared_on">Distribuit %1$s</string>
+    <string name="export_more_count">+%1$d în plus</string>
     <string name="notification_reminder_title">Memento: %1$s</string>
     <string name="notification_action_complete">Finalizează</string>
     <string name="notification_action_snooze_15m">Amână 15 min</string>
