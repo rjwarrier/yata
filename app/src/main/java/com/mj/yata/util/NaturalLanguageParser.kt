@@ -49,13 +49,13 @@ object NaturalLanguageParser {
     @Volatile private var customDateAliases: Map<String, DateAliasTarget> = emptyMap()
 
     private val weekdayNames = mapOf(
-        "monday" to DayOfWeek.MONDAY, "mon" to DayOfWeek.MONDAY,
-        "tuesday" to DayOfWeek.TUESDAY, "tue" to DayOfWeek.TUESDAY, "tues" to DayOfWeek.TUESDAY,
-        "wednesday" to DayOfWeek.WEDNESDAY, "wed" to DayOfWeek.WEDNESDAY,
-        "thursday" to DayOfWeek.THURSDAY, "thu" to DayOfWeek.THURSDAY, "thurs" to DayOfWeek.THURSDAY,
-        "friday" to DayOfWeek.FRIDAY, "fri" to DayOfWeek.FRIDAY,
-        "saturday" to DayOfWeek.SATURDAY, "sat" to DayOfWeek.SATURDAY,
-        "sunday" to DayOfWeek.SUNDAY, "sun" to DayOfWeek.SUNDAY,
+        "monday" to DayOfWeek.MONDAY, "mon" to DayOfWeek.MONDAY, "mo" to DayOfWeek.MONDAY, "mondy" to DayOfWeek.MONDAY, "mnday" to DayOfWeek.MONDAY,
+        "tuesday" to DayOfWeek.TUESDAY, "tue" to DayOfWeek.TUESDAY, "tues" to DayOfWeek.TUESDAY, "tus" to DayOfWeek.TUESDAY, "tueday" to DayOfWeek.TUESDAY, "tuesdy" to DayOfWeek.TUESDAY,
+        "wednesday" to DayOfWeek.WEDNESDAY, "wed" to DayOfWeek.WEDNESDAY, "weds" to DayOfWeek.WEDNESDAY, "wensday" to DayOfWeek.WEDNESDAY, "wendsday" to DayOfWeek.WEDNESDAY, "wednsday" to DayOfWeek.WEDNESDAY,
+        "thursday" to DayOfWeek.THURSDAY, "thu" to DayOfWeek.THURSDAY, "thur" to DayOfWeek.THURSDAY, "thurs" to DayOfWeek.THURSDAY, "thrs" to DayOfWeek.THURSDAY, "thurday" to DayOfWeek.THURSDAY, "thrusday" to DayOfWeek.THURSDAY,
+        "friday" to DayOfWeek.FRIDAY, "fri" to DayOfWeek.FRIDAY, "fr" to DayOfWeek.FRIDAY, "firday" to DayOfWeek.FRIDAY, "fridy" to DayOfWeek.FRIDAY,
+        "saturday" to DayOfWeek.SATURDAY, "sat" to DayOfWeek.SATURDAY, "saterday" to DayOfWeek.SATURDAY, "satrday" to DayOfWeek.SATURDAY, "satrdy" to DayOfWeek.SATURDAY,
+        "sunday" to DayOfWeek.SUNDAY, "sun" to DayOfWeek.SUNDAY, "sundy" to DayOfWeek.SUNDAY,
         // Spanish aliases. Add new languages here and the date/recurrence rules pick them up.
         "lunes" to DayOfWeek.MONDAY, "lun" to DayOfWeek.MONDAY,
         "martes" to DayOfWeek.TUESDAY, "mar" to DayOfWeek.TUESDAY,
@@ -178,12 +178,17 @@ object NaturalLanguageParser {
 
     private val timeOfDayWords = mapOf(
         "night" to LocalTime.of(21, 0),
+        "nite" to LocalTime.of(21, 0),
         "midnight" to LocalTime.of(0, 0),
         "morning" to LocalTime.of(9, 0),
+        "morn" to LocalTime.of(9, 0),
+        "mrng" to LocalTime.of(9, 0),
         "noon" to LocalTime.of(12, 0),
         "midday" to LocalTime.of(12, 0),
         "afternoon" to LocalTime.of(15, 0),
+        "aft" to LocalTime.of(15, 0),
         "evening" to LocalTime.of(18, 0),
+        "eve" to LocalTime.of(18, 0),
         "noche" to LocalTime.of(21, 0),
         "medianoche" to LocalTime.of(0, 0),
         "mañana" to LocalTime.of(9, 0),
@@ -207,15 +212,22 @@ object NaturalLanguageParser {
 
     // â”€â”€ Recurrence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // "each" is accepted everywhere "every" is â€” it's the same instruction, and people write both.
-    private const val EVERY = "(?:every|each|cada|todo|toda|todos\\s+os|todas\\s+as|chaque|tous\\s+les|toutes\\s+les)"
-    private val everyAlternateDayRegex = Regex("\\b$EVERY\\s+(?:other|alternate|otro|alterno|outro|alternado|autre)\\s+(?:day|día|dia|jour)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val everyAlternateWeekRegex = Regex("\\b$EVERY\\s+(?:other|alternate|otra|alterna|outra|alternada|autre)\\s+(?:week|semana|semaine)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val everyAlternateMonthRegex = Regex("\\b$EVERY\\s+(?:other|alternate|otro|alterno|outro|alternado|autre)\\s+(?:months?|mes(?:es)?|mês|mêses|mois)\\b", RegexOption.IGNORE_CASE)
-    private val everyAlternateYearRegex = Regex("\\b$EVERY\\s+(?:other|alternate|otro|alterno|outro|alternado|autre)\\s+(?:year|año|ano|an|année|annee)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val everyNDaysRegex = Regex("\\b$EVERY\\s+(\\d+)\\s+(?:day|día|dia|jour)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val everyNWeeksRegex = Regex("\\b$EVERY\\s+(\\d+)\\s+(?:week|semana|semaine)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val everyNMonthsRegex = Regex("\\b$EVERY\\s+(\\d+)\\s+(?:months?|mes(?:es)?|mês|mêses|mois)\\b", RegexOption.IGNORE_CASE)
-    private val everyNYearsRegex = Regex("\\b$EVERY\\s+(\\d+)\\s+(?:year|año|ano|an|année|annee)(s)?\\b", RegexOption.IGNORE_CASE)
+    private const val EVERY = "(?:every|evry|evr|each|ea\\.?|cada|todo|toda|todos\\s+os|todas\\s+as|chaque|tous\\s+les|toutes\\s+les)"
+    private const val DAY_UNIT = "(?:days?|dys?|dy|d|día|dÃ­a|dia|jour)s?"
+    private const val WEEK_UNIT = "(?:weeks?|wks?|wk|w|semana|semaine)s?"
+    private const val MONTH_UNIT = "(?:months?|mos?|mths?|mth|mes(?:es)?|mês|mÃªs|mêses|mÃªses|mois)"
+    private const val YEAR_UNIT = "(?:years?|yrs?|yr|y|año|aÃ±o|ano|an|année|annÃ©e|annee)s?"
+    private const val QUARTER_UNIT = "(?:quarters?|qtrs?|qtr)"
+    private const val NUMBER_COUNT = "(?:(?:twenty|twnty|thirty|forty|fourty|fifty|sixty|seventy|eighty|ninety)(?:[-\\s]+(?:one|two|three|thre|tree|four|five|fiv|six|seven|eight|eigth|nine))?|one|two|three|thre|tree|four|five|fiv|six|seven|eight|eigth|nine|ten|eleven|elevenn|twelve|twelv|tweleve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|twnty|thirty|forty|fourty|fifty|sixty|seventy|eighty|ninety|\\d+)"
+    private val everyAlternateDayRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otro|alterno|outro|alternado|autre)\\s+$DAY_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val everyAlternateWeekRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otra|alterna|outra|alternada|autre)\\s+$WEEK_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val everyAlternateMonthRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otro|alterno|outro|alternado|autre)\\s+$MONTH_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val everyAlternateYearRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otro|alterno|outro|alternado|autre)\\s+$YEAR_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val everyNDaysRegex = Regex("\\b$EVERY\\s+($NUMBER_COUNT)\\s+$DAY_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val everyNWeeksRegex = Regex("\\b$EVERY\\s+($NUMBER_COUNT)\\s+$WEEK_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val everyNMonthsRegex = Regex("\\b$EVERY\\s+($NUMBER_COUNT)\\s+$MONTH_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val everyNQuartersRegex = Regex("\\b$EVERY\\s+($NUMBER_COUNT)\\s+$QUARTER_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val everyNYearsRegex = Regex("\\b$EVERY\\s+($NUMBER_COUNT)\\s+$YEAR_UNIT\\b", RegexOption.IGNORE_CASE)
     private val everyWeekdayRegex = Regex("\\b$EVERY\\s+([\\p{L}-]+)\\b", RegexOption.IGNORE_CASE)
 
     // Longest names first so "sun" can't win against "sunday" and leave "day" stranded.
@@ -260,7 +272,7 @@ object NaturalLanguageParser {
         RegexOption.IGNORE_CASE
     )
     private val recurrenceTimesRegex = Regex(
-        "\\b(?:(?:for|por|pour)\\s+)?(\\d+)\\s*(?:times|occurrences|occurrence|veces|ocurrencias|vezes|ocorrências|ocorrencias|fois|x)\\b",
+        "\\b(?:(?:for|por|pour)\\s+)?($NUMBER_COUNT)\\s*(?:times|occurrences|occurrence|veces|ocurrencias|vezes|ocorrências|ocorrencias|fois|x)\\b",
         RegexOption.IGNORE_CASE
     )
     // Word aliases for existing frequencies. Spacing/hyphenation variants ("semi-annually",
@@ -278,10 +290,15 @@ object NaturalLanguageParser {
     // "semiannually" don't have this problem â€” no boundary character means no accidental
     // match â€” but are kept alongside their hyphenated siblings for readability.)
     private val bareRecurrenceWords = mapOf(
+        "bi-wkly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) },
+        "bi wkly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) },
         "bi-weekly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) },
         "biweekly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) },
         "fortnightly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) },
         "fortnighly" to { Recurrence("weekly", 2, null, null, RecurrenceEnds.Never) }, // common typo
+        "quaterly" to { Recurrence("monthly", 3, null, null, RecurrenceEnds.Never) },
+        "quartly" to { Recurrence("monthly", 3, null, null, RecurrenceEnds.Never) },
+        "qtrly" to { Recurrence("monthly", 3, null, null, RecurrenceEnds.Never) },
         "quarterly" to { Recurrence("monthly", 3, null, null, RecurrenceEnds.Never) },
         "semi-annually" to { Recurrence("monthly", 6, null, null, RecurrenceEnds.Never) },
         "semi annually" to { Recurrence("monthly", 6, null, null, RecurrenceEnds.Never) },
@@ -297,9 +314,16 @@ object NaturalLanguageParser {
         "bi annually" to { Recurrence("yearly", 2, null, null, RecurrenceEnds.Never) },
         "biannually" to { Recurrence("yearly", 2, null, null, RecurrenceEnds.Never) },
         "annually" to { Recurrence("yearly", 1, null, null, RecurrenceEnds.Never) },
+        "annully" to { Recurrence("yearly", 1, null, null, RecurrenceEnds.Never) },
+        "yrly" to { Recurrence("yearly", 1, null, null, RecurrenceEnds.Never) },
         "daily" to { Recurrence("daily", 1, null, null, RecurrenceEnds.Never) },
+        "dly" to { Recurrence("daily", 1, null, null, RecurrenceEnds.Never) },
         "weekly" to { Recurrence("weekly", 1, null, null, RecurrenceEnds.Never) },
+        "wkly" to { Recurrence("weekly", 1, null, null, RecurrenceEnds.Never) },
         "monthly" to { Recurrence("monthly", 1, null, null, RecurrenceEnds.Never) },
+        "montly" to { Recurrence("monthly", 1, null, null, RecurrenceEnds.Never) },
+        "mnthly" to { Recurrence("monthly", 1, null, null, RecurrenceEnds.Never) },
+        "mthly" to { Recurrence("monthly", 1, null, null, RecurrenceEnds.Never) },
         "yearly" to { Recurrence("yearly", 1, null, null, RecurrenceEnds.Never) },
         "weekdays" to { Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never) },
         "weekends" to { Recurrence("weekly", 1, listOf("SA", "SU"), null, RecurrenceEnds.Never) },
@@ -347,25 +371,66 @@ object NaturalLanguageParser {
     // "a"/"an" alongside digits so "in a week" reads the same as "in 1 week", plus the vague
     // counts people actually type. Longest alternatives first, or "a" matches inside "a few"
     // and the count silently collapses to 1.
-    private const val COUNT = "(?:a\\s+couple\\s+of|a\\s+couple|a\\s+few|several|un|una|um|uma|unos|unas|uns|umas|varios|varias|vários|várias|quelques|plusieurs|an|a|\\d+)"
-    private val inDaysRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+(?:day|día|dia|jour)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val inWeeksRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+(?:week|semana|semaine)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val inMonthsRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+(?:months?|mes(?:es)?|mês|meses|mois)\\b", RegexOption.IGNORE_CASE)
-    private val inYearsRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+(?:year|año|ano|an|année|annee)(s)?\\b", RegexOption.IGNORE_CASE)
+    private val COUNT = "(?:a\\s+couple\\s+of|a\\s+couple|a\\s+few|several|un|una|um|uma|unos|unas|uns|umas|varios|varias|vários|várias|quelques|plusieurs|an|a|$NUMBER_COUNT)"
+    private val inDaysRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+$DAY_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val inWeeksRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+$WEEK_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val inMonthsRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+$MONTH_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val inQuartersRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+$QUARTER_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val inYearsRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+$YEAR_UNIT\\b", RegexOption.IGNORE_CASE)
     // "in 3 business days" â€” counts weekdays only, which is the whole point of saying it.
-    private val inBusinessDaysRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+(?:business|working|work|hábiles|habiles|laborables|úteis|uteis|ouvrables)\\s+(?:day|día|dia|jour)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val nextWeekdayRegex = Regex("\\b(?:next|próximo|proximo|próxima|proxima|prochain|prochaine)\\s+([\\p{L}-]+)\\b", RegexOption.IGNORE_CASE)
-    private val thisWeekdayRegex = Regex("\\b(?:this|este|esta|ce|cet|cette)\\s+([\\p{L}-]+)\\b", RegexOption.IGNORE_CASE)
+    private val inBusinessDaysRegex = Regex("\\b(?:in|en|em|dans)\\s+($COUNT)\\s+(?:business|buisness|working|work|biz|bus|bd|bday|hábiles|habiles|laborables|úteis|uteis|ouvrables)\\s+$DAY_UNIT\\b", RegexOption.IGNORE_CASE)
+    private val nextWeekdayRegex = Regex("\\b(?:next|nxt|nx|nex|próximo|proximo|próxima|proxima|prochain|prochaine)\\s+([\\p{L}-]+)\\b", RegexOption.IGNORE_CASE)
+    private val thisWeekdayRegex = Regex("\\b(?:this|ths|tis|este|esta|ce|cet|cette)\\s+([\\p{L}-]+)\\b", RegexOption.IGNORE_CASE)
     // "wednesday next week" â€” the same day "next wednesday" means, said back to front. Without
     // this the "next week" phrase claims its half and the weekday is left behind in the title.
     private val weekdayNextWeekRegex by lazy {
         Regex("\\b($weekdayAlt)\\s+(?:next\\s+week|la\\s+próxima\\s+semana|la\\s+proxima\\s+semana|semana\\s+que\\s+vem|semaine\\s+prochaine)\\b", RegexOption.IGNORE_CASE)
     }
 
+    private val countWordValues = mapOf(
+        "one" to 1L,
+        "two" to 2L,
+        "three" to 3L, "thre" to 3L, "tree" to 3L,
+        "four" to 4L,
+        "five" to 5L, "fiv" to 5L,
+        "six" to 6L,
+        "seven" to 7L,
+        "eight" to 8L, "eigth" to 8L,
+        "nine" to 9L,
+        "ten" to 10L,
+        "eleven" to 11L, "elevenn" to 11L,
+        "twelve" to 12L, "twelv" to 12L, "tweleve" to 12L,
+        "thirteen" to 13L,
+        "fourteen" to 14L,
+        "fifteen" to 15L,
+        "sixteen" to 16L,
+        "seventeen" to 17L,
+        "eighteen" to 18L,
+        "nineteen" to 19L
+    )
+    private val countTensValues = mapOf(
+        "twenty" to 20L, "twnty" to 20L,
+        "thirty" to 30L,
+        "forty" to 40L, "fourty" to 40L,
+        "fifty" to 50L,
+        "sixty" to 60L,
+        "seventy" to 70L,
+        "eighty" to 80L,
+        "ninety" to 90L
+    )
+
     /** Digits, "a"/"an", or one of the vague words in [COUNT]. Anything unrecognized reads as 1. */
     private fun countOrOne(token: String): Long {
-        val t = token.trim().lowercase()
+        val t = token.trim().lowercase().replace('-', ' ').replace(Regex("\\s+"), " ")
         t.toLongOrNull()?.let { return it }
+        countWordValues[t]?.let { return it }
+        countTensValues[t]?.let { return it }
+        val parts = t.split(" ")
+        if (parts.size == 2) {
+            val tens = countTensValues[parts[0]]
+            val unit = countWordValues[parts[1]]
+            if (tens != null && unit != null && unit in 1L..9L) return tens + unit
+        }
         return when {
             t.contains("couple") -> 2L
             t.contains("few") -> 3L
@@ -375,6 +440,18 @@ object NaturalLanguageParser {
             t == "varios" || t == "varias" || t == "vários" || t == "várias" || t == "plusieurs" -> 4L
             t == "quelques" -> 3L
             else -> 1L
+        }
+    }
+
+    private fun relativeUnitKind(token: String): String? {
+        val t = token.trim().lowercase().removeSuffix("s")
+        return when (t) {
+            "day", "dy", "d", "dÃ­a", "dia", "jour" -> "day"
+            "week", "wk", "w", "semana", "semaine" -> "week"
+            "month", "mo", "mth", "mes", "mÃª", "mÃªs", "moi" -> "month"
+            "quarter", "qtr" -> "quarter"
+            "year", "yr", "y", "aÃ±o", "ano", "an", "annÃ©e", "annee" -> "year"
+            else -> null
         }
     }
 
@@ -405,7 +482,7 @@ object NaturalLanguageParser {
             "(?=\\s+(?:due|vence|échéance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|assign|asign|atrib|@|#|!|p[1-3]|for\\b|por\\b|pour\\b|in\\s+(?:list|project)|em\\s+(?:lista|projeto)|en\\s+(?:liste|projet|lista|proyecto))|$)",
         RegexOption.IGNORE_CASE
     )
-    private val fromNowRegex = Regex("\\b(a|an|um|uma|un|une|\\d+)\\s+(day|week|month|dia|semana|mês|mes|jour|semaine|mois)s?\\s+(?:from\\s+(?:now|today)|a\\s+partir\\s+de\\s+(?:agora|hoje)|à\\s+partir\\s+d['’]?aujourd['’]?hui)\\b", RegexOption.IGNORE_CASE)
+    private val fromNowRegex = Regex("\\b(a|an|um|uma|un|une|$NUMBER_COUNT)\\s+($DAY_UNIT|$WEEK_UNIT|$MONTH_UNIT|$QUARTER_UNIT|$YEAR_UNIT)\\s+(?:from\\s+(?:now|today)|a\\s+partir\\s+de\\s+(?:agora|hoje)|à\\s+partir\\s+d['’]?aujourd['’]?hui)\\b", RegexOption.IGNORE_CASE)
     // "the 20th" / "on the 20th" with no month named â€” nearest upcoming month that has that day.
     private val ordinalDayOfMonthRegex = Regex("\\b(?:on\\s+)?the\\s+(\\d{1,2})(?:st|nd|rd|th)\\b", RegexOption.IGNORE_CASE)
     /**
@@ -450,15 +527,36 @@ object NaturalLanguageParser {
         // be checked as its own phrase since "weekend" isn't a weekday the generic "next
         // <weekday>" rule below understands, and it'd otherwise silently fail to match at all.
         "beginning of next month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
+        "beginning nxt month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
+        "beginning next mth" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
         "start of next month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
+        "start nxt month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
+        "start next mth" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
         "end of next month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atEndOfMonth() },
+        "end nxt month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atEndOfMonth() },
+        "end next mth" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atEndOfMonth() },
         "next weekend" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SATURDAY).plusDays(7) },
+        "nxt weekend" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SATURDAY).plusDays(7) },
+        "next wknd" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SATURDAY).plusDays(7) },
+        "nxt wknd" to { ref: LocalDate -> nextOrSame(ref, DayOfWeek.SATURDAY).plusDays(7) },
         "next quarter" to { ref: LocalDate -> nextQuarterStart(ref) },
+        "nxt quarter" to { ref: LocalDate -> nextQuarterStart(ref) },
+        "next qtr" to { ref: LocalDate -> nextQuarterStart(ref) },
+        "nxt qtr" to { ref: LocalDate -> nextQuarterStart(ref) },
         "end of quarter" to { ref: LocalDate -> nextQuarterStart(ref).minusDays(1) },
         "end of the quarter" to { ref: LocalDate -> nextQuarterStart(ref).minusDays(1) },
         "next week" to { ref: LocalDate -> ref.plusWeeks(1) },
+        "nxt week" to { ref: LocalDate -> ref.plusWeeks(1) },
+        "next wk" to { ref: LocalDate -> ref.plusWeeks(1) },
+        "nxt wk" to { ref: LocalDate -> ref.plusWeeks(1) },
         "next month" to { ref: LocalDate -> ref.plusMonths(1) },
+        "nxt month" to { ref: LocalDate -> ref.plusMonths(1) },
+        "next mth" to { ref: LocalDate -> ref.plusMonths(1) },
+        "nxt mth" to { ref: LocalDate -> ref.plusMonths(1) },
         "next year" to { ref: LocalDate -> ref.plusYears(1) },
+        "nxt year" to { ref: LocalDate -> ref.plusYears(1) },
+        "next yr" to { ref: LocalDate -> ref.plusYears(1) },
+        "nxt yr" to { ref: LocalDate -> ref.plusYears(1) },
         "beginning of month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
         "beginning of the month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
         "start of month" to { ref: LocalDate -> YearMonth.from(ref).plusMonths(1).atDay(1) },
@@ -557,10 +655,19 @@ object NaturalLanguageParser {
     private val phraseDateTimes: List<Triple<String, (LocalDate) -> LocalDate, LocalTime?>> = listOf(
         Triple("a week today", { ref: LocalDate -> ref.plusWeeks(1) }, null),
         Triple("a week tomorrow", { ref: LocalDate -> ref.plusWeeks(1).plusDays(1) }, null),
+        Triple("tmr morning", { ref: LocalDate -> ref.plusDays(1) }, LocalTime.of(9, 0)),
+        Triple("tmrw morning", { ref: LocalDate -> ref.plusDays(1) }, LocalTime.of(9, 0)),
+        Triple("tmr afternoon", { ref: LocalDate -> ref.plusDays(1) }, LocalTime.of(15, 0)),
+        Triple("tmrw afternoon", { ref: LocalDate -> ref.plusDays(1) }, LocalTime.of(15, 0)),
+        Triple("tmr evening", { ref: LocalDate -> ref.plusDays(1) }, LocalTime.of(18, 0)),
+        Triple("tmrw evening", { ref: LocalDate -> ref.plusDays(1) }, LocalTime.of(18, 0)),
+        Triple("tmr night", { ref: LocalDate -> ref.plusDays(1) }, LocalTime.of(21, 0)),
+        Triple("tmrw night", { ref: LocalDate -> ref.plusDays(1) }, LocalTime.of(21, 0)),
         Triple("this morning", { ref: LocalDate -> ref }, LocalTime.of(9, 0)),
         Triple("this afternoon", { ref: LocalDate -> ref }, LocalTime.of(15, 0)),
         Triple("this evening", { ref: LocalDate -> ref }, LocalTime.of(18, 0)),
         Triple("later tonight", { ref: LocalDate -> ref }, LocalTime.of(21, 0)),
+        Triple("later tonite", { ref: LocalDate -> ref }, LocalTime.of(21, 0)),
         Triple("later today", { ref: LocalDate -> ref }, null),
         Triple("esta mañana", { ref: LocalDate -> ref }, LocalTime.of(9, 0)),
         Triple("esta manana", { ref: LocalDate -> ref }, LocalTime.of(9, 0)),
@@ -596,9 +703,23 @@ object NaturalLanguageParser {
     private val eobTime: LocalTime = LocalTime.of(17, 0)
     private val bareDateWords = listOf(
         "today" to { ref: LocalDate -> ref },
+        "tdy" to { ref: LocalDate -> ref },
+        "tday" to { ref: LocalDate -> ref },
+        "tody" to { ref: LocalDate -> ref },
         "tomorrow" to { ref: LocalDate -> ref.plusDays(1) },
+        "tomorow" to { ref: LocalDate -> ref.plusDays(1) },
+        "tommorow" to { ref: LocalDate -> ref.plusDays(1) },
+        "tommorrow" to { ref: LocalDate -> ref.plusDays(1) },
+        "tmr" to { ref: LocalDate -> ref.plusDays(1) },
         "tmrw" to { ref: LocalDate -> ref.plusDays(1) },
+        "tomrw" to { ref: LocalDate -> ref.plusDays(1) },
+        "tmw" to { ref: LocalDate -> ref.plusDays(1) },
+        "tomo" to { ref: LocalDate -> ref.plusDays(1) },
         "yesterday" to { ref: LocalDate -> ref.minusDays(1) },
+        "yday" to { ref: LocalDate -> ref.minusDays(1) },
+        "yest" to { ref: LocalDate -> ref.minusDays(1) },
+        "ystrday" to { ref: LocalDate -> ref.minusDays(1) },
+        "yestrday" to { ref: LocalDate -> ref.minusDays(1) },
         "hoy" to { ref: LocalDate -> ref },
         "mañana" to { ref: LocalDate -> ref.plusDays(1) },
         "manana" to { ref: LocalDate -> ref.plusDays(1) },
@@ -632,18 +753,18 @@ object NaturalLanguageParser {
     // ("July 20 2026" / "July 20, 2026"). No year given â†’ nearest occurrence on/after
     // referenceDate, rolling into next year if the month/day already passed this year.
     private val monthNames = mapOf(
-        "jan" to 1, "january" to 1,
-        "feb" to 2, "february" to 2,
+        "jan" to 1, "january" to 1, "janury" to 1, "januarry" to 1,
+        "feb" to 2, "february" to 2, "febuary" to 2,
         "mar" to 3, "march" to 3,
-        "apr" to 4, "april" to 4,
+        "apr" to 4, "april" to 4, "apirl" to 4,
         "may" to 5,
         "jun" to 6, "june" to 6,
         "jul" to 7, "july" to 7,
-        "aug" to 8, "august" to 8,
-        "sep" to 9, "sept" to 9, "september" to 9,
-        "oct" to 10, "october" to 10,
-        "nov" to 11, "november" to 11,
-        "dec" to 12, "december" to 12,
+        "aug" to 8, "august" to 8, "augst" to 8,
+        "sep" to 9, "sept" to 9, "september" to 9, "septmber" to 9, "sepetember" to 9,
+        "oct" to 10, "october" to 10, "octber" to 10,
+        "nov" to 11, "november" to 11, "novemeber" to 11,
+        "dec" to 12, "december" to 12, "decemeber" to 12,
         "ene" to 1, "enero" to 1,
         "febrero" to 2,
         "marzo" to 3,
@@ -747,10 +868,15 @@ object NaturalLanguageParser {
     // "remind"/"remind me" phrases set the *reminder*, distinct from the due time â€” checked
     // before due-time parsing so "remind at 5pm" doesn't leave a stray "5pm" behind for the
     // due-time rule to also claim as the task's own due time.
+    private val remindShortAtTimeKeywordRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+(?:(?:at|on)\\s+time)\\b", RegexOption.IGNORE_CASE)
+    private val remindShortMinutesBeforeRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+($NUMBER_COUNT)\\s*(?:m|min|mins|minute|minutes)\\s+(?:before|bef|b4)\\b", RegexOption.IGNORE_CASE)
+    private val remindShortHourBeforeRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+(?:1\\s*(?:h|hr|hrs|hour)|one\\s*(?:h|hr|hrs|hour)|an?\\s+hour)\\s+(?:before|bef|b4)\\b", RegexOption.IGNORE_CASE)
+    private val remindShortDayBeforeRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+(?:1\\s*(?:d|dy|day)|one\\s*(?:d|dy|day)|a\\s+day)\\s+(?:before|bef|b4)\\b", RegexOption.IGNORE_CASE)
+    private val remindShortAtClockTimeRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+(?:(?:at)\\s+)?(\\d{1,2})([:.](\\d{2}))?\\s*(am|pm|AM|PM)\\b", RegexOption.IGNORE_CASE)
     private val remindAtTimeKeywordRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:(?:at|on)\\s+time|a\\s+la\\s+hora|na\\s+hora|à\\s+l['’]?heure)\\b", RegexOption.IGNORE_CASE)
-    private val remindMinutesBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(\\d+)\\s*(?:min|mins|minute|minutes|minuto|minutos)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
-    private val remindHourBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:1\\s+(?:hour|hora|heure)|an?\\s+hour|una\\s+hora|uma\\s+hora|une\\s+heure)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
-    private val remindDayBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:1\\s+(?:day|día|dia|jour)|a\\s+day|un\\s+día|un\\s+dia|um\\s+dia|une\\s+jour|un\\s+jour)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
+    private val remindMinutesBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+($NUMBER_COUNT)\\s*(?:min|mins|minute|minutes|minuto|minutos)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
+    private val remindHourBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:1\\s+(?:hour|hora|heure)|one\\s+hour|an?\\s+hour|una\\s+hora|uma\\s+hora|une\\s+heure)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
+    private val remindDayBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:1\\s+(?:day|día|dia|jour)|one\\s+day|a\\s+day|un\\s+día|un\\s+dia|um\\s+dia|une\\s+jour|un\\s+jour)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
     private val remindAtClockTimeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:(?:at|a\\s+las?|às?|as|à|a)\\s+)?(\\d{1,2})([:.](\\d{2}))?\\s*(am|pm|AM|PM)\\b", RegexOption.IGNORE_CASE)
 
     // â”€â”€ Priority â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -771,26 +897,45 @@ object NaturalLanguageParser {
         "highest priority" to "high",
         "top priority" to "high",
         "high priority" to "high",
+        "hi priority" to "high",
+        "high pri" to "high",
+        "hi pri" to "high",
         "super urgent" to "high",
         "must do" to "high",
         "vital" to "high",
         "essential" to "high",
         "urgent" to "high",
+        "urgnt" to "high",
+        "urgentt" to "high",
         "critical" to "high",
+        "critcal" to "high",
+        "crit" to "high",
         "asap" to "high",
+        "as soon as possible" to "high",
         "drop everything" to "high",
         "high prio" to "high",
+        "hi prio" to "high",
+        "h prio" to "high",
         "top prio" to "high",
         "medium priority" to "med",
+        "meduim priority" to "med",
         "med priority" to "med",
         "normal priority" to "med",
         "medium prio" to "med",
+        "medium pri" to "med",
         "med prio" to "med",
+        "med pri" to "med",
+        "m prio" to "med",
         "normal prio" to "med",
         "lowest priority" to "low",
         "low priority" to "low",
+        "lo priority" to "low",
+        "low pri" to "low",
+        "lo pri" to "low",
         "minor priority" to "low",
         "low prio" to "low",
+        "lo prio" to "low",
+        "l prio" to "low",
         "back burner" to "low",
         "backburner" to "low",
         "nice to have" to "low",
@@ -867,15 +1012,15 @@ object NaturalLanguageParser {
     // â”€â”€ Flag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private val flagPhrases = listOf(
         "flag this", "flag it", "flagged", "star this", "star it", "starred",
-        "important", "mark as important", "bookmark", "bookmarked",
+        "important", "importnt", "importnat", "impt", "mark as important", "bookmark", "bookmarked",
         "marcar", "marcar esto", "marcada", "destacar", "destacado", "importante", "marcar como importante",
         "sinalizar", "sinalizado", "destacar isto", "marcar como importante",
         "marquer", "marqué", "marquee", "signaler", "favori", "mettre en favori", "marquer comme important"
     )
 
     // â”€â”€ Additional relative dates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    private val inHoursRegex = Regex("\\b(?:in|en|em|dans)\\s+(a|an|un|una|um|uma|une|\\d+)\\s+(?:hour|hora|heure)(s)?\\b", RegexOption.IGNORE_CASE)
-    private val inMinutesRegex = Regex("\\b(?:in|en|em|dans)\\s+(a|an|un|una|um|uma|une|\\d+)\\s+(?:min(?:ute)?|minuto|minute)s?\\b", RegexOption.IGNORE_CASE)
+    private val inHoursRegex = Regex("\\b(?:in|en|em|dans)\\s+(a|an|un|una|um|uma|une|$NUMBER_COUNT)\\s+(?:h|hr|hrs|hour|hora|heure)(s)?\\b", RegexOption.IGNORE_CASE)
+    private val inMinutesRegex = Regex("\\b(?:in|en|em|dans)\\s+(a|an|un|una|um|uma|une|$NUMBER_COUNT)\\s+(?:m|min|mins|min(?:ute)?|minuto|minute)s?\\b", RegexOption.IGNORE_CASE)
     private val halfAnHourRegex = Regex("\\b(?:in|en|em|dans)\\s+(?:half\\s+(?:an?\\s+)?hour|media\\s+hora|meia\\s+hora|une\\s+demi[-\\s]heure|demi[-\\s]heure)\\b", RegexOption.IGNORE_CASE)
     /**
      * Word/phrase rules are stored as plain strings and only become regexes here. Compiling them
@@ -937,6 +1082,7 @@ object NaturalLanguageParser {
         }
 
         val raw = rawInput
+            .replace(Regex("\\b2\\s*day\\b", RegexOption.IGNORE_CASE), "today")
             .replace(Regex("\\bto\\s+day\\b", RegexOption.IGNORE_CASE), "today")
             .replace(Regex("\\b(to|two|2)\\s*morrow\\b", RegexOption.IGNORE_CASE), "tomorrow")
             .replace(Regex("\\bate\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "8 $1")
@@ -977,10 +1123,11 @@ object NaturalLanguageParser {
         if (recurrence == null) everyAlternateWeekRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("weekly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
         if (recurrence == null) everyAlternateMonthRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("monthly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
         if (recurrence == null) everyAlternateYearRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("yearly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
-        if (recurrence == null) firstFreeMatch(everyNDaysRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> recurrence = Recurrence("daily", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNWeeksRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> recurrence = Recurrence("weekly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNMonthsRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> recurrence = Recurrence("monthly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNYearsRegex)?.let { m -> m.groupValues[1].toIntOrNull()?.let { n -> recurrence = Recurrence("yearly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNDaysRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("daily", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNWeeksRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("weekly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNMonthsRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("monthly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNQuartersRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("monthly", n * 3, null, null, RecurrenceEnds.Never); claim(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNYearsRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("yearly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
         // "every last day of the month" before "every month on the Nth" â€” the former's "last day"
         // would otherwise fall through and be read as a bare monthly with no day pinned at all.
         if (recurrence == null) {
@@ -1024,6 +1171,11 @@ object NaturalLanguageParser {
             firstFreeMatch(everyWeekdayRegex)?.let { m ->
                 val token = m.groupValues[1].lowercase()
                 val rec = when {
+                    token in setOf("days", "dy", "dys", "d") -> Recurrence("daily", 1, null, null, RecurrenceEnds.Never)
+                    token in setOf("weeks", "wk", "wks", "w") -> Recurrence("weekly", 1, null, null, RecurrenceEnds.Never)
+                    token in setOf("months", "mo", "mos", "mth", "mths") -> Recurrence("monthly", 1, null, null, RecurrenceEnds.Never)
+                    token in setOf("years", "yr", "yrs", "y") -> Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
+                    token in setOf("quarters", "qtrs") -> Recurrence("monthly", 3, null, null, RecurrenceEnds.Never)
                     token == "day" || token == "día" || token == "dia" || token == "jour" -> Recurrence("daily", 1, null, null, RecurrenceEnds.Never)
                     token == "week" || token == "semana" || token == "semaine" -> Recurrence("weekly", 1, null, null, RecurrenceEnds.Never)
                     token == "month" || token == "mes" || token == "mês" || token == "mois" -> Recurrence("monthly", 1, null, null, RecurrenceEnds.Never)
@@ -1069,7 +1221,7 @@ object NaturalLanguageParser {
             }
             if (recurrence!!.ends == RecurrenceEnds.Never) {
                 firstFreeMatch(recurrenceTimesRegex)?.let { m ->
-                    m.groupValues[1].toIntOrNull()?.takeIf { it > 0 }?.let { n ->
+                    countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n ->
                         recurrence = recurrence!!.copy(ends = RecurrenceEnds.After(n))
                         claim(m.range)
                     }
@@ -1079,10 +1231,10 @@ object NaturalLanguageParser {
 
         // 1.5 Reminder â€” see the regexes' own comment for why this runs before due-time parsing.
         var reminder: String? = null
-        firstFreeMatch(remindAtTimeKeywordRegex)?.let { m -> reminder = "At time"; claim(m.range) }
+        (firstFreeMatch(remindShortAtTimeKeywordRegex) ?: firstFreeMatch(remindAtTimeKeywordRegex))?.let { m -> reminder = "At time"; claim(m.range) }
         if (reminder == null) {
-            firstFreeMatch(remindMinutesBeforeRegex)?.let { m ->
-                val label = when (m.groupValues[1].toIntOrNull()) {
+            (firstFreeMatch(remindShortMinutesBeforeRegex) ?: firstFreeMatch(remindMinutesBeforeRegex))?.let { m ->
+                val label = when (countOrOne(m.groupValues[1]).toInt()) {
                     5 -> "5 min before"
                     15 -> "15 min before"
                     30 -> "30 min before"
@@ -1091,10 +1243,10 @@ object NaturalLanguageParser {
                 if (label != null) { reminder = label; claim(m.range) }
             }
         }
-        if (reminder == null) firstFreeMatch(remindHourBeforeRegex)?.let { m -> reminder = "1 hour before"; claim(m.range) }
-        if (reminder == null) firstFreeMatch(remindDayBeforeRegex)?.let { m -> reminder = "1 day before"; claim(m.range) }
+        if (reminder == null) (firstFreeMatch(remindShortHourBeforeRegex) ?: firstFreeMatch(remindHourBeforeRegex))?.let { m -> reminder = "1 hour before"; claim(m.range) }
+        if (reminder == null) (firstFreeMatch(remindShortDayBeforeRegex) ?: firstFreeMatch(remindDayBeforeRegex))?.let { m -> reminder = "1 day before"; claim(m.range) }
         if (reminder == null) {
-            firstFreeMatch(remindAtClockTimeRegex)?.let { m ->
+            (firstFreeMatch(remindShortAtClockTimeRegex) ?: firstFreeMatch(remindAtClockTimeRegex))?.let { m ->
                 val hour = m.groupValues[1].toIntOrNull()
                 val minute = m.groupValues[3].toIntOrNull() ?: 0
                 val meridiem = m.groupValues[4]
@@ -1289,11 +1441,14 @@ object NaturalLanguageParser {
         }
 
         // 3. Relative dates
-        firstFreeWord("tonight")?.let { m ->
-            due = referenceDate
-            if (time == null) time = timeOfDayWords.getValue("night").format(timeFormatter).uppercase(Locale.getDefault())
-            claim(m.range)
-            dueRange = m.range
+        for (word in listOf("tonight", "tonite", "tnite")) {
+            firstFreeWord(word)?.let { m ->
+                due = referenceDate
+                if (time == null) time = timeOfDayWords.getValue("night").format(timeFormatter).uppercase(Locale.getDefault())
+                claim(m.range)
+                dueRange = m.range
+            }
+            if (due != null) break
         }
         // Date phrases that also imply a clock time. Before the bare "today"/"tomorrow" words,
         // since each one contains one of them â€” see [phraseDateTimes].
@@ -1457,10 +1612,12 @@ object NaturalLanguageParser {
         if (due == null) {
             firstFreeMatch(fromNowRegex)?.let { m ->
                 val n = countOrOne(m.groupValues[1])
-                due = when (m.groupValues[2].lowercase()) {
-                    "day", "dia", "jour" -> referenceDate.plusDays(n)
-                    "week", "semana", "semaine" -> referenceDate.plusWeeks(n)
-                    "month", "mês", "mes", "mois" -> referenceDate.plusMonths(n)
+                due = when (relativeUnitKind(m.groupValues[2])) {
+                    "day" -> referenceDate.plusDays(n)
+                    "week" -> referenceDate.plusWeeks(n)
+                    "month" -> referenceDate.plusMonths(n)
+                    "quarter" -> referenceDate.plusMonths(n * 3)
+                    "year" -> referenceDate.plusYears(n)
                     else -> null
                 }
                 if (due != null) { claim(m.range); dueRange = m.range }
@@ -1498,6 +1655,9 @@ object NaturalLanguageParser {
             firstFreeMatch(inMonthsRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
         }
         if (due == null) {
+            firstFreeMatch(inQuartersRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1]) * 3); claim(m.range); dueRange = m.range }
+        }
+        if (due == null) {
             firstFreeMatch(inYearsRegex)?.let { m -> due = referenceDate.plusYears(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
         }
         // "next <weekday>" â€” nearest occurrence strictly after today.
@@ -1531,7 +1691,7 @@ object NaturalLanguageParser {
         if (reminder == null && dueRange != null) {
             val range = dueRange!!
             val prefix = raw.substring(0, range.first)
-            Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio)\\s*$", RegexOption.IGNORE_CASE).find(prefix)?.let { m ->
+            Regex("\\b(?:remind(?:\\s+me)?|rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider|recu[eé]rdame|recordatorio)\\s*$", RegexOption.IGNORE_CASE).find(prefix)?.let { m ->
                 if (isFree(m.range)) {
                     reminder = "At time"
                     claim(m.range)

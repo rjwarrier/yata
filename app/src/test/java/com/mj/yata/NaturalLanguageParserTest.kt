@@ -20,6 +20,20 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun parsesCommonDateShortFormsAndMisspellings() {
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("tmr call client", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("tomrw call client", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("tommorow call client", ref).due)
+        assertEquals("2026-07-04", NaturalLanguageParser.parse("2day file report", ref).due)
+        assertEquals("2026-07-04", NaturalLanguageParser.parse("tdy file report", ref).due)
+        assertEquals("2026-07-03", NaturalLanguageParser.parse("yday log notes", ref).due)
+
+        val nextWeek = NaturalLanguageParser.parse("nxt wk check status", ref)
+        assertEquals("2026-07-11", nextWeek.due)
+        assertEquals("check status", nextWeek.title)
+    }
+
+    @Test
     fun parsesToday() {
         val result = NaturalLanguageParser.parse("today call mom", ref)
         assertEquals("2026-07-04", result.due)
@@ -153,6 +167,41 @@ class NaturalLanguageParserTest {
         val result = NaturalLanguageParser.parse("in 3 days renew license", ref)
         assertEquals("2026-07-07", result.due)
         assertEquals("renew license", result.title)
+    }
+
+    @Test
+    fun parsesRelativeUnitShortForms() {
+        assertEquals("2026-07-07", NaturalLanguageParser.parse("in 3 d renew license", ref).due)
+        assertEquals("2026-07-18", NaturalLanguageParser.parse("in 2 wks checkup", ref).due)
+        assertEquals("2026-08-04", NaturalLanguageParser.parse("in 1 mth renew", ref).due)
+        assertEquals("2028-07-04", NaturalLanguageParser.parse("in 2 yrs renew passport", ref).due)
+    }
+
+    @Test
+    fun parsesRelativeWordNumberCounts() {
+        assertEquals("2026-07-15", NaturalLanguageParser.parse("in eleven days renew license", ref).due)
+        assertEquals("2026-07-07", NaturalLanguageParser.parse("in thre days follow up", ref).due)
+        assertEquals("2026-07-25", NaturalLanguageParser.parse("in twenty one days renew license", ref).due)
+        assertEquals("2026-08-04", NaturalLanguageParser.parse("in thirty-one days renew license", ref).due)
+
+        val hours = NaturalLanguageParser.parse("in two hrs check oven", ref, LocalTime.of(10, 0))
+        assertEquals("12:00 PM", hours.time)
+
+        val minutes = NaturalLanguageParser.parse("in fifteen min leave", ref, LocalTime.of(10, 0))
+        assertEquals("10:15 AM", minutes.time)
+    }
+
+    @Test
+    fun parsesBroaderDateTimeShortForms() {
+        val tonight = NaturalLanguageParser.parse("tonite finish notes", ref)
+        assertEquals("2026-07-04", tonight.due)
+        assertEquals("9:00 PM", tonight.time)
+        assertEquals("finish notes", tonight.title)
+
+        val tomorrowMorning = NaturalLanguageParser.parse("tmr morn call client", ref)
+        assertEquals("2026-07-05", tomorrowMorning.due)
+        assertEquals("9:00 AM", tomorrowMorning.time)
+        assertEquals("call client", tomorrowMorning.title)
     }
 
     @Test
@@ -581,6 +630,26 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun parsesReminderShortFormsAndMisspellings() {
+        assertEquals("15 min before", NaturalLanguageParser.parse("tmr remndr 15m b4 standup", ref).reminder)
+        assertEquals("1 hour before", NaturalLanguageParser.parse("tmr rmndr 1hr bef flight", ref).reminder)
+        assertEquals("5:30 PM", NaturalLanguageParser.parse("tmr rmd 5:30pm submit report", ref).reminder)
+
+        val dateReminder = NaturalLanguageParser.parse("rem tmr pay rent", ref)
+        assertEquals("2026-07-05", dateReminder.due)
+        assertEquals("At time", dateReminder.reminder)
+        assertEquals("pay rent", dateReminder.title)
+    }
+
+    @Test
+    fun parsesReminderWordNumberOffsets() {
+        assertEquals("15 min before", NaturalLanguageParser.parse("tomorrow remind me fifteen min before standup", ref).reminder)
+        assertEquals("30 min before", NaturalLanguageParser.parse("tomorrow rem thirty m b4 standup", ref).reminder)
+        assertEquals("1 hour before", NaturalLanguageParser.parse("tomorrow remind one hour before flight", ref).reminder)
+        assertEquals("1 day before", NaturalLanguageParser.parse("tomorrow rem one day before flight", ref).reminder)
+    }
+
+    @Test
     fun parsesRemindHourAndDayBefore() {
         assertEquals("1 hour before", NaturalLanguageParser.parse("remind an hour before flight", ref).reminder)
         assertEquals("1 day before", NaturalLanguageParser.parse("remind a day before anniversary", ref).reminder)
@@ -632,6 +701,16 @@ class NaturalLanguageParserTest {
         assertEquals("low", NaturalLanguageParser.parse("low priority read book", ref).priority)
         assertEquals("low", NaturalLanguageParser.parse("someday learn guitar", ref).priority)
         assertEquals("low", NaturalLanguageParser.parse("whenever organize garage", ref).priority)
+    }
+
+    @Test
+    fun parsesPriorityShortFormsAndMisspellings() {
+        assertEquals("high", NaturalLanguageParser.parse("hi prio call client", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("urgnt call client", ref).priority)
+        assertEquals("high", NaturalLanguageParser.parse("critcal server down", ref).priority)
+        assertEquals("med", NaturalLanguageParser.parse("med pri follow up", ref).priority)
+        assertEquals("low", NaturalLanguageParser.parse("lo prio read book", ref).priority)
+        assertTrue(NaturalLanguageParser.parse("impt call client", ref).flag)
     }
 
     @Test
@@ -758,6 +837,40 @@ class NaturalLanguageParserTest {
         assertEquals(2, NaturalLanguageParser.parse("biweekly team sync", ref).recurrence?.interval)
         assertEquals("monthly", NaturalLanguageParser.parse("quarterly review", ref).recurrence?.freq)
         assertEquals(3, NaturalLanguageParser.parse("quarterly review", ref).recurrence?.interval)
+    }
+
+    @Test
+    fun parsesRecurrenceShortFormsAndMisspellings() {
+        assertEquals("weekly", NaturalLanguageParser.parse("wkly team sync", ref).recurrence?.freq)
+        assertEquals("monthly", NaturalLanguageParser.parse("mthly review", ref).recurrence?.freq)
+        assertEquals(3, NaturalLanguageParser.parse("qtrly review", ref).recurrence?.interval)
+        assertEquals(3, NaturalLanguageParser.parse("quaterly review", ref).recurrence?.interval)
+        assertEquals(2, NaturalLanguageParser.parse("every 2 wks haircut", ref).recurrence?.interval)
+        assertEquals(3, NaturalLanguageParser.parse("every qtr review", ref).recurrence?.interval)
+        assertEquals(2, NaturalLanguageParser.parse("every alt wk haircut", ref).recurrence?.interval)
+        assertEquals(listOf("MO"), NaturalLanguageParser.parse("ea mon review", ref).recurrence?.byday)
+    }
+
+    @Test
+    fun parsesRecurrenceWordNumberCounts() {
+        assertEquals(11, NaturalLanguageParser.parse("every eleven days water plants", ref).recurrence?.interval)
+        assertEquals(3, NaturalLanguageParser.parse("every thre weeks haircut", ref).recurrence?.interval)
+        assertEquals(21, NaturalLanguageParser.parse("every twenty one days water plants", ref).recurrence?.interval)
+
+        val result = NaturalLanguageParser.parse("daily standup for eleven times", ref)
+        assertEquals(RecurrenceEnds.After(11), result.recurrence?.ends)
+
+        val compoundEnd = NaturalLanguageParser.parse("daily standup for twenty-one times", ref)
+        assertEquals(RecurrenceEnds.After(21), compoundEnd.recurrence?.ends)
+    }
+
+    @Test
+    fun parsesQuarterCountsAsDateAndRecurrence() {
+        assertEquals("2027-01-04", NaturalLanguageParser.parse("in 2 qtrs review roadmap", ref).due)
+
+        val recurring = NaturalLanguageParser.parse("every two qtrs board review", ref)
+        assertEquals("monthly", recurring.recurrence?.freq)
+        assertEquals(6, recurring.recurrence?.interval)
     }
 
     @Test
