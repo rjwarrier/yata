@@ -39,20 +39,23 @@ class GitHubSyncManager @Inject constructor(
     ): Result<SyncRunReport> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                var syncResult: Result<SyncRunReport>? = null
-                withContext(NonCancellable) {
-                    val config = config()
-                    val api = api(config)
-                    syncResult = publisher(api, options).sync(config, progress)
-                    userPreferences.setGitHubTokenExpiresAt(api.tokenExpiresAtEpochMillis)
-                    syncResult = syncResult?.map { report ->
-                        report.copy(details = report.details + githubSyncDetails(api.tokenExpiresAtEpochMillis))
-                    }
-                    if (syncResult?.isSuccess == true) {
-                        userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
-                    }
+                // Only the local-write step (inside publisher()'s commit lambda, below) runs under
+                // NonCancellable now - it used to wrap the entire network round trip, which made a
+                // sync retrying against a slow/unreachable host (CAS retries x HTTP retries x
+                // per-request timeouts) uncancellable for potentially minutes, with no way for the
+                // user or WorkManager to stop it. Network calls fail safely if cancelled; a
+                // half-applied local snapshot replace does not, so that part still needs the guard.
+                val config = config()
+                val api = api(config)
+                var syncResult = publisher(api, options).sync(config, progress)
+                userPreferences.setGitHubTokenExpiresAt(api.tokenExpiresAtEpochMillis)
+                syncResult = syncResult.map { report ->
+                    report.copy(details = report.details + githubSyncDetails(api.tokenExpiresAtEpochMillis))
                 }
-                syncResult ?: Result.failure(IllegalStateException("GitHub sync did not complete"))
+                if (syncResult.isSuccess) {
+                    userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
+                }
+                syncResult
             } catch (e: Exception) {
                 Log.w(TAG, "syncNow failed", e)
                 Result.failure<SyncRunReport>(e)
@@ -140,7 +143,14 @@ class GitHubSyncManager @Inject constructor(
         if (!BackupCrypto.isEncrypted(bytes)) return bytes
         val passphrase = credentialsStore.backupPassphrase
             ?: throw IllegalStateException("This GitHub snapshot is encrypted - set the backup passphrase first")
-        return BackupCrypto.decrypt(bytes, passphrase)
+        return try {
+            BackupCrypto.decrypt(bytes, passphrase)
+        } catch (e: java.security.GeneralSecurityException) {
+            // Otherwise this surfaces as a raw AEADBadTagException with no actionable message -
+            // and, worse, propagates past readRemoteSnapshot's damaged-head handling, so it never
+            // gets the "try an older recovery commit" treatment a genuinely corrupt snapshot does.
+            throw IllegalStateException("Wrong backup passphrase, or the GitHub snapshot is damaged", e)
+        }
     }
 
     private fun commitMessage(bytes: ByteArray): String {
@@ -170,9 +180,11 @@ class GitHubSyncManager @Inject constructor(
                 )
             },
             commit = { prepared ->
-                snapshotSyncEngine.commit(
-                    prepared.token as com.mj.yata.data.sync.PreparedSnapshotSync
-                )
+                withContext(NonCancellable) {
+                    snapshotSyncEngine.commit(
+                        prepared.token as com.mj.yata.data.sync.PreparedSnapshotSync
+                    )
+                }
             },
             encode = ::encodePayload,
             decode = ::decodePayload,

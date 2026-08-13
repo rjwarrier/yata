@@ -924,7 +924,7 @@ class UserPreferences @Inject constructor(
             val normalizedOwner = owner.trim()
             val normalizedRepo = repo.trim()
             val normalizedBranch = branch.trim().ifBlank { "main" }
-            val normalizedApiBase = apiBase.trim().ifBlank { "https://api.github.com" }
+            val normalizedApiBase = com.mj.yata.data.github.GitHubApiBase.validate(apiBase)
             prefs[GITHUB_OWNER] = normalizedOwner
             prefs[GITHUB_REPO] = normalizedRepo
             prefs[GITHUB_BRANCH] = normalizedBranch

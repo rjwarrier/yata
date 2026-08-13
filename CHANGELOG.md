@@ -18,6 +18,17 @@ test-only changes belong in the commit message, not here, unless they change beh
 ### Changed
 - Reordered Help & About's About section: GitHub/Share/Website links now above "Other apps by dev".
 - Restyled the "Other apps by dev" card with accent-tinted icon badges per app and a bordered surface.
+- GitHub sync now refuses to connect to, or publish onto, a **public** repository - it only syncs to
+  private repos, checked both when connecting and on every sync.
+- The GitHub API base URL field now requires `https://` and a valid host, whether typed directly or
+  brought in via a GitHub config import.
+- A cancelled GitHub sync no longer blocks on the network round trip - only the final local-write
+  step stays uninterruptible, so cancelling (or the app closing) during a slow/unreachable sync no
+  longer hangs.
+- GitHub sync error messages are more specific: rate-limited (429) requests now back off and retry
+  instead of failing outright, a wrong backup passphrase reports itself instead of looking like a
+  damaged snapshot, and an oversized snapshot is rejected with a clear size before upload instead of
+  failing partway through.
 
 ## [0.92.2] - 2026-08-13
 

@@ -126,7 +126,7 @@ object GitHubConfigTransfer {
         val normalizedOwner = owner.trim()
         val normalizedRepo = repo.trim()
         val normalizedBranch = branch.trim().ifBlank { "main" }
-        val normalizedApiBase = apiBase.trim().ifBlank { "https://api.github.com" }
+        val normalizedApiBase = GitHubApiBase.validate(apiBase)
         val normalizedToken = token.trim()
         require(normalizedOwner.isNotBlank()) { "GitHub owner is required" }
         require(normalizedRepo.isNotBlank()) { "GitHub repo is required" }

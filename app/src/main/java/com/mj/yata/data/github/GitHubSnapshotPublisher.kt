@@ -36,6 +36,12 @@ internal class GitHubSnapshotPublisher(
             if (!repo.canPush) {
                 throw GitHubPermissionException()
             }
+            // Re-checked every sync, not just at connect time - the repo could be made public on
+            // GitHub's side (or the config transferred/imported to a device that never ran the
+            // connect-time check) after YATA started syncing to it.
+            if (!repo.isPrivate) {
+                throw GitHubPublicRepoException()
+            }
 
             var attempt = 0
             while (true) {
@@ -56,6 +62,15 @@ internal class GitHubSnapshotPublisher(
                 if (prepared.remoteNeedsPublish || head.snapshotBlobSha == null || remoteSnapshot.isRecovery) {
                     progress(74, "Publishing GitHub commit")
                     val encoded = encode(prepared.canonicalBytes)
+                    // GitHub's blob endpoint caps content around 100MB after base64 encoding; this
+                    // margin catches an oversized snapshot (large embedded photos) with a clear
+                    // message instead of an opaque upload failure partway through.
+                    if (encoded.size > MAX_SNAPSHOT_BYTES) {
+                        throw GitHubTransportException(
+                            "This snapshot is too large to sync to GitHub (${encoded.size / (1024 * 1024)}MB). " +
+                                "Remove some photos or large attachments and try again."
+                        )
+                    }
                     val blobSha = createBlobVerified(config, encoded, "uploaded snapshot")
                     val entries = mutableListOf(GitHubTreeEntry(path = SNAPSHOT_PATH, sha = blobSha))
                     if (!head.hasReadme) {
@@ -162,7 +177,9 @@ internal class GitHubSnapshotPublisher(
     ): RecoverySearchResult {
         val failures = mutableListOf<String>()
         var checked = 0
-        api.listCommits(config.owner, config.repo, config.branch, SNAPSHOT_PATH)
+        // +1: the excluded (damaged) head commit is filtered out below, but listCommits doesn't
+        // know that, so ask for one extra to still get MAX_RECOVERY_COMMITS real candidates.
+        api.listCommits(config.owner, config.repo, config.branch, SNAPSHOT_PATH, maxResults = MAX_RECOVERY_COMMITS + 1)
             .asSequence()
             .filterNot { it.sha == excludedCommitSha }
             .take(MAX_RECOVERY_COMMITS)
@@ -253,7 +270,28 @@ internal class GitHubSnapshotPublisher(
         throw GitHubHistoryRewrittenException()
     }
 
+    /** One request via GitHub's compare API when available (also works across GHES versions that
+     * support it); falls back to a manual BFS walk of parent commits otherwise. Both answer the
+     * same question - is [ancestorSha] reachable by walking [descendantSha]'s parents - which is
+     * what "history was not rewritten" and "the branch really did advance" need to know. */
     private suspend fun isAncestor(
+        config: GitHubSyncConfig,
+        ancestorSha: String,
+        descendantSha: String
+    ): Boolean {
+        if (ancestorSha == descendantSha) return true
+        val compareResult = try {
+            api.compareCommits(config.owner, config.repo, base = ancestorSha, head = descendantSha)
+        } catch (_: GitHubException) {
+            null
+        }
+        if (compareResult != null) {
+            return compareResult.status == "ahead" || compareResult.status == "identical"
+        }
+        return isAncestorByWalk(config, ancestorSha, descendantSha)
+    }
+
+    private suspend fun isAncestorByWalk(
         config: GitHubSyncConfig,
         ancestorSha: String,
         descendantSha: String
@@ -330,6 +368,7 @@ internal class GitHubSnapshotPublisher(
         private const val CAS_RETRY_BASE_DELAY_MS = 150L
         const val MAX_RECOVERY_COMMITS = 20
         const val MAX_ANCESTRY_COMMITS = 250
+        const val MAX_SNAPSHOT_BYTES = 60 * 1024 * 1024
 
         val README_TEXT = """
             # YATA sync repository

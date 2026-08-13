@@ -11,8 +11,10 @@ import com.mj.yata.data.local.crash.CrashLogStore
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.data.github.GitHubApiBase
 import com.mj.yata.data.github.GitHubNotFoundException
 import com.mj.yata.data.github.GitHubPermissionException
+import com.mj.yata.data.github.GitHubPublicRepoException
 import com.mj.yata.data.github.GitHubConfigTransfer
 import com.mj.yata.data.github.GitHubConfigTransferPayload
 import com.mj.yata.data.github.HttpGitHubApi
@@ -2306,26 +2308,23 @@ private data class MainNavigationState(
         onResult: (Result<Unit>) -> Unit
     ) {
         safeLaunch {
-            val normalizedApiBase = apiBase.trim().ifBlank { "https://api.github.com" }
-            val tokenToUse = token.ifBlank { remoteBackupCredentialsStore.githubToken.orEmpty() }
-            if (tokenToUse.isBlank()) {
-                onResult(Result.failure(IllegalStateException("GitHub token is required")))
-                return@safeLaunch
-            }
-            val api = HttpGitHubApi(
-                tokenProvider = { tokenToUse },
-                apiBaseProvider = { normalizedApiBase }
-            )
-            val parsed = parseGitHubRepo(repoText)
-            val (owner, repo) = withContext(Dispatchers.IO) {
-                if (parsed.first != null) {
-                    parsed.first!! to parsed.second
-                } else {
-                    api.getUser().login to parsed.second
+            val result = runCatching {
+                val normalizedApiBase = GitHubApiBase.validate(apiBase)
+                val tokenToUse = token.ifBlank { remoteBackupCredentialsStore.githubToken.orEmpty() }
+                check(tokenToUse.isNotBlank()) { "GitHub token is required" }
+                val api = HttpGitHubApi(
+                    tokenProvider = { tokenToUse },
+                    apiBaseProvider = { normalizedApiBase }
+                )
+                val parsed = parseGitHubRepo(repoText)
+                val (owner, repo) = withContext(Dispatchers.IO) {
+                    if (parsed.first != null) {
+                        parsed.first!! to parsed.second
+                    } else {
+                        api.getUser().login to parsed.second
+                    }
                 }
-            }
-            val result = withContext(Dispatchers.IO) {
-                runCatching {
+                withContext(Dispatchers.IO) {
                     val remoteRepo = try {
                         api.getRepo(owner, repo)
                     } catch (e: GitHubNotFoundException) {
@@ -2339,9 +2338,15 @@ private data class MainNavigationState(
                     if (!remoteRepo.canPush) {
                         throw GitHubPermissionException()
                     }
+                    if (!remoteRepo.isPrivate) {
+                        throw GitHubPublicRepoException()
+                    }
                     remoteBackupCredentialsStore.githubToken = tokenToUse
                     userPreferences.setGitHubConfiguration(
-                        owner = owner,
+                        // The API's own owner login, not the possibly-stale one the user typed or
+                        // parsed from the repo text - if the repo was renamed/transferred since,
+                        // this is the canonical value sync should track going forward.
+                        owner = remoteRepo.owner,
                         repo = remoteRepo.name,
                         branch = remoteRepo.defaultBranch,
                         apiBase = normalizedApiBase

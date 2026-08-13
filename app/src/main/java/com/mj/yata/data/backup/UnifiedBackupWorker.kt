@@ -11,6 +11,7 @@ import com.mj.yata.data.github.GitHubAuthException
 import com.mj.yata.data.github.GitHubHistoryRewrittenException
 import com.mj.yata.data.github.GitHubNotFoundException
 import com.mj.yata.data.github.GitHubPermissionException
+import com.mj.yata.data.github.GitHubPublicRepoException
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.domain.model.BackupRunResult
 import com.mj.yata.domain.usecase.BackupOperations
@@ -134,6 +135,7 @@ internal fun backupFailureShouldRetry(result: BackupRunResult): Boolean =
     when (result.error) {
         is GitHubAuthException,
         is GitHubPermissionException,
+        is GitHubPublicRepoException,
         is GitHubNotFoundException,
         is GitHubHistoryRewrittenException -> false
         else -> true

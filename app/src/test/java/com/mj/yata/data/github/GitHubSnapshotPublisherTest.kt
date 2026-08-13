@@ -517,6 +517,7 @@ class GitHubSnapshotPublisherTest {
         private val trees = linkedMapOf<String, GitHubTree>()
         var headCommitSha: String? = null
         var canPush = true
+        var isPrivate = true
         var failUpdateRefTimes = 0
         var corruptSnapshotBlobReads = false
         var corruptCreateBlobSha = false
@@ -552,12 +553,12 @@ class GitHubSnapshotPublisherTest {
         fun treeForHead(): GitHubTree = trees.getValue(commits.getValue(headCommitSha!!).treeSha)
 
         override suspend fun getRepo(owner: String, repo: String): GitHubRepo =
-            GitHubRepo(owner, repo, defaultBranch = "main", canPush = canPush)
+            GitHubRepo(owner, repo, defaultBranch = "main", canPush = canPush, isPrivate = isPrivate)
 
         override suspend fun getUser(): GitHubUser = GitHubUser("owner")
 
         override suspend fun createRepo(name: String, private: Boolean): GitHubRepo =
-            GitHubRepo("owner", name, defaultBranch = "main", canPush = true)
+            GitHubRepo("owner", name, defaultBranch = "main", canPush = true, isPrivate = private)
 
         override suspend fun getRef(owner: String, repo: String, branch: String): GitHubRef {
             getRefCalls++
@@ -619,8 +620,19 @@ class GitHubSnapshotPublisherTest {
                 putBlob(bytes)
             }
 
-        override suspend fun listCommits(owner: String, repo: String, branch: String, path: String): List<GitHubCommitSummary> =
-            commits.keys.reversed().map { GitHubCommitSummary(it, "commit", Instant.EPOCH) }
+        override suspend fun listCommits(
+            owner: String,
+            repo: String,
+            branch: String,
+            path: String,
+            maxResults: Int
+        ): List<GitHubCommitSummary> =
+            commits.keys.reversed().take(maxResults).map { GitHubCommitSummary(it, "commit", Instant.EPOCH) }
+
+        // Not modeled by this fake - GitHubSnapshotPublisher falls back to a manual ancestry walk
+        // when compare fails, and that walk is what these tests exercise.
+        override suspend fun compareCommits(owner: String, repo: String, base: String, head: String): GitHubCompareResult =
+            throw GitHubNotFoundException()
 
         private fun putBlob(bytes: ByteArray): String {
             val sha = GitBlobSha.of(bytes)

@@ -13,6 +13,29 @@ import java.time.Instant
 import java.time.format.DateTimeParseException
 import java.util.Base64
 
+/**
+ * The GitHub API base is a free-text field (so self-hosted GitHub Enterprise Server's
+ * `https://<host>/api/v3` works), but the PAT is sent as `Authorization: Bearer` to whatever it
+ * says. Requiring https here doesn't fully close that - an attacker-controlled host can still
+ * terminate TLS and receive the token - but it does rule out a plaintext leak and typos that
+ * silently resolve to an unintended scheme (`javascript:`, `file:`, a bare host with no scheme).
+ */
+object GitHubApiBase {
+    const val DEFAULT = "https://api.github.com"
+
+    fun validate(raw: String): String {
+        val trimmed = raw.trim().ifBlank { DEFAULT }.trimEnd('/')
+        val url = try {
+            URL(trimmed)
+        } catch (e: java.net.MalformedURLException) {
+            throw IllegalArgumentException("GitHub API base URL is not valid", e)
+        }
+        require(url.protocol == "https") { "GitHub API base URL must start with https://" }
+        require(!url.host.isNullOrBlank()) { "GitHub API base URL must include a host" }
+        return trimmed
+    }
+}
+
 interface GitHubApi {
     suspend fun getRepo(owner: String, repo: String): GitHubRepo
     suspend fun getUser(): GitHubUser
@@ -27,15 +50,29 @@ interface GitHubApi {
     suspend fun getContent(owner: String, repo: String, path: String, ref: String): GitHubContent?
     suspend fun getBlob(owner: String, repo: String, sha: String): ByteArray
     suspend fun createBlob(owner: String, repo: String, bytes: ByteArray): String
-    suspend fun listCommits(owner: String, repo: String, branch: String, path: String): List<GitHubCommitSummary>
+    suspend fun listCommits(
+        owner: String,
+        repo: String,
+        branch: String,
+        path: String,
+        maxResults: Int = Int.MAX_VALUE
+    ): List<GitHubCommitSummary>
+    suspend fun compareCommits(owner: String, repo: String, base: String, head: String): GitHubCompareResult
 }
 
 data class GitHubRepo(
     val owner: String,
     val name: String,
     val defaultBranch: String,
-    val canPush: Boolean
+    val canPush: Boolean,
+    // Absence is treated as "not confirmed private" (false) rather than assumed-safe, so a
+    // malformed/unexpected API response blocks sync instead of silently publishing task data to
+    // a public repo.
+    val isPrivate: Boolean
 )
+
+/** `status` is one of GitHub's compare values: "identical", "ahead", "behind", "diverged". */
+data class GitHubCompareResult(val status: String, val aheadBy: Int, val behindBy: Int)
 
 data class GitHubUser(val login: String)
 
@@ -82,7 +119,15 @@ class GitHubHistoryRewrittenException(
         "GitHub branch history changed outside YATA. Restore a snapshot from GitHub history, or reconnect this repo after confirming the current snapshot is correct."
 ) : GitHubException(message)
 class GitHubNotFoundException(message: String = "GitHub resource was not found") : GitHubException(message)
-class GitHubTransportException(message: String = "GitHub request failed", cause: Throwable? = null) : GitHubException(message, cause)
+class GitHubTransportException(
+    message: String = "GitHub request failed",
+    cause: Throwable? = null,
+    val retryable: Boolean = true
+) : GitHubException(message, cause)
+class GitHubPublicRepoException(
+    message: String = "This GitHub repository is public. YATA only syncs to a private repository " +
+        "- make the repo private, or connect a different one, then try again."
+) : GitHubException(message)
 
 class HttpGitHubApi(
     private val tokenProvider: () -> String?,
@@ -100,7 +145,8 @@ class HttpGitHubApi(
             owner = json.optJSONObject("owner")?.optString("login").orEmpty().ifBlank { owner },
             name = json.optString("name", repo),
             defaultBranch = json.optString("default_branch", "main"),
-            canPush = permissions?.optBoolean("push", false) ?: false
+            canPush = permissions?.optBoolean("push", false) ?: false,
+            isPrivate = json.optBoolean("private", false)
         )
     }
 
@@ -114,7 +160,8 @@ class HttpGitHubApi(
             owner = json.optJSONObject("owner")?.optString("login").orEmpty(),
             name = json.optString("name", name),
             defaultBranch = json.optString("default_branch", "main"),
-            canPush = json.optJSONObject("permissions")?.optBoolean("push", false) ?: true
+            canPush = json.optJSONObject("permissions")?.optBoolean("push", false) ?: true,
+            isPrivate = json.optBoolean("private", private)
         )
     }
 
@@ -205,6 +252,13 @@ class HttpGitHubApi(
 
     override suspend fun getBlob(owner: String, repo: String, sha: String): ByteArray {
         val json = requestJson("GET", "/repos/${pathSegment(owner)}/${pathSegment(repo)}/git/blobs/${pathSegment(sha)}")
+        val encoding = json.optString("encoding", "base64")
+        if (encoding != "base64") {
+            // GitHub returns encoding "none" with empty content for blobs above its inline size
+            // limit. Decoding that as base64 silently yields empty bytes, which downstream looks
+            // like a SHA mismatch rather than "this snapshot is too large to read this way".
+            throw GitHubTransportException("GitHub blob is too large to read directly (encoding: $encoding)")
+        }
         return Base64.getMimeDecoder().decode(json.getString("content"))
     }
 
@@ -216,10 +270,16 @@ class HttpGitHubApi(
             .getString("sha")
     }
 
-    override suspend fun listCommits(owner: String, repo: String, branch: String, path: String): List<GitHubCommitSummary> {
+    override suspend fun listCommits(
+        owner: String,
+        repo: String,
+        branch: String,
+        path: String,
+        maxResults: Int
+    ): List<GitHubCommitSummary> {
         val out = mutableListOf<GitHubCommitSummary>()
         var page = 1
-        while (true) {
+        while (out.size < maxResults) {
             val array = requestJsonArray(
                 "GET",
                 "/repos/${pathSegment(owner)}/${pathSegment(repo)}/commits?sha=${queryValue(branch)}&path=${queryValue(path)}&per_page=$COMMITS_PAGE_SIZE&page=$page"
@@ -237,7 +297,19 @@ class HttpGitHubApi(
             if (array.length() < COMMITS_PAGE_SIZE) break
             page++
         }
-        return out
+        return if (out.size > maxResults) out.take(maxResults) else out
+    }
+
+    override suspend fun compareCommits(owner: String, repo: String, base: String, head: String): GitHubCompareResult {
+        val json = requestJson(
+            "GET",
+            "/repos/${pathSegment(owner)}/${pathSegment(repo)}/compare/${pathSegment(base)}...${pathSegment(head)}"
+        )
+        return GitHubCompareResult(
+            status = json.optString("status", "diverged"),
+            aheadBy = json.optInt("ahead_by", 0),
+            behindBy = json.optInt("behind_by", 0)
+        )
     }
 
     private suspend fun requestJson(method: String, endpoint: String, body: JSONObject? = null): JSONObject =
@@ -278,7 +350,7 @@ class HttpGitHubApi(
                 } else {
                     connection.errorStream?.use { it.readBytesCompat() } ?: ByteArray(0)
                 }
-                if (status !in 200..299) throw mapError(status, connection)
+                if (status !in 200..299) throw mapError(status, connection, endpoint)
                 bytes
             } catch (e: GitHubException) {
                 throw e
@@ -311,7 +383,7 @@ class HttpGitHubApi(
         return connection
     }
 
-    private fun mapError(status: Int, connection: HttpURLConnection): GitHubException =
+    private fun mapError(status: Int, connection: HttpURLConnection, endpoint: String): GitHubException =
         when {
             status == 401 -> GitHubAuthException()
             status == 403 && connection.getHeaderField("x-ratelimit-remaining") == "0" ->
@@ -325,7 +397,15 @@ class HttpGitHubApi(
                 GitHubRateLimitException(connection.secondaryRateLimitResetEpochSeconds())
             status == 403 -> GitHubPermissionException()
             status == 404 -> GitHubNotFoundException()
-            status == 409 || status == 422 -> GitHubConflictException()
+            status == 429 -> GitHubRateLimitException(connection.secondaryRateLimitResetEpochSeconds())
+            // A ref update genuinely races another writer and returns 409/422 - that's the
+            // publish-time compare-and-swap conflict the publisher retries on. A 422 from any
+            // other endpoint (e.g. an oversized/malformed blob or tree) is a validation failure
+            // that retrying won't fix; treating it as a conflict burned all CAS retries and then
+            // reported "repository kept changing during sync" for what was really a bad request.
+            status == 409 -> GitHubConflictException()
+            status == 422 && endpoint.contains("/git/refs/") -> GitHubConflictException()
+            status == 422 -> GitHubTransportException("GitHub rejected the request as invalid", retryable = false)
             status >= 500 -> GitHubTransportException("GitHub is temporarily unavailable")
             else -> GitHubTransportException("GitHub request was rejected")
         }
@@ -336,7 +416,7 @@ class HttpGitHubApi(
         }
 
     private fun GitHubException.isRetryable(): Boolean =
-        this is GitHubTransportException ||
+        (this is GitHubTransportException && retryable) ||
             (this is GitHubRateLimitException && retryAfterMillis() != null)
 
     private fun GitHubException.retryDelayMillis(attempt: Int): Long =
