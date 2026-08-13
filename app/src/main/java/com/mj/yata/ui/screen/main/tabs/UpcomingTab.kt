@@ -786,7 +786,7 @@ private fun DayPill(
         targetValue = when {
             selected -> MaterialTheme.colorScheme.primary
             isToday -> MaterialTheme.colorScheme.primaryContainer
-            else -> Color.Transparent
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)
         },
         animationSpec = tween(YataDur.fade),
         label = "dayPillBg"
