@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Giờ (vd: 3:00 chiều, 15:00, buổi tối)</string>
     <string name="tasker_field_reminder">Nhắc nhở (vd: 15 phút trước, 1 ngày trước)</string>
     <string name="tasker_field_priority">Mức ưu tiên (không, thấp, vừa, cao)</string>
-    <string name="tasker_field_section">Phần (Sáng hoặc Chiều)</string>
+    <string name="tasker_field_section">Phần (tùy chọn)</string>
     <string name="tasker_field_repeat">Lặp lại (vd: hằng ngày, mỗi thứ hai, mỗi 2 tuần)</string>
     <string name="tasker_field_notes">Ghi chú</string>
     <string name="shortcut_quick_add_short">Thêm nhanh</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">Dọn sạch thùng rác</string>
     <string name="cd_trash_restore">Khôi phục</string>
     <string name="cd_trash_delete_forever">Xóa vĩnh viễn</string>
+    <string name="trash_deleted_today">Đã xóa hôm nay</string>
+    <string name="trash_deleted_yesterday">Đã xóa hôm qua</string>
+    <string name="trash_deleted_on">Đã xóa vào %1$s</string>
+    <string name="trash_kept_forever_suffix">được giữ cho đến khi bạn xóa hẳn</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">còn %1$d ngày</item>
+        <item quantity="other">còn %1$d ngày</item>
+    </plurals>
+    <string name="trash_restored_snackbar">Đã khôi phục "%1$s"</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">Đã khôi phục %1$d việc cần làm</item>
+        <item quantity="other">Đã khôi phục %1$d việc cần làm</item>
+    </plurals>
+    <string name="action_view">Xem</string>
     <string name="archive_title">Lưu trữ</string>
     <string name="archive_empty_state">Chưa có việc nào trong Lưu trữ.</string>
     <string name="archive_empty_state_desc">Việc đã lưu trữ sẽ xuất hiện ở đây. Dùng Lưu trữ khi muốn ẩn việc mà không xóa.</string>
     <string name="archive_empty_state_action">Đến Hôm nay</string>
     <string name="archive_notice">Lưu trữ cất việc cần làm mà không xóa. Chúng ẩn khỏi danh sách bình thường, không bao giờ hết hạn, và có thể bỏ lưu trữ bất cứ lúc nào.</string>
+    <string name="archive_section_shelved_active">Đang hoạt động</string>
+    <string name="archive_section_shelved_completed">Đã hoàn thành</string>
+    <string name="archive_unarchived_snackbar">Đã bỏ lưu trữ "%1$s"</string>
     <string name="cd_archive_unarchive">Bỏ lưu trữ việc</string>
+        <string name="cd_bulk_select">Chọn</string>
     <string name="cd_bulk_cancel_selection">Hủy chọn</string>
     <string name="cd_bulk_mark_done">Đánh dấu hoàn thành</string>
     <string name="cd_bulk_add_tag">Thêm thẻ</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Mọi việc trong danh sách này sẽ bị xóa vĩnh viễn.</string>
     <string name="list_detail_delete_list">Xóa danh sách</string>
     <string name="list_detail_delete_list_2">Xóa danh sách?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Chỉ xóa danh sách để giữ việc bên trong không thuộc danh sách nào, hoặc xóa cả danh sách lẫn mọi việc bên trong.</string>
+    <string name="list_detail_list_only">Chỉ danh sách</string>
+    <string name="list_detail_list_tasks">Danh sách + việc cần làm</string>
     <string name="list_detail_edit_list">Sửa danh sách</string>
     <string name="list_detail_search_in_list">Tìm trong danh sách</string>
     <string name="lock_backspace">Xóa lùi</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">Bỏ lưu trữ việc cần làm</string>
     <string name="task_link_copied">Đã sao chép liên kết việc cần làm</string>
     <string name="task_deleted">Đã xóa việc cần làm</string>
+    <string name="task_marked_open">Đã mở lại việc cần làm</string>
+    <string name="task_completed">Đã hoàn thành việc cần làm</string>
     <string name="export_failed">Xuất thất bại.</string>
     <string name="reminder_before_due_error">Nhắc nhở phải trước giờ đến hạn.</string>
     <string name="reminder_in_past_error">Giờ nhắc nhở đó đã qua hôm nay.</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Xóa %1$d việc cần làm?</item>
         <item quantity="other">Xóa %1$d việc cần làm?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">Đã xóa %1$d việc cần làm</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">Đã hoàn thành %1$d việc cần làm</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">Đã bỏ lưu trữ %1$d việc cần làm</item>
+        <item quantity="other">Đã bỏ lưu trữ %1$d việc cần làm</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Lưu trữ %1$d dự án?</item>

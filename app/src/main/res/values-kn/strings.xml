@@ -12,7 +12,7 @@
     <string name="tasker_field_time">ಸಮಯ (ಉದಾ. 3:00 PM, 15:00, ಸಂಜೆ)</string>
     <string name="tasker_field_reminder">ಜ್ಞಾಪನೆ (ಉದಾ. 15 ನಿಮಿಷ ಮೊದಲು, 1 ದಿನ ಮೊದಲು)</string>
     <string name="tasker_field_priority">ಆದ್ಯತೆ (ಇಲ್ಲ, ಕಡಿಮೆ, ಮಧ್ಯಮ, ಹೆಚ್ಚು)</string>
-    <string name="tasker_field_section">ವಿಭಾಗ (ಬೆಳಿಗ್ಗೆ ಅಥವಾ ಮಧ್ಯಾಹ್ನ)</string>
+    <string name="tasker_field_section">ವಿಭಾಗ (ಐಚ್ಛಿಕ)</string>
     <string name="tasker_field_repeat">ಪುನರಾವರ್ತನೆ (ಉದಾ. ಪ್ರತಿದಿನ, ಪ್ರತಿ ಸೋಮವಾರ, ಪ್ರತಿ 2 ವಾರಗಳಿಗೊಮ್ಮೆ)</string>
     <string name="tasker_field_notes">ಟಿಪ್ಪಣಿಗಳು</string>
     <string name="shortcut_quick_add_short">ತ್ವರಿತ ಸೇರ್ಪಡೆ</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">ಕಸದಬುಟ್ಟಿ ಖಾಲಿ ಮಾಡಿ</string>
     <string name="cd_trash_restore">ಪುನಃಸ್ಥಾಪಿಸಿ</string>
     <string name="cd_trash_delete_forever">ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಿ</string>
+    <string name="trash_deleted_today">ಇಂದು ಅಳಿಸಲಾಗಿದೆ</string>
+    <string name="trash_deleted_yesterday">ನಿನ್ನೆ ಅಳಿಸಲಾಗಿದೆ</string>
+    <string name="trash_deleted_on">%1$s ರಂದು ಅಳಿಸಲಾಗಿದೆ</string>
+    <string name="trash_kept_forever_suffix">ನೀವು ತೆಗೆದುಹಾಕುವವರೆಗೆ ಇಡಲಾಗುತ್ತದೆ</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d ದಿನ ಬಾಕಿ</item>
+        <item quantity="other">%1$d ದಿನ ಬಾಕಿ</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d ಕಾರ್ಯ ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಕಾರ್ಯಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ</item>
+    </plurals>
+    <string name="action_view">ವೀಕ್ಷಿಸಿ</string>
     <string name="archive_title">ಆರ್ಕೈವ್</string>
     <string name="archive_empty_state">ಆರ್ಕೈವ್‌ನಲ್ಲಿ ಸಂಗ್ರಹಿಸಿದ ಕಾರ್ಯಗಳಿಲ್ಲ.</string>
     <string name="archive_empty_state_desc">ಆರ್ಕೈವ್ ಮಾಡಿದ ಕಾರ್ಯಗಳು ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ. ಕಾರ್ಯವನ್ನು ಅಳಿಸದೆ ಮರೆಮಾಡಲು ಆರ್ಕೈವ್ ಬಳಸಿ.</string>
     <string name="archive_empty_state_action">ಇಂದಿಗೆ ಹೋಗಿ</string>
     <string name="archive_notice">ಆರ್ಕೈವ್ ಕಾರ್ಯಗಳನ್ನು ಅಳಿಸದೆ ಸಂಗ್ರಹಿಸಿಡುತ್ತದೆ. ಅವು ಸಾಮಾನ್ಯ ಪಟ್ಟಿಗಳಿಂದ ಮರೆಯಾಗಿ ಉಳಿಯುತ್ತವೆ, ಎಂದಿಗೂ ಅವಧಿ ಮುಗಿಯುವುದಿಲ್ಲ ಮತ್ತು ಯಾವಾಗ ಬೇಕಾದರೂ ಪುನಃ ಆರ್ಕೈವ್ ಅನ್ಮಾಡಬಹುದು.</string>
+    <string name="archive_section_shelved_active">ಸಕ್ರಿಯ</string>
+    <string name="archive_section_shelved_completed">ಪೂರ್ಣಗೊಂಡ</string>
+    <string name="archive_unarchived_snackbar">"%1$s" ಆರ್ಕೈವ್‌ನಿಂದ ತೆಗೆಯಲಾಗಿದೆ</string>
     <string name="cd_archive_unarchive">ಕಾರ್ಯವನ್ನು ಆರ್ಕೈವ್‌ನಿಂದ ಹೊರತೆಗೆಯಿರಿ</string>
+        <string name="cd_bulk_select">ಆಯ್ಕೆಮಾಡಿ</string>
     <string name="cd_bulk_cancel_selection">ಆಯ್ಕೆ ರದ್ದುಮಾಡಿ</string>
     <string name="cd_bulk_mark_done">ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿ</string>
     <string name="cd_bulk_add_tag">ಟ್ಯಾಗ್ ಸೇರಿಸಿ</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">ಈ ಪಟ್ಟಿಯೊಳಗಿನ ಎಲ್ಲಾ ಕಾರ್ಯಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಲಾಗುತ್ತದೆ.</string>
     <string name="list_detail_delete_list">ಪಟ್ಟಿ ಅಳಿಸಿ</string>
     <string name="list_detail_delete_list_2">ಪಟ್ಟಿ ಅಳಿಸುವುದೇ?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">ಕಾರ್ಯಗಳನ್ನು ಪಟ್ಟಿ ಇಲ್ಲದೆ ಉಳಿಸಿಕೊಳ್ಳಲು ಪಟ್ಟಿಯನ್ನು ಮಾತ್ರ ಅಳಿಸಿ, ಅಥವಾ ಪಟ್ಟಿ ಮತ್ತು ಅದರೊಳಗಿನ ಎಲ್ಲಾ ಕಾರ್ಯಗಳನ್ನು ಅಳಿಸಿ.</string>
+    <string name="list_detail_list_only">ಪಟ್ಟಿ ಮಾತ್ರ</string>
+    <string name="list_detail_list_tasks">ಪಟ್ಟಿ + ಕಾರ್ಯಗಳು</string>
     <string name="list_detail_edit_list">ಪಟ್ಟಿ ಸಂಪಾದಿಸಿ</string>
     <string name="list_detail_search_in_list">ಪಟ್ಟಿಯಲ್ಲಿ ಹುಡುಕಿ</string>
     <string name="lock_backspace">ಬ್ಯಾಕ್‌ಸ್ಪೇಸ್</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">ಕಾರ್ಯವನ್ನು ಆರ್ಕೈವ್‌ನಿಂದ ಹೊರತೆಗೆಯಿರಿ</string>
     <string name="task_link_copied">ಕಾರ್ಯ ಲಿಂಕ್ ನಕಲಿಸಲಾಗಿದೆ</string>
     <string name="task_deleted">ಕಾರ್ಯ ಅಳಿಸಲಾಗಿದೆ</string>
+    <string name="task_marked_open">ಕಾರ್ಯವನ್ನು ತೆರೆದಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ</string>
+    <string name="task_completed">ಕಾರ್ಯ ಪೂರ್ಣಗೊಂಡಿದೆ</string>
     <string name="export_failed">ರಫ್ತು ವಿಫಲವಾಗಿದೆ.</string>
     <string name="reminder_before_due_error">ಜ್ಞಾಪನೆಯು ಗಡುವಿನ ಸಮಯಕ್ಕಿಂತ ಮೊದಲು ಇರಬೇಕು.</string>
     <string name="reminder_in_past_error">ಆ ಜ್ಞಾಪನೆ ಸಮಯ ಇಂದು ಈಗಾಗಲೇ ಕಳೆದುಹೋಗಿದೆ.</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d ಕಾರ್ಯ ಅಳಿಸುವುದೇ?</item>
         <item quantity="other">%1$d ಕಾರ್ಯಗಳನ್ನು ಅಳಿಸುವುದೇ?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d ಕಾರ್ಯಗಳನ್ನು ಅಳಿಸಲಾಗಿದೆ</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d ಕಾರ್ಯಗಳು ಪೂರ್ಣಗೊಂಡಿವೆ</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d ಕಾರ್ಯ ಆರ್ಕೈವ್‌ನಿಂದ ತೆಗೆಯಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಕಾರ್ಯಗಳನ್ನು ಆರ್ಕೈವ್‌ನಿಂದ ತೆಗೆಯಲಾಗಿದೆ</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d ಪ್ರಾಜೆಕ್ಟ್ ಆರ್ಕೈವ್ ಮಾಡುವುದೇ?</item>

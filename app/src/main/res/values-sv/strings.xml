@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Tid (t.ex. 15:00, kväll)</string>
     <string name="tasker_field_reminder">Påminnelse (t.ex. 15 min innan, 1 dag innan)</string>
     <string name="tasker_field_priority">Prioritet (ingen, låg, medel, hög)</string>
-    <string name="tasker_field_section">Sektion (Förmiddag eller Eftermiddag)</string>
+    <string name="tasker_field_section">Sektion (valfritt)</string>
     <string name="tasker_field_repeat">Upprepning (t.ex. dagligen, varje måndag, var 2:a vecka)</string>
     <string name="tasker_field_notes">Anteckningar</string>
     <string name="shortcut_quick_add_short">Snabblägg till</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">Töm papperskorgen</string>
     <string name="cd_trash_restore">Återställ</string>
     <string name="cd_trash_delete_forever">Ta bort för alltid</string>
+    <string name="trash_deleted_today">Borttagen idag</string>
+    <string name="trash_deleted_yesterday">Borttagen igår</string>
+    <string name="trash_deleted_on">Borttagen %1$s</string>
+    <string name="trash_kept_forever_suffix">sparas tills du tar bort den</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d dag kvar</item>
+        <item quantity="other">%1$d dagar kvar</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" återställd</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d uppgift återställd</item>
+        <item quantity="other">%1$d uppgifter återställda</item>
+    </plurals>
+    <string name="action_view">Visa</string>
     <string name="archive_title">Arkiv</string>
     <string name="archive_empty_state">Inga arkiverade uppgifter i Arkiv.</string>
     <string name="archive_empty_state_desc">Arkiverade uppgifter visas här. Använd Arkiv när du vill dölja en uppgift utan att ta bort den.</string>
     <string name="archive_empty_state_action">Gå till Idag</string>
     <string name="archive_notice">Arkiv lägger undan uppgifter utan att ta bort dem. De förblir dolda från vanliga listor, upphör aldrig och kan avarkiveras när som helst.</string>
+    <string name="archive_section_shelved_active">Aktiva</string>
+    <string name="archive_section_shelved_completed">Slutförda</string>
+    <string name="archive_unarchived_snackbar">"%1$s" borttagen från arkivet</string>
     <string name="cd_archive_unarchive">Avarkivera uppgift</string>
+        <string name="cd_bulk_select">Markera</string>
     <string name="cd_bulk_cancel_selection">Avbryt markering</string>
     <string name="cd_bulk_mark_done">Markera som klar</string>
     <string name="cd_bulk_add_tag">Lägg till tagg</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Alla uppgifter i den här listan tas bort permanent.</string>
     <string name="list_detail_delete_list">Ta bort lista</string>
     <string name="list_detail_delete_list_2">Ta bort lista?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Ta bort endast listan för att behålla dess uppgifter utan lista, eller ta bort listan och alla uppgifter i den.</string>
+    <string name="list_detail_list_only">Endast lista</string>
+    <string name="list_detail_list_tasks">Lista + uppgifter</string>
     <string name="list_detail_edit_list">Redigera lista</string>
     <string name="list_detail_search_in_list">Sök i lista</string>
     <string name="lock_backspace">Backsteg</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">Avarkivera uppgift</string>
     <string name="task_link_copied">Uppgiftslänk kopierad</string>
     <string name="task_deleted">Uppgift borttagen</string>
+    <string name="task_marked_open">Uppgift markerad som öppen</string>
+    <string name="task_completed">Uppgift slutförd</string>
     <string name="export_failed">Export misslyckades.</string>
     <string name="reminder_before_due_error">Påminnelsen måste vara innan förfallotiden.</string>
     <string name="reminder_in_past_error">Den påminnelsetiden har redan passerat idag.</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Ta bort %1$d uppgift?</item>
         <item quantity="other">Ta bort %1$d uppgifter?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d uppgifter borttagna</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d uppgifter slutförda</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d uppgift borttagen från arkivet</item>
+        <item quantity="other">%1$d uppgifter borttagna från arkivet</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Arkivera %1$d projekt?</item>

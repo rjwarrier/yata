@@ -132,7 +132,7 @@ class CreateTaskConfigActivity : ComponentActivity(), TaskerPluginConfig<CreateT
                             LabeledField("Time (e.g. 3:00 PM, 15:00, evening)", time) { time = it }
                             LabeledField("Reminder (e.g. 15 min before)", reminder) { reminder = it }
                             LabeledField("Priority (none, low, med, high)", priority) { priority = it }
-                            LabeledField("Section (Morning or Afternoon)", section) { section = it }
+                            LabeledField("Section (must match one of the target project's sections)", section) { section = it }
                             LabeledField("Repeat (e.g. daily, every monday, every 2 weeks)", repeat) { repeat = it }
                             LabeledField("Notes", notes, singleLine = false) { notes = it }
                         }

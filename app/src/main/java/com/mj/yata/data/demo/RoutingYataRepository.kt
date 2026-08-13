@@ -97,6 +97,7 @@ class RoutingYataRepository @Inject constructor(
     override fun getListById(id: String): Flow<YataList?> = routed(real.getListById(id), demo.getListById(id))
     override suspend fun upsertList(list: YataList) = write { real.upsertList(list) }
     override suspend fun deleteList(list: YataList) = write { real.deleteList(list) }
+    override suspend fun deleteListOnly(list: YataList) = write { real.deleteListOnly(list) }
     override suspend fun setListsArchived(ids: List<String>, archived: Boolean) = write { real.setListsArchived(ids, archived) }
 
     override fun getPeople(): Flow<List<Person>> = routed(real.getPeople(), demo.getPeople())

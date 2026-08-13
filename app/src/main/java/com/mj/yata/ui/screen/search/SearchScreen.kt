@@ -278,12 +278,13 @@ fun SearchScreen(
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     // Swipe-to-delete on a single task reuses the same deferred-Undo-snackbar pattern as the
     // bulk-delete dialog below, just for one id at a time.
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+            val result = showUndoSnackbar(snackbarHostState, context.getString(R.string.task_deleted), undoWindowSeconds)
             if (!result) {
                 viewModel.deleteTask(task)
             }
@@ -357,7 +358,8 @@ fun SearchScreen(
     fun toggleTaskWithUndo(task: Task) {
         viewModel.toggleTaskDone(task.id) {}
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, if (task.done) "Task marked open" else "Task completed", undoWindowSeconds)
+            val message = context.getString(if (task.done) R.string.task_marked_open else R.string.task_completed)
+            val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
             if (result) {
                 viewModel.restoreTasks(listOf(task))
             }
@@ -370,7 +372,8 @@ fun SearchScreen(
         viewModel.bulkCompleteTasks(selectedIds.toList())
         selectedIds.clear()
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "${previous.size} task(s) completed", undoWindowSeconds)
+            val message = context.resources.getQuantityString(R.plurals.tasks_completed_count, previous.size, previous.size)
+            val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
             if (result) {
                 viewModel.restoreTasks(previous)
             }
@@ -696,7 +699,8 @@ fun SearchScreen(
                     selectedIds.clear()
                     showBulkDeleteDialog = false
                     scope.launch {
-                        val result = showUndoSnackbar(snackbarHostState, if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted", undoWindowSeconds)
+                        val message = context.resources.getQuantityString(R.plurals.tasks_deleted, ids.size, ids.size)
+                        val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
                         if (!result) {
                             viewModel.bulkDeleteTasks(ids)
                         }

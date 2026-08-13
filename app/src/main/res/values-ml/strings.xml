@@ -12,7 +12,7 @@
     <string name="tasker_field_time">സമയം (ഉദാ. 3:00 PM, 15:00, വൈകുന്നേരം)</string>
     <string name="tasker_field_reminder">ഓർമ്മപ്പെടുത്തൽ (ഉദാ. 15 മിനിറ്റ് മുൻപ്, 1 ദിവസം മുൻപ്)</string>
     <string name="tasker_field_priority">മുൻഗണന (ഇല്ല, കുറവ്, ഇടത്തരം, കൂടുതൽ)</string>
-    <string name="tasker_field_section">വിഭാഗം (രാവിലെ അല്ലെങ്കിൽ ഉച്ചയ്ക്ക് ശേഷം)</string>
+    <string name="tasker_field_section">വിഭാഗം (ഓപ്ഷണൽ)</string>
     <string name="tasker_field_repeat">ആവർത്തനം (ഉദാ. ദിവസവും, എല്ലാ തിങ്കളും, ഓരോ 2 ആഴ്ചയിലും)</string>
     <string name="tasker_field_notes">കുറിപ്പുകൾ</string>
     <string name="shortcut_quick_add_short">പെട്ടെന്ന് ചേർക്കുക</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">ട്രാഷ് ഒഴിവാക്കുക</string>
     <string name="cd_trash_restore">വീണ്ടെടുക്കുക</string>
     <string name="cd_trash_delete_forever">എന്നെന്നേക്കും ഇല്ലാതാക്കുക</string>
+    <string name="trash_deleted_today">ഇന്ന് ഇല്ലാതാക്കി</string>
+    <string name="trash_deleted_yesterday">ഇന്നലെ ഇല്ലാതാക്കി</string>
+    <string name="trash_deleted_on">%1$s-ന് ഇല്ലാതാക്കി</string>
+    <string name="trash_kept_forever_suffix">നീക്കം ചെയ്യുന്നത് വരെ സൂക്ഷിക്കും</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d ദിവസം ബാക്കി</item>
+        <item quantity="other">%1$d ദിവസം ബാക്കി</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" പുനഃസ്ഥാപിച്ചു</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d ടാസ്ക് പുനഃസ്ഥാപിച്ചു</item>
+        <item quantity="other">%1$d ടാസ്കുകൾ പുനഃസ്ഥാപിച്ചു</item>
+    </plurals>
+    <string name="action_view">കാണുക</string>
     <string name="archive_title">ആർക്കൈവ്</string>
     <string name="archive_empty_state">ആർക്കൈവിൽ മാറ്റിവച്ച ടാസ്കുകളൊന്നുമില്ല.</string>
     <string name="archive_empty_state_desc">ആർക്കൈവ് ചെയ്ത ടാസ്കുകൾ ഇവിടെ കാണിക്കും. ഇല്ലാതാക്കാതെ ഒരു ടാസ്ക് മറയ്ക്കണമെങ്കിൽ ആർക്കൈവ് ഉപയോഗിക്കുക.</string>
     <string name="archive_empty_state_action">ഇന്നിലേക്ക് പോകുക</string>
     <string name="archive_notice">ആർക്കൈവ് ടാസ്കുകൾ ഇല്ലാതാക്കാതെ മാറ്റിവയ്ക്കുന്നു. അവ സാധാരണ ലിസ്റ്റുകളിൽ നിന്ന് മറഞ്ഞിരിക്കും, ഒരിക്കലും കാലഹരണപ്പെടില്ല, എപ്പോൾ വേണമെങ്കിലും അൺആർക്കൈവ് ചെയ്യാം.</string>
+    <string name="archive_section_shelved_active">സജീവം</string>
+    <string name="archive_section_shelved_completed">പൂർത്തിയാക്കിയ</string>
+    <string name="archive_unarchived_snackbar">"%1$s" ആർക്കൈവിൽ നിന്ന് നീക്കി</string>
     <string name="cd_archive_unarchive">ടാസ്ക് അൺആർക്കൈവ് ചെയ്യുക</string>
+        <string name="cd_bulk_select">തിരഞ്ഞെടുക്കുക</string>
     <string name="cd_bulk_cancel_selection">തിരഞ്ഞെടുപ്പ് റദ്ദാക്കുക</string>
     <string name="cd_bulk_mark_done">പൂർത്തിയായതായി അടയാളപ്പെടുത്തുക</string>
     <string name="cd_bulk_add_tag">ടാഗ് ചേർക്കുക</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">ഈ ലിസ്റ്റിലെ എല്ലാ ടാസ്കുകളും എന്നെന്നേക്കും ഇല്ലാതാക്കും.</string>
     <string name="list_detail_delete_list">ലിസ്റ്റ് ഇല്ലാതാക്കുക</string>
     <string name="list_detail_delete_list_2">ലിസ്റ്റ് ഇല്ലാതാക്കണോ?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">അതിലെ ടാസ്കുകൾ ലിസ്റ്റില്ലാതെ നിലനിർത്താൻ ലിസ്റ്റ് മാത്രം ഇല്ലാതാക്കുക, അല്ലെങ്കിൽ ലിസ്റ്റും അതിനുള്ളിലെ എല്ലാ ടാസ്കുകളും ഇല്ലാതാക്കുക.</string>
+    <string name="list_detail_list_only">ലിസ്റ്റ് മാത്രം</string>
+    <string name="list_detail_list_tasks">ലിസ്റ്റ് + ടാസ്കുകൾ</string>
     <string name="list_detail_edit_list">ലിസ്റ്റ് എഡിറ്റ് ചെയ്യുക</string>
     <string name="list_detail_search_in_list">ലിസ്റ്റിൽ തിരയുക</string>
     <string name="lock_backspace">ബാക്ക്സ്പേസ്</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">ടാസ്ക് അൺആർക്കൈവ് ചെയ്യുക</string>
     <string name="task_link_copied">ടാസ്ക് ലിങ്ക് കോപ്പി ചെയ്തു</string>
     <string name="task_deleted">ടാസ്ക് ഇല്ലാതാക്കി</string>
+    <string name="task_marked_open">ടാസ്ക് തുറന്നതായി അടയാളപ്പെടുത്തി</string>
+    <string name="task_completed">ടാസ്ക് പൂർത്തിയാക്കി</string>
     <string name="export_failed">എക്സ്പോർട്ട് പരാജയപ്പെട്ടു.</string>
     <string name="reminder_before_due_error">ഓർമ്മപ്പെടുത്തൽ സമയപരിധിക്ക് മുൻപ് ആയിരിക്കണം.</string>
     <string name="reminder_in_past_error">ആ ഓർമ്മപ്പെടുത്തൽ സമയം ഇന്ന് ഇതിനകം കഴിഞ്ഞു.</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d ടാസ്ക് ഇല്ലാതാക്കണോ?</item>
         <item quantity="other">%1$d ടാസ്കുകൾ ഇല്ലാതാക്കണോ?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d ടാസ്കുകൾ ഇല്ലാതാക്കി</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d ടാസ്കുകൾ പൂർത്തിയാക്കി</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d ടാസ്ക് ആർക്കൈവിൽ നിന്ന് നീക്കി</item>
+        <item quantity="other">%1$d ടാസ്കുകൾ ആർക്കൈവിൽ നിന്ന് നീക്കി</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d പ്രോജക്റ്റ് ആർക്കൈവ് ചെയ്യണോ?</item>

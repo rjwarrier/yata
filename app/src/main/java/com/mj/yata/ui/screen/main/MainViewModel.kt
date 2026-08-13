@@ -1523,6 +1523,13 @@ private data class MainNavigationState(
         }
     }
 
+    fun bulkRestoreTasks(ids: List<String>) {
+        if (ids.isEmpty()) return
+        safeLaunch {
+            ids.forEach { repository.restoreTask(it) }
+        }
+    }
+
     // Archive — shelved but intact, separate from Trash (see YataRepository.getArchivedTasks).
     val archivedTasks: StateFlow<List<Task>> = repository.getArchivedTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -1542,6 +1549,13 @@ private data class MainNavigationState(
     fun permanentlyDeleteTask(task: Task) {
         safeLaunch {
             repository.permanentlyDeleteTask(task)
+        }
+    }
+
+    fun bulkPermanentlyDeleteTasks(tasks: List<Task>) {
+        if (tasks.isEmpty()) return
+        safeLaunch {
+            tasks.forEach { repository.permanentlyDeleteTask(it) }
         }
     }
 
@@ -1614,13 +1628,6 @@ private data class MainNavigationState(
     fun deleteProjectOnly(project: Project) {
         safeLaunch {
             repository.deleteProjectOnly(project)
-        }
-    }
-
-    fun bulkDeleteProjects(ids: List<String>) {
-        safeLaunch {
-            val byId = projects.value.associateBy { it.id }
-            ids.forEach { id -> byId[id]?.let { repository.deleteProject(it) } }
         }
     }
 
@@ -1781,12 +1788,6 @@ private data class MainNavigationState(
         }
     }
 
-    fun addTagGroup(name: String, color: String) {
-        safeLaunch {
-            repository.upsertTagGroup(TagGroup(id = "tg_" + UUID.randomUUID().toString(), name = name, color = color))
-        }
-    }
-
     fun upsertTagGroup(group: TagGroup) {
         safeLaunch {
             repository.upsertTagGroup(group)
@@ -1828,6 +1829,12 @@ private data class MainNavigationState(
     fun deleteList(list: YataList) {
         safeLaunch {
             repository.deleteList(list)
+        }
+    }
+
+    fun deleteListOnly(list: YataList) {
+        safeLaunch {
+            repository.deleteListOnly(list)
         }
     }
 

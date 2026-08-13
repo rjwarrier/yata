@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Tijd (bijv. 15:00, 3:00 PM, avond)</string>
     <string name="tasker_field_reminder">Herinnering (bijv. 15 min van tevoren, 1 dag van tevoren)</string>
     <string name="tasker_field_priority">Prioriteit (geen, laag, gemiddeld, hoog)</string>
-    <string name="tasker_field_section">Sectie (Ochtend of Middag)</string>
+    <string name="tasker_field_section">Sectie (optioneel)</string>
     <string name="tasker_field_repeat">Herhaling (bijv. dagelijks, elke maandag, elke 2 weken)</string>
     <string name="tasker_field_notes">Notities</string>
     <string name="shortcut_quick_add_short">Snel toevoegen</string>
@@ -279,12 +279,30 @@
     <string name="cd_trash_empty">Prullenbak leegmaken</string>
     <string name="cd_trash_restore">Herstellen</string>
     <string name="cd_trash_delete_forever">Voor altijd verwijderen</string>
+    <string name="trash_deleted_today">Vandaag verwijderd</string>
+    <string name="trash_deleted_yesterday">Gisteren verwijderd</string>
+    <string name="trash_deleted_on">Verwijderd op %1$s</string>
+    <string name="trash_kept_forever_suffix">bewaard tot je het verwijdert</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">nog %1$d dag</item>
+        <item quantity="other">nog %1$d dagen</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" hersteld</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d taak hersteld</item>
+        <item quantity="other">%1$d taken hersteld</item>
+    </plurals>
+    <string name="action_view">Bekijken</string>
     <string name="archive_title">Archief</string>
     <string name="archive_empty_state">Geen opgeslagen taken in Archief.</string>
     <string name="archive_empty_state_desc">Gearchiveerde taken verschijnen hier. Gebruik Archief wanneer je een taak wilt verbergen zonder deze te verwijderen.</string>
     <string name="archive_empty_state_action">Ga naar Vandaag</string>
     <string name="archive_notice">Archief zet taken opzij zonder ze te verwijderen. Ze blijven verborgen uit normale lijsten, verlopen nooit, en kunnen op elk moment worden gedearchiveerd.</string>
+    <string name="archive_section_shelved_active">Actief</string>
+    <string name="archive_section_shelved_completed">Voltooid</string>
+    <string name="archive_unarchived_snackbar">"%1$s" uit archief gehaald</string>
     <string name="cd_archive_unarchive">Taak dearchiveren</string>
+        <string name="cd_bulk_select">Selecteren</string>
     <string name="cd_bulk_cancel_selection">Selectie annuleren</string>
     <string name="cd_bulk_mark_done">Als voltooid markeren</string>
     <string name="cd_bulk_add_tag">Tag toevoegen</string>
@@ -301,6 +319,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d taak verwijderen?</item>
         <item quantity="other">%1$d taken verwijderen?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d taken verwijderd</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d taken voltooid</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d taak uit archief gehaald</item>
+        <item quantity="other">%1$d taken uit archief gehaald</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d project archiveren?</item>
@@ -592,6 +622,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Alle taken in deze lijst worden permanent verwijderd.</string>
     <string name="list_detail_delete_list">Lijst verwijderen</string>
     <string name="list_detail_delete_list_2">Lijst verwijderen?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Verwijder alleen de lijst om de taken zonder lijst te behouden, of verwijder de lijst en alle taken erin.</string>
+    <string name="list_detail_list_only">Alleen lijst</string>
+    <string name="list_detail_list_tasks">Lijst + taken</string>
     <string name="list_detail_edit_list">Lijst bewerken</string>
     <string name="list_detail_search_in_list">Zoeken in lijst</string>
     <string name="lock_backspace">Backspace</string>
@@ -951,6 +984,8 @@
     <string name="task_unarchive_action">Taak dearchiveren</string>
     <string name="task_link_copied">Taaklink gekopieerd</string>
     <string name="task_deleted">Taak verwijderd</string>
+    <string name="task_marked_open">Taak gemarkeerd als open</string>
+    <string name="task_completed">Taak voltooid</string>
     <string name="export_failed">Exporteren mislukt.</string>
     <string name="reminder_before_due_error">Herinnering moet vóór de vervaltijd liggen.</string>
     <string name="reminder_in_past_error">Die herinneringstijd is vandaag al voorbij.</string>

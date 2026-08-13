@@ -27,7 +27,7 @@
     <string name="tasker_field_time">Time (e.g. 3:00 PM, 15:00, evening)</string>
     <string name="tasker_field_reminder">Reminder (e.g. 15 min before, 1 day before)</string>
     <string name="tasker_field_priority">Priority (none, low, med, high)</string>
-    <string name="tasker_field_section">Section (Morning or Afternoon)</string>
+    <string name="tasker_field_section">Section (optional)</string>
     <string name="tasker_field_repeat">Repeat (e.g. daily, every monday, every 2 weeks)</string>
     <string name="tasker_field_notes">Notes</string>
 
@@ -376,6 +376,20 @@
     <string name="cd_trash_empty">Empty trash</string>
     <string name="cd_trash_restore">Restore</string>
     <string name="cd_trash_delete_forever">Delete forever</string>
+    <string name="trash_deleted_today">Deleted today</string>
+    <string name="trash_deleted_yesterday">Deleted yesterday</string>
+    <string name="trash_deleted_on">Deleted on %1$s</string>
+    <string name="trash_kept_forever_suffix">kept until removed</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <string name="trash_restored_snackbar">Restored \"%1$s\"</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">Restored %1$d task</item>
+        <item quantity="other">Restored %1$d tasks</item>
+    </plurals>
+    <string name="action_view">View</string>
 
     <!-- Archive -->
     <string name="archive_title">Archive</string>
@@ -383,9 +397,13 @@
     <string name="archive_empty_state_desc">Archived tasks will appear here. Use Archive when you want to hide a task without deleting it.</string>
     <string name="archive_empty_state_action">Go to Today</string>
     <string name="archive_notice">Archive shelves tasks without deleting them. They stay hidden from normal lists, never expire, and can be unarchived anytime.</string>
+    <string name="archive_section_shelved_active">Active</string>
+    <string name="archive_section_shelved_completed">Completed</string>
+    <string name="archive_unarchived_snackbar">Unarchived \"%1$s\"</string>
     <string name="cd_archive_unarchive">Unarchive task</string>
 
     <!-- Bulk selection toolbar -->
+    <string name="cd_bulk_select">Select</string>
     <string name="cd_bulk_cancel_selection">Cancel selection</string>
     <string name="cd_bulk_mark_done">Mark done</string>
     <string name="cd_bulk_add_tag">Add tag</string>
@@ -411,6 +429,20 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Delete %1$d task?</item>
         <item quantity="other">Delete %1$d tasks?</item>
+    </plurals>
+    <!-- Undo-snackbar messages after a bulk action - "one" reuses the same wording as the
+         single-task action's own snackbar (task_deleted/task_completed) so the two stay in sync. -->
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d tasks deleted</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d tasks completed</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">Unarchived %1$d task</item>
+        <item quantity="other">Unarchived %1$d tasks</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Archive %1$d project?</item>
@@ -742,6 +774,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">All tasks inside this list will be permanently deleted.</string>
     <string name="list_detail_delete_list">Delete list</string>
     <string name="list_detail_delete_list_2">Delete list?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Delete only the list to keep its tasks without a list, or delete the list and all tasks inside it.</string>
+    <string name="list_detail_list_only">List only</string>
+    <string name="list_detail_list_tasks">List + tasks</string>
     <string name="list_detail_edit_list">Edit list</string>
     <string name="list_detail_search_in_list">Search in list</string>
     <string name="lock_backspace">Backspace</string>
@@ -1154,6 +1189,8 @@
     <string name="task_unarchive_action">Unarchive task</string>
     <string name="task_link_copied">Task link copied</string>
     <string name="task_deleted">Task deleted</string>
+    <string name="task_marked_open">Task marked open</string>
+    <string name="task_completed">Task completed</string>
     <string name="export_failed">Export failed.</string>
     <string name="reminder_before_due_error">Reminder must be before the due time.</string>
     <string name="reminder_in_past_error">That reminder time has already passed today.</string>

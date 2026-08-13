@@ -826,16 +826,27 @@ fun ListDetailScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(stringResource(R.string.list_detail_delete_list_2)) },
-            text = { Text(stringResource(R.string.list_detail_all_tasks_inside_this_list_will_be_permane)) },
+            text = { Text(stringResource(R.string.list_detail_delete_only_the_list_to_keep_its_tasks)) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        viewModel.deleteList(list)
-                        onNavigateBack()
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            viewModel.deleteListOnly(list)
+                            onNavigateBack()
+                        }
+                    ) {
+                        Text(stringResource(R.string.list_detail_list_only))
                     }
-                ) {
-                    Text(stringResource(R.string.cd_delete), color = MaterialTheme.colorScheme.error)
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            viewModel.deleteList(list)
+                            onNavigateBack()
+                        }
+                    ) {
+                        Text(stringResource(R.string.list_detail_list_tasks), color = MaterialTheme.colorScheme.error)
+                    }
                 }
             },
             dismissButton = {

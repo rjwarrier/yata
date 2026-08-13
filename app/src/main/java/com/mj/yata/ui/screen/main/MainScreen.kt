@@ -155,7 +155,8 @@ fun MainScreen(
     fun bulkDeleteWithUndo(ids: List<String>) {
         if (ids.isEmpty()) return
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, if (ids.size == 1) "Task deleted" else "${ids.size} tasks deleted", undoWindowSeconds)
+            val message = context.resources.getQuantityString(R.plurals.tasks_deleted, ids.size, ids.size)
+            val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
             if (!result) {
                 viewModel.bulkDeleteTasks(ids)
             }
@@ -261,7 +262,8 @@ fun MainScreen(
         val previous = tasks.find { it.id == id } ?: return
         viewModel.toggleTaskDone(id) { if (!previous.done) celebrateTrigger++ }
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, if (previous.done) "Task marked open" else "Task completed", undoWindowSeconds)
+            val message = context.getString(if (previous.done) R.string.task_marked_open else R.string.task_completed)
+            val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
             if (result) {
                 viewModel.restoreTasks(listOf(previous))
             }
@@ -273,7 +275,8 @@ fun MainScreen(
         if (previous.isEmpty()) return
         viewModel.bulkCompleteTasks(ids)
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "${previous.size} task(s) completed", undoWindowSeconds)
+            val message = context.resources.getQuantityString(R.plurals.tasks_completed_count, previous.size, previous.size)
+            val result = showUndoSnackbar(snackbarHostState, message, undoWindowSeconds)
             if (result) {
                 viewModel.restoreTasks(previous)
             }

@@ -12,7 +12,7 @@
     <string name="tasker_field_time">સમય (દા.ત. 3:00 PM, 15:00, evening)</string>
     <string name="tasker_field_reminder">રિમાઇન્ડર (દા.ત. 15 min before, 1 day before)</string>
     <string name="tasker_field_priority">પ્રાધાન્ય (none, low, med, high)</string>
-    <string name="tasker_field_section">વિભાગ (Morning અથવા Afternoon)</string>
+    <string name="tasker_field_section">વિભાગ (વૈકલ્પિક)</string>
     <string name="tasker_field_repeat">પુનરાવર્તન (દા.ત. daily, every monday, every 2 weeks)</string>
     <string name="tasker_field_notes">નોંધ</string>
     <string name="shortcut_quick_add_short">ઝડપી ઉમેરો</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">કચરાપેટી ખાલી કરો</string>
     <string name="cd_trash_restore">પુનઃસ્થાપિત કરો</string>
     <string name="cd_trash_delete_forever">કાયમ માટે કાઢી નાખો</string>
+    <string name="trash_deleted_today">આજે કાઢી નાખવામાં આવ્યું</string>
+    <string name="trash_deleted_yesterday">ગઈકાલે કાઢી નાખવામાં આવ્યું</string>
+    <string name="trash_deleted_on">%1$s ના રોજ કાઢી નાખવામાં આવ્યું</string>
+    <string name="trash_kept_forever_suffix">તમે દૂર ન કરો ત્યાં સુધી રખાય છે</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d દિવસ બાકી</item>
+        <item quantity="other">%1$d દિવસ બાકી</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" પુનઃસ્થાપિત થયું</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d ટાસ્ક પુનઃસ્થાપિત થયો</item>
+        <item quantity="other">%1$d ટાસ્ક પુનઃસ્થાપિત થયા</item>
+    </plurals>
+    <string name="action_view">જુઓ</string>
     <string name="archive_title">આર્કાઇવ</string>
     <string name="archive_empty_state">આર્કાઇવમાં કોઈ શેલ્વ કરેલા ટાસ્ક નથી.</string>
     <string name="archive_empty_state_desc">આર્કાઇવ કરેલા ટાસ્ક અહીં દેખાશે. ટાસ્ક કાઢી નાખ્યા વિના છુપાવવા આર્કાઇવનો ઉપયોગ કરો.</string>
     <string name="archive_empty_state_action">આજે પર જાઓ</string>
     <string name="archive_notice">આર્કાઇવ ટાસ્કને કાઢી નાખ્યા વિના શેલ્વ કરે છે. તેઓ સામાન્ય યાદીઓમાંથી છુપાયેલા રહે છે, ક્યારેય સમાપ્ત થતા નથી, અને ગમે ત્યારે અનઆર્કાઇવ કરી શકાય છે.</string>
+    <string name="archive_section_shelved_active">સક્રિય</string>
+    <string name="archive_section_shelved_completed">પૂર્ણ થયેલા</string>
+    <string name="archive_unarchived_snackbar">"%1$s" આર્કાઇવમાંથી દૂર કરાયું</string>
     <string name="cd_archive_unarchive">ટાસ્ક અનઆર્કાઇવ કરો</string>
+        <string name="cd_bulk_select">પસંદ કરો</string>
     <string name="cd_bulk_cancel_selection">પસંદગી રદ કરો</string>
     <string name="cd_bulk_mark_done">પૂર્ણ ચિહ્નિત કરો</string>
     <string name="cd_bulk_add_tag">ટૅગ ઉમેરો</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">આ યાદીની અંદરના બધા ટાસ્ક કાયમ માટે કાઢી નાખવામાં આવશે.</string>
     <string name="list_detail_delete_list">યાદી કાઢી નાખો</string>
     <string name="list_detail_delete_list_2">યાદી કાઢી નાખવી છે?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">યાદી વગર તેના ટાસ્ક રાખવા ફક્ત યાદી કાઢી નાખો, અથવા યાદી અને તેની અંદરના બધા ટાસ્ક કાઢી નાખો.</string>
+    <string name="list_detail_list_only">ફક્ત યાદી</string>
+    <string name="list_detail_list_tasks">યાદી + ટાસ્ક</string>
     <string name="list_detail_edit_list">યાદી સંપાદિત કરો</string>
     <string name="list_detail_search_in_list">યાદીમાં શોધો</string>
     <string name="lock_backspace">બેકસ્પેસ</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">ટાસ્ક અનઆર્કાઇવ કરો</string>
     <string name="task_link_copied">ટાસ્ક લિંક કૉપિ થઈ</string>
     <string name="task_deleted">ટાસ્ક કાઢી નાખવામાં આવ્યો</string>
+    <string name="task_marked_open">ટાસ્ક ખુલ્લા તરીકે ચિહ્નિત થયું</string>
+    <string name="task_completed">ટાસ્ક પૂર્ણ થયું</string>
     <string name="export_failed">એક્સપોર્ટ નિષ્ફળ.</string>
     <string name="reminder_before_due_error">રિમાઇન્ડર નિયત સમય પહેલા હોવું જોઈએ.</string>
     <string name="reminder_in_past_error">તે રિમાઇન્ડર સમય આજે પહેલેથી પસાર થઈ ગયો છે.</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d ટાસ્ક કાઢી નાખવો છે?</item>
         <item quantity="other">%1$d ટાસ્ક કાઢી નાખવા છે?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d ટાસ્ક કાઢી નાખવામાં આવ્યા</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d ટાસ્ક પૂર્ણ થયા</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d ટાસ્ક આર્કાઇવમાંથી દૂર કરાયો</item>
+        <item quantity="other">%1$d ટાસ્ક આર્કાઇવમાંથી દૂર કરાયા</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d પ્રોજેક્ટ આર્કાઇવ કરવો છે?</item>

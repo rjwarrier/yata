@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Oră (ex. 3:00 PM, 15:00, seara)</string>
     <string name="tasker_field_reminder">Memento (ex. cu 15 min înainte, cu 1 zi înainte)</string>
     <string name="tasker_field_priority">Prioritate (fără, mică, medie, mare)</string>
-    <string name="tasker_field_section">Secțiune (Dimineață sau După-amiază)</string>
+    <string name="tasker_field_section">Secțiune (opțional)</string>
     <string name="tasker_field_repeat">Repetare (ex. zilnic, în fiecare luni, la 2 săptămâni)</string>
     <string name="tasker_field_notes">Note</string>
     <string name="shortcut_quick_add_short">Adăugare rapidă</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">Golește coșul de gunoi</string>
     <string name="cd_trash_restore">Restaurează</string>
     <string name="cd_trash_delete_forever">Șterge definitiv</string>
+    <string name="trash_deleted_today">Ștearsă azi</string>
+    <string name="trash_deleted_yesterday">Ștearsă ieri</string>
+    <string name="trash_deleted_on">Ștearsă pe %1$s</string>
+    <string name="trash_kept_forever_suffix">păstrată până o elimini</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d zi rămasă</item>
+        <item quantity="other">%1$d zile rămase</item>
+    </plurals>
+    <string name="trash_restored_snackbar">„%1$s” a fost restaurată</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d sarcină restaurată</item>
+        <item quantity="other">%1$d sarcini restaurate</item>
+    </plurals>
+    <string name="action_view">Vizualizează</string>
     <string name="archive_title">Arhivă</string>
     <string name="archive_empty_state">Nicio sarcină pusă deoparte în Arhivă.</string>
     <string name="archive_empty_state_desc">Sarcinile arhivate vor apărea aici. Folosește Arhiva când vrei să ascunzi o sarcină fără a o șterge.</string>
     <string name="archive_empty_state_action">Mergi la Azi</string>
     <string name="archive_notice">Arhiva pune sarcinile deoparte fără a le șterge. Rămân ascunse din listele obișnuite, nu expiră niciodată și pot fi dezarhivate oricând.</string>
+    <string name="archive_section_shelved_active">Active</string>
+    <string name="archive_section_shelved_completed">Finalizate</string>
+    <string name="archive_unarchived_snackbar">„%1$s” a fost scoasă din arhivă</string>
     <string name="cd_archive_unarchive">Dezarhivează sarcina</string>
+        <string name="cd_bulk_select">Selectează</string>
     <string name="cd_bulk_cancel_selection">Anulează selecția</string>
     <string name="cd_bulk_mark_done">Marchează finalizată</string>
     <string name="cd_bulk_add_tag">Adaugă etichetă</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Toate sarcinile din această listă vor fi șterse definitiv.</string>
     <string name="list_detail_delete_list">Șterge lista</string>
     <string name="list_detail_delete_list_2">Ștergi lista?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Șterge doar lista pentru a-i păstra sarcinile fără listă sau șterge lista și toate sarcinile din ea.</string>
+    <string name="list_detail_list_only">Doar lista</string>
+    <string name="list_detail_list_tasks">Listă + sarcini</string>
     <string name="list_detail_edit_list">Editează lista</string>
     <string name="list_detail_search_in_list">Caută în listă</string>
     <string name="lock_backspace">Ștergere</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">Dezarhivează sarcina</string>
     <string name="task_link_copied">Link-ul sarcinii a fost copiat</string>
     <string name="task_deleted">Sarcină ștearsă</string>
+    <string name="task_marked_open">Sarcină marcată ca deschisă</string>
+    <string name="task_completed">Sarcină finalizată</string>
     <string name="export_failed">Export eșuat.</string>
     <string name="reminder_before_due_error">Memento-ul trebuie să fie înainte de ora termenului.</string>
     <string name="reminder_in_past_error">Acea oră de memento a trecut deja azi.</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Ștergi %1$d sarcină?</item>
         <item quantity="other">Ștergi %1$d sarcini?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d sarcini șterse</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d sarcini finalizate</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d sarcină scoasă din arhivă</item>
+        <item quantity="other">%1$d sarcini scoase din arhivă</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Arhivezi %1$d proiect?</item>

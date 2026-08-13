@@ -12,7 +12,7 @@
     <string name="tasker_field_time">সময় (যেমন বিকেল ৩:০০, ১৫:০০, সন্ধ্যা)</string>
     <string name="tasker_field_reminder">রিমাইন্ডার (যেমন ১৫ মিনিট আগে, ১ দিন আগে)</string>
     <string name="tasker_field_priority">অগ্রাধিকার (কোনোটি নয়, কম, মাঝারি, বেশি)</string>
-    <string name="tasker_field_section">বিভাগ (সকাল বা বিকেল)</string>
+    <string name="tasker_field_section">বিভাগ (ঐচ্ছিক)</string>
     <string name="tasker_field_repeat">পুনরাবৃত্তি (যেমন প্রতিদিন, প্রতি সোমবার, প্রতি ২ সপ্তাহে)</string>
     <string name="tasker_field_notes">নোট</string>
     <string name="shortcut_quick_add_short">দ্রুত যোগ</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">ট্র্যাশ খালি করুন</string>
     <string name="cd_trash_restore">পুনরুদ্ধার</string>
     <string name="cd_trash_delete_forever">চিরতরে মুছুন</string>
+    <string name="trash_deleted_today">আজ মুছে ফেলা হয়েছে</string>
+    <string name="trash_deleted_yesterday">গতকাল মুছে ফেলা হয়েছে</string>
+    <string name="trash_deleted_on">%1$s তারিখে মুছে ফেলা হয়েছে</string>
+    <string name="trash_kept_forever_suffix">আপনি না সরানো পর্যন্ত রাখা হয়</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d দিন বাকি</item>
+        <item quantity="other">%1$d দিন বাকি</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" পুনরুদ্ধার হয়েছে</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d টাস্ক পুনরুদ্ধার হয়েছে</item>
+        <item quantity="other">%1$d টাস্ক পুনরুদ্ধার হয়েছে</item>
+    </plurals>
+    <string name="action_view">দেখুন</string>
     <string name="archive_title">সংরক্ষণাগার</string>
     <string name="archive_empty_state">সংরক্ষণাগারে কোনো টাস্ক নেই।</string>
     <string name="archive_empty_state_desc">সংরক্ষণাগারভুক্ত টাস্ক এখানে দেখা যাবে। মুছে না ফেলে টাস্ক লুকাতে চাইলে সংরক্ষণাগার ব্যবহার করুন।</string>
     <string name="archive_empty_state_action">আজ-তে যান</string>
     <string name="archive_notice">সংরক্ষণাগার টাস্ক না মুছেই সরিয়ে রাখে। এগুলো স্বাভাবিক লিস্ট থেকে লুকানো থাকে, কখনো মেয়াদ শেষ হয় না, এবং যেকোনো সময় পুনরুদ্ধার করা যায়।</string>
+    <string name="archive_section_shelved_active">সক্রিয়</string>
+    <string name="archive_section_shelved_completed">সম্পন্ন</string>
+    <string name="archive_unarchived_snackbar">"%1$s" আর্কাইভ থেকে সরানো হয়েছে</string>
     <string name="cd_archive_unarchive">টাস্ক পুনরুদ্ধার</string>
+        <string name="cd_bulk_select">নির্বাচন করুন</string>
     <string name="cd_bulk_cancel_selection">নির্বাচন বাতিল করুন</string>
     <string name="cd_bulk_mark_done">সম্পন্ন চিহ্নিত করুন</string>
     <string name="cd_bulk_add_tag">ট্যাগ যোগ করুন</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">এই লিস্টের ভেতরের সব টাস্ক স্থায়ীভাবে মুছে ফেলা হবে।</string>
     <string name="list_detail_delete_list">লিস্ট মুছুন</string>
     <string name="list_detail_delete_list_2">লিস্ট মুছবেন?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">এর টাস্ক লিস্টবিহীন রাখতে শুধু লিস্ট মুছুন, অথবা লিস্ট এবং এর ভেতরের সব টাস্ক মুছুন।</string>
+    <string name="list_detail_list_only">শুধু লিস্ট</string>
+    <string name="list_detail_list_tasks">লিস্ট + টাস্ক</string>
     <string name="list_detail_edit_list">লিস্ট সম্পাদনা করুন</string>
     <string name="list_detail_search_in_list">লিস্টে খুঁজুন</string>
     <string name="lock_backspace">ব্যাকস্পেস</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">টাস্ক পুনরুদ্ধার করুন</string>
     <string name="task_link_copied">টাস্কের লিংক কপি হয়েছে</string>
     <string name="task_deleted">টাস্ক মুছে ফেলা হয়েছে</string>
+    <string name="task_marked_open">টাস্ক খোলা হিসেবে চিহ্নিত হয়েছে</string>
+    <string name="task_completed">টাস্ক সম্পন্ন হয়েছে</string>
     <string name="export_failed">রপ্তানি ব্যর্থ হয়েছে।</string>
     <string name="reminder_before_due_error">রিমাইন্ডার অবশ্যই শেষ সময়ের আগে হতে হবে।</string>
     <string name="reminder_in_past_error">সেই রিমাইন্ডারের সময় আজ ইতিমধ্যে পার হয়ে গেছে।</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d টাস্ক মুছবেন?</item>
         <item quantity="other">%1$d টাস্ক মুছবেন?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d টাস্ক মুছে ফেলা হয়েছে</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d টাস্ক সম্পন্ন হয়েছে</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d টাস্ক আর্কাইভ থেকে সরানো হয়েছে</item>
+        <item quantity="other">%1$d টাস্ক আর্কাইভ থেকে সরানো হয়েছে</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d প্রজেক্ট সংরক্ষণাগারভুক্ত করবেন?</item>

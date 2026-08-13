@@ -12,7 +12,7 @@
     <string name="tasker_field_time">நேரம் (எ.கா. 3:00 PM, 15:00, மாலை)</string>
     <string name="tasker_field_reminder">நினைவூட்டல் (எ.கா. 15 நிமிடம் முன், 1 நாள் முன்)</string>
     <string name="tasker_field_priority">முன்னுரிமை (இல்லை, குறைவு, நடுத்தரம், அதிகம்)</string>
-    <string name="tasker_field_section">பிரிவு (காலை அல்லது மதியம்)</string>
+    <string name="tasker_field_section">பிரிவு (விருப்பம்)</string>
     <string name="tasker_field_repeat">திரும்பச் செய் (எ.கா. தினமும், ஒவ்வொரு திங்களும், ஒவ்வொரு 2 வாரமும்)</string>
     <string name="tasker_field_notes">குறிப்புகள்</string>
     <string name="shortcut_quick_add_short">விரைவாகச் சேர்</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">குப்பையைக் காலி செய்</string>
     <string name="cd_trash_restore">மீட்டெடு</string>
     <string name="cd_trash_delete_forever">என்றென்றும் நீக்கு</string>
+    <string name="trash_deleted_today">இன்று நீக்கப்பட்டது</string>
+    <string name="trash_deleted_yesterday">நேற்று நீக்கப்பட்டது</string>
+    <string name="trash_deleted_on">%1$s அன்று நீக்கப்பட்டது</string>
+    <string name="trash_kept_forever_suffix">அகற்றும் வரை வைக்கப்படும்</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d நாள் மீதம்</item>
+        <item quantity="other">%1$d நாள் மீதம்</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" மீட்டமைக்கப்பட்டது</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d பணி மீட்டமைக்கப்பட்டது</item>
+        <item quantity="other">%1$d பணிகள் மீட்டமைக்கப்பட்டன</item>
+    </plurals>
+    <string name="action_view">பார்</string>
     <string name="archive_title">காப்பகம்</string>
     <string name="archive_empty_state">காப்பகத்தில் ஒதுக்கி வைக்கப்பட்ட பணிகள் இல்லை.</string>
     <string name="archive_empty_state_desc">காப்பகப்படுத்தப்பட்ட பணிகள் இங்கே தோன்றும். நீக்காமல் ஒரு பணியை மறைக்க காப்பகத்தைப் பயன்படுத்தவும்.</string>
     <string name="archive_empty_state_action">இன்றுக்குச் செல்</string>
     <string name="archive_notice">காப்பகம் பணிகளை நீக்காமல் ஒதுக்கி வைக்கிறது. அவை சாதாரண பட்டியல்களில் இருந்து மறைந்தே இருக்கும், ஒருபோதும் காலாவதியாகாது, எப்போது வேண்டுமானாலும் காப்பகத்திலிருந்து மீட்கலாம்.</string>
+    <string name="archive_section_shelved_active">செயலில்</string>
+    <string name="archive_section_shelved_completed">முடிந்த</string>
+    <string name="archive_unarchived_snackbar">"%1$s" காப்பகத்திலிருந்து அகற்றப்பட்டது</string>
     <string name="cd_archive_unarchive">பணியைக் காப்பகத்திலிருந்து மீட்டெடு</string>
+        <string name="cd_bulk_select">தேர்ந்தெடு</string>
     <string name="cd_bulk_cancel_selection">தேர்வை ரத்து செய்</string>
     <string name="cd_bulk_mark_done">முடிந்ததாகக் குறி</string>
     <string name="cd_bulk_add_tag">குறிச்சொல் சேர்</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">இந்த பட்டியலில் உள்ள அனைத்து பணிகளும் நிரந்தரமாக நீக்கப்படும்.</string>
     <string name="list_detail_delete_list">பட்டியலை நீக்கு</string>
     <string name="list_detail_delete_list_2">பட்டியலை நீக்கவா?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">பணிகளைப் பட்டியலின்றி வைத்திருக்க பட்டியலை மட்டும் நீக்கவும், அல்லது பட்டியலையும் அதிலுள்ள அனைத்து பணிகளையும் நீக்கவும்.</string>
+    <string name="list_detail_list_only">பட்டியல் மட்டும்</string>
+    <string name="list_detail_list_tasks">பட்டியல் + பணிகள்</string>
     <string name="list_detail_edit_list">பட்டியலைத் திருத்து</string>
     <string name="list_detail_search_in_list">பட்டியலில் தேடு</string>
     <string name="lock_backspace">பின்னகற்றி</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">பணியைக் காப்பகத்திலிருந்து மீட்டெடு</string>
     <string name="task_link_copied">பணி இணைப்பு நகலெடுக்கப்பட்டது</string>
     <string name="task_deleted">பணி நீக்கப்பட்டது</string>
+    <string name="task_marked_open">பணி திறந்ததாகக் குறிக்கப்பட்டது</string>
+    <string name="task_completed">பணி முடிந்தது</string>
     <string name="export_failed">ஏற்றுமதி தோல்வியடைந்தது.</string>
     <string name="reminder_before_due_error">நினைவூட்டல் கடைசி நேரத்திற்கு முன் இருக்க வேண்டும்.</string>
     <string name="reminder_in_past_error">அந்த நினைவூட்டல் நேரம் இன்று ஏற்கனவே கடந்துவிட்டது.</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d பணியை நீக்கவா?</item>
         <item quantity="other">%1$d பணிகளை நீக்கவா?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d பணிகள் நீக்கப்பட்டன</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d பணிகள் முடிந்தன</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d பணி காப்பகத்திலிருந்து அகற்றப்பட்டது</item>
+        <item quantity="other">%1$d பணிகள் காப்பகத்திலிருந்து அகற்றப்பட்டன</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d திட்டத்தைக் காப்பகப்படுத்தவா?</item>

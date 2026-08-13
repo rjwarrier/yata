@@ -12,7 +12,7 @@
     <string name="tasker_field_time">సమయం (ఉదా. 3:00 PM, 15:00, సాయంత్రం)</string>
     <string name="tasker_field_reminder">రిమైండర్ (ఉదా. 15 నిమిషాల ముందు, 1 రోజు ముందు)</string>
     <string name="tasker_field_priority">ప్రాధాన్యత (లేదు, తక్కువ, మధ్యస్థం, ఎక్కువ)</string>
-    <string name="tasker_field_section">విభాగం (ఉదయం లేదా మధ్యాహ్నం)</string>
+    <string name="tasker_field_section">విభాగం (ఐచ్ఛికం)</string>
     <string name="tasker_field_repeat">పునరావృతం (ఉదా. ప్రతిరోజూ, ప్రతి సోమవారం, ప్రతి 2 వారాలకు)</string>
     <string name="tasker_field_notes">గమనికలు</string>
     <string name="shortcut_quick_add_short">త్వరిత జోడింపు</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">ట్రాష్ ఖాళీ చేయండి</string>
     <string name="cd_trash_restore">పునరుద్ధరించండి</string>
     <string name="cd_trash_delete_forever">శాశ్వతంగా తొలగించండి</string>
+    <string name="trash_deleted_today">ఈరోజు తొలగించబడింది</string>
+    <string name="trash_deleted_yesterday">నిన్న తొలగించబడింది</string>
+    <string name="trash_deleted_on">%1$s న తొలగించబడింది</string>
+    <string name="trash_kept_forever_suffix">మీరు తీసివేసే వరకు ఉంచబడుతుంది</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d రోజు మిగిలి ఉంది</item>
+        <item quantity="other">%1$d రోజులు మిగిలి ఉన్నాయి</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" పునరుద్ధరించబడింది</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d టాస్క్ పునరుద్ధరించబడింది</item>
+        <item quantity="other">%1$d టాస్క్‌లు పునరుద్ధరించబడ్డాయి</item>
+    </plurals>
+    <string name="action_view">చూడండి</string>
     <string name="archive_title">ఆర్కైవ్</string>
     <string name="archive_empty_state">ఆర్కైవ్‌లో షెల్వ్ చేసిన టాస్క్‌లు లేవు.</string>
     <string name="archive_empty_state_desc">ఆర్కైవ్ చేసిన టాస్క్‌లు ఇక్కడ కనిపిస్తాయి. టాస్క్‌ను తొలగించకుండా దాచాలనుకున్నప్పుడు ఆర్కైవ్ వాడండి.</string>
     <string name="archive_empty_state_action">ఈరోజుకు వెళ్ళండి</string>
     <string name="archive_notice">ఆర్కైవ్ టాస్క్‌లను తొలగించకుండా షెల్వ్ చేస్తుంది. అవి సాధారణ జాబితాల నుండి దాగి ఉంటాయి, ఎప్పటికీ గడువు ముగియవు, ఎప్పుడైనా అన్‌ఆర్కైవ్ చేయవచ్చు.</string>
+    <string name="archive_section_shelved_active">యాక్టివ్</string>
+    <string name="archive_section_shelved_completed">పూర్తయిన</string>
+    <string name="archive_unarchived_snackbar">"%1$s" ఆర్కైవ్ నుండి తీసివేయబడింది</string>
     <string name="cd_archive_unarchive">టాస్క్ అన్‌ఆర్కైవ్ చేయండి</string>
+        <string name="cd_bulk_select">ఎంచుకోండి</string>
     <string name="cd_bulk_cancel_selection">ఎంపిక రద్దు చేయండి</string>
     <string name="cd_bulk_mark_done">పూర్తయినట్లు గుర్తించండి</string>
     <string name="cd_bulk_add_tag">ట్యాగ్ జోడించండి</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">ఈ జాబితాలోని అన్ని టాస్క్‌లు శాశ్వతంగా తొలగించబడతాయి.</string>
     <string name="list_detail_delete_list">జాబితా తొలగించండి</string>
     <string name="list_detail_delete_list_2">జాబితా తొలగించాలా?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">టాస్క్‌లను జాబితా లేకుండా ఉంచడానికి కేవలం జాబితాను మాత్రమే తొలగించండి, లేదా జాబితాతో పాటు అందులోని అన్ని టాస్క్‌లను తొలగించండి.</string>
+    <string name="list_detail_list_only">జాబితా మాత్రమే</string>
+    <string name="list_detail_list_tasks">జాబితా + టాస్క్‌లు</string>
     <string name="list_detail_edit_list">జాబితా సవరించండి</string>
     <string name="list_detail_search_in_list">జాబితాలో వెతకండి</string>
     <string name="lock_backspace">బ్యాక్‌స్పేస్</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">టాస్క్ అన్‌ఆర్కైవ్ చేయండి</string>
     <string name="task_link_copied">టాస్క్ లింక్ కాపీ చేయబడింది</string>
     <string name="task_deleted">టాస్క్ తొలగించబడింది</string>
+    <string name="task_marked_open">టాస్క్ తెరిచినట్లు గుర్తించబడింది</string>
+    <string name="task_completed">టాస్క్ పూర్తయింది</string>
     <string name="export_failed">ఎగుమతి విఫలమైంది.</string>
     <string name="reminder_before_due_error">రిమైండర్ గడువు సమయానికి ముందు ఉండాలి.</string>
     <string name="reminder_in_past_error">ఆ రిమైండర్ సమయం ఈరోజు ఇప్పటికే గడిచిపోయింది.</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d టాస్క్ తొలగించాలా?</item>
         <item quantity="other">%1$d టాస్క్‌లు తొలగించాలా?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d టాస్క్‌లు తొలగించబడ్డాయి</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d టాస్క్‌లు పూర్తయ్యాయి</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d టాస్క్ ఆర్కైవ్ నుండి తీసివేయబడింది</item>
+        <item quantity="other">%1$d టాస్క్‌లు ఆర్కైవ్ నుండి తీసివేయబడ్డాయి</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d ప్రాజెక్ట్ ఆర్కైవ్ చేయాలా?</item>

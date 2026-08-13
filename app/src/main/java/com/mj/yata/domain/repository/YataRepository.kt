@@ -87,6 +87,7 @@ interface YataRepository {
     fun getListById(id: String): Flow<YataList?>
     suspend fun upsertList(list: YataList)
     suspend fun deleteList(list: YataList)
+    suspend fun deleteListOnly(list: YataList)
     suspend fun setListsArchived(ids: List<String>, archived: Boolean)
 
     // People

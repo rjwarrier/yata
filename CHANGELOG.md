@@ -46,6 +46,18 @@ test-only changes belong in the commit message, not here, unless they change beh
   app's lists instead of appearing/disappearing abruptly.
 - Fixed the Task Detail and New Task sheet's expand/collapse animations ignoring the Motion mode
   setting.
+- Deleting a list now offers "List only" (keep its tasks, unlinked) or "List + tasks", matching the
+  choice Project delete has always had.
+- Deleting a project or list no longer permanently destroys its tasks outright - they're soft-deleted
+  into Trash like any other task delete, recoverable until Trash's retention period clears them.
+- Archive now supports multiselect (long-press a task) with a bulk unarchive action, and its
+  unarchive-undo snackbar matches the rest of the app's undo behaviour (respects your configured
+  undo window instead of a fixed 10 seconds).
+- Trash now supports multiselect (long-press a task) with bulk restore and bulk delete-forever
+  actions. Its "Deleted today/yesterday/on <date> · N days left" labels are now localized instead of
+  always showing in English regardless of language setting.
+- Various previously English-only snackbar messages (task deleted/completed/reopened, including the
+  bulk-action counts) are now localized in all supported languages.
 
 ## [0.92.2] - 2026-08-13
 

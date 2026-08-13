@@ -13,7 +13,7 @@
     <string name="tasker_field_time">Hora (p. ej. 3:00 PM, 15:00, tarde)</string>
     <string name="tasker_field_reminder">Recordatorio (p. ej. 15 min antes, 1 día antes)</string>
     <string name="tasker_field_priority">Prioridad (ninguna, baja, media, alta)</string>
-    <string name="tasker_field_section">Sección (Mañana o Tarde)</string>
+    <string name="tasker_field_section">Sección (opcional)</string>
     <string name="tasker_field_repeat">Repetir (p. ej. diario, cada lunes, cada 2 semanas)</string>
     <string name="tasker_field_notes">Notas</string>
 
@@ -255,13 +255,31 @@
     <string name="cd_trash_empty">Vaciar papelera</string>
     <string name="cd_trash_restore">Restaurar</string>
     <string name="cd_trash_delete_forever">Eliminar para siempre</string>
+    <string name="trash_deleted_today">Eliminada hoy</string>
+    <string name="trash_deleted_yesterday">Eliminada ayer</string>
+    <string name="trash_deleted_on">Eliminada el %1$s</string>
+    <string name="trash_kept_forever_suffix">se conserva hasta que la elimines</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">queda %1$d día</item>
+        <item quantity="other">quedan %1$d días</item>
+    </plurals>
+    <string name="trash_restored_snackbar">Se restauró "%1$s"</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">Se restauró %1$d tarea</item>
+        <item quantity="other">Se restauraron %1$d tareas</item>
+    </plurals>
+    <string name="action_view">Ver</string>
     <string name="archive_title">Archivo</string>
     <string name="archive_empty_state">No hay tareas archivadas.</string>
     <string name="archive_empty_state_desc">Las tareas archivadas aparecerán aquí. Usa Archivo cuando quieras ocultar una tarea sin eliminarla.</string>
     <string name="archive_empty_state_action">Ir a Hoy</string>
     <string name="archive_notice">Archivo guarda tareas sin eliminarlas. Permanecen ocultas de las listas normales, nunca caducan y puedes desarchivarlas cuando quieras.</string>
+    <string name="archive_section_shelved_active">Activas</string>
+    <string name="archive_section_shelved_completed">Completadas</string>
+    <string name="archive_unarchived_snackbar">Se quitó del archivo "%1$s"</string>
     <string name="cd_archive_unarchive">Desarchivar tarea</string>
 
+        <string name="cd_bulk_select">Seleccionar</string>
     <string name="cd_bulk_cancel_selection">Cancelar selección</string>
     <string name="cd_bulk_mark_done">Marcar completadas</string>
     <string name="cd_bulk_add_tag">Añadir etiqueta</string>
@@ -279,6 +297,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">¿Eliminar %1$d tarea?</item>
         <item quantity="other">¿Eliminar %1$d tareas?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d tareas eliminadas</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d tareas completadas</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d tarea restaurada del archivo</item>
+        <item quantity="other">%1$d tareas restauradas del archivo</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">¿Archivar %1$d proyecto?</item>
@@ -374,6 +404,8 @@
     <string name="task_unarchive_action">Desarchivar tarea</string>
     <string name="task_link_copied">Enlace de tarea copiado</string>
     <string name="task_deleted">Tarea eliminada</string>
+    <string name="task_marked_open">Tarea marcada como abierta</string>
+    <string name="task_completed">Tarea completada</string>
     <string name="export_failed">Error al exportar.</string>
     <string name="reminder_before_due_error">El recordatorio debe ser antes de la hora límite.</string>
     <string name="reminder_in_past_error">Esa hora de recordatorio ya pasó hoy.</string>
@@ -695,6 +727,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Todas las tareas dentro de esta lista se eliminarán permanentemente.</string>
     <string name="list_detail_delete_list">Eliminar lista</string>
     <string name="list_detail_delete_list_2">¿Eliminar lista?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Elimina solo la lista para conservar sus tareas sin lista, o elimina la lista y todas las tareas dentro.</string>
+    <string name="list_detail_list_only">Solo lista</string>
+    <string name="list_detail_list_tasks">Lista + tareas</string>
     <string name="list_detail_edit_list">Editar lista</string>
     <string name="list_detail_search_in_list">Buscar en lista</string>
     <string name="lock_backspace">Borrar</string>

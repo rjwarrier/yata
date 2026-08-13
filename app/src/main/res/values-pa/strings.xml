@@ -12,7 +12,7 @@
     <string name="tasker_field_time">ਸਮਾਂ (ਜਿਵੇਂ 3:00 PM, 15:00, ਸ਼ਾਮ)</string>
     <string name="tasker_field_reminder">ਰੀਮਾਈਂਡਰ (ਜਿਵੇਂ 15 ਮਿੰਟ ਪਹਿਲਾਂ, 1 ਦਿਨ ਪਹਿਲਾਂ)</string>
     <string name="tasker_field_priority">ਤਰਜੀਹ (ਕੋਈ ਨਹੀਂ, ਘੱਟ, ਮੱਧਮ, ਵੱਧ)</string>
-    <string name="tasker_field_section">ਭਾਗ (ਸਵੇਰ ਜਾਂ ਦੁਪਹਿਰ)</string>
+    <string name="tasker_field_section">ਭਾਗ (ਵਿਕਲਪਿਕ)</string>
     <string name="tasker_field_repeat">ਦੁਹਰਾਓ (ਜਿਵੇਂ ਰੋਜ਼ਾਨਾ, ਹਰ ਸੋਮਵਾਰ, ਹਰ 2 ਹਫ਼ਤੇ)</string>
     <string name="tasker_field_notes">ਨੋਟਸ</string>
     <string name="shortcut_quick_add_short">ਤੁਰੰਤ ਜੋੜੋ</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">ਰੱਦੀ ਖਾਲੀ ਕਰੋ</string>
     <string name="cd_trash_restore">ਬਹਾਲ ਕਰੋ</string>
     <string name="cd_trash_delete_forever">ਹਮੇਸ਼ਾ ਲਈ ਮਿਟਾਓ</string>
+    <string name="trash_deleted_today">ਅੱਜ ਮਿਟਾਇਆ</string>
+    <string name="trash_deleted_yesterday">ਕੱਲ੍ਹ ਮਿਟਾਇਆ</string>
+    <string name="trash_deleted_on">%1$s ਨੂੰ ਮਿਟਾਇਆ</string>
+    <string name="trash_kept_forever_suffix">ਹਟਾਉਣ ਤੱਕ ਰੱਖਿਆ ਜਾਂਦਾ ਹੈ</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d ਦਿਨ ਬਾਕੀ</item>
+        <item quantity="other">%1$d ਦਿਨ ਬਾਕੀ</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" ਬਹਾਲ ਕੀਤਾ ਗਿਆ</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d ਕਾਰਜ ਬਹਾਲ ਕੀਤਾ ਗਿਆ</item>
+        <item quantity="other">%1$d ਕਾਰਜ ਬਹਾਲ ਕੀਤੇ ਗਏ</item>
+    </plurals>
+    <string name="action_view">ਵੇਖੋ</string>
     <string name="archive_title">ਆਰਕਾਈਵ</string>
     <string name="archive_empty_state">ਆਰਕਾਈਵ ਵਿੱਚ ਕੋਈ ਸਾਂਭੇ ਕਾਰਜ ਨਹੀਂ।</string>
     <string name="archive_empty_state_desc">ਆਰਕਾਈਵ ਕੀਤੇ ਕਾਰਜ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੇ। ਜਦੋਂ ਤੁਸੀਂ ਕਾਰਜ ਮਿਟਾਏ ਬਿਨਾਂ ਲੁਕਾਉਣਾ ਚਾਹੋ ਤਾਂ ਆਰਕਾਈਵ ਵਰਤੋ।</string>
     <string name="archive_empty_state_action">ਅੱਜ \'ਤੇ ਜਾਓ</string>
     <string name="archive_notice">ਆਰਕਾਈਵ ਕਾਰਜਾਂ ਨੂੰ ਮਿਟਾਏ ਬਿਨਾਂ ਸਾਂਭਦੀ ਹੈ। ਇਹ ਆਮ ਸੂਚੀਆਂ ਤੋਂ ਲੁਕੇ ਰਹਿੰਦੇ ਹਨ, ਕਦੇ ਖਤਮ ਨਹੀਂ ਹੁੰਦੇ, ਅਤੇ ਕਿਸੇ ਵੀ ਸਮੇਂ ਅਨ-ਆਰਕਾਈਵ ਕੀਤੇ ਜਾ ਸਕਦੇ ਹਨ।</string>
+    <string name="archive_section_shelved_active">ਸਰਗਰਮ</string>
+    <string name="archive_section_shelved_completed">ਪੂਰੇ ਹੋਏ</string>
+    <string name="archive_unarchived_snackbar">"%1$s" ਆਰਕਾਈਵ ਤੋਂ ਹਟਾਇਆ ਗਿਆ</string>
     <string name="cd_archive_unarchive">ਕਾਰਜ ਅਨ-ਆਰਕਾਈਵ ਕਰੋ</string>
+        <string name="cd_bulk_select">ਚੁਣੋ</string>
     <string name="cd_bulk_cancel_selection">ਚੋਣ ਰੱਦ ਕਰੋ</string>
     <string name="cd_bulk_mark_done">ਪੂਰਾ ਚਿੰਨ੍ਹਿਤ ਕਰੋ</string>
     <string name="cd_bulk_add_tag">ਟੈਗ ਜੋੜੋ</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">ਇਸ ਸੂਚੀ ਦੇ ਸਾਰੇ ਕਾਰਜ ਪੱਕੇ ਤੌਰ \'ਤੇ ਮਿਟਾ ਦਿੱਤੇ ਜਾਣਗੇ।</string>
     <string name="list_detail_delete_list">ਸੂਚੀ ਮਿਟਾਓ</string>
     <string name="list_detail_delete_list_2">ਸੂਚੀ ਮਿਟਾਈਏ?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">ਇਸਦੇ ਕਾਰਜਾਂ ਨੂੰ ਬਿਨਾਂ ਸੂਚੀ ਰੱਖਣ ਲਈ ਸਿਰਫ਼ ਸੂਚੀ ਮਿਟਾਓ, ਜਾਂ ਸੂਚੀ ਅਤੇ ਇਸ ਵਿੱਚਲੇ ਸਾਰੇ ਕਾਰਜ ਮਿਟਾਓ।</string>
+    <string name="list_detail_list_only">ਸਿਰਫ਼ ਸੂਚੀ</string>
+    <string name="list_detail_list_tasks">ਸੂਚੀ + ਕਾਰਜ</string>
     <string name="list_detail_edit_list">ਸੂਚੀ ਸੰਪਾਦਿਤ ਕਰੋ</string>
     <string name="list_detail_search_in_list">ਸੂਚੀ ਵਿੱਚ ਖੋਜੋ</string>
     <string name="lock_backspace">ਬੈਕਸਪੇਸ</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">ਕਾਰਜ ਅਨ-ਆਰਕਾਈਵ ਕਰੋ</string>
     <string name="task_link_copied">ਕਾਰਜ ਲਿੰਕ ਕਾਪੀ ਹੋਇਆ</string>
     <string name="task_deleted">ਕਾਰਜ ਮਿਟਾਇਆ</string>
+    <string name="task_marked_open">ਕਾਰਜ ਨੂੰ ਖੁੱਲ੍ਹਾ ਵਜੋਂ ਚਿੰਨ੍ਹਿਤ ਕੀਤਾ ਗਿਆ</string>
+    <string name="task_completed">ਕਾਰਜ ਪੂਰਾ ਹੋਇਆ</string>
     <string name="export_failed">ਨਿਰਯਾਤ ਅਸਫਲ।</string>
     <string name="reminder_before_due_error">ਰੀਮਾਈਂਡਰ ਨਿਯਤ ਸਮੇਂ ਤੋਂ ਪਹਿਲਾਂ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ।</string>
     <string name="reminder_in_past_error">ਉਹ ਰੀਮਾਈਂਡਰ ਸਮਾਂ ਅੱਜ ਪਹਿਲਾਂ ਹੀ ਲੰਘ ਚੁੱਕਾ ਹੈ।</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d ਕਾਰਜ ਮਿਟਾਈਏ?</item>
         <item quantity="other">%1$d ਕਾਰਜ ਮਿਟਾਈਏ?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d ਕਾਰਜ ਮਿਟਾਏ ਗਏ</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d ਕਾਰਜ ਪੂਰੇ ਹੋਏ</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d ਕਾਰਜ ਆਰਕਾਈਵ ਤੋਂ ਹਟਾਇਆ ਗਿਆ</item>
+        <item quantity="other">%1$d ਕਾਰਜ ਆਰਕਾਈਵ ਤੋਂ ਹਟਾਏ ਗਏ</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d ਪ੍ਰੋਜੈਕਟ ਆਰਕਾਈਵ ਕਰੀਏ?</item>

@@ -14,7 +14,7 @@
     <string name="tasker_field_time">Uhrzeit (z. B. 15:00, abends)</string>
     <string name="tasker_field_reminder">Erinnerung (z. B. 15 Min. vorher, 1 Tag vorher)</string>
     <string name="tasker_field_priority">Priorität (keine, niedrig, mittel, hoch)</string>
-    <string name="tasker_field_section">Abschnitt (Morgen oder Nachmittag)</string>
+    <string name="tasker_field_section">Abschnitt (optional)</string>
     <string name="tasker_field_repeat">Wiederholung (z. B. täglich, jeden Montag, alle 2 Wochen)</string>
     <string name="tasker_field_notes">Notizen</string>
 
@@ -332,6 +332,20 @@
     <string name="cd_trash_empty">Papierkorb leeren</string>
     <string name="cd_trash_restore">Wiederherstellen</string>
     <string name="cd_trash_delete_forever">Endgültig löschen</string>
+    <string name="trash_deleted_today">Heute gelöscht</string>
+    <string name="trash_deleted_yesterday">Gestern gelöscht</string>
+    <string name="trash_deleted_on">Gelöscht am %1$s</string>
+    <string name="trash_kept_forever_suffix">aufbewahrt, bis du sie entfernst</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">noch %1$d Tag</item>
+        <item quantity="other">noch %1$d Tage</item>
+    </plurals>
+    <string name="trash_restored_snackbar">„%1$s“ wiederhergestellt</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d Aufgabe wiederhergestellt</item>
+        <item quantity="other">%1$d Aufgaben wiederhergestellt</item>
+    </plurals>
+    <string name="action_view">Anzeigen</string>
 
     <!-- Archive -->
     <string name="archive_title">Archiv</string>
@@ -339,9 +353,13 @@
     <string name="archive_empty_state_desc">Archivierte Aufgaben erscheinen hier. Nutze Archiv, um eine Aufgabe auszublenden, ohne sie zu löschen.</string>
     <string name="archive_empty_state_action">Zu Heute</string>
     <string name="archive_notice">Archiv legt Aufgaben ab, ohne sie zu löschen. Sie bleiben aus normalen Listen ausgeblendet, verfallen nie und können jederzeit wiederhergestellt werden.</string>
+    <string name="archive_section_shelved_active">Aktiv</string>
+    <string name="archive_section_shelved_completed">Erledigt</string>
+    <string name="archive_unarchived_snackbar">„%1$s“ aus dem Archiv geholt</string>
     <string name="cd_archive_unarchive">Aufgabe wiederherstellen</string>
 
     <!-- Bulk selection toolbar -->
+        <string name="cd_bulk_select">Auswählen</string>
     <string name="cd_bulk_cancel_selection">Auswahl abbrechen</string>
     <string name="cd_bulk_mark_done">Als erledigt markieren</string>
     <string name="cd_bulk_add_tag">Tag hinzufügen</string>
@@ -367,6 +385,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d Aufgabe löschen?</item>
         <item quantity="other">%1$d Aufgaben löschen?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d Aufgaben gelöscht</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d Aufgaben erledigt</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d Aufgabe aus dem Archiv geholt</item>
+        <item quantity="other">%1$d Aufgaben aus dem Archiv geholt</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d Projekt archivieren?</item>
@@ -675,6 +705,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Alle Aufgaben in dieser Liste werden endgültig gelöscht.</string>
     <string name="list_detail_delete_list">Liste löschen</string>
     <string name="list_detail_delete_list_2">Liste löschen?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Nur die Liste löschen, um ihre Aufgaben ohne Liste zu behalten, oder die Liste und alle darin enthaltenen Aufgaben löschen.</string>
+    <string name="list_detail_list_only">Nur Liste</string>
+    <string name="list_detail_list_tasks">Liste + Aufgaben</string>
     <string name="list_detail_edit_list">Liste bearbeiten</string>
     <string name="list_detail_search_in_list">In Liste suchen</string>
     <string name="lock_backspace">Rücktaste</string>
@@ -1059,6 +1092,8 @@
     <string name="task_unarchive_action">Aufgabe wiederherstellen</string>
     <string name="task_link_copied">Aufgaben-Link kopiert</string>
     <string name="task_deleted">Aufgabe gelöscht</string>
+    <string name="task_marked_open">Aufgabe als offen markiert</string>
+    <string name="task_completed">Aufgabe erledigt</string>
     <string name="export_failed">Export fehlgeschlagen.</string>
     <string name="reminder_before_due_error">Die Erinnerung muss vor der Fälligkeitszeit liegen.</string>
     <string name="reminder_in_past_error">Diese Erinnerungszeit ist heute bereits verstrichen.</string>

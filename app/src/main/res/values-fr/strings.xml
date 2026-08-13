@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Heure (par exemple 15h00, 15h00, soir)</string>
     <string name="tasker_field_reminder">Rappel (par exemple 15 min avant, 1 jour avant)</string>
     <string name="tasker_field_priority">Priorité (aucune, faible, moyenne, élevée)</string>
-    <string name="tasker_field_section">Section (Matin ou Après-midi)</string>
+    <string name="tasker_field_section">Section (facultatif)</string>
     <string name="tasker_field_repeat">Répéter (par exemple quotidiennement, tous les lundis, toutes les 2 semaines)</string>
     <string name="tasker_field_notes">Remarques</string>
     <string name="shortcut_quick_add_short">Ajout rapide</string>
@@ -240,12 +240,30 @@
     <string name="cd_trash_empty">Vider la poubelle</string>
     <string name="cd_trash_restore">Restaurer</string>
     <string name="cd_trash_delete_forever">Supprimer pour toujours</string>
+    <string name="trash_deleted_today">Supprimée aujourd\'hui</string>
+    <string name="trash_deleted_yesterday">Supprimée hier</string>
+    <string name="trash_deleted_on">Supprimée le %1$s</string>
+    <string name="trash_kept_forever_suffix">conservée jusqu\'à suppression</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d jour restant</item>
+        <item quantity="other">%1$d jours restants</item>
+    </plurals>
+    <string name="trash_restored_snackbar">« %1$s » restaurée</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d tâche restaurée</item>
+        <item quantity="other">%1$d tâches restaurées</item>
+    </plurals>
+    <string name="action_view">Voir</string>
     <string name="archive_title">Archive</string>
     <string name="archive_empty_state">Aucune tâche mise de côté dans Archive.</string>
     <string name="archive_empty_state_desc">Les tâches archivées apparaîtront ici. Utilisez Archive lorsque vous souhaitez masquer une tâche sans la supprimer.</string>
     <string name="archive_empty_state_action">Aller à aujourd\'hui</string>
     <string name="archive_notice">Archivez les tâches des étagères sans les supprimer. Ils restent masqués des listes normales, n’expirent jamais et peuvent être désarchivés à tout moment.</string>
+    <string name="archive_section_shelved_active">Actives</string>
+    <string name="archive_section_shelved_completed">Terminées</string>
+    <string name="archive_unarchived_snackbar">« %1$s » désarchivée</string>
     <string name="cd_archive_unarchive">Tâche de désarchivage</string>
+        <string name="cd_bulk_select">Sélectionner</string>
     <string name="cd_bulk_cancel_selection">Annuler la sélection</string>
     <string name="cd_bulk_mark_done">Marquer comme terminé</string>
     <string name="cd_bulk_add_tag">Ajouter une balise</string>
@@ -262,6 +280,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Supprimer la tâche %1$d ?</item>
         <item quantity="other">Supprimer les tâches %1$d ?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d tâches supprimées</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d tâches terminées</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d tâche désarchivée</item>
+        <item quantity="other">%1$d tâches désarchivées</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Archiver le projet %1$d ?</item>
@@ -412,6 +442,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Toutes les tâches de cette liste seront définitivement supprimées.</string>
     <string name="list_detail_delete_list">Supprimer la liste</string>
     <string name="list_detail_delete_list_2">Supprimer la liste ?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Supprimez uniquement la liste pour conserver ses tâches sans liste, ou supprimez la liste et toutes les tâches qu\'elle contient.</string>
+    <string name="list_detail_list_only">Liste uniquement</string>
+    <string name="list_detail_list_tasks">Liste + tâches</string>
     <string name="list_detail_edit_list">Modifier la liste</string>
     <string name="list_detail_search_in_list">Rechercher dans la liste</string>
     <string name="lock_backspace">Retour arrière</string>
@@ -715,6 +748,8 @@
     <string name="task_unarchive_action">Tâche de désarchivage</string>
     <string name="task_link_copied">Lien de tâche copié</string>
     <string name="task_deleted">Tâche supprimée</string>
+    <string name="task_marked_open">Tâche marquée comme ouverte</string>
+    <string name="task_completed">Tâche terminée</string>
     <string name="export_failed">L\'exportation a échoué.</string>
     <string name="reminder_before_due_error">Le rappel doit être effectué avant l\'heure prévue.</string>
     <string name="reminder_in_past_error">Ce temps de rappel est déjà passé aujourd’hui.</string>

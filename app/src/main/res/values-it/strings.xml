@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Ora (es. 15:00, 3:00 PM, sera)</string>
     <string name="tasker_field_reminder">Promemoria (es. 15 min prima, 1 giorno prima)</string>
     <string name="tasker_field_priority">Priorità (nessuna, bassa, media, alta)</string>
-    <string name="tasker_field_section">Sezione (Mattina o Pomeriggio)</string>
+    <string name="tasker_field_section">Sezione (facoltativa)</string>
     <string name="tasker_field_repeat">Ripeti (es. ogni giorno, ogni lunedì, ogni 2 settimane)</string>
     <string name="tasker_field_notes">Note</string>
     <string name="shortcut_quick_add_short">Aggiunta rapida</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">Svuota cestino</string>
     <string name="cd_trash_restore">Ripristina</string>
     <string name="cd_trash_delete_forever">Elimina definitivamente</string>
+    <string name="trash_deleted_today">Eliminata oggi</string>
+    <string name="trash_deleted_yesterday">Eliminata ieri</string>
+    <string name="trash_deleted_on">Eliminata il %1$s</string>
+    <string name="trash_kept_forever_suffix">conservata finché non la rimuovi</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d giorno rimasto</item>
+        <item quantity="other">%1$d giorni rimasti</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" ripristinata</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d attività ripristinata</item>
+        <item quantity="other">%1$d attività ripristinate</item>
+    </plurals>
+    <string name="action_view">Visualizza</string>
     <string name="archive_title">Archivio</string>
     <string name="archive_empty_state">Nessuna attività archiviata.</string>
     <string name="archive_empty_state_desc">Le attività archiviate compariranno qui. Usa l\'archivio quando vuoi nascondere un\'attività senza eliminarla.</string>
     <string name="archive_empty_state_action">Vai a Oggi</string>
     <string name="archive_notice">L\'archivio mette da parte le attività senza eliminarle. Restano nascoste dagli elenchi normali, non scadono mai e possono essere ripristinate in qualsiasi momento.</string>
+    <string name="archive_section_shelved_active">Attivi</string>
+    <string name="archive_section_shelved_completed">Completate</string>
+    <string name="archive_unarchived_snackbar">"%1$s" rimossa dall\'archivio</string>
     <string name="cd_archive_unarchive">Rimuovi dall\'archivio</string>
+        <string name="cd_bulk_select">Seleziona</string>
     <string name="cd_bulk_cancel_selection">Annulla selezione</string>
     <string name="cd_bulk_mark_done">Contrassegna come completata</string>
     <string name="cd_bulk_add_tag">Aggiungi tag</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Tutte le attività contenute in questo elenco verranno eliminate definitivamente.</string>
     <string name="list_detail_delete_list">Elimina elenco</string>
     <string name="list_detail_delete_list_2">Eliminare l\'elenco?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Elimina solo l\'elenco per mantenere le sue attività senza un elenco, oppure elimina l\'elenco e tutte le attività al suo interno.</string>
+    <string name="list_detail_list_only">Solo elenco</string>
+    <string name="list_detail_list_tasks">Elenco + attività</string>
     <string name="list_detail_edit_list">Modifica elenco</string>
     <string name="list_detail_search_in_list">Cerca nell\'elenco</string>
     <string name="lock_backspace">Backspace</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">Rimuovi dall\'archivio</string>
     <string name="task_link_copied">Link all\'attività copiato</string>
     <string name="task_deleted">Attività eliminata</string>
+    <string name="task_marked_open">Attività contrassegnata come aperta</string>
+    <string name="task_completed">Attività completata</string>
     <string name="export_failed">Esportazione non riuscita.</string>
     <string name="reminder_before_due_error">Il promemoria deve essere prima dell\'orario di scadenza.</string>
     <string name="reminder_in_past_error">Quell\'orario di promemoria è già passato oggi.</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Eliminare %1$d attività?</item>
         <item quantity="other">Eliminare %1$d attività?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d attività eliminate</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d attività completate</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d attività rimossa dall\'archivio</item>
+        <item quantity="other">%1$d attività rimosse dall\'archivio</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Archiviare %1$d progetto?</item>

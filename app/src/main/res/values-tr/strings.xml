@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Saat (ör. 15:00, akşam)</string>
     <string name="tasker_field_reminder">Hatırlatıcı (ör. 15 dakika önce, 1 gün önce)</string>
     <string name="tasker_field_priority">Öncelik (yok, düşük, orta, yüksek)</string>
-    <string name="tasker_field_section">Bölüm (Sabah veya Öğleden sonra)</string>
+    <string name="tasker_field_section">Bölüm (isteğe bağlı)</string>
     <string name="tasker_field_repeat">Tekrar (ör. her gün, her pazartesi, 2 haftada bir)</string>
     <string name="tasker_field_notes">Notlar</string>
     <string name="shortcut_quick_add_short">Hızlı Ekle</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">Çöp kutusunu boşalt</string>
     <string name="cd_trash_restore">Geri yükle</string>
     <string name="cd_trash_delete_forever">Kalıcı olarak sil</string>
+    <string name="trash_deleted_today">Bugün silindi</string>
+    <string name="trash_deleted_yesterday">Dün silindi</string>
+    <string name="trash_deleted_on">%1$s tarihinde silindi</string>
+    <string name="trash_kept_forever_suffix">siz kaldırana kadar saklanır</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d gün kaldı</item>
+        <item quantity="other">%1$d gün kaldı</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" geri yüklendi</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d görev geri yüklendi</item>
+        <item quantity="other">%1$d görev geri yüklendi</item>
+    </plurals>
+    <string name="action_view">Görüntüle</string>
     <string name="archive_title">Arşiv</string>
     <string name="archive_empty_state">Arşivde kaldırılmış görev yok.</string>
     <string name="archive_empty_state_desc">Arşivlenen görevler burada görünecek. Bir görevi silmeden gizlemek istediğinizde Arşiv\'i kullanın.</string>
     <string name="archive_empty_state_action">Bugün\'e git</string>
     <string name="archive_notice">Arşiv, görevleri silmeden kaldırır. Normal listelerden gizli kalırlar, asla süresi dolmaz ve istediğiniz zaman arşivden çıkarılabilirler.</string>
+    <string name="archive_section_shelved_active">Aktif</string>
+    <string name="archive_section_shelved_completed">Tamamlanan</string>
+    <string name="archive_unarchived_snackbar">"%1$s" arşivden çıkarıldı</string>
     <string name="cd_archive_unarchive">Görevi arşivden çıkar</string>
+        <string name="cd_bulk_select">Seç</string>
     <string name="cd_bulk_cancel_selection">Seçimi iptal et</string>
     <string name="cd_bulk_mark_done">Tamamlandı olarak işaretle</string>
     <string name="cd_bulk_add_tag">Etiket ekle</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Bu listedeki tüm görevler kalıcı olarak silinecek.</string>
     <string name="list_detail_delete_list">Listeyi sil</string>
     <string name="list_detail_delete_list_2">Liste silinsin mi?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Görevlerini listesiz tutmak için yalnızca listeyi silin, ya da listeyi ve içindeki tüm görevleri silin.</string>
+    <string name="list_detail_list_only">Yalnızca liste</string>
+    <string name="list_detail_list_tasks">Liste + görevler</string>
     <string name="list_detail_edit_list">Listeyi düzenle</string>
     <string name="list_detail_search_in_list">Listede ara</string>
     <string name="lock_backspace">Geri sil</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">Görevi arşivden çıkar</string>
     <string name="task_link_copied">Görev bağlantısı kopyalandı</string>
     <string name="task_deleted">Görev silindi</string>
+    <string name="task_marked_open">Görev açık olarak işaretlendi</string>
+    <string name="task_completed">Görev tamamlandı</string>
     <string name="export_failed">Dışa aktarma başarısız oldu.</string>
     <string name="reminder_before_due_error">Hatırlatıcı, bitiş saatinden önce olmalıdır.</string>
     <string name="reminder_in_past_error">O hatırlatma saati bugün için zaten geçti.</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d görev silinsin mi?</item>
         <item quantity="other">%1$d görev silinsin mi?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d görev silindi</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d görev tamamlandı</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d görev arşivden çıkarıldı</item>
+        <item quantity="other">%1$d görev arşivden çıkarıldı</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d proje arşivlensin mi?</item>

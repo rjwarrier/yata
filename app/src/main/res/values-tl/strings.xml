@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Oras (hal. 3:00 PM, 15:00, gabi)</string>
     <string name="tasker_field_reminder">Paalala (hal. 15 minuto bago, 1 araw bago)</string>
     <string name="tasker_field_priority">Prayoridad (wala, mababa, katamtaman, mataas)</string>
-    <string name="tasker_field_section">Seksyon (Umaga o Hapon)</string>
+    <string name="tasker_field_section">Seksyon (opsyonal)</string>
     <string name="tasker_field_repeat">Ulitin (hal. araw-araw, tuwing Lunes, bawat 2 linggo)</string>
     <string name="tasker_field_notes">Mga tala</string>
     <string name="shortcut_quick_add_short">Mabilis na Idagdag</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">Linisin ang basura</string>
     <string name="cd_trash_restore">Ibalik</string>
     <string name="cd_trash_delete_forever">Burahin nang tuluyan</string>
+    <string name="trash_deleted_today">Nabura ngayon</string>
+    <string name="trash_deleted_yesterday">Nabura kahapon</string>
+    <string name="trash_deleted_on">Nabura noong %1$s</string>
+    <string name="trash_kept_forever_suffix">nananatili hanggang alisin mo</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d araw na natitira</item>
+        <item quantity="other">%1$d araw na natitira</item>
+    </plurals>
+    <string name="trash_restored_snackbar">Naibalik ang "%1$s"</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">Naibalik ang %1$d gawain</item>
+        <item quantity="other">Naibalik ang %1$d na gawain</item>
+    </plurals>
+    <string name="action_view">Tingnan</string>
     <string name="archive_title">Archive</string>
     <string name="archive_empty_state">Walang naka-archive na gawain.</string>
     <string name="archive_empty_state_desc">Lalabas dito ang mga naka-archive na gawain. Gamitin ang Archive kapag gusto mong itago ang isang gawain nang hindi ito binubura.</string>
     <string name="archive_empty_state_action">Pumunta sa Ngayon</string>
     <string name="archive_notice">Itinatago ng Archive ang mga gawain nang hindi ito binubura. Nananatili itong nakatago sa mga normal na listahan, hindi ito nag-e-expire, at maaari itong i-unarchive anumang oras.</string>
+    <string name="archive_section_shelved_active">Aktibo</string>
+    <string name="archive_section_shelved_completed">Natapos</string>
+    <string name="archive_unarchived_snackbar">Na-unarchive ang "%1$s"</string>
     <string name="cd_archive_unarchive">I-unarchive ang gawain</string>
+        <string name="cd_bulk_select">Piliin</string>
     <string name="cd_bulk_cancel_selection">Kanselahin ang pagpili</string>
     <string name="cd_bulk_mark_done">I-mark bilang tapos</string>
     <string name="cd_bulk_add_tag">Magdagdag ng tag</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Permanenteng buburahin ang lahat ng gawain sa loob ng listahang ito.</string>
     <string name="list_detail_delete_list">Burahin ang listahan</string>
     <string name="list_detail_delete_list_2">Burahin ang listahan?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Burahin lang ang listahan para mapanatili ang mga gawain nito nang walang listahan, o burahin ang listahan at lahat ng gawain sa loob nito.</string>
+    <string name="list_detail_list_only">Listahan lang</string>
+    <string name="list_detail_list_tasks">Listahan + gawain</string>
     <string name="list_detail_edit_list">I-edit ang listahan</string>
     <string name="list_detail_search_in_list">Maghanap sa listahan</string>
     <string name="lock_backspace">Backspace</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">I-unarchive ang gawain</string>
     <string name="task_link_copied">Nakopya ang link ng gawain</string>
     <string name="task_deleted">Nabura ang gawain</string>
+    <string name="task_marked_open">Minarkahan ang gawain bilang bukas</string>
+    <string name="task_completed">Natapos ang gawain</string>
     <string name="export_failed">Nabigo ang pag-export.</string>
     <string name="reminder_before_due_error">Dapat nauna ang paalala sa oras ng takdang petsa.</string>
     <string name="reminder_in_past_error">Nakalipas na ang oras ng paalalang iyon ngayon.</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Burahin ang %1$d gawain?</item>
         <item quantity="other">Burahin ang %1$d na gawain?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d gawain ang nabura</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d gawain ang natapos</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">Na-unarchive ang %1$d gawain</item>
+        <item quantity="other">Na-unarchive ang %1$d na gawain</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">I-archive ang %1$d proyekto?</item>

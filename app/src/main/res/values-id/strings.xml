@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Waktu (mis. 3:00 PM, 15:00, malam)</string>
     <string name="tasker_field_reminder">Pengingat (mis. 15 menit sebelum, 1 hari sebelum)</string>
     <string name="tasker_field_priority">Prioritas (tidak ada, rendah, sedang, tinggi)</string>
-    <string name="tasker_field_section">Bagian (Pagi atau Sore)</string>
+    <string name="tasker_field_section">Bagian (opsional)</string>
     <string name="tasker_field_repeat">Ulangi (mis. harian, tiap senin, tiap 2 minggu)</string>
     <string name="tasker_field_notes">Catatan</string>
     <string name="shortcut_quick_add_short">Tambah Cepat</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">Kosongkan sampah</string>
     <string name="cd_trash_restore">Pulihkan</string>
     <string name="cd_trash_delete_forever">Hapus selamanya</string>
+    <string name="trash_deleted_today">Dihapus hari ini</string>
+    <string name="trash_deleted_yesterday">Dihapus kemarin</string>
+    <string name="trash_deleted_on">Dihapus pada %1$s</string>
+    <string name="trash_kept_forever_suffix">disimpan hingga Anda menghapusnya</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d hari lagi</item>
+        <item quantity="other">%1$d hari lagi</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" dipulihkan</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d tugas dipulihkan</item>
+        <item quantity="other">%1$d tugas dipulihkan</item>
+    </plurals>
+    <string name="action_view">Lihat</string>
     <string name="archive_title">Arsip</string>
     <string name="archive_empty_state">Tidak ada tugas tersimpan di Arsip.</string>
     <string name="archive_empty_state_desc">Tugas yang diarsipkan akan muncul di sini. Gunakan Arsip saat Anda ingin menyembunyikan tugas tanpa menghapusnya.</string>
     <string name="archive_empty_state_action">Buka Hari Ini</string>
     <string name="archive_notice">Arsip menyimpan tugas tanpa menghapusnya. Tugas tetap tersembunyi dari daftar normal, tidak pernah kedaluwarsa, dan dapat dibatalkan pengarsipannya kapan saja.</string>
+    <string name="archive_section_shelved_active">Aktif</string>
+    <string name="archive_section_shelved_completed">Selesai</string>
+    <string name="archive_unarchived_snackbar">"%1$s" tidak diarsipkan lagi</string>
     <string name="cd_archive_unarchive">Batalkan arsip tugas</string>
+        <string name="cd_bulk_select">Pilih</string>
     <string name="cd_bulk_cancel_selection">Batalkan pilihan</string>
     <string name="cd_bulk_mark_done">Tandai selesai</string>
     <string name="cd_bulk_add_tag">Tambah tag</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Semua tugas di dalam daftar ini akan dihapus secara permanen.</string>
     <string name="list_detail_delete_list">Hapus daftar</string>
     <string name="list_detail_delete_list_2">Hapus daftar?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Hapus hanya daftarnya untuk menjaga tugasnya tanpa daftar, atau hapus daftar beserta semua tugas di dalamnya.</string>
+    <string name="list_detail_list_only">Hanya daftar</string>
+    <string name="list_detail_list_tasks">Daftar + tugas</string>
     <string name="list_detail_edit_list">Edit daftar</string>
     <string name="list_detail_search_in_list">Cari di daftar</string>
     <string name="lock_backspace">Backspace</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">Batalkan arsip tugas</string>
     <string name="task_link_copied">Tautan tugas disalin</string>
     <string name="task_deleted">Tugas dihapus</string>
+    <string name="task_marked_open">Tugas ditandai terbuka</string>
+    <string name="task_completed">Tugas selesai</string>
     <string name="export_failed">Ekspor gagal.</string>
     <string name="reminder_before_due_error">Pengingat harus sebelum waktu jatuh tempo.</string>
     <string name="reminder_in_past_error">Waktu pengingat itu sudah lewat hari ini.</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Hapus %1$d tugas?</item>
         <item quantity="other">Hapus %1$d tugas?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d tugas dihapus</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d tugas selesai</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d tugas tidak diarsipkan lagi</item>
+        <item quantity="other">%1$d tugas tidak diarsipkan lagi</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Arsipkan %1$d proyek?</item>

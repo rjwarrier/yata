@@ -63,10 +63,11 @@ fun NextDaysScreen(
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+            val result = showUndoSnackbar(snackbarHostState, context.getString(R.string.task_deleted), undoWindowSeconds)
             if (!result) {
                 viewModel.deleteTask(task)
             }

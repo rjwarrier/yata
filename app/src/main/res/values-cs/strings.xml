@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Čas (např. 15:00, večer)</string>
     <string name="tasker_field_reminder">Připomenutí (např. 15 min předem, 1 den předem)</string>
     <string name="tasker_field_priority">Priorita (žádná, nízká, střední, vysoká)</string>
-    <string name="tasker_field_section">Sekce (Dopoledne nebo Odpoledne)</string>
+    <string name="tasker_field_section">Sekce (volitelné)</string>
     <string name="tasker_field_repeat">Opakování (např. denně, každé pondělí, každé 2 týdny)</string>
     <string name="tasker_field_notes">Poznámky</string>
     <string name="shortcut_quick_add_short">Rychlé přidání</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">Vyprázdnit koš</string>
     <string name="cd_trash_restore">Obnovit</string>
     <string name="cd_trash_delete_forever">Smazat navždy</string>
+    <string name="trash_deleted_today">Smazáno dnes</string>
+    <string name="trash_deleted_yesterday">Smazáno včera</string>
+    <string name="trash_deleted_on">Smazáno %1$s</string>
+    <string name="trash_kept_forever_suffix">uchováno, dokud jej neodstraníte</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d den zbývá</item>
+        <item quantity="other">%1$d dní zbývá</item>
+    </plurals>
+    <string name="trash_restored_snackbar">„%1$s“ obnoveno</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">Obnoven %1$d úkol</item>
+        <item quantity="other">Obnoveno %1$d úkolů</item>
+    </plurals>
+    <string name="action_view">Zobrazit</string>
     <string name="archive_title">Archiv</string>
     <string name="archive_empty_state">V archivu nejsou žádné odložené úkoly.</string>
     <string name="archive_empty_state_desc">Archivované úkoly se zobrazí zde. Archiv použijte, když chcete úkol skrýt bez smazání.</string>
     <string name="archive_empty_state_action">Přejít na Dnes</string>
     <string name="archive_notice">Archiv odkládá úkoly bez jejich smazání. Zůstávají skryté z běžných seznamů, nikdy nevyprší a lze je kdykoli obnovit.</string>
+    <string name="archive_section_shelved_active">Aktivní</string>
+    <string name="archive_section_shelved_completed">Dokončené</string>
+    <string name="archive_unarchived_snackbar">Zrušeno archivování „%1$s“</string>
     <string name="cd_archive_unarchive">Obnovit úkol z archivu</string>
+        <string name="cd_bulk_select">Vybrat</string>
     <string name="cd_bulk_cancel_selection">Zrušit výběr</string>
     <string name="cd_bulk_mark_done">Označit jako dokončené</string>
     <string name="cd_bulk_add_tag">Přidat štítek</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Všechny úkoly v tomto seznamu budou trvale smazány.</string>
     <string name="list_detail_delete_list">Smazat seznam</string>
     <string name="list_detail_delete_list_2">Smazat seznam?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Smažte pouze seznam, aby jeho úkoly zůstaly bez seznamu, nebo smažte seznam i všechny úkoly v něm.</string>
+    <string name="list_detail_list_only">Pouze seznam</string>
+    <string name="list_detail_list_tasks">Seznam + úkoly</string>
     <string name="list_detail_edit_list">Upravit seznam</string>
     <string name="list_detail_search_in_list">Hledat v seznamu</string>
     <string name="lock_backspace">Backspace</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">Obnovit úkol z archivu</string>
     <string name="task_link_copied">Odkaz na úkol zkopírován</string>
     <string name="task_deleted">Úkol smazán</string>
+    <string name="task_marked_open">Úkol označen jako otevřený</string>
+    <string name="task_completed">Úkol dokončen</string>
     <string name="export_failed">Export selhal.</string>
     <string name="reminder_before_due_error">Připomenutí musí být před časem termínu.</string>
     <string name="reminder_in_past_error">Tento čas připomenutí už dnes uplynul.</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Smazat %1$d úkol?</item>
         <item quantity="other">Smazat %1$d úkolů?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d úkolů smazáno</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d úkolů dokončeno</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">Zrušeno archivování %1$d úkolu</item>
+        <item quantity="other">Zrušeno archivování %1$d úkolů</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Archivovat %1$d projekt?</item>

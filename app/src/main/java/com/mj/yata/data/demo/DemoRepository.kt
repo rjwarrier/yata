@@ -80,6 +80,7 @@ class DemoRepository @Inject constructor() : YataRepository {
     override fun getListById(id: String): Flow<YataList?> = dataset.map { d -> d.lists.find { it.id == id } }
     override suspend fun upsertList(list: YataList) = Unit
     override suspend fun deleteList(list: YataList) = Unit
+    override suspend fun deleteListOnly(list: YataList) = Unit
     override suspend fun setListsArchived(ids: List<String>, archived: Boolean) = Unit
 
     override fun getPeople(): Flow<List<Person>> = dataset.map { it.people }

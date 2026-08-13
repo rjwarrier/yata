@@ -12,7 +12,7 @@
     <string name="tasker_field_time">वेळ (उदा. दुपारी 3:00, 15:00, संध्याकाळी)</string>
     <string name="tasker_field_reminder">स्मरणपत्र (उदा. 15 मिनिटे आधी, 1 दिवस आधी)</string>
     <string name="tasker_field_priority">प्राधान्य (काहीही नाही, कमी, मध्यम, जास्त)</string>
-    <string name="tasker_field_section">विभाग (सकाळ किंवा दुपार)</string>
+    <string name="tasker_field_section">विभाग (ऐच्छिक)</string>
     <string name="tasker_field_repeat">पुनरावृत्ती (उदा. दररोज, दर सोमवारी, दर 2 आठवड्यांनी)</string>
     <string name="tasker_field_notes">नोंदी</string>
     <string name="shortcut_quick_add_short">झटपट जोडा</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">कचरापेटी रिकामी करा</string>
     <string name="cd_trash_restore">पुनर्संचयित करा</string>
     <string name="cd_trash_delete_forever">कायमचे हटवा</string>
+    <string name="trash_deleted_today">आज हटवले</string>
+    <string name="trash_deleted_yesterday">काल हटवले</string>
+    <string name="trash_deleted_on">%1$s रोजी हटवले</string>
+    <string name="trash_kept_forever_suffix">तुम्ही काढेपर्यंत ठेवले जाते</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d दिवस शिल्लक</item>
+        <item quantity="other">%1$d दिवस शिल्लक</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" पुनर्संचयित केले</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d कार्य पुनर्संचयित केले</item>
+        <item quantity="other">%1$d कार्ये पुनर्संचयित केली</item>
+    </plurals>
+    <string name="action_view">पहा</string>
     <string name="archive_title">संग्रह</string>
     <string name="archive_empty_state">संग्रहात कोणतीही बाजूला ठेवलेली कार्ये नाहीत.</string>
     <string name="archive_empty_state_desc">संग्रहित कार्ये इथे दिसतील. कार्य न हटवता लपवायचे असल्यास संग्रह वापरा.</string>
     <string name="archive_empty_state_action">आजवर जा</string>
     <string name="archive_notice">संग्रह कार्ये न हटवता बाजूला ठेवतो. ती सामान्य याद्यांमधून लपलेली राहतात, कधीही कालबाह्य होत नाहीत, आणि केव्हाही संग्रहमुक्त करता येतात.</string>
+    <string name="archive_section_shelved_active">सक्रिय</string>
+    <string name="archive_section_shelved_completed">पूर्ण झालेली</string>
+    <string name="archive_unarchived_snackbar">"%1$s" संग्रहणातून काढले</string>
     <string name="cd_archive_unarchive">कार्य संग्रहमुक्त करा</string>
+        <string name="cd_bulk_select">निवडा</string>
     <string name="cd_bulk_cancel_selection">निवड रद्द करा</string>
     <string name="cd_bulk_mark_done">पूर्ण म्हणून चिन्हांकित करा</string>
     <string name="cd_bulk_add_tag">टॅग जोडा</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">या यादीतील सर्व कार्ये कायमची हटवली जातील.</string>
     <string name="list_detail_delete_list">यादी हटवा</string>
     <string name="list_detail_delete_list_2">यादी हटवायची?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">कार्ये यादीशिवाय ठेवण्यासाठी फक्त यादी हटवा, किंवा यादी आणि त्यातील सर्व कार्ये हटवा.</string>
+    <string name="list_detail_list_only">फक्त यादी</string>
+    <string name="list_detail_list_tasks">यादी + कार्ये</string>
     <string name="list_detail_edit_list">यादी संपादित करा</string>
     <string name="list_detail_search_in_list">यादीत शोधा</string>
     <string name="lock_backspace">बॅकस्पेस</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">कार्य संग्रहमुक्त करा</string>
     <string name="task_link_copied">कार्याची लिंक कॉपी केली</string>
     <string name="task_deleted">कार्य हटवले</string>
+    <string name="task_marked_open">कार्य खुले म्हणून चिन्हांकित केले</string>
+    <string name="task_completed">कार्य पूर्ण झाले</string>
     <string name="export_failed">निर्यात अयशस्वी.</string>
     <string name="reminder_before_due_error">स्मरणपत्र देय वेळेच्या आधी असणे आवश्यक आहे.</string>
     <string name="reminder_in_past_error">ती स्मरणपत्र वेळ आज आधीच निघून गेली आहे.</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d कार्य हटवायचे?</item>
         <item quantity="other">%1$d कार्ये हटवायची?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d कार्ये हटवली</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d कार्ये पूर्ण झाली</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d कार्य संग्रहणातून काढले</item>
+        <item quantity="other">%1$d कार्ये संग्रहणातून काढली</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d प्रकल्प संग्रहित करायचा?</item>

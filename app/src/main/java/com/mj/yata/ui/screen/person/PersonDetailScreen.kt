@@ -131,7 +131,7 @@ fun PersonDetailScreen(
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
-            val result = showUndoSnackbar(snackbarHostState, "Task deleted", undoWindowSeconds)
+            val result = showUndoSnackbar(snackbarHostState, exportContext.getString(R.string.task_deleted), undoWindowSeconds)
             if (!result) {
                 viewModel.deleteTask(task)
             }

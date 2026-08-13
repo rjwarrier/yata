@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Muda (mfano 3:00 PM, 15:00, jioni)</string>
     <string name="tasker_field_reminder">Ukumbusho (mfano dakika 15 kabla, siku 1 kabla)</string>
     <string name="tasker_field_priority">Kipaumbele (hakuna, chini, wastani, juu)</string>
-    <string name="tasker_field_section">Sehemu (Asubuhi au Mchana)</string>
+    <string name="tasker_field_section">Sehemu (hiari)</string>
     <string name="tasker_field_repeat">Rudia (mfano kila siku, kila Jumatatu, kila wiki 2)</string>
     <string name="tasker_field_notes">Maelezo</string>
     <string name="shortcut_quick_add_short">Ongeza Haraka</string>
@@ -230,12 +230,30 @@
     <string name="cd_trash_empty">Ondoa takataka</string>
     <string name="cd_trash_restore">Rejesha</string>
     <string name="cd_trash_delete_forever">Futa kabisa</string>
+    <string name="trash_deleted_today">Imefutwa leo</string>
+    <string name="trash_deleted_yesterday">Imefutwa jana</string>
+    <string name="trash_deleted_on">Imefutwa tarehe %1$s</string>
+    <string name="trash_kept_forever_suffix">inahifadhiwa hadi uitoe</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">siku %1$d iliyobaki</item>
+        <item quantity="other">siku %1$d zilizobaki</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" imerejeshwa</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">Kazi %1$d imerejeshwa</item>
+        <item quantity="other">Kazi %1$d zimerejeshwa</item>
+    </plurals>
+    <string name="action_view">Tazama</string>
     <string name="archive_title">Hifadhi</string>
     <string name="archive_empty_state">Hakuna kazi zilizohifadhiwa kwenye Hifadhi.</string>
     <string name="archive_empty_state_desc">Kazi zilizohifadhiwa zitaonekana hapa. Tumia Hifadhi unapotaka kuficha kazi bila kuifuta.</string>
     <string name="archive_empty_state_action">Nenda kwa Leo</string>
     <string name="archive_notice">Hifadhi huficha kazi bila kuzifuta. Zinabaki zimefichwa kutoka kwenye orodha za kawaida, hazina muda wa mwisho, na zinaweza kutolewa wakati wowote.</string>
+    <string name="archive_section_shelved_active">Inayoendelea</string>
+    <string name="archive_section_shelved_completed">Zilizokamilika</string>
+    <string name="archive_unarchived_snackbar">"%1$s" imeondolewa kwenye hifadhi</string>
     <string name="cd_archive_unarchive">Toa kazi kwenye hifadhi</string>
+        <string name="cd_bulk_select">Chagua</string>
     <string name="cd_bulk_cancel_selection">Ghairi uteuzi</string>
     <string name="cd_bulk_mark_done">Weka imekamilika</string>
     <string name="cd_bulk_add_tag">Ongeza lebo</string>
@@ -580,6 +598,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Kazi zote ndani ya orodha hii zitafutwa kabisa.</string>
     <string name="list_detail_delete_list">Futa orodha</string>
     <string name="list_detail_delete_list_2">Futa orodha?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Futa orodha tu ili kuhifadhi kazi zake bila orodha, au futa orodha na kazi zote ndani yake.</string>
+    <string name="list_detail_list_only">Orodha pekee</string>
+    <string name="list_detail_list_tasks">Orodha + kazi</string>
     <string name="list_detail_edit_list">Hariri orodha</string>
     <string name="list_detail_search_in_list">Tafuta kwenye orodha</string>
     <string name="lock_backspace">Futa nyuma</string>
@@ -931,6 +952,8 @@
     <string name="task_unarchive_action">Toa kazi kwenye hifadhi</string>
     <string name="task_link_copied">Kiungo cha kazi kimenakiliwa</string>
     <string name="task_deleted">Kazi imefutwa</string>
+    <string name="task_marked_open">Kazi imewekwa alama wazi</string>
+    <string name="task_completed">Kazi imekamilika</string>
     <string name="export_failed">Kuhamisha kumeshindwa.</string>
     <string name="reminder_before_due_error">Ukumbusho lazima uwe kabla ya muda wa mwisho.</string>
     <string name="reminder_in_past_error">Muda huo wa ukumbusho tayari umepita leo.</string>
@@ -1297,6 +1320,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Futa kazi %1$d?</item>
         <item quantity="other">Futa kazi %1$d?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">Kazi %1$d zimefutwa</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">Kazi %1$d zimekamilika</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">Kazi %1$d imeondolewa kwenye hifadhi</item>
+        <item quantity="other">Kazi %1$d zimeondolewa kwenye hifadhi</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Hifadhi mradi %1$d?</item>

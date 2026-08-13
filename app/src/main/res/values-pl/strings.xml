@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Godzina (np. 15:00, wieczorem)</string>
     <string name="tasker_field_reminder">Przypomnienie (np. 15 min przed, 1 dzień przed)</string>
     <string name="tasker_field_priority">Priorytet (brak, niski, średni, wysoki)</string>
-    <string name="tasker_field_section">Sekcja (Rano lub Popołudnie)</string>
+    <string name="tasker_field_section">Sekcja (opcjonalne)</string>
     <string name="tasker_field_repeat">Powtarzanie (np. codziennie, co poniedziałek, co 2 tygodnie)</string>
     <string name="tasker_field_notes">Notatki</string>
     <string name="shortcut_quick_add_short">Szybkie dodawanie</string>
@@ -235,12 +235,30 @@
     <string name="cd_trash_empty">Opróżnij kosz</string>
     <string name="cd_trash_restore">Przywróć</string>
     <string name="cd_trash_delete_forever">Usuń na stałe</string>
+    <string name="trash_deleted_today">Usunięto dzisiaj</string>
+    <string name="trash_deleted_yesterday">Usunięto wczoraj</string>
+    <string name="trash_deleted_on">Usunięto %1$s</string>
+    <string name="trash_kept_forever_suffix">przechowywane do usunięcia</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">pozostał %1$d dzień</item>
+        <item quantity="other">pozostało %1$d dni</item>
+    </plurals>
+    <string name="trash_restored_snackbar">Przywrócono „%1$s”</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">Przywrócono %1$d zadanie</item>
+        <item quantity="other">Przywrócono %1$d zadań</item>
+    </plurals>
+    <string name="action_view">Zobacz</string>
     <string name="archive_title">Archiwum</string>
     <string name="archive_empty_state">Brak odłożonych zadań w Archiwum.</string>
     <string name="archive_empty_state_desc">Zarchiwizowane zadania pojawią się tutaj. Użyj Archiwum, gdy chcesz ukryć zadanie bez jego usuwania.</string>
     <string name="archive_empty_state_action">Przejdź do Dziś</string>
     <string name="archive_notice">Archiwum odkłada zadania bez ich usuwania. Pozostają ukryte na zwykłych listach, nigdy nie wygasają i można je w każdej chwili przywrócić.</string>
+    <string name="archive_section_shelved_active">Aktywne</string>
+    <string name="archive_section_shelved_completed">Ukończone</string>
+    <string name="archive_unarchived_snackbar">Cofnięto archiwizację „%1$s”</string>
     <string name="cd_archive_unarchive">Przywróć zadanie z archiwum</string>
+        <string name="cd_bulk_select">Zaznacz</string>
     <string name="cd_bulk_cancel_selection">Anuluj zaznaczenie</string>
     <string name="cd_bulk_mark_done">Oznacz jako ukończone</string>
     <string name="cd_bulk_add_tag">Dodaj tag</string>
@@ -504,6 +522,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Wszystkie zadania w tej liście zostaną trwale usunięte.</string>
     <string name="list_detail_delete_list">Usuń listę</string>
     <string name="list_detail_delete_list_2">Usunąć listę?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Usuń tylko listę, aby zachować jej zadania bez listy, lub usuń listę i wszystkie zadania w niej zawarte.</string>
+    <string name="list_detail_list_only">Tylko lista</string>
+    <string name="list_detail_list_tasks">Lista + zadania</string>
     <string name="list_detail_edit_list">Edytuj listę</string>
     <string name="list_detail_search_in_list">Szukaj na liście</string>
     <string name="lock_backspace">Backspace</string>
@@ -855,6 +876,8 @@
     <string name="task_unarchive_action">Przywróć zadanie z archiwum</string>
     <string name="task_link_copied">Link do zadania skopiowany</string>
     <string name="task_deleted">Zadanie usunięte</string>
+    <string name="task_marked_open">Zadanie oznaczone jako otwarte</string>
+    <string name="task_completed">Zadanie ukończone</string>
     <string name="export_failed">Eksport nie powiódł się.</string>
     <string name="reminder_before_due_error">Przypomnienie musi być przed godziną terminu.</string>
     <string name="reminder_in_past_error">Ta godzina przypomnienia już minęła dzisiaj.</string>
@@ -1221,6 +1244,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Usunąć %1$d zadanie?</item>
         <item quantity="other">Usunąć %1$d zadań?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">Usunięto %1$d zadań</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">Ukończono %1$d zadań</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">Cofnięto archiwizację %1$d zadania</item>
+        <item quantity="other">Cofnięto archiwizację %1$d zadań</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Zarchiwizować %1$d projekt?</item>

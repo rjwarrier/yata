@@ -12,7 +12,7 @@
     <string name="tasker_field_time">Horário (por exemplo, 15h, 15h, noite)</string>
     <string name="tasker_field_reminder">Lembrete (por exemplo, 15 minutos antes, 1 dia antes)</string>
     <string name="tasker_field_priority">Prioridade (nenhuma, baixa, média, alta)</string>
-    <string name="tasker_field_section">Seção (Manhã ou Tarde)</string>
+    <string name="tasker_field_section">Seção (opcional)</string>
     <string name="tasker_field_repeat">Repetir (por exemplo, diariamente, todas as segundas-feiras, a cada 2 semanas)</string>
     <string name="tasker_field_notes">Notas</string>
     <string name="shortcut_quick_add_short">Adição rápida</string>
@@ -240,12 +240,30 @@
     <string name="cd_trash_empty">Esvaziar lixo</string>
     <string name="cd_trash_restore">Restaurar</string>
     <string name="cd_trash_delete_forever">Excluir definitivamente</string>
+    <string name="trash_deleted_today">Excluída hoje</string>
+    <string name="trash_deleted_yesterday">Excluída ontem</string>
+    <string name="trash_deleted_on">Excluída em %1$s</string>
+    <string name="trash_kept_forever_suffix">mantida até você removê-la</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d dia restante</item>
+        <item quantity="other">%1$d dias restantes</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" restaurada</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d tarefa restaurada</item>
+        <item quantity="other">%1$d tarefas restauradas</item>
+    </plurals>
+    <string name="action_view">Ver</string>
     <string name="archive_title">Arquivo</string>
     <string name="archive_empty_state">Nenhuma tarefa arquivada no Arquivo.</string>
     <string name="archive_empty_state_desc">As tarefas arquivadas aparecerão aqui. Use Arquivar quando quiser ocultar uma tarefa sem excluí-la.</string>
     <string name="archive_empty_state_action">Ir para hoje</string>
     <string name="archive_notice">Arquive tarefas das prateleiras sem excluí-las. Eles ficam ocultos nas listas normais, nunca expiram e podem ser desarquivados a qualquer momento.</string>
+    <string name="archive_section_shelved_active">Ativas</string>
+    <string name="archive_section_shelved_completed">Concluídas</string>
+    <string name="archive_unarchived_snackbar">"%1$s" removida do arquivo</string>
     <string name="cd_archive_unarchive">Tarefa de desarquivamento</string>
+        <string name="cd_bulk_select">Selecionar</string>
     <string name="cd_bulk_cancel_selection">Cancelar seleção</string>
     <string name="cd_bulk_mark_done">Marcar como concluído</string>
     <string name="cd_bulk_add_tag">Adicionar etiqueta</string>
@@ -262,6 +280,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">Excluir tarefa %1$d?</item>
         <item quantity="other">Excluir tarefas %1$d?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d tarefas excluídas</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d tarefas concluídas</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d tarefa removida do arquivo</item>
+        <item quantity="other">%1$d tarefas removidas do arquivo</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">Arquivar projeto %1$d?</item>
@@ -412,6 +442,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Todas as tarefas nesta lista serão excluídas permanentemente.</string>
     <string name="list_detail_delete_list">Excluir lista</string>
     <string name="list_detail_delete_list_2">Excluir lista?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">Exclua apenas a lista para manter suas tarefas sem lista ou exclua a lista e todas as tarefas dentro dela.</string>
+    <string name="list_detail_list_only">Somente lista</string>
+    <string name="list_detail_list_tasks">Lista + tarefas</string>
     <string name="list_detail_edit_list">Editar lista</string>
     <string name="list_detail_search_in_list">Pesquisar na lista</string>
     <string name="lock_backspace">Retrocesso</string>
@@ -715,6 +748,8 @@
     <string name="task_unarchive_action">Tarefa de desarquivamento</string>
     <string name="task_link_copied">Link da tarefa copiado</string>
     <string name="task_deleted">Tarefa excluída</string>
+    <string name="task_marked_open">Tarefa marcada como aberta</string>
+    <string name="task_completed">Tarefa concluída</string>
     <string name="export_failed">Falha na exportação.</string>
     <string name="reminder_before_due_error">O lembrete deve ser antes do prazo.</string>
     <string name="reminder_in_past_error">Esse tempo de lembrete já passou hoje.</string>

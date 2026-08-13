@@ -12,7 +12,7 @@
     <string name="tasker_field_time">समय (जैसे 3:00 PM, 15:00, शाम)</string>
     <string name="tasker_field_reminder">रिमाइंडर (जैसे 15 मिनट पहले, 1 दिन पहले)</string>
     <string name="tasker_field_priority">प्राथमिकता (कोई नहीं, कम, मध्यम, उच्च)</string>
-    <string name="tasker_field_section">सेक्शन (सुबह या दोपहर)</string>
+    <string name="tasker_field_section">सेक्शन (वैकल्पिक)</string>
     <string name="tasker_field_repeat">दोहराव (जैसे रोज़, हर सोमवार, हर 2 हफ्ते)</string>
     <string name="tasker_field_notes">नोट्स</string>
     <string name="shortcut_quick_add_short">झटपट जोड़ें</string>
@@ -279,12 +279,30 @@
     <string name="cd_trash_empty">ट्रैश खाली करें</string>
     <string name="cd_trash_restore">पुनर्स्थापित करें</string>
     <string name="cd_trash_delete_forever">हमेशा के लिए हटाएं</string>
+    <string name="trash_deleted_today">आज हटाया गया</string>
+    <string name="trash_deleted_yesterday">कल हटाया गया</string>
+    <string name="trash_deleted_on">%1$s को हटाया गया</string>
+    <string name="trash_kept_forever_suffix">जब तक आप न हटाएं, तब तक रखा जाता है</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d दिन शेष</item>
+        <item quantity="other">%1$d दिन शेष</item>
+    </plurals>
+    <string name="trash_restored_snackbar">"%1$s" पुनर्स्थापित किया गया</string>
+    <plurals name="trash_tasks_restored">
+        <item quantity="one">%1$d कार्य पुनर्स्थापित किया गया</item>
+        <item quantity="other">%1$d कार्य पुनर्स्थापित किए गए</item>
+    </plurals>
+    <string name="action_view">देखें</string>
     <string name="archive_title">आर्काइव</string>
     <string name="archive_empty_state">आर्काइव में कोई अलग रखे कार्य नहीं हैं।</string>
     <string name="archive_empty_state_desc">आर्काइव किए गए कार्य यहां दिखाई देंगे। किसी कार्य को हटाए बिना छिपाने के लिए आर्काइव का उपयोग करें।</string>
     <string name="archive_empty_state_action">आज पर जाएं</string>
     <string name="archive_notice">आर्काइव कार्यों को हटाए बिना अलग रख देता है। वे सामान्य सूचियों से छिपे रहते हैं, कभी समाप्त नहीं होते, और कभी भी अनआर्काइव किए जा सकते हैं।</string>
+    <string name="archive_section_shelved_active">सक्रिय</string>
+    <string name="archive_section_shelved_completed">पूर्ण</string>
+    <string name="archive_unarchived_snackbar">"%1$s" आर्काइव से हटाया गया</string>
     <string name="cd_archive_unarchive">कार्य अनआर्काइव करें</string>
+        <string name="cd_bulk_select">चुनें</string>
     <string name="cd_bulk_cancel_selection">चयन रद्द करें</string>
     <string name="cd_bulk_mark_done">पूर्ण के रूप में चिह्नित करें</string>
     <string name="cd_bulk_add_tag">टैग जोड़ें</string>
@@ -301,6 +319,18 @@
     <plurals name="confirm_delete_tasks_title">
         <item quantity="one">%1$d कार्य हटाएं?</item>
         <item quantity="other">%1$d कार्य हटाएं?</item>
+    </plurals>
+    <plurals name="tasks_deleted">
+        <item quantity="one">@string/task_deleted</item>
+        <item quantity="other">%1$d कार्य हटाए गए</item>
+    </plurals>
+    <plurals name="tasks_completed_count">
+        <item quantity="one">@string/task_completed</item>
+        <item quantity="other">%1$d कार्य पूर्ण हुए</item>
+    </plurals>
+    <plurals name="archive_tasks_unarchived">
+        <item quantity="one">%1$d कार्य आर्काइव से हटाया गया</item>
+        <item quantity="other">%1$d कार्य आर्काइव से हटाए गए</item>
     </plurals>
     <plurals name="confirm_archive_projects_title">
         <item quantity="one">%1$d परियोजना आर्काइव करें?</item>
@@ -592,6 +622,9 @@
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">इस सूची के अंदर के सभी कार्य स्थायी रूप से हटा दिए जाएंगे।</string>
     <string name="list_detail_delete_list">सूची हटाएं</string>
     <string name="list_detail_delete_list_2">सूची हटाएं?</string>
+    <string name="list_detail_delete_only_the_list_to_keep_its_tasks">केवल सूची हटाएं ताकि उसके कार्य बिना सूची के बने रहें, या सूची और उसके अंदर के सभी कार्यों को हटाएं।</string>
+    <string name="list_detail_list_only">केवल सूची</string>
+    <string name="list_detail_list_tasks">सूची + कार्य</string>
     <string name="list_detail_edit_list">सूची संपादित करें</string>
     <string name="list_detail_search_in_list">सूची में खोजें</string>
     <string name="lock_backspace">बैकस्पेस</string>
@@ -951,6 +984,8 @@
     <string name="task_unarchive_action">कार्य अनआर्काइव करें</string>
     <string name="task_link_copied">कार्य लिंक कॉपी हो गया</string>
     <string name="task_deleted">कार्य हटा दिया गया</string>
+    <string name="task_marked_open">कार्य को खुला चिह्नित किया गया</string>
+    <string name="task_completed">कार्य पूर्ण हुआ</string>
     <string name="export_failed">निर्यात विफल रहा।</string>
     <string name="reminder_before_due_error">रिमाइंडर नियत समय से पहले होना चाहिए।</string>
     <string name="reminder_in_past_error">वह रिमाइंडर समय आज पहले ही बीत चुका है।</string>

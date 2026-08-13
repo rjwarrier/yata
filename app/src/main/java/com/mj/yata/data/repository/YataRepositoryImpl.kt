@@ -429,9 +429,15 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteProject(project: Project) {
+        // Soft-delete the project's tasks into Trash rather than letting the FK's CASCADE hard-delete
+        // them outright - see softDeleteByProjectId's doc for why that has to happen (and clear
+        // projectId) before the project row itself is removed, in the same transaction.
         val tasksToDelete = db.taskDao().getTasksCascadedByProjectDelete(project.id)
         tasksToDelete.forEach { reminderScheduler.cancelReminder(it) }
-        db.projectDao().delete(project.toEntity())
+        db.withTransaction {
+            db.taskDao().softDeleteByProjectId(project.id, System.currentTimeMillis())
+            db.projectDao().delete(project.toEntity())
+        }
         widgetUpdater.notifyTasksChanged()
     }
 
@@ -471,9 +477,21 @@ class YataRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteList(list: YataList) {
+        // See deleteProject's comment - same reasoning, list equivalent.
         val tasksToDelete = db.taskDao().getTasksCascadedByListDelete(list.id)
         tasksToDelete.forEach { reminderScheduler.cancelReminder(it) }
-        db.listDao().delete(list.toEntity())
+        db.withTransaction {
+            db.taskDao().softDeleteByListId(list.id, System.currentTimeMillis())
+            db.listDao().delete(list.toEntity())
+        }
+        widgetUpdater.notifyTasksChanged()
+    }
+
+    override suspend fun deleteListOnly(list: YataList) {
+        db.withTransaction {
+            db.taskDao().clearList(list.id)
+            db.listDao().delete(list.toEntity())
+        }
         widgetUpdater.notifyTasksChanged()
     }
 
