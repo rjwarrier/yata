@@ -898,11 +898,17 @@
     <string name="voice_task_overlay_create_task">Taak aanmaken</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Tik om systeemspraakdialoog te gebruiken</string>
     <string name="welcome_skip">Overslaan</string>
+    <string name="welcome_next">Volgende</string>
+    <string name="welcome_get_started">Aan de slag</string>
     <string name="welcome_title_intro">Welkom bij YATA</string>
     <string name="welcome_title_projects_lists">Projecten &amp; Lijsten</string>
     <string name="welcome_title_people_delegation">Mensen &amp; Delegatie</string>
     <string name="welcome_title_tags">Tags</string>
     <string name="welcome_title_today_upcoming">Vandaag &amp; Binnenkort</string>
+    <string name="welcome_title_profile">Maak het van jou</string>
+    <string name="welcome_profile_description">Voeg je naam en een foto toe — zo verschijn je als toegewezene bij je eigen taken en in gedeelde exports.</string>
+    <string name="welcome_profile_email_hint">Alleen ter weergave — wordt niet gebruikt om in te loggen of te synchroniseren.</string>
+    <string name="welcome_profile_avatar_or_icon">Of kies een pictogram</string>
     <string name="welcome_title_analytics">Analyses</string>
     <string name="widget_config_widget_customizer">Widget-aanpassing</string>
     <string name="widget_config_corner_radius">Hoekradius</string>

@@ -866,11 +866,17 @@
     <string name="voice_task_overlay_create_task">ಕಾರ್ಯ ರಚಿಸಿ</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">ಸಿಸ್ಟಂ ಧ್ವನಿ ಡೈಲಾಗ್ ಬಳಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
     <string name="welcome_skip">ಬಿಟ್ಟುಬಿಡಿ</string>
+    <string name="welcome_next">ಮುಂದೆ</string>
+    <string name="welcome_get_started">ಪ್ರಾರಂಭಿಸಿ</string>
     <string name="welcome_title_intro">YATA ಗೆ ಸ್ವಾಗತ</string>
     <string name="welcome_title_projects_lists">ಪ್ರಾಜೆಕ್ಟ್‌ಗಳು ಮತ್ತು ಪಟ್ಟಿಗಳು</string>
     <string name="welcome_title_people_delegation">ಜನರು ಮತ್ತು ಪ್ರತಿನಿಧೀಕರಣ</string>
     <string name="welcome_title_tags">ಟ್ಯಾಗ್‌ಗಳು</string>
     <string name="welcome_title_today_upcoming">ಇಂದು ಮತ್ತು ಮುಂಬರುವ</string>
+    <string name="welcome_title_profile">ಇದನ್ನು ನಿಮ್ಮದಾಗಿಸಿ</string>
+    <string name="welcome_profile_description">ನಿಮ್ಮ ಹೆಸರು ಮತ್ತು ಚಿತ್ರವನ್ನು ಸೇರಿಸಿ — ನಿಮ್ಮ ಸ್ವಂತ ಕಾರ್ಯಗಳಲ್ಲಿ ಮತ್ತು ಹಂಚಿಕೊಂಡ ಎಕ್ಸ್‌ಪೋರ್ಟ್‌ಗಳಲ್ಲಿ ನೀವು ನಿಯೋಜಿತರಾಗಿ ಹೀಗೆ ಕಾಣಿಸಿಕೊಳ್ಳುತ್ತೀರಿ.</string>
+    <string name="welcome_profile_email_hint">ಕೇವಲ ಪ್ರದರ್ಶನಕ್ಕಾಗಿ — ಸೈನ್ ಇನ್ ಅಥವಾ ಸಿಂಕ್ ಮಾಡಲು ಬಳಸಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="welcome_profile_avatar_or_icon">ಅಥವಾ ಐಕಾನ್ ಆಯ್ಕೆಮಾಡಿ</string>
     <string name="welcome_title_analytics">ವಿಶ್ಲೇಷಣೆ</string>
     <string name="widget_config_widget_customizer">ವಿಜೆಟ್ ಕಸ್ಟಮೈಸರ್</string>
     <string name="widget_config_corner_radius">ಮೂಲೆ ತ್ರಿಜ್ಯ</string>

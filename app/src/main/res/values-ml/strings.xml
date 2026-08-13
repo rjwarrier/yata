@@ -866,11 +866,17 @@
     <string name="voice_task_overlay_create_task">ടാസ്ക് സൃഷ്ടിക്കുക</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">സിസ്റ്റം വോയ്സ് ഡയലോഗ് ഉപയോഗിക്കാൻ ടാപ്പ് ചെയ്യുക</string>
     <string name="welcome_skip">ഒഴിവാക്കുക</string>
+    <string name="welcome_next">അടുത്തത്</string>
+    <string name="welcome_get_started">ആരംഭിക്കുക</string>
     <string name="welcome_title_intro">YATA-യിലേക്ക് സ്വാഗതം</string>
     <string name="welcome_title_projects_lists">പ്രോജക്റ്റുകളും ലിസ്റ്റുകളും</string>
     <string name="welcome_title_people_delegation">ആളുകളും ഏൽപ്പിക്കലും</string>
     <string name="welcome_title_tags">ടാഗുകൾ</string>
     <string name="welcome_title_today_upcoming">ഇന്നും വരാനിരിക്കുന്നവയും</string>
+    <string name="welcome_title_profile">ഇത് നിങ്ങളുടേതാക്കൂ</string>
+    <string name="welcome_profile_description">നിങ്ങളുടെ പേരും ചിത്രവും ചേർക്കുക — നിങ്ങളുടെ സ്വന്തം ടാസ്കുകളിലും പങ്കിട്ട എക്സ്പോർട്ടുകളിലും നിങ്ങൾ അസൈനിയായി ഇങ്ങനെയാണ് കാണപ്പെടുക.</string>
+    <string name="welcome_profile_email_hint">പ്രദർശനത്തിന് മാത്രം — സൈൻ ഇൻ ചെയ്യാനോ സിങ്ക് ചെയ്യാനോ ഉപയോഗിക്കില്ല.</string>
+    <string name="welcome_profile_avatar_or_icon">അല്ലെങ്കിൽ ഒരു ഐക്കൺ തിരഞ്ഞെടുക്കുക</string>
     <string name="welcome_title_analytics">അനലിറ്റിക്സ്</string>
     <string name="widget_config_widget_customizer">വിജറ്റ് കസ്റ്റമൈസർ</string>
     <string name="widget_config_corner_radius">കോർണർ റേഡിയസ്</string>

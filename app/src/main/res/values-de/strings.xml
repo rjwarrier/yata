@@ -1004,11 +1004,17 @@
     <string name="voice_task_overlay_create_task">Aufgabe erstellen</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Tippen, um den Sprachdialog des Systems zu verwenden</string>
     <string name="welcome_skip">Überspringen</string>
+    <string name="welcome_next">Weiter</string>
+    <string name="welcome_get_started">Los geht\'s</string>
     <string name="welcome_title_intro">Willkommen bei YATA</string>
     <string name="welcome_title_projects_lists">Projekte &amp; Listen</string>
     <string name="welcome_title_people_delegation">Personen &amp; Delegation</string>
     <string name="welcome_title_tags">Tags</string>
     <string name="welcome_title_today_upcoming">Heute &amp; Demnächst</string>
+    <string name="welcome_title_profile">Mach es zu deinem</string>
+    <string name="welcome_profile_description">Füge deinen Namen und ein Bild hinzu — so erscheinst du als Zuständige(r) bei deinen eigenen Aufgaben und in geteilten Exporten.</string>
+    <string name="welcome_profile_email_hint">Nur zur Anzeige — wird nicht zum Anmelden oder Synchronisieren verwendet.</string>
+    <string name="welcome_profile_avatar_or_icon">Oder wähle ein Symbol</string>
     <string name="welcome_title_analytics">Analysen</string>
     <string name="widget_config_widget_customizer">Widget-Anpassung</string>
     <string name="widget_config_corner_radius">Eckenradius</string>

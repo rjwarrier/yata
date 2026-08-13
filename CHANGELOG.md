@@ -60,6 +60,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   bulk-action counts) are now localized in all supported languages.
 - Task row density's Compact/Comfortable/Spacious labels (Settings → Appearance) are now localized
   instead of always showing in English.
+- The Welcome tour's "Make it yours" profile step (Next/Get Started buttons, title, description,
+  email hint, "Or pick an icon") was missing translations in all 24 non-English locales since it was
+  added - it now has them.
 
 ## [0.92.2] - 2026-08-13
 

@@ -790,11 +790,17 @@
     <string name="voice_task_overlay_create_task">Tạo việc cần làm</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Nhấn để dùng hộp thoại giọng nói hệ thống</string>
     <string name="welcome_skip">Bỏ qua</string>
+    <string name="welcome_next">Tiếp theo</string>
+    <string name="welcome_get_started">Bắt đầu</string>
     <string name="welcome_title_intro">Chào mừng đến với YATA</string>
     <string name="welcome_title_projects_lists">Dự án &amp; Danh sách</string>
     <string name="welcome_title_people_delegation">Con người &amp; Ủy quyền</string>
     <string name="welcome_title_tags">Thẻ</string>
     <string name="welcome_title_today_upcoming">Hôm nay &amp; Sắp tới</string>
+    <string name="welcome_title_profile">Biến nó thành của bạn</string>
+    <string name="welcome_profile_description">Thêm tên và ảnh của bạn — đây là cách bạn sẽ hiển thị với tư cách người được giao trong các việc của chính bạn và trong các bản xuất được chia sẻ.</string>
+    <string name="welcome_profile_email_hint">Chỉ để hiển thị — không dùng để đăng nhập hoặc đồng bộ.</string>
+    <string name="welcome_profile_avatar_or_icon">Hoặc chọn một biểu tượng</string>
     <string name="welcome_title_analytics">Thống kê</string>
     <string name="widget_config_widget_customizer">Tùy chỉnh tiện ích</string>
     <string name="widget_config_corner_radius">Bán kính góc</string>

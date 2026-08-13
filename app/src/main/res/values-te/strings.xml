@@ -866,11 +866,17 @@
     <string name="voice_task_overlay_create_task">టాస్క్ సృష్టించండి</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">సిస్టమ్ వాయిస్ డైలాగ్ వాడటానికి నొక్కండి</string>
     <string name="welcome_skip">దాటవేయండి</string>
+    <string name="welcome_next">తదుపరి</string>
+    <string name="welcome_get_started">ప్రారంభించండి</string>
     <string name="welcome_title_intro">యాటాకు స్వాగతం</string>
     <string name="welcome_title_projects_lists">ప్రాజెక్టులు &amp; జాబితాలు</string>
     <string name="welcome_title_people_delegation">వ్యక్తులు &amp; అప్పగింత</string>
     <string name="welcome_title_tags">ట్యాగ్‌లు</string>
     <string name="welcome_title_today_upcoming">ఈరోజు &amp; రాబోయేవి</string>
+    <string name="welcome_title_profile">దీన్ని మీదిగా చేసుకోండి</string>
+    <string name="welcome_profile_description">మీ పేరు మరియు చిత్రాన్ని జోడించండి — మీ సొంత టాస్క్‌లలో మరియు షేర్ చేసిన ఎగుమతులలో మీరు కేటాయించిన వ్యక్తిగా ఇలా కనిపిస్తారు.</string>
+    <string name="welcome_profile_email_hint">ప్రదర్శన కోసం మాత్రమే — సైన్ ఇన్ చేయడానికి లేదా సింక్ చేయడానికి ఉపయోగించబడదు.</string>
+    <string name="welcome_profile_avatar_or_icon">లేదా చిహ్నాన్ని ఎంచుకోండి</string>
     <string name="welcome_title_analytics">విశ్లేషణలు</string>
     <string name="widget_config_widget_customizer">విడ్జెట్ కస్టమైజర్</string>
     <string name="widget_config_corner_radius">కార్నర్ రేడియస్</string>

@@ -790,11 +790,17 @@
     <string name="voice_task_overlay_create_task">Skapa uppgift</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Tryck för att använda systemets röstdialog</string>
     <string name="welcome_skip">Hoppa över</string>
+    <string name="welcome_next">Nästa</string>
+    <string name="welcome_get_started">Kom igång</string>
     <string name="welcome_title_intro">Välkommen till YATA</string>
     <string name="welcome_title_projects_lists">Projekt &amp; listor</string>
     <string name="welcome_title_people_delegation">Personer &amp; delegering</string>
     <string name="welcome_title_tags">Taggar</string>
     <string name="welcome_title_today_upcoming">Idag &amp; kommande</string>
+    <string name="welcome_title_profile">Gör den till din</string>
+    <string name="welcome_profile_description">Lägg till ditt namn och en bild — så här kommer du att visas som tilldelad i dina egna uppgifter och i delade exporter.</string>
+    <string name="welcome_profile_email_hint">Endast för visning — används inte för att logga in eller synka.</string>
+    <string name="welcome_profile_avatar_or_icon">Eller välj en ikon</string>
     <string name="welcome_title_analytics">Statistik</string>
     <string name="widget_config_widget_customizer">Widgetanpassare</string>
     <string name="widget_config_corner_radius">Hörnradie</string>

@@ -866,11 +866,17 @@
     <string name="voice_task_overlay_create_task">Gumawa ng Gawain</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">I-tap para gamitin ang System Voice Dialog</string>
     <string name="welcome_skip">Laktawan</string>
+    <string name="welcome_next">Susunod</string>
+    <string name="welcome_get_started">Magsimula</string>
     <string name="welcome_title_intro">Maligayang Pagdating sa YATA</string>
     <string name="welcome_title_projects_lists">Mga Proyekto at Listahan</string>
     <string name="welcome_title_people_delegation">Mga Tao at Delegasyon</string>
     <string name="welcome_title_tags">Mga Tag</string>
     <string name="welcome_title_today_upcoming">Ngayon at Paparating</string>
+    <string name="welcome_title_profile">Gawin itong sa\'yo</string>
+    <string name="welcome_profile_description">Idagdag ang iyong pangalan at larawan — ganito ka lalabas bilang nakatalaga sa sarili mong mga gawain at sa mga ibinahaging export.</string>
+    <string name="welcome_profile_email_hint">Para sa display lang — hindi ginagamit para mag-sign in o mag-sync.</string>
+    <string name="welcome_profile_avatar_or_icon">O pumili ng icon</string>
     <string name="welcome_title_analytics">Analytics</string>
     <string name="widget_config_widget_customizer">Widget Customizer</string>
     <string name="widget_config_corner_radius">Corner Radius</string>

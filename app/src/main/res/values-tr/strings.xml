@@ -790,11 +790,17 @@
     <string name="voice_task_overlay_create_task">Görev Oluştur</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Sistem Sesli Diyaloğunu kullanmak için dokunun</string>
     <string name="welcome_skip">Atla</string>
+    <string name="welcome_next">İleri</string>
+    <string name="welcome_get_started">Başla</string>
     <string name="welcome_title_intro">YATA\'ya hoş geldiniz</string>
     <string name="welcome_title_projects_lists">Projeler ve Listeler</string>
     <string name="welcome_title_people_delegation">Kişiler ve Delegasyon</string>
     <string name="welcome_title_tags">Etiketler</string>
     <string name="welcome_title_today_upcoming">Bugün ve Yaklaşan</string>
+    <string name="welcome_title_profile">Kendine özel yap</string>
+    <string name="welcome_profile_description">Adınızı ve bir fotoğraf ekleyin — kendi görevlerinizde ve paylaşılan dışa aktarmalarda atanan kişi olarak böyle görüneceksiniz.</string>
+    <string name="welcome_profile_email_hint">Yalnızca görüntüleme içindir — oturum açmak veya senkronize etmek için kullanılmaz.</string>
+    <string name="welcome_profile_avatar_or_icon">Ya da bir simge seçin</string>
     <string name="welcome_title_analytics">Analitik</string>
     <string name="widget_config_widget_customizer">Widget Özelleştirici</string>
     <string name="widget_config_corner_radius">Köşe Yarıçapı</string>

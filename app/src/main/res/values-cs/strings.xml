@@ -790,11 +790,17 @@
     <string name="voice_task_overlay_create_task">Vytvořit úkol</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Klepnutím použijete systémové hlasové okno</string>
     <string name="welcome_skip">Přeskočit</string>
+    <string name="welcome_next">Další</string>
+    <string name="welcome_get_started">Začít</string>
     <string name="welcome_title_intro">Vítejte v YATA</string>
     <string name="welcome_title_projects_lists">Projekty a seznamy</string>
     <string name="welcome_title_people_delegation">Lidé a delegování</string>
     <string name="welcome_title_tags">Štítky</string>
     <string name="welcome_title_today_upcoming">Dnes a nadcházející</string>
+    <string name="welcome_title_profile">Přizpůsobte si to</string>
+    <string name="welcome_profile_description">Přidejte své jméno a fotku — takto se budete zobrazovat jako řešitel u vlastních úkolů a ve sdílených exportech.</string>
+    <string name="welcome_profile_email_hint">Pouze pro zobrazení — nepoužívá se k přihlášení ani synchronizaci.</string>
+    <string name="welcome_profile_avatar_or_icon">Nebo vyberte ikonu</string>
     <string name="welcome_title_analytics">Statistiky</string>
     <string name="widget_config_widget_customizer">Přizpůsobení widgetu</string>
     <string name="widget_config_corner_radius">Zaoblení rohů</string>

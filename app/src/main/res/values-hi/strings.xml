@@ -898,11 +898,17 @@
     <string name="voice_task_overlay_create_task">कार्य बनाएं</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">सिस्टम वॉइस डायलॉग उपयोग करने के लिए टैप करें</string>
     <string name="welcome_skip">छोड़ें</string>
+    <string name="welcome_next">अगला</string>
+    <string name="welcome_get_started">शुरू करें</string>
     <string name="welcome_title_intro">YATA में आपका स्वागत है</string>
     <string name="welcome_title_projects_lists">परियोजनाएं और सूचियां</string>
     <string name="welcome_title_people_delegation">लोग और कार्य सौंपना</string>
     <string name="welcome_title_tags">टैग</string>
     <string name="welcome_title_today_upcoming">आज और आगामी</string>
+    <string name="welcome_title_profile">इसे अपना बनाएं</string>
+    <string name="welcome_profile_description">अपना नाम और एक तस्वीर जोड़ें — आप अपने कार्यों और साझा किए गए एक्सपोर्ट में इसी तरह असाइनी के रूप में दिखेंगे।</string>
+    <string name="welcome_profile_email_hint">केवल दिखाने के लिए — साइन इन या सिंक करने के लिए उपयोग नहीं होता।</string>
+    <string name="welcome_profile_avatar_or_icon">या एक आइकन चुनें</string>
     <string name="welcome_title_analytics">विश्लेषण</string>
     <string name="widget_config_widget_customizer">विजेट कस्टमाइज़र</string>
     <string name="widget_config_corner_radius">कोने की गोलाई</string>

@@ -866,11 +866,17 @@
     <string name="voice_task_overlay_create_task">Unda Kazi</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Gusa kutumia Dirisha la Sauti la Mfumo</string>
     <string name="welcome_skip">Ruka</string>
+    <string name="welcome_next">Ifuatayo</string>
+    <string name="welcome_get_started">Anza</string>
     <string name="welcome_title_intro">Karibu YATA</string>
     <string name="welcome_title_projects_lists">Miradi na Orodha</string>
     <string name="welcome_title_people_delegation">Watu na Ukabidhi</string>
     <string name="welcome_title_tags">Lebo</string>
     <string name="welcome_title_today_upcoming">Leo na Zinazokuja</string>
+    <string name="welcome_title_profile">Ifanye yako</string>
+    <string name="welcome_profile_description">Ongeza jina lako na picha — hivi ndivyo utakavyoonekana kama mhusika katika kazi zako mwenyewe na katika hifadhi zilizoshirikiwa.</string>
+    <string name="welcome_profile_email_hint">Kwa ajili ya kuonyesha tu — hairtumiwi kuingia au kusawazisha.</string>
+    <string name="welcome_profile_avatar_or_icon">Au chagua ikoni</string>
     <string name="welcome_title_analytics">Uchambuzi</string>
     <string name="widget_config_widget_customizer">Kirekebishi cha Wijeti</string>
     <string name="widget_config_corner_radius">Mviringo wa Kona</string>

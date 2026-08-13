@@ -866,11 +866,17 @@
     <string name="voice_task_overlay_create_task">कार्य तयार करा</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">सिस्टीम आवाज संवाद वापरण्यासाठी टॅप करा</string>
     <string name="welcome_skip">वगळा</string>
+    <string name="welcome_next">पुढे</string>
+    <string name="welcome_get_started">सुरू करा</string>
     <string name="welcome_title_intro">YATA मध्ये स्वागत आहे</string>
     <string name="welcome_title_projects_lists">प्रकल्प आणि याद्या</string>
     <string name="welcome_title_people_delegation">लोक आणि प्रत्यायोजन</string>
     <string name="welcome_title_tags">टॅग्ज</string>
     <string name="welcome_title_today_upcoming">आज आणि आगामी</string>
+    <string name="welcome_title_profile">हे तुमचे बनवा</string>
+    <string name="welcome_profile_description">तुमचे नाव आणि एक चित्र जोडा — तुमच्या स्वतःच्या कार्यांमध्ये आणि शेअर केलेल्या एक्सपोर्टमध्ये तुम्ही अशाच प्रकारे नियुक्त व्यक्ती म्हणून दिसाल.</string>
+    <string name="welcome_profile_email_hint">फक्त दाखवण्यासाठी — साइन इन किंवा सिंक करण्यासाठी वापरले जात नाही.</string>
+    <string name="welcome_profile_avatar_or_icon">किंवा एक चिन्ह निवडा</string>
     <string name="welcome_title_analytics">विश्लेषण</string>
     <string name="widget_config_widget_customizer">विजेट सानुकूलक</string>
     <string name="widget_config_corner_radius">कोपऱ्याची त्रिज्या</string>

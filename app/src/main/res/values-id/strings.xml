@@ -790,11 +790,17 @@
     <string name="voice_task_overlay_create_task">Buat Tugas</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Ketuk untuk menggunakan Dialog Suara Sistem</string>
     <string name="welcome_skip">Lewati</string>
+    <string name="welcome_next">Berikutnya</string>
+    <string name="welcome_get_started">Mulai</string>
     <string name="welcome_title_intro">Selamat datang di YATA</string>
     <string name="welcome_title_projects_lists">Proyek &amp; Daftar</string>
     <string name="welcome_title_people_delegation">Orang &amp; Pelimpahan</string>
     <string name="welcome_title_tags">Tag</string>
     <string name="welcome_title_today_upcoming">Hari Ini &amp; Mendatang</string>
+    <string name="welcome_title_profile">Jadikan milikmu</string>
+    <string name="welcome_profile_description">Tambahkan nama dan foto Anda — begitulah Anda akan muncul sebagai penerima tugas pada tugas Anda sendiri dan dalam ekspor bersama.</string>
+    <string name="welcome_profile_email_hint">Hanya untuk ditampilkan — tidak digunakan untuk masuk atau sinkronisasi.</string>
+    <string name="welcome_profile_avatar_or_icon">Atau pilih ikon</string>
     <string name="welcome_title_analytics">Analitik</string>
     <string name="widget_config_widget_customizer">Kustomisasi Widget</string>
     <string name="widget_config_corner_radius">Radius Sudut</string>

@@ -790,11 +790,17 @@
     <string name="voice_task_overlay_create_task">Crea attività</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Tocca per usare la finestra vocale di sistema</string>
     <string name="welcome_skip">Salta</string>
+    <string name="welcome_next">Avanti</string>
+    <string name="welcome_get_started">Inizia</string>
     <string name="welcome_title_intro">Benvenuto su YATA</string>
     <string name="welcome_title_projects_lists">Progetti ed elenchi</string>
     <string name="welcome_title_people_delegation">Persone e delega</string>
     <string name="welcome_title_tags">Tag</string>
     <string name="welcome_title_today_upcoming">Oggi e In arrivo</string>
+    <string name="welcome_title_profile">Rendilo tuo</string>
+    <string name="welcome_profile_description">Aggiungi il tuo nome e una foto — è così che apparirai come assegnatario nelle tue attività e negli export condivisi.</string>
+    <string name="welcome_profile_email_hint">Solo per la visualizzazione — non viene usato per accedere o sincronizzare.</string>
+    <string name="welcome_profile_avatar_or_icon">Oppure scegli un\'icona</string>
     <string name="welcome_title_analytics">Statistiche</string>
     <string name="widget_config_widget_customizer">Personalizzazione widget</string>
     <string name="widget_config_corner_radius">Raggio degli angoli</string>

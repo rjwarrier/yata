@@ -790,11 +790,17 @@
     <string name="voice_task_overlay_create_task">Creează sarcină</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Atinge pentru a folosi dialogul vocal al sistemului</string>
     <string name="welcome_skip">Omite</string>
+    <string name="welcome_next">Următorul</string>
+    <string name="welcome_get_started">Începe</string>
     <string name="welcome_title_intro">Bine ai venit la YATA</string>
     <string name="welcome_title_projects_lists">Proiecte și liste</string>
     <string name="welcome_title_people_delegation">Persoane și delegare</string>
     <string name="welcome_title_tags">Etichete</string>
     <string name="welcome_title_today_upcoming">Azi și următoarele</string>
+    <string name="welcome_title_profile">Personalizează-l</string>
+    <string name="welcome_profile_description">Adaugă-ți numele și o poză — așa vei apărea ca persoană responsabilă la propriile sarcini și în exporturile partajate.</string>
+    <string name="welcome_profile_email_hint">Doar pentru afișare — nu este folosit pentru autentificare sau sincronizare.</string>
+    <string name="welcome_profile_avatar_or_icon">Sau alege o pictogramă</string>
     <string name="welcome_title_analytics">Analiză</string>
     <string name="widget_config_widget_customizer">Personalizare widget</string>
     <string name="widget_config_corner_radius">Rază colțuri</string>

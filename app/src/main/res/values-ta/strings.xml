@@ -866,11 +866,17 @@
     <string name="voice_task_overlay_create_task">பணியை உருவாக்கு</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">சாதன குரல் உரையாடலைப் பயன்படுத்த தட்டவும்</string>
     <string name="welcome_skip">தவிர்</string>
+    <string name="welcome_next">அடுத்து</string>
+    <string name="welcome_get_started">தொடங்கு</string>
     <string name="welcome_title_intro">YATA-க்கு வரவேற்கிறோம்</string>
     <string name="welcome_title_projects_lists">திட்டங்கள் &amp; பட்டியல்கள்</string>
     <string name="welcome_title_people_delegation">நபர்கள் &amp; பணி ஒப்படைப்பு</string>
     <string name="welcome_title_tags">குறிச்சொற்கள்</string>
     <string name="welcome_title_today_upcoming">இன்று &amp; வரவிருக்கும்</string>
+    <string name="welcome_title_profile">இதை உங்களுடையதாக்குங்கள்</string>
+    <string name="welcome_profile_description">உங்கள் பெயரையும் படத்தையும் சேர்க்கவும் — உங்கள் சொந்த பணிகளிலும் பகிரப்பட்ட ஏற்றுமதிகளிலும் நீங்கள் இப்படித்தான் நியமிக்கப்பட்டவராகக் காட்சியளிப்பீர்கள்.</string>
+    <string name="welcome_profile_email_hint">காட்சிக்கு மட்டும் — உள்நுழைய அல்லது ஒத்திசைக்க பயன்படுத்தப்படாது.</string>
+    <string name="welcome_profile_avatar_or_icon">அல்லது ஒரு ஐகானைத் தேர்ந்தெடுக்கவும்</string>
     <string name="welcome_title_analytics">பகுப்பாய்வு</string>
     <string name="widget_config_widget_customizer">விட்ஜெட் தனிப்பயனாக்கி</string>
     <string name="widget_config_corner_radius">மூலை ஆரம்</string>

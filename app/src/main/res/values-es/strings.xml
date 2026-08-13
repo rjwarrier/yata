@@ -962,6 +962,8 @@
     <string name="voice_task_overlay_speak_again">Hablar de nuevo</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">Toca para usar el diálogo de voz del sistema</string>
     <string name="welcome_skip">Omitir</string>
+    <string name="welcome_next">Siguiente</string>
+    <string name="welcome_get_started">Comenzar</string>
 
     <string name="widget_config_widget_customizer">Personalizador de widget</string>
     <string name="widget_config_corner_radius">Radio de esquinas</string>
@@ -1191,6 +1193,10 @@
     <string name="welcome_title_people_delegation">People &amp; Delegation</string>
     <string name="welcome_title_tags">Etiquetas</string>
     <string name="welcome_title_today_upcoming">Hoy &amp; Próximas</string>
+    <string name="welcome_title_profile">Hazlo tuyo</string>
+    <string name="welcome_profile_description">Añade tu nombre y una foto — así aparecerás como responsable en tus propias tareas y en las exportaciones compartidas.</string>
+    <string name="welcome_profile_email_hint">Solo para mostrar — no se usa para iniciar sesión ni sincronizar.</string>
+    <string name="welcome_profile_avatar_or_icon">O elige un icono</string>
     <string name="welcome_title_analytics">Analytics</string>
     <string name="export_yata_wordmark">YATA</string>
     <string name="export_made_with_yata">Made with YATA</string>

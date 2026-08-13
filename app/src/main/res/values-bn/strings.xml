@@ -790,11 +790,17 @@
     <string name="voice_task_overlay_create_task">টাস্ক তৈরি করুন</string>
     <string name="voice_task_overlay_tap_to_use_system_voice_dialog">সিস্টেম ভয়েস ডায়ালগ ব্যবহার করতে ট্যাপ করুন</string>
     <string name="welcome_skip">এড়িয়ে যান</string>
+    <string name="welcome_next">পরবর্তী</string>
+    <string name="welcome_get_started">শুরু করুন</string>
     <string name="welcome_title_intro">YATA-তে স্বাগতম</string>
     <string name="welcome_title_projects_lists">প্রজেক্ট ও লিস্ট</string>
     <string name="welcome_title_people_delegation">মানুষ ও দায়িত্ব অর্পণ</string>
     <string name="welcome_title_tags">ট্যাগ</string>
     <string name="welcome_title_today_upcoming">আজ ও আসন্ন</string>
+    <string name="welcome_title_profile">এটি আপনার মতো করুন</string>
+    <string name="welcome_profile_description">আপনার নাম এবং একটি ছবি যোগ করুন — আপনার নিজের টাস্কে এবং শেয়ার করা এক্সপোর্টে আপনি এভাবেই অ্যাসাইনি হিসেবে দেখাবেন।</string>
+    <string name="welcome_profile_email_hint">শুধু প্রদর্শনের জন্য — সাইন ইন বা সিঙ্ক করার জন্য ব্যবহৃত হয় না।</string>
+    <string name="welcome_profile_avatar_or_icon">অথবা একটি আইকন বেছে নিন</string>
     <string name="welcome_title_analytics">বিশ্লেষণ</string>
     <string name="widget_config_widget_customizer">উইজেট কাস্টমাইজার</string>
     <string name="widget_config_corner_radius">কোণার ব্যাসার্ধ</string>
