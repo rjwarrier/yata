@@ -48,8 +48,10 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
@@ -3066,12 +3068,12 @@ fun SettingsScreen(
         }
         item {
             AboutEntrance(delayMillis = 0) {
-                OtherAppsCard(modifier = Modifier.fillMaxWidth())
+                GitHubAndShareRow(onNavigateToShareApp = onNavigateToShareApp, modifier = Modifier.fillMaxWidth())
             }
         }
         item {
             AboutEntrance(delayMillis = 60) {
-                GitHubAndShareRow(onNavigateToShareApp = onNavigateToShareApp, modifier = Modifier.fillMaxWidth())
+                OtherAppsCard(modifier = Modifier.fillMaxWidth())
             }
         }
     }
@@ -3969,12 +3971,17 @@ private fun AboutYataCard(
     }
 }
 
-private data class OtherApp(val name: String, val tagline: String, val playStoreUrl: String)
+private data class OtherApp(
+    val name: String,
+    val tagline: String,
+    val playStoreUrl: String,
+    val icon: ImageVector
+)
 
 private val otherApps = listOf(
-    OtherApp("yaja", "Journaling app", "https://play.google.com/store/apps/details?id=com.mj.yaja"),
-    OtherApp("Assetrack", "Track your assets", "https://play.google.com/store/apps/details?id=com.mj.assetrack"),
-    OtherApp("Ultra", "Smart reminders", "https://play.google.com/store/apps/details?id=com.ultra.reminders")
+    OtherApp("yaja", "Journaling app", "https://play.google.com/store/apps/details?id=com.mj.yaja", Icons.Default.Book),
+    OtherApp("Assetrack", "Track your assets", "https://play.google.com/store/apps/details?id=com.mj.assetrack", Icons.Default.Inventory2),
+    OtherApp("Ultra", "Smart reminders", "https://play.google.com/store/apps/details?id=com.ultra.reminders", Icons.Default.Alarm)
 )
 
 /** Fades and rises the About screen's new link cards into place on first composition, staggered
@@ -3998,32 +4005,48 @@ private fun AboutEntrance(delayMillis: Int, content: @Composable () -> Unit) {
 @Composable
 private fun OtherAppsCard(modifier: Modifier = Modifier) {
     val uriHandler = LocalUriHandler.current
+    val accents = LocalYataAccents.current
+    val tileAccents = listOf(accents.accentA, accents.accentB, accents.accentC)
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         modifier = modifier
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = stringResource(R.string.settings_about_other_apps),
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = stringResource(R.string.settings_about_other_apps),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(IntrinsicSize.Max),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                otherApps.forEach { app ->
+                otherApps.forEachIndexed { index, app ->
+                    val tint = tileAccents[index % tileAccents.size]
                     Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = RoundedCornerShape(10.dp),
+                        color = tint.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, tint.copy(alpha = 0.3f)),
                         onClick = { uriHandler.openUri(app.playStoreUrl) },
                         modifier = Modifier
                             .weight(1f)
@@ -4032,10 +4055,24 @@ private fun OtherAppsCard(modifier: Modifier = Modifier) {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 8.dp, vertical = 10.dp),
+                                .padding(horizontal = 8.dp, vertical = 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(tint.copy(alpha = 0.22f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = app.icon,
+                                    contentDescription = null,
+                                    tint = tint,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                             Text(
                                 text = app.name,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),

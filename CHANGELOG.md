@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Changed
+- Reordered Help & About's About section: GitHub/Share/Website links now above "Other apps by dev".
+- Restyled the "Other apps by dev" card with accent-tinted icon badges per app and a bordered surface.
+
 ## [0.92.2] - 2026-08-13
 
 `versionCode 19`. Upgrades in place over 0.92.1.
