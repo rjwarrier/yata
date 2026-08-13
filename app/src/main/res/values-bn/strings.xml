@@ -123,6 +123,9 @@
     <string name="cd_remove_preset">%1$s সরান</string>
     <string name="settings_motion_mode">মোশন মোড</string>
     <string name="settings_motion_mode_summary">অন্য ভিজ্যুয়াল সেটিংস পরিবর্তন না করেই অ্যাপ অ্যানিমেশন নিয়ন্ত্রণ করুন।</string>
+    <string name="motion_mode_full">সম্পূর্ণ</string>
+    <string name="motion_mode_reduced">হ্রাসকৃত</string>
+    <string name="motion_mode_off">বন্ধ</string>
     <string name="settings_tasker_integration">Tasker একীকরণ</string>
     <string name="settings_tasker_integration_summary">Yata প্লাগইনের মাধ্যমে Tasker প্রোফাইলকে টাস্ক তৈরি করার অনুমতি দিন।</string>
     <string name="settings_date_aliases">তারিখের ছদ্মনাম</string>

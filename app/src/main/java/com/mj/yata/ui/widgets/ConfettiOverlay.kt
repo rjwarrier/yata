@@ -1,6 +1,5 @@
 package com.mj.yata.ui.widgets
 
-import android.provider.Settings
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
@@ -9,7 +8,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.platform.LocalContext
 import com.mj.yata.ui.theme.ALL_ACCENT_KEYS
 import com.mj.yata.ui.theme.LocalYataAccents
 import kotlinx.coroutines.android.awaitFrame
@@ -35,22 +33,11 @@ fun ConfettiOverlay(
 ) {
     if (trigger == 0) return
 
-    // Purely decorative, so it is skipped outright on either signal rather than shortened: the
-    // system animator scale, and the app's own Reduce Motion setting — which until now this could
-    // not see, so someone who had turned motion down in the app would still have got confetti.
+    // Purely decorative, so it is skipped outright rather than shortened. LocalReduceMotion now
+    // covers both signals - the app's own Reduce Motion setting and the system animator scale,
+    // which MainActivity folds in at the source (see systemAnimatorScaleIsZero) - so this used to
+    // need its own separate Settings.Global read here; it doesn't anymore.
     if (com.mj.yata.ui.theme.LocalReduceMotion.current) return
-
-    val context = LocalContext.current
-    val isReducedMotion = remember(context) {
-        val scale = Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f
-        )
-        scale == 0f
-    }
-
-    if (isReducedMotion) return
 
     var particles by remember { mutableStateOf<List<Particle>>(emptyList()) }
     val random = remember { Random() }

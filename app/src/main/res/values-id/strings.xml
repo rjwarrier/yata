@@ -123,6 +123,9 @@
     <string name="cd_remove_preset">Hapus %1$s</string>
     <string name="settings_motion_mode">Mode gerak</string>
     <string name="settings_motion_mode_summary">Kendalikan animasi aplikasi tanpa mengubah pengaturan visual lainnya.</string>
+    <string name="motion_mode_full">Penuh</string>
+    <string name="motion_mode_reduced">Dikurangi</string>
+    <string name="motion_mode_off">Nonaktif</string>
     <string name="settings_tasker_integration">Integrasi Tasker</string>
     <string name="settings_tasker_integration_summary">Izinkan profil Tasker membuat tugas melalui plugin Yata.</string>
     <string name="settings_date_aliases">Alias tanggal</string>

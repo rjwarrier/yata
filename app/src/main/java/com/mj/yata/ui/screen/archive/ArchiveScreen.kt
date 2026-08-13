@@ -147,7 +147,12 @@ fun ArchiveScreen(
                                         viewModel.setTaskArchived(task.id, true)
                                     }
                                 }
-                            }
+                            },
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
+                                placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
+                                fadeOutSpec = com.mj.yata.ui.theme.yataItemFade
+                            )
                         )
                     }
                 }
@@ -169,7 +174,12 @@ fun ArchiveScreen(
                                         viewModel.setTaskArchived(task.id, true)
                                     }
                                 }
-                            }
+                            },
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
+                                placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
+                                fadeOutSpec = com.mj.yata.ui.theme.yataItemFade
+                            )
                         )
                     }
                 }
@@ -194,12 +204,13 @@ private fun ArchiveSectionHeader(label: String, count: Int) {
 private fun ArchiveTaskRow(
     task: com.mj.yata.domain.model.Task,
     onClick: () -> Unit,
-    onUnarchive: () -> Unit
+    onUnarchive: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier

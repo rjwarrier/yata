@@ -121,6 +121,11 @@ fun TodayTab(
      * to be tapped each time. Settings → Task Defaults. */
     showUpcomingWhenEmpty: Boolean = false,
     useWideLayout: Boolean = false,
+    /** False only for the brief window before Room's first query lands on cold start - see
+     * MainViewModel.initialDataLoaded. An empty list here is ambiguous between "genuinely no
+     * tasks" and "haven't loaded yet"; this disambiguates so the former's empty state doesn't
+     * flash before the latter resolves. */
+    initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -637,7 +642,11 @@ fun TodayTab(
                 bottom = 88.dp
             )
         ) {
-            if (pendingTasks.isEmpty() && completedTasks.isEmpty()) {
+            if (pendingTasks.isEmpty() && completedTasks.isEmpty() && !initialDataLoaded) {
+                item(key = "loading_shimmer") {
+                    com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth())
+                }
+            } else if (pendingTasks.isEmpty() && completedTasks.isEmpty()) {
                 val filtered = selectedFilter != TodayTaskFilter.ALL || activeStatFilter != null
                 item {
                     com.mj.yata.ui.widgets.TabEmptyState(
@@ -922,8 +931,7 @@ private fun SyncProgressPill(
     modifier: Modifier = Modifier
 ) {
     val percent = progress.percent.coerceIn(0, 100)
-    val transition = rememberInfiniteTransition(label = "SyncWave")
-    val phase by transition.animateFloat(
+    val phase by com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(

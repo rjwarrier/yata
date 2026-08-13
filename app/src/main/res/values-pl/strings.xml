@@ -123,6 +123,9 @@
     <string name="cd_remove_preset">Usuń %1$s</string>
     <string name="settings_motion_mode">Tryb animacji</string>
     <string name="settings_motion_mode_summary">Steruj animacjami aplikacji bez zmiany innych ustawień wizualnych.</string>
+    <string name="motion_mode_full">Pełny</string>
+    <string name="motion_mode_reduced">Zmniejszony</string>
+    <string name="motion_mode_off">Wyłączony</string>
     <string name="settings_tasker_integration">Integracja z Taskerem</string>
     <string name="settings_tasker_integration_summary">Pozwól profilom Taskera tworzyć zadania przez wtyczkę Yata.</string>
     <string name="settings_date_aliases">Aliasy dat</string>

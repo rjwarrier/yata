@@ -143,6 +143,9 @@
     <string name="cd_remove_preset">%1$s हटाएं</string>
     <string name="settings_motion_mode">मोशन मोड</string>
     <string name="settings_motion_mode_summary">अन्य विज़ुअल सेटिंग्स बदले बिना ऐप एनिमेशन नियंत्रित करें।</string>
+    <string name="motion_mode_full">पूर्ण</string>
+    <string name="motion_mode_reduced">कम</string>
+    <string name="motion_mode_off">बंद</string>
     <string name="settings_tasker_integration">टास्कर एकीकरण</string>
     <string name="settings_tasker_integration_summary">टास्कर प्रोफ़ाइल को Yata प्लगइन के ज़रिए कार्य बनाने की अनुमति दें।</string>
     <string name="settings_date_aliases">तारीख उपनाम</string>

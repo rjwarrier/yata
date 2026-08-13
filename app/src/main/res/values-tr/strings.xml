@@ -123,6 +123,9 @@
     <string name="cd_remove_preset">%1$s kaldır</string>
     <string name="settings_motion_mode">Hareket modu</string>
     <string name="settings_motion_mode_summary">Diğer görsel ayarları değiştirmeden uygulama animasyonlarını kontrol edin.</string>
+    <string name="motion_mode_full">Tam</string>
+    <string name="motion_mode_reduced">Azaltılmış</string>
+    <string name="motion_mode_off">Kapalı</string>
     <string name="settings_tasker_integration">Tasker entegrasyonu</string>
     <string name="settings_tasker_integration_summary">Tasker profillerinin Yata eklentisi üzerinden görev oluşturmasına izin verin.</string>
     <string name="settings_date_aliases">Tarih takma adları</string>

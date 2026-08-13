@@ -143,6 +143,9 @@
     <string name="cd_remove_preset">%1$s verwijderen</string>
     <string name="settings_motion_mode">Bewegingsmodus</string>
     <string name="settings_motion_mode_summary">Beheer app-animaties zonder andere visuele instellingen te wijzigen.</string>
+    <string name="motion_mode_full">Volledig</string>
+    <string name="motion_mode_reduced">Verminderd</string>
+    <string name="motion_mode_off">Uit</string>
     <string name="settings_tasker_integration">Tasker-integratie</string>
     <string name="settings_tasker_integration_summary">Sta Tasker-profielen toe om taken te maken via de Yata-plugin.</string>
     <string name="settings_date_aliases">Datumaliassen</string>

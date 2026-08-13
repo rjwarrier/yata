@@ -118,6 +118,9 @@
     <string name="cd_remove_preset">Ondoa %1$s</string>
     <string name="settings_motion_mode">Hali ya mwendo</string>
     <string name="settings_motion_mode_summary">Dhibiti michoro ya programu bila kubadilisha mipangilio mingine ya kuonekana.</string>
+    <string name="motion_mode_full">Kamili</string>
+    <string name="motion_mode_reduced">Iliyopunguzwa</string>
+    <string name="motion_mode_off">Zima</string>
     <string name="settings_tasker_integration">Muunganiko wa Tasker</string>
     <string name="settings_tasker_integration_summary">Ruhusu wasifu wa Tasker kuunda kazi kupitia programu-jalizi ya Yata.</string>
     <string name="settings_date_aliases">Majina mbadala ya tarehe</string>

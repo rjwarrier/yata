@@ -69,6 +69,8 @@ fun PeopleTab(
     sortMode: com.mj.yata.util.EntitySortMode = com.mj.yata.util.EntitySortMode.NAME_ASC,
     onSortModeChange: (com.mj.yata.util.EntitySortMode) -> Unit = {},
     useWideLayout: Boolean = false,
+    /** See TodayTab's parameter of the same name. */
+    initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val tasksByPerson = remember(tasks) {
@@ -164,7 +166,11 @@ fun PeopleTab(
             // suggested when read on its own. 10dp matches the tag rows on the Tags tab.
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            if (people.isEmpty()) {
+            if (people.isEmpty() && !initialDataLoaded) {
+                item(key = "loading_shimmer") {
+                    com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth())
+                }
+            } else if (people.isEmpty()) {
                 item {
                     com.mj.yata.ui.widgets.TabEmptyState(
                         icon = Icons.Default.Groups,
@@ -189,7 +195,15 @@ fun PeopleTab(
                     }
                     if (expanded) {
                         items(groupPeople.chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "person_${it.id}" } }) { row ->
-                            PersonRowGroup(row = row, useWideLayout = useWideLayout) { person, itemModifier ->
+                            PersonRowGroup(
+                            row = row,
+                            useWideLayout = useWideLayout,
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
+                                placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
+                                fadeOutSpec = com.mj.yata.ui.theme.yataItemFade
+                            )
+                        ) { person, itemModifier ->
                                 PersonListRow(
                                     person = person,
                                     tasksByPerson = tasksByPerson,
@@ -218,7 +232,15 @@ fun PeopleTab(
                 }
                 if (ungroupedExpanded) {
                     items(ungrouped.chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "person_${it.id}" } }) { row ->
-                        PersonRowGroup(row = row, useWideLayout = useWideLayout) { person, itemModifier ->
+                        PersonRowGroup(
+                            row = row,
+                            useWideLayout = useWideLayout,
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
+                                placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
+                                fadeOutSpec = com.mj.yata.ui.theme.yataItemFade
+                            )
+                        ) { person, itemModifier ->
                             PersonListRow(
                                 person = person,
                                 tasksByPerson = tasksByPerson,
@@ -244,7 +266,15 @@ fun PeopleTab(
                 }
                 if (archivedExpanded) {
                     items(archivedPeople.sorted().chunked(if (useWideLayout) 2 else 1), key = { row -> row.joinToString { "archived_${it.id}" } }) { row ->
-                        PersonRowGroup(row = row, useWideLayout = useWideLayout) { person, itemModifier ->
+                        PersonRowGroup(
+                            row = row,
+                            useWideLayout = useWideLayout,
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
+                                placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
+                                fadeOutSpec = com.mj.yata.ui.theme.yataItemFade
+                            )
+                        ) { person, itemModifier ->
                             PersonRow(
                                 person = person,
                                 totalTasks = 0,
@@ -330,14 +360,15 @@ private fun PersonListRow(
 private fun PersonRowGroup(
     row: List<Person>,
     useWideLayout: Boolean,
+    modifier: Modifier = Modifier,
     content: @Composable (Person, Modifier) -> Unit
 ) {
     if (!useWideLayout) {
-        content(row.first(), Modifier.fillMaxWidth())
+        content(row.first(), modifier.fillMaxWidth())
         return
     }
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         row.forEach { person ->

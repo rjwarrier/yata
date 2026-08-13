@@ -805,7 +805,9 @@ private fun SearchResultsList(
                         if (canSaveCurrentSmartFilterSet) {
                             FilledTonalIconButton(
                                 onClick = onSaveActiveFilters,
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier
+                                    .minimumInteractiveComponentSize()
+                                    .size(36.dp)
                             ) {
                                 Icon(
                                     Icons.Default.BookmarkAdd,

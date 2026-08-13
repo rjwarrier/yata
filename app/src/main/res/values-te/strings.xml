@@ -118,6 +118,9 @@
     <string name="cd_remove_preset">%1$s ను తొలగించండి</string>
     <string name="settings_motion_mode">మోషన్ మోడ్</string>
     <string name="settings_motion_mode_summary">ఇతర దృశ్య సెట్టింగ్‌లను మార్చకుండా యాప్ యానిమేషన్‌లను నియంత్రించండి.</string>
+    <string name="motion_mode_full">పూర్తి</string>
+    <string name="motion_mode_reduced">తగ్గించబడింది</string>
+    <string name="motion_mode_off">ఆఫ్</string>
     <string name="settings_tasker_integration">టాస్కర్ ఇంటిగ్రేషన్</string>
     <string name="settings_tasker_integration_summary">యాటా ప్లగిన్ ద్వారా టాస్క్‌లు సృష్టించడానికి టాస్కర్ ప్రొఫైల్‌లను అనుమతించండి.</string>
     <string name="settings_date_aliases">తేదీ మారుపేర్లు</string>

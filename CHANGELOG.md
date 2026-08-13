@@ -29,6 +29,23 @@ test-only changes belong in the commit message, not here, unless they change beh
   instead of failing outright, a wrong backup passphrase reports itself instead of looking like a
   damaged snapshot, and an oversized snapshot is rejected with a clear size before upload instead of
   failing partway through.
+- Today, Projects, People, Tags, and Upcoming now show a loading skeleton instead of briefly
+  flashing their empty state ("No tasks yet", etc.) on cold start, before the database's first
+  query result arrives.
+- Motion mode (Settings → Appearance → Reduced/Off) now actually stops decorative looping
+  animations — the shimmer skeleton, empty-state icon pulse, sync-progress wave, and voice capture's
+  pulses/waveform previously kept animating regardless of the setting. The system-wide "Animator
+  duration scale" (Developer Options → Animation off) now has the same effect app-wide, not just on
+  the completion confetti.
+- Back-swiping out of the app on Android 14+ now shows the predictive-back preview instead of it
+  being suppressed.
+- Larger tap targets (48dp minimum) on several small icon buttons that were smaller than Android's
+  accessibility minimum: a task row's comment/rename/snooze icons, the profile avatar button, the
+  GitHub token help icon, and Search's save-filter icon.
+- Archived and unarchived tasks, and people list rows, now animate in and out like the rest of the
+  app's lists instead of appearing/disappearing abruptly.
+- Fixed the Task Detail and New Task sheet's expand/collapse animations ignoring the Motion mode
+  setting.
 
 ## [0.92.2] - 2026-08-13
 

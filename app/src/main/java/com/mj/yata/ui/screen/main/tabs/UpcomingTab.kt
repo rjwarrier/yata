@@ -107,6 +107,8 @@ fun UpcomingTab(
     projectsEnabled: Boolean = true,
     taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
     useWideLayout: Boolean = false,
+    /** See TodayTab's parameter of the same name. */
+    initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -297,7 +299,10 @@ fun UpcomingTab(
                     val profileLabel = stringResource(R.string.cd_open_profile)
                     IconButton(
                         onClick = onProfileClick,
-                        modifier = Modifier.size(40.dp).semantics { contentDescription = profileLabel }
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(40.dp)
+                            .semantics { contentDescription = profileLabel }
                     ) {
                         PersonAvatar(
                             initials = com.mj.yata.util.initialsFor(userName),
@@ -533,8 +538,8 @@ fun UpcomingTab(
         AnimatedContent(
             targetState = selectedDay,
             transitionSpec = {
-                (slideInVertically(animationSpec = tween(220, easing = YataEase.emphDecel)) { it / 8 } +
-                    fadeIn(tween(220, easing = YataEase.emphDecel)))
+                (slideInVertically(animationSpec = tween(YataDur.fade, easing = YataEase.emphDecel)) { it / 8 } +
+                    fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)))
                     .togetherWith(fadeOut(tween(YataDur.fade)))
             },
             modifier = Modifier.weight(1f),
@@ -585,7 +590,11 @@ fun UpcomingTab(
                     modifier = if (useWideLayout && !selectionMode) Modifier.weight(1f) else Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 88.dp)
                 ) {
-                    if (dayTasks.isEmpty()) {
+                    if (dayTasks.isEmpty() && !initialDataLoaded) {
+                        item(key = "loading_shimmer") {
+                            com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth())
+                        }
+                    } else if (dayTasks.isEmpty()) {
                         item { UpcomingEmptyState() }
                     } else {
                         items(dayTasks, key = { it.id }, contentType = { "task" }) { task ->

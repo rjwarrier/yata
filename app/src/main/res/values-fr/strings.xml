@@ -908,6 +908,9 @@
     <string name="cd_remove_preset">Supprimer %1$s</string>
     <string name="settings_motion_mode">Mode de mouvement</string>
     <string name="settings_motion_mode_summary">Contrôlez les animations de l\'application sans changer d\'autres paramètres visuels.</string>
+    <string name="motion_mode_full">Complet</string>
+    <string name="motion_mode_reduced">Réduit</string>
+    <string name="motion_mode_off">Désactivé</string>
     <string name="settings_tasker_integration">Intégration Tasker</string>
     <string name="settings_tasker_integration_summary">Autorisez les profils Tasker à créer des tâches via le plugin Yata.</string>
     <string name="settings_date_aliases">Alias de date</string>

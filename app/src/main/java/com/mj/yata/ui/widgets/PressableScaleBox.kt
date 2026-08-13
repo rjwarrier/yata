@@ -22,12 +22,17 @@ fun PressableScaleBox(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale = remember { Animatable(1f) }
+    // Unlike bounceClickable (Motion.kt), this ignored LocalReduceMotion entirely - every one of
+    // its 13 call sites kept the full press-shrink animation under Reduced or Off. Snapping
+    // straight to 1f (no shrink at all) rather than shortening it matches bounceClickable's own
+    // and ProgressRing's convention: purely decorative motion stops outright.
+    val reduceMotion = com.mj.yata.ui.theme.LocalReduceMotion.current
 
-    LaunchedEffect(isPressed, enabled) {
-        if (isPressed && enabled) {
-            scale.animateTo(scaleAmount, spring(stiffness = 900f))
-        } else {
-            scale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 900f))
+    LaunchedEffect(isPressed, enabled, reduceMotion) {
+        when {
+            reduceMotion -> scale.snapTo(1f)
+            isPressed && enabled -> scale.animateTo(scaleAmount, spring(stiffness = 900f))
+            else -> scale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = 900f))
         }
     }
 

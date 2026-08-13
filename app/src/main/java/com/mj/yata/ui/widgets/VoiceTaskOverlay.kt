@@ -167,8 +167,7 @@ fun VoiceTaskOverlay(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val infinitePulse = rememberInfiniteTransition(label = "headerPulse")
-                    val pulseScale by infinitePulse.animateFloat(
+                    val pulseScale by com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
                         initialValue = 1f,
                         targetValue = 1.7f,
                         animationSpec = infiniteRepeatable(
@@ -177,7 +176,7 @@ fun VoiceTaskOverlay(
                         ),
                         label = "pulseScale"
                     )
-                    val pulseAlpha by infinitePulse.animateFloat(
+                    val pulseAlpha by com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
                         initialValue = 0.8f,
                         targetValue = 0.15f,
                         animationSpec = infiniteRepeatable(
@@ -477,8 +476,7 @@ private fun AudioWaveformCanvas(
     val secondaryColor = MaterialTheme.colorScheme.tertiary
     val auraColor = MaterialTheme.colorScheme.secondary
 
-    val infiniteTransition = rememberInfiniteTransition(label = "waveformWave")
-    val phase by infiniteTransition.animateFloat(
+    val phase by com.mj.yata.ui.theme.rememberMotionAwareInfiniteFloat(
         initialValue = 0f,
         targetValue = (2 * PI).toFloat(),
         animationSpec = infiniteRepeatable(

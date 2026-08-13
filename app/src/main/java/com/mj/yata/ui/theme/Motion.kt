@@ -1,17 +1,25 @@
 package com.mj.yata.ui.theme
 
+import android.content.Context
+import android.provider.Settings
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.InfiniteRepeatableSpec
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +29,17 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import com.mj.yata.domain.model.MotionMode
+
+/**
+ * The system-wide "Animator duration scale" (Developer Options > Animation off, or the equivalent
+ * accessibility toggle some OEMs expose). Compose doesn't consult this on its own, so a user who
+ * turned system animations off got full YATA motion anyway - previously checked only by
+ * [com.mj.yata.ui.widgets.ConfettiOverlay]; [MainActivity][com.mj.yata.MainActivity] now folds it
+ * into [YataDur.applyMotionMode] so it governs every animation in the app the same way, not just
+ * confetti.
+ */
+fun systemAnimatorScaleIsZero(context: Context): Boolean =
+    Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
 /** Centralized easings/durations mirroring handoff m3-widgets.jsx EASE/DUR. */
 object YataEase {
@@ -147,3 +166,36 @@ fun Modifier.bounceClickable(
 }
 
 private fun <T> snap(): AnimationSpec<T> = tween(0)
+
+/**
+ * Motion-aware replacement for `rememberInfiniteTransition().animateFloat(...)`, for a loop that is
+ * purely decorative (a pulse, a shimmer sweep, a wandering wave) rather than communicating a state
+ * change. Gates on [LocalReduceMotion] — true for both [MotionMode.REDUCED] and [MotionMode.OFF] —
+ * matching the convention [ProgressRing]'s wave already established: decorative motion should stop
+ * outright under Reduce Motion, not just play faster, which is what [YataDur]'s duration scaling is
+ * for instead. Every direct call to `rememberInfiniteTransition` bypassed that and looped forever
+ * regardless of the setting. Callers keep their own [animationSpec] (repeat mode, easing, duration
+ * all vary per use) - this only decides whether the transition runs at all.
+ */
+@Composable
+fun rememberMotionAwareInfiniteFloat(
+    initialValue: Float,
+    targetValue: Float,
+    animationSpec: InfiniteRepeatableSpec<Float>,
+    label: String = "motionAwareInfiniteFloat",
+    /** The value to hold when motion is off. Defaults to [initialValue], right for a sweep that
+     * starts/rests at one end (shimmer, a wave's phase); a Reverse pulse oscillating around a
+     * midpoint should pass that midpoint explicitly instead. */
+    restValue: Float = initialValue
+): State<Float> {
+    if (LocalReduceMotion.current) {
+        return remember(restValue) { mutableFloatStateOf(restValue) }
+    }
+    val transition = rememberInfiniteTransition(label = label)
+    return transition.animateFloat(
+        initialValue = initialValue,
+        targetValue = targetValue,
+        animationSpec = animationSpec,
+        label = label
+    )
+}

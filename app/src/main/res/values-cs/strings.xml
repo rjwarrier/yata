@@ -123,6 +123,9 @@
     <string name="cd_remove_preset">Odebrat %1$s</string>
     <string name="settings_motion_mode">Režim animací</string>
     <string name="settings_motion_mode_summary">Ovládejte animace aplikace bez změny dalších vizuálních nastavení.</string>
+    <string name="motion_mode_full">Plný</string>
+    <string name="motion_mode_reduced">Omezený</string>
+    <string name="motion_mode_off">Vypnuto</string>
     <string name="settings_tasker_integration">Integrace s Taskerem</string>
     <string name="settings_tasker_integration_summary">Umožnit profilům Tasker vytvářet úkoly přes zásuvný modul Yata.</string>
     <string name="settings_date_aliases">Aliasy dat</string>

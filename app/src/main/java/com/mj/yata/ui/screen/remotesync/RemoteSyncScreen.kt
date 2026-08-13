@@ -412,7 +412,9 @@ fun RemoteSyncScreen(
                                 Text(stringResource(R.string.remote_sync_token_label))
                                 IconButton(
                                     onClick = { showGitHubPatHelpDialog = true },
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier
+                                        .minimumInteractiveComponentSize()
+                                        .size(28.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Info,

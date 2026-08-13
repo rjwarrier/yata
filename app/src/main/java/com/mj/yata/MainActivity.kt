@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -311,9 +312,20 @@ class MainActivity : AppCompatActivity() {
             }
 
             val motionMode by userPreferences.motionModeFlow.collectAsState(initial = MotionMode.FULL)
-            val reduceMotionEnabled = motionMode != MotionMode.FULL
-            LaunchedEffect(motionMode) {
-                com.mj.yata.ui.theme.YataDur.applyMotionMode(motionMode)
+            // The system-wide animator scale (Developer Options > Animation off) overrides the
+            // in-app choice outright when it's zero, same as ConfettiOverlay already did on its
+            // own - see systemAnimatorScaleIsZero's doc for why this now governs every animation
+            // instead of just confetti. Read once per Activity creation, not on every
+            // recomposition: it only changes via a device settings toggle, which recreates the
+            // Activity's process context anyway.
+            val context = LocalContext.current
+            val systemAnimationsOff = remember(context) {
+                com.mj.yata.ui.theme.systemAnimatorScaleIsZero(context)
+            }
+            val effectiveMotionMode = if (systemAnimationsOff) MotionMode.OFF else motionMode
+            val reduceMotionEnabled = effectiveMotionMode != MotionMode.FULL
+            LaunchedEffect(effectiveMotionMode) {
+                com.mj.yata.ui.theme.YataDur.applyMotionMode(effectiveMotionMode)
             }
             val dateAliasDefinitions by userPreferences.dateAliasDefinitionsFlow.collectAsState(initial = emptySet())
             LaunchedEffect(dateAliasDefinitions) {

@@ -118,6 +118,9 @@
     <string name="cd_remove_preset">%1$s ತೆಗೆದುಹಾಕಿ</string>
     <string name="settings_motion_mode">ಚಲನೆ ಮೋಡ್</string>
     <string name="settings_motion_mode_summary">ಇತರ ದೃಶ್ಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಬದಲಾಯಿಸದೆ ಆ್ಯಪ್ ಅನಿಮೇಷನ್‌ಗಳನ್ನು ನಿಯಂತ್ರಿಸಿ.</string>
+    <string name="motion_mode_full">ಪೂರ್ಣ</string>
+    <string name="motion_mode_reduced">ಕಡಿಮೆಗೊಳಿಸಲಾಗಿದೆ</string>
+    <string name="motion_mode_off">ಆಫ್</string>
     <string name="settings_tasker_integration">Tasker ಸಂಯೋಜನೆ</string>
     <string name="settings_tasker_integration_summary">Yata ಪ್ಲಗಿನ್ ಮೂಲಕ ಕಾರ್ಯಗಳನ್ನು ರಚಿಸಲು Tasker ಪ್ರೊಫೈಲ್‌ಗಳಿಗೆ ಅನುಮತಿಸಿ.</string>
     <string name="settings_date_aliases">ದಿನಾಂಕ ಅಲಿಯಾಸ್‌ಗಳು</string>

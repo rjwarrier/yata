@@ -948,8 +948,8 @@ fun TaskDetailScreen(
             item {
                 AnimatedVisibility(
                     visible = showSubtasks,
-                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
-                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                    enter = expandVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeIn(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)),
+                    exit = shrinkVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeOut(animationSpec = tween(com.mj.yata.ui.theme.YataDur.micro))
                 ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val subtasks = task.subtasks
@@ -1160,8 +1160,8 @@ fun TaskDetailScreen(
             item {
                 AnimatedVisibility(
                     visible = showNotes,
-                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
-                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                    enter = expandVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeIn(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)),
+                    exit = shrinkVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeOut(animationSpec = tween(com.mj.yata.ui.theme.YataDur.micro))
                 ) {
                 var isEditingNotes by remember(task.id) { mutableStateOf(false) }
                 // onFocusChanged fires once immediately on mount reporting isFocused=false (before
@@ -1239,8 +1239,8 @@ fun TaskDetailScreen(
             item {
                 AnimatedVisibility(
                     visible = showComments,
-                    enter = expandVertically(animationSpec = tween(220)) + fadeIn(animationSpec = tween(220)),
-                    exit = shrinkVertically(animationSpec = tween(180)) + fadeOut(animationSpec = tween(150))
+                    enter = expandVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeIn(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)),
+                    exit = shrinkVertically(animationSpec = tween(com.mj.yata.ui.theme.YataDur.fade)) + fadeOut(animationSpec = tween(com.mj.yata.ui.theme.YataDur.micro))
                 ) {
                 var newComment by remember { mutableStateOf("") }
                 val peopleById = remember(people) { people.associateBy { it.id } }

@@ -63,6 +63,8 @@ fun ProjectsTab(
     onBulkArchiveProjects: (List<String>) -> Unit = {},
     peopleEnabled: Boolean = true,
     useWideLayout: Boolean = false,
+    /** See TodayTab's parameter of the same name. */
+    initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val activeProjects = remember(projects) { projects.activeProjects() }
@@ -133,7 +135,9 @@ fun ProjectsTab(
                 bottom = 88.dp
             ),
             headerItemCount = if (activeProjects.isEmpty()) 1 else 0,
-            header = if (activeProjects.isEmpty()) {
+            header = if (activeProjects.isEmpty() && !initialDataLoaded) {
+                { item(key = "loading_shimmer") { com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth()) } }
+            } else if (activeProjects.isEmpty()) {
                 {
                     item {
                         com.mj.yata.ui.widgets.TabEmptyState(

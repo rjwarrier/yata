@@ -1085,8 +1085,8 @@ fun NewTaskSheet(
                 )
                 AnimatedVisibility(
                     visible = true,
-                    enter = fadeIn(tween(150)) + expandVertically(tween(150)),
-                    exit = fadeOut(tween(100)) + shrinkVertically(tween(100))
+                    enter = fadeIn(tween(com.mj.yata.ui.theme.YataDur.micro)) + expandVertically(tween(com.mj.yata.ui.theme.YataDur.micro)),
+                    exit = fadeOut(tween(com.mj.yata.ui.theme.YataDur.micro)) + shrinkVertically(tween(com.mj.yata.ui.theme.YataDur.micro))
                 ) {
                     Column(
                         modifier = Modifier

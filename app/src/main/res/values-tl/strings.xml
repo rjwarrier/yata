@@ -118,6 +118,9 @@
     <string name="cd_remove_preset">Alisin ang %1$s</string>
     <string name="settings_motion_mode">Motion mode</string>
     <string name="settings_motion_mode_summary">Kontrolin ang mga animation ng app nang hindi ginagalaw ang ibang visual na setting.</string>
+    <string name="motion_mode_full">Buo</string>
+    <string name="motion_mode_reduced">Nabawasan</string>
+    <string name="motion_mode_off">Naka-off</string>
     <string name="settings_tasker_integration">Tasker integration</string>
     <string name="settings_tasker_integration_summary">Payagan ang mga Tasker profile na gumawa ng gawain sa pamamagitan ng Yata plugin.</string>
     <string name="settings_date_aliases">Mga alias ng petsa</string>

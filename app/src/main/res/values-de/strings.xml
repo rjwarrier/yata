@@ -172,6 +172,9 @@
     <string name="cd_remove_preset">%1$s entfernen</string>
     <string name="settings_motion_mode">Bewegungsmodus</string>
     <string name="settings_motion_mode_summary">App-Animationen steuern, ohne andere visuelle Einstellungen zu ändern.</string>
+    <string name="motion_mode_full">Voll</string>
+    <string name="motion_mode_reduced">Reduziert</string>
+    <string name="motion_mode_off">Aus</string>
     <string name="settings_tasker_integration">Tasker-Integration</string>
     <string name="settings_tasker_integration_summary">Tasker-Profilen erlauben, über das YATA-Plugin Aufgaben zu erstellen.</string>
     <string name="settings_date_aliases">Datumsalias</string>

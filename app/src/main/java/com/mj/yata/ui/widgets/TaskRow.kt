@@ -493,24 +493,32 @@ fun TaskRow(
         }
 
         if (onCommentClick != null) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.Comment,
-                contentDescription = stringResource(R.string.cd_task_add_comment),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            // Touch target expands to 48dp via minimumInteractiveComponentSize (same pattern as
+            // SpringyCheck's checkbox above, already shipped at 48dp in this same row) while the
+            // visible glyph stays exactly the 16dp it always was - only the invisible tap/ripple
+            // area grows, not the row's visual density.
+            Box(
                 modifier = Modifier
                     .padding(start = 4.dp)
-                    .size(28.dp)
+                    .minimumInteractiveComponentSize()
                     .clip(CircleShape)
-                    .clickable { onCommentClick() }
-                    .padding(6.dp)
-            )
+                    .clickable { onCommentClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.Comment,
+                    contentDescription = stringResource(R.string.cd_task_add_comment),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
 
         if (onRenameTask != null && !selectionMode) {
-            IconButton(
-                onClick = { showRenameDialog = true },
-                modifier = Modifier.size(32.dp)
-            ) {
+            // No explicit .size() override - IconButton's own default already guarantees a 48dp
+            // touch target; the previous 32dp override shrank it below the accessibility minimum
+            // while the 18dp icon inside stayed the same either way.
+            IconButton(onClick = { showRenameDialog = true }) {
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = stringResource(R.string.cd_task_edit_title),
@@ -523,10 +531,7 @@ fun TaskRow(
         if (onQuickSnooze != null && !task.done) {
             var showSnoozeMenu by remember { mutableStateOf(false) }
             Box {
-                IconButton(
-                    onClick = { showSnoozeMenu = true },
-                    modifier = Modifier.size(32.dp)
-                ) {
+                IconButton(onClick = { showSnoozeMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = stringResource(R.string.cd_task_snooze),

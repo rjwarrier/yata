@@ -185,6 +185,10 @@ fun MainScreen(
 
     // Database updates flows
     val uiState by viewModel.mainScreenUiState.collectAsStateWithLifecycle()
+    // Separate from mainScreenUiState's combine chain deliberately - see its own doc comment on
+    // MainViewModel for why it has to observe the raw repository flows directly rather than any
+    // of the StateFlows that chain feeds from.
+    val initialDataLoaded by viewModel.initialDataLoaded.collectAsStateWithLifecycle()
     val tasks = uiState.tasks
     val projects = uiState.projects
     val activeProjects = uiState.activeProjects
@@ -793,7 +797,8 @@ fun MainScreen(
                             syncButtonEnabled = !syncInProgress,
                             onSyncClick = { runManualSync() },
                             showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty,
-                            useWideLayout = useWideNavigation
+                            useWideLayout = useWideNavigation,
+                            initialDataLoaded = initialDataLoaded
                         )
                         1 -> ProjectsTab(
                             projects = projects,
@@ -812,7 +817,8 @@ fun MainScreen(
                             onProjectsReordered = { viewModel.commitProjectOrder(it) },
                             onBulkArchiveProjects = { viewModel.bulkArchiveProjects(it) },
                             peopleEnabled = peopleFeatureEnabled,
-                            useWideLayout = useWideNavigation
+                            useWideLayout = useWideNavigation,
+                            initialDataLoaded = initialDataLoaded
                         )
                         2 -> PeopleTab(
                             people = people,
@@ -836,7 +842,8 @@ fun MainScreen(
                             onDeleteGroup = { viewModel.deletePersonGroup(it) },
                             sortMode = sortModePeopleTab,
                             onSortModeChange = { viewModel.setSortModePeopleTab(it) },
-                            useWideLayout = useWideNavigation
+                            useWideLayout = useWideNavigation,
+                            initialDataLoaded = initialDataLoaded
                         )
                         3 -> TagsTab(
                             tags = tags,
@@ -862,7 +869,8 @@ fun MainScreen(
                             tagsEnabled = tagsFeatureEnabled,
                             sortMode = sortModeTagsTab,
                             onSortModeChange = { viewModel.setSortModeTagsTab(it) },
-                            useWideLayout = useWideNavigation
+                            useWideLayout = useWideNavigation,
+                            initialDataLoaded = initialDataLoaded
                         )
                         4 -> UpcomingTab(
                             tasks = tasks,
@@ -897,7 +905,8 @@ fun MainScreen(
                             peopleEnabled = peopleFeatureEnabled,
                             tagsEnabled = tagsFeatureEnabled,
                             projectsEnabled = projectsFeatureEnabled,
-                            taskRowDensity = taskRowDensity
+                            taskRowDensity = taskRowDensity,
+                            initialDataLoaded = initialDataLoaded
                         )
                     }
                 }

@@ -123,6 +123,9 @@
     <string name="cd_remove_preset">Xóa %1$s</string>
     <string name="settings_motion_mode">Chế độ chuyển động</string>
     <string name="settings_motion_mode_summary">Điều chỉnh hiệu ứng chuyển động mà không đổi cài đặt hiển thị khác.</string>
+    <string name="motion_mode_full">Đầy đủ</string>
+    <string name="motion_mode_reduced">Giảm</string>
+    <string name="motion_mode_off">Tắt</string>
     <string name="settings_tasker_integration">Tích hợp Tasker</string>
     <string name="settings_tasker_integration_summary">Cho phép hồ sơ Tasker tạo việc cần làm qua plugin Yata.</string>
     <string name="settings_date_aliases">Bí danh ngày tháng</string>

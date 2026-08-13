@@ -185,6 +185,9 @@
     <string name="cd_remove_preset">Remove %1$s</string>
     <string name="settings_motion_mode">Motion mode</string>
     <string name="settings_motion_mode_summary">Control app animations without changing other visual settings.</string>
+    <string name="motion_mode_full">Full</string>
+    <string name="motion_mode_reduced">Reduced</string>
+    <string name="motion_mode_off">Off</string>
     <string name="settings_tasker_integration">Tasker integration</string>
     <string name="settings_tasker_integration_summary">Allow Tasker profiles to create tasks through the Yata plugin.</string>
     <string name="settings_date_aliases">Date aliases</string>

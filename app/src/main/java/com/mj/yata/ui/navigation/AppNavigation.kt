@@ -8,7 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
@@ -65,13 +65,24 @@ fun AppNavigation(
     val currentBackStackEntry = navController.currentBackStackEntryAsState().value
     val lastExitBackPressAt = remember { mutableLongStateOf(0L) }
 
-    BackHandler(enabled = currentBackStackEntry?.destination?.route == Screen.Main.route) {
-        val now = System.currentTimeMillis()
-        if (now - lastExitBackPressAt.longValue <= EXIT_BACK_PRESS_WINDOW_MS) {
-            context.findActivity()?.finish()
-        } else {
-            lastExitBackPressAt.longValue = now
-            Toast.makeText(context, context.getString(R.string.press_back_again_to_exit), Toast.LENGTH_SHORT).show()
+    // PredictiveBackHandler instead of plain BackHandler so Android 14+'s back-to-home preview
+    // still renders during the swipe on Main (the app's primary screen, and the one destination
+    // this callback intercepts) - a non-progress-aware BackHandler consumes the gesture outright
+    // and suppresses that preview. The double-tap-to-exit decision itself only fires once the
+    // gesture actually completes; a swipe the user lets go of partway through (surfaced as
+    // CancellationException from the progress collection) does nothing, same as before.
+    PredictiveBackHandler(enabled = currentBackStackEntry?.destination?.route == Screen.Main.route) { progress ->
+        try {
+            progress.collect { }
+            val now = System.currentTimeMillis()
+            if (now - lastExitBackPressAt.longValue <= EXIT_BACK_PRESS_WINDOW_MS) {
+                context.findActivity()?.finish()
+            } else {
+                lastExitBackPressAt.longValue = now
+                Toast.makeText(context, context.getString(R.string.press_back_again_to_exit), Toast.LENGTH_SHORT).show()
+            }
+        } catch (_: kotlinx.coroutines.CancellationException) {
+            // Gesture released before crossing the back threshold - no state change.
         }
     }
 

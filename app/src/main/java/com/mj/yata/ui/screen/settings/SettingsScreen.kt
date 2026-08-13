@@ -1003,15 +1003,18 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        val motionFullLabel = stringResource(R.string.motion_mode_full)
+                        val motionReducedLabel = stringResource(R.string.motion_mode_reduced)
+                        val motionOffLabel = stringResource(R.string.motion_mode_off)
                         SegmentedControl(
                             items = listOf(MotionMode.FULL, MotionMode.REDUCED, MotionMode.OFF),
                             selectedItem = motionMode,
                             onItemSelected = { viewModel.setMotionMode(it) },
                             labelProvider = {
                                 when (it) {
-                                    MotionMode.FULL -> "Full"
-                                    MotionMode.REDUCED -> "Reduced"
-                                    MotionMode.OFF -> "Off"
+                                    MotionMode.FULL -> motionFullLabel
+                                    MotionMode.REDUCED -> motionReducedLabel
+                                    MotionMode.OFF -> motionOffLabel
                                 }
                             }
                         )

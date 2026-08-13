@@ -76,6 +76,8 @@ fun TagsTab(
     onSortModeChange: (com.mj.yata.util.EntitySortMode) -> Unit = {},
     tagsEnabled: Boolean = true,
     useWideLayout: Boolean = false,
+    /** See TodayTab's parameter of the same name. */
+    initialDataLoaded: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -188,7 +190,9 @@ fun TagsTab(
             var openExpanded by rememberSaveable { mutableStateOf(true) }
             var closedExpanded by rememberSaveable { mutableStateOf(false) }
 
-            if (tags.isEmpty()) {
+            if (tags.isEmpty() && !initialDataLoaded) {
+                com.mj.yata.ui.widgets.ListRowsShimmer(modifier = Modifier.fillMaxWidth())
+            } else if (tags.isEmpty()) {
                 com.mj.yata.ui.widgets.TabEmptyState(
                     icon = Icons.AutoMirrored.Filled.Label,
                     title = stringResource(R.string.tags_empty_title),

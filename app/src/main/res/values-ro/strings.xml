@@ -123,6 +123,9 @@
     <string name="cd_remove_preset">Elimină %1$s</string>
     <string name="settings_motion_mode">Mod animații</string>
     <string name="settings_motion_mode_summary">Controlează animațiile aplicației fără a schimba alte setări vizuale.</string>
+    <string name="motion_mode_full">Complet</string>
+    <string name="motion_mode_reduced">Redus</string>
+    <string name="motion_mode_off">Dezactivat</string>
     <string name="settings_tasker_integration">Integrare Tasker</string>
     <string name="settings_tasker_integration_summary">Permite profilurilor Tasker să creeze sarcini prin pluginul Yata.</string>
     <string name="settings_date_aliases">Alias-uri de dată</string>

@@ -123,6 +123,9 @@
     <string name="cd_remove_preset">Ta bort %1$s</string>
     <string name="settings_motion_mode">Rörelseläge</string>
     <string name="settings_motion_mode_summary">Styr appens animationer utan att ändra andra visuella inställningar.</string>
+    <string name="motion_mode_full">Full</string>
+    <string name="motion_mode_reduced">Reducerad</string>
+    <string name="motion_mode_off">Av</string>
     <string name="settings_tasker_integration">Tasker-integration</string>
     <string name="settings_tasker_integration_summary">Tillåt Tasker-profiler att skapa uppgifter via Yata-tillägget.</string>
     <string name="settings_date_aliases">Datumalias</string>

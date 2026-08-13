@@ -461,6 +461,35 @@ private data class MainNavigationState(
     val personGroups: StateFlow<List<PersonGroup>> = repository.getPersonGroups()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val _initialDataLoaded = MutableStateFlow(false)
+
+    /**
+     * True once the core lists have all received their first real Room emission. [tasks] and
+     * friends above start at `emptyList()` as their [stateIn] seed, indistinguishable from a
+     * genuinely empty list - so on cold start every tab briefly rendered its "nothing here" empty
+     * state (with icon pulse) before Room's first query result replaced it. Tabs gate their empty
+     * state on this instead, showing a loading skeleton until the real data lands.
+     *
+     * Subscribes directly to the repository flows rather than the [tasks]/[projects]/etc.
+     * [StateFlow]s above: those are [SharingStarted.WhileSubscribed], so their `.value` is only
+     * the real seed until *something* subscribes to them, and collecting them here first would
+     * just observe that same seed instead of waiting for it to be replaced.
+     */
+    val initialDataLoaded: StateFlow<Boolean> = _initialDataLoaded.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            combine(
+                repository.getTasks(),
+                repository.getProjects(),
+                repository.getLists(),
+                repository.getPeople(),
+                repository.getTags()
+            ) { _, _, _, _, _ -> Unit }.first()
+            _initialDataLoaded.value = true
+        }
+    }
+
     /** Today's remaining (due, incomplete) task count — the badge shown on every bottom nav bar,
      * and consumed by [settingsUiState]/[mainScreenUiState] below instead of each recomputing it
      * independently (one of those inline copies had drifted and was missing the

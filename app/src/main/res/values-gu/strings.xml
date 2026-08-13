@@ -118,6 +118,9 @@
     <string name="cd_remove_preset">%1$s દૂર કરો</string>
     <string name="settings_motion_mode">મોશન મોડ</string>
     <string name="settings_motion_mode_summary">અન્ય વિઝ્યુઅલ સેટિંગ્સ બદલ્યા વિના એપ એનિમેશન નિયંત્રિત કરો.</string>
+    <string name="motion_mode_full">પૂર્ણ</string>
+    <string name="motion_mode_reduced">ઘટાડેલું</string>
+    <string name="motion_mode_off">બંધ</string>
     <string name="settings_tasker_integration">Tasker ઇન્ટિગ્રેશન</string>
     <string name="settings_tasker_integration_summary">Yata પ્લગઇન દ્વારા Tasker પ્રોફાઇલને ટાસ્ક બનાવવાની મંજૂરી આપો.</string>
     <string name="settings_date_aliases">તારીખ ઉપનામો</string>

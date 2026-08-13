@@ -118,6 +118,9 @@
     <string name="cd_remove_preset">%1$s ஐ நீக்கு</string>
     <string name="settings_motion_mode">அசைவு பயன்முறை</string>
     <string name="settings_motion_mode_summary">மற்ற காட்சி அமைப்புகளை மாற்றாமல் ஆப்ஸ் அசைவூட்டங்களைக் கட்டுப்படுத்தவும்.</string>
+    <string name="motion_mode_full">முழு</string>
+    <string name="motion_mode_reduced">குறைக்கப்பட்டது</string>
+    <string name="motion_mode_off">ஆஃப்</string>
     <string name="settings_tasker_integration">Tasker இணைப்பு</string>
     <string name="settings_tasker_integration_summary">Yata செருகுநிரல் மூலம் பணிகளை உருவாக்க Tasker சுயவிவரங்களை அனுமதிக்கவும்.</string>
     <string name="settings_date_aliases">தேதி மாற்றுப் பெயர்கள்</string>
