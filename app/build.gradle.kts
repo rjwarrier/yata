@@ -216,8 +216,12 @@ tasks.register("lintLocaleParity") {
         val sourceKeys = keysIn(sourceFile)
         check(sourceKeys.isNotEmpty()) { "No keys found in ${sourceFile.path} — check the file exists." }
 
+        // "values-v" alone would also match values-vi (Vietnamese) - API-level qualifiers are
+        // always values-v followed by a digit (v21, v31, ...), so require that digit to avoid
+        // silently dropping a real locale whose code happens to start with "v".
+        val apiQualifier = Regex("""^values-v\d""")
         val localeDirs = valuesDir.listFiles { f ->
-            f.isDirectory && f.name.startsWith("values-") && !f.name.startsWith("values-night") && !f.name.startsWith("values-v")
+            f.isDirectory && f.name.startsWith("values-") && !f.name.startsWith("values-night") && !apiQualifier.containsMatchIn(f.name)
         }.orEmpty().sortedBy { it.name }
 
         val missingByLocale = sortedMapOf<String, Set<String>>()
