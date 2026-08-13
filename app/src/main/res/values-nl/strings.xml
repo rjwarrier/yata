@@ -1155,6 +1155,9 @@
     <string name="settings_reduce_motion">Beweging beperken</string>
     <string name="settings_reduce_motion_desc">Verkort navigatie-, sheet- en overvloeianimaties.</string>
     <string name="settings_task_row_density">Dichtheid taakrijen</string>
+    <string name="task_row_density_compact">Compact</string>
+    <string name="task_row_density_comfortable">Comfortabel</string>
+    <string name="task_row_density_spacious">Ruim</string>
     <string name="settings_task_cards">Taakkaarten</string>
     <string name="settings_task_cards_desc">Geef elke taak zijn eigen kaart in plaats van een platte rij.</string>
     <string name="settings_today_tab">Tabblad Vandaag</string>

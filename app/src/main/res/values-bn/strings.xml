@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">মোশন কমান</string>
     <string name="settings_reduce_motion_desc">নেভিগেশন, শিট, এবং ফেড অ্যানিমেশন সংক্ষিপ্ত করে।</string>
     <string name="settings_task_row_density">টাস্ক সারির ঘনত্ব</string>
+    <string name="task_row_density_compact">সংক্ষিপ্ত</string>
+    <string name="task_row_density_comfortable">আরামদায়ক</string>
+    <string name="task_row_density_spacious">প্রশস্ত</string>
     <string name="settings_task_cards">টাস্ক কার্ড</string>
     <string name="settings_task_cards_desc">একটি সমতল সারির বদলে প্রতিটি টাস্ককে নিজস্ব কার্ড দিন।</string>
     <string name="settings_today_tab">আজ ট্যাব</string>

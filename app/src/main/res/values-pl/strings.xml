@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">Ogranicz animacje</string>
     <string name="settings_reduce_motion_desc">Skraca animacje nawigacji, arkuszy i zanikania.</string>
     <string name="settings_task_row_density">Gęstość wiersza zadania</string>
+    <string name="task_row_density_compact">Kompaktowy</string>
+    <string name="task_row_density_comfortable">Komfortowy</string>
+    <string name="task_row_density_spacious">Przestronny</string>
     <string name="settings_task_cards">Karty zadań</string>
     <string name="settings_task_cards_desc">Nadaj każdemu zadaniu własną kartę zamiast płaskiego wiersza.</string>
     <string name="settings_today_tab">Karta Dziś</string>

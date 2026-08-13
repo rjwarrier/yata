@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">Reduce animațiile</string>
     <string name="settings_reduce_motion_desc">Scurtează animațiile de navigare, foaie și estompare.</string>
     <string name="settings_task_row_density">Densitatea rândurilor de sarcini</string>
+    <string name="task_row_density_compact">Compact</string>
+    <string name="task_row_density_comfortable">Confortabil</string>
+    <string name="task_row_density_spacious">Spațios</string>
     <string name="settings_task_cards">Carduri de sarcini</string>
     <string name="settings_task_cards_desc">Dă fiecărei sarcini propriul card în loc de un rând plat.</string>
     <string name="settings_today_tab">Fila Azi</string>

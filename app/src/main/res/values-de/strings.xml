@@ -1265,6 +1265,9 @@
     <string name="settings_reduce_motion">Bewegung reduzieren</string>
     <string name="settings_reduce_motion_desc">Verkürzt Navigations-, Sheet- und Überblendanimationen.</string>
     <string name="settings_task_row_density">Dichte der Aufgabenzeilen</string>
+    <string name="task_row_density_compact">Kompakt</string>
+    <string name="task_row_density_comfortable">Komfortabel</string>
+    <string name="task_row_density_spacious">Geräumig</string>
     <string name="settings_task_cards">Aufgabenkarten</string>
     <string name="settings_task_cards_desc">Jeder Aufgabe eine eigene Karte statt einer flachen Zeile geben.</string>
     <string name="settings_today_tab">Tab „Heute“</string>

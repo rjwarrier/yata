@@ -1111,6 +1111,9 @@
     <string name="settings_reduce_motion">Punguza mwendo</string>
     <string name="settings_reduce_motion_desc">Hufupisha michoro ya uelekezaji, karatasi, na kufifia.</string>
     <string name="settings_task_row_density">Msongamano wa safu ya kazi</string>
+    <string name="task_row_density_compact">Fupi</string>
+    <string name="task_row_density_comfortable">Starehe</string>
+    <string name="task_row_density_spacious">Nafasi Kubwa</string>
     <string name="settings_task_cards">Kadi za kazi</string>
     <string name="settings_task_cards_desc">Ipe kila kazi kadi yake badala ya safu tambarare.</string>
     <string name="settings_today_tab">Kichupo cha Leo</string>

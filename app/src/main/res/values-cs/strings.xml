@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">Omezit pohyb</string>
     <string name="settings_reduce_motion_desc">Zkrátí animace navigace, listů a prolínání.</string>
     <string name="settings_task_row_density">Hustota řádků úkolů</string>
+    <string name="task_row_density_compact">Kompaktní</string>
+    <string name="task_row_density_comfortable">Pohodlný</string>
+    <string name="task_row_density_spacious">Prostorný</string>
     <string name="settings_task_cards">Karty úkolů</string>
     <string name="settings_task_cards_desc">Dát každému úkolu vlastní kartu místo plochého řádku.</string>
     <string name="settings_today_tab">Záložka Dnes</string>

@@ -1111,6 +1111,9 @@
     <string name="settings_reduce_motion">మోషన్ తగ్గించండి</string>
     <string name="settings_reduce_motion_desc">నావిగేషన్, షీట్ మరియు ఫేడ్ యానిమేషన్‌లను తగ్గిస్తుంది.</string>
     <string name="settings_task_row_density">టాస్క్ వరుస సాంద్రత</string>
+    <string name="task_row_density_compact">కాంపాక్ట్</string>
+    <string name="task_row_density_comfortable">సౌకర్యవంతమైన</string>
+    <string name="task_row_density_spacious">విశాలమైన</string>
     <string name="settings_task_cards">టాస్క్ కార్డులు</string>
     <string name="settings_task_cards_desc">ప్రతి టాస్క్‌కు ఫ్లాట్ వరుసకు బదులు దాని సొంత కార్డు ఇవ్వండి.</string>
     <string name="settings_today_tab">ఈరోజు ట్యాబ్</string>

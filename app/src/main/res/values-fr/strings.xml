@@ -865,6 +865,9 @@
     <string name="settings_reduce_motion">Réduire les mouvements</string>
     <string name="settings_reduce_motion_desc">Raccourcit les animations de navigation, de feuille et de fondu.</string>
     <string name="settings_task_row_density">Densité des lignes de tâches</string>
+    <string name="task_row_density_compact">Compact</string>
+    <string name="task_row_density_comfortable">Confortable</string>
+    <string name="task_row_density_spacious">Spacieux</string>
     <string name="settings_task_cards">Cartes de tâches</string>
     <string name="settings_task_cards_desc">Donnez à chaque tâche sa propre carte au lieu d\'une ligne plate.</string>
     <string name="settings_today_tab">Onglet Aujourd\'hui</string>

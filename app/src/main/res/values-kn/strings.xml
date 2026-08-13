@@ -1111,6 +1111,9 @@
     <string name="settings_reduce_motion">ಚಲನೆ ಕಡಿಮೆ ಮಾಡಿ</string>
     <string name="settings_reduce_motion_desc">ನ್ಯಾವಿಗೇಷನ್, ಶೀಟ್, ಮತ್ತು ಫೇಡ್ ಅನಿಮೇಷನ್‌ಗಳನ್ನು ಕಡಿಮೆ ಮಾಡುತ್ತದೆ.</string>
     <string name="settings_task_row_density">ಕಾರ್ಯ ಸಾಲಿನ ಸಾಂದ್ರತೆ</string>
+    <string name="task_row_density_compact">ಸಾಂದ್ರ</string>
+    <string name="task_row_density_comfortable">ಆರಾಮದಾಯಕ</string>
+    <string name="task_row_density_spacious">ವಿಶಾಲ</string>
     <string name="settings_task_cards">ಕಾರ್ಯ ಕಾರ್ಡ್‌ಗಳು</string>
     <string name="settings_task_cards_desc">ಸಮತಟ್ಟಾದ ಸಾಲಿನ ಬದಲು ಪ್ರತಿ ಕಾರ್ಯಕ್ಕೂ ತನ್ನದೇ ಕಾರ್ಡ್ ನೀಡಿ.</string>
     <string name="settings_today_tab">ಇಂದು ಟ್ಯಾಬ್</string>

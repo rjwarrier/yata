@@ -1111,6 +1111,9 @@
     <string name="settings_reduce_motion">ਮੋਸ਼ਨ ਘਟਾਓ</string>
     <string name="settings_reduce_motion_desc">ਨੈਵੀਗੇਸ਼ਨ, ਸ਼ੀਟ, ਅਤੇ ਫੇਡ ਐਨੀਮੇਸ਼ਨ ਛੋਟੇ ਕਰਦਾ ਹੈ।</string>
     <string name="settings_task_row_density">ਕਾਰਜ ਕਤਾਰ ਸੰਘਣਤਾ</string>
+    <string name="task_row_density_compact">ਸੰਖੇਪ</string>
+    <string name="task_row_density_comfortable">ਆਰਾਮਦਾਇਕ</string>
+    <string name="task_row_density_spacious">ਖੁੱਲ੍ਹਾ</string>
     <string name="settings_task_cards">ਕਾਰਜ ਕਾਰਡ</string>
     <string name="settings_task_cards_desc">ਫਲੈਟ ਕਤਾਰ ਦੀ ਬਜਾਏ ਹਰ ਕਾਰਜ ਨੂੰ ਆਪਣਾ ਕਾਰਡ ਦਿਓ।</string>
     <string name="settings_today_tab">ਅੱਜ ਟੈਬ</string>

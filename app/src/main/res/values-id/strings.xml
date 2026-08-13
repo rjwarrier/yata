@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">Kurangi gerakan</string>
     <string name="settings_reduce_motion_desc">Memperpendek animasi navigasi, sheet, dan fade.</string>
     <string name="settings_task_row_density">Kepadatan baris tugas</string>
+    <string name="task_row_density_compact">Kompak</string>
+    <string name="task_row_density_comfortable">Nyaman</string>
+    <string name="task_row_density_spacious">Lega</string>
     <string name="settings_task_cards">Kartu tugas</string>
     <string name="settings_task_cards_desc">Beri setiap tugas kartunya sendiri, bukan baris datar.</string>
     <string name="settings_today_tab">Tab Hari Ini</string>

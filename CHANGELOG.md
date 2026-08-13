@@ -58,6 +58,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   always showing in English regardless of language setting.
 - Various previously English-only snackbar messages (task deleted/completed/reopened, including the
   bulk-action counts) are now localized in all supported languages.
+- Task row density's Compact/Comfortable/Spacious labels (Settings → Appearance) are now localized
+  instead of always showing in English.
 
 ## [0.92.2] - 2026-08-13
 

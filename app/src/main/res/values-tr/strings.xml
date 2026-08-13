@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">Hareketi azalt</string>
     <string name="settings_reduce_motion_desc">Gezinme, sayfa ve solma animasyonlarını kısaltır.</string>
     <string name="settings_task_row_density">Görev satırı yoğunluğu</string>
+    <string name="task_row_density_compact">Sıkışık</string>
+    <string name="task_row_density_comfortable">Rahat</string>
+    <string name="task_row_density_spacious">Ferah</string>
     <string name="settings_task_cards">Görev kartları</string>
     <string name="settings_task_cards_desc">Her göreve düz bir satır yerine kendi kartını verir.</string>
     <string name="settings_today_tab">Bugün sekmesi</string>

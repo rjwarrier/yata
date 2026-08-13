@@ -1111,6 +1111,9 @@
     <string name="settings_reduce_motion">அசைவைக் குறை</string>
     <string name="settings_reduce_motion_desc">வழிசெலுத்தல், தாள் மற்றும் மங்கல் அசைவூட்டங்களைக் குறுக்குகிறது.</string>
     <string name="settings_task_row_density">பணி வரிசை அடர்த்தி</string>
+    <string name="task_row_density_compact">சுருக்கமானது</string>
+    <string name="task_row_density_comfortable">வசதியானது</string>
+    <string name="task_row_density_spacious">விசாலமானது</string>
     <string name="settings_task_cards">பணி அட்டைகள்</string>
     <string name="settings_task_cards_desc">தட்டையான வரிசைக்குப் பதிலாக ஒவ்வொரு பணிக்கும் அதன் சொந்த அட்டையைக் கொடு.</string>
     <string name="settings_today_tab">இன்று தாவல்</string>

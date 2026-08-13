@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">Giảm chuyển động</string>
     <string name="settings_reduce_motion_desc">Rút ngắn hiệu ứng điều hướng, bảng và mờ dần.</string>
     <string name="settings_task_row_density">Mật độ dòng việc cần làm</string>
+    <string name="task_row_density_compact">Gọn</string>
+    <string name="task_row_density_comfortable">Thoải mái</string>
+    <string name="task_row_density_spacious">Rộng rãi</string>
     <string name="settings_task_cards">Thẻ việc cần làm</string>
     <string name="settings_task_cards_desc">Đặt mỗi việc cần làm vào một thẻ riêng thay vì dòng phẳng.</string>
     <string name="settings_today_tab">Tab Hôm nay</string>

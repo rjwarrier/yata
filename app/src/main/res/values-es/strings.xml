@@ -526,6 +526,9 @@
     <string name="settings_reduce_motion">Reducir movimiento</string>
     <string name="settings_reduce_motion_desc">Acorta animaciones de navegación, paneles y desvanecimientos.</string>
     <string name="settings_task_row_density">Densidad de filas de tarea</string>
+    <string name="task_row_density_compact">Compacta</string>
+    <string name="task_row_density_comfortable">Cómoda</string>
+    <string name="task_row_density_spacious">Amplia</string>
     <string name="settings_task_cards">Tarjetas de tarea</string>
     <string name="settings_task_cards_desc">Muestra cada tarea en su propia tarjeta en vez de una fila plana.</string>
     <string name="settings_today_tab">Pestaña Hoy</string>

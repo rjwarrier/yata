@@ -1111,6 +1111,9 @@
     <string name="settings_reduce_motion">ചലനം കുറയ്ക്കുക</string>
     <string name="settings_reduce_motion_desc">നാവിഗേഷൻ, ഷീറ്റ്, ഫേഡ് ആനിമേഷനുകൾ ചെറുതാക്കുന്നു.</string>
     <string name="settings_task_row_density">ടാസ്ക് വരി സാന്ദ്രത</string>
+    <string name="task_row_density_compact">ഒതുക്കമുള്ളത്</string>
+    <string name="task_row_density_comfortable">സൗകര്യപ്രദം</string>
+    <string name="task_row_density_spacious">വിശാലം</string>
     <string name="settings_task_cards">ടാസ്ക് കാർഡുകൾ</string>
     <string name="settings_task_cards_desc">ഒരു പരന്ന വരിക്ക് പകരം ഓരോ ടാസ്കിനും അതിന്റേതായ കാർഡ് നൽകുക.</string>
     <string name="settings_today_tab">ഇന്ന് ടാബ്</string>

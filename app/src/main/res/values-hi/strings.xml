@@ -1155,6 +1155,9 @@
     <string name="settings_reduce_motion">मोशन कम करें</string>
     <string name="settings_reduce_motion_desc">नेविगेशन, शीट और फ़ेड एनिमेशन को छोटा करता है।</string>
     <string name="settings_task_row_density">कार्य पंक्ति घनत्व</string>
+    <string name="task_row_density_compact">संक्षिप्त</string>
+    <string name="task_row_density_comfortable">आरामदायक</string>
+    <string name="task_row_density_spacious">विस्तृत</string>
     <string name="settings_task_cards">कार्य कार्ड</string>
     <string name="settings_task_cards_desc">हर कार्य को सादी पंक्ति के बजाय अपना कार्ड दें।</string>
     <string name="settings_today_tab">आज टैब</string>

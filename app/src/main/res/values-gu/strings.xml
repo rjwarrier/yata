@@ -1111,6 +1111,9 @@
     <string name="settings_reduce_motion">મોશન ઓછું કરો</string>
     <string name="settings_reduce_motion_desc">નેવિગેશન, શીટ અને ફેડ એનિમેશન ટૂંકા કરે છે.</string>
     <string name="settings_task_row_density">ટાસ્ક પંક્તિ ઘનતા</string>
+    <string name="task_row_density_compact">કોમ્પેક્ટ</string>
+    <string name="task_row_density_comfortable">આરામદાયક</string>
+    <string name="task_row_density_spacious">જગ્યા ધરાવતું</string>
     <string name="settings_task_cards">ટાસ્ક કાર્ડ</string>
     <string name="settings_task_cards_desc">દરેક ટાસ્કને ફ્લેટ પંક્તિને બદલે પોતાનું કાર્ડ આપો.</string>
     <string name="settings_today_tab">Today ટૅબ</string>

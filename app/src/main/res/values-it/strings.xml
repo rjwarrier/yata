@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">Riduci le animazioni</string>
     <string name="settings_reduce_motion_desc">Accorcia le animazioni di navigazione, dei fogli e delle dissolvenze.</string>
     <string name="settings_task_row_density">Densità righe attività</string>
+    <string name="task_row_density_compact">Compatta</string>
+    <string name="task_row_density_comfortable">Comoda</string>
+    <string name="task_row_density_spacious">Spaziosa</string>
     <string name="settings_task_cards">Schede attività</string>
     <string name="settings_task_cards_desc">Dai a ogni attività la propria scheda invece di una riga piatta.</string>
     <string name="settings_today_tab">Scheda Oggi</string>

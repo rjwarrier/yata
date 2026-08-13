@@ -1111,6 +1111,9 @@
     <string name="settings_reduce_motion">Bawasan ang motion</string>
     <string name="settings_reduce_motion_desc">Pinapaikli ang mga animation ng navigation, sheet, at fade.</string>
     <string name="settings_task_row_density">Density ng row ng gawain</string>
+    <string name="task_row_density_compact">Compact</string>
+    <string name="task_row_density_comfortable">Komportable</string>
+    <string name="task_row_density_spacious">Malawak</string>
     <string name="settings_task_cards">Mga card ng gawain</string>
     <string name="settings_task_cards_desc">Bigyan ang bawat gawain ng sariling card sa halip na flat na row.</string>
     <string name="settings_today_tab">Ngayon tab</string>

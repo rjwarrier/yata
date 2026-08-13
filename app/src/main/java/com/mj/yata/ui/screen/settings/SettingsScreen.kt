@@ -1027,15 +1027,18 @@ fun SettingsScreen(
                             text = stringResource(R.string.settings_task_row_density),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                         )
+                        val densityCompactLabel = stringResource(R.string.task_row_density_compact)
+                        val densityComfortableLabel = stringResource(R.string.task_row_density_comfortable)
+                        val densitySpaciousLabel = stringResource(R.string.task_row_density_spacious)
                         SegmentedControl(
                             items = listOf(TaskRowDensity.COMPACT, TaskRowDensity.COMFORTABLE, TaskRowDensity.SPACIOUS),
                             selectedItem = taskRowDensity,
                             onItemSelected = { viewModel.setTaskRowDensity(it) },
                             labelProvider = {
                                 when (it) {
-                                    TaskRowDensity.COMPACT -> "Compact"
-                                    TaskRowDensity.COMFORTABLE -> "Comfortable"
-                                    TaskRowDensity.SPACIOUS -> "Spacious"
+                                    TaskRowDensity.COMPACT -> densityCompactLabel
+                                    TaskRowDensity.COMFORTABLE -> densityComfortableLabel
+                                    TaskRowDensity.SPACIOUS -> densitySpaciousLabel
                                 }
                             }
                         )

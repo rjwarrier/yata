@@ -1035,6 +1035,9 @@
     <string name="settings_reduce_motion">Minska rörelse</string>
     <string name="settings_reduce_motion_desc">Förkortar animationer för navigering, ark och toning.</string>
     <string name="settings_task_row_density">Uppgiftsradens densitet</string>
+    <string name="task_row_density_compact">Kompakt</string>
+    <string name="task_row_density_comfortable">Bekväm</string>
+    <string name="task_row_density_spacious">Rymlig</string>
     <string name="settings_task_cards">Uppgiftskort</string>
     <string name="settings_task_cards_desc">Ge varje uppgift sitt eget kort istället för en platt rad.</string>
     <string name="settings_today_tab">Idag-fliken</string>
