@@ -838,7 +838,7 @@ private fun DayPill(
     }
 }
 
-/** Fixed 38dp squircle month-grid cell. */
+/** Fixed rounded-square month-grid cell. */
 @Composable
 private fun MonthDayCell(
     day: LocalDate,
@@ -848,11 +848,16 @@ private fun MonthDayCell(
     dotColors: List<Color>,
     onClick: () -> Unit
 ) {
-    val bg = when {
-        selected -> MaterialTheme.colorScheme.primary
-        isToday -> MaterialTheme.colorScheme.primaryContainer
-        else -> Color.Transparent
-    }
+    val bg by animateColorAsState(
+        targetValue = when {
+            selected -> MaterialTheme.colorScheme.primary
+            isToday -> MaterialTheme.colorScheme.primaryContainer
+            inMonth -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f)
+        },
+        animationSpec = tween(YataDur.fade),
+        label = "monthCellBg"
+    )
     val fg = when {
         selected -> MaterialTheme.colorScheme.onPrimary
         !inMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
@@ -882,10 +887,10 @@ private fun MonthDayCell(
                         scaleX = scale
                         scaleY = scale
                         shadowElevation = if (selected) 3f else 0f
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(10.dp)
                         clip = false
                     }
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(10.dp))
                     .background(bg)
                     .clickable(onClick = onClick),
                 contentAlignment = Alignment.Center
