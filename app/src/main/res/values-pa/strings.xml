@@ -297,6 +297,7 @@
     <string name="action_done">ਪੂਰਾ ਹੋਇਆ</string>
     <string name="action_export">ਨਿਰਯਾਤ ਕਰੋ</string>
     <string name="action_export_as_image">ਚਿੱਤਰ ਵਜੋਂ ਨਿਰਯਾਤ ਕਰੋ</string>
+    <string name="action_refresh">ਰਿਫ੍ਰੈਸ਼ ਕਰੋ</string>
     <string name="action_export_as_pdf">PDF ਵਜੋਂ ਨਿਰਯਾਤ ਕਰੋ</string>
     <string name="action_go_to_existing_task">ਮੌਜੂਦਾ ਕਾਰਜ \'ਤੇ ਜਾਓ</string>
     <string name="action_ignore_and_create">ਅਣਡਿੱਠ ਕਰੋ ਅਤੇ ਬਣਾਓ</string>
@@ -397,6 +398,11 @@
     <string name="remote_sync_github_force_download_progress">GitHub ਸਨੈਪਸ਼ਾਟ ਡਾਊਨਲੋਡ ਹੋ ਰਿਹਾ ਹੈ…</string>
     <string name="remote_sync_github_force_download_success">ਨਵੀਨਤਮ GitHub ਸਨੈਪਸ਼ਾਟ ਬਹਾਲ ਕੀਤਾ ਗਿਆ: %1$s।</string>
     <string name="remote_sync_github_force_download_title">ਨਵੀਨਤਮ GitHub ਸਨੈਪਸ਼ਾਟ ਵਰਤਣਾ ਹੈ?</string>
+    <string name="remote_sync_activity_title">ਸਿੰਕ ਗਤੀਵਿਧੀ</string>
+    <string name="remote_sync_activity_summary">ਇਸ ਰਿਪੋਜ਼ਟਰੀ ਵਿੱਚ ਭੇਜੇ ਗਏ ਸਨੈਪਸ਼ਾਟ, ਨਵੀਨਤਮ ਪਹਿਲਾਂ।</string>
+    <string name="remote_sync_activity_empty">ਹਾਲੇ ਤੱਕ ਕੋਈ ਸਨੈਪਸ਼ਾਟ ਨਹੀਂ ਭੇਜਿਆ ਗਿਆ।</string>
+    <string name="remote_sync_activity_this_device">ਇਹ ਡਿਵਾਈਸ</string>
+    <string name="remote_sync_activity_unknown_device">ਅਣ-ਦਰਸਾਇਆ</string>
     <string name="remote_sync_github_recovery_title">ਰਿਕਵਰੀ</string>
     <string name="remote_sync_import_github_config">ਕੌਂਫਿਗ ਆਯਾਤ ਕਰੋ</string>
     <string name="settings_about_github">GitHub \'ਤੇ ਸੋਰਸ ਵੇਖੋ</string>

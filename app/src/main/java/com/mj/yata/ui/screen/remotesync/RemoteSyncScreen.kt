@@ -2,6 +2,7 @@ package com.mj.yata.ui.screen.remotesync
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Storage
@@ -48,6 +50,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
 import com.mj.yata.data.github.GitHubConfigTransfer
 import com.mj.yata.domain.model.RemoteBackupProtocol
+import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncCommitMessage
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
@@ -57,6 +61,8 @@ import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.YataFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.util.localized
+import com.mj.yata.util.modelSyncDeviceLabel
+import com.mj.yata.util.syncDeviceLabel
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -144,6 +150,40 @@ fun RemoteSyncScreen(
     var isHostKeyMismatch by remember { mutableStateOf(false) }
     val draftIsFtp = draftProtocol == RemoteBackupProtocol.FTP
     val draftIsGitHub = draftProtocol == RemoteBackupProtocol.GITHUB
+
+    // Sync activity feed. Reads the *saved* config rather than the draft: it reports what has
+    // actually been pushed to the connected repo, which an unsaved edit hasn't changed.
+    var syncActivity by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
+    var isLoadingSyncActivity by remember { mutableStateOf(false) }
+    var syncActivityError by remember { mutableStateOf<String?>(null) }
+    val githubConfigured = remoteBackupProtocol == RemoteBackupProtocol.GITHUB &&
+        githubOwner.isNotBlank() && githubRepo.isNotBlank() && githubTokenAlreadySet
+    // Both forms: snapshots pushed before the device was renamed (or before the Settings name was
+    // preferred at all) carry the model-derived label, and should still read as "this device".
+    val thisDeviceLabels = remember(context) {
+        setOf(context.syncDeviceLabel(), modelSyncDeviceLabel())
+    }
+
+    fun loadSyncActivity() {
+        if (isLoadingSyncActivity) return
+        isLoadingSyncActivity = true
+        syncActivityError = null
+        viewModel.listRemoteRestorePoints { result ->
+            isLoadingSyncActivity = false
+            result.fold(
+                onSuccess = { points -> syncActivity = points.take(SYNC_ACTIVITY_LIMIT) },
+                onFailure = { error ->
+                    syncActivity = emptyList()
+                    syncActivityError = error.message ?: context.getString(R.string.export_failed)
+                }
+            )
+        }
+    }
+
+    // Reloads when the connected repo changes, so the feed can never show another repo's history.
+    LaunchedEffect(githubConfigured, githubOwner, githubRepo, githubBranch) {
+        if (githubConfigured) loadSyncActivity()
+    }
     val tokenExpiryStatus = githubTokenExpiryStatus(githubTokenExpiresAt)
     fun enteredGitHubToken(): String =
         draftGitHubToken.takeUnless { githubTokenAlreadySet && it == savedSecretPlaceholder }.orEmpty()
@@ -884,6 +924,23 @@ fun RemoteSyncScreen(
                     }
                 }
             }
+
+            if (draftIsGitHub && githubConfigured) {
+                RemoteConfigGroup(
+                    title = stringResource(R.string.remote_sync_activity_title),
+                    summary = stringResource(R.string.remote_sync_activity_summary),
+                    icon = Icons.Default.History
+                ) {
+                    GitHubSyncActivity(
+                        entries = syncActivity,
+                        isLoading = isLoadingSyncActivity,
+                        error = syncActivityError,
+                        thisDeviceLabels = thisDeviceLabels,
+                        onRefresh = ::loadSyncActivity
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
         }
         }
@@ -1003,6 +1060,122 @@ fun RemoteSyncScreen(
 private enum class GitHubConfigTransferMode {
     EXPORT,
     IMPORT
+}
+
+/** How many commits the activity feed shows. The underlying `listRestorePoints` walks the repo's
+ * whole snapshot history (it backs the restore picker, which needs every point), so this only caps
+ * what's rendered — a feed answering "what changed recently" doesn't get more trustworthy by
+ * scrolling back through a year of daily syncs. */
+private const val SYNC_ACTIVITY_LIMIT = 12
+
+@Composable
+private fun GitHubSyncActivity(
+    entries: List<RestorePoint>,
+    isLoading: Boolean,
+    error: String?,
+    thisDeviceLabels: Set<String>,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        when {
+            isLoading && entries.isEmpty() -> {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+            error != null -> {
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+            entries.isEmpty() -> {
+                Text(
+                    text = stringResource(R.string.remote_sync_activity_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            else -> {
+                entries.forEach { entry ->
+                    val parsed = remember(entry.label) { SyncCommitMessage.parse(entry.label) }
+                    SyncActivityRow(
+                        device = parsed.device,
+                        summary = parsed.summary,
+                        timestamp = entry.createdAt,
+                        isThisDevice = parsed.device != null &&
+                            thisDeviceLabels.any { it.equals(parsed.device, ignoreCase = true) }
+                    )
+                }
+            }
+        }
+        TextButton(
+            onClick = onRefresh,
+            enabled = !isLoading,
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text(stringResource(R.string.action_refresh))
+        }
+    }
+}
+
+@Composable
+private fun SyncActivityRow(
+    device: String?,
+    summary: String?,
+    timestamp: java.time.Instant?,
+    isThisDevice: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.CloudUpload,
+            contentDescription = null,
+            tint = if (isThisDevice) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(16.dp)
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = device ?: stringResource(R.string.remote_sync_activity_unknown_device),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = if (device == null) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                )
+                if (isThisDevice) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.remote_sync_activity_this_device),
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+            val details = listOfNotNull(summary, timestamp?.localized()).joinToString(" · ")
+            if (details.isNotBlank()) {
+                Text(
+                    text = details,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
 
 @Composable

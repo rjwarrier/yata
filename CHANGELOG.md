@@ -20,6 +20,13 @@ test-only changes belong in the commit message, not here, unless they change beh
   shape and size. Tap it to speak a task straight in — due date, time, priority, tags,
   project/list, and assignees are all recognized the same way typed quick-add understands them,
   and the task is created directly without opening the New Task sheet first.
+- Remote sync → GitHub now shows a "Sync activity" feed: the recent snapshots pushed to the
+  configured repository, each with the device that pushed it (badged when it's this device), what
+  it contained, and when. Commits not written by YATA still appear, marked as unattributed.
+- Snapshots are now labelled with your device's name from Android's Settings (About phone → Device
+  name) instead of just its model, so two of the same handset are tellable apart in the sync
+  activity feed. Rename the device there and future snapshots follow; ones already pushed keep the
+  name they were pushed with, and still count as this device.
 - Search now recognizes tags, people, project/list, priority, and flag mentions in the typed query
   the same way quick-add does (e.g. "tagged urgent assigned to me" narrows to tasks with the
   "urgent" tag assigned to you), shown as dismissible chips alongside the existing smart filters.

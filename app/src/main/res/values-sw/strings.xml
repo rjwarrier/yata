@@ -297,6 +297,7 @@
     <string name="action_done">Imekamilika</string>
     <string name="action_export">Hamisha</string>
     <string name="action_export_as_image">Hamisha kama picha</string>
+    <string name="action_refresh">Onyesha upya</string>
     <string name="action_export_as_pdf">Hamisha kama PDF</string>
     <string name="action_go_to_existing_task">Nenda kwenye kazi iliyopo</string>
     <string name="action_ignore_and_create">Puuza na uunde</string>
@@ -397,6 +398,11 @@
     <string name="remote_sync_github_force_download_progress">Inapakua hifadhi ya GitHub…</string>
     <string name="remote_sync_github_force_download_success">Hifadhi mpya zaidi ya GitHub imerejeshwa: %1$s.</string>
     <string name="remote_sync_github_force_download_title">Tumia hifadhi mpya zaidi ya GitHub?</string>
+    <string name="remote_sync_activity_title">Shughuli za usawazishaji</string>
+    <string name="remote_sync_activity_summary">Picha zilizotumwa kwenye hazina hii, mpya zaidi kwanza.</string>
+    <string name="remote_sync_activity_empty">Hakuna picha zilizotumwa bado.</string>
+    <string name="remote_sync_activity_this_device">Kifaa hiki</string>
+    <string name="remote_sync_activity_unknown_device">Haijabainishwa</string>
     <string name="remote_sync_github_recovery_title">Kurejesha</string>
     <string name="remote_sync_import_github_config">Leta mipangilio</string>
     <string name="settings_about_github">Tazama chanzo kwenye GitHub</string>

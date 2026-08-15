@@ -507,6 +507,7 @@
     <string name="action_done">Done</string>
     <string name="action_export">Export</string>
     <string name="action_export_as_image">Export as image</string>
+    <string name="action_refresh">Refresh</string>
     <string name="action_export_as_pdf">Export as PDF</string>
     <string name="action_import">Import</string>
     <string name="action_go_to_existing_task">Go to existing task</string>
@@ -588,6 +589,11 @@
     <string name="remote_sync_github_config_import_too_large">That file is too large to be a GitHub config export.</string>
     <string name="remote_sync_github_config_exported">GitHub config exported.</string>
     <string name="remote_sync_github_config_imported">GitHub config imported for %1$s.</string>
+    <string name="remote_sync_activity_title">Sync activity</string>
+    <string name="remote_sync_activity_summary">Snapshots pushed to this repository, newest first.</string>
+    <string name="remote_sync_activity_empty">No snapshots pushed yet.</string>
+    <string name="remote_sync_activity_this_device">This device</string>
+    <string name="remote_sync_activity_unknown_device">Unattributed</string>
     <string name="remote_sync_github_recovery_title">Recovery</string>
     <string name="remote_sync_github_force_download_action">Use latest GitHub snapshot</string>
     <string name="remote_sync_github_force_download_hint">Replaces this device with the newest snapshot from the configured GitHub branch.</string>

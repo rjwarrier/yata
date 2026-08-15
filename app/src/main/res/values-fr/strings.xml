@@ -343,6 +343,7 @@
     <string name="action_done">Fait</string>
     <string name="action_export">Exporter</string>
     <string name="action_export_as_image">Exporter sous forme d\'image</string>
+    <string name="action_refresh">Actualiser</string>
     <string name="action_export_as_pdf">Exporter au format PDF</string>
     <string name="action_go_to_existing_task">Aller à la tâche existante</string>
     <string name="action_ignore_and_create">Ignorer et créer</string>
@@ -1356,6 +1357,11 @@
     <string name="remote_sync_github_config_import_password_title">Déchiffrer la configuration GitHub</string>
     <string name="remote_sync_github_config_import_too_large">Ce fichier est trop volumineux pour être un export de configuration GitHub.</string>
     <string name="remote_sync_github_config_imported">Configuration GitHub importée pour %1$s.</string>
+    <string name="remote_sync_activity_title">Activité de synchronisation</string>
+    <string name="remote_sync_activity_summary">Instantanés envoyés vers ce dépôt, les plus récents en premier.</string>
+    <string name="remote_sync_activity_empty">Aucun instantané envoyé pour le moment.</string>
+    <string name="remote_sync_activity_this_device">Cet appareil</string>
+    <string name="remote_sync_activity_unknown_device">Non attribué</string>
     <string name="remote_sync_github_recovery_title">Récupération</string>
     <string name="remote_sync_github_force_download_action">Utiliser la dernière capture GitHub</string>
     <string name="remote_sync_github_force_download_hint">Remplace les données de cet appareil par la capture la plus récente de la branche GitHub configurée.</string>

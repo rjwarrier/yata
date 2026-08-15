@@ -1,6 +1,6 @@
 package com.mj.yata.data.github
 
-import android.os.Build
+import android.content.Context
 import android.util.Log
 import com.mj.yata.data.local.backup.RecoveryBackupManager
 import com.mj.yata.data.local.datastore.UserPreferences
@@ -8,11 +8,14 @@ import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sync.SnapshotSyncEngine
 import com.mj.yata.domain.model.BackupSummary
 import com.mj.yata.domain.sync.RestorePoint
+import com.mj.yata.domain.sync.SyncCommitMessage
 import com.mj.yata.domain.sync.SyncRunOptions
 import com.mj.yata.domain.sync.SyncRunReport
 import com.mj.yata.domain.sync.SyncTransport
 import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
+import com.mj.yata.util.syncDeviceLabel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
@@ -24,6 +27,7 @@ import javax.inject.Singleton
 
 @Singleton
 class GitHubSyncManager @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val userPreferences: UserPreferences,
     private val credentialsStore: RemoteBackupCredentialsStore,
     private val snapshotSyncEngine: SnapshotSyncEngine,
@@ -160,7 +164,7 @@ class GitHubSyncManager @Inject constructor(
         } else {
             "snapshot"
         }
-        return "YATA sync from ${deviceLabel()} - $counts"
+        return SyncCommitMessage.format(deviceLabel(), counts)
     }
 
     private fun publisher(api: GitHubApi, options: SyncRunOptions = SyncRunOptions()): GitHubSnapshotPublisher =
@@ -236,19 +240,7 @@ class GitHubSyncManager @Inject constructor(
         return GitHubSyncConfig(owner, repo, branch, apiBase)
     }
 
-    private fun deviceLabel(): String {
-        val manufacturer = Build.MANUFACTURER.orEmpty().trim()
-        val model = Build.MODEL.orEmpty().trim()
-        val cleanedModel = if (
-            manufacturer.isNotBlank() &&
-            model.startsWith(manufacturer, ignoreCase = true)
-        ) {
-            model
-        } else {
-            listOf(manufacturer, model).filter { it.isNotBlank() }.joinToString(" ")
-        }
-        return cleanedModel.ifBlank { "Unknown Android device" }
-    }
+    private fun deviceLabel(): String = context.syncDeviceLabel()
 
     private companion object {
         const val TAG = "GitHubSyncManager"

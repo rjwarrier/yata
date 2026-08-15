@@ -460,6 +460,7 @@
     <string name="action_done">Fertig</string>
     <string name="action_export">Exportieren</string>
     <string name="action_export_as_image">Als Bild exportieren</string>
+    <string name="action_refresh">Aktualisieren</string>
     <string name="action_export_as_pdf">Als PDF exportieren</string>
     <string name="action_go_to_existing_task">Zur bestehenden Aufgabe gehen</string>
     <string name="action_ignore_and_create">Ignorieren und erstellen</string>
@@ -1511,6 +1512,11 @@
     <string name="remote_sync_github_config_import_password_title">GitHub-Konfiguration entschlüsseln</string>
     <string name="remote_sync_github_config_import_too_large">Diese Datei ist zu groß, um ein GitHub-Konfigurationsexport zu sein.</string>
     <string name="remote_sync_github_config_imported">GitHub-Konfiguration für %1$s importiert.</string>
+    <string name="remote_sync_activity_title">Sync-Aktivität</string>
+    <string name="remote_sync_activity_summary">In dieses Repository hochgeladene Snapshots, neueste zuerst.</string>
+    <string name="remote_sync_activity_empty">Noch keine Snapshots hochgeladen.</string>
+    <string name="remote_sync_activity_this_device">Dieses Gerät</string>
+    <string name="remote_sync_activity_unknown_device">Nicht zugeordnet</string>
     <string name="remote_sync_github_recovery_title">Wiederherstellung</string>
     <string name="remote_sync_github_force_download_action">Neuesten GitHub-Snapshot verwenden</string>
     <string name="remote_sync_github_force_download_hint">Ersetzt die Daten auf diesem Gerät durch den neuesten Snapshot aus dem konfigurierten GitHub-Branch.</string>

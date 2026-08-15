@@ -302,6 +302,7 @@
     <string name="action_done">Hotovo</string>
     <string name="action_export">Exportovat</string>
     <string name="action_export_as_image">Exportovat jako obrázek</string>
+    <string name="action_refresh">Obnovit</string>
     <string name="action_export_as_pdf">Exportovat jako PDF</string>
     <string name="action_go_to_existing_task">Přejít na existující úkol</string>
     <string name="action_ignore_and_create">Ignorovat a vytvořit</string>
@@ -1354,6 +1355,11 @@
     <string name="remote_sync_github_config_import_password_title">Dešifrovat konfiguraci GitHub</string>
     <string name="remote_sync_github_config_import_too_large">Tento soubor je příliš velký na to, aby byl exportem konfigurace GitHub.</string>
     <string name="remote_sync_github_config_imported">Konfigurace GitHub importována pro %1$s.</string>
+    <string name="remote_sync_activity_title">Aktivita synchronizace</string>
+    <string name="remote_sync_activity_summary">Snímky odeslané do tohoto repozitáře, nejnovější první.</string>
+    <string name="remote_sync_activity_empty">Zatím nebyly odeslány žádné snímky.</string>
+    <string name="remote_sync_activity_this_device">Toto zařízení</string>
+    <string name="remote_sync_activity_unknown_device">Nepřiřazeno</string>
     <string name="remote_sync_github_recovery_title">Obnovení</string>
     <string name="remote_sync_github_force_download_action">Použít nejnovější snímek GitHub</string>
     <string name="remote_sync_github_force_download_hint">Nahradí data v tomto zařízení nejnovějším snímkem z nakonfigurované větve GitHub.</string>

@@ -297,6 +297,7 @@
     <string name="action_done">పూర్తయింది</string>
     <string name="action_export">ఎగుమతి చేయండి</string>
     <string name="action_export_as_image">చిత్రంగా ఎగుమతి చేయండి</string>
+    <string name="action_refresh">రిఫ్రెష్ చేయండి</string>
     <string name="action_export_as_pdf">PDFగా ఎగుమతి చేయండి</string>
     <string name="action_go_to_existing_task">ఇప్పటికే ఉన్న టాస్క్‌కు వెళ్ళండి</string>
     <string name="action_ignore_and_create">వదిలేసి సృష్టించండి</string>
@@ -397,6 +398,11 @@
     <string name="remote_sync_github_force_download_progress">GitHub స్నాప్‌షాట్ డౌన్‌లోడ్ అవుతోంది…</string>
     <string name="remote_sync_github_force_download_success">తాజా GitHub స్నాప్‌షాట్ పునరుద్ధరించబడింది: %1$s.</string>
     <string name="remote_sync_github_force_download_title">తాజా GitHub స్నాప్‌షాట్‌ను ఉపయోగించాలా?</string>
+    <string name="remote_sync_activity_title">సింక్ కార్యకలాపం</string>
+    <string name="remote_sync_activity_summary">ఈ రిపోజిటరీకి పంపిన స్నాప్‌షాట్‌లు, సరికొత్తవి మొదట.</string>
+    <string name="remote_sync_activity_empty">ఇంకా స్నాప్‌షాట్‌లు ఏవీ పంపబడలేదు.</string>
+    <string name="remote_sync_activity_this_device">ఈ పరికరం</string>
+    <string name="remote_sync_activity_unknown_device">ఆపాదించబడలేదు</string>
     <string name="remote_sync_github_recovery_title">రికవరీ</string>
     <string name="remote_sync_import_github_config">కాన్ఫిగ్‌ను దిగుమతి చేయండి</string>
     <string name="settings_about_github">GitHubలో సోర్స్‌ను చూడండి</string>

@@ -297,6 +297,7 @@
     <string name="action_done">முடிந்தது</string>
     <string name="action_export">ஏற்றுமதி</string>
     <string name="action_export_as_image">படமாக ஏற்றுமதி செய்</string>
+    <string name="action_refresh">புதுப்பிக்கவும்</string>
     <string name="action_export_as_pdf">PDF ஆக ஏற்றுமதி செய்</string>
     <string name="action_go_to_existing_task">இருக்கும் பணிக்குச் செல்</string>
     <string name="action_ignore_and_create">புறக்கணித்து உருவாக்கு</string>
@@ -397,6 +398,11 @@
     <string name="remote_sync_github_force_download_progress">GitHub ஸ்னாப்ஷாட் பதிவிறக்கப்படுகிறது…</string>
     <string name="remote_sync_github_force_download_success">சமீபத்திய GitHub ஸ்னாப்ஷாட் மீட்டமைக்கப்பட்டது: %1$s.</string>
     <string name="remote_sync_github_force_download_title">சமீபத்திய GitHub ஸ்னாப்ஷாட்டைப் பயன்படுத்தவா?</string>
+    <string name="remote_sync_activity_title">ஒத்திசைவு செயல்பாடு</string>
+    <string name="remote_sync_activity_summary">இந்த களஞ்சியத்திற்கு அனுப்பப்பட்ட ஸ்னாப்ஷாட்டுகள், புதியவை முதலில்.</string>
+    <string name="remote_sync_activity_empty">இதுவரை ஸ்னாப்ஷாட்டுகள் எதுவும் அனுப்பப்படவில்லை.</string>
+    <string name="remote_sync_activity_this_device">இந்தச் சாதனம்</string>
+    <string name="remote_sync_activity_unknown_device">குறிப்பிடப்படாதது</string>
     <string name="remote_sync_github_recovery_title">மீட்பு</string>
     <string name="remote_sync_import_github_config">கட்டமைப்பை இறக்குமதி செய்</string>
     <string name="settings_about_github">GitHub இல் மூலத்தைக் காண்க</string>

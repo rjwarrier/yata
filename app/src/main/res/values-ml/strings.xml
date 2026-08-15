@@ -297,6 +297,7 @@
     <string name="action_done">പൂർത്തിയായി</string>
     <string name="action_export">എക്സ്പോർട്ട് ചെയ്യുക</string>
     <string name="action_export_as_image">ചിത്രമായി എക്സ്പോർട്ട് ചെയ്യുക</string>
+    <string name="action_refresh">പുതുക്കുക</string>
     <string name="action_export_as_pdf">PDF ആയി എക്സ്പോർട്ട് ചെയ്യുക</string>
     <string name="action_go_to_existing_task">നിലവിലുള്ള ടാസ്കിലേക്ക് പോകുക</string>
     <string name="action_ignore_and_create">അവഗണിച്ച് സൃഷ്ടിക്കുക</string>
@@ -397,6 +398,11 @@
     <string name="remote_sync_github_force_download_progress">GitHub സ്നാപ്പ്ഷോട്ട് ഡൗൺലോഡ് ചെയ്യുന്നു…</string>
     <string name="remote_sync_github_force_download_success">ഏറ്റവും പുതിയ GitHub സ്നാപ്പ്ഷോട്ട് പുനഃസ്ഥാപിച്ചു: %1$s.</string>
     <string name="remote_sync_github_force_download_title">ഏറ്റവും പുതിയ GitHub സ്നാപ്പ്ഷോട്ട് ഉപയോഗിക്കണോ?</string>
+    <string name="remote_sync_activity_title">സിങ്ക് പ്രവർത്തനം</string>
+    <string name="remote_sync_activity_summary">ഈ റിപ്പോസിറ്ററിയിലേക്ക് അയച്ച സ്നാപ്പ്ഷോട്ടുകൾ, ഏറ്റവും പുതിയത് ആദ്യം.</string>
+    <string name="remote_sync_activity_empty">ഇതുവരെ സ്നാപ്പ്ഷോട്ടുകളൊന്നും അയച്ചിട്ടില്ല.</string>
+    <string name="remote_sync_activity_this_device">ഈ ഉപകരണം</string>
+    <string name="remote_sync_activity_unknown_device">ആരോപിക്കപ്പെടാത്തത്</string>
     <string name="remote_sync_github_recovery_title">വീണ്ടെടുക്കൽ</string>
     <string name="remote_sync_import_github_config">കോൺഫിഗ് ഇംപോർട്ട് ചെയ്യുക</string>
     <string name="settings_about_github">GitHub-ൽ സോഴ്‌സ് കാണുക</string>

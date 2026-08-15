@@ -382,6 +382,7 @@
     <string name="action_done">पूर्ण</string>
     <string name="action_export">निर्यात करें</string>
     <string name="action_export_as_image">छवि के रूप में निर्यात करें</string>
+    <string name="action_refresh">रिफ़्रेश करें</string>
     <string name="action_export_as_pdf">PDF के रूप में निर्यात करें</string>
     <string name="action_go_to_existing_task">मौजूदा कार्य पर जाएं</string>
     <string name="action_ignore_and_create">नज़रअंदाज़ करें और बनाएं</string>
@@ -1354,6 +1355,11 @@
     <string name="remote_sync_github_config_import_password_title">GitHub कॉन्फ़िग डिक्रिप्ट करें</string>
     <string name="remote_sync_github_config_import_too_large">यह फ़ाइल GitHub कॉन्फ़िग निर्यात होने के लिए बहुत बड़ी है।</string>
     <string name="remote_sync_github_config_imported">%1$s के लिए GitHub कॉन्फ़िग आयात किया गया।</string>
+    <string name="remote_sync_activity_title">सिंक गतिविधि</string>
+    <string name="remote_sync_activity_summary">इस रिपॉजिटरी में भेजे गए स्नैपशॉट, नवीनतम पहले।</string>
+    <string name="remote_sync_activity_empty">अभी तक कोई स्नैपशॉट नहीं भेजा गया।</string>
+    <string name="remote_sync_activity_this_device">यह डिवाइस</string>
+    <string name="remote_sync_activity_unknown_device">अनिर्दिष्ट</string>
     <string name="remote_sync_github_recovery_title">रिकवरी</string>
     <string name="remote_sync_github_force_download_action">नवीनतम GitHub स्नैपशॉट उपयोग करें</string>
     <string name="remote_sync_github_force_download_hint">यह डिवाइस कॉन्फ़िगर की गई GitHub ब्रांच के नवीनतम स्नैपशॉट से बदल दिया जाएगा।</string>

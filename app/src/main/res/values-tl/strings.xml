@@ -297,6 +297,7 @@
     <string name="action_done">Tapos na</string>
     <string name="action_export">I-export</string>
     <string name="action_export_as_image">I-export bilang larawan</string>
+    <string name="action_refresh">I-refresh</string>
     <string name="action_export_as_pdf">I-export bilang PDF</string>
     <string name="action_go_to_existing_task">Pumunta sa umiiral nang gawain</string>
     <string name="action_ignore_and_create">Huwag pansinin at gawin</string>
@@ -397,6 +398,11 @@
     <string name="remote_sync_github_force_download_progress">Dina-download ang GitHub snapshot...</string>
     <string name="remote_sync_github_force_download_success">Naibalik ang pinakabagong GitHub snapshot: %1$s.</string>
     <string name="remote_sync_github_force_download_title">Gamitin ang pinakabagong GitHub snapshot?</string>
+    <string name="remote_sync_activity_title">Aktibidad ng sync</string>
+    <string name="remote_sync_activity_summary">Mga snapshot na ipinadala sa repository na ito, pinakabago muna.</string>
+    <string name="remote_sync_activity_empty">Wala pang naipadalang snapshot.</string>
+    <string name="remote_sync_activity_this_device">Ang device na ito</string>
+    <string name="remote_sync_activity_unknown_device">Hindi natukoy</string>
     <string name="remote_sync_github_recovery_title">Pagbawi</string>
     <string name="remote_sync_import_github_config">I-import ang config</string>
     <string name="settings_about_github">Tingnan ang source sa GitHub</string>

@@ -302,6 +302,7 @@
     <string name="action_done">Gata</string>
     <string name="action_export">Exportă</string>
     <string name="action_export_as_image">Exportă ca imagine</string>
+    <string name="action_refresh">Reîmprospătează</string>
     <string name="action_export_as_pdf">Exportă ca PDF</string>
     <string name="action_go_to_existing_task">Mergi la sarcina existentă</string>
     <string name="action_ignore_and_create">Ignoră și creează</string>
@@ -1354,6 +1355,11 @@
     <string name="remote_sync_github_config_import_password_title">Decriptează configurația GitHub</string>
     <string name="remote_sync_github_config_import_too_large">Fișierul este prea mare pentru a fi un export de configurație GitHub.</string>
     <string name="remote_sync_github_config_imported">Configurație GitHub importată pentru %1$s.</string>
+    <string name="remote_sync_activity_title">Activitate de sincronizare</string>
+    <string name="remote_sync_activity_summary">Instantanee trimise în acest depozit, cele mai noi primele.</string>
+    <string name="remote_sync_activity_empty">Niciun instantaneu trimis încă.</string>
+    <string name="remote_sync_activity_this_device">Acest dispozitiv</string>
+    <string name="remote_sync_activity_unknown_device">Neatribuit</string>
     <string name="remote_sync_github_recovery_title">Recuperare</string>
     <string name="remote_sync_github_force_download_action">Folosește cel mai recent instantaneu GitHub</string>
     <string name="remote_sync_github_force_download_hint">Înlocuiește acest dispozitiv cu cel mai recent instantaneu din ramura GitHub configurată.</string>
