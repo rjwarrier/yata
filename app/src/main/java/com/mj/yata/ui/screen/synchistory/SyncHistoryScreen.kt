@@ -74,9 +74,9 @@ fun SyncHistoryScreen(
     // If the last fetch returned fewer than it asked for, that's every restore point there is.
     val hasMore = loadError == null && entries.size >= requestedLimit
 
-    fun load(limit: Int, onDone: () -> Unit) {
+    fun load(limit: Int, forceRefresh: Boolean, onDone: () -> Unit) {
         loadError = null
-        viewModel.listRemoteRestorePoints(limit = limit) { result ->
+        viewModel.listRemoteRestorePoints(limit = limit, forceRefresh = forceRefresh) { result ->
             onDone()
             result.fold(
                 onSuccess = { entries = it },
@@ -88,20 +88,25 @@ fun SyncHistoryScreen(
         }
     }
 
-    fun refresh() {
+    // forceRefresh = false on the initial screen-open load: it's the common case of arriving
+    // here right after RemoteSyncScreen's own compact-row fetch, and there's no reason to pay for
+    // a second GitHub API call for data that's still fresh from the first. The toolbar's explicit
+    // refresh action forces past that, since "refresh" tapped by hand means "I want current data,
+    // not what happened to already be cached."
+    fun loadFirstPage(forceRefresh: Boolean) {
         requestedLimit = SYNC_HISTORY_PAGE_SIZE
         isLoading = true
-        load(requestedLimit) { isLoading = false }
+        load(requestedLimit, forceRefresh) { isLoading = false }
     }
 
     fun loadMore() {
         if (isLoadingMore || !hasMore) return
         isLoadingMore = true
         requestedLimit += SYNC_HISTORY_PAGE_SIZE
-        load(requestedLimit) { isLoadingMore = false }
+        load(requestedLimit, forceRefresh = false) { isLoadingMore = false }
     }
 
-    LaunchedEffect(Unit) { refresh() }
+    LaunchedEffect(Unit) { loadFirstPage(forceRefresh = false) }
 
     // Single-expand accordion — keeps the list scannable, and caches each fetched summary so
     // collapsing and re-expanding a card doesn't re-download the snapshot.
@@ -147,7 +152,7 @@ fun SyncHistoryScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = ::refresh, enabled = !isLoading) {
+                    IconButton(onClick = { loadFirstPage(forceRefresh = true) }, enabled = !isLoading) {
                         Icon(Icons.Default.CloudUpload, contentDescription = stringResource(R.string.action_refresh))
                     }
                 }

@@ -62,6 +62,13 @@ class BackupOperations @Inject constructor(
     private companion object {
         /** Keeps edit bursts from producing a backup for every individual keystroke. */
         const val DEBOUNCE_MILLIS = 15 * 1000L
+
+        /** How long a fetched restore-point list is trusted before a plain (non-forced) call
+         * re-fetches it. Long enough to absorb the couple of seconds between RemoteSyncScreen's
+         * compact "last synced" row and navigating into SyncHistoryScreen's full list - the case
+         * this exists for - short enough that a background sync landing a new commit surfaces on
+         * the next natural fetch instead of needing a manual refresh to notice. */
+        const val RESTORE_POINTS_CACHE_TTL_MILLIS = 10 * 1000L
     }
 
     private val debounceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -80,6 +87,20 @@ class BackupOperations @Inject constructor(
     val lastSyncSucceeded: StateFlow<Boolean?> = _lastSyncSucceeded.asStateFlow()
     private val _syncProgress = MutableStateFlow<SyncProgressState?>(null)
     val syncProgress: StateFlow<SyncProgressState?> = _syncProgress.asStateFlow()
+
+    // GitHub-only: RemoteSyncScreen's compact "last synced" row and SyncHistoryScreen's full list
+    // both call listRemoteRestorePoints within moments of each other on the same navigation, and
+    // GitHub's is a real API call (SFTP/FTP's is a cheap directory listing already, not worth
+    // caching). Keyed on the repo identity so switching accounts/repos can't serve stale data, and
+    // narrowed by requested size so a small cached fetch never answers for a bigger one.
+    private var cachedRestorePoints: List<RestorePoint>? = null
+    private var cachedRestorePointsLimit = 0
+    private var cachedRestorePointsKey: String? = null
+    private var cachedRestorePointsAtMs = 0L
+
+    private fun invalidateRestorePointsCache() {
+        cachedRestorePoints = null
+    }
 
     /**
      * Backs up to every destination the user has switched on, whatever triggered it — the manual
@@ -266,6 +287,10 @@ class BackupOperations @Inject constructor(
     }
 
     private fun finishSyncFeedback(success: Boolean, failureLabel: String? = null) {
+        // A successful sync of any destination may have just pushed a new GitHub commit; the
+        // cache doesn't know which destination this was for, so it errs toward invalidating
+        // rather than risking a stale list after a sync that actually did touch GitHub.
+        if (success) invalidateRestorePointsCache()
         var terminalFailureGeneration: Int? = null
         synchronized(syncStateLock) {
             if (!success) {
@@ -412,11 +437,30 @@ class BackupOperations @Inject constructor(
     suspend fun inspectSftpBackup(filename: String): Result<BackupSummary> =
         sftpBackupManager.inspectBackup(filename)
 
-    suspend fun listRemoteRestorePoints(limit: Int = Int.MAX_VALUE): Result<List<RestorePoint>> =
-        currentTransport().listRestorePoints(limit)
+    suspend fun listRemoteRestorePoints(limit: Int = Int.MAX_VALUE, forceRefresh: Boolean = false): Result<List<RestorePoint>> {
+        val protocol = userPreferences.remoteBackupProtocolFlow.first()
+        if (protocol != RemoteBackupProtocol.GITHUB) return currentTransport().listRestorePoints(limit)
+
+        val key = githubRestorePointsCacheKey()
+        val cached = cachedRestorePoints
+        val cacheIsFresh = System.currentTimeMillis() - cachedRestorePointsAtMs < RESTORE_POINTS_CACHE_TTL_MILLIS
+        if (!forceRefresh && cached != null && cacheIsFresh && cachedRestorePointsKey == key && cachedRestorePointsLimit >= limit) {
+            return Result.success(cached.take(limit))
+        }
+
+        return currentTransport().listRestorePoints(limit).onSuccess {
+            cachedRestorePoints = it
+            cachedRestorePointsLimit = limit
+            cachedRestorePointsKey = key
+            cachedRestorePointsAtMs = System.currentTimeMillis()
+        }
+    }
+
+    private suspend fun githubRestorePointsCacheKey(): String =
+        "${userPreferences.githubOwnerFlow.first()}/${userPreferences.githubRepoFlow.first()}@${userPreferences.githubBranchFlow.first()}"
 
     suspend fun restoreRemoteSnapshot(id: String): Result<Unit> =
-        currentTransport().restore(id)
+        currentTransport().restore(id).also { if (it.isSuccess) invalidateRestorePointsCache() }
 
     suspend fun restoreLatestRemoteSnapshot(): Result<RestorePoint> {
         val transport = currentTransport()
@@ -425,7 +469,7 @@ class BackupOperations @Inject constructor(
         val restorePoints = transport.listRestorePoints(limit = 1).getOrElse { return Result.failure(it) }
         val latest = restorePoints.firstOrNull()
             ?: return Result.failure(IllegalStateException("No server backups found yet"))
-        return transport.restore(latest.id).map { latest }
+        return transport.restore(latest.id).map { latest }.also { if (it.isSuccess) invalidateRestorePointsCache() }
     }
 
     suspend fun inspectRemoteSnapshot(id: String): Result<BackupSummary> =
