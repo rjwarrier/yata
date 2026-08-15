@@ -10,6 +10,8 @@ YATA's quick-add parser is rule based. It extracts schedule fields and entities 
 - Language packs: `app/src/main/java/com/mj/yata/util/nl/LanguagePack.kt`
 - Merged lexicon: `app/src/main/java/com/mj/yata/util/nl/NaturalLanguageLexicon.kt`
 - Input normalization: `app/src/main/java/com/mj/yata/util/nl/NaturalLanguageInputNormalizer.kt`
+- Normalized raw-range mapping: `app/src/main/java/com/mj/yata/util/nl/NormalizedInput.kt`
+- Rule groups: `app/src/main/java/com/mj/yata/util/nl/*Rules.kt`
 - Title cleanup: `app/src/main/java/com/mj/yata/util/nl/NaturalLanguageTitleCleaner.kt`
 - Shared highlight UI: `app/src/main/java/com/mj/yata/ui/widgets/QuickAddHighlightTransformation.kt`
 
@@ -36,6 +38,8 @@ Examples:
 - `tháng mười một` can be represented by a Latin fallback such as `thang muoi mot`
 
 Voice-friendly aliases are allowed, but keep them close to the language pack entry they support.
+When a voice alias needs a rewrite, add it in `NaturalLanguageInputNormalizer.kt` so
+`NormalizedInput` can map recognized spans back to the user's original text.
 
 ## Ambiguity
 
@@ -98,4 +102,8 @@ Parser tests:
 .\gradlew.bat :app:testDebugUnitTest --tests com.mj.yata.NaturalLanguageLexiconTest --console=plain
 ```
 
-At the time this guide was added, the targeted unit-test commands were blocked by unrelated compile errors in `AnalyticsUtilsTest.kt`. Once those are fixed, run the parser and lexicon tests for every natural-language change.
+For parser-control-flow or normalization changes, also run:
+
+```powershell
+.\gradlew.bat :app:testDebugUnitTest --tests com.mj.yata.AnalyticsUtilsTest --console=plain
+```
