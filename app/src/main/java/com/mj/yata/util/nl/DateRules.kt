@@ -63,6 +63,43 @@ internal data class DateRuleResult(
 )
 
 internal object DateRules {
+    /**
+     * "2 weeks from now/today" — resolved ahead of everything else in [apply], and specifically
+     * ahead of start-date parsing in [com.mj.yata.util.NaturalLanguageParser.parse]. `startDateRegex`
+     * treats a bare "from" as a start-date keyword, so without this running first, "2 weeks from
+     * today" got read as start-date phrase "from today" (claiming that span) and [apply]'s own
+     * fromNowRegex check — which needs the whole "2 weeks from today" — found its match already
+     * partially claimed and silently gave up.
+     */
+    fun applyFromNow(
+        context: ParserContext,
+        config: DateRuleConfig,
+        existingDue: LocalDate?
+    ): DateRuleResult {
+        var due = existingDue
+        var dueRange: IntRange? = null
+
+        if (due == null) {
+            context.firstFreeMatch(config.fromNowRegex)?.let { match ->
+                val count = config.countOrOne(match.groupValues[1])
+                due = when (config.relativeUnitKind(match.groupValues[2])) {
+                    "day" -> context.referenceDate.plusDays(count)
+                    "week" -> context.referenceDate.plusWeeks(count)
+                    "month" -> context.referenceDate.plusMonths(count)
+                    "quarter" -> context.referenceDate.plusMonths(count * 3)
+                    "year" -> context.referenceDate.plusYears(count)
+                    else -> null
+                }
+                if (due != null) {
+                    context.claimDueDate(match.range)
+                    dueRange = match.range
+                }
+            }
+        }
+
+        return DateRuleResult(due = due, time = null, dueRange = dueRange)
+    }
+
     fun apply(
         context: ParserContext,
         config: DateRuleConfig,

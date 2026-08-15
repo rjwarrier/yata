@@ -4,12 +4,15 @@ import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DateAliasTarget
+import com.mj.yata.util.nl.DAY_UNIT
 import com.mj.yata.util.nl.DateRuleConfig
 import com.mj.yata.util.nl.DateRules
 import com.mj.yata.util.nl.EntityRules
 import com.mj.yata.util.nl.EscapeRules
+import com.mj.yata.util.nl.MONTH_UNIT
 import com.mj.yata.util.nl.NATURAL_LANGUAGE_NUMBER_COUNT
 import com.mj.yata.util.nl.NaturalLanguageLexicon
+import com.mj.yata.util.nl.QUARTER_UNIT
 import com.mj.yata.util.nl.ParseState
 import com.mj.yata.util.nl.ParserContext
 import com.mj.yata.util.nl.PriorityFlagRules
@@ -18,6 +21,8 @@ import com.mj.yata.util.nl.RecurrenceRules
 import com.mj.yata.util.nl.ReminderRules
 import com.mj.yata.util.nl.StartDateRules
 import com.mj.yata.util.nl.TimeRules
+import com.mj.yata.util.nl.WEEK_UNIT
+import com.mj.yata.util.nl.YEAR_UNIT
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
 import com.mj.yata.util.nl.naturalLanguageCountOrOne
 import com.mj.yata.util.nl.normalizeNaturalLanguageInputWithRanges
@@ -147,7 +152,10 @@ object NaturalLanguageParser {
         customDateAliases = encodedDefinitions
             .mapNotNull(DateAliasDefinition::decode)
             .associate { it.alias to it.target }
-        synchronized(cacheLock) { parseCache.clear() }
+        synchronized(cacheLock) {
+            parseCache.clear()
+            cachedDateRuleConfig = null
+        }
     }
 
     private fun resolveDateAlias(target: DateAliasTarget, referenceDate: LocalDate): LocalDate =
@@ -167,48 +175,14 @@ object NaturalLanguageParser {
         }
 
     // â”€â”€ Time â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    private val timeOfDayWords = mapOf(
-        "night" to LocalTime.of(21, 0),
-        "nite" to LocalTime.of(21, 0),
-        "midnight" to LocalTime.of(0, 0),
-        "morning" to LocalTime.of(9, 0),
-        "morn" to LocalTime.of(9, 0),
-        "mrng" to LocalTime.of(9, 0),
-        "noon" to LocalTime.of(12, 0),
-        "midday" to LocalTime.of(12, 0),
-        "afternoon" to LocalTime.of(15, 0),
-        "aft" to LocalTime.of(15, 0),
-        "evening" to LocalTime.of(18, 0),
-        "eve" to LocalTime.of(18, 0),
-        "noche" to LocalTime.of(21, 0),
-        "medianoche" to LocalTime.of(0, 0),
-        "mañana" to LocalTime.of(9, 0),
-        "manana" to LocalTime.of(9, 0),
-        "mediodía" to LocalTime.of(12, 0),
-        "mediodia" to LocalTime.of(12, 0),
-        "tarde" to LocalTime.of(18, 0),
-        "noite" to LocalTime.of(21, 0),
-        "meia-noite" to LocalTime.of(0, 0),
-        "manhã" to LocalTime.of(9, 0),
-        "manha" to LocalTime.of(9, 0),
-        "meio-dia" to LocalTime.of(12, 0),
-        "matin" to LocalTime.of(9, 0),
-        "midi" to LocalTime.of(12, 0),
-        "après-midi" to LocalTime.of(15, 0),
-        "apres-midi" to LocalTime.of(15, 0),
-        "soir" to LocalTime.of(18, 0),
-        "nuit" to LocalTime.of(21, 0),
-        "minuit" to LocalTime.of(0, 0)
-    )
+    // Only "night" is ever read from here (DateRules' "tonight"/"tonite" handling) â€” the
+    // full time-of-day word list lives in TimeRules.applyFallback, which owns the actual
+    // word -> clock-time matching for every other word in every supported language.
+    private val timeOfDayWords = mapOf("night" to LocalTime.of(21, 0))
 
     // â”€â”€ Recurrence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // "each" is accepted everywhere "every" is â€” it's the same instruction, and people write both.
     private const val EVERY = "(?:every|evry|evr|each|ea\\.?|cada|todo|toda|todos\\s+os|todas\\s+as|chaque|tous\\s+les|toutes\\s+les|jeden|jede|jeder|jedes|ogni|elke|iedere|varje|co|kazdy|fiecare|her|setiap|kila|bawat|moi)"
-    private const val DAY_UNIT = "(?:days?|dys?|dy|d|día|dÃ­a|dia|jour|tag|tage|giorno|giorni|dag|dagen|dagar|dzien|dni|zi|zie|gun|hari|siku|araw|ngay)s?"
-    private const val WEEK_UNIT = "(?:weeks?|wks?|wk|w|semana|semaine|woche|wochen|settimana|settimane|week|weken|vecka|veckor|tydzien|tygodnie|saptamana|hafta|minggu|wiki|linggo|tuan)s?"
-    private const val MONTH_UNIT = "(?:months?|mos?|mths?|mth|mes(?:es)?|mês|mÃªs|mêses|mÃªses|mois|monat|monate|mese|mesi|maand|maanden|manad|manader|miesiac|miesiace|luna|ay|bulan|mwezi|buwan|thang)"
-    private const val YEAR_UNIT = "(?:years?|yrs?|yr|y|año|aÃ±o|ano|an|année|annÃ©e|annee|jahr|jahre|anni|jaar|ar|rok|lata|yil|tahun|mwaka|taon|nam)s?"
-    private const val QUARTER_UNIT = "(?:quarters?|qtrs?|qtr)"
     private const val NUMBER_COUNT = NATURAL_LANGUAGE_NUMBER_COUNT
     private val everyAlternateDayRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otro|alterno|outro|alternado|autre)\\s+$DAY_UNIT\\b", RegexOption.IGNORE_CASE)
     private val everyAlternateWeekRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otra|alterna|outra|alternada|autre)\\s+$WEEK_UNIT\\b", RegexOption.IGNORE_CASE)
@@ -435,13 +409,17 @@ object NaturalLanguageParser {
     }
 
     private fun relativeUnitKind(token: String): String? {
+        // Compared post-strip, so entries here must be the ALREADY-suffix-stripped form for any
+        // matched word ending in "s" — "moi" anticipates "mois", "me"/"mê" anticipate "mes"/"mês"
+        // the same way. Writing the un-stripped "mes"/"mês" here (as this list once did after a
+        // mid-refactor edit) makes those two branches permanently unreachable.
         val t = token.trim().lowercase().removeSuffix("s")
         return when (t) {
-            "day", "dy", "d", "dÃ­a", "dia", "jour" -> "day"
+            "day", "dy", "d", "día", "dia", "jour" -> "day"
             "week", "wk", "w", "semana", "semaine" -> "week"
-            "month", "mo", "mth", "mes", "mÃª", "mÃªs", "moi" -> "month"
+            "month", "mo", "mth", "me", "mê", "moi" -> "month"
             "quarter", "qtr" -> "quarter"
-            "year", "yr", "y", "aÃ±o", "ano", "an", "annÃ©e", "annee" -> "year"
+            "year", "yr", "y", "año", "ano", "an", "année", "annee" -> "year"
             else -> null
         }
     }
@@ -473,7 +451,7 @@ object NaturalLanguageParser {
             "(?=\\s+(?:due|vence|échéance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|assign|asign|atrib|@|#|!|p[1-3]|for\\b|por\\b|pour\\b|in\\s+(?:list|project)|em\\s+(?:lista|projeto)|en\\s+(?:liste|projet|lista|proyecto))|$)",
         RegexOption.IGNORE_CASE
     )
-    private val fromNowRegex = Regex("\\b(a|an|um|uma|un|une|$NUMBER_COUNT)\\s+($DAY_UNIT|$WEEK_UNIT|$MONTH_UNIT|$QUARTER_UNIT|$YEAR_UNIT)\\s+(?:from\\s+(?:now|today)|a\\s+partir\\s+de\\s+(?:agora|hoje)|à\\s+partir\\s+d['’]?aujourd['’]?hui)\\b", RegexOption.IGNORE_CASE)
+    private val fromNowRegex = Regex("\\b(a|an|um|uma|un|una|une|$NUMBER_COUNT)\\s+($DAY_UNIT|$WEEK_UNIT|$MONTH_UNIT|$QUARTER_UNIT|$YEAR_UNIT)\\s+(?:from\\s+(?:now|today)|a\\s+partir\\s+de\\s+(?:agora|hoje|ahora|hoy)|à\\s+partir\\s+d['’]?aujourd['’]?hui)\\b", RegexOption.IGNORE_CASE)
     // "the 20th" / "on the 20th" with no month named â€” nearest upcoming month that has that day.
     private val ordinalDayOfMonthRegex = Regex("\\b(?:on\\s+)?the\\s+(\\d{1,2})(?:st|nd|rd|th)\\b", RegexOption.IGNORE_CASE)
     /**
@@ -914,198 +892,6 @@ object NaturalLanguageParser {
     private val escapeRegex = Regex("\\\\(\\w+)")
     private val highlightPrepositionRegex =
         Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
-    private const val ENTITY_NAME_CHARS = "\\p{L}\\p{N}_\\-\\s"
-    private const val ENTITY_BOUNDARY_KEYWORDS =
-            "project\\b|proyecto\\b|projeto\\b|projet\\b|list\\b|lista\\b|liste\\b|tag\\b|etiqueta\\b|Ã©tiquette\\b|\\u00e9tiquette\\b|etiquette\\b|" +
-            "tagged?\\b|label\\b|labeled?\\b|assign(?:ed)?\\s+to\\b|asignad[ao]\\s+a\\b|asignar\\s+a\\b|" +
-            "atribu[iÃ­]d[ao]\\s+a\\b|atribuir\\s+a\\b|assignÃ©\\s+Ã \\b|assign\\u00e9\\s+\\u00e0\\b|assigne\\s+a\\b|assigner\\s+Ã \\b|assigner\\s+\\u00e0\\b|" +
-            "give(?:n)?\\s+to\\b|delegate\\b|delegar\\b|send\\s+to\\b|assign\\b|due\\b|vence\\b|Ã©chÃ©ance\\b|echeance\\b|" +
-            "at\\b|a\\s+las?\\b|Ã s?\\b|Ã \\b|every\\b|cada\\b|todo\\b|toda\\b|chaque\\b|on\\b|el\\b|le\\b|" +
-            "today\\b|tdy\\b|tomorrow\\b|tmr\\b|tmrw\\b|tomrw\\b|tonight\\b|tonite\\b|" +
-            "morning\\b|morn\\b|afternoon\\b|evening\\b|night\\b|noon\\b|midnight\\b|" +
-            "monday\\b|mon\\b|tuesday\\b|tue\\b|wednesday\\b|wed\\b|thursday\\b|thu\\b|friday\\b|fri\\b|saturday\\b|sat\\b|sunday\\b|sun\\b|" +
-            "lunes\\b|martes\\b|miÃ©rcoles\\b|miercoles\\b|jueves\\b|viernes\\b|sÃ¡bado\\b|sabado\\b|domingo\\b|" +
-            "segunda(?:-feira)?\\b|terÃ§a(?:-feira)?\\b|terca(?:-feira)?\\b|quarta(?:-feira)?\\b|quinta(?:-feira)?\\b|sexta(?:-feira)?\\b|" +
-            "lundi\\b|mardi\\b|mercredi\\b|jeudi\\b|vendredi\\b|samedi\\b|dimanche\\b|" +
-            "next\\b|nxt\\b|this\\b|in\\b|by\\b|before\\b|after\\b|starts?\\b|start(?:ing)?\\b|not\\s+before\\b|p[1-3]\\b|" +
-            "hash\\s*tag\\b|hashtag\\b|pound\\s*tag\\b|at\\s+sign\\b|plus\\s+project\\b|equals\\s+list\\b"
-    private const val ENTITY_WORD_BOUNDARY = "!|#|@|\\+|=|$ENTITY_BOUNDARY_KEYWORDS"
-    private val quotedEntityValueRegex = Regex("^\\s*(?:\"([^\"]+)\"|'([^']+)'|([$ENTITY_NAME_CHARS]+?))\\s*$")
-    private val projectEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:\\+|plus\\s+project\\b|in\\s+project\\b|for\\s+project\\b|under\\s+project\\b|project\\b|en\\s+proyecto\\b|para\\s+proyecto\\b|bajo\\s+proyecto\\b|proyecto\\b|em\\s+projeto\\b|para\\s+projeto\\b|projeto\\b|dans\\s+projet\\b|pour\\s+projet\\b|projet\\b)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
-        RegexOption.IGNORE_CASE
-    )
-    private val listEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:=|equals\\s+list\\b|in\\s+list\\b|for\\s+list\\b|under\\s+list\\b|list\\b|en\\s+lista\\b|para\\s+lista\\b|bajo\\s+lista\\b|lista\\b|em\\s+lista\\b|dans\\s+liste\\b|pour\\s+liste\\b|liste\\b)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
-        RegexOption.IGNORE_CASE
-    )
-    private val tagEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:#|hash\\s*tag\\s+|hashtag\\s+|pound\\s*tag\\s+|tagged?\\s+as\\s+|tagged?\\s+|tag\\s+as\\s+|tag\\s+|labeled?\\s+as\\s+|labeled?\\s+|label\\s+as\\s+|label\\s+|with\\s+tag\\s+|etiquetad[ao]\\s+como\\s+|etiquetad[ao]\\s+|etiqueta\\s+como\\s+|etiqueta\\s+|con\\s+etiqueta\\s+|marcad[ao]\\s+como\\s+|rÃ³tulo\\s+|rotulo\\s+|Ã©tiquette\\s+|\\u00e9tiquette\\s+|etiquette\\s+|avec\\s+Ã©tiquette\\s+|avec\\s+\\u00e9tiquette\\s+|avec\\s+etiquette\\s+)([\\p{L}\\p{N}_\\-]+)(?![\\p{L}\\p{N}_])",
-        RegexOption.IGNORE_CASE
-    )
-    private val assigneeEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:assign(?:ed)?\\s+to\\s+|give(?:n)?\\s+to\\s+|delegate(?:d)?\\s+to\\s+|send\\s+to\\s+|assign\\s+|asignad[ao]\\s+a\\s+|asignar\\s+a\\s+|delegad[ao]\\s+a\\s+|delegar\\s+a\\s+|enviar\\s+a\\s+|atribu[iÃ­]d[ao]\\s+a\\s+|atribuir\\s+a\\s+|delegar\\s+para\\s+|enviar\\s+para\\s+|assignÃ©\\s+Ã \\s+|assign\\u00e9\\s+\\u00e0\\s+|assigne\\s+a\\s+|assigner\\s+Ã \\s+|assigner\\s+\\u00e0\\s+|assigner\\s+a\\s+|dÃ©lÃ©guÃ©\\s+Ã \\s+|d\\u00e9l\\u00e9gu\\u00e9\\s+\\u00e0\\s+|delegue\\s+a\\s+|dÃ©lÃ©guer\\s+Ã \\s+|d\\u00e9l\\u00e9guer\\s+\\u00e0\\s+|deleguer\\s+a\\s+|envoyer\\s+Ã \\s+|envoyer\\s+\\u00e0\\s+|envoyer\\s+a\\s+|at\\s+sign\\s+|@)(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
-        RegexOption.IGNORE_CASE
-    )
-
-    private fun entityValue(rawValue: String): String =
-        quotedEntityValueRegex.matchEntire(rawValue)?.let { m ->
-            m.groupValues.drop(1).firstOrNull { it.isNotBlank() }?.trim()
-        } ?: rawValue.trim().trim('"', '\'')
-
-    // â”€â”€ Reminder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // "remind"/"remind me" phrases set the *reminder*, distinct from the due time â€” checked
-    // before due-time parsing so "remind at 5pm" doesn't leave a stray "5pm" behind for the
-    // due-time rule to also claim as the task's own due time.
-    private val remindShortAtTimeKeywordRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+(?:(?:at|on)\\s+time)\\b", RegexOption.IGNORE_CASE)
-    private val remindShortMinutesBeforeRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+($NUMBER_COUNT)\\s*(?:m|min|mins|minute|minutes)\\s+(?:before|bef|b4)\\b", RegexOption.IGNORE_CASE)
-    private val remindShortHourBeforeRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+(?:1\\s*(?:h|hr|hrs|hour)|one\\s*(?:h|hr|hrs|hour)|an?\\s+hour)\\s+(?:before|bef|b4)\\b", RegexOption.IGNORE_CASE)
-    private val remindShortDayBeforeRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+(?:1\\s*(?:d|dy|day)|one\\s*(?:d|dy|day)|a\\s+day)\\s+(?:before|bef|b4)\\b", RegexOption.IGNORE_CASE)
-    private val remindShortAtClockTimeRegex = Regex("\\b(?:rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider)\\s+(?:(?:at)\\s+)?(\\d{1,2})([:.](\\d{2}))?\\s*(am|pm|AM|PM)\\b", RegexOption.IGNORE_CASE)
-    private val remindAtTimeKeywordRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:(?:at|on)\\s+time|a\\s+la\\s+hora|na\\s+hora|à\\s+l['’]?heure)\\b", RegexOption.IGNORE_CASE)
-    private val remindMinutesBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+($NUMBER_COUNT)\\s*(?:min|mins|minute|minutes|minuto|minutos)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
-    private val remindHourBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:1\\s+(?:hour|hora|heure)|one\\s+hour|an?\\s+hour|una\\s+hora|uma\\s+hora|une\\s+heure)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
-    private val remindDayBeforeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:1\\s+(?:day|día|dia|jour)|one\\s+day|a\\s+day|un\\s+día|un\\s+dia|um\\s+dia|une\\s+jour|un\\s+jour)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
-    private val remindAtClockTimeRegex = Regex("\\b(?:remind(?:\\s+me)?|recu[eé]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:(?:at|a\\s+las?|às?|as|à|a)\\s+)?(\\d{1,2})([:.](\\d{2}))?\\s*(am|pm|AM|PM)\\b", RegexOption.IGNORE_CASE)
-
-    // â”€â”€ Priority â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // "!1"/"!!1" (etc.) â€” 1 is the most urgent, matching the common "p1 is highest" convention.
-    private val priorityShorthandRegex = Regex("!{1,2}([1-3])\\b")
-    // Bare "p1"/"p2"/"p3" (no "!") â€” same convention, checked alongside the "!N" shorthand
-    // since it's just as explicit, before falling through to the word-phrase list below.
-    private val priorityBareRegex = Regex("\\bp([1-3])\\b", RegexOption.IGNORE_CASE)
-    // Multi-word phrases first so "high priority" claims itself whole rather than leaving a
-    // dangling "priority" behind for a later rule to trip over.
-    private val priorityWordPhrases = listOf(
-        // Negations first: "not urgent" contains "urgent", and whichever is listed first wins,
-        // so putting these anywhere below would read the phrase as the exact opposite of itself.
-        "not urgent" to "low",
-        "non urgent" to "low",
-        "not important" to "low",
-        "not critical" to "low",
-        "highest priority" to "high",
-        "top priority" to "high",
-        "high priority" to "high",
-        "hi priority" to "high",
-        "high pri" to "high",
-        "hi pri" to "high",
-        "super urgent" to "high",
-        "must do" to "high",
-        "vital" to "high",
-        "essential" to "high",
-        "urgent" to "high",
-        "urgnt" to "high",
-        "urgentt" to "high",
-        "critical" to "high",
-        "critcal" to "high",
-        "crit" to "high",
-        "asap" to "high",
-        "as soon as possible" to "high",
-        "drop everything" to "high",
-        "high prio" to "high",
-        "hi prio" to "high",
-        "h prio" to "high",
-        "top prio" to "high",
-        "medium priority" to "med",
-        "meduim priority" to "med",
-        "med priority" to "med",
-        "normal priority" to "med",
-        "medium prio" to "med",
-        "medium pri" to "med",
-        "med prio" to "med",
-        "med pri" to "med",
-        "m prio" to "med",
-        "normal prio" to "med",
-        "lowest priority" to "low",
-        "low priority" to "low",
-        "lo priority" to "low",
-        "low pri" to "low",
-        "lo pri" to "low",
-        "minor priority" to "low",
-        "low prio" to "low",
-        "lo prio" to "low",
-        "l prio" to "low",
-        "back burner" to "low",
-        "backburner" to "low",
-        "nice to have" to "low",
-        "if i have time" to "low",
-        "when i can" to "low",
-        "when i get a chance" to "low",
-        "not urgent" to "low",
-        "eventually" to "low",
-        "someday" to "low",
-        "whenever" to "low",
-        "no rush" to "low",
-        "máxima prioridad" to "high",
-        "maxima prioridad" to "high",
-        "alta prioridad" to "high",
-        "prioridad alta" to "high",
-        "muy urgente" to "high",
-        "urgente" to "high",
-        "crítico" to "high",
-        "critico" to "high",
-        "importante" to "high",
-        "cuanto antes" to "high",
-        "lo antes posible" to "high",
-        "prioridad media" to "med",
-        "media prioridad" to "med",
-        "prioridad normal" to "med",
-        "baja prioridad" to "low",
-        "prioridad baja" to "low",
-        "sin prisa" to "low",
-        "cuando pueda" to "low",
-        "algún día" to "low",
-        "algun dia" to "low",
-        "prioridade máxima" to "high",
-        "prioridade maxima" to "high",
-        "alta prioridade" to "high",
-        "prioridade alta" to "high",
-        "muito urgente" to "high",
-        "urgente" to "high",
-        "crítico" to "high",
-        "critico" to "high",
-        "importante" to "high",
-        "o quanto antes" to "high",
-        "quanto antes" to "high",
-        "prioridade média" to "med",
-        "prioridade media" to "med",
-        "prioridade normal" to "med",
-        "baixa prioridade" to "low",
-        "prioridade baixa" to "low",
-        "sem pressa" to "low",
-        "quando puder" to "low",
-        "priorité maximale" to "high",
-        "priorite maximale" to "high",
-        "haute priorité" to "high",
-        "haute priorite" to "high",
-        "priorité haute" to "high",
-        "priorite haute" to "high",
-        "très urgent" to "high",
-        "tres urgent" to "high",
-        "urgent" to "high",
-        "critique" to "high",
-        "dès que possible" to "high",
-        "des que possible" to "high",
-        "priorité moyenne" to "med",
-        "priorite moyenne" to "med",
-        "priorité normale" to "med",
-        "priorite normale" to "med",
-        "basse priorité" to "low",
-        "basse priorite" to "low",
-        "priorité basse" to "low",
-        "priorite basse" to "low",
-        "pas urgent" to "low",
-        "quand je peux" to "low"
-    )
-
-    // â”€â”€ Flag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    private val flagPhrases = listOf(
-        "flag this", "flag it", "flagged", "star this", "star it", "starred",
-        "important", "importnt", "importnat", "impt", "mark as important", "bookmark", "bookmarked",
-        "marcar", "marcar esto", "marcada", "destacar", "destacado", "importante", "marcar como importante",
-        "sinalizar", "sinalizado", "destacar isto", "marcar como importante",
-        "marquer", "marqué", "marquee", "signaler", "favori", "mettre en favori", "marquer comme important"
-    )
 
     // â”€â”€ Additional relative dates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private val inHoursRegex = Regex("\\b(?:in|en|em|dans)\\s+(a|an|un|una|um|uma|une|$NUMBER_COUNT)\\s+(?:h|hr|hrs|hour|hora|heure)(s)?\\b", RegexOption.IGNORE_CASE)
@@ -1120,12 +906,6 @@ object NaturalLanguageParser {
     private val wordRegexCache = java.util.concurrent.ConcurrentHashMap<String, Regex>()
     private fun cachedWordRegex(word: String): Regex =
         wordRegexCache.getOrPut(word) { literalWordRegex(word) }
-
-    /** As [cachedWordRegex], but also absorbing a trailing "ish"/"-ish". */
-    private fun cachedIshWordRegex(word: String): Regex =
-        wordRegexCache.getOrPut("ish:$word") {
-            literalIshWordRegex(word)
-        }
 
     /**
      * How much of a "<keyword> <date phrase>" match to actually claim.
@@ -1178,7 +958,16 @@ object NaturalLanguageParser {
             wordRegex = ::cachedWordRegex
         )
 
+    // Only `customDateAliases` ever changes after startup (via configureDateAliases, which also
+    // clears this), so the other ~44 fields don't need rebuilding on every parse() call.
+    @Volatile private var cachedDateRuleConfig: DateRuleConfig? = null
+
     private fun dateRuleConfig(): DateRuleConfig =
+        cachedDateRuleConfig ?: synchronized(cacheLock) {
+            cachedDateRuleConfig ?: buildDateRuleConfig().also { cachedDateRuleConfig = it }
+        }
+
+    private fun buildDateRuleConfig(): DateRuleConfig =
         DateRuleConfig(
             timeFormatter = timeFormatter,
             timeOfDayWords = timeOfDayWords,
@@ -1289,6 +1078,14 @@ object NaturalLanguageParser {
 
         // 2. Explicit time is handled by TimeRules above.
 
+        val dateConfig = dateRuleConfig()
+
+        // 2.4 "N units from now/today" â€” claimed before start-date parsing so a bare "from" in
+        // that phrase isn't mistaken for the start-date keyword (see DateRules.applyFromNow).
+        val fromNowResult = DateRules.applyFromNow(parserContext, dateConfig, due)
+        due = fromNowResult.due
+        fromNowResult.dueRange?.let { dueRange = it }
+
         // 2.5 Start date â€” "starts monday", "from next week", "defer to the 15th". Must run
         // before section 3, or the bare date inside the phrase gets claimed as the *due* date and
         // "starts monday" silently means the opposite of what it says.
@@ -1307,7 +1104,7 @@ object NaturalLanguageParser {
 
         val dateResult = DateRules.apply(
             context = parserContext,
-            config = dateRuleConfig(),
+            config = dateConfig,
             existingDue = due,
             existingTime = time
         )

@@ -76,14 +76,17 @@ internal object TimeRules {
         "coucher" to LocalTime.of(22, 0)
     )
 
+    // Order matters: applyFallback below returns the FIRST entry that matches anywhere in the
+    // input, so this list is priority order, not just a lookup table. "morning" must precede
+    // "noon" or "standup morning before noon" resolves to noon instead of 9am.
     private val timeOfDayWords = mapOf(
         "night" to LocalTime.of(21, 0),
         "nite" to LocalTime.of(21, 0),
         "midnight" to LocalTime.of(0, 0),
-        "noon" to LocalTime.of(12, 0),
         "morning" to LocalTime.of(9, 0),
         "morn" to LocalTime.of(9, 0),
         "mrng" to LocalTime.of(9, 0),
+        "noon" to LocalTime.of(12, 0),
         "midday" to LocalTime.of(12, 0),
         "afternoon" to LocalTime.of(15, 0),
         "aft" to LocalTime.of(15, 0),
@@ -206,9 +209,16 @@ internal object TimeRules {
         return null
     }
 
+    // parse() runs on every keystroke; compiling the ~14-entry ish-regex list from scratch each
+    // time was measurable, so cache it the same way NaturalLanguageParser caches its own word
+    // regexes.
+    private val ishRegexCache = java.util.concurrent.ConcurrentHashMap<String, Regex>()
+    private fun cachedIshWordRegex(word: String): Regex =
+        ishRegexCache.getOrPut(word) { literalIshWordRegex(word) }
+
     fun applyFallback(context: ParserContext, timeFormatter: DateTimeFormatter): String? {
         for ((word, clock) in timeOfDayWords) {
-            context.firstFreeMatch(literalIshWordRegex(word))?.let { match ->
+            context.firstFreeMatch(cachedIshWordRegex(word))?.let { match ->
                 context.claimTime(match.range)
                 return clock.formatStorage(timeFormatter)
             }
@@ -224,8 +234,12 @@ internal object TimeRules {
     }
 
     private fun Int.toHour24(modifier: String, inferBarePm: Boolean = false): Int {
-        val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
-        val isAm = modifier.contains("a") || modifier == "morning"
+        // `modifier` isn't reliably lowercased by every caller (time12Regex passes its raw
+        // capture group straight through), so an uppercase "3PM" — which Android autocapitalize
+        // makes common — must not fail this check and silently fall through to AM.
+        val m = modifier.lowercase()
+        val isPm = m.contains("p") || m == "afternoon" || m == "evening" || m == "night"
+        val isAm = m.contains("a") || m == "morning"
         return when {
             isPm && this != 12 -> this + 12
             isAm && this == 12 -> 0
@@ -240,9 +254,4 @@ internal object TimeRules {
     private fun LocalTime.formatStorage(timeFormatter: DateTimeFormatter): String =
         format(timeFormatter).uppercase(Locale.getDefault())
 
-    private const val DAY_UNIT = "(?:days?|dys?|dy|d|d\u00eda|dia|jour|tag|tage|giorno|giorni|dag|dagen|dagar|dzien|dni|zi|zie|gun|hari|siku|araw|ngay)s?"
-    private const val WEEK_UNIT = "(?:weeks?|wks?|wk|w|semana|semaine|woche|wochen|settimana|settimane|week|weken|vecka|veckor|tydzien|tygodnie|saptamana|hafta|minggu|wiki|linggo|tuan)s?"
-    private const val MONTH_UNIT = "(?:months?|mos?|mths?|mth|mes(?:es)?|m\u00eas|mois|monat|monate|mese|mesi|maand|maanden|manad|manader|miesiac|miesiace|luna|ay|bulan|mwezi|buwan|thang)"
-    private const val YEAR_UNIT = "(?:years?|yrs?|yr|y|a\u00f1o|ano|an|ann\u00e9e|annee|jahr|jahre|anni|jaar|ar|rok|lata|yil|tahun|mwaka|taon|nam)s?"
-    private const val QUARTER_UNIT = "(?:quarters?|qtrs?|qtr)"
 }

@@ -64,6 +64,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   email hint, "Or pick an icon") was missing translations in all 24 non-English locales since it was
   added - it now has them.
 
+### Fixed
+- Quick add's smart date/time parsing now reads uppercase "PM" correctly ("3PM" was silently read as
+  3 AM - Android's autocapitalize makes this common). Also fixed: "2 weeks from today" (only "from
+  now" worked), "a partir de ahora/hoy" for Spanish relative dates, and month-unit words ("mes"/"mês")
+  in "N months from now" phrases, which were unreachable due to a copy-paste slip.
+
 ## [0.92.2] - 2026-08-13
 
 `versionCode 19`. Upgrades in place over 0.92.1.
