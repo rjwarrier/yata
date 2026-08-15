@@ -4,6 +4,8 @@ import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DateAliasTarget
+import com.mj.yata.util.nl.DateRuleConfig
+import com.mj.yata.util.nl.DateRules
 import com.mj.yata.util.nl.EntityRules
 import com.mj.yata.util.nl.NATURAL_LANGUAGE_NUMBER_COUNT
 import com.mj.yata.util.nl.NaturalLanguageLexicon
@@ -1201,11 +1203,7 @@ object NaturalLanguageParser {
         }
 
         fun isFree(range: IntRange) = parserContext.isFree(range)
-        fun claimDueDate(range: IntRange) = parserContext.claimDueDate(range)
-        fun claimTime(range: IntRange) = parserContext.claimTime(range)
         fun claimReminder(range: IntRange) = parserContext.claimReminder(range)
-        fun firstFreeMatch(regex: Regex) = parserContext.firstFreeMatch(regex)
-        fun firstFreeWord(word: String) = parserContext.firstFreeWord(word, ::cachedWordRegex)
 
         // 1. Recurrence. Checked first so "every sunday" is claimed whole before due-date rules.
         val recurrenceResult = RecurrenceRules.apply(
@@ -1266,250 +1264,61 @@ object NaturalLanguageParser {
             claimEndFor = ::claimEndFor
         )
 
-        // 3. Relative dates
-        for (word in listOf("tonight", "tonite", "tnite")) {
-            firstFreeWord(word)?.let { m ->
-                due = referenceDate
-                if (time == null) time = timeOfDayWords.getValue("night").format(timeFormatter).uppercase(Locale.getDefault())
-                claimDueDate(m.range)
-                dueRange = m.range
-            }
-            if (due != null) break
-        }
-        // Date phrases that also imply a clock time. Before the bare "today"/"tomorrow" words,
-        // since each one contains one of them â€” see [phraseDateTimes].
-        if (due == null) {
-            for ((phrase, resolve, clock) in phraseDateTimes) {
-                firstFreeMatch(cachedWordRegex(phrase))?.let { m ->
-                    due = resolve(referenceDate)
-                    if (clock != null && time == null) time = clock.format(timeFormatter).uppercase(Locale.getDefault())
-                    claimDueDate(m.range)
-                    dueRange = m.range
-                }
-                if (due != null) break
-            }
-        }
-        if (due == null) {
-            for ((alias, target) in customDateAliases.entries.sortedByDescending { it.key.length }) {
-                firstFreeWord(alias)?.let { m ->
-                    due = resolveDateAlias(target, referenceDate)
-                    claimDueDate(m.range)
-                    dueRange = m.range
-                }
-                if (due != null) break
-            }
-        }
-        // "in N hour(s)"/"in N minute(s)"/"in half an hour" are the only relative-date phrases
-        // precise enough to need a clock time, not just a calendar date, so they set both
-        // together (crossing midnight rolls the due date forward naturally, e.g. "in 3 hours"
-        // at 11pm is due tomorrow). A pre-existing explicit time claim wins if there already
-        // is one; the due date always gets set.
-        fun applyMinutesOffset(minutes: Long, range: IntRange) {
-            val target = java.time.LocalDateTime.of(referenceDate, referenceTime).plusMinutes(minutes)
-            due = target.toLocalDate()
-            if (time == null) time = target.toLocalTime().format(timeFormatter).uppercase(Locale.getDefault())
-            claimDueDate(range)
-            dueRange = range
-        }
-        if (due == null) {
-            firstFreeMatch(halfAnHourRegex)?.let { m -> applyMinutesOffset(30, m.range) }
-        }
-        if (due == null) {
-            firstFreeMatch(inHoursRegex)?.let { m -> applyMinutesOffset(countOrOne(m.groupValues[1]) * 60, m.range) }
-        }
-        if (due == null) {
-            firstFreeMatch(inMinutesRegex)?.let { m -> applyMinutesOffset(countOrOne(m.groupValues[1]), m.range) }
-        }
-        // Numeric dates â€” most explicit, checked before everything else in this section.
-        if (due == null) {
-            firstFreeMatch(isoDateRegex)?.let { m ->
-                val year = m.groupValues[1].toIntOrNull()
-                val month = m.groupValues[2].toIntOrNull()
-                val day = m.groupValues[3].toIntOrNull()
-                if (year != null && month != null && day != null) {
-                    resolveIsoDate(year, month, day)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
-                }
-            }
-        }
-        if (due == null) {
-            firstFreeMatch(slashDateRegex)?.let { m ->
-                val n1 = m.groupValues[1].toIntOrNull()
-                val n2 = m.groupValues[2].toIntOrNull()
-                val yearRaw = m.groupValues[3].ifEmpty { null }
-                if (n1 != null && n2 != null) {
-                    resolveSlashDate(n1, n2, yearRaw, referenceDate, dayFirst)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
-                }
-            }
-        }
-        // "20.07.2026" / "20-07-2026" â€” same day/month disambiguation as the slash form.
-        if (due == null) {
-            firstFreeMatch(dottedDateRegex)?.let { m ->
-                val n1 = m.groupValues[1].toIntOrNull()
-                val n2 = m.groupValues[2].toIntOrNull()
-                val yearRaw = m.groupValues[3].ifEmpty { null }
-                if (n1 != null && n2 != null) {
-                    resolveSlashDate(n1, n2, yearRaw, referenceDate, dayFirst)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
-                }
-            }
-        }
-        // Absolute "Jul 20" / "20 July" style dates â€” checked early since they're explicit
-        // and shouldn't be shadowed by the vaguer relative-date rules below.
-        if (due == null) {
-            firstFreeMatch(monthDayRegex)?.let { m ->
-                val month = monthNames[m.groupValues[1].lowercase()]
-                val day = m.groupValues[2].toIntOrNull()
-                val year = m.groupValues[3].toIntOrNull()
-                if (month != null && day != null) {
-                    resolveMonthDay(month, day, year, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
-                }
-            }
-        }
-        if (due == null) {
-            firstFreeMatch(dayMonthRegex)?.let { m ->
-                val day = m.groupValues[1].toIntOrNull()
-                val month = monthNames[m.groupValues[2].lowercase()]
-                val year = m.groupValues[3].toIntOrNull()
-                if (month != null && day != null) {
-                    resolveMonthDay(month, day, year, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
-                }
-            }
-        }
-        // "mid july" â€” the 15th of that month.
-        if (due == null) {
-            firstFreeMatch(midMonthNameRegex)?.let { m ->
-                monthNames[m.groupValues[1].lowercase()]?.let { month ->
-                    resolveMonthDay(month, 15, null, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
-                }
-            }
-        }
-        // "day after tomorrow" â€” checked before the bare "tomorrow" word below so the whole
-        // phrase is claimed at once instead of "tomorrow" alone matching first.
-        if (due == null) {
-            firstFreeMatch(dayAfterTomorrowRegex)?.let { m -> due = referenceDate.plusDays(2); claimDueDate(m.range); dueRange = m.range }
-        }
-        // "wednesday next week" â€” before the phrase list below, which owns the "next week" half
-        // of it and would otherwise strand the weekday in the title.
-        if (due == null) {
-            firstFreeMatch(weekdayNextWeekRegex)?.let { m ->
-                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextAfter(referenceDate, day); claimDueDate(m.range); dueRange = m.range }
-            }
-        }
-        if (due == null) {
-            for ((word, resolve) in bareDateWords) {
-                firstFreeWord(word)?.let { m -> due = resolve(referenceDate); claimDueDate(m.range); dueRange = m.range }
-                if (due != null) break
-            }
-        }
-        if (due == null) {
-            for ((phrase, resolve) in phraseDates) {
-                firstFreeMatch(cachedWordRegex(phrase))?.let { m ->
-                    due = resolve(referenceDate)
-                    claimDueDate(m.range)
-                    dueRange = m.range
-                }
-                if (due != null) break
-            }
-        }
-        // "eod"/"eob"/"cob" â€” a clock time plus, on their own, today. Unlike every other phrase
-        // here they say *when in the day*, not which day, so the date they imply is only a
-        // fallback: "eod friday" means Friday at 6pm, not today. The date is therefore applied
-        // at the end of this section, once every rule that can name a real day has had its turn.
-        var endOfDayFallbackRange: IntRange? = null
-        if (due == null && endOfDayFallbackRange == null) {
-            firstFreeWord("eod")?.let { m ->
-                if (time == null) time = eodTime.format(timeFormatter).uppercase(Locale.getDefault())
-                claimTime(m.range)
-                endOfDayFallbackRange = m.range
-            }
-        }
-        if (due == null && endOfDayFallbackRange == null) {
-            for (word in listOf("eob", "cob")) {
-                firstFreeWord(word)?.let { m ->
-                    if (time == null) time = eobTime.format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                    endOfDayFallbackRange = m.range
-                }
-                if (endOfDayFallbackRange != null) break
-            }
-        }
-        if (due == null) {
-            firstFreeMatch(fortnightRegex)?.let { m -> due = referenceDate.plusWeeks(2); claimDueDate(m.range); dueRange = m.range }
-        }
-        if (due == null) {
-            firstFreeMatch(fromNowRegex)?.let { m ->
-                val n = countOrOne(m.groupValues[1])
-                due = when (relativeUnitKind(m.groupValues[2])) {
-                    "day" -> referenceDate.plusDays(n)
-                    "week" -> referenceDate.plusWeeks(n)
-                    "month" -> referenceDate.plusMonths(n)
-                    "quarter" -> referenceDate.plusMonths(n * 3)
-                    "year" -> referenceDate.plusYears(n)
-                    else -> null
-                }
-                if (due != null) { claimDueDate(m.range); dueRange = m.range }
-            }
-        }
-        // "the 20th" (no month named) â€” nearest upcoming month with that day.
-        if (due == null) {
-            firstFreeMatch(ordinalDayOfMonthRegex)?.let { m ->
-                m.groupValues[1].toIntOrNull()?.let { day ->
-                    resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
-                }
-            }
-        }
-        // The same, spelled out: "on the first", "the twenty-first".
-        if (due == null) {
-            firstFreeMatch(ordinalWordDayRegex)?.let { m ->
-                ordinalWords[m.groupValues[1].lowercase()]?.let { day ->
-                    resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
-                }
-            }
-        }
-        // Weekdays-only count, before the plain day count below.
-        if (due == null) {
-            firstFreeMatch(inBusinessDaysRegex)?.let { m ->
-                due = plusBusinessDays(referenceDate, countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range
-            }
-        }
-        if (due == null) {
-            firstFreeMatch(inDaysRegex)?.let { m -> due = referenceDate.plusDays(countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range }
-        }
-        if (due == null) {
-            firstFreeMatch(inWeeksRegex)?.let { m -> due = referenceDate.plusWeeks(countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range }
-        }
-        if (due == null) {
-            firstFreeMatch(inMonthsRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range }
-        }
-        if (due == null) {
-            firstFreeMatch(inQuartersRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1]) * 3); claimDueDate(m.range); dueRange = m.range }
-        }
-        if (due == null) {
-            firstFreeMatch(inYearsRegex)?.let { m -> due = referenceDate.plusYears(countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range }
-        }
-        // "next <weekday>" â€” nearest occurrence strictly after today.
-        if (due == null) {
-            firstFreeMatch(nextWeekdayRegex)?.let { m ->
-                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextAfter(referenceDate, day); claimDueDate(m.range); dueRange = m.range }
-            }
-        }
-        // "this <weekday>" â€” nearest occurrence including today.
-        if (due == null) {
-            firstFreeMatch(thisWeekdayRegex)?.let { m ->
-                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextOrSame(referenceDate, day); claimDueDate(m.range); dueRange = m.range }
-            }
-        }
-        // Bare weekday name (no this/next prefix) â€” nearest occurrence including today.
-        if (due == null) {
-            for ((name, day) in weekdayNames) {
-                firstFreeWord(name)?.let { m -> due = nextOrSame(referenceDate, day); claimDueDate(m.range); dueRange = m.range }
-                if (due != null) break
-            }
-        }
-        // Nothing named a day, so "eod"/"eob"/"cob" means today after all.
-        if (due == null && endOfDayFallbackRange != null) {
-            due = referenceDate
-            dueRange = endOfDayFallbackRange
-        }
+        val dateResult = DateRules.apply(
+            context = parserContext,
+            config = DateRuleConfig(
+                timeFormatter = timeFormatter,
+                timeOfDayWords = timeOfDayWords,
+                phraseDateTimes = phraseDateTimes,
+                customDateAliases = customDateAliases,
+                resolveDateAlias = ::resolveDateAlias,
+                halfAnHourRegex = halfAnHourRegex,
+                inHoursRegex = inHoursRegex,
+                inMinutesRegex = inMinutesRegex,
+                isoDateRegex = isoDateRegex,
+                slashDateRegex = slashDateRegex,
+                dottedDateRegex = dottedDateRegex,
+                monthDayRegex = monthDayRegex,
+                dayMonthRegex = dayMonthRegex,
+                midMonthNameRegex = midMonthNameRegex,
+                monthNames = monthNames,
+                dayAfterTomorrowRegex = dayAfterTomorrowRegex,
+                weekdayNextWeekRegex = weekdayNextWeekRegex,
+                bareDateWords = bareDateWords,
+                phraseDates = phraseDates,
+                eodTime = eodTime,
+                eobTime = eobTime,
+                fortnightRegex = fortnightRegex,
+                fromNowRegex = fromNowRegex,
+                ordinalDayOfMonthRegex = ordinalDayOfMonthRegex,
+                ordinalWordDayRegex = ordinalWordDayRegex,
+                ordinalWords = ordinalWords,
+                inBusinessDaysRegex = inBusinessDaysRegex,
+                inDaysRegex = inDaysRegex,
+                inWeeksRegex = inWeeksRegex,
+                inMonthsRegex = inMonthsRegex,
+                inQuartersRegex = inQuartersRegex,
+                inYearsRegex = inYearsRegex,
+                nextWeekdayRegex = nextWeekdayRegex,
+                thisWeekdayRegex = thisWeekdayRegex,
+                weekdayNames = weekdayNames,
+                resolveIsoDate = ::resolveIsoDate,
+                resolveSlashDate = ::resolveSlashDate,
+                resolveMonthDay = ::resolveMonthDay,
+                resolveOrdinalDayOfMonth = ::resolveOrdinalDayOfMonth,
+                relativeUnitKind = ::relativeUnitKind,
+                plusBusinessDays = ::plusBusinessDays,
+                nextAfter = ::nextAfter,
+                nextOrSame = ::nextOrSame,
+                countOrOne = ::countOrOne,
+                wordRegex = ::cachedWordRegex
+            ),
+            existingDue = due,
+            existingTime = time
+        )
+        due = dateResult.due
+        time = dateResult.time
+        dateResult.dueRange?.let { dueRange = it }
 
         // 3.5 "remind <date>" â€” a bare "remind"/"remind me" immediately before a date phrase
         // (no offset/clock-time suffix, since those are already claimed in section 1.5) implies
