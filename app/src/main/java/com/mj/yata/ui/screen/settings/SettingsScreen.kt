@@ -368,8 +368,6 @@ fun SettingsScreen(
     val confettiEnabled by viewModel.confettiEnabled.collectAsStateWithLifecycle()
     val timeFormat by viewModel.timeFormat.collectAsStateWithLifecycle()
     val dateFormat by viewModel.dateFormat.collectAsStateWithLifecycle()
-    var showTrashRetentionMenu by remember { mutableStateOf(false) }
-    var showAutoArchiveMenu by remember { mutableStateOf(false) }
     var showAgendaTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
     var showSnoozeTonightPicker by remember { mutableStateOf(false) }
@@ -2335,43 +2333,21 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                Box {
-                    val retentionOptions = listOf(7, 30, 90, 0)
-                    SettingsRow(
-                        label = stringResource(R.string.settings_trash_retention),
-                        value = if (trashRetentionDays <= 0) {
+                run {
+                    val trashRetentionOptions = listOf(1, 3, 7, 14, 30, 60, 90, 180, 0)
+                    val trashRetentionLabels = trashRetentionOptions.map { days ->
+                        if (days <= 0) {
                             stringResource(R.string.settings_trash_forever)
                         } else {
-                            pluralStringResource(
-                                R.plurals.settings_trash_days_value,
-                                trashRetentionDays,
-                                trashRetentionDays
-                            )
-                        },
-                        onClick = { showTrashRetentionMenu = true }
-                    )
-                    DropdownMenu(
-                        expanded = showTrashRetentionMenu,
-                        onDismissRequest = { showTrashRetentionMenu = false }
-                    ) {
-                        retentionOptions.forEach { days ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        if (days <= 0) {
-                                            stringResource(R.string.settings_trash_forever)
-                                        } else {
-                                            pluralStringResource(R.plurals.settings_trash_days_value, days, days)
-                                        }
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.setTrashRetentionDays(days)
-                                    showTrashRetentionMenu = false
-                                }
-                            )
+                            pluralStringResource(R.plurals.settings_trash_days_value, days, days)
                         }
                     }
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_trash_retention),
+                        stopLabels = trashRetentionLabels,
+                        selectedIndex = trashRetentionOptions.indexOf(trashRetentionDays).coerceAtLeast(0),
+                        onSelect = { viewModel.setTrashRetentionDays(trashRetentionOptions[it]) }
+                    )
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -2404,45 +2380,23 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                Box {
+                run {
                     // Off by default — silently shelving a user's completed tasks without
                     // them asking would look like data loss.
-                    val autoArchiveOptions = listOf(0, 7, 30, 90)
-                    SettingsRow(
-                        label = stringResource(R.string.settings_auto_archive),
-                        value = if (autoArchiveDays <= 0) {
+                    val autoArchiveOptions = listOf(0, 1, 3, 7, 14, 30, 60, 90)
+                    val autoArchiveLabels = autoArchiveOptions.map { days ->
+                        if (days <= 0) {
                             stringResource(R.string.settings_auto_archive_off)
                         } else {
-                            pluralStringResource(
-                                R.plurals.settings_auto_archive_value,
-                                autoArchiveDays,
-                                autoArchiveDays
-                            )
-                        },
-                        onClick = { showAutoArchiveMenu = true }
-                    )
-                    DropdownMenu(
-                        expanded = showAutoArchiveMenu,
-                        onDismissRequest = { showAutoArchiveMenu = false }
-                    ) {
-                        autoArchiveOptions.forEach { days ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        if (days <= 0) {
-                                            stringResource(R.string.settings_auto_archive_off)
-                                        } else {
-                                            pluralStringResource(R.plurals.settings_auto_archive_value, days, days)
-                                        }
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.setAutoArchiveDays(days)
-                                    showAutoArchiveMenu = false
-                                }
-                            )
+                            pluralStringResource(R.plurals.settings_auto_archive_value, days, days)
                         }
                     }
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_auto_archive),
+                        stopLabels = autoArchiveLabels,
+                        selectedIndex = autoArchiveOptions.indexOf(autoArchiveDays).coerceAtLeast(0),
+                        onSelect = { viewModel.setAutoArchiveDays(autoArchiveOptions[it]) }
+                    )
                 }
             }
         }
@@ -4840,7 +4794,7 @@ private const val MAX_INLINE_STOP_LABELS = 5
 @Composable
 private fun StopSliderSetting(
     title: String,
-    description: String,
+    description: String = "",
     stopLabels: List<String>,
     selectedIndex: Int,
     onSelect: (Int) -> Unit
@@ -4863,11 +4817,13 @@ private fun StopSliderSetting(
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (description.isNotBlank()) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Slider(
             value = selectedIndex.toFloat(),
             onValueChange = { onSelect(it.roundToInt().coerceIn(0, lastStop)) },
