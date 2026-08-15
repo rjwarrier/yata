@@ -7,6 +7,7 @@ import com.mj.yata.domain.model.DateAliasTarget
 import com.mj.yata.util.nl.DateRuleConfig
 import com.mj.yata.util.nl.DateRules
 import com.mj.yata.util.nl.EntityRules
+import com.mj.yata.util.nl.EscapeRules
 import com.mj.yata.util.nl.NATURAL_LANGUAGE_NUMBER_COUNT
 import com.mj.yata.util.nl.NaturalLanguageLexicon
 import com.mj.yata.util.nl.ParseState
@@ -1185,23 +1186,7 @@ object NaturalLanguageParser {
         var time: String? = null
         var recurrence: Recurrence? = null
 
-        // Escape: a backslash directly before a word protects that word from being read as a
-        // date/time/recurrence keyword â€” e.g. "call mom \today" keeps "today" as literal text
-        // instead of setting the due date, same idea as an escape character in code. The
-        // backslash itself is stripped (via `stripOnly`) but never counted as a "recognized"
-        // span, so it doesn't get underlined like a real match would.
-        escapeRegex.findAll(raw).forEach { m ->
-            val backslashIndex = m.range.first
-            val escapedWordRange = m.groups[1]!!.range
-            claimTracker.addEscape(backslashIndex..backslashIndex, escapedWordRange)
-            val escapedWord = m.groupValues[1].lowercase()
-            if (escapedWord in setOf("every", "each", "cada", "todo", "toda", "chaque")) {
-                Regex("\\G\\s+([\\p{L}-]+)", RegexOption.IGNORE_CASE)
-                    .find(raw, escapedWordRange.last + 1)
-                    ?.takeIf { weekdayNames.containsKey(it.groupValues[1].lowercase()) }
-                    ?.let { claimTracker.addProtectedRange(escapedWordRange.first..it.range.last) }
-            }
-        }
+        EscapeRules.apply(parserContext, escapeRegex, weekdayNames.keys)
 
         // 1. Recurrence. Checked first so "every sunday" is claimed whole before due-date rules.
         val recurrenceResult = RecurrenceRules.apply(
