@@ -5,11 +5,14 @@ import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DateAliasTarget
 import com.mj.yata.util.nl.EntityRules
+import com.mj.yata.util.nl.NATURAL_LANGUAGE_NUMBER_COUNT
 import com.mj.yata.util.nl.NaturalLanguageLexicon
 import com.mj.yata.util.nl.ParseState
 import com.mj.yata.util.nl.ParserContext
 import com.mj.yata.util.nl.PriorityFlagRules
+import com.mj.yata.util.nl.ReminderRules
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
+import com.mj.yata.util.nl.naturalLanguageCountOrOne
 import com.mj.yata.util.nl.normalizeNaturalLanguageInput
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -268,7 +271,7 @@ object NaturalLanguageParser {
     private const val MONTH_UNIT = "(?:months?|mos?|mths?|mth|mes(?:es)?|mês|mÃªs|mêses|mÃªses|mois|monat|monate|mese|mesi|maand|maanden|manad|manader|miesiac|miesiace|luna|ay|bulan|mwezi|buwan|thang)"
     private const val YEAR_UNIT = "(?:years?|yrs?|yr|y|año|aÃ±o|ano|an|année|annÃ©e|annee|jahr|jahre|anni|jaar|ar|rok|lata|yil|tahun|mwaka|taon|nam)s?"
     private const val QUARTER_UNIT = "(?:quarters?|qtrs?|qtr)"
-    private const val NUMBER_COUNT = "(?:(?:twenty|twnty|thirty|forty|fourty|fifty|sixty|seventy|eighty|ninety)(?:[-\\s]+(?:one|two|three|thre|tree|four|five|fiv|six|seven|eight|eigth|nine))?|one|two|three|thre|tree|four|five|fiv|six|seven|eight|eigth|nine|ten|eleven|elevenn|twelve|twelv|tweleve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|twnty|thirty|forty|fourty|fifty|sixty|seventy|eighty|ninety|\\d+)"
+    private const val NUMBER_COUNT = NATURAL_LANGUAGE_NUMBER_COUNT
     private val everyAlternateDayRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otro|alterno|outro|alternado|autre)\\s+$DAY_UNIT\\b", RegexOption.IGNORE_CASE)
     private val everyAlternateWeekRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otra|alterna|outra|alternada|autre)\\s+$WEEK_UNIT\\b", RegexOption.IGNORE_CASE)
     private val everyAlternateMonthRegex = Regex("\\b$EVERY\\s+(?:other|othr|alternate|alternating|alt|otro|alterno|outro|alternado|autre)\\s+$MONTH_UNIT\\b", RegexOption.IGNORE_CASE)
@@ -1391,38 +1394,8 @@ object NaturalLanguageParser {
             }
         }
 
-        // 1.5 Reminder â€” see the regexes' own comment for why this runs before due-time parsing.
-        var reminder: String? = null
-        (firstFreeMatch(remindShortAtTimeKeywordRegex) ?: firstFreeMatch(remindAtTimeKeywordRegex))?.let { m -> reminder = "At time"; claimReminder(m.range) }
-        if (reminder == null) {
-            (firstFreeMatch(remindShortMinutesBeforeRegex) ?: firstFreeMatch(remindMinutesBeforeRegex))?.let { m ->
-                val label = when (countOrOne(m.groupValues[1]).toInt()) {
-                    5 -> "5 min before"
-                    15 -> "15 min before"
-                    30 -> "30 min before"
-                    else -> null
-                }
-                if (label != null) { reminder = label; claimReminder(m.range) }
-            }
-        }
-        if (reminder == null) (firstFreeMatch(remindShortHourBeforeRegex) ?: firstFreeMatch(remindHourBeforeRegex))?.let { m -> reminder = "1 hour before"; claimReminder(m.range) }
-        if (reminder == null) (firstFreeMatch(remindShortDayBeforeRegex) ?: firstFreeMatch(remindDayBeforeRegex))?.let { m -> reminder = "1 day before"; claimReminder(m.range) }
-        if (reminder == null) {
-            (firstFreeMatch(remindShortAtClockTimeRegex) ?: firstFreeMatch(remindAtClockTimeRegex))?.let { m ->
-                val hour = m.groupValues[1].toIntOrNull()
-                val minute = m.groupValues[3].toIntOrNull() ?: 0
-                val meridiem = m.groupValues[4]
-                if (hour != null && hour in 1..12 && minute in 0..59) {
-                    val hour24 = when {
-                        meridiem.equals("am", ignoreCase = true) && hour == 12 -> 0
-                        meridiem.equals("pm", ignoreCase = true) && hour != 12 -> hour + 12
-                        else -> hour
-                    }
-                    reminder = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claimReminder(m.range)
-                }
-            }
-        }
+        // 1.5 Reminder. Runs before due-time parsing so "remind at 5pm" does not claim task time.
+        var reminder: String? = ReminderRules.apply(parserContext, timeFormatter)
 
         // 2. Explicit time â€” checked before day-count phrases so "tomorrow 3pm" doesn't have
         // "3" mistaken for a bare number, and before time-of-day words so "6pm" wins over "evening".
