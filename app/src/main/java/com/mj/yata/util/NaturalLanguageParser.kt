@@ -4,6 +4,7 @@ import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DateAliasTarget
+import com.mj.yata.util.nl.NaturalLanguageLexicon
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -120,7 +121,7 @@ object NaturalLanguageParser {
         "thứ hai" to DayOfWeek.MONDAY, "thu hai" to DayOfWeek.MONDAY, "thứ ba" to DayOfWeek.TUESDAY, "thu ba" to DayOfWeek.TUESDAY,
         "thứ tư" to DayOfWeek.WEDNESDAY, "thu tu" to DayOfWeek.WEDNESDAY, "thứ năm" to DayOfWeek.THURSDAY, "thu nam" to DayOfWeek.THURSDAY,
         "thứ sáu" to DayOfWeek.FRIDAY, "thu sau" to DayOfWeek.FRIDAY, "thứ bảy" to DayOfWeek.SATURDAY, "thu bay" to DayOfWeek.SATURDAY, "chủ nhật" to DayOfWeek.SUNDAY, "chu nhat" to DayOfWeek.SUNDAY
-    )
+    ) + NaturalLanguageLexicon.weekdayNames
     private val rruleDay = mapOf(
         DayOfWeek.MONDAY to "MO", DayOfWeek.TUESDAY to "TU", DayOfWeek.WEDNESDAY to "WE",
         DayOfWeek.THURSDAY to "TH", DayOfWeek.FRIDAY to "FR", DayOfWeek.SATURDAY to "SA", DayOfWeek.SUNDAY to "SU"
@@ -806,7 +807,7 @@ object NaturalLanguageParser {
         "hom nay" to { ref: LocalDate -> ref },
         "ngay mai" to { ref: LocalDate -> ref.plusDays(1) },
         "hom qua" to { ref: LocalDate -> ref.minusDays(1) }
-    )
+    ) + NaturalLanguageLexicon.relativeDateWords.toList()
 
     private fun resolveOrdinalDayOfMonth(day: Int, ref: LocalDate): LocalDate? {
         var year = ref.year
@@ -897,7 +898,7 @@ object NaturalLanguageParser {
         "octobre" to 10,
         "novembre" to 11,
         "déc" to 12, "decembre" to 12, "décembre" to 12
-    )
+    ) + NaturalLanguageLexicon.monthNames
     private val monthAlt = literalAlternation(monthNames.keys)
     private val monthDayRegex = Regex("\\b($monthAlt)\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b", RegexOption.IGNORE_CASE)
     // Optional leading "the" / mid "of" so "the 20th of july" also resolves as a full date
