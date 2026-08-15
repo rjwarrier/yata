@@ -1356,6 +1356,7 @@
     <string name="remote_sync_github_config_import_too_large">Tệp đó quá lớn để là một bản xuất cấu hình GitHub.</string>
     <string name="remote_sync_github_config_imported">Đã nhập cấu hình GitHub cho %1$s.</string>
     <string name="remote_sync_activity_title">Hoạt động đồng bộ</string>
+    <string name="remote_sync_view_all_activity">Xem tất cả</string>
     <string name="remote_sync_activity_summary">Ảnh chụp đã đẩy lên kho lưu trữ này, mới nhất trước.</string>
     <string name="remote_sync_activity_empty">Chưa có ảnh chụp nào được đẩy lên.</string>
     <string name="remote_sync_activity_this_device">Thiết bị này</string>

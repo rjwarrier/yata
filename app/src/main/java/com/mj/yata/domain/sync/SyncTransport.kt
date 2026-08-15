@@ -8,7 +8,11 @@ interface SyncTransport {
         progress: (Int, String) -> Unit = { _, _ -> },
         options: SyncRunOptions = SyncRunOptions()
     ): Result<SyncRunReport>
-    suspend fun listRestorePoints(): Result<List<RestorePoint>>
+    /** [limit] bounds how many points a caller that only needs the most recent few (e.g. a
+     * one-line "last synced" summary) has to pay to fetch — for GitHub this is a real network
+     * cost, since each restore point is a commit paginated 100 at a time from the API; SFTP/FTP's
+     * rotated history files are already small enough that it's a no-op there. */
+    suspend fun listRestorePoints(limit: Int = Int.MAX_VALUE): Result<List<RestorePoint>>
     suspend fun restore(id: String): Result<Unit>
     suspend fun inspect(id: String): Result<BackupSummary>
     suspend fun readSnapshot(id: String): Result<ByteArray>

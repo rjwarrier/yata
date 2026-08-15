@@ -412,15 +412,17 @@ class BackupOperations @Inject constructor(
     suspend fun inspectSftpBackup(filename: String): Result<BackupSummary> =
         sftpBackupManager.inspectBackup(filename)
 
-    suspend fun listRemoteRestorePoints(): Result<List<RestorePoint>> =
-        currentTransport().listRestorePoints()
+    suspend fun listRemoteRestorePoints(limit: Int = Int.MAX_VALUE): Result<List<RestorePoint>> =
+        currentTransport().listRestorePoints(limit)
 
     suspend fun restoreRemoteSnapshot(id: String): Result<Unit> =
         currentTransport().restore(id)
 
     suspend fun restoreLatestRemoteSnapshot(): Result<RestorePoint> {
         val transport = currentTransport()
-        val restorePoints = transport.listRestorePoints().getOrElse { return Result.failure(it) }
+        // Only the newest point is needed here — no reason to pay for the whole history just to
+        // take the first entry off it.
+        val restorePoints = transport.listRestorePoints(limit = 1).getOrElse { return Result.failure(it) }
         val latest = restorePoints.firstOrNull()
             ?: return Result.failure(IllegalStateException("No server backups found yet"))
         return transport.restore(latest.id).map { latest }

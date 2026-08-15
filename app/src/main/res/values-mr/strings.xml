@@ -399,6 +399,7 @@
     <string name="remote_sync_github_force_download_success">नवीनतम GitHub स्नॅपशॉट पुनर्संचयित केले: %1$s.</string>
     <string name="remote_sync_github_force_download_title">नवीनतम GitHub स्नॅपशॉट वापरायचा?</string>
     <string name="remote_sync_activity_title">सिंक क्रियाकलाप</string>
+    <string name="remote_sync_view_all_activity">सर्व पहा</string>
     <string name="remote_sync_activity_summary">या रिपॉझिटरीमध्ये पाठवलेले स्नॅपशॉट, नवीनतम प्रथम.</string>
     <string name="remote_sync_activity_empty">अद्याप कोणतेही स्नॅपशॉट पाठवलेले नाहीत.</string>
     <string name="remote_sync_activity_this_device">हे डिव्हाइस</string>

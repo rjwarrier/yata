@@ -67,14 +67,15 @@ class GitHubSyncManager @Inject constructor(
         }
     }
 
-    override suspend fun listRestorePoints(): Result<List<RestorePoint>> = withContext(Dispatchers.IO) {
+    override suspend fun listRestorePoints(limit: Int): Result<List<RestorePoint>> = withContext(Dispatchers.IO) {
         try {
             val config = config()
             val commits = api(config).listCommits(
                 config.owner,
                 config.repo,
                 config.branch,
-                GitHubSnapshotPublisher.SNAPSHOT_PATH
+                GitHubSnapshotPublisher.SNAPSHOT_PATH,
+                maxResults = limit
             )
             Result.success(commits.map { commit ->
                 RestorePoint(

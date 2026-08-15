@@ -399,6 +399,7 @@
     <string name="remote_sync_github_force_download_success">తాజా GitHub స్నాప్‌షాట్ పునరుద్ధరించబడింది: %1$s.</string>
     <string name="remote_sync_github_force_download_title">తాజా GitHub స్నాప్‌షాట్‌ను ఉపయోగించాలా?</string>
     <string name="remote_sync_activity_title">సింక్ కార్యకలాపం</string>
+    <string name="remote_sync_view_all_activity">అన్నీ చూడండి</string>
     <string name="remote_sync_activity_summary">ఈ రిపోజిటరీకి పంపిన స్నాప్‌షాట్‌లు, సరికొత్తవి మొదట.</string>
     <string name="remote_sync_activity_empty">ఇంకా స్నాప్‌షాట్‌లు ఏవీ పంపబడలేదు.</string>
     <string name="remote_sync_activity_this_device">ఈ పరికరం</string>

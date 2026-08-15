@@ -2493,8 +2493,8 @@ private data class MainNavigationState(
         safeLaunch { onResult(backupOperations.restoreSftpBackup(filename)) }
     }
 
-    fun listRemoteRestorePoints(onResult: (Result<List<RestorePoint>>) -> Unit) {
-        safeLaunch { onResult(backupOperations.listRemoteRestorePoints()) }
+    fun listRemoteRestorePoints(limit: Int = Int.MAX_VALUE, onResult: (Result<List<RestorePoint>>) -> Unit) {
+        safeLaunch { onResult(backupOperations.listRemoteRestorePoints(limit)) }
     }
 
     fun restoreRemoteSnapshot(id: String, onResult: (Result<Unit>) -> Unit) {

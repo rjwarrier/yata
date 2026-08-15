@@ -685,8 +685,10 @@ class FtpBackupManager @Inject constructor(
         }
     }
 
-    override suspend fun listRestorePoints(): Result<List<RestorePoint>> =
-        listBackups().map { names -> names.map(::restorePointFromHistoryName) }
+    // The rotated history file list is already small (retention-bounded), so limit is a
+    // client-side trim rather than something worth threading into the directory listing itself.
+    override suspend fun listRestorePoints(limit: Int): Result<List<RestorePoint>> =
+        listBackups().map { names -> names.take(limit).map(::restorePointFromHistoryName) }
 
     suspend fun restoreBackup(filename: String): Result<Unit> = sessionMutex.withLock {
         withContext(Dispatchers.IO) {

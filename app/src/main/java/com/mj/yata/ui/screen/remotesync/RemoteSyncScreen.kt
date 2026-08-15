@@ -79,6 +79,7 @@ import kotlinx.coroutines.withContext
 fun RemoteSyncScreen(
     viewModel: MainViewModel,
     onNavigateBack: () -> Unit,
+    onNavigateToSyncHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.settingsUiState.collectAsStateWithLifecycle()
@@ -168,10 +169,12 @@ fun RemoteSyncScreen(
         if (isLoadingSyncActivity) return
         isLoadingSyncActivity = true
         syncActivityError = null
-        viewModel.listRemoteRestorePoints { result ->
+        // limit = 1: only the latest is ever shown here, so there's no reason to pay for a full
+        // page (up to 100 commits) of GitHub API history just to read the first entry off it.
+        viewModel.listRemoteRestorePoints(limit = 1) { result ->
             isLoadingSyncActivity = false
             result.fold(
-                onSuccess = { points -> syncActivity = points.take(SYNC_ACTIVITY_LIMIT) },
+                onSuccess = { points -> syncActivity = points },
                 onFailure = { error ->
                     syncActivity = emptyList()
                     syncActivityError = error.message ?: context.getString(R.string.export_failed)
@@ -931,12 +934,15 @@ fun RemoteSyncScreen(
                     summary = stringResource(R.string.remote_sync_activity_summary),
                     icon = Icons.Default.History
                 ) {
-                    GitHubSyncActivity(
-                        entries = syncActivity,
+                    // Just the most recent entry here -- the full list is what SyncHistoryScreen
+                    // is for. Embedding every entry inline used to make this already-long config
+                    // screen scroll forever with no more information gained per row.
+                    GitHubSyncActivitySummary(
+                        latest = syncActivity.firstOrNull(),
                         isLoading = isLoadingSyncActivity,
                         error = syncActivityError,
                         thisDeviceLabels = thisDeviceLabels,
-                        onRefresh = ::loadSyncActivity
+                        onViewAll = onNavigateToSyncHistory
                     )
                 }
             }
@@ -1062,24 +1068,22 @@ private enum class GitHubConfigTransferMode {
     IMPORT
 }
 
-/** How many commits the activity feed shows. The underlying `listRestorePoints` walks the repo's
- * whole snapshot history (it backs the restore picker, which needs every point), so this only caps
- * what's rendered — a feed answering "what changed recently" doesn't get more trustworthy by
- * scrolling back through a year of daily syncs. */
-private const val SYNC_ACTIVITY_LIMIT = 12
-
+/** Only the most recent commit is fetched/shown here — the full history lives in
+ * SyncHistoryScreen, one card per entry, with per-card lazy detail and restore. This row exists
+ * to answer "did the last sync happen, and from where" at a glance without leaving the config
+ * screen for it. */
 @Composable
-private fun GitHubSyncActivity(
-    entries: List<RestorePoint>,
+private fun GitHubSyncActivitySummary(
+    latest: RestorePoint?,
     isLoading: Boolean,
     error: String?,
     thisDeviceLabels: Set<String>,
-    onRefresh: () -> Unit,
+    onViewAll: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         when {
-            isLoading && entries.isEmpty() -> {
+            isLoading && latest == null -> {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
             error != null -> {
@@ -1089,7 +1093,7 @@ private fun GitHubSyncActivity(
                     color = MaterialTheme.colorScheme.error
                 )
             }
-            entries.isEmpty() -> {
+            latest == null -> {
                 Text(
                     text = stringResource(R.string.remote_sync_activity_empty),
                     style = MaterialTheme.typography.bodySmall,
@@ -1097,24 +1101,21 @@ private fun GitHubSyncActivity(
                 )
             }
             else -> {
-                entries.forEach { entry ->
-                    val parsed = remember(entry.label) { SyncCommitMessage.parse(entry.label) }
-                    SyncActivityRow(
-                        device = parsed.device,
-                        summary = parsed.summary,
-                        timestamp = entry.createdAt,
-                        isThisDevice = parsed.device != null &&
-                            thisDeviceLabels.any { it.equals(parsed.device, ignoreCase = true) }
-                    )
-                }
+                val parsed = remember(latest.label) { SyncCommitMessage.parse(latest.label) }
+                SyncActivityRow(
+                    device = parsed.device,
+                    summary = parsed.summary,
+                    timestamp = latest.createdAt,
+                    isThisDevice = parsed.device != null &&
+                        thisDeviceLabels.any { it.equals(parsed.device, ignoreCase = true) }
+                )
             }
         }
         TextButton(
-            onClick = onRefresh,
-            enabled = !isLoading,
+            onClick = onViewAll,
             modifier = Modifier.align(Alignment.End)
         ) {
-            Text(stringResource(R.string.action_refresh))
+            Text(stringResource(R.string.remote_sync_view_all_activity))
         }
     }
 }

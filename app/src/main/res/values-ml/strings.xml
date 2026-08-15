@@ -399,6 +399,7 @@
     <string name="remote_sync_github_force_download_success">ഏറ്റവും പുതിയ GitHub സ്നാപ്പ്ഷോട്ട് പുനഃസ്ഥാപിച്ചു: %1$s.</string>
     <string name="remote_sync_github_force_download_title">ഏറ്റവും പുതിയ GitHub സ്നാപ്പ്ഷോട്ട് ഉപയോഗിക്കണോ?</string>
     <string name="remote_sync_activity_title">സിങ്ക് പ്രവർത്തനം</string>
+    <string name="remote_sync_view_all_activity">എല്ലാം കാണുക</string>
     <string name="remote_sync_activity_summary">ഈ റിപ്പോസിറ്ററിയിലേക്ക് അയച്ച സ്നാപ്പ്ഷോട്ടുകൾ, ഏറ്റവും പുതിയത് ആദ്യം.</string>
     <string name="remote_sync_activity_empty">ഇതുവരെ സ്നാപ്പ്ഷോട്ടുകളൊന്നും അയച്ചിട്ടില്ല.</string>
     <string name="remote_sync_activity_this_device">ഈ ഉപകരണം</string>

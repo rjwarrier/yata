@@ -399,6 +399,7 @@
     <string name="remote_sync_github_force_download_success">ಇತ್ತೀಚಿನ GitHub ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ: %1$s.</string>
     <string name="remote_sync_github_force_download_title">ಇತ್ತೀಚಿನ GitHub ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ ಬಳಸಬೇಕೆ?</string>
     <string name="remote_sync_activity_title">ಸಿಂಕ್ ಚಟುವಟಿಕೆ</string>
+    <string name="remote_sync_view_all_activity">ಎಲ್ಲವನ್ನೂ ವೀಕ್ಷಿಸಿ</string>
     <string name="remote_sync_activity_summary">ಈ ರೆಪೊಸಿಟರಿಗೆ ಕಳುಹಿಸಿದ ಸ್ನ್ಯಾಪ್‌ಶಾಟ್‌ಗಳು, ಹೊಸವು ಮೊದಲು.</string>
     <string name="remote_sync_activity_empty">ಇನ್ನೂ ಯಾವುದೇ ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ ಕಳುಹಿಸಿಲ್ಲ.</string>
     <string name="remote_sync_activity_this_device">ಈ ಸಾಧನ</string>

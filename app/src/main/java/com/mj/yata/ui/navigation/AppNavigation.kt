@@ -469,6 +469,16 @@ fun AppNavigation(
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             RemoteSyncScreen(
                 viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSyncHistory = { navController.navigate(Screen.SyncHistory.route) }
+            )
+        }
+
+        // ── Sync history ─────────────────────────────────────────────────────
+        composable(Screen.SyncHistory.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            com.mj.yata.ui.screen.synchistory.SyncHistoryScreen(
+                viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

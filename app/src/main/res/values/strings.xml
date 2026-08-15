@@ -590,6 +590,7 @@
     <string name="remote_sync_github_config_exported">GitHub config exported.</string>
     <string name="remote_sync_github_config_imported">GitHub config imported for %1$s.</string>
     <string name="remote_sync_activity_title">Sync activity</string>
+    <string name="remote_sync_view_all_activity">View all</string>
     <string name="remote_sync_activity_summary">Snapshots pushed to this repository, newest first.</string>
     <string name="remote_sync_activity_empty">No snapshots pushed yet.</string>
     <string name="remote_sync_activity_this_device">This device</string>

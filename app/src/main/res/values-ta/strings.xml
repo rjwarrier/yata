@@ -399,6 +399,7 @@
     <string name="remote_sync_github_force_download_success">சமீபத்திய GitHub ஸ்னாப்ஷாட் மீட்டமைக்கப்பட்டது: %1$s.</string>
     <string name="remote_sync_github_force_download_title">சமீபத்திய GitHub ஸ்னாப்ஷாட்டைப் பயன்படுத்தவா?</string>
     <string name="remote_sync_activity_title">ஒத்திசைவு செயல்பாடு</string>
+    <string name="remote_sync_view_all_activity">அனைத்தையும் காண்க</string>
     <string name="remote_sync_activity_summary">இந்த களஞ்சியத்திற்கு அனுப்பப்பட்ட ஸ்னாப்ஷாட்டுகள், புதியவை முதலில்.</string>
     <string name="remote_sync_activity_empty">இதுவரை ஸ்னாப்ஷாட்டுகள் எதுவும் அனுப்பப்படவில்லை.</string>
     <string name="remote_sync_activity_this_device">இந்தச் சாதனம்</string>
