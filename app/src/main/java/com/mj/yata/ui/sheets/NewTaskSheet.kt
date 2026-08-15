@@ -111,15 +111,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -139,6 +134,7 @@ import com.mj.yata.ui.widgets.PriorityBars
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.consumeMentionToken
 import com.mj.yata.ui.widgets.detectMentionToken
+import com.mj.yata.ui.widgets.rememberQuickAddHighlightTransformation
 import com.mj.yata.ui.widgets.TRIGGER_LIST
 import com.mj.yata.ui.widgets.TRIGGER_PERSON
 import com.mj.yata.ui.widgets.TRIGGER_PROJECT
@@ -150,7 +146,6 @@ import com.mj.yata.ui.widgets.YataSelectChip
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.ParsedQuickAdd
-import com.mj.yata.util.QuickAddHighlightType
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
 import com.mj.yata.util.resolveParsedQuickAddEntities
@@ -800,50 +795,10 @@ fun NewTaskSheet(
             // A real rounded pill isn't possible inline in an editable BasicTextField, so this
             // approximates one with a tinted background + bold colored text (same accent@16%
             // language TagChip/YataSelectChip use elsewhere) — far more visible than a thin underline.
-            val quickAddFallbackColor = MaterialTheme.colorScheme.primary
-            fun quickAddHighlightColor(type: QuickAddHighlightType): Color = when (type) {
-                QuickAddHighlightType.DueDate -> Color(0xFF2563EB)
-                QuickAddHighlightType.StartDate -> Color(0xFF0891B2)
-                QuickAddHighlightType.Time -> Color(0xFF7C3AED)
-                QuickAddHighlightType.Recurrence -> Color(0xFF0F766E)
-                QuickAddHighlightType.Reminder -> Color(0xFFD97706)
-                QuickAddHighlightType.Priority -> Color(0xFFDC2626)
-                QuickAddHighlightType.Flag -> Color(0xFFE11D48)
-                QuickAddHighlightType.Project -> Color(0xFF9333EA)
-                QuickAddHighlightType.List -> Color(0xFF4F46E5)
-                QuickAddHighlightType.Tag -> Color(0xFF16A34A)
-                QuickAddHighlightType.Assignee -> Color(0xFFDB2777)
-                QuickAddHighlightType.Other -> quickAddFallbackColor
-            }
-            val quickAddVisualTransformation = remember(quickAdd.highlightSpans, quickAddMatched) {
-                VisualTransformation { text ->
-                    if (!quickAddMatched || quickAdd.highlightSpans.isEmpty()) {
-                        TransformedText(text, OffsetMapping.Identity)
-                    } else {
-                        val annotated = buildAnnotatedString {
-                            append(text.text)
-                            quickAdd.highlightSpans.forEach { span ->
-                                val range = span.range
-                                val chipColor = quickAddHighlightColor(span.type)
-                                val start = range.first.coerceIn(0, text.text.length)
-                                val end = (range.last + 1).coerceIn(0, text.text.length)
-                                if (start < end) {
-                                    addStyle(
-                                        SpanStyle(
-                                            color = chipColor,
-                                            fontWeight = FontWeight.Bold,
-                                            background = chipColor.copy(alpha = 0.16f)
-                                        ),
-                                        start,
-                                        end
-                                    )
-                                }
-                            }
-                        }
-                        TransformedText(annotated, OffsetMapping.Identity)
-                    }
-                }
-            }
+            val quickAddVisualTransformation = rememberQuickAddHighlightTransformation(
+                spans = quickAdd.highlightSpans,
+                enabled = quickAddMatched
+            )
 
             // The title is the one field that must be obvious the instant the sheet opens, and a
             // 2dp underline didn't carry that — it read as the least emphasised control on a
