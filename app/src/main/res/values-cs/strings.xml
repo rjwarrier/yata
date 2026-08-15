@@ -159,7 +159,7 @@
     <string name="settings_date_format_desc">Určuje také, jak se čte zadané datum jako 3/4 při přidávání úkolu.</string>
     <string name="settings_system_notifications">Zvuk a vibrace</string>
     <string name="settings_system_notifications_desc">Otevře vlastní nastavení oznámení systému Android pro YATA.</string>
-    <string name="settings_section_sound_feedback">Zvuk a odezva</string>
+    <string name="settings_section_sound_feedback">Hlasový vstup a zvuk</string>
     <string name="settings_section_task_defaults">Výchozí nastavení úkolů</string>
     <string name="settings_floating_bottom_panel">Použít plovoucí spodní panel</string>
     <string name="settings_floating_bottom_panel_desc">Zobrazit spodní navigační lištu jako plovoucí panel oddělený od okrajů obrazovky.</string>
@@ -208,6 +208,8 @@
     <string name="settings_language_picker_subtitle">Okamžitě přepnout YATA. Systém sleduje jazyk zařízení.</string>
     <string name="settings_language_search_placeholder">Hledat jazyky</string>
     <string name="settings_language_selected">Vybráno</string>
+    <string name="settings_import_export_group">Import a export</string>
+    <string name="settings_danger_zone_group">Nebezpečná zóna</string>
     <string name="settings_task_lifecycle">Životní cyklus úkolu</string>
     <string name="settings_task_lifecycle_desc">Koš maže úkoly po uplynutí doby uchování; Archiv úkoly jen skrývá a zachovává je beze změny.</string>
     <string name="settings_archive_desc">Odložit úkoly bez jejich smazání. Archivované úkoly jsou skryté ze seznamů, uchovávají se natrvalo a lze je kdykoli obnovit.</string>
@@ -775,6 +777,7 @@
     <string name="sort_starred_first">Nejprve oblíbené</string>
     <string name="today_next_10_days">Dalších 10 dní</string>
     <string name="today_search_tasks">Hledat úkoly</string>
+    <string name="today_voice_fab_label">Mluvit</string>
     <string name="upcoming_next_month">Další měsíc</string>
     <string name="upcoming_previous_month">Předchozí měsíc</string>
     <string name="voice_task_overlay_speak_again">Mluvit znovu</string>

@@ -41,6 +41,7 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
     private var transientRestartCount = 0
     private var activeSessionId = 0
     private var lastCommittedSegment = ""
+    private var sessionStartTimeMillis = 0L
 
     fun startListening(useStrictOffline: Boolean = true, language: String = "default") {
         isListeningActive = true
@@ -51,6 +52,7 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
         lastLanguage = language
         lastStrictOffline = useStrictOffline && language !in offlineUnavailableLanguages
         transientRestartCount = 0
+        sessionStartTimeMillis = System.currentTimeMillis()
         restartInternal()
     }
 
@@ -58,6 +60,25 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
         mainHandler.removeCallbacksAndMessages(null)
         val sessionId = ++activeSessionId
         stopRecognizerOnly()
+
+        if (!isListeningActive) return
+
+        // Soft cap on total session length: each recognized segment cycles back through here to
+        // restart listening, so this is the natural checkpoint to stop an open mic that was left
+        // running (dropped overlay, background app) rather than bounding cost per call only.
+        // Checked here rather than on a separate scheduled callback because restartInternal
+        // already clears all pending Handler callbacks/messages on every cycle, which would
+        // silently cancel an independent timeout the same way.
+        if (System.currentTimeMillis() - sessionStartTimeMillis > MAX_SESSION_DURATION_MILLIS) {
+            isListeningActive = false
+            stopRecognizerOnly()
+            _state.value = if (accumulatedText.isNotBlank()) {
+                VoiceState.FinalResult(accumulatedText)
+            } else {
+                VoiceState.Error("Voice input time limit reached. Tap speak again to continue.")
+            }
+            return
+        }
 
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             _state.value = VoiceState.Error("Voice recognition service not available on this device")
@@ -196,8 +217,14 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
-                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
-                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2500L)
+                    // Room to pause and think mid-sentence before the engine calls a segment done
+                    // and hands off to the auto-restart cycle. Restarting is visually seamless
+                    // (see isActivelyListening in VoiceTaskOverlay), but each restart is a fresh
+                    // startListening() call, and the OS plays its own audible start-listening tone
+                    // on every one of those — kept deliberately long so that tone stays rare
+                    // instead of firing every few seconds of normal pausing.
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 8000L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 7000L)
                     if (lastStrictOffline) {
                         putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                     }
@@ -252,25 +279,33 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
     }
 
     private fun appendRecognizedSegment(segment: String) {
+        // Past the cap, the accumulated text is frozen: normalizedForComparison() and
+        // mergeWithTokenOverlap() below both re-scan the whole string per segment, so an open
+        // mic left running would otherwise pay ever-growing cost per restart cycle and hand an
+        // ever-growing string to NaturalLanguageParser downstream. Capped well past any real
+        // spoken task description.
+        if (accumulatedText.length >= MAX_ACCUMULATED_TEXT_LENGTH) return
+
         val normalizedSegment = segment.normalizedForComparison()
         if (normalizedSegment.isBlank()) return
         if (normalizedSegment == lastCommittedSegment.normalizedForComparison()) return
         val normalizedAccumulated = accumulatedText.normalizedForComparison()
         if (normalizedAccumulated.endsWith(normalizedSegment)) return
         if (normalizedSegment.startsWith(normalizedAccumulated) && normalizedAccumulated.isNotBlank()) {
-            accumulatedText = segment.trim()
+            accumulatedText = segment.trim().take(MAX_ACCUMULATED_TEXT_LENGTH)
             lastCommittedSegment = segment
             return
         }
 
         val merged = mergeWithTokenOverlap(accumulatedText, segment)
         if (merged != null) {
-            accumulatedText = merged
+            accumulatedText = merged.take(MAX_ACCUMULATED_TEXT_LENGTH)
             lastCommittedSegment = segment
             return
         }
 
-        accumulatedText = if (accumulatedText.isNotBlank()) "$accumulatedText $segment" else segment
+        accumulatedText = (if (accumulatedText.isNotBlank()) "$accumulatedText $segment" else segment)
+            .take(MAX_ACCUMULATED_TEXT_LENGTH)
         lastCommittedSegment = segment
     }
 
@@ -344,6 +379,10 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
 
     private companion object {
         const val MAX_TRANSIENT_RESTARTS = 8
+        // Well past any real spoken task description; see the comment on appendRecognizedSegment.
+        const val MAX_ACCUMULATED_TEXT_LENGTH = 4000
+        // Soft cap on total mic-open time per session; see the comment in restartInternal.
+        const val MAX_SESSION_DURATION_MILLIS = 5 * 60 * 1000L
         val offlineUnavailableLanguages = mutableSetOf<String>()
     }
 }

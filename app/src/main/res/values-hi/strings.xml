@@ -179,7 +179,7 @@
     <string name="settings_date_format_desc">यह भी तय करता है कि कार्य जोड़ते समय 3/4 जैसी टाइप की गई तारीख को कैसे पढ़ा जाए।</string>
     <string name="settings_system_notifications">ध्वनि और कंपन</string>
     <string name="settings_system_notifications_desc">YATA के लिए एंड्रॉइड की अपनी अधिसूचना सेटिंग्स खोलता है।</string>
-    <string name="settings_section_sound_feedback">ध्वनि और फ़ीडबैक</string>
+    <string name="settings_section_sound_feedback">वॉइस इनपुट और ध्वनि</string>
     <string name="settings_section_task_defaults">कार्य डिफ़ॉल्ट</string>
     <string name="settings_floating_bottom_panel">फ़्लोटिंग बॉटम पैनल का उपयोग करें</string>
     <string name="settings_floating_bottom_panel_desc">निचले नेविगेशन बार को स्क्रीन किनारों से अलग एक फ़्लोटिंग पिल पैनल के रूप में दिखाएं।</string>
@@ -232,6 +232,8 @@
     <string name="settings_language_picker_subtitle">YATA को तुरंत बदलें। सिस्टम आपकी डिवाइस भाषा का पालन करता है।</string>
     <string name="settings_language_search_placeholder">भाषाएं खोजें</string>
     <string name="settings_language_selected">चयनित</string>
+    <string name="settings_import_export_group">आयात और निर्यात</string>
+    <string name="settings_danger_zone_group">खतरे का क्षेत्र</string>
     <string name="settings_task_lifecycle">कार्य जीवनचक्र</string>
     <string name="settings_task_lifecycle_desc">ट्रैश एक निर्धारित अवधि के बाद कार्यों को हटा देता है; आर्काइव केवल कार्यों को छिपाता है और उन्हें बरकरार रखता है।</string>
     <string name="settings_archive_desc">कार्यों को हटाए बिना अलग रखें। आर्काइव किए गए कार्य सूचियों से छिपे रहते हैं, अनिश्चित काल तक रखे जाते हैं, और उन्हें अनआर्काइव किया जा सकता है।</string>
@@ -883,6 +885,7 @@
     <string name="sort_starred_first">स्टार किए पहले</string>
     <string name="today_next_10_days">अगले 10 दिन</string>
     <string name="today_search_tasks">कार्य खोजें</string>
+    <string name="today_voice_fab_label">बोलें</string>
     <string name="upcoming_next_month">अगला महीना</string>
     <string name="upcoming_previous_month">पिछला महीना</string>
     <string name="voice_task_overlay_speak_again">फिर से बोलें</string>

@@ -154,7 +154,7 @@
     <string name="settings_date_format_desc">టాస్క్ జోడించేటప్పుడు 3/4 వంటి టైప్ చేసిన తేదీని ఎలా చదవాలో కూడా నిర్ణయిస్తుంది.</string>
     <string name="settings_system_notifications">శబ్దం &amp; వైబ్రేషన్</string>
     <string name="settings_system_notifications_desc">యాటా కోసం ఆండ్రాయిడ్ సొంత నోటిఫికేషన్ సెట్టింగ్‌లను తెరుస్తుంది.</string>
-    <string name="settings_section_sound_feedback">శబ్దం &amp; ఫీడ్‌బ్యాక్</string>
+    <string name="settings_section_sound_feedback">వాయిస్ ఇన్‌పుట్ మరియు శబ్దం</string>
     <string name="settings_section_task_defaults">టాస్క్ డిఫాల్ట్‌లు</string>
     <string name="settings_floating_bottom_panel">తేలియాడే దిగువ ప్యానెల్ వాడండి</string>
     <string name="settings_floating_bottom_panel_desc">స్క్రీన్ అంచుల నుండి వేరుగా తేలియాడే పిల్ ప్యానెల్‌గా దిగువ నావిగేషన్ బార్‌ను ప్రదర్శించండి.</string>
@@ -203,6 +203,8 @@
     <string name="settings_language_picker_subtitle">యాటాను వెంటనే మార్చండి. సిస్టమ్ మీ పరికర భాషను అనుసరిస్తుంది.</string>
     <string name="settings_language_search_placeholder">భాషలు వెతకండి</string>
     <string name="settings_language_selected">ఎంచుకున్నది</string>
+    <string name="settings_import_export_group">దిగుమతి మరియు ఎగుమతి</string>
+    <string name="settings_danger_zone_group">ప్రమాద ప్రాంతం</string>
     <string name="settings_task_lifecycle">టాస్క్ జీవితచక్రం</string>
     <string name="settings_task_lifecycle_desc">నిల్వ కాలం తర్వాత ట్రాష్ టాస్క్‌లను తొలగిస్తుంది; ఆర్కైవ్ కేవలం టాస్క్‌లను దాచి, చెక్కుచెదరకుండా ఉంచుతుంది.</string>
     <string name="settings_archive_desc">టాస్క్‌లను తొలగించకుండా షెల్వ్ చేయండి. ఆర్కైవ్ చేసిన టాస్క్‌లు జాబితాల నుండి దాగి, శాశ్వతంగా ఉంచబడతాయి, ఎప్పుడైనా అన్‌ఆర్కైవ్ చేయవచ్చు.</string>
@@ -851,6 +853,7 @@
     <string name="sort_starred_first">స్టార్ చేసినవి ముందుగా</string>
     <string name="today_next_10_days">తర్వాతి 10 రోజులు</string>
     <string name="today_search_tasks">టాస్క్‌లు వెతకండి</string>
+    <string name="today_voice_fab_label">మాట్లాడండి</string>
     <string name="upcoming_next_month">తర్వాతి నెల</string>
     <string name="upcoming_previous_month">మునుపటి నెల</string>
     <string name="voice_task_overlay_speak_again">మళ్ళీ మాట్లాడండి</string>

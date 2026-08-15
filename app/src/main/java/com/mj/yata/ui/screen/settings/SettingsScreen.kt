@@ -438,15 +438,15 @@ fun SettingsScreen(
         SettingsSearchTarget("features", stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("manage", stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Build),
         SettingsSearchTarget("tasker", "Tasker", "Automation access for creating tasks", "tasker automation plugin create task", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
-        SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic swipe undo", SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
-        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week voice assign assignee me subtask complete completion auto ask", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
+        SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic voice language speech recognition", SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
+        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week assign assignee me subtask complete completion auto ask undo window swipe confetti", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
         SettingsSearchTarget("date_aliases", "Date aliases", "Custom quick-add words for due dates", "quick add natural language date aliases keywords today tomorrow", SettingsDestination.TASK_DEFAULTS, Icons.Default.CalendarMonth),
         SettingsSearchTarget("notifications", stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
         SettingsSearchTarget("privacy_security", stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
         SettingsSearchTarget("data_management", stringResource(R.string.settings_section_data_management), stringResource(R.string.settings_search_data_summary), "export import csv calendar trash archive delete data", SettingsDestination.DATA_MANAGEMENT, Icons.Default.Storage),
-        SettingsSearchTarget("remote_backup", stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "self hosted server sync backup sftp ftp restore frequency", SettingsDestination.BACKUP_SYNC, Icons.Default.CloudSync),
+        SettingsSearchTarget("remote_backup", stringResource(R.string.settings_section_cloud_backup), stringResource(R.string.settings_search_cloud_summary), "self hosted server sync backup sftp ftp restore frequency manual backup to file", SettingsDestination.BACKUP_SYNC, Icons.Default.CloudSync),
         SettingsSearchTarget("local_backup", stringResource(R.string.settings_section_local_backup), stringResource(R.string.settings_search_local_summary), "local backup restore", SettingsDestination.BACKUP_SYNC, Icons.Default.Save),
-        SettingsSearchTarget("help_about", stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide crash logs", SettingsDestination.HELP_ABOUT, Icons.AutoMirrored.Filled.HelpOutline)
+        SettingsSearchTarget("help_about", stringResource(R.string.settings_section_help_about), stringResource(R.string.settings_search_help_summary), "help about version guide crash logs welcome tour onboarding", SettingsDestination.HELP_ABOUT, Icons.AutoMirrored.Filled.HelpOutline)
     )
     val normalizedSettingsQuery = settingsSearchQuery.trim().lowercase()
     val filteredSettingsTargets = remember(normalizedSettingsQuery, settingsSearchTargets) {
@@ -1195,7 +1195,12 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            }
+        }
+        item {
+            // Tasker is an automation/integration toggle, not something that changes the nav's
+            // shape — kept in its own card rather than mixed into the nav-shape card above.
+            SettingsSectionCard {
                 SettingsToggleRow(
                     title = stringResource(R.string.settings_tasker_integration),
                     subtitle = stringResource(R.string.settings_tasker_integration_summary),
@@ -1224,6 +1229,116 @@ fun SettingsScreen(
                     onCheckedChange = { viewModel.setHapticsEnabled(it) }
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                val systemDefaultVoiceLabel = stringResource(R.string.settings_voice_system_default)
+                val voiceLanguages = remember(systemDefaultVoiceLabel) {
+                    listOf(
+                        "default" to systemDefaultVoiceLabel,
+                        "en-US" to "English (US)",
+                        "en-IN" to "English (India)",
+                        "en-GB" to "English (UK)",
+                        "es-ES" to "Spanish",
+                        "fr-FR" to "French",
+                        "de-DE" to "German",
+                        "hi-IN" to "Hindi",
+                        "ja-JP" to "Japanese",
+                        "zh-CN" to "Chinese",
+                        "pt-BR" to "Portuguese"
+                    )
+                }
+                Box {
+                    SettingsPickerSurface(
+                        label = stringResource(R.string.settings_voice_input_language),
+                        value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: systemDefaultVoiceLabel,
+                        onClick = { showVoiceLanguageMenu = true }
+                    )
+                    DropdownMenu(
+                        expanded = showVoiceLanguageMenu,
+                        onDismissRequest = { showVoiceLanguageMenu = false },
+                        modifier = Modifier.widthIn(min = 220.dp)
+                    ) {
+                        SettingsScrollableDropdownContent(scrollState = voiceLanguageMenuScrollState) {
+                            voiceLanguages.forEach { (code, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        viewModel.setVoiceRecognitionLanguage(code)
+                                        showVoiceLanguageMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        }
+
+        if (settingsDestination == SettingsDestination.TASK_DEFAULTS) {
+        item {
+            // Task defaults — what a newly created task inherits, plus the calendar/voice
+            // conventions the app assumes. Previously buried at the end of PREFERENCES.
+            SettingsSectionCard {
+                // Hidden when the People feature is off: with no people there is nobody to assign
+                // to, so the row would toggle something with no observable effect.
+                if (peopleFeatureEnabled) {
+                    SettingsToggleRow(
+                        title = stringResource(R.string.settings_auto_assign),
+                        subtitle = stringResource(R.string.settings_auto_assign_desc),
+                        checked = autoAssignToMe,
+                        onCheckedChange = { viewModel.setAutoAssignToMe(it) }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                }
+
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_today_show_upcoming_when_empty),
+                    subtitle = stringResource(R.string.settings_today_show_upcoming_when_empty_summary),
+                    checked = todayShowUpcomingWhenEmpty,
+                    onCheckedChange = { viewModel.setTodayShowUpcomingWhenEmpty(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_start_week_sunday),
+                    subtitle = stringResource(R.string.settings_start_week_sunday_desc),
+                    checked = startOfWeekSunday,
+                    onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_undo_window),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_undo_window_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Resolved outside the lambda: labelProvider is not a composable scope.
+                    val undoShort = pluralStringResource(R.plurals.settings_undo_window_value, 4, 4)
+                    val undoMedium = pluralStringResource(R.plurals.settings_undo_window_value, 8, 8)
+                    val undoLong = pluralStringResource(R.plurals.settings_undo_window_value, 15, 15)
+                    SegmentedControl(
+                        items = listOf(4, 8, 15),
+                        selectedItem = undoWindowSeconds,
+                        onItemSelected = { viewModel.setUndoWindowSeconds(it) },
+                        labelProvider = { secs ->
+                            when (secs) {
+                                4 -> undoShort
+                                8 -> undoMedium
+                                else -> undoLong
+                            }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
                 SettingsToggleRow(
                     title = stringResource(R.string.settings_swipe_actions),
                     subtitle = stringResource(R.string.settings_swipe_actions_desc),
@@ -1287,72 +1402,6 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_confetti_desc),
                     checked = confettiEnabled,
                     onCheckedChange = { viewModel.setConfettiEnabled(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_undo_window),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_undo_window_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    // Resolved outside the lambda: labelProvider is not a composable scope.
-                    val undoShort = pluralStringResource(R.plurals.settings_undo_window_value, 4, 4)
-                    val undoMedium = pluralStringResource(R.plurals.settings_undo_window_value, 8, 8)
-                    val undoLong = pluralStringResource(R.plurals.settings_undo_window_value, 15, 15)
-                    SegmentedControl(
-                        items = listOf(4, 8, 15),
-                        selectedItem = undoWindowSeconds,
-                        onItemSelected = { viewModel.setUndoWindowSeconds(it) },
-                        labelProvider = { secs ->
-                            when (secs) {
-                                4 -> undoShort
-                                8 -> undoMedium
-                                else -> undoLong
-                            }
-                        }
-                    )
-                }
-            }
-        }
-        }
-
-        if (settingsDestination == SettingsDestination.TASK_DEFAULTS) {
-        item {
-            // Task defaults — what a newly created task inherits, plus the calendar/voice
-            // conventions the app assumes. Previously buried at the end of PREFERENCES.
-            SettingsSectionCard {
-                // Hidden when the People feature is off: with no people there is nobody to assign
-                // to, so the row would toggle something with no observable effect.
-                if (peopleFeatureEnabled) {
-                    SettingsToggleRow(
-                        title = stringResource(R.string.settings_auto_assign),
-                        subtitle = stringResource(R.string.settings_auto_assign_desc),
-                        checked = autoAssignToMe,
-                        onCheckedChange = { viewModel.setAutoAssignToMe(it) }
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                }
-
-                SettingsToggleRow(
-                    title = stringResource(R.string.settings_today_show_upcoming_when_empty),
-                    subtitle = stringResource(R.string.settings_today_show_upcoming_when_empty_summary),
-                    checked = todayShowUpcomingWhenEmpty,
-                    onCheckedChange = { viewModel.setTodayShowUpcomingWhenEmpty(it) }
-                )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                SettingsToggleRow(
-                    title = stringResource(R.string.settings_start_week_sunday),
-                    subtitle = stringResource(R.string.settings_start_week_sunday_desc),
-                    checked = startOfWeekSunday,
-                    onCheckedChange = { viewModel.setStartOfWeekSunday(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -1636,49 +1685,6 @@ fun SettingsScreen(
                     value = TaskScheduleUtils.displayTime(defaultReminderHour, defaultReminderMinute),
                     onClick = { showReminderTimePicker = true }
                 )
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                val systemDefaultVoiceLabel = stringResource(R.string.settings_voice_system_default)
-                val voiceLanguages = remember(systemDefaultVoiceLabel) {
-                    listOf(
-                        "default" to systemDefaultVoiceLabel,
-                        "en-US" to "English (US)",
-                        "en-IN" to "English (India)",
-                        "en-GB" to "English (UK)",
-                        "es-ES" to "Spanish",
-                        "fr-FR" to "French",
-                        "de-DE" to "German",
-                        "hi-IN" to "Hindi",
-                        "ja-JP" to "Japanese",
-                        "zh-CN" to "Chinese",
-                        "pt-BR" to "Portuguese"
-                    )
-                }
-                Box {
-                    SettingsPickerSurface(
-                        label = stringResource(R.string.settings_voice_input_language),
-                        value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: systemDefaultVoiceLabel,
-                        onClick = { showVoiceLanguageMenu = true }
-                    )
-                    DropdownMenu(
-                        expanded = showVoiceLanguageMenu,
-                        onDismissRequest = { showVoiceLanguageMenu = false },
-                        modifier = Modifier.widthIn(min = 220.dp)
-                    ) {
-                        SettingsScrollableDropdownContent(scrollState = voiceLanguageMenuScrollState) {
-                            voiceLanguages.forEach { (code, label) ->
-                                DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = {
-                                        viewModel.setVoiceRecognitionLanguage(code)
-                                        showVoiceLanguageMenu = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -2155,380 +2161,325 @@ fun SettingsScreen(
         }
         if (settingsDestination == SettingsDestination.DATA_MANAGEMENT) {
         item {
-            // 5. Backup/Data Section
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onExportRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudUpload,
-                            contentDescription = stringResource(R.string.settings_export_data),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_backup_to_file),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_backup_to_file_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+            // Import & Export — bringing data in from, or sending it out to, another format/app.
+            // Manual whole-app backup/restore lives in Backup & Sync next to the automatic kind.
+            SettingsSectionCard {
+                SettingsSubsectionHeader(text = stringResource(R.string.settings_import_export_group))
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onImportRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudDownload,
+                        contentDescription = stringResource(R.string.settings_import_data),
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
                         Text(
-                            text = stringResource(R.string.settings_task_lifecycle),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            text = stringResource(R.string.settings_restore_from_file),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = stringResource(R.string.settings_task_lifecycle_desc),
+                            text = stringResource(R.string.settings_restore_from_file_summary),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onImportRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudDownload,
-                            contentDescription = stringResource(R.string.settings_import_data),
-                            tint = MaterialTheme.colorScheme.tertiary
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onImportPlainTextRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudDownload,
+                        contentDescription = stringResource(R.string.settings_import_csv_or_text),
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_import_csv),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_restore_from_file),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_restore_from_file_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onImportPlainTextRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudDownload,
-                            contentDescription = stringResource(R.string.settings_import_csv_or_text),
-                            tint = MaterialTheme.colorScheme.tertiary
+                        Text(
+                            text = stringResource(R.string.settings_import_csv_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_import_csv),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_import_csv_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onExportCsvRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudUpload,
-                            contentDescription = stringResource(R.string.settings_export_csv),
-                            tint = MaterialTheme.colorScheme.primary
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onExportCsvRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudUpload,
+                        contentDescription = stringResource(R.string.settings_export_csv),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_export_csv),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_export_csv),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_export_csv_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onExportIcsRequested() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = stringResource(R.string.settings_export_to_calendar),
-                            tint = MaterialTheme.colorScheme.secondary
+                        Text(
+                            text = stringResource(R.string.settings_export_csv_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_export_calendar),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_export_calendar_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateToWelcome() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.TaskAlt,
-                            contentDescription = stringResource(R.string.settings_show_welcome_tour),
-                            tint = MaterialTheme.colorScheme.secondary
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onExportIcsRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = stringResource(R.string.settings_export_to_calendar),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_export_calendar),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.settings_show_welcome_tour),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_show_welcome_tour_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateToTrash() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.trash_title),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        Text(
+                            text = stringResource(R.string.settings_export_calendar_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.trash_title),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                // Reflects the configured retention rather than claiming a fixed
-                                // 30 days, which stopped being true once this became a setting.
-                                text = if (trashRetentionDays <= 0) {
-                                    stringResource(R.string.settings_trash_kept_forever)
-                                } else {
-                                    pluralStringResource(
-                                        R.plurals.settings_trash_kept_days,
-                                        trashRetentionDays,
-                                        trashRetentionDays
-                                    )
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
+                }
+            }
+        }
+        item {
+            // Task Lifecycle — where completed/deleted tasks go and how long they stay there.
+            SettingsSectionCard {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_task_lifecycle),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_task_lifecycle_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Box {
-                        val retentionOptions = listOf(7, 30, 90, 0)
-                        SettingsRow(
-                            label = stringResource(R.string.settings_trash_retention),
-                            value = if (trashRetentionDays <= 0) {
-                                stringResource(R.string.settings_trash_forever)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToTrash() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.trash_title),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.trash_title),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            // Reflects the configured retention rather than claiming a fixed
+                            // 30 days, which stopped being true once this became a setting.
+                            text = if (trashRetentionDays <= 0) {
+                                stringResource(R.string.settings_trash_kept_forever)
                             } else {
                                 pluralStringResource(
-                                    R.plurals.settings_trash_days_value,
+                                    R.plurals.settings_trash_kept_days,
                                     trashRetentionDays,
                                     trashRetentionDays
                                 )
                             },
-                            onClick = { showTrashRetentionMenu = true }
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        DropdownMenu(
-                            expanded = showTrashRetentionMenu,
-                            onDismissRequest = { showTrashRetentionMenu = false }
-                        ) {
-                            retentionOptions.forEach { days ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (days <= 0) {
-                                                stringResource(R.string.settings_trash_forever)
-                                            } else {
-                                                pluralStringResource(R.plurals.settings_trash_days_value, days, days)
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.setTrashRetentionDays(days)
-                                        showTrashRetentionMenu = false
-                                    }
-                                )
-                            }
-                        }
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateToArchive() }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                Box {
+                    val retentionOptions = listOf(7, 30, 90, 0)
+                    SettingsRow(
+                        label = stringResource(R.string.settings_trash_retention),
+                        value = if (trashRetentionDays <= 0) {
+                            stringResource(R.string.settings_trash_forever)
+                        } else {
+                            pluralStringResource(
+                                R.plurals.settings_trash_days_value,
+                                trashRetentionDays,
+                                trashRetentionDays
+                            )
+                        },
+                        onClick = { showTrashRetentionMenu = true }
+                    )
+                    DropdownMenu(
+                        expanded = showTrashRetentionMenu,
+                        onDismissRequest = { showTrashRetentionMenu = false }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Archive,
-                            contentDescription = stringResource(R.string.archive_title),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                text = stringResource(R.string.archive_title),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_archive_desc),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        retentionOptions.forEach { days ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (days <= 0) {
+                                            stringResource(R.string.settings_trash_forever)
+                                        } else {
+                                            pluralStringResource(R.plurals.settings_trash_days_value, days, days)
+                                        }
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.setTrashRetentionDays(days)
+                                    showTrashRetentionMenu = false
+                                }
                             )
                         }
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Box {
-                        // Off by default — silently shelving a user's completed tasks without
-                        // them asking would look like data loss.
-                        val autoArchiveOptions = listOf(0, 7, 30, 90)
-                        SettingsRow(
-                            label = stringResource(R.string.settings_auto_archive),
-                            value = if (autoArchiveDays <= 0) {
-                                stringResource(R.string.settings_auto_archive_off)
-                            } else {
-                                pluralStringResource(
-                                    R.plurals.settings_auto_archive_value,
-                                    autoArchiveDays,
-                                    autoArchiveDays
-                                )
-                            },
-                            onClick = { showAutoArchiveMenu = true }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToArchive() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Archive,
+                        contentDescription = stringResource(R.string.archive_title),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.archive_title),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
-                        DropdownMenu(
-                            expanded = showAutoArchiveMenu,
-                            onDismissRequest = { showAutoArchiveMenu = false }
-                        ) {
-                            autoArchiveOptions.forEach { days ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (days <= 0) {
-                                                stringResource(R.string.settings_auto_archive_off)
-                                            } else {
-                                                pluralStringResource(R.plurals.settings_auto_archive_value, days, days)
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.setAutoArchiveDays(days)
-                                        showAutoArchiveMenu = false
-                                    }
-                                )
-                            }
-                        }
+                        Text(
+                            text = stringResource(R.string.settings_archive_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
+                }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(enabled = !isDeletingAll) { showDeleteAllDialog = true }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                Box {
+                    // Off by default — silently shelving a user's completed tasks without
+                    // them asking would look like data loss.
+                    val autoArchiveOptions = listOf(0, 7, 30, 90)
+                    SettingsRow(
+                        label = stringResource(R.string.settings_auto_archive),
+                        value = if (autoArchiveDays <= 0) {
+                            stringResource(R.string.settings_auto_archive_off)
+                        } else {
+                            pluralStringResource(
+                                R.plurals.settings_auto_archive_value,
+                                autoArchiveDays,
+                                autoArchiveDays
+                            )
+                        },
+                        onClick = { showAutoArchiveMenu = true }
+                    )
+                    DropdownMenu(
+                        expanded = showAutoArchiveMenu,
+                        onDismissRequest = { showAutoArchiveMenu = false }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteForever,
-                            contentDescription = stringResource(R.string.settings_delete_all_data),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.settings_delete_all_data),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.error
+                        autoArchiveOptions.forEach { days ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (days <= 0) {
+                                            stringResource(R.string.settings_auto_archive_off)
+                                        } else {
+                                            pluralStringResource(R.plurals.settings_auto_archive_value, days, days)
+                                        }
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.setAutoArchiveDays(days)
+                                    showAutoArchiveMenu = false
+                                }
                             )
-                            Text(
-                                text = stringResource(R.string.settings_delete_all_data_summary),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (isDeletingAll) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         }
                     }
+                }
+            }
+        }
+        item {
+            // Danger Zone — irreversible. Kept as its own card so it isn't scanned past as just
+            // another row in the middle of routine import/export/lifecycle settings.
+            SettingsSectionCard {
+                SettingsSubsectionHeader(text = stringResource(R.string.settings_danger_zone_group))
 
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = !isDeletingAll) { showDeleteAllDialog = true }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteForever,
+                        contentDescription = stringResource(R.string.settings_delete_all_data),
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_delete_all_data),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_delete_all_data_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (isDeletingAll) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    }
                 }
             }
         }
@@ -2975,6 +2926,65 @@ fun SettingsScreen(
                 }
             }
         }
+        item {
+            // Manual, one-off backup/restore to a file the user picks — distinct from the
+            // automatic Local Backup card above and the Remote Backup card further up.
+            SettingsSectionCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onExportRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudUpload,
+                        contentDescription = stringResource(R.string.settings_export_data),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_backup_to_file),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_backup_to_file_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onImportRequested() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudDownload,
+                        contentDescription = stringResource(R.string.settings_import_data),
+                        tint = MaterialTheme.colorScheme.tertiary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_restore_from_file),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_restore_from_file_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
         }
         if (settingsDestination == SettingsDestination.HELP_ABOUT) {
         item {
@@ -3052,6 +3062,37 @@ fun SettingsScreen(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
+                }
+            }
+        }
+        }
+        if (settingsDestination == SettingsDestination.HELP_ABOUT) {
+        item {
+            SettingsSectionCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToWelcome() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.TaskAlt,
+                        contentDescription = stringResource(R.string.settings_show_welcome_tour),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_show_welcome_tour),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_show_welcome_tour_summary),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

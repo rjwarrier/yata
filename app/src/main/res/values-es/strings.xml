@@ -149,7 +149,7 @@
     <string name="settings_date_format_desc">También decide cómo se interpreta una fecha escrita como 3/4 al añadir una tarea.</string>
     <string name="settings_system_notifications">Sonido y vibración</string>
     <string name="settings_system_notifications_desc">Abre los ajustes de notificaciones de Android para YATA.</string>
-    <string name="settings_section_sound_feedback">Sonido y respuesta</string>
+    <string name="settings_section_sound_feedback">Entrada de voz y sonido</string>
     <string name="settings_section_task_defaults">Valores predeterminados de tareas</string>
 
     <string name="settings_floating_bottom_panel">Usar panel inferior flotante</string>
@@ -206,6 +206,8 @@
     <string name="settings_language_search_placeholder">Buscar idiomas</string>
     <string name="settings_language_selected">Seleccionado</string>
 
+    <string name="settings_import_export_group">Importar y exportar</string>
+    <string name="settings_danger_zone_group">Zona de peligro</string>
     <string name="settings_task_lifecycle">Ciclo de vida de tareas</string>
     <string name="settings_task_lifecycle_desc">La papelera elimina tareas tras un periodo de retención; Archivo solo oculta tareas y las mantiene intactas.</string>
     <string name="settings_archive_desc">Guarda tareas sin eliminarlas. Las tareas archivadas se ocultan de las listas, se mantienen indefinidamente y pueden desarchivarse.</string>
@@ -957,6 +959,7 @@
     <string name="sort_starred_first">Destacadas primero</string>
     <string name="today_next_10_days">Próximos 10 días</string>
     <string name="today_search_tasks">Buscar tareas</string>
+    <string name="today_voice_fab_label">Hablar</string>
     <string name="upcoming_next_month">Próximo mes</string>
     <string name="upcoming_previous_month">Mes anterior</string>
     <string name="voice_task_overlay_speak_again">Hablar de nuevo</string>

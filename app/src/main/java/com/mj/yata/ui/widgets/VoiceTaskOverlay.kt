@@ -105,6 +105,15 @@ fun VoiceTaskOverlay(
     val rmsDb by voiceRecognizer.rmsDb.collectAsStateWithLifecycle()
     var manualText by remember { mutableStateOf("") }
 
+    // The recognizer restarts itself automatically after every recognized segment (see
+    // OnDeviceVoiceRecognizer's ~450ms restart) so the user never has to re-tap to keep talking.
+    // FinalResult is that transient "between segments" state, not a real stop — treating it as
+    // not-listening made the waveform/caption flatline on every few-second thinking pause, which
+    // read as the mic abruptly cutting out even though it silently picked back up moments later.
+    val isActivelyListening = voiceState is VoiceState.Listening ||
+        voiceState is VoiceState.Speaking ||
+        voiceState is VoiceState.FinalResult
+
     var hasMicPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
@@ -187,7 +196,7 @@ fun VoiceTaskOverlay(
                     )
 
                     Box(contentAlignment = Alignment.Center) {
-                        if (voiceState is VoiceState.Listening || voiceState is VoiceState.Speaking) {
+                        if (isActivelyListening) {
                             Box(
                                 modifier = Modifier
                                     .size(14.dp)
@@ -201,7 +210,7 @@ fun VoiceTaskOverlay(
                                 .size(10.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (voiceState is VoiceState.Listening || voiceState is VoiceState.Speaking)
+                                    if (isActivelyListening)
                                         MaterialTheme.colorScheme.primary
                                     else
                                         MaterialTheme.colorScheme.outline
@@ -238,7 +247,7 @@ fun VoiceTaskOverlay(
             // Audio Waveform Animation Canvas
             AudioWaveformCanvas(
                 amplitude = rmsDb,
-                isListening = voiceState is VoiceState.Listening || voiceState is VoiceState.Speaking,
+                isListening = isActivelyListening,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)

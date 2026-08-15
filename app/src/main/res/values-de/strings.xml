@@ -211,7 +211,7 @@
     <!-- System notification settings -->
     <string name="settings_system_notifications">Ton &amp; Vibration</string>
     <string name="settings_system_notifications_desc">Öffnet die eigenen Benachrichtigungseinstellungen von Android für YATA.</string>
-    <string name="settings_section_sound_feedback">Ton &amp; Feedback</string>
+    <string name="settings_section_sound_feedback">Spracheingabe und Ton</string>
     <string name="settings_section_task_defaults">Aufgabenstandards</string>
 
     <string name="settings_floating_bottom_panel">Schwebendes unteres Panel verwenden</string>
@@ -277,6 +277,8 @@
     <string name="settings_language_selected">Ausgewählt</string>
 
     <!-- Archive -->
+    <string name="settings_import_export_group">Import &amp; Export</string>
+    <string name="settings_danger_zone_group">Gefahrenzone</string>
     <string name="settings_task_lifecycle">Aufgaben-Lebenszyklus</string>
     <string name="settings_task_lifecycle_desc">Der Papierkorb löscht Aufgaben nach einer Aufbewahrungsfrist; Archiv blendet Aufgaben nur aus und behält sie unangetastet.</string>
     <string name="settings_archive_desc">Aufgaben ablegen, ohne sie zu löschen. Archivierte Aufgaben werden aus Listen ausgeblendet, unbegrenzt aufbewahrt und können wiederhergestellt werden.</string>
@@ -989,6 +991,7 @@
     <string name="sort_starred_first">Markierte zuerst</string>
     <string name="today_next_10_days">Nächste 10 Tage</string>
     <string name="today_search_tasks">Aufgaben suchen</string>
+    <string name="today_voice_fab_label">Sprechen</string>
     <string name="upcoming_next_month">Nächster Monat</string>
     <string name="upcoming_previous_month">Vorheriger Monat</string>
     <string name="voice_task_overlay_speak_again">Erneut sprechen</string>

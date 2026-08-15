@@ -159,7 +159,7 @@
     <string name="settings_date_format_desc">Decyduje też, jak odczytywana jest wpisana data typu 3/4 podczas dodawania zadania.</string>
     <string name="settings_system_notifications">Dźwięk i wibracje</string>
     <string name="settings_system_notifications_desc">Otwiera ustawienia powiadomień systemu Android dla YATA.</string>
-    <string name="settings_section_sound_feedback">Dźwięk i informacje zwrotne</string>
+    <string name="settings_section_sound_feedback">Wejście głosowe i dźwięk</string>
     <string name="settings_section_task_defaults">Ustawienia domyślne zadań</string>
     <string name="settings_floating_bottom_panel">Użyj pływającego dolnego panelu</string>
     <string name="settings_floating_bottom_panel_desc">Wyświetlaj dolny pasek nawigacji jako pływający panel oddzielony od krawędzi ekranu.</string>
@@ -208,6 +208,8 @@
     <string name="settings_language_picker_subtitle">Przełącz YATA natychmiast. Systemowy podąża za językiem urządzenia.</string>
     <string name="settings_language_search_placeholder">Szukaj języków</string>
     <string name="settings_language_selected">Wybrany</string>
+    <string name="settings_import_export_group">Import i eksport</string>
+    <string name="settings_danger_zone_group">Strefa zagrożenia</string>
     <string name="settings_task_lifecycle">Cykl życia zadania</string>
     <string name="settings_task_lifecycle_desc">Kosz usuwa zadania po upływie okresu przechowywania; Archiwum tylko ukrywa zadania, zachowując je nienaruszone.</string>
     <string name="settings_archive_desc">Odkładaj zadania bez ich usuwania. Zarchiwizowane zadania są ukryte z list, przechowywane bezterminowo i można je przywrócić.</string>
@@ -775,6 +777,7 @@
     <string name="sort_starred_first">Ulubione najpierw</string>
     <string name="today_next_10_days">Następne 10 dni</string>
     <string name="today_search_tasks">Szukaj zadań</string>
+    <string name="today_voice_fab_label">Mów</string>
     <string name="upcoming_next_month">Następny miesiąc</string>
     <string name="upcoming_previous_month">Poprzedni miesiąc</string>
     <string name="voice_task_overlay_speak_again">Mów ponownie</string>

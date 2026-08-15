@@ -140,7 +140,7 @@
     <string name="settings_date_format_desc">Décide également de la manière dont une date saisie comme 3/4 est lue lors de l\'ajout d\'une tâche.</string>
     <string name="settings_system_notifications">Son et vibrations</string>
     <string name="settings_system_notifications_desc">Ouvre les propres paramètres de notification d\'Android\' pour YATA.</string>
-    <string name="settings_section_sound_feedback">Son et commentaires</string>
+    <string name="settings_section_sound_feedback">Saisie vocale et son</string>
     <string name="settings_section_task_defaults">Paramètres par défaut des tâches</string>
     <string name="settings_floating_bottom_panel">Utiliser le panneau inférieur flottant</string>
     <string name="settings_floating_bottom_panel_desc">Affichez la barre de navigation inférieure sous la forme d\'un panneau de pilule flottant détaché des bords de l\'écran.</string>
@@ -193,6 +193,8 @@
     <string name="settings_language_picker_subtitle">Change YATA immédiatement. Système utilise la langue de l\'appareil.</string>
     <string name="settings_language_search_placeholder">Rechercher des langues</string>
     <string name="settings_language_selected">Sélectionné</string>
+    <string name="settings_import_export_group">Importer et exporter</string>
+    <string name="settings_danger_zone_group">Zone de danger</string>
     <string name="settings_task_lifecycle">Cycle de vie des tâches</string>
     <string name="settings_task_lifecycle_desc">La corbeille supprime les tâches après une fenêtre de conservation ; Archive masque uniquement les tâches et les conserve intactes.</string>
     <string name="settings_archive_desc">Rangez les tâches sans les supprimer. Les tâches archivées sont masquées des listes, conservées indéfiniment et peuvent être désarchivées.</string>
@@ -663,6 +665,7 @@
     <string name="sort_starred_first">Favorisé en premier</string>
     <string name="today_next_10_days">10 prochains jours</string>
     <string name="today_search_tasks">Tâches de recherche</string>
+    <string name="today_voice_fab_label">Parler</string>
     <string name="upcoming_next_month">Mois prochain</string>
     <string name="upcoming_previous_month">Mois précédent</string>
     <string name="voice_task_overlay_speak_again">Parler à nouveau</string>

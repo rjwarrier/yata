@@ -154,7 +154,7 @@
     <string name="settings_date_format_desc">ಕಾರ್ಯ ಸೇರಿಸುವಾಗ 3/4 ನಂತಹ ಟೈಪ್ ಮಾಡಿದ ದಿನಾಂಕವನ್ನು ಹೇಗೆ ಓದಬೇಕೆಂದೂ ಇದು ನಿರ್ಧರಿಸುತ್ತದೆ.</string>
     <string name="settings_system_notifications">ಧ್ವನಿ ಮತ್ತು ಕಂಪನ</string>
     <string name="settings_system_notifications_desc">YATA ಗಾಗಿ Android ನ ಸ್ವಂತ ಅಧಿಸೂಚನೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯುತ್ತದೆ.</string>
-    <string name="settings_section_sound_feedback">ಧ್ವನಿ ಮತ್ತು ಪ್ರತಿಕ್ರಿಯೆ</string>
+    <string name="settings_section_sound_feedback">ಧ್ವನಿ ಇನ್‌ಪುಟ್ ಮತ್ತು ಶಬ್ದ</string>
     <string name="settings_section_task_defaults">ಕಾರ್ಯ ಡೀಫಾಲ್ಟ್‌ಗಳು</string>
     <string name="settings_floating_bottom_panel">ತೇಲುವ ಕೆಳ ಫಲಕ ಬಳಸಿ</string>
     <string name="settings_floating_bottom_panel_desc">ಕೆಳ ನ್ಯಾವಿಗೇಷನ್ ಬಾರ್ ಅನ್ನು ಪರದೆಯ ಅಂಚುಗಳಿಂದ ಬೇರ್ಪಟ್ಟ ತೇಲುವ ಪಿಲ್ ಫಲಕವಾಗಿ ಪ್ರದರ್ಶಿಸಿ.</string>
@@ -203,6 +203,8 @@
     <string name="settings_language_picker_subtitle">YATA ಅನ್ನು ತಕ್ಷಣ ಬದಲಾಯಿಸಿ. ಸಿಸ್ಟಂ ನಿಮ್ಮ ಸಾಧನದ ಭಾಷೆಯನ್ನು ಅನುಸರಿಸುತ್ತದೆ.</string>
     <string name="settings_language_search_placeholder">ಭಾಷೆಗಳನ್ನು ಹುಡುಕಿ</string>
     <string name="settings_language_selected">ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ</string>
+    <string name="settings_import_export_group">ಆಮದು ಮತ್ತು ರಫ್ತು</string>
+    <string name="settings_danger_zone_group">ಅಪಾಯದ ವಲಯ</string>
     <string name="settings_task_lifecycle">ಕಾರ್ಯ ಜೀವನಚಕ್ರ</string>
     <string name="settings_task_lifecycle_desc">ಕಸದಬುಟ್ಟಿ ಸಂರಕ್ಷಣಾ ಅವಧಿಯ ನಂತರ ಕಾರ್ಯಗಳನ್ನು ಅಳಿಸುತ್ತದೆ; ಆರ್ಕೈವ್ ಕಾರ್ಯಗಳನ್ನು ಮರೆಮಾಡುತ್ತದೆ ಮಾತ್ರ ಮತ್ತು ಅವುಗಳನ್ನು ಹಾಗೆಯೇ ಇಡುತ್ತದೆ.</string>
     <string name="settings_archive_desc">ಕಾರ್ಯಗಳನ್ನು ಅಳಿಸದೆ ಸಂಗ್ರಹಿಸಿಡಿ. ಆರ್ಕೈವ್ ಮಾಡಿದ ಕಾರ್ಯಗಳನ್ನು ಪಟ್ಟಿಗಳಿಂದ ಮರೆಮಾಡಲಾಗುತ್ತದೆ, ಅನಿರ್ದಿಷ್ಟವಾಗಿ ಇಡಲಾಗುತ್ತದೆ ಮತ್ತು ಪುನಃ ಆರ್ಕೈವ್ ಅನ್ಮಾಡಬಹುದು.</string>
@@ -851,6 +853,7 @@
     <string name="sort_starred_first">ಸ್ಟಾರ್ ಮಾಡಿದವು ಮೊದಲು</string>
     <string name="today_next_10_days">ಮುಂದಿನ 10 ದಿನಗಳು</string>
     <string name="today_search_tasks">ಕಾರ್ಯಗಳನ್ನು ಹುಡುಕಿ</string>
+    <string name="today_voice_fab_label">ಮಾತನಾಡಿ</string>
     <string name="upcoming_next_month">ಮುಂದಿನ ತಿಂಗಳು</string>
     <string name="upcoming_previous_month">ಹಿಂದಿನ ತಿಂಗಳು</string>
     <string name="voice_task_overlay_speak_again">ಮತ್ತೆ ಮಾತನಾಡಿ</string>

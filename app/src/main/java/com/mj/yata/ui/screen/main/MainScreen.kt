@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.platform.LocalContext
 import com.mj.yata.util.backupResultMessage
 import com.mj.yata.util.initialSyncConfirmationRequired
+import com.mj.yata.util.resolveParsedQuickAddEntities
 import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -71,6 +72,7 @@ import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 import com.mj.yata.ui.widgets.PersonAvatar
 import com.mj.yata.ui.widgets.PressableScaleBox
+import com.mj.yata.ui.widgets.VoiceTaskOverlay
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.ui.sheets.*
@@ -177,6 +179,7 @@ fun MainScreen(
     var showDiscardNewTaskDialog by rememberSaveable { mutableStateOf(false) }
     var isNewListSheetOpen by remember { mutableStateOf(false) }
     var showCommandPalette by remember { mutableStateOf(false) }
+    var showTodayVoiceOverlay by remember { mutableStateOf(false) }
 
     // "Quick Add" launcher shortcut / widget tap lands here with this set — open the sheet once,
     // pre-selecting a list if the Quick Add widget's list chip was what was tapped.
@@ -655,51 +658,112 @@ fun MainScreen(
                     else -> null
                 }
 
-                AnimatedVisibility(
-                    visible = fabTarget != null && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
-                    enter = scaleIn(),
-                    exit = scaleOut()
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    // Forces both FABs below to the width of whichever one is wider ("Speak" vs.
+                    // "New task", and their translations vary in length across 24 locales) rather
+                    // than each hugging its own text — otherwise the shorter one reads as a
+                    // different, smaller control instead of a matching pair.
+                    modifier = Modifier.width(IntrinsicSize.Max)
                 ) {
-                    val (fabLabel, sheetType) = fabTarget ?: ("New task" to MainSheetType.NewTask)
-                    PressableScaleBox(
-                        onClick = {
-                            activeSheet = sheetType
-                        },
-                        // No navigationBarsPadding here. CustomBottomNav already consumes the
-                        // system navigation inset in both modes — the floating variant on its
-                        // outer Box, the docked variant on its inner one — and Scaffold positions
-                        // the FAB relative to the bottomBar's *outer* height. Applying the inset
-                        // again added the full nav-bar height a second time, which is why the FAB
-                        // floated well clear of the panel: ~24dp on gesture nav, ~48dp with the
-                        // three-button bar. Scaffold's own 16dp FAB-to-bottomBar spacing is the
-                        // only gap needed, and it's the M3 default.
-                        modifier = Modifier
+                    // Today-only voice capture, stacked above the main FAB below. Same
+                    // AnimatedVisibility scale in/out as the main FAB so both bubbles appear and
+                    // disappear the same way when the tab or FAB visibility changes.
+                    AnimatedVisibility(
+                        visible = selectedTab == 0 && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
+                        enter = scaleIn(),
+                        exit = scaleOut()
                     ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            shape = RoundedCornerShape(16.dp),
-                            tonalElevation = 6.dp,
-                            shadowElevation = 6.dp
+                        PressableScaleBox(
+                            onClick = { showTodayVoiceOverlay = true },
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .heightIn(min = 56.dp)
-                                    .padding(horizontal = 22.dp, vertical = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            // Same pill shape/size as the main FAB below, not a small circle — a
+                            // mismatched circle-over-rectangle pairing read as visually unrelated.
+                            // primaryContainer/onPrimaryContainer is a deliberately different tonal
+                            // step of the same brand hue as the main FAB's `primary`: in this app's
+                            // dark theme that tone is darker and more muted, reading as clearly
+                            // secondary while still visually paired with it (unlike
+                            // secondaryContainer, which this app already uses as its
+                            // "selected/active" signal elsewhere and so read as urgent here).
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                shape = RoundedCornerShape(16.dp),
+                                tonalElevation = 6.dp,
+                                shadowElevation = 6.dp,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null)
-                                androidx.compose.animation.AnimatedContent(
-                                    targetState = fabLabel,
-                                    transitionSpec = {
-                                        (androidx.compose.animation.slideInVertically { height -> height } + fadeIn()).togetherWith(
-                                            androidx.compose.animation.slideOutVertically { height -> -height } + fadeOut()
-                                        )
-                                    },
-                                    label = "fabLabelAnim"
-                                ) { targetLabel ->
-                                    Text(targetLabel, style = MaterialTheme.typography.labelLarge)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 56.dp)
+                                        .padding(horizontal = 22.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Mic,
+                                        contentDescription = null
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.today_voice_fab_label),
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = fabTarget != null && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
+                        enter = scaleIn(),
+                        exit = scaleOut()
+                    ) {
+                        val (fabLabel, sheetType) = fabTarget ?: ("New task" to MainSheetType.NewTask)
+                        PressableScaleBox(
+                            onClick = {
+                                activeSheet = sheetType
+                            },
+                            // No navigationBarsPadding here. CustomBottomNav already consumes the
+                            // system navigation inset in both modes — the floating variant on its
+                            // outer Box, the docked variant on its inner one — and Scaffold positions
+                            // the FAB relative to the bottomBar's *outer* height. Applying the inset
+                            // again added the full nav-bar height a second time, which is why the FAB
+                            // floated well clear of the panel: ~24dp on gesture nav, ~48dp with the
+                            // three-button bar. Scaffold's own 16dp FAB-to-bottomBar spacing is the
+                            // only gap needed, and it's the M3 default.
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                shape = RoundedCornerShape(16.dp),
+                                tonalElevation = 6.dp,
+                                shadowElevation = 6.dp,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 56.dp)
+                                        .padding(horizontal = 22.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null)
+                                    androidx.compose.animation.AnimatedContent(
+                                        targetState = fabLabel,
+                                        transitionSpec = {
+                                            (androidx.compose.animation.slideInVertically { height -> height } + fadeIn()).togetherWith(
+                                                androidx.compose.animation.slideOutVertically { height -> -height } + fadeOut()
+                                            )
+                                        },
+                                        label = "fabLabelAnim"
+                                    ) { targetLabel ->
+                                        Text(targetLabel, style = MaterialTheme.typography.labelLarge)
+                                    }
                                 }
                             }
                         }
@@ -1077,6 +1141,54 @@ fun MainScreen(
                 }
             }
         }
+    }
+
+    // Today's voice FAB — captures and creates a task directly, without going through
+    // NewTaskSheet. VoiceTaskOverlay's own checkmark already carries the fully parsed result
+    // (due/time/priority/tags/assignees), so entity name -> id resolution is the only step left
+    // before it's a savable NewTaskDraft, same as bulk-mode quick add does per line.
+    if (showTodayVoiceOverlay) {
+        VoiceTaskOverlay(
+            isOpen = showTodayVoiceOverlay,
+            onDismiss = { showTodayVoiceOverlay = false },
+            voiceLanguage = voiceLanguage,
+            onTaskRecognized = { parsed ->
+                val resolved = resolveParsedQuickAddEntities(
+                    quickAdd = parsed,
+                    baseListId = null,
+                    baseProjectId = null,
+                    baseTagIds = emptyList(),
+                    baseAssigneeIds = emptyList(),
+                    lists = lists,
+                    projects = activeProjects,
+                    people = activePeople,
+                    tags = tags,
+                    projectsEnabled = projectsFeatureEnabled,
+                    tagsEnabled = tagsFeatureEnabled,
+                    peopleEnabled = peopleFeatureEnabled
+                )
+                viewModel.addTask(
+                    NewTaskDraft(
+                        title = parsed.title,
+                        listId = resolved.listId,
+                        priority = parsed.priority ?: "none",
+                        assigneeIds = resolved.assigneeIds,
+                        tagIds = resolved.tagIds,
+                        recurrence = parsed.recurrence,
+                        due = parsed.due ?: resolved.projectDue ?: defaultDueDate.resolve(),
+                        startDate = parsed.startDate,
+                        time = parsed.time,
+                        reminder = parsed.reminder,
+                        section = "",
+                        projectId = resolved.projectId,
+                        notes = null,
+                        subtasks = emptyList(),
+                        flag = parsed.flag,
+                        estimateMinutes = defaultEstimateMinutes
+                    )
+                )
+            }
+        )
     }
 
     if (showDiscardNewTaskDialog) {

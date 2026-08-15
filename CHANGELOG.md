@@ -15,7 +15,20 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+- Today now has a "Speak" voice-capture FAB above the regular "New task" FAB, matching its pill
+  shape and size. Tap it to speak a task straight in — due date, time, priority, tags,
+  project/list, and assignees are all recognized the same way typed quick-add understands them,
+  and the task is created directly without opening the New Task sheet first.
+
 ### Changed
+- Settings → "Sound & Feedback" is now "Voice Input and Sound", and Voice input language moved
+  there (from Task Defaults); Undo window, Swipe actions, and Confetti moved the other way, into
+  Task Defaults.
+- Settings → Data Management: "Backup to File"/"Restore from File" moved to Backup & Sync (next to
+  the automatic Local Backup card); "Show welcome tour" moved to Help & About; Tasker integration
+  moved out of Navigation & Features into its own card. The remaining Data Management rows are now
+  grouped into Import & Export, Task Lifecycle, and a Danger Zone card for delete-all-data.
 - Reordered Help & About's About section: GitHub/Share/Website links now above "Other apps by dev".
 - Restyled the "Other apps by dev" card with accent-tinted icon badges per app and a bordered surface.
 - GitHub sync now refuses to connect to, or publish onto, a **public** repository - it only syncs to
@@ -65,6 +78,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   added - it now has them.
 
 ### Fixed
+- Voice capture now caps how long a session can stay open (5 minutes) and how much transcript it
+  accumulates, instead of restarting indefinitely on a dropped/forgotten overlay.
 - Quick add's smart date/time parsing now reads uppercase "PM" correctly ("3PM" was silently read as
   3 AM - Android's autocapitalize makes this common). Also fixed: "2 weeks from today" (only "from
   now" worked), "a partir de ahora/hoy" for Spanish relative dates, and month-unit words ("mes"/"mês")
@@ -75,6 +90,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   before the widget's quick-add dialog even finished opening for shared text. Also added a general
   length cap on smart parsing - text far longer than a task title was ever meant to hold now skips
   the pattern-matching pass entirely instead of costing time proportional to its length.
+- Voice task capture no longer looks like it abruptly stops listening every few seconds. It was
+  already auto-restarting itself in the background after each recognized phrase so a thinking
+  pause never lost anything, but the waveform and "Listening..." indicator went flat during that
+  restart, reading as the mic cutting out - they now stay active through it. Each restart also
+  plays the system's own start-listening tone, so the silence-before-restart pause is now several
+  seconds longer, keeping that tone rare instead of firing every few seconds of normal pausing.
 
 ## [0.92.2] - 2026-08-13
 

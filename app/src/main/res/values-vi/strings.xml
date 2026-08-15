@@ -159,7 +159,7 @@
     <string name="settings_date_format_desc">Cũng quyết định cách đọc ngày gõ tay như 3/4 khi thêm việc cần làm.</string>
     <string name="settings_system_notifications">Âm thanh &amp; rung</string>
     <string name="settings_system_notifications_desc">Mở cài đặt thông báo của Android cho YATA.</string>
-    <string name="settings_section_sound_feedback">Âm thanh &amp; Phản hồi</string>
+    <string name="settings_section_sound_feedback">Đầu vào giọng nói và âm thanh</string>
     <string name="settings_section_task_defaults">Mặc định việc cần làm</string>
     <string name="settings_floating_bottom_panel">Dùng thanh nổi phía dưới</string>
     <string name="settings_floating_bottom_panel_desc">Hiển thị thanh điều hướng dưới cùng dạng viên nổi tách khỏi mép màn hình.</string>
@@ -208,6 +208,8 @@
     <string name="settings_language_picker_subtitle">Đổi ngôn ngữ YATA ngay lập tức. Mặc định hệ thống theo ngôn ngữ thiết bị.</string>
     <string name="settings_language_search_placeholder">Tìm ngôn ngữ</string>
     <string name="settings_language_selected">Đã chọn</string>
+    <string name="settings_import_export_group">Nhập và xuất</string>
+    <string name="settings_danger_zone_group">Vùng nguy hiểm</string>
     <string name="settings_task_lifecycle">Vòng đời việc cần làm</string>
     <string name="settings_task_lifecycle_desc">Thùng rác xóa việc sau một khoảng thời gian lưu giữ; Lưu trữ chỉ ẩn việc và giữ nguyên vẹn.</string>
     <string name="settings_archive_desc">Cất việc cần làm mà không xóa. Việc đã lưu trữ bị ẩn khỏi danh sách, giữ vô thời hạn, và có thể bỏ lưu trữ bất cứ lúc nào.</string>
@@ -775,6 +777,7 @@
     <string name="sort_starred_first">Gắn sao trước</string>
     <string name="today_next_10_days">10 ngày tới</string>
     <string name="today_search_tasks">Tìm việc cần làm</string>
+    <string name="today_voice_fab_label">Nói</string>
     <string name="upcoming_next_month">Tháng sau</string>
     <string name="upcoming_previous_month">Tháng trước</string>
     <string name="voice_task_overlay_speak_again">Nói lại</string>

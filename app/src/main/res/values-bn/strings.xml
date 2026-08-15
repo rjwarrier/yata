@@ -159,7 +159,7 @@
     <string name="settings_date_format_desc">টাস্ক যোগ করার সময় 3/4-এর মতো টাইপ করা তারিখ কীভাবে পড়া হবে তাও নির্ধারণ করে।</string>
     <string name="settings_system_notifications">শব্দ ও কম্পন</string>
     <string name="settings_system_notifications_desc">YATA-এর জন্য Android-এর নিজস্ব বিজ্ঞপ্তি সেটিংস খোলে।</string>
-    <string name="settings_section_sound_feedback">শব্দ ও প্রতিক্রিয়া</string>
+    <string name="settings_section_sound_feedback">ভয়েস ইনপুট ও শব্দ</string>
     <string name="settings_section_task_defaults">টাস্কের ডিফল্ট</string>
     <string name="settings_floating_bottom_panel">ভাসমান নিচের প্যানেল ব্যবহার করুন</string>
     <string name="settings_floating_bottom_panel_desc">নিচের নেভিগেশন বারকে স্ক্রিনের প্রান্ত থেকে বিচ্ছিন্ন একটি ভাসমান পিল প্যানেল হিসেবে দেখান।</string>
@@ -208,6 +208,8 @@
     <string name="settings_language_picker_subtitle">YATA-কে সাথে সাথে পরিবর্তন করুন। সিস্টেম আপনার ডিভাইসের ভাষা অনুসরণ করে।</string>
     <string name="settings_language_search_placeholder">ভাষা খুঁজুন</string>
     <string name="settings_language_selected">নির্বাচিত</string>
+    <string name="settings_import_export_group">ইম্পোর্ট ও এক্সপোর্ট</string>
+    <string name="settings_danger_zone_group">বিপদ অঞ্চল</string>
     <string name="settings_task_lifecycle">টাস্কের জীবনচক্র</string>
     <string name="settings_task_lifecycle_desc">ট্র্যাশ একটি সংরক্ষণ সময়ের পর টাস্ক মুছে ফেলে; সংরক্ষণাগার শুধু টাস্ক লুকিয়ে রাখে এবং অক্ষত রাখে।</string>
     <string name="settings_archive_desc">টাস্ক না মুছেই সরিয়ে রাখুন। সংরক্ষণাগারভুক্ত টাস্ক লিস্ট থেকে লুকানো থাকে, অনির্দিষ্টকাল সংরক্ষিত হয়, এবং পুনরুদ্ধার করা যায়।</string>
@@ -775,6 +777,7 @@
     <string name="sort_starred_first">তারকাচিহ্নিত আগে</string>
     <string name="today_next_10_days">পরবর্তী ১০ দিন</string>
     <string name="today_search_tasks">টাস্ক খুঁজুন</string>
+    <string name="today_voice_fab_label">বলুন</string>
     <string name="upcoming_next_month">পরের মাস</string>
     <string name="upcoming_previous_month">আগের মাস</string>
     <string name="voice_task_overlay_speak_again">আবার বলুন</string>

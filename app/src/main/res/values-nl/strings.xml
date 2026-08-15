@@ -179,7 +179,7 @@
     <string name="settings_date_format_desc">Bepaalt ook hoe een getypte datum zoals 3/4 wordt gelezen bij het toevoegen van een taak.</string>
     <string name="settings_system_notifications">Geluid &amp; trilling</string>
     <string name="settings_system_notifications_desc">Opent de eigen meldingeninstellingen van Android voor YATA.</string>
-    <string name="settings_section_sound_feedback">Geluid &amp; Feedback</string>
+    <string name="settings_section_sound_feedback">Spraakinvoer en geluid</string>
     <string name="settings_section_task_defaults">Taakstandaarden</string>
     <string name="settings_floating_bottom_panel">Zwevend onderpaneel gebruiken</string>
     <string name="settings_floating_bottom_panel_desc">Toon de onderste navigatiebalk als een zwevend pilvormig paneel los van de schermranden.</string>
@@ -232,6 +232,8 @@
     <string name="settings_language_picker_subtitle">Schakel YATA direct om. Systeem volgt de taal van je apparaat.</string>
     <string name="settings_language_search_placeholder">Talen zoeken</string>
     <string name="settings_language_selected">Geselecteerd</string>
+    <string name="settings_import_export_group">Importeren en exporteren</string>
+    <string name="settings_danger_zone_group">Gevarenzone</string>
     <string name="settings_task_lifecycle">Taaklevenscyclus</string>
     <string name="settings_task_lifecycle_desc">Prullenbak verwijdert taken na een bewaartermijn; Archief verbergt taken alleen en houdt ze intact.</string>
     <string name="settings_archive_desc">Zet taken opzij zonder ze te verwijderen. Gearchiveerde taken zijn verborgen uit lijsten, blijven onbeperkt bewaard, en kunnen worden gedearchiveerd.</string>
@@ -883,6 +885,7 @@
     <string name="sort_starred_first">Met ster eerst</string>
     <string name="today_next_10_days">Volgende 10 dagen</string>
     <string name="today_search_tasks">Taken zoeken</string>
+    <string name="today_voice_fab_label">Spreken</string>
     <string name="upcoming_next_month">Volgende maand</string>
     <string name="upcoming_previous_month">Vorige maand</string>
     <string name="voice_task_overlay_speak_again">Opnieuw spreken</string>
