@@ -11,6 +11,7 @@ import com.mj.yata.util.nl.ParseState
 import com.mj.yata.util.nl.ParserContext
 import com.mj.yata.util.nl.PriorityFlagRules
 import com.mj.yata.util.nl.ReminderRules
+import com.mj.yata.util.nl.TimeRules
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
 import com.mj.yata.util.nl.naturalLanguageCountOrOne
 import com.mj.yata.util.nl.normalizeNaturalLanguageInput
@@ -1397,159 +1398,9 @@ object NaturalLanguageParser {
         // 1.5 Reminder. Runs before due-time parsing so "remind at 5pm" does not claim task time.
         var reminder: String? = ReminderRules.apply(parserContext, timeFormatter)
 
-        // 2. Explicit time â€” checked before day-count phrases so "tomorrow 3pm" doesn't have
-        // "3" mistaken for a bare number, and before time-of-day words so "6pm" wins over "evening".
-        firstFreeMatch(time12Regex)?.let { m ->
-            val hour = m.groupValues[1].toIntOrNull()
-            val minute = m.groupValues[2].toIntOrNull() ?: 0
-            val meridiem = m.groupValues[3]
-            if (hour != null && hour in 1..12 && minute in 0..59) {
-                val isPm = meridiem.contains("p", ignoreCase = true)
-                val isAm = meridiem.contains("a", ignoreCase = true)
-                val hour24 = when {
-                    isPm && hour != 12 -> hour + 12
-                    isAm && hour == 12 -> 0
-                    else -> hour
-                }
-                time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                claimTime(m.range)
-            }
-        }
+        time = TimeRules.applyExplicit(parserContext, timeFormatter)
 
-        if (time == null) {
-            firstFreeMatch(timeOClockRegex)?.let { m ->
-                val hour = m.groupValues[1].toIntOrNull()
-                val modifier = m.groupValues[2].lowercase()
-                if (hour != null && hour in 1..12) {
-                    val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
-                    val isAm = modifier.contains("a") || modifier == "morning"
-                    val hour24 = when {
-                        isPm && hour != 12 -> hour + 12
-                        isAm && hour == 12 -> 0
-                        !isPm && !isAm && hour in 1..7 -> hour + 12
-                        else -> hour
-                    }
-                    time = LocalTime.of(hour24, 0).format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                }
-            }
-        }
-
-        if (time == null) {
-            firstFreeMatch(atTimeRegex)?.let { m ->
-                val hour = m.groupValues[1].toIntOrNull()
-                val minute = m.groupValues[2].toIntOrNull() ?: 0
-                val modifier = m.groupValues[3].lowercase()
-                if (hour != null && hour in 1..12 && minute in 0..59) {
-                    val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
-                    val isAm = modifier.contains("a") || modifier == "morning"
-                    val hour24 = when {
-                        isPm && hour != 12 -> hour + 12
-                        isAm && hour == 12 -> 0
-                        !isPm && !isAm && hour in 1..7 -> hour + 12
-                        else -> hour
-                    }
-                    time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                }
-            }
-        }
-
-        if (time == null) {
-            firstFreeMatch(quarterHalfRegex)?.let { m ->
-                val type = m.groupValues[1].lowercase()
-                val hourRaw = m.groupValues[2].lowercase()
-                val modifier = m.groupValues[3].lowercase()
-                val baseHour = hourRaw.toIntOrNull() ?: wordToHourMap[hourRaw]
-                if (baseHour != null && baseHour in 1..12) {
-                    val (effectiveHour, minute) = when {
-                        type.contains("half") -> baseHour to 30
-                        type.contains("quarter past") -> baseHour to 15
-                        type.contains("quarter to") -> {
-                            val h = if (baseHour == 1) 12 else baseHour - 1
-                            h to 45
-                        }
-                        else -> baseHour to 0
-                    }
-                    val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
-                    val isAm = modifier.contains("a") || modifier == "morning"
-                    val hour24 = when {
-                        isPm && effectiveHour != 12 -> effectiveHour + 12
-                        isAm && effectiveHour == 12 -> 0
-                        !isPm && !isAm && effectiveHour in 1..7 -> effectiveHour + 12
-                        else -> effectiveHour
-                    }
-                    time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                }
-            }
-        }
-
-        if (time == null) {
-            firstFreeMatch(writtenHourRegex)?.let { m ->
-                val hourWord = m.groupValues[1].lowercase()
-                val minuteWord = m.groupValues[2].lowercase()
-                val modifier = m.groupValues[3].lowercase()
-                val hour = wordToHourMap[hourWord]
-                val minute = when (minuteWord) {
-                    "fifteen", "15" -> 15
-                    "thirty", "30" -> 30
-                    "forty five", "45" -> 45
-                    else -> 0
-                }
-                if (hour != null && hour in 1..12) {
-                    val isPm = modifier.contains("p") || modifier == "afternoon" || modifier == "evening" || modifier == "night"
-                    val isAm = modifier.contains("a") || modifier == "morning"
-                    val hour24 = when {
-                        isPm && hour != 12 -> hour + 12
-                        isAm && hour == 12 -> 0
-                        !isPm && !isAm && hour in 1..7 -> hour + 12
-                        else -> hour
-                    }
-                    time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                }
-            }
-        }
-
-        if (time == null) {
-            firstFreeMatch(mealTimeRegex)?.let { m ->
-                mealTimes[m.groupValues[1].lowercase()]?.let { clock ->
-                    time = clock.format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                }
-            }
-        }
-
-        if (time == null) {
-            firstFreeMatch(ishTimeRegex)?.let { m ->
-                m.groupValues[1].toIntOrNull()?.takeIf { it in 1..23 }?.let { hour ->
-                    val hour24 = if (hour in 1..7) hour + 12 else hour
-                    time = LocalTime.of(hour24 % 24, 0).format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                }
-            }
-        }
-
-        // "first thing" sets only the time, never the date â€” that way "first thing monday" lets
-        // the date rules have "monday" instead of being pinned to today by the phrase itself.
-        if (time == null) {
-            firstFreeMatch(firstThingRegex)?.let { m ->
-                time = LocalTime.of(9, 0).format(timeFormatter).uppercase(Locale.getDefault())
-                claimTime(m.range)
-            }
-        }
-
-        if (time == null) {
-            firstFreeMatch(time24Regex)?.let { m ->
-                val hour = m.groupValues[1].toIntOrNull()
-                val minute = m.groupValues[2].toIntOrNull()
-                if (hour != null && minute != null && hour in 0..23) {
-                    time = LocalTime.of(hour, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                }
-            }
-        }
+        // 2. Explicit time is handled by TimeRules above.
 
         // 2.5 Start date â€” "starts monday", "from next week", "defer to the 15th". Must run
         // before section 3, or the bare date inside the phrase gets claimed as the *due* date and
@@ -1835,23 +1686,7 @@ object NaturalLanguageParser {
         }
 
         if (time == null) {
-            for ((word, clock) in timeOfDayWords) {
-                // The optional "-ish" is part of the match so it's stripped with the word it
-                // qualifies, rather than being left stranded in the title ("noon-ish" -> "ish").
-                firstFreeMatch(cachedIshWordRegex(word))?.let { m ->
-                    time = clock.format(timeFormatter).uppercase(Locale.getDefault())
-                    claimTime(m.range)
-                }
-                if (time != null) break
-            }
-        }
-        if (time == null) {
-            firstFreeMatch(bareMeridiemRegex)?.let { m ->
-                val meridiem = m.groupValues[1].lowercase()
-                val isPm = meridiem.contains("p")
-                time = if (isPm) "5:00 PM" else "9:00 AM"
-                claimTime(m.range)
-            }
+            time = TimeRules.applyFallback(parserContext, timeFormatter)
         }
 
         // 5-6. Priority and flag
