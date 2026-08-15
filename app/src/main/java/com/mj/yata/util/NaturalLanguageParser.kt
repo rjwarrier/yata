@@ -445,10 +445,20 @@ object NaturalLanguageParser {
      * the resolver can't make a date out of what follows. "not before" and "defer (to|until)"
      * are unambiguous enough to take anything.
      */
+    // Shared between the opening keyword and the closing lookahead below, so they can't drift
+    // apart again the way they did before: without this keyword list ALSO being a stop-word, a
+    // second "starts X" later in the input had nothing to make the lazy capture halt at, so it
+    // swallowed everything up to end-of-string — including every repeat of the keyword — and fed
+    // that whole tail to a nested parse() call, which found another "starts X" inside it and did
+    // the same thing again. Input with a few hundred repeats of "starts"/"from"/etc measured
+    // multiple recursion levels deep and tens of seconds of regex work; see git history for the
+    // repro. Any future keyword added to the open list must also be safe as a stop-word here, or
+    // this reopens the same hole.
+    private const val START_DATE_KEYWORD_ALT = "starts?|starting|begins?|beginning|not\\s+before|defer(?:red)?(?:\\s+(?:to|until|till))?|available|from|empieza|empezar|comienza|comenzar|começa|comecar|começar|inicia|iniciar|desde|no\\s+antes\\s+de|não\\s+antes\\s+de|nao\\s+antes\\s+de|commence|commencer|débute|debute|début|debut|à\\s+partir\\s+de|pas\\s+avant"
     private val startDateRegex = Regex(
-        "\\b(starts?|starting|begins?|beginning|not\\s+before|defer(?:red)?(?:\\s+(?:to|until|till))?|available|from|empieza|empezar|comienza|comenzar|começa|comecar|começar|inicia|iniciar|desde|no\\s+antes\\s+de|não\\s+antes\\s+de|nao\\s+antes\\s+de|commence|commencer|débute|debute|début|debut|à\\s+partir\\s+de|pas\\s+avant)\\s+" +
+        "\\b($START_DATE_KEYWORD_ALT)\\s+" +
             "((?:\\d|next\\b|this\\b|tomorrow\\b|today\\b|the\\b|in\\b|próximo\\b|proximo\\b|próxima\\b|proxima\\b|prochain\\b|prochaine\\b|este\\b|esta\\b|ce\\b|cet\\b|cette\\b|mañana\\b|manana\\b|amanhã\\b|amanha\\b|demain\\b|hoy\\b|hoje\\b|aujourd|el\\b|em\\b|en\\b|dans\\b|le\\b|lun|mar|mié|mie|jue|vie|sáb|sab|dom|seg|ter|qua|qui|sex|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|mon|tue|wed|thu|fri|sat|sun|ene|feb|mar|abr|apr|mai|may|jun|jul|ago|aug|sep|oct|nov|dic|dec|jan)[A-Za-zÁÉÍÓÚÜÑáéíóúüñÃÕÇãõçÀÂÊÎÔÛÄËÏÖÜàâêîôûäëïöü0-9,/\\-\\s]*?)" +
-            "(?=\\s+(?:due|vence|échéance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|assign|asign|atrib|@|#|!|p[1-3]|for\\b|por\\b|pour\\b|in\\s+(?:list|project)|em\\s+(?:lista|projeto)|en\\s+(?:liste|projet|lista|proyecto))|$)",
+            "(?=\\s+(?:due|vence|échéance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|assign|asign|atrib|@|#|!|p[1-3]|for\\b|por\\b|pour\\b|in\\s+(?:list|project)|em\\s+(?:lista|projeto)|en\\s+(?:liste|projet|lista|proyecto)|(?:$START_DATE_KEYWORD_ALT))|$)",
         RegexOption.IGNORE_CASE
     )
     private val fromNowRegex = Regex("\\b(a|an|um|uma|un|una|une|$NUMBER_COUNT)\\s+($DAY_UNIT|$WEEK_UNIT|$MONTH_UNIT|$QUARTER_UNIT|$YEAR_UNIT)\\s+(?:from\\s+(?:now|today)|a\\s+partir\\s+de\\s+(?:agora|hoje|ahora|hoy)|à\\s+partir\\s+d['’]?aujourd['’]?hui)\\b", RegexOption.IGNORE_CASE)
@@ -928,7 +938,8 @@ object NaturalLanguageParser {
     private fun recurrenceRuleConfig(
         referenceDate: LocalDate,
         referenceTime: LocalTime,
-        dayFirst: Boolean
+        dayFirst: Boolean,
+        parseNested: (String) -> ParsedQuickAdd
     ): RecurrenceRuleConfig =
         RecurrenceRuleConfig(
             everyAlternateDayRegex = everyAlternateDayRegex,
@@ -952,7 +963,7 @@ object NaturalLanguageParser {
             weekdayNames = weekdayNames,
             rruleDay = rruleDay,
             resolveOrdinalDayOfMonth = ::resolveOrdinalDayOfMonth,
-            parseNested = { phrase -> parse(phrase, referenceDate, referenceTime, dayFirst) },
+            parseNested = parseNested,
             claimEndFor = ::claimEndFor,
             countOrOne = ::countOrOne,
             wordRegex = ::cachedWordRegex
@@ -1023,22 +1034,50 @@ object NaturalLanguageParser {
         }
     }
 
+    // "Quick add" is a task-title field, not a document — real usage is well under this. Anything
+    // longer either came from a share-sheet/paste of something that was never meant to be a task
+    // title, or is adversarial, and the ~90-rule regex pipeline below costs real time per
+    // character on a string this long. Skip it rather than pay that cost (and see
+    // MAX_NESTED_PARSE_DEPTH below for why bounding cost per call isn't enough on its own).
+    private const val MAX_QUICK_ADD_INPUT_LENGTH = 500
+
+    // Two rules recurse into parse() on a captured sub-phrase (start-date and recurrence-until).
+    // That recursion is meant to terminate after one level — see the comment on
+    // START_DATE_KEYWORD_ALT for the incident where a regex gap let it go arbitrarily deep
+    // instead. This is the backstop for the *next* such gap: past this depth, a nested phrase is
+    // taken as plain text (no date resolved from it) rather than parsed further.
+    private const val MAX_NESTED_PARSE_DEPTH = 1
+
     /**
      * @param dayFirst how to read an ambiguous numeric date like "3/4". Defaults to whatever the
      *   user's date-order setting resolves to, so typing a date and reading one back agree.
+     * @param depth internal recursion guard for the start-date/recurrence-until rules, which
+     *   resolve a captured sub-phrase by calling back into [parse]. Callers outside this file
+     *   should never pass this.
      */
     fun parse(
         rawInput: String,
         referenceDate: LocalDate = LocalDate.now(),
         referenceTime: LocalTime = LocalTime.now(),
-        dayFirst: Boolean = AppFormats.dayFirstDates()
+        dayFirst: Boolean = AppFormats.dayFirstDates(),
+        depth: Int = 0
     ): ParsedQuickAdd {
+        if (rawInput.length > MAX_QUICK_ADD_INPUT_LENGTH) {
+            return ParsedQuickAdd(title = rawInput.trim(), due = null, time = null, recurrence = null, highlightRanges = emptyList())
+        }
+
         // The reference *time* belongs in the key as well as the date: "in 30 minutes" resolves
         // against it, so keying on the date alone served a stale clock time to every later call
         // with the same text. Truncated to the minute, which is the resolution the result has.
+        // Recursive (depth > 0) calls resolve a small fragment purely to extract one date out of
+        // it — not worth a cache slot, and depth changes what a call is even allowed to resolve
+        // (see MAX_NESTED_PARSE_DEPTH), so a recursive call's result isn't safe to reuse for a
+        // future top-level call on the same text.
         val cacheKey = "$rawInput|$referenceDate|${referenceTime.hour}:${referenceTime.minute}|$dayFirst"
-        synchronized(cacheLock) {
-            parseCache[cacheKey]?.let { return it }
+        if (depth == 0) {
+            synchronized(cacheLock) {
+                parseCache[cacheKey]?.let { return it }
+            }
         }
 
         val normalizedInput = normalizeNaturalLanguageInputWithRanges(rawInput)
@@ -1061,10 +1100,21 @@ object NaturalLanguageParser {
 
         EscapeRules.apply(parserContext, escapeRegex, weekdayNames.keys)
 
+        // Shared by the two rules that resolve a captured sub-phrase by recursing into parse().
+        // Past MAX_NESTED_PARSE_DEPTH, the phrase is treated as unparsed text instead of being
+        // parsed further — see the constant's comment for why this exists.
+        val boundedParseNested: (String) -> ParsedQuickAdd = { phrase ->
+            if (depth >= MAX_NESTED_PARSE_DEPTH) {
+                ParsedQuickAdd(title = phrase, due = null, time = null, recurrence = null, highlightRanges = emptyList())
+            } else {
+                parse(phrase, referenceDate, referenceTime, dayFirst, depth + 1)
+            }
+        }
+
         // 1. Recurrence. Checked first so "every sunday" is claimed whole before due-date rules.
         val recurrenceResult = RecurrenceRules.apply(
             context = parserContext,
-            config = recurrenceRuleConfig(referenceDate, referenceTime, dayFirst),
+            config = recurrenceRuleConfig(referenceDate, referenceTime, dayFirst, boundedParseNested),
             existingDue = due
         )
         recurrence = recurrenceResult.recurrence
@@ -1098,7 +1148,7 @@ object NaturalLanguageParser {
         val startDate: LocalDate? = StartDateRules.apply(
             context = parserContext,
             startDateRegex = startDateRegex,
-            parseNested = { phrase -> parse(phrase, referenceDate, referenceTime, dayFirst) },
+            parseNested = boundedParseNested,
             claimEndFor = ::claimEndFor
         )
 
@@ -1154,8 +1204,10 @@ object NaturalLanguageParser {
             highlightRanges = sortedClaims,
             highlightSpans = sortedHighlightSpans
         )
-        synchronized(cacheLock) {
-            parseCache[cacheKey] = result
+        if (depth == 0) {
+            synchronized(cacheLock) {
+                parseCache[cacheKey] = result
+            }
         }
         return result
     }

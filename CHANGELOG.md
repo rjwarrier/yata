@@ -69,6 +69,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   3 AM - Android's autocapitalize makes this common). Also fixed: "2 weeks from today" (only "from
   now" worked), "a partir de ahora/hoy" for Spanish relative dates, and month-unit words ("mes"/"mês")
   in "N months from now" phrases, which were unreachable due to a copy-paste slip.
+- Fixed a freeze in quick add's smart parsing: text containing multiple "starts"/"begins"/"from"/etc
+  phrases with nothing recognizable after some of them (e.g. a shared sports schedule or repeated
+  calendar text) could take tens of seconds to minutes to parse, on the main thread, including
+  before the widget's quick-add dialog even finished opening for shared text. Also added a general
+  length cap on smart parsing - text far longer than a task title was ever meant to hold now skips
+  the pattern-matching pass entirely instead of costing time proportional to its length.
 
 ## [0.92.2] - 2026-08-13
 
