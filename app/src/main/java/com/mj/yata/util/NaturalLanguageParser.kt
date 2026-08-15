@@ -1243,26 +1243,37 @@ object NaturalLanguageParser {
         fun isFree(range: IntRange) = claimTracker.isFree(range)
         fun claim(range: IntRange, type: QuickAddHighlightType = QuickAddHighlightType.Other) =
             claimTracker.claim(range, type)
+        fun claimDueDate(range: IntRange) = claim(range, QuickAddHighlightType.DueDate)
+        fun claimStartDate(range: IntRange) = claim(range, QuickAddHighlightType.StartDate)
+        fun claimTime(range: IntRange) = claim(range, QuickAddHighlightType.Time)
+        fun claimRecurrence(range: IntRange) = claim(range, QuickAddHighlightType.Recurrence)
+        fun claimReminder(range: IntRange) = claim(range, QuickAddHighlightType.Reminder)
+        fun claimPriority(range: IntRange) = claim(range, QuickAddHighlightType.Priority)
+        fun claimFlag(range: IntRange) = claim(range, QuickAddHighlightType.Flag)
+        fun claimProject(range: IntRange) = claim(range, QuickAddHighlightType.Project)
+        fun claimList(range: IntRange) = claim(range, QuickAddHighlightType.List)
+        fun claimTag(range: IntRange) = claim(range, QuickAddHighlightType.Tag)
+        fun claimAssignee(range: IntRange) = claim(range, QuickAddHighlightType.Assignee)
         fun firstFreeMatch(regex: Regex) = claimTracker.firstFreeMatch(regex, raw)
         fun firstFreeWord(word: String) = firstFreeMatch(cachedWordRegex(word))
 
         // 1. Recurrence â€” checked first so "every sunday"/"every monday" is claimed whole
         // before the later bare-weekday due-date rule can also match "sunday"/"monday".
-        everyAlternateDayRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("daily", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
-        if (recurrence == null) everyAlternateWeekRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("weekly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
-        if (recurrence == null) everyAlternateMonthRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("monthly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
-        if (recurrence == null) everyAlternateYearRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("yearly", 2, null, null, RecurrenceEnds.Never); claim(m.range) }
-        if (recurrence == null) firstFreeMatch(everyNDaysRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("daily", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNWeeksRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("weekly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNMonthsRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("monthly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNQuartersRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("monthly", n * 3, null, null, RecurrenceEnds.Never); claim(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNYearsRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("yearly", n, null, null, RecurrenceEnds.Never); claim(m.range) } }
+        everyAlternateDayRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("daily", 2, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) }
+        if (recurrence == null) everyAlternateWeekRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("weekly", 2, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) }
+        if (recurrence == null) everyAlternateMonthRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("monthly", 2, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) }
+        if (recurrence == null) everyAlternateYearRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("yearly", 2, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) }
+        if (recurrence == null) firstFreeMatch(everyNDaysRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("daily", n, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNWeeksRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("weekly", n, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNMonthsRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("monthly", n, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNQuartersRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("monthly", n * 3, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
+        if (recurrence == null) firstFreeMatch(everyNYearsRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("yearly", n, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
         // "every last day of the month" before "every month on the Nth" â€” the former's "last day"
         // would otherwise fall through and be read as a bare monthly with no day pinned at all.
         if (recurrence == null) {
             firstFreeMatch(everyLastDayOfMonthRegex)?.let { m ->
                 recurrence = Recurrence("monthly", 1, null, -1, RecurrenceEnds.Never)
-                claim(m.range)
+                claimRecurrence(m.range)
                 if (due == null) {
                     due = YearMonth.from(referenceDate).atEndOfMonth()
                         .let { if (it.isBefore(referenceDate)) YearMonth.from(referenceDate).plusMonths(1).atEndOfMonth() else it }
@@ -1276,7 +1287,7 @@ object NaturalLanguageParser {
             (firstFreeMatch(everyMonthOnDayRegex) ?: firstFreeMatch(everyOrdinalOfMonthRegex))?.let { m ->
                 m.groupValues[1].toIntOrNull()?.takeIf { it in 1..31 }?.let { day ->
                     recurrence = Recurrence("monthly", 1, null, day, RecurrenceEnds.Never)
-                    claim(m.range)
+                    claimRecurrence(m.range)
                     if (due == null) {
                         resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; dueRange = m.range }
                     }
@@ -1292,7 +1303,7 @@ object NaturalLanguageParser {
                     .sortedBy { it.value }
                 if (days.isNotEmpty()) {
                     recurrence = Recurrence("weekly", 1, days.map { rruleDay.getValue(it) }, null, RecurrenceEnds.Never)
-                    claim(m.range)
+                    claimRecurrence(m.range)
                 }
             }
         }
@@ -1319,7 +1330,7 @@ object NaturalLanguageParser {
                 }
                 if (rec != null) {
                     recurrence = rec
-                    claim(m.range)
+                    claimRecurrence(m.range)
                 }
             }
         }
@@ -1327,7 +1338,7 @@ object NaturalLanguageParser {
             for ((word, factory) in bareRecurrenceWords) {
                 firstFreeWord(word)?.let { m ->
                     recurrence = factory()
-                    claim(m.range)
+                    claimRecurrence(m.range)
                 }
                 if (recurrence != null) break
             }
@@ -1344,7 +1355,7 @@ object NaturalLanguageParser {
                     val nested = parse(phrase, referenceDate, referenceTime, dayFirst)
                     nested.due?.let { endDate ->
                         recurrence = recurrence!!.copy(ends = RecurrenceEnds.On(endDate))
-                        claim(m.range.first..claimEndFor(m, 1, nested))
+                        claimRecurrence(m.range.first..claimEndFor(m, 1, nested))
                     }
                 }
             }
@@ -1352,7 +1363,7 @@ object NaturalLanguageParser {
                 firstFreeMatch(recurrenceTimesRegex)?.let { m ->
                     countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n ->
                         recurrence = recurrence!!.copy(ends = RecurrenceEnds.After(n))
-                        claim(m.range)
+                        claimRecurrence(m.range)
                     }
                 }
             }
@@ -1360,7 +1371,7 @@ object NaturalLanguageParser {
 
         // 1.5 Reminder â€” see the regexes' own comment for why this runs before due-time parsing.
         var reminder: String? = null
-        (firstFreeMatch(remindShortAtTimeKeywordRegex) ?: firstFreeMatch(remindAtTimeKeywordRegex))?.let { m -> reminder = "At time"; claim(m.range) }
+        (firstFreeMatch(remindShortAtTimeKeywordRegex) ?: firstFreeMatch(remindAtTimeKeywordRegex))?.let { m -> reminder = "At time"; claimReminder(m.range) }
         if (reminder == null) {
             (firstFreeMatch(remindShortMinutesBeforeRegex) ?: firstFreeMatch(remindMinutesBeforeRegex))?.let { m ->
                 val label = when (countOrOne(m.groupValues[1]).toInt()) {
@@ -1369,11 +1380,11 @@ object NaturalLanguageParser {
                     30 -> "30 min before"
                     else -> null
                 }
-                if (label != null) { reminder = label; claim(m.range) }
+                if (label != null) { reminder = label; claimReminder(m.range) }
             }
         }
-        if (reminder == null) (firstFreeMatch(remindShortHourBeforeRegex) ?: firstFreeMatch(remindHourBeforeRegex))?.let { m -> reminder = "1 hour before"; claim(m.range) }
-        if (reminder == null) (firstFreeMatch(remindShortDayBeforeRegex) ?: firstFreeMatch(remindDayBeforeRegex))?.let { m -> reminder = "1 day before"; claim(m.range) }
+        if (reminder == null) (firstFreeMatch(remindShortHourBeforeRegex) ?: firstFreeMatch(remindHourBeforeRegex))?.let { m -> reminder = "1 hour before"; claimReminder(m.range) }
+        if (reminder == null) (firstFreeMatch(remindShortDayBeforeRegex) ?: firstFreeMatch(remindDayBeforeRegex))?.let { m -> reminder = "1 day before"; claimReminder(m.range) }
         if (reminder == null) {
             (firstFreeMatch(remindShortAtClockTimeRegex) ?: firstFreeMatch(remindAtClockTimeRegex))?.let { m ->
                 val hour = m.groupValues[1].toIntOrNull()
@@ -1386,7 +1397,7 @@ object NaturalLanguageParser {
                         else -> hour
                     }
                     reminder = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimReminder(m.range)
                 }
             }
         }
@@ -1406,7 +1417,7 @@ object NaturalLanguageParser {
                     else -> hour
                 }
                 time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                claim(m.range)
+                claimTime(m.range)
             }
         }
 
@@ -1424,7 +1435,7 @@ object NaturalLanguageParser {
                         else -> hour
                     }
                     time = LocalTime.of(hour24, 0).format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                 }
             }
         }
@@ -1444,7 +1455,7 @@ object NaturalLanguageParser {
                         else -> hour
                     }
                     time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                 }
             }
         }
@@ -1474,7 +1485,7 @@ object NaturalLanguageParser {
                         else -> effectiveHour
                     }
                     time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                 }
             }
         }
@@ -1501,7 +1512,7 @@ object NaturalLanguageParser {
                         else -> hour
                     }
                     time = LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                 }
             }
         }
@@ -1510,7 +1521,7 @@ object NaturalLanguageParser {
             firstFreeMatch(mealTimeRegex)?.let { m ->
                 mealTimes[m.groupValues[1].lowercase()]?.let { clock ->
                     time = clock.format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                 }
             }
         }
@@ -1520,7 +1531,7 @@ object NaturalLanguageParser {
                 m.groupValues[1].toIntOrNull()?.takeIf { it in 1..23 }?.let { hour ->
                     val hour24 = if (hour in 1..7) hour + 12 else hour
                     time = LocalTime.of(hour24 % 24, 0).format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                 }
             }
         }
@@ -1530,7 +1541,7 @@ object NaturalLanguageParser {
         if (time == null) {
             firstFreeMatch(firstThingRegex)?.let { m ->
                 time = LocalTime.of(9, 0).format(timeFormatter).uppercase(Locale.getDefault())
-                claim(m.range)
+                claimTime(m.range)
             }
         }
 
@@ -1540,7 +1551,7 @@ object NaturalLanguageParser {
                 val minute = m.groupValues[2].toIntOrNull()
                 if (hour != null && minute != null && hour in 0..23) {
                     time = LocalTime.of(hour, minute).format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                 }
             }
         }
@@ -1564,7 +1575,7 @@ object NaturalLanguageParser {
                     // Claim the keyword *and* the date words it governs, so they're off-limits to
                     // every rule below and get stripped from the saved title together — but only
                     // as far as the date actually reaches, see [claimEndFor].
-                    if (startDate != null) claim(m.range.first..claimEndFor(m, 2, nested))
+                    if (startDate != null) claimStartDate(m.range.first..claimEndFor(m, 2, nested))
                 }
             }
         }
@@ -1574,7 +1585,7 @@ object NaturalLanguageParser {
             firstFreeWord(word)?.let { m ->
                 due = referenceDate
                 if (time == null) time = timeOfDayWords.getValue("night").format(timeFormatter).uppercase(Locale.getDefault())
-                claim(m.range)
+                claimDueDate(m.range)
                 dueRange = m.range
             }
             if (due != null) break
@@ -1586,7 +1597,7 @@ object NaturalLanguageParser {
                 firstFreeMatch(cachedWordRegex(phrase))?.let { m ->
                     due = resolve(referenceDate)
                     if (clock != null && time == null) time = clock.format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimDueDate(m.range)
                     dueRange = m.range
                 }
                 if (due != null) break
@@ -1596,7 +1607,7 @@ object NaturalLanguageParser {
             for ((alias, target) in customDateAliases.entries.sortedByDescending { it.key.length }) {
                 firstFreeWord(alias)?.let { m ->
                     due = resolveDateAlias(target, referenceDate)
-                    claim(m.range)
+                    claimDueDate(m.range)
                     dueRange = m.range
                 }
                 if (due != null) break
@@ -1611,7 +1622,7 @@ object NaturalLanguageParser {
             val target = java.time.LocalDateTime.of(referenceDate, referenceTime).plusMinutes(minutes)
             due = target.toLocalDate()
             if (time == null) time = target.toLocalTime().format(timeFormatter).uppercase(Locale.getDefault())
-            claim(range)
+            claimDueDate(range)
             dueRange = range
         }
         if (due == null) {
@@ -1630,7 +1641,7 @@ object NaturalLanguageParser {
                 val month = m.groupValues[2].toIntOrNull()
                 val day = m.groupValues[3].toIntOrNull()
                 if (year != null && month != null && day != null) {
-                    resolveIsoDate(year, month, day)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveIsoDate(year, month, day)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
                 }
             }
         }
@@ -1640,7 +1651,7 @@ object NaturalLanguageParser {
                 val n2 = m.groupValues[2].toIntOrNull()
                 val yearRaw = m.groupValues[3].ifEmpty { null }
                 if (n1 != null && n2 != null) {
-                    resolveSlashDate(n1, n2, yearRaw, referenceDate, dayFirst)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveSlashDate(n1, n2, yearRaw, referenceDate, dayFirst)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
                 }
             }
         }
@@ -1651,7 +1662,7 @@ object NaturalLanguageParser {
                 val n2 = m.groupValues[2].toIntOrNull()
                 val yearRaw = m.groupValues[3].ifEmpty { null }
                 if (n1 != null && n2 != null) {
-                    resolveSlashDate(n1, n2, yearRaw, referenceDate, dayFirst)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveSlashDate(n1, n2, yearRaw, referenceDate, dayFirst)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
                 }
             }
         }
@@ -1663,7 +1674,7 @@ object NaturalLanguageParser {
                 val day = m.groupValues[2].toIntOrNull()
                 val year = m.groupValues[3].toIntOrNull()
                 if (month != null && day != null) {
-                    resolveMonthDay(month, day, year, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveMonthDay(month, day, year, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
                 }
             }
         }
@@ -1673,7 +1684,7 @@ object NaturalLanguageParser {
                 val month = monthNames[m.groupValues[2].lowercase()]
                 val year = m.groupValues[3].toIntOrNull()
                 if (month != null && day != null) {
-                    resolveMonthDay(month, day, year, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveMonthDay(month, day, year, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
                 }
             }
         }
@@ -1681,25 +1692,25 @@ object NaturalLanguageParser {
         if (due == null) {
             firstFreeMatch(midMonthNameRegex)?.let { m ->
                 monthNames[m.groupValues[1].lowercase()]?.let { month ->
-                    resolveMonthDay(month, 15, null, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveMonthDay(month, 15, null, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
                 }
             }
         }
         // "day after tomorrow" â€” checked before the bare "tomorrow" word below so the whole
         // phrase is claimed at once instead of "tomorrow" alone matching first.
         if (due == null) {
-            firstFreeMatch(dayAfterTomorrowRegex)?.let { m -> due = referenceDate.plusDays(2); claim(m.range); dueRange = m.range }
+            firstFreeMatch(dayAfterTomorrowRegex)?.let { m -> due = referenceDate.plusDays(2); claimDueDate(m.range); dueRange = m.range }
         }
         // "wednesday next week" â€” before the phrase list below, which owns the "next week" half
         // of it and would otherwise strand the weekday in the title.
         if (due == null) {
             firstFreeMatch(weekdayNextWeekRegex)?.let { m ->
-                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextAfter(referenceDate, day); claim(m.range); dueRange = m.range }
+                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextAfter(referenceDate, day); claimDueDate(m.range); dueRange = m.range }
             }
         }
         if (due == null) {
             for ((word, resolve) in bareDateWords) {
-                firstFreeWord(word)?.let { m -> due = resolve(referenceDate); claim(m.range); dueRange = m.range }
+                firstFreeWord(word)?.let { m -> due = resolve(referenceDate); claimDueDate(m.range); dueRange = m.range }
                 if (due != null) break
             }
         }
@@ -1707,7 +1718,7 @@ object NaturalLanguageParser {
             for ((phrase, resolve) in phraseDates) {
                 firstFreeMatch(cachedWordRegex(phrase))?.let { m ->
                     due = resolve(referenceDate)
-                    claim(m.range)
+                    claimDueDate(m.range)
                     dueRange = m.range
                 }
                 if (due != null) break
@@ -1721,7 +1732,7 @@ object NaturalLanguageParser {
         if (due == null && endOfDayFallbackRange == null) {
             firstFreeWord("eod")?.let { m ->
                 if (time == null) time = eodTime.format(timeFormatter).uppercase(Locale.getDefault())
-                claim(m.range)
+                claimTime(m.range)
                 endOfDayFallbackRange = m.range
             }
         }
@@ -1729,14 +1740,14 @@ object NaturalLanguageParser {
             for (word in listOf("eob", "cob")) {
                 firstFreeWord(word)?.let { m ->
                     if (time == null) time = eobTime.format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                     endOfDayFallbackRange = m.range
                 }
                 if (endOfDayFallbackRange != null) break
             }
         }
         if (due == null) {
-            firstFreeMatch(fortnightRegex)?.let { m -> due = referenceDate.plusWeeks(2); claim(m.range); dueRange = m.range }
+            firstFreeMatch(fortnightRegex)?.let { m -> due = referenceDate.plusWeeks(2); claimDueDate(m.range); dueRange = m.range }
         }
         if (due == null) {
             firstFreeMatch(fromNowRegex)?.let { m ->
@@ -1749,14 +1760,14 @@ object NaturalLanguageParser {
                     "year" -> referenceDate.plusYears(n)
                     else -> null
                 }
-                if (due != null) { claim(m.range); dueRange = m.range }
+                if (due != null) { claimDueDate(m.range); dueRange = m.range }
             }
         }
         // "the 20th" (no month named) â€” nearest upcoming month with that day.
         if (due == null) {
             firstFreeMatch(ordinalDayOfMonthRegex)?.let { m ->
                 m.groupValues[1].toIntOrNull()?.let { day ->
-                    resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
                 }
             }
         }
@@ -1764,47 +1775,47 @@ object NaturalLanguageParser {
         if (due == null) {
             firstFreeMatch(ordinalWordDayRegex)?.let { m ->
                 ordinalWords[m.groupValues[1].lowercase()]?.let { day ->
-                    resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; claim(m.range); dueRange = m.range }
+                    resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; claimDueDate(m.range); dueRange = m.range }
                 }
             }
         }
         // Weekdays-only count, before the plain day count below.
         if (due == null) {
             firstFreeMatch(inBusinessDaysRegex)?.let { m ->
-                due = plusBusinessDays(referenceDate, countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range
+                due = plusBusinessDays(referenceDate, countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range
             }
         }
         if (due == null) {
-            firstFreeMatch(inDaysRegex)?.let { m -> due = referenceDate.plusDays(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
+            firstFreeMatch(inDaysRegex)?.let { m -> due = referenceDate.plusDays(countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range }
         }
         if (due == null) {
-            firstFreeMatch(inWeeksRegex)?.let { m -> due = referenceDate.plusWeeks(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
+            firstFreeMatch(inWeeksRegex)?.let { m -> due = referenceDate.plusWeeks(countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range }
         }
         if (due == null) {
-            firstFreeMatch(inMonthsRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
+            firstFreeMatch(inMonthsRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range }
         }
         if (due == null) {
-            firstFreeMatch(inQuartersRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1]) * 3); claim(m.range); dueRange = m.range }
+            firstFreeMatch(inQuartersRegex)?.let { m -> due = referenceDate.plusMonths(countOrOne(m.groupValues[1]) * 3); claimDueDate(m.range); dueRange = m.range }
         }
         if (due == null) {
-            firstFreeMatch(inYearsRegex)?.let { m -> due = referenceDate.plusYears(countOrOne(m.groupValues[1])); claim(m.range); dueRange = m.range }
+            firstFreeMatch(inYearsRegex)?.let { m -> due = referenceDate.plusYears(countOrOne(m.groupValues[1])); claimDueDate(m.range); dueRange = m.range }
         }
         // "next <weekday>" â€” nearest occurrence strictly after today.
         if (due == null) {
             firstFreeMatch(nextWeekdayRegex)?.let { m ->
-                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextAfter(referenceDate, day); claim(m.range); dueRange = m.range }
+                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextAfter(referenceDate, day); claimDueDate(m.range); dueRange = m.range }
             }
         }
         // "this <weekday>" â€” nearest occurrence including today.
         if (due == null) {
             firstFreeMatch(thisWeekdayRegex)?.let { m ->
-                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextOrSame(referenceDate, day); claim(m.range); dueRange = m.range }
+                weekdayNames[m.groupValues[1].lowercase()]?.let { day -> due = nextOrSame(referenceDate, day); claimDueDate(m.range); dueRange = m.range }
             }
         }
         // Bare weekday name (no this/next prefix) â€” nearest occurrence including today.
         if (due == null) {
             for ((name, day) in weekdayNames) {
-                firstFreeWord(name)?.let { m -> due = nextOrSame(referenceDate, day); claim(m.range); dueRange = m.range }
+                firstFreeWord(name)?.let { m -> due = nextOrSame(referenceDate, day); claimDueDate(m.range); dueRange = m.range }
                 if (due != null) break
             }
         }
@@ -1823,7 +1834,7 @@ object NaturalLanguageParser {
             Regex("\\b(?:remind(?:\\s+me)?|rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider|recu[eé]rdame|recordatorio)\\s*$", RegexOption.IGNORE_CASE).find(prefix)?.let { m ->
                 if (isFree(m.range)) {
                     reminder = "At time"
-                    claim(m.range)
+                    claimReminder(m.range)
                 }
             }
         }
@@ -1834,7 +1845,7 @@ object NaturalLanguageParser {
                 // qualifies, rather than being left stranded in the title ("noon-ish" -> "ish").
                 firstFreeMatch(cachedIshWordRegex(word))?.let { m ->
                     time = clock.format(timeFormatter).uppercase(Locale.getDefault())
-                    claim(m.range)
+                    claimTime(m.range)
                 }
                 if (time != null) break
             }
@@ -1844,7 +1855,7 @@ object NaturalLanguageParser {
                 val meridiem = m.groupValues[1].lowercase()
                 val isPm = meridiem.contains("p")
                 time = if (isPm) "5:00 PM" else "9:00 AM"
-                claim(m.range)
+                claimTime(m.range)
             }
         }
 
@@ -1860,7 +1871,7 @@ object NaturalLanguageParser {
                     "3" -> "low"
                     else -> null
                 }
-                claim(m.range)
+                claimPriority(m.range)
             }
         // Bare "p1"/"p2"/"p3" â€” same convention as the "!N" shorthand, checked next since
         // it's just as explicit as that (only if "!N" didn't already match).
@@ -1872,7 +1883,7 @@ object NaturalLanguageParser {
                     "3" -> "low"
                     else -> null
                 }
-                if (priority != null) claim(m.range)
+                if (priority != null) claimPriority(m.range)
             }
         }
         // Word-based priority â€” only if "!N"/"pN" above didn't already set one.
@@ -1880,7 +1891,7 @@ object NaturalLanguageParser {
             for ((phrase, level) in priorityWordPhrases) {
                 firstFreeMatch(cachedWordRegex(phrase))?.let { m ->
                     priority = level
-                    claim(m.range)
+                    claimPriority(m.range)
                 }
                 if (priority != null) break
             }
@@ -1891,7 +1902,7 @@ object NaturalLanguageParser {
         for (phrase in flagPhrases) {
             firstFreeMatch(cachedWordRegex(phrase))?.let { m ->
                 flag = true
-                claim(m.range)
+                claimFlag(m.range)
             }
             if (flag) break
         }
@@ -1900,20 +1911,20 @@ object NaturalLanguageParser {
         var projectName: String? = null
         firstFreeMatch(projectEntityRegex)?.let { m ->
             projectName = entityValue(m.groupValues[1])
-            claim(m.range)
+            claimProject(m.range)
         }
 
         var listName: String? = null
         firstFreeMatch(listEntityRegex)?.let { m ->
             listName = entityValue(m.groupValues[1])
-            claim(m.range)
+            claimList(m.range)
         }
 
         val tagNames = mutableListOf<String>()
         for (m in tagEntityRegex.findAll(raw)) {
             if (isFree(m.range)) {
                 tagNames.add(entityValue(m.groupValues[1]))
-                claim(m.range)
+                claimTag(m.range)
             }
         }
 
@@ -1921,64 +1932,12 @@ object NaturalLanguageParser {
         for (m in assigneeEntityRegex.findAll(raw)) {
             if (isFree(m.range)) {
                 assigneeNames.add(entityValue(m.groupValues[1]))
-                claim(m.range)
+                claimAssignee(m.range)
             }
         }
         val prepositionRegex = Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 
-        val expandedClaimSpans = claimTracker.expandedSpans(raw, prepositionRegex)
-
-        fun IntRange.overlaps(other: IntRange): Boolean = first <= other.last && other.first <= last
-        fun Regex.matchesRange(range: IntRange): Boolean = findAll(raw).any { it.range == range || range.overlaps(it.range) }
-        fun inferHighlightType(span: QuickAddHighlightSpan): QuickAddHighlightType {
-            if (span.type != QuickAddHighlightType.Other) return span.type
-            val range = span.range
-            val text = raw.substring(range.first.coerceAtLeast(0), (range.last + 1).coerceAtMost(raw.length)).trim()
-            return when {
-                projectEntityRegex.matchesRange(range) -> QuickAddHighlightType.Project
-                listEntityRegex.matchesRange(range) -> QuickAddHighlightType.List
-                tagEntityRegex.matchesRange(range) -> QuickAddHighlightType.Tag
-                assigneeEntityRegex.matchesRange(range) -> QuickAddHighlightType.Assignee
-                priorityShorthandRegex.matchesRange(range) || priorityBareRegex.matchesRange(range) ||
-                    priorityWordPhrases.any { (phrase, _) -> text.equals(phrase, ignoreCase = true) } -> QuickAddHighlightType.Priority
-                flagPhrases.any { text.equals(it, ignoreCase = true) } -> QuickAddHighlightType.Flag
-                reminder != null && (
-                    remindShortAtTimeKeywordRegex.matchesRange(range) || remindAtTimeKeywordRegex.matchesRange(range) ||
-                    remindShortMinutesBeforeRegex.matchesRange(range) || remindMinutesBeforeRegex.matchesRange(range) ||
-                    remindShortHourBeforeRegex.matchesRange(range) || remindHourBeforeRegex.matchesRange(range) ||
-                    remindShortDayBeforeRegex.matchesRange(range) || remindDayBeforeRegex.matchesRange(range) ||
-                    remindShortAtClockTimeRegex.matchesRange(range) || remindAtClockTimeRegex.matchesRange(range)
-                ) -> QuickAddHighlightType.Reminder
-                recurrence != null && (
-                    everyAlternateDayRegex.matchesRange(range) || everyAlternateWeekRegex.matchesRange(range) ||
-                    everyAlternateMonthRegex.matchesRange(range) || everyAlternateYearRegex.matchesRange(range) ||
-                    everyNDaysRegex.matchesRange(range) || everyNWeeksRegex.matchesRange(range) ||
-                    everyNMonthsRegex.matchesRange(range) || everyNQuartersRegex.matchesRange(range) ||
-                    everyNYearsRegex.matchesRange(range) || everyLastDayOfMonthRegex.matchesRange(range) ||
-                    everyMonthOnDayRegex.matchesRange(range) || everyOrdinalOfMonthRegex.matchesRange(range) ||
-                    everyMultiWeekdayRegex.matchesRange(range) || everyWeekdayRegex.matchesRange(range) ||
-                    recurrenceUntilRegex.matchesRange(range) || recurrenceTimesRegex.matchesRange(range) ||
-                    text.contains("every", ignoreCase = true) ||
-                    text.contains("until", ignoreCase = true) ||
-                    text.contains("times", ignoreCase = true) ||
-                    bareRecurrenceWords.keys.any { text.equals(it, ignoreCase = true) }
-                ) -> QuickAddHighlightType.Recurrence
-                time != null && (
-                    time12Regex.matchesRange(range) || timeOClockRegex.matchesRange(range) ||
-                    atTimeRegex.matchesRange(range) || quarterHalfRegex.matchesRange(range) ||
-                    writtenHourRegex.matchesRange(range) || mealTimeRegex.matchesRange(range) ||
-                    ishTimeRegex.matchesRange(range) || firstThingRegex.matchesRange(range) ||
-                    time24Regex.matchesRange(range) || bareMeridiemRegex.matchesRange(range) ||
-                    timeOfDayWords.keys.any { text.equals(it, ignoreCase = true) || text.equals("$it-ish", ignoreCase = true) }
-                ) -> QuickAddHighlightType.Time
-                startDate != null && startDateRegex.matchesRange(range) -> QuickAddHighlightType.StartDate
-                dueRange?.let { range.overlaps(it) } == true -> QuickAddHighlightType.DueDate
-                else -> QuickAddHighlightType.Other
-            }
-        }
-
-        val sortedHighlightSpans = expandedClaimSpans
-            .map { span -> span.copy(type = inferHighlightType(span)) }
+        val sortedHighlightSpans = claimTracker.expandedSpans(raw, prepositionRegex)
             .sortedBy { it.range.first }
         val sortedClaims = sortedHighlightSpans.map { it.range }
         val sortedStrip = (sortedClaims + claimTracker.stripOnlyRanges()).sortedBy { it.first }
