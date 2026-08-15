@@ -302,7 +302,11 @@ private fun QuickAddDialogContent(
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim()
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                .orEmpty()
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .maxByOrNull { it.length }
             if (!spoken.isNullOrBlank()) {
                 title = if (title.isBlank()) spoken else title.trimEnd() + " " + spoken
             }
@@ -312,6 +316,9 @@ private fun QuickAddDialogContent(
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PROMPT, context.getString(R.string.quick_add_voice_prompt))
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
         }
         if (intent.resolveActivity(context.packageManager) != null) {
             speechLauncher.launch(intent)

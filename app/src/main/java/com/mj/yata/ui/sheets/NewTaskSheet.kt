@@ -150,6 +150,7 @@ import com.mj.yata.ui.widgets.YataSelectChip
 import com.mj.yata.ui.widgets.YataTimePickerLauncher
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.ParsedQuickAdd
+import com.mj.yata.util.QuickAddHighlightType
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
 import com.mj.yata.util.resolveParsedQuickAddEntities
@@ -549,41 +550,45 @@ fun NewTaskSheet(
 
     var isVoiceOverlayOpen by remember { mutableStateOf(false) }
 
+    fun applyVoiceQuickAdd(parsed: ParsedQuickAdd) {
+        val parsedTitle = parsed.title
+        title = TextFieldValue(parsedTitle, TextRange(parsedTitle.length))
+        if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
+        if (parsed.startDate != null) { selectedStartDate = parsed.startDate; startDateManuallySet = true }
+        if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
+        if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
+        if (parsed.reminder != null) { selectedReminder = parsed.reminder; reminderManuallySet = true }
+        if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
+        if (parsed.flag) selectedFlag = true
+        if (projectsEnabled && parsed.projectName != null) {
+            findBestEntityMatch(parsed.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
+        }
+        if (parsed.listName != null) {
+            findBestEntityMatch(parsed.listName, lists, { it.name })?.let { selectedListId = it.id }
+        }
+        if (tagsEnabled && parsed.tagNames.isNotEmpty()) {
+            val matchedTagIds = parsed.tagNames.mapNotNull { target ->
+                findBestEntityMatch(target, tags, { it.name })?.id
+            }.distinct().filterNot { it in selectedTagIds }
+            selectedTagIds.addAll(matchedTagIds)
+        }
+        if (peopleEnabled && parsed.assigneeNames.isNotEmpty()) {
+            val matchedAssigneeIds = parsed.assigneeNames.mapNotNull { target ->
+                findBestEntityMatch(target, activePeople, { it.name })?.id
+            }.distinct().filterNot { it in selectedAssigneeIds }
+            selectedAssigneeIds.addAll(matchedAssigneeIds)
+        }
+        quickAddDismissed = false
+    }
+
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            val spoken = matches?.firstOrNull()?.trim()
+            val spoken = matches.orEmpty().map { it.trim() }.filter { it.isNotBlank() }.maxByOrNull { it.length }
             if (!spoken.isNullOrBlank()) {
-                val parsed = NaturalLanguageParser.parse(spoken)
-                val parsedTitle = parsed.title
-                title = TextFieldValue(parsedTitle, TextRange(parsedTitle.length))
-                if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
-                if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
-                if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
-                if (parsed.reminder != null) { selectedReminder = parsed.reminder; reminderManuallySet = true }
-                if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
-                if (parsed.flag) selectedFlag = true
-                if (parsed.projectName != null) {
-                    findBestEntityMatch(parsed.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
-                }
-                if (parsed.listName != null) {
-                    findBestEntityMatch(parsed.listName, lists, { it.name })?.let { selectedListId = it.id }
-                }
-                if (parsed.tagNames.isNotEmpty()) {
-                    val matchedTagIds = parsed.tagNames.mapNotNull { target ->
-                        findBestEntityMatch(target, tags, { it.name })?.id
-                    }.distinct()
-                    selectedTagIds.addAll(matchedTagIds)
-                }
-                if (parsed.assigneeNames.isNotEmpty()) {
-                    val matchedAssigneeIds = parsed.assigneeNames.mapNotNull { target ->
-                        findBestEntityMatch(target, activePeople, { it.name })?.id
-                    }.distinct()
-                    selectedAssigneeIds.addAll(matchedAssigneeIds)
-                }
-                quickAddDismissed = false
+                applyVoiceQuickAdd(NaturalLanguageParser.parse(spoken))
             }
         }
     }
@@ -795,23 +800,39 @@ fun NewTaskSheet(
             // A real rounded pill isn't possible inline in an editable BasicTextField, so this
             // approximates one with a tinted background + bold colored text (same accent@16%
             // language TagChip/YataSelectChip use elsewhere) — far more visible than a thin underline.
-            val quickAddChipColor = MaterialTheme.colorScheme.primary
-            val quickAddVisualTransformation = remember(quickAdd.highlightRanges, quickAddMatched, quickAddChipColor) {
+            val quickAddFallbackColor = MaterialTheme.colorScheme.primary
+            fun quickAddHighlightColor(type: QuickAddHighlightType): Color = when (type) {
+                QuickAddHighlightType.DueDate -> Color(0xFF2563EB)
+                QuickAddHighlightType.StartDate -> Color(0xFF0891B2)
+                QuickAddHighlightType.Time -> Color(0xFF7C3AED)
+                QuickAddHighlightType.Recurrence -> Color(0xFF0F766E)
+                QuickAddHighlightType.Reminder -> Color(0xFFD97706)
+                QuickAddHighlightType.Priority -> Color(0xFFDC2626)
+                QuickAddHighlightType.Flag -> Color(0xFFE11D48)
+                QuickAddHighlightType.Project -> Color(0xFF9333EA)
+                QuickAddHighlightType.List -> Color(0xFF4F46E5)
+                QuickAddHighlightType.Tag -> Color(0xFF16A34A)
+                QuickAddHighlightType.Assignee -> Color(0xFFDB2777)
+                QuickAddHighlightType.Other -> quickAddFallbackColor
+            }
+            val quickAddVisualTransformation = remember(quickAdd.highlightSpans, quickAddMatched) {
                 VisualTransformation { text ->
-                    if (!quickAddMatched || quickAdd.highlightRanges.isEmpty()) {
+                    if (!quickAddMatched || quickAdd.highlightSpans.isEmpty()) {
                         TransformedText(text, OffsetMapping.Identity)
                     } else {
                         val annotated = buildAnnotatedString {
                             append(text.text)
-                            quickAdd.highlightRanges.forEach { range ->
+                            quickAdd.highlightSpans.forEach { span ->
+                                val range = span.range
+                                val chipColor = quickAddHighlightColor(span.type)
                                 val start = range.first.coerceIn(0, text.text.length)
                                 val end = (range.last + 1).coerceIn(0, text.text.length)
                                 if (start < end) {
                                     addStyle(
                                         SpanStyle(
-                                            color = quickAddChipColor,
+                                            color = chipColor,
                                             fontWeight = FontWeight.Bold,
-                                            background = quickAddChipColor.copy(alpha = 0.16f)
+                                            background = chipColor.copy(alpha = 0.16f)
                                         ),
                                         start,
                                         end
@@ -1767,33 +1788,7 @@ fun NewTaskSheet(
             onDismiss = { isVoiceOverlayOpen = false },
             voiceLanguage = voiceLanguage,
             onTaskRecognized = { parsed ->
-                val parsedTitle = parsed.title
-                title = TextFieldValue(parsedTitle, TextRange(parsedTitle.length))
-                if (parsed.due != null) { selectedDueDate = parsed.due; dueManuallySet = true }
-                if (parsed.time != null) { selectedTime = parsed.time; timeManuallySet = true }
-                if (parsed.recurrence != null) { selectedRecurrence = parsed.recurrence; recurrenceManuallySet = true }
-                if (parsed.reminder != null) { selectedReminder = parsed.reminder; reminderManuallySet = true }
-                if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
-                if (parsed.flag) selectedFlag = true
-                if (parsed.projectName != null) {
-                    findBestEntityMatch(parsed.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
-                }
-                if (parsed.listName != null) {
-                    findBestEntityMatch(parsed.listName, lists, { it.name })?.let { selectedListId = it.id }
-                }
-                if (parsed.tagNames.isNotEmpty()) {
-                    val matchedTagIds = parsed.tagNames.mapNotNull { target ->
-                        findBestEntityMatch(target, tags, { it.name })?.id
-                    }.distinct()
-                    selectedTagIds.addAll(matchedTagIds)
-                }
-                if (parsed.assigneeNames.isNotEmpty()) {
-                    val matchedAssigneeIds = parsed.assigneeNames.mapNotNull { target ->
-                        findBestEntityMatch(target, activePeople, { it.name })?.id
-                    }.distinct()
-                    selectedAssigneeIds.addAll(matchedAssigneeIds)
-                }
-                quickAddDismissed = false
+                applyVoiceQuickAdd(parsed)
             }
         )
     }

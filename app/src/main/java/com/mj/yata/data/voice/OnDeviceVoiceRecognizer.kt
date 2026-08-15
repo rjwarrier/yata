@@ -155,7 +155,7 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
                         if (!isCurrentSession(sessionId)) return
                         if (!isListeningActive) return
                         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                        val text = matches?.firstOrNull()?.trim() ?: ""
+                        val text = matches.bestTranscript()
                         if (text.isNotBlank()) {
                             appendRecognizedSegment(text)
                             transientRestartCount = 0
@@ -178,7 +178,7 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
                         if (!isCurrentSession(sessionId)) return
                         if (!isListeningActive) return
                         val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                        val partial = matches?.firstOrNull()?.trim() ?: ""
+                        val partial = matches.bestTranscript()
                         if (partial.isNotBlank()) {
                             transientRestartCount = 0
                             val combined = if (accumulatedText.isNotBlank()) "$accumulatedText $partial" else partial
@@ -257,9 +257,43 @@ class OnDeviceVoiceRecognizer(private val context: Context) {
         if (normalizedSegment == lastCommittedSegment.normalizedForComparison()) return
         val normalizedAccumulated = accumulatedText.normalizedForComparison()
         if (normalizedAccumulated.endsWith(normalizedSegment)) return
+        if (normalizedSegment.startsWith(normalizedAccumulated) && normalizedAccumulated.isNotBlank()) {
+            accumulatedText = segment.trim()
+            lastCommittedSegment = segment
+            return
+        }
+
+        val merged = mergeWithTokenOverlap(accumulatedText, segment)
+        if (merged != null) {
+            accumulatedText = merged
+            lastCommittedSegment = segment
+            return
+        }
 
         accumulatedText = if (accumulatedText.isNotBlank()) "$accumulatedText $segment" else segment
         lastCommittedSegment = segment
+    }
+
+    private fun List<String>?.bestTranscript(): String =
+        orEmpty()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .maxByOrNull { it.normalizedForComparison().length }
+            .orEmpty()
+
+    private fun mergeWithTokenOverlap(existing: String, incoming: String): String? {
+        val existingTokens = existing.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+        val incomingTokens = incoming.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (existingTokens.isEmpty() || incomingTokens.isEmpty()) return null
+        val maxOverlap = minOf(existingTokens.size, incomingTokens.size)
+        for (size in maxOverlap downTo 1) {
+            val existingTail = existingTokens.takeLast(size).joinToString(" ").normalizedForComparison()
+            val incomingHead = incomingTokens.take(size).joinToString(" ").normalizedForComparison()
+            if (existingTail == incomingHead) {
+                return (existingTokens + incomingTokens.drop(size)).joinToString(" ")
+            }
+        }
+        return null
     }
 
     private fun String.normalizedForComparison(): String {

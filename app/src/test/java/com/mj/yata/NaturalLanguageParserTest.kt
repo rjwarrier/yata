@@ -2,6 +2,7 @@ package com.mj.yata
 
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.QuickAddHighlightType
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.LocalDate
@@ -242,6 +243,55 @@ class NaturalLanguageParserTest {
         assertEquals("review brief", result.title)
         assertEquals("ClientCRM", result.projectName)
         assertEquals("Q3Board", result.listName)
+    }
+
+    @Test
+    fun parsesSpokenSymbolEntityTokens() {
+        val result = NaturalLanguageParser.parse(
+            "plus project ClientCRM equals list Q3Board at sign Jane hashtag urgent tomorrow review brief",
+            ref
+        )
+        assertEquals("2026-07-05", result.due)
+        assertEquals("review brief", result.title)
+        assertEquals("ClientCRM", result.projectName)
+        assertEquals("Q3Board", result.listName)
+        assertEquals(listOf("urgent"), result.tagNames)
+        assertEquals(listOf("Jane"), result.assigneeNames)
+    }
+
+    @Test
+    fun parsesAdditionalLocalizedRelativeDates() {
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("morgen bericht senden", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("domani chiamare luca", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("besok bayar tagihan", ref).due)
+        assertEquals("2026-07-05", NaturalLanguageParser.parse("ngay mai gui bao cao", ref).due)
+        assertEquals("2026-07-03", NaturalLanguageParser.parse("gisteren notities loggen", ref).due)
+    }
+
+    @Test
+    fun parsesAdditionalLocalizedWeekdays() {
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("montag team sync", ref).due)
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("lunedi team sync", ref).due)
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("maandag team sync", ref).due)
+        assertEquals("2026-07-06", NaturalLanguageParser.parse("senin team sync", ref).due)
+    }
+
+    @Test
+    fun parsesAdditionalLocalizedMonthNames() {
+        assertEquals("2026-10-12", NaturalLanguageParser.parse("12 ottobre firmare contratto", ref).due)
+        assertEquals("2026-11-05", NaturalLanguageParser.parse("5 kasim rapor hazirla", ref).due)
+        assertEquals("2026-09-07", NaturalLanguageParser.parse("7 wrzesnia wyslac fakture", ref).due)
+        assertEquals("2026-11-05", NaturalLanguageParser.parse("thang muoi mot 5 gui bao cao", ref).due)
+    }
+
+    @Test
+    fun parsesAdditionalLocalizedRecurrenceUnits() {
+        assertEquals("weekly", NaturalLanguageParser.parse("ogni settimana pulire casa", ref).recurrence?.freq)
+        assertEquals("monthly", NaturalLanguageParser.parse("jeden monat miete zahlen", ref).recurrence?.freq)
+
+        val turkish = NaturalLanguageParser.parse("her 2 hafta toplanti", ref)
+        assertEquals("weekly", turkish.recurrence?.freq)
+        assertEquals(2, turkish.recurrence?.interval)
     }
 
     @Test
@@ -624,6 +674,24 @@ class NaturalLanguageParserTest {
         assertEquals(1, result.highlightRanges.size)
         val range = result.highlightRanges.first()
         assertEquals("every monday", raw.substring(range.first, range.last + 1))
+    }
+
+    @Test
+    fun highlightSpansCarryRecognizedDataTypes() {
+        val raw = "tomorrow 3pm every monday +Client =Backlog #urgent @Jane !1 review"
+        val result = NaturalLanguageParser.parse(raw, ref)
+        val typedSlices = result.highlightSpans.associate { span ->
+            raw.substring(span.range.first, span.range.last + 1) to span.type
+        }
+
+        assertEquals(QuickAddHighlightType.DueDate, typedSlices["tomorrow"])
+        assertEquals(QuickAddHighlightType.Time, typedSlices["3pm"])
+        assertEquals(QuickAddHighlightType.Recurrence, typedSlices["every monday"])
+        assertEquals(QuickAddHighlightType.Project, typedSlices["+Client"])
+        assertEquals(QuickAddHighlightType.List, typedSlices["=Backlog"])
+        assertEquals(QuickAddHighlightType.Tag, typedSlices["#urgent"])
+        assertEquals(QuickAddHighlightType.Assignee, typedSlices["@Jane"])
+        assertEquals(QuickAddHighlightType.Priority, typedSlices["!1"])
     }
 
     @Test

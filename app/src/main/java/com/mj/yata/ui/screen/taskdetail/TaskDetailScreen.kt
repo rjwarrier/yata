@@ -40,9 +40,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,6 +80,7 @@ import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.ParsedQuickAdd
+import com.mj.yata.util.QuickAddHighlightType
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findBestEntityMatch
 import com.mj.yata.util.withParsedQuickAdd
@@ -473,6 +479,50 @@ fun TaskDetailScreen(
                     val quickAdd = remember(titleBuffer.text) { NaturalLanguageParser.parse(titleBuffer.text) }
                     val quickAddMatched = isEditingTitle && titleEdited && !titleQuickAddDismissed &&
                         quickAdd.title != titleBuffer.text.trim()
+                    val quickAddFallbackColor = MaterialTheme.colorScheme.primary
+                    fun quickAddHighlightColor(type: QuickAddHighlightType): Color = when (type) {
+                        QuickAddHighlightType.DueDate -> Color(0xFF2563EB)
+                        QuickAddHighlightType.StartDate -> Color(0xFF0891B2)
+                        QuickAddHighlightType.Time -> Color(0xFF7C3AED)
+                        QuickAddHighlightType.Recurrence -> Color(0xFF0F766E)
+                        QuickAddHighlightType.Reminder -> Color(0xFFD97706)
+                        QuickAddHighlightType.Priority -> Color(0xFFDC2626)
+                        QuickAddHighlightType.Flag -> Color(0xFFE11D48)
+                        QuickAddHighlightType.Project -> Color(0xFF9333EA)
+                        QuickAddHighlightType.List -> Color(0xFF4F46E5)
+                        QuickAddHighlightType.Tag -> Color(0xFF16A34A)
+                        QuickAddHighlightType.Assignee -> Color(0xFFDB2777)
+                        QuickAddHighlightType.Other -> quickAddFallbackColor
+                    }
+                    val quickAddVisualTransformation = remember(quickAdd.highlightSpans, quickAddMatched) {
+                        VisualTransformation { text ->
+                            if (!quickAddMatched || quickAdd.highlightSpans.isEmpty()) {
+                                TransformedText(text, OffsetMapping.Identity)
+                            } else {
+                                val annotated = buildAnnotatedString {
+                                    append(text.text)
+                                    quickAdd.highlightSpans.forEach { span ->
+                                        val range = span.range
+                                        val chipColor = quickAddHighlightColor(span.type)
+                                        val start = range.first.coerceIn(0, text.text.length)
+                                        val end = (range.last + 1).coerceIn(0, text.text.length)
+                                        if (start < end) {
+                                            addStyle(
+                                                SpanStyle(
+                                                    color = chipColor,
+                                                    fontWeight = FontWeight.Bold,
+                                                    background = chipColor.copy(alpha = 0.16f)
+                                                ),
+                                                start,
+                                                end
+                                            )
+                                        }
+                                    }
+                                }
+                                TransformedText(annotated, OffsetMapping.Identity)
+                            }
+                        }
+                    }
                     val mention = remember(titleBuffer, tagsFeatureEnabled, peopleFeatureEnabled, projectsFeatureEnabled) {
                         if (!isEditingTitle) {
                             null
@@ -549,6 +599,7 @@ fun TaskDetailScreen(
                                 // already hold text longer than the line — as a single line the
                                 // start of it was unreachable.
                                 maxLines = 4,
+                                visualTransformation = quickAddVisualTransformation,
                                 cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
                                 modifier = Modifier
                                     .weight(1f)
