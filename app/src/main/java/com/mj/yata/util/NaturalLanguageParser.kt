@@ -1201,19 +1201,9 @@ object NaturalLanguageParser {
         }
 
         fun isFree(range: IntRange) = parserContext.isFree(range)
-        fun claim(range: IntRange, type: QuickAddHighlightType = QuickAddHighlightType.Other) =
-            parserContext.claim(range, type)
         fun claimDueDate(range: IntRange) = parserContext.claimDueDate(range)
-        fun claimStartDate(range: IntRange) = parserContext.claimStartDate(range)
         fun claimTime(range: IntRange) = parserContext.claimTime(range)
-        fun claimRecurrence(range: IntRange) = parserContext.claimRecurrence(range)
         fun claimReminder(range: IntRange) = parserContext.claimReminder(range)
-        fun claimPriority(range: IntRange) = parserContext.claimPriority(range)
-        fun claimFlag(range: IntRange) = parserContext.claimFlag(range)
-        fun claimProject(range: IntRange) = parserContext.claimProject(range)
-        fun claimList(range: IntRange) = parserContext.claimList(range)
-        fun claimTag(range: IntRange) = parserContext.claimTag(range)
-        fun claimAssignee(range: IntRange) = parserContext.claimAssignee(range)
         fun firstFreeMatch(regex: Regex) = parserContext.firstFreeMatch(regex)
         fun firstFreeWord(word: String) = parserContext.firstFreeWord(word, ::cachedWordRegex)
 
