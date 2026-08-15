@@ -912,6 +912,8 @@ object NaturalLanguageParser {
     }
 
     private val escapeRegex = Regex("\\\\(\\w+)")
+    private val highlightPrepositionRegex =
+        Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
     private const val ENTITY_NAME_CHARS = "\\p{L}\\p{N}_\\-\\s"
     private const val ENTITY_BOUNDARY_KEYWORDS =
             "project\\b|proyecto\\b|projeto\\b|projet\\b|list\\b|lista\\b|liste\\b|tag\\b|etiqueta\\b|Ã©tiquette\\b|\\u00e9tiquette\\b|etiquette\\b|" +
@@ -1327,9 +1329,7 @@ object NaturalLanguageParser {
 
         // 7. Project, List, Tag, Assignee keywords
         val entities = EntityRules.apply(parserContext)
-        val prepositionRegex = Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
-
-        val sortedNormalizedHighlightSpans = parserContext.expandedSpans(prepositionRegex)
+        val sortedNormalizedHighlightSpans = parserContext.expandedSpans(highlightPrepositionRegex)
             .sortedBy { it.range.first }
         val sortedHighlightSpans = sortedNormalizedHighlightSpans
             .map { span -> span.copy(range = normalizedInput.toRawRange(span.range)) }
