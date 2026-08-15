@@ -1407,6 +1407,39 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun recognizedHighlightSpansDoNotOverlap() {
+        val result = NaturalLanguageParser.parse(
+            "remind me 30 min before every monday and wednesday at 3pm +Client =Backlog #urgent @Jane !1 review",
+            ref
+        )
+        val spans = result.highlightSpans.map { it.range }.sortedBy { it.first }
+        spans.zipWithNext().forEach { (left, right) ->
+            assertTrue("highlight spans must not overlap: $left and $right", left.last < right.first)
+        }
+    }
+
+    @Test
+    fun escapedRecognizedWordsRemainUnhighlighted() {
+        val result = NaturalLanguageParser.parse("\\tomorrow \\3pm \\every monday literal title", ref)
+        assertNull(result.due)
+        assertNull(result.time)
+        assertNull(result.recurrence)
+        assertTrue(result.highlightSpans.isEmpty())
+        assertEquals("tomorrow 3pm every monday literal title", result.title)
+    }
+
+    @Test
+    fun malformedEntityRunsDoNotProduceInvalidHighlightSpans() {
+        val input = "#".repeat(40) + " " + "@".repeat(40) + " " + "+".repeat(40) + " " + "=".repeat(40)
+        val result = NaturalLanguageParser.parse(input, ref)
+        result.highlightSpans.forEach { span ->
+            assertTrue(span.range.first in input.indices)
+            assertTrue(span.range.last in input.indices)
+            assertTrue(span.range.first <= span.range.last)
+        }
+    }
+
+    @Test
     fun oddInputsDoNotCrashParser() {
         val inputs = listOf(
             "",
