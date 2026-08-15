@@ -277,12 +277,17 @@ class HttpGitHubApi(
         path: String,
         maxResults: Int
     ): List<GitHubCommitSummary> {
+        // Bounded to maxResults, not always the full page size: a caller asking for the latest 1
+        // commit only shrinks the *number of pages* fetched if per_page stays uncapped - the page
+        // itself still comes over the wire at full size. Capping per_page too means maxResults=1
+        // actually downloads one commit, not a 100-commit page truncated client-side afterward.
+        val perPage = minOf(maxResults, COMMITS_PAGE_SIZE)
         val out = mutableListOf<GitHubCommitSummary>()
         var page = 1
         while (out.size < maxResults) {
             val array = requestJsonArray(
                 "GET",
-                "/repos/${pathSegment(owner)}/${pathSegment(repo)}/commits?sha=${queryValue(branch)}&path=${queryValue(path)}&per_page=$COMMITS_PAGE_SIZE&page=$page"
+                "/repos/${pathSegment(owner)}/${pathSegment(repo)}/commits?sha=${queryValue(branch)}&path=${queryValue(path)}&per_page=$perPage&page=$page"
             )
             if (array.length() == 0) break
             out += array.objects().map { json ->
@@ -294,7 +299,7 @@ class HttpGitHubApi(
                     authoredAt = author?.optString("date")?.parseInstantOrNull()
                 )
             }
-            if (array.length() < COMMITS_PAGE_SIZE) break
+            if (array.length() < perPage) break
             page++
         }
         return if (out.size > maxResults) out.take(maxResults) else out

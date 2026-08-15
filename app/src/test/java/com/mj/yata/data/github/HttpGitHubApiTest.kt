@@ -273,6 +273,48 @@ class HttpGitHubApiTest {
     }
 
     @Test
+    fun listCommitsWithSmallMaxResultsRequestsOnlyThatManyPerPage() = runTest {
+        // A caller asking for the latest 1 commit should download 1 commit over the wire, not a
+        // full 100-commit page truncated client-side afterward - that was the whole point of
+        // callers being able to pass a small maxResults in the first place.
+        var requestedUrl = ""
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { url ->
+                requestedUrl = url.toString()
+                FakeConnection(status = 200, body = "[${commitJson("sha-1")}]")
+            },
+            retryDelay = {}
+        )
+
+        val commits = api.listCommits("owner", "repo", "main", "yata/snapshot.json", maxResults = 1)
+
+        assertEquals(1, commits.size)
+        assertTrue(requestedUrl.contains("per_page=1"))
+    }
+
+    @Test
+    fun listCommitsWithSmallMaxResultsStopsAfterOnePageEvenIfMore() = runTest {
+        // A short page (fewer commits than requested) means there's nothing more to fetch, same
+        // as the unbounded case - this shouldn't spin into a second page once maxResults is hit.
+        val connections = ArrayDeque(listOf(FakeConnection(status = 200, body = "[${commitJson("sha-1")}]")))
+        var requestCount = 0
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = { url ->
+                requestCount++
+                connections.removeFirst()
+            },
+            retryDelay = {}
+        )
+
+        val commits = api.listCommits("owner", "repo", "main", "yata/snapshot.json", maxResults = 1)
+
+        assertEquals(1, commits.size)
+        assertEquals(1, requestCount)
+    }
+
+    @Test
     fun listCommitsEncodesQueryValuesSafely() = runTest {
         var requestedUrl = ""
         val api = HttpGitHubApi(

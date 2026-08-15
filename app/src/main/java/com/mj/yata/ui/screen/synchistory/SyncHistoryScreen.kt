@@ -93,7 +93,11 @@ fun SyncHistoryScreen(
 
     fun toggleExpand(id: String) {
         expandedId = if (expandedId == id) null else id
-        if (expandedId == id && id !in summaries && id !in summaryErrors) {
+        // inspectingId != id guards against a second concurrent fetch of the same snapshot: the
+        // cache only gets populated when the *first* fetch resolves, so collapsing and
+        // re-expanding the same card before that happens would otherwise pass this check twice
+        // and download+decrypt the same blob twice in parallel.
+        if (expandedId == id && id !in summaries && id !in summaryErrors && inspectingId != id) {
             inspectingId = id
             viewModel.inspectRemoteSnapshot(id) { result ->
                 if (inspectingId == id) inspectingId = null
@@ -232,9 +236,11 @@ fun SyncHistoryScreen(
             },
             confirmButton = {
                 TextButton(
-                    // A snapshot that couldn't be read is one that couldn't be restored either -
-                    // better to block here than fail halfway through overwriting live data.
-                    enabled = !isRestoring && error == null,
+                    // Blocked both on a read failure AND on still-loading (summary == null,
+                    // error == null is *also* true mid-fetch) - a snapshot whose contents haven't
+                    // been shown yet is one the user hasn't actually had the chance to check
+                    // before confirming, which defeats the reason this dialog shows them at all.
+                    enabled = !isRestoring && error == null && summary != null,
                     onClick = {
                         isRestoring = true
                         viewModel.restoreRemoteSnapshot(restorePoint.id) { result ->
