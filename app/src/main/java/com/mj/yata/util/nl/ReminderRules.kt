@@ -25,6 +25,8 @@ internal object ReminderRules {
         Regex("\\b(?:remind(?:\\s+me)?|recu[e\u00e9]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:1\\s+(?:day|d\u00eda|dia|jour)|one\\s+day|a\\s+day|un\\s+d\u00eda|un\\s+dia|um\\s+dia|une\\s+jour|un\\s+jour)\\s+(?:before|antes|avant)\\b", RegexOption.IGNORE_CASE)
     private val remindAtClockTimeRegex =
         Regex("\\b(?:remind(?:\\s+me)?|recu[e\u00e9]rdame|recordatorio|lembra(?:r)?(?:\\s+me)?|lembrete|rappelle(?:[-\\s]moi)?|rappel)\\s+(?:(?:at|a\\s+las?|\u00e0s?|as|\u00e0|a)\\s+)?(\\d{1,2})([:.](\\d{2}))?\\s*(am|pm|AM|PM)\\b", RegexOption.IGNORE_CASE)
+    private val remindDateFallbackRegex =
+        Regex("\\b(?:remind(?:\\s+me)?|rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider|recu[e\u00e9]rdame|recordatorio)\\s*$", RegexOption.IGNORE_CASE)
 
     fun apply(context: ParserContext, timeFormatter: DateTimeFormatter): String? {
         (context.firstFreeMatch(remindShortAtTimeKeywordRegex) ?: context.firstFreeMatch(remindAtTimeKeywordRegex))?.let { match ->
@@ -67,6 +69,20 @@ internal object ReminderRules {
                 }
                 context.claimReminder(match.range)
                 return LocalTime.of(hour24, minute).format(timeFormatter).uppercase(Locale.getDefault())
+            }
+        }
+
+        return null
+    }
+
+    fun applyDateFallback(context: ParserContext, dueRange: IntRange?): String? {
+        if (dueRange == null) return null
+
+        val prefix = context.raw.substring(0, dueRange.first)
+        remindDateFallbackRegex.find(prefix)?.let { match ->
+            if (context.isFree(match.range)) {
+                context.claimReminder(match.range)
+                return "At time"
             }
         }
 

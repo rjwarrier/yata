@@ -1203,9 +1203,6 @@ object NaturalLanguageParser {
             }
         }
 
-        fun isFree(range: IntRange) = parserContext.isFree(range)
-        fun claimReminder(range: IntRange) = parserContext.claimReminder(range)
-
         // 1. Recurrence. Checked first so "every sunday" is claimed whole before due-date rules.
         val recurrenceResult = RecurrenceRules.apply(
             context = parserContext,
@@ -1321,18 +1318,9 @@ object NaturalLanguageParser {
         time = dateResult.time
         dateResult.dueRange?.let { dueRange = it }
 
-        // 3.5 "remind <date>" â€” a bare "remind"/"remind me" immediately before a date phrase
-        // (no offset/clock-time suffix, since those are already claimed in section 1.5) implies
-        // the reminder should fire at the task's due time.
-        if (reminder == null && dueRange != null) {
-            val range = dueRange!!
-            val prefix = raw.substring(0, range.first)
-            Regex("\\b(?:remind(?:\\s+me)?|rem(?:\\s+me)?|rmd|rmndr|remndr|reminder|remindr|remider|recu[eé]rdame|recordatorio)\\s*$", RegexOption.IGNORE_CASE).find(prefix)?.let { m ->
-                if (isFree(m.range)) {
-                    reminder = "At time"
-                    claimReminder(m.range)
-                }
-            }
+        // 3.5 "remind <date>" fallback, after due-date rules know the date span.
+        if (reminder == null) {
+            reminder = ReminderRules.applyDateFallback(parserContext, dueRange)
         }
 
         if (time == null) {
