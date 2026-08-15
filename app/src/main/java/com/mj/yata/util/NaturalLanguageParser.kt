@@ -13,6 +13,7 @@ import com.mj.yata.util.nl.PriorityFlagRules
 import com.mj.yata.util.nl.RecurrenceRuleConfig
 import com.mj.yata.util.nl.RecurrenceRules
 import com.mj.yata.util.nl.ReminderRules
+import com.mj.yata.util.nl.StartDateRules
 import com.mj.yata.util.nl.TimeRules
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
 import com.mj.yata.util.nl.naturalLanguageCountOrOne
@@ -1268,20 +1269,12 @@ object NaturalLanguageParser {
         // depth 1: the captured group can't contain another start keyword, since the keyword is
         // what delimits it. Only the resolved date is taken from the nested result â€” its title,
         // priority and everything else are discarded.
-        var startDate: LocalDate? = null
-        firstFreeMatch(startDateRegex)?.let { m ->
-            val phrase = m.groupValues[2]
-            if (phrase.isNotBlank()) {
-                val nested = NaturalLanguageParser.parse(phrase, referenceDate, referenceTime, dayFirst)
-                nested.due?.let { resolved ->
-                    startDate = runCatching { LocalDate.parse(resolved) }.getOrNull()
-                    // Claim the keyword *and* the date words it governs, so they're off-limits to
-                    // every rule below and get stripped from the saved title together — but only
-                    // as far as the date actually reaches, see [claimEndFor].
-                    if (startDate != null) claimStartDate(m.range.first..claimEndFor(m, 2, nested))
-                }
-            }
-        }
+        val startDate: LocalDate? = StartDateRules.apply(
+            context = parserContext,
+            startDateRegex = startDateRegex,
+            parseNested = { phrase -> parse(phrase, referenceDate, referenceTime, dayFirst) },
+            claimEndFor = ::claimEndFor
+        )
 
         // 3. Relative dates
         for (word in listOf("tonight", "tonite", "tnite")) {
