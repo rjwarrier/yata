@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.93] - 2026-08-16
+
+`versionCode 20`. Upgrades in place over 0.92.2.
+
 ### Added
 - Today now has a "Speak" voice-capture FAB above the regular "New task" FAB, matching its pill
   shape and size. Tap it to speak a task straight in — due date, time, priority, tags,
@@ -850,7 +854,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.92.2...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.93...HEAD
+[0.93]: https://github.com/rjwarrier/yata/releases/tag/v0.93
 [0.92.2]: https://github.com/rjwarrier/yata/releases/tag/v0.92.2
 [0.90.1 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90.1-beta
 [0.90 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90-beta
