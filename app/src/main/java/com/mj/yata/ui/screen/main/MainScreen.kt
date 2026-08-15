@@ -679,8 +679,10 @@ fun MainScreen(
                             onClick = { showTodayVoiceOverlay = true },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Same pill shape/size as the main FAB below, not a small circle — a
-                            // mismatched circle-over-rectangle pairing read as visually unrelated.
+                            // Same size as the main FAB below (matched via the shared
+                            // IntrinsicSize.Max width and heightIn(min = 56.dp)), but a fully
+                            // rounded chip shape rather than its rounded-rectangle one — a visual
+                            // cue that this is the secondary action, not a mismatched pairing.
                             // primaryContainer/onPrimaryContainer is a deliberately different tonal
                             // step of the same brand hue as the main FAB's `primary`: in this app's
                             // dark theme that tone is darker and more muted, reading as clearly
@@ -690,7 +692,7 @@ fun MainScreen(
                             Surface(
                                 color = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(percent = 50),
                                 tonalElevation = 6.dp,
                                 shadowElevation = 6.dp,
                                 modifier = Modifier.fillMaxWidth()

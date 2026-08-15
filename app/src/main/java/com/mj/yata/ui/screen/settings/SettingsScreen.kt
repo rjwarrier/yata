@@ -3239,7 +3239,14 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteAllDialog = false }) { Text(stringResource(R.string.action_cancel)) }
+                AssistChip(
+                    onClick = { showDeleteAllDialog = false },
+                    label = { Text(stringResource(R.string.action_cancel)) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ),
+                    border = null
+                )
             }
         )
     }

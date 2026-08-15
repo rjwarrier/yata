@@ -25,6 +25,11 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Trash retention and Auto-archive (Settings → Data Management → Task Lifecycle) are now sliders
   with more options (1/3/7/14/30/60/90/180 days, plus Forever for Trash and Off for Auto-archive)
   instead of a 4-option dropdown.
+- Today's "Speak" FAB is now a fully-rounded chip shape instead of matching the "New task" FAB's
+  rounded-rectangle shape, so the two read as primary/secondary rather than a mismatched pairing.
+  Size stays matched between the two.
+- Settings' "Delete all data" confirmation dialog's Cancel button is now a filled chip instead of a
+  plain text button.
 - Settings → "Sound & Feedback" is now "Voice Input and Sound", and Voice input language moved
   there (from Task Defaults); Undo window, Swipe actions, and Confetti moved the other way, into
   Task Defaults.
