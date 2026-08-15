@@ -1222,8 +1222,7 @@ object NaturalLanguageParser {
             .replace(Regex("\\btoo\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "2 $1")
             .replace(Regex("\\bfor\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "4 $1")
 
-        val claimed = mutableListOf<IntRange>()
-        val claimTypes = mutableMapOf<IntRange, QuickAddHighlightType>()
+        val claimTracker = ClaimTracker()
         var due: LocalDate? = null
         // Declared up here rather than in section 3 because the monthly-on-a-date recurrence rules
         // resolve a due date of their own, well before the due-date section runs.
@@ -1236,21 +1235,15 @@ object NaturalLanguageParser {
         // instead of setting the due date, same idea as an escape character in code. The
         // backslash itself is stripped (via `stripOnly`) but never counted as a "recognized"
         // span, so it doesn't get underlined like a real match would.
-        val escapedRanges = mutableListOf<IntRange>()
-        val stripOnly = mutableListOf<IntRange>()
         escapeRegex.findAll(raw).forEach { m ->
             val backslashIndex = m.range.first
-            stripOnly.add(backslashIndex..backslashIndex)
-            escapedRanges.add(m.groups[1]!!.range)
+            claimTracker.addEscape(backslashIndex..backslashIndex, m.groups[1]!!.range)
         }
 
-        fun isFree(range: IntRange) = claimed.none { it.first <= range.last && range.first <= it.last } &&
-            escapedRanges.none { it.first <= range.last && range.first <= it.last }
-        fun claim(range: IntRange, type: QuickAddHighlightType = QuickAddHighlightType.Other) {
-            claimed.add(range)
-            claimTypes[range] = type
-        }
-        fun firstFreeMatch(regex: Regex) = regex.findAll(raw).firstOrNull { isFree(it.range) }
+        fun isFree(range: IntRange) = claimTracker.isFree(range)
+        fun claim(range: IntRange, type: QuickAddHighlightType = QuickAddHighlightType.Other) =
+            claimTracker.claim(range, type)
+        fun firstFreeMatch(regex: Regex) = claimTracker.firstFreeMatch(regex, raw)
         fun firstFreeWord(word: String) = firstFreeMatch(cachedWordRegex(word))
 
         // 1. Recurrence â€” checked first so "every sunday"/"every monday" is claimed whole
@@ -1933,16 +1926,7 @@ object NaturalLanguageParser {
         }
         val prepositionRegex = Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 
-        val expandedClaimSpans = claimed.map { range ->
-            var start = range.first
-            val prefix = raw.substring(0, start)
-            prepositionRegex.find(prefix)?.let { m ->
-                if (isFree(m.range)) {
-                    start = m.range.first
-                }
-            }
-            QuickAddHighlightSpan(start..range.last, claimTypes[range] ?: QuickAddHighlightType.Other)
-        }
+        val expandedClaimSpans = claimTracker.expandedSpans(raw, prepositionRegex)
 
         fun IntRange.overlaps(other: IntRange): Boolean = first <= other.last && other.first <= last
         fun Regex.matchesRange(range: IntRange): Boolean = findAll(raw).any { it.range == range || range.overlaps(it.range) }
@@ -1997,7 +1981,7 @@ object NaturalLanguageParser {
             .map { span -> span.copy(type = inferHighlightType(span)) }
             .sortedBy { it.range.first }
         val sortedClaims = sortedHighlightSpans.map { it.range }
-        val sortedStrip = (sortedClaims + stripOnly).sortedBy { it.first }
+        val sortedStrip = (sortedClaims + claimTracker.stripOnlyRanges()).sortedBy { it.first }
         val titleRaw = buildString {
             var cursor = 0
             for (range in sortedStrip) {
