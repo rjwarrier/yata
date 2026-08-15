@@ -40,6 +40,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   sync commit messages. The two had drifted onto separate code paths, so a device's own snapshot
   payload could carry its bare model name while the commit publishing it carried the name from
   Settings.
+- New Task: an explicit due date is no longer silently overwritten by the project's default due
+  date when both are mentioned in the same typed title (e.g. "call plumber +renovation tomorrow").
+  Picking a project used to always apply its due date a moment after quick-add applied the typed
+  one, clobbering it.
 
 ### Changed
 - Trash retention and Auto-archive (Settings → Data Management → Task Lifecycle) are now sliders

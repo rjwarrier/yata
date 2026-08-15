@@ -531,12 +531,26 @@ fun NewTaskSheet(
     // A project with no due date of its own means its tasks default to no due date too — not
     // "today". This used to fall back to today, which clobbered the correct null the initial
     // state above already computed the moment this effect ran on first composition.
+    //
+    // Only applies when nothing has already claimed the due date. Picking a project can itself
+    // come from quick-add parsing a project mention in the same title that also mentions a due
+    // date (e.g. "call plumber +renovation tomorrow") — that project selection lands in
+    // `selectedProjectId` a beat before this effect's coroutine runs, so without the
+    // `quickAdd.due` check here, an explicitly typed due date would get silently overwritten by
+    // the project's default the instant the project was recognized. A due date the user actually
+    // wrote always wins.
     var lastLoadedProjectId by remember { mutableStateOf(effectiveInitialProjectId) }
     LaunchedEffect(selectedProjectId, projects) {
         val projectObj = projects.find { it.id == selectedProjectId }
         if (projectObj != null && projectObj.id != lastLoadedProjectId) {
             lastLoadedProjectId = projectObj.id
-            setDueDate(projectObj.due)
+            val dueAlreadyClaimed = dueManuallySet || ("due" !in ignoredQuickAddFields && quickAdd.due != null)
+            if (!dueAlreadyClaimed) {
+                // Not routed through setDueDate(): this is a default, not a manual pick, and
+                // marking it dueManuallySet would incorrectly block quick-add from ever
+                // overriding it if the user later types a due phrase into the title.
+                selectedDueDate = projectObj.due
+            }
             if (selectedReminder == null) {
                 selectedReminder = projectObj.defaultReminder
             }
