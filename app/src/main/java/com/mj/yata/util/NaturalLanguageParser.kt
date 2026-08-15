@@ -10,6 +10,8 @@ import com.mj.yata.util.nl.NaturalLanguageLexicon
 import com.mj.yata.util.nl.ParseState
 import com.mj.yata.util.nl.ParserContext
 import com.mj.yata.util.nl.PriorityFlagRules
+import com.mj.yata.util.nl.RecurrenceRuleConfig
+import com.mj.yata.util.nl.RecurrenceRules
 import com.mj.yata.util.nl.ReminderRules
 import com.mj.yata.util.nl.TimeRules
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
@@ -1214,117 +1216,41 @@ object NaturalLanguageParser {
         fun firstFreeMatch(regex: Regex) = parserContext.firstFreeMatch(regex)
         fun firstFreeWord(word: String) = parserContext.firstFreeWord(word, ::cachedWordRegex)
 
-        // 1. Recurrence â€” checked first so "every sunday"/"every monday" is claimed whole
-        // before the later bare-weekday due-date rule can also match "sunday"/"monday".
-        everyAlternateDayRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("daily", 2, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) }
-        if (recurrence == null) everyAlternateWeekRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("weekly", 2, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) }
-        if (recurrence == null) everyAlternateMonthRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("monthly", 2, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) }
-        if (recurrence == null) everyAlternateYearRegex.let { firstFreeMatch(it) }?.let { m -> recurrence = Recurrence("yearly", 2, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) }
-        if (recurrence == null) firstFreeMatch(everyNDaysRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("daily", n, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNWeeksRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("weekly", n, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNMonthsRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("monthly", n, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNQuartersRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("monthly", n * 3, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
-        if (recurrence == null) firstFreeMatch(everyNYearsRegex)?.let { m -> countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n -> recurrence = Recurrence("yearly", n, null, null, RecurrenceEnds.Never); claimRecurrence(m.range) } }
-        // "every last day of the month" before "every month on the Nth" â€” the former's "last day"
-        // would otherwise fall through and be read as a bare monthly with no day pinned at all.
-        if (recurrence == null) {
-            firstFreeMatch(everyLastDayOfMonthRegex)?.let { m ->
-                recurrence = Recurrence("monthly", 1, null, -1, RecurrenceEnds.Never)
-                claimRecurrence(m.range)
-                if (due == null) {
-                    due = YearMonth.from(referenceDate).atEndOfMonth()
-                        .let { if (it.isBefore(referenceDate)) YearMonth.from(referenceDate).plusMonths(1).atEndOfMonth() else it }
-                    dueRange = m.range
-                }
-            }
-        }
-        // Monthly pinned to a date, said either way round. Both also set the due date to the next
-        // occurrence of that day â€” the series says *which* day, and the first one is still coming.
-        if (recurrence == null) {
-            (firstFreeMatch(everyMonthOnDayRegex) ?: firstFreeMatch(everyOrdinalOfMonthRegex))?.let { m ->
-                m.groupValues[1].toIntOrNull()?.takeIf { it in 1..31 }?.let { day ->
-                    recurrence = Recurrence("monthly", 1, null, day, RecurrenceEnds.Never)
-                    claimRecurrence(m.range)
-                    if (due == null) {
-                        resolveOrdinalDayOfMonth(day, referenceDate)?.let { d -> due = d; dueRange = m.range }
-                    }
-                }
-            }
-        }
-        // Several weekdays at once â€” before the single-weekday rule below, see its own comment.
-        if (recurrence == null) {
-            firstFreeMatch(everyMultiWeekdayRegex)?.let { m ->
-                val days = multiWeekdaySplitRegex.split(m.groupValues[1])
-                    .mapNotNull { weekdayNames[it.trim().lowercase()] }
-                    .distinct()
-                    .sortedBy { it.value }
-                if (days.isNotEmpty()) {
-                    recurrence = Recurrence("weekly", 1, days.map { rruleDay.getValue(it) }, null, RecurrenceEnds.Never)
-                    claimRecurrence(m.range)
-                }
-            }
-        }
-        if (recurrence == null) {
-            firstFreeMatch(everyWeekdayRegex)?.let { m ->
-                val token = m.groupValues[1].lowercase()
-                val rec = when {
-                    token in setOf("days", "dy", "dys", "d") -> Recurrence("daily", 1, null, null, RecurrenceEnds.Never)
-                    token in setOf("weeks", "wk", "wks", "w") -> Recurrence("weekly", 1, null, null, RecurrenceEnds.Never)
-                    token in setOf("months", "mo", "mos", "mth", "mths") -> Recurrence("monthly", 1, null, null, RecurrenceEnds.Never)
-                    token in setOf("years", "yr", "yrs", "y") -> Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
-                    token in setOf("quarters", "qtrs") -> Recurrence("monthly", 3, null, null, RecurrenceEnds.Never)
-                    token in setOf("day", "día", "dia", "jour", "tag", "tage", "giorno", "giorni", "dag", "dagen", "dagar", "dzien", "dni", "zi", "zie", "gun", "hari", "siku", "araw", "ngay") -> Recurrence("daily", 1, null, null, RecurrenceEnds.Never)
-                    token in setOf("week", "semana", "semaine", "woche", "wochen", "settimana", "settimane", "weken", "vecka", "veckor", "tydzien", "tygodnie", "saptamana", "hafta", "minggu", "wiki", "linggo", "tuan") -> Recurrence("weekly", 1, null, null, RecurrenceEnds.Never)
-                    token in setOf("month", "mes", "mês", "mois", "monat", "monate", "mese", "mesi", "maand", "maanden", "manad", "manader", "miesiac", "miesiace", "luna", "ay", "bulan", "mwezi", "buwan", "thang") -> Recurrence("monthly", 1, null, null, RecurrenceEnds.Never)
-                    token in setOf("year", "año", "ano", "an", "année", "annee", "jahr", "jahre", "anni", "jaar", "ar", "rok", "lata", "yil", "tahun", "mwaka", "taon", "nam") -> Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
-                    token == "quarter" || token == "qtr" || token == "trimestre" -> Recurrence("monthly", 3, null, null, RecurrenceEnds.Never)
-                    // Singular "every weekday"/"every weekend" â€” the bare-word list below only has
-                    // the plurals, so without these the whole phrase silently matched nothing.
-                    token == "weekday" || token == "weekdays" || token == "laborable" || token == "laborables" || token == "útil" || token == "util" || token == "úteis" || token == "uteis" || token == "ouvrable" || token == "ouvrables" -> Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never)
-                    token == "weekend" || token == "weekends" || token == "week-end" -> Recurrence("weekly", 1, listOf("SA", "SU"), null, RecurrenceEnds.Never)
-                    weekdayNames.containsKey(token) -> Recurrence("weekly", 1, listOf(rruleDay.getValue(weekdayNames.getValue(token))), null, RecurrenceEnds.Never)
-                    else -> null
-                }
-                if (rec != null) {
-                    recurrence = rec
-                    claimRecurrence(m.range)
-                }
-            }
-        }
-        if (recurrence == null) {
-            for ((word, factory) in bareRecurrenceWords) {
-                firstFreeWord(word)?.let { m ->
-                    recurrence = factory()
-                    claimRecurrence(m.range)
-                }
-                if (recurrence != null) break
-            }
-        }
-
-        // 1.2 When the series stops. Only meaningful with a recurrence, and claimed here rather
-        // than later so the date inside "until dec 20" can't be mistaken for the due date.
-        // The end date is resolved by recursing on the captured phrase, the same trick the start
-        // date uses; the capture can't contain another "until", so it bottoms out at depth 1.
-        if (recurrence != null) {
-            firstFreeMatch(recurrenceUntilRegex)?.let { m ->
-                val phrase = m.groupValues[1]
-                if (phrase.isNotBlank()) {
-                    val nested = parse(phrase, referenceDate, referenceTime, dayFirst)
-                    nested.due?.let { endDate ->
-                        recurrence = recurrence!!.copy(ends = RecurrenceEnds.On(endDate))
-                        claimRecurrence(m.range.first..claimEndFor(m, 1, nested))
-                    }
-                }
-            }
-            if (recurrence!!.ends == RecurrenceEnds.Never) {
-                firstFreeMatch(recurrenceTimesRegex)?.let { m ->
-                    countOrOne(m.groupValues[1]).toInt().takeIf { it > 0 }?.let { n ->
-                        recurrence = recurrence!!.copy(ends = RecurrenceEnds.After(n))
-                        claimRecurrence(m.range)
-                    }
-                }
-            }
-        }
+        // 1. Recurrence. Checked first so "every sunday" is claimed whole before due-date rules.
+        val recurrenceResult = RecurrenceRules.apply(
+            context = parserContext,
+            config = RecurrenceRuleConfig(
+                everyAlternateDayRegex = everyAlternateDayRegex,
+                everyAlternateWeekRegex = everyAlternateWeekRegex,
+                everyAlternateMonthRegex = everyAlternateMonthRegex,
+                everyAlternateYearRegex = everyAlternateYearRegex,
+                everyNDaysRegex = everyNDaysRegex,
+                everyNWeeksRegex = everyNWeeksRegex,
+                everyNMonthsRegex = everyNMonthsRegex,
+                everyNQuartersRegex = everyNQuartersRegex,
+                everyNYearsRegex = everyNYearsRegex,
+                everyLastDayOfMonthRegex = everyLastDayOfMonthRegex,
+                everyMonthOnDayRegex = everyMonthOnDayRegex,
+                everyOrdinalOfMonthRegex = everyOrdinalOfMonthRegex,
+                everyMultiWeekdayRegex = everyMultiWeekdayRegex,
+                multiWeekdaySplitRegex = multiWeekdaySplitRegex,
+                everyWeekdayRegex = everyWeekdayRegex,
+                bareRecurrenceWords = bareRecurrenceWords,
+                recurrenceUntilRegex = recurrenceUntilRegex,
+                recurrenceTimesRegex = recurrenceTimesRegex,
+                weekdayNames = weekdayNames,
+                rruleDay = rruleDay,
+                resolveOrdinalDayOfMonth = ::resolveOrdinalDayOfMonth,
+                parseNested = { phrase -> parse(phrase, referenceDate, referenceTime, dayFirst) },
+                claimEndFor = ::claimEndFor,
+                countOrOne = ::countOrOne,
+                wordRegex = ::cachedWordRegex
+            ),
+            existingDue = due
+        )
+        recurrence = recurrenceResult.recurrence
+        due = recurrenceResult.due
+        dueRange = recurrenceResult.dueRange
 
         // 1.5 Reminder. Runs before due-time parsing so "remind at 5pm" does not claim task time.
         var reminder: String? = ReminderRules.apply(parserContext, timeFormatter)
