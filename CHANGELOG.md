@@ -44,6 +44,13 @@ test-only changes belong in the commit message, not here, unless they change beh
   date when both are mentioned in the same typed title (e.g. "call plumber +renovation tomorrow").
   Picking a project used to always apply its due date a moment after quick-add applied the typed
   one, clobbering it.
+- Quick-add title cleanup no longer leaves stray connector words ("to", "from", "at", "in", "on",
+  "by", "for") behind once the text they were connecting has been recognized and removed — either
+  stranded between two recognized mentions ("renew license #paperwork to @Jane" now cleans up to
+  "renew license") or immediately before one that doesn't need a leading word of its own to
+  trigger ("buy milk to @Jane" now cleans up to "buy milk"). Also fixed a related bug where a
+  multi-word project/list/assignee name being typed right before a bare "to"/"from" absorbed that
+  word into the extracted name itself (captured "Work to" instead of "Work").
 
 ### Changed
 - Trash retention and Auto-archive (Settings → Data Management → Task Lifecycle) are now sliders

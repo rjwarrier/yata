@@ -55,6 +55,39 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun bareConnectorImmediatelyBeforeAnEntityMentionIsStripped() {
+        // "@Jane" needs no leading word of its own to trigger, unlike "assigned to Jane" - so a
+        // bare "to"/"in" directly in front of it used to have nothing to absorb it, leaving it
+        // dangling in the title once "@Jane" itself was stripped.
+        assertEquals("buy milk", NaturalLanguageParser.parse("buy milk to @Jane", ref).title)
+        assertEquals("prepare slides", NaturalLanguageParser.parse("prepare slides in +Work", ref).title)
+    }
+
+    @Test
+    fun fillerWordStrandedBetweenTwoEntityMentionsIsStripped() {
+        // Each of #paperwork and @Jane is claimed on its own (single-word tag capture, bare "@"
+        // trigger) with nothing to say what the "to" connecting them belongs to - it used to be
+        // left sitting in the title between the two now-removed mentions.
+        val result = NaturalLanguageParser.parse("renew license #paperwork to @Jane", ref)
+        assertEquals("renew license", result.title)
+        assertEquals(listOf("paperwork"), result.tagNames)
+        assertEquals(listOf("Jane"), result.assigneeNames)
+    }
+
+    @Test
+    fun multiWordEntityNameStopsAtABareToOrFromInsteadOfSwallowingIt() {
+        // project/list/assignee names are captured lazily up to the next recognized boundary
+        // word - "to"/"from" weren't in that boundary list on their own (only "assign to"/"send
+        // to" were), so "project Work to tag Errand" captured the project name as "Work to"
+        // instead of stopping at "Work", corrupting the name and leaving the leftover "to" for
+        // the between-claims fix above to clean up.
+        val result = NaturalLanguageParser.parse("clean data project Work to tag Errand", ref)
+        assertEquals("clean data", result.title)
+        assertEquals("Work", result.projectName)
+        assertEquals(listOf("Errand"), result.tagNames)
+    }
+
+    @Test
     fun parsesSpanishTomorrowAndTime() {
         val result = NaturalLanguageParser.parse("mañana a las 15:30 comprar leche", ref)
         assertEquals("2026-07-05", result.due)

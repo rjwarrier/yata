@@ -14,6 +14,11 @@ internal object EntityRules {
             "tagged?\\b|label\\b|labeled?\\b|assign(?:ed)?\\s+to\\b|asignad[ao]\\s+a\\b|asignar\\s+a\\b|" +
             "atribu[iÃ­]d[ao]\\s+a\\b|atribuir\\s+a\\b|assignÃ©\\s+Ã \\b|assign\\u00e9\\s+\\u00e0\\b|assigne\\s+a\\b|assigner\\s+Ã \\b|assigner\\s+\\u00e0\\b|" +
             "give(?:n)?\\s+to\\b|delegate\\b|delegar\\b|send\\s+to\\b|assign\\b|due\\b|vence\\b|Ã©chÃ©ance\\b|echeance\\b|" +
+            // Bare "to"/"from" as connectors, not just as part of "assign(ed) to"/"send to" above -
+            // without these, a multi-word project/list/assignee name's lazy capture had nothing
+            // to stop it swallowing a trailing filler word ("project Work to tag Errand" captured
+            // the project name as "Work to" instead of stopping at "to").
+            "to\\b|from\\b|" +
             "at\\b|a\\s+las?\\b|Ã s?\\b|Ã \\b|every\\b|cada\\b|todo\\b|toda\\b|chaque\\b|on\\b|el\\b|le\\b|" +
             "today\\b|tdy\\b|tomorrow\\b|tmr\\b|tmrw\\b|tomrw\\b|tonight\\b|tonite\\b|" +
             "morning\\b|morn\\b|afternoon\\b|evening\\b|night\\b|noon\\b|midnight\\b|" +

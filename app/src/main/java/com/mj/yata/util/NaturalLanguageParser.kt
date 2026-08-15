@@ -901,7 +901,7 @@ object NaturalLanguageParser {
 
     private val escapeRegex = Regex("\\\\(\\w+)")
     private val highlightPrepositionRegex =
-        Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
+        Regex("(?:^|\\s)(for|on|at|by|from|to|in|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 
     // â”€â”€ Additional relative dates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private val inHoursRegex = Regex("\\b(?:in|en|em|dans)\\s+(a|an|un|una|um|uma|une|$NUMBER_COUNT)\\s+(?:h|hr|hrs|hour|hora|heure)(s)?\\b", RegexOption.IGNORE_CASE)
