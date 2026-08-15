@@ -8,7 +8,11 @@ internal class ClaimTracker {
 
     fun addEscape(backslashRange: IntRange, protectedRange: IntRange) {
         stripOnly.add(backslashRange)
-        escapedRanges.add(protectedRange)
+        addProtectedRange(protectedRange)
+    }
+
+    fun addProtectedRange(range: IntRange) {
+        escapedRanges.add(range)
     }
 
     fun addStripOnly(range: IntRange) {

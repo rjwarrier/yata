@@ -169,7 +169,8 @@ object NaturalLanguageParser {
     private val writtenHourRegex = Regex(
         "\\b(?:at\\s+)?(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)" +
         "(?:\\s+(thirty|fifteen|forty\\s+five|45|30|15))?" +
-        "(?:\\s+(?:in\\s+the\\s+)?(morning|afternoon|evening|night|a\\.?\\s*m\\.?|p\\.?\\s*m\\.?|am|pm))?\\b",
+        "(?:\\s+(?:in\\s+the\\s+)?(morning|afternoon|evening|night|a\\.?\\s*m\\.?|p\\.?\\s*m\\.?|am|pm))?\\b" +
+            "(?!\\s+(?:$DAY_UNIT|$WEEK_UNIT|$MONTH_UNIT|$QUARTER_UNIT|$YEAR_UNIT|h|hr|hrs|hour|m|min|mins|minute))",
         RegexOption.IGNORE_CASE
     )
 
@@ -967,30 +968,36 @@ object NaturalLanguageParser {
 
     private val escapeRegex = Regex("\\\\(\\w+)")
     private const val ENTITY_NAME_CHARS = "\\p{L}\\p{N}_\\-\\s"
-    private const val ENTITY_WORD_BOUNDARY =
-        "project|proyecto|projeto|projet|list|lista|liste|tag|etiqueta|Ã©tiquette|etiquette|" +
-            "tagged?|label|labeled?|assign(?:ed)?\\s+to|asignad[ao]\\s+a|asignar\\s+a|" +
-            "atribu[iÃ­]d[ao]\\s+a|atribuir\\s+a|assignÃ©\\s+Ã |assigne\\s+a|assigner\\s+Ã |" +
-            "give(?:n)?\\s+to|delegate|delegar|send\\s+to|assign|due|vence|Ã©chÃ©ance|echeance|" +
-            "at|a\\s+las?|Ã s?|Ã |every|cada|todo|toda|chaque|on|el|le|today|tdy|tomorrow|tmr|" +
-            "tmrw|tomrw|tonight|tonite|morning|morn|afternoon|evening|night|noon|midnight|" +
-            "next|nxt|this|in|by|before|after|starts?|start(?:ing)?|not\\s+before|!|p[1-3]|#|@|\\+|=|" +
-            "hash\\s*tag|hashtag|pound\\s*tag|at\\s+sign|plus\\s+project|equals\\s+list"
+    private const val ENTITY_BOUNDARY_KEYWORDS =
+            "project\\b|proyecto\\b|projeto\\b|projet\\b|list\\b|lista\\b|liste\\b|tag\\b|etiqueta\\b|Ã©tiquette\\b|\\u00e9tiquette\\b|etiquette\\b|" +
+            "tagged?\\b|label\\b|labeled?\\b|assign(?:ed)?\\s+to\\b|asignad[ao]\\s+a\\b|asignar\\s+a\\b|" +
+            "atribu[iÃ­]d[ao]\\s+a\\b|atribuir\\s+a\\b|assignÃ©\\s+Ã \\b|assign\\u00e9\\s+\\u00e0\\b|assigne\\s+a\\b|assigner\\s+Ã \\b|assigner\\s+\\u00e0\\b|" +
+            "give(?:n)?\\s+to\\b|delegate\\b|delegar\\b|send\\s+to\\b|assign\\b|due\\b|vence\\b|Ã©chÃ©ance\\b|echeance\\b|" +
+            "at\\b|a\\s+las?\\b|Ã s?\\b|Ã \\b|every\\b|cada\\b|todo\\b|toda\\b|chaque\\b|on\\b|el\\b|le\\b|" +
+            "today\\b|tdy\\b|tomorrow\\b|tmr\\b|tmrw\\b|tomrw\\b|tonight\\b|tonite\\b|" +
+            "morning\\b|morn\\b|afternoon\\b|evening\\b|night\\b|noon\\b|midnight\\b|" +
+            "monday\\b|mon\\b|tuesday\\b|tue\\b|wednesday\\b|wed\\b|thursday\\b|thu\\b|friday\\b|fri\\b|saturday\\b|sat\\b|sunday\\b|sun\\b|" +
+            "lunes\\b|martes\\b|miÃ©rcoles\\b|miercoles\\b|jueves\\b|viernes\\b|sÃ¡bado\\b|sabado\\b|domingo\\b|" +
+            "segunda(?:-feira)?\\b|terÃ§a(?:-feira)?\\b|terca(?:-feira)?\\b|quarta(?:-feira)?\\b|quinta(?:-feira)?\\b|sexta(?:-feira)?\\b|" +
+            "lundi\\b|mardi\\b|mercredi\\b|jeudi\\b|vendredi\\b|samedi\\b|dimanche\\b|" +
+            "next\\b|nxt\\b|this\\b|in\\b|by\\b|before\\b|after\\b|starts?\\b|start(?:ing)?\\b|not\\s+before\\b|p[1-3]\\b|" +
+            "hash\\s*tag\\b|hashtag\\b|pound\\s*tag\\b|at\\s+sign\\b|plus\\s+project\\b|equals\\s+list\\b"
+    private const val ENTITY_WORD_BOUNDARY = "!|#|@|\\+|=|$ENTITY_BOUNDARY_KEYWORDS"
     private val quotedEntityValueRegex = Regex("^\\s*(?:\"([^\"]+)\"|'([^']+)'|([$ENTITY_NAME_CHARS]+?))\\s*$")
     private val projectEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:\\+|plus\\s+project|in\\s+project|for\\s+project|under\\s+project|project|en\\s+proyecto|para\\s+proyecto|bajo\\s+proyecto|proyecto|em\\s+projeto|para\\s+projeto|projeto|dans\\s+projet|pour\\s+projet|projet)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        "(?<![\\p{L}\\p{N}_])(?:\\+|plus\\s+project\\b|in\\s+project\\b|for\\s+project\\b|under\\s+project\\b|project\\b|en\\s+proyecto\\b|para\\s+proyecto\\b|bajo\\s+proyecto\\b|proyecto\\b|em\\s+projeto\\b|para\\s+projeto\\b|projeto\\b|dans\\s+projet\\b|pour\\s+projet\\b|projet\\b)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
         RegexOption.IGNORE_CASE
     )
     private val listEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:=|equals\\s+list|in\\s+list|for\\s+list|under\\s+list|list|en\\s+lista|para\\s+lista|bajo\\s+lista|lista|em\\s+lista|dans\\s+liste|pour\\s+liste|liste)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        "(?<![\\p{L}\\p{N}_])(?:=|equals\\s+list\\b|in\\s+list\\b|for\\s+list\\b|under\\s+list\\b|list\\b|en\\s+lista\\b|para\\s+lista\\b|bajo\\s+lista\\b|lista\\b|em\\s+lista\\b|dans\\s+liste\\b|pour\\s+liste\\b|liste\\b)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
         RegexOption.IGNORE_CASE
     )
     private val tagEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:#|hash\\s*tag\\s+|hashtag\\s+|pound\\s*tag\\s+|tagged?\\s+as\\s+|tagged?\\s+|tag\\s+as\\s+|tag\\s+|labeled?\\s+as\\s+|labeled?\\s+|label\\s+as\\s+|label\\s+|with\\s+tag\\s+|etiquetad[ao]\\s+como\\s+|etiquetad[ao]\\s+|etiqueta\\s+como\\s+|etiqueta\\s+|con\\s+etiqueta\\s+|marcad[ao]\\s+como\\s+|rÃ³tulo\\s+|rotulo\\s+|Ã©tiquette\\s+|etiquette\\s+|avec\\s+Ã©tiquette\\s+|avec\\s+etiquette\\s+)([\\p{L}\\p{N}_\\-]+)(?![\\p{L}\\p{N}_])",
+        "(?<![\\p{L}\\p{N}_])(?:#|hash\\s*tag\\s+|hashtag\\s+|pound\\s*tag\\s+|tagged?\\s+as\\s+|tagged?\\s+|tag\\s+as\\s+|tag\\s+|labeled?\\s+as\\s+|labeled?\\s+|label\\s+as\\s+|label\\s+|with\\s+tag\\s+|etiquetad[ao]\\s+como\\s+|etiquetad[ao]\\s+|etiqueta\\s+como\\s+|etiqueta\\s+|con\\s+etiqueta\\s+|marcad[ao]\\s+como\\s+|rÃ³tulo\\s+|rotulo\\s+|Ã©tiquette\\s+|\\u00e9tiquette\\s+|etiquette\\s+|avec\\s+Ã©tiquette\\s+|avec\\s+\\u00e9tiquette\\s+|avec\\s+etiquette\\s+)([\\p{L}\\p{N}_\\-]+)(?![\\p{L}\\p{N}_])",
         RegexOption.IGNORE_CASE
     )
     private val assigneeEntityRegex = Regex(
-        "(?<![\\p{L}\\p{N}_])(?:assign(?:ed)?\\s+to\\s+|give(?:n)?\\s+to\\s+|delegate(?:d)?\\s+to\\s+|send\\s+to\\s+|assign\\s+|asignad[ao]\\s+a\\s+|asignar\\s+a\\s+|delegad[ao]\\s+a\\s+|delegar\\s+a\\s+|enviar\\s+a\\s+|atribu[iÃ­]d[ao]\\s+a\\s+|atribuir\\s+a\\s+|delegar\\s+para\\s+|enviar\\s+para\\s+|assignÃ©\\s+Ã \\s+|assigne\\s+a\\s+|assigner\\s+Ã \\s+|assigner\\s+a\\s+|dÃ©lÃ©guÃ©\\s+Ã \\s+|delegue\\s+a\\s+|dÃ©lÃ©guer\\s+Ã \\s+|deleguer\\s+a\\s+|envoyer\\s+Ã \\s+|envoyer\\s+a\\s+|at\\s+sign\\s+|@)(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        "(?<![\\p{L}\\p{N}_])(?:assign(?:ed)?\\s+to\\s+|give(?:n)?\\s+to\\s+|delegate(?:d)?\\s+to\\s+|send\\s+to\\s+|assign\\s+|asignad[ao]\\s+a\\s+|asignar\\s+a\\s+|delegad[ao]\\s+a\\s+|delegar\\s+a\\s+|enviar\\s+a\\s+|atribu[iÃ­]d[ao]\\s+a\\s+|atribuir\\s+a\\s+|delegar\\s+para\\s+|enviar\\s+para\\s+|assignÃ©\\s+Ã \\s+|assign\\u00e9\\s+\\u00e0\\s+|assigne\\s+a\\s+|assigner\\s+Ã \\s+|assigner\\s+\\u00e0\\s+|assigner\\s+a\\s+|dÃ©lÃ©guÃ©\\s+Ã \\s+|d\\u00e9l\\u00e9gu\\u00e9\\s+\\u00e0\\s+|delegue\\s+a\\s+|dÃ©lÃ©guer\\s+Ã \\s+|d\\u00e9l\\u00e9guer\\s+\\u00e0\\s+|deleguer\\s+a\\s+|envoyer\\s+Ã \\s+|envoyer\\s+\\u00e0\\s+|envoyer\\s+a\\s+|at\\s+sign\\s+|@)(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
         RegexOption.IGNORE_CASE
     )
 
@@ -1233,7 +1240,15 @@ object NaturalLanguageParser {
         // span, so it doesn't get underlined like a real match would.
         escapeRegex.findAll(raw).forEach { m ->
             val backslashIndex = m.range.first
-            claimTracker.addEscape(backslashIndex..backslashIndex, m.groups[1]!!.range)
+            val escapedWordRange = m.groups[1]!!.range
+            claimTracker.addEscape(backslashIndex..backslashIndex, escapedWordRange)
+            val escapedWord = m.groupValues[1].lowercase()
+            if (escapedWord in setOf("every", "each", "cada", "todo", "toda", "chaque")) {
+                Regex("\\G\\s+([\\p{L}-]+)", RegexOption.IGNORE_CASE)
+                    .find(raw, escapedWordRange.last + 1)
+                    ?.takeIf { weekdayNames.containsKey(it.groupValues[1].lowercase()) }
+                    ?.let { claimTracker.addProtectedRange(escapedWordRange.first..it.range.last) }
+            }
         }
 
         fun isFree(range: IntRange) = claimTracker.isFree(range)
@@ -1884,11 +1899,17 @@ object NaturalLanguageParser {
         }
         // Word-based priority â€” only if "!N"/"pN" above didn't already set one.
         if (priority == null) {
+            fun followsTagCommand(range: IntRange): Boolean =
+                Regex("(?:#|hash\\s*tag|hashtag|pound\\s*tag|tag(?:ged)?(?:\\s+as)?|label(?:ed)?(?:\\s+as)?|with\\s+tag|etiqueta(?:\\s+como)?|\\u00e9tiquette|etiquette)\\s*$", RegexOption.IGNORE_CASE)
+                    .containsMatchIn(raw.substring(0, range.first))
+
             for ((phrase, level) in priorityWordPhrases) {
-                firstFreeMatch(cachedWordRegex(phrase))?.let { m ->
-                    priority = level
-                    claimPriority(m.range)
-                }
+                cachedWordRegex(phrase).findAll(raw)
+                    .firstOrNull { m -> isFree(m.range) && !followsTagCommand(m.range) }
+                    ?.let { m ->
+                        priority = level
+                        claimPriority(m.range)
+                    }
                 if (priority != null) break
             }
         }

@@ -232,24 +232,28 @@ class AnalyticsUtilsTest {
     // ── Insights ────────────────────────────────────────────────────────────────────────────
 
     @Test
-    fun insights_flagOverdueAssigneeFirst() {
-        val tasks = listOf(task("t1", due = "2026-06-01", assignees = listOf("bob")))
-        val stats = AnalyticsUtils.byDelegation(tasks, listOf(bob), AnalyticsPeriod.WEEK, today)
-        val summary = AnalyticsUtils.delegationSummary(tasks, listOf(me, bob))
+    fun insights_flagStaleOpenTasks() {
+        val tasks = listOf(task("t1", due = "2026-12-01", createdOn = today.minusDays(45)))
         val insights = AnalyticsUtils.buildInsights(
-            tasks, stats, summary, emptyList(), emptyList(), emptyList(), today
+            tasks = tasks,
+            projectStats = emptyList(),
+            tagStats = emptyList(),
+            listStats = emptyList(),
+            today = today
         )
         assertTrue(insights.isNotEmpty())
-        assertTrue(insights.first().headline.contains("Bob"))
+        assertTrue(insights.first().headline.contains("over 30 days old"))
     }
 
     @Test
     fun insights_reportCleanStateWhenNothingIsWrong() {
         val tasks = listOf(task("t1", due = "2026-12-01", assignees = listOf("bob")))
-        val stats = AnalyticsUtils.byDelegation(tasks, listOf(bob), AnalyticsPeriod.WEEK, today)
-        val summary = AnalyticsUtils.delegationSummary(tasks, listOf(me, bob))
         val insights = AnalyticsUtils.buildInsights(
-            tasks, stats, summary, emptyList(), emptyList(), emptyList(), today
+            tasks = tasks,
+            projectStats = emptyList(),
+            tagStats = emptyList(),
+            listStats = emptyList(),
+            today = today
         )
         assertEquals(1, insights.size)
         assertEquals("Nothing overdue", insights.first().headline)
@@ -260,10 +264,12 @@ class AnalyticsUtilsTest {
         val tasks = (1..40).map {
             task("t$it", due = "2026-01-01", assignees = listOf("bob"), createdOn = today.minusDays(200))
         } + task("u1")
-        val stats = AnalyticsUtils.byDelegation(tasks, listOf(bob), AnalyticsPeriod.WEEK, today)
-        val summary = AnalyticsUtils.delegationSummary(tasks, listOf(me, bob))
         val insights = AnalyticsUtils.buildInsights(
-            tasks, stats, summary, emptyList(), emptyList(), emptyList(), today
+            tasks = tasks,
+            projectStats = emptyList(),
+            tagStats = emptyList(),
+            listStats = emptyList(),
+            today = today
         )
         assertTrue(insights.size <= 4)
     }
@@ -314,14 +320,19 @@ class AnalyticsUtilsTest {
     }
 
     @Test
-    fun overdueInsight_carriesTheFilterThatShowsThoseTasks() {
+    fun overdueTrendInsight_carriesTheFilterThatShowsThoseTasks() {
         val tasks = listOf(task("t1", due = "2026-06-01", assignees = listOf("bob")))
-        val stats = AnalyticsUtils.byDelegation(tasks, listOf(bob), AnalyticsPeriod.WEEK, today)
-        val summary = AnalyticsUtils.delegationSummary(tasks, listOf(me, bob))
         val insights = AnalyticsUtils.buildInsights(
-            tasks, stats, summary, emptyList(), emptyList(), emptyList(), today
+            tasks = tasks,
+            projectStats = emptyList(),
+            tagStats = emptyList(),
+            listStats = emptyList(),
+            today = today,
+            overdueTrend = com.mj.yata.util.MetricTrend(delta = 5, improved = false)
         )
-        assertEquals(com.mj.yata.util.SEARCH_FILTER_OVERDUE, insights.first().searchFilter)
+        val overdueInsight = insights.first { it.headline.contains("Overdue up") }
+
+        assertEquals(com.mj.yata.util.SEARCH_FILTER_OVERDUE, overdueInsight.searchFilter)
     }
 
     // ── Trends ──────────────────────────────────────────────────────────────────────────────
@@ -396,15 +407,21 @@ class AnalyticsUtilsTest {
     @Test
     fun insights_callOutAMaterialOverdueRiseButIgnoreDrift() {
         val material = AnalyticsUtils.buildInsights(
-            emptyList(), emptyList(), AnalyticsUtils.delegationSummary(emptyList(), emptyList()),
-            emptyList(), emptyList(), emptyList(), today,
+            tasks = emptyList(),
+            projectStats = emptyList(),
+            tagStats = emptyList(),
+            listStats = emptyList(),
+            today = today,
             overdueTrend = com.mj.yata.util.MetricTrend(delta = 5, improved = false)
         )
         assertTrue(material.any { it.headline.contains("Overdue up 5") })
 
         val drift = AnalyticsUtils.buildInsights(
-            emptyList(), emptyList(), AnalyticsUtils.delegationSummary(emptyList(), emptyList()),
-            emptyList(), emptyList(), emptyList(), today,
+            tasks = emptyList(),
+            projectStats = emptyList(),
+            tagStats = emptyList(),
+            listStats = emptyList(),
+            today = today,
             overdueTrend = com.mj.yata.util.MetricTrend(delta = 1, improved = false)
         )
         assertTrue(drift.none { it.headline.contains("Overdue up") })
@@ -413,8 +430,11 @@ class AnalyticsUtilsTest {
     @Test
     fun insights_warnWhenWorkArrivesFasterThanItLeaves() {
         val insights = AnalyticsUtils.buildInsights(
-            emptyList(), emptyList(), AnalyticsUtils.delegationSummary(emptyList(), emptyList()),
-            emptyList(), emptyList(), emptyList(), today,
+            tasks = emptyList(),
+            projectStats = emptyList(),
+            tagStats = emptyList(),
+            listStats = emptyList(),
+            today = today,
             createdInPeriod = 12,
             completedInPeriod = 4
         )
@@ -426,8 +446,11 @@ class AnalyticsUtilsTest {
     @Test
     fun insights_skipBacklogCallOutWhenNothingHasACreationDate() {
         val insights = AnalyticsUtils.buildInsights(
-            emptyList(), emptyList(), AnalyticsUtils.delegationSummary(emptyList(), emptyList()),
-            emptyList(), emptyList(), emptyList(), today,
+            tasks = emptyList(),
+            projectStats = emptyList(),
+            tagStats = emptyList(),
+            listStats = emptyList(),
+            today = today,
             createdInPeriod = 0,
             completedInPeriod = 9
         )
