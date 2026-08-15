@@ -19,7 +19,7 @@ import com.mj.yata.util.nl.StartDateRules
 import com.mj.yata.util.nl.TimeRules
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
 import com.mj.yata.util.nl.naturalLanguageCountOrOne
-import com.mj.yata.util.nl.normalizeNaturalLanguageInput
+import com.mj.yata.util.nl.normalizeNaturalLanguageInputWithRanges
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -1167,7 +1167,8 @@ object NaturalLanguageParser {
             parseCache[cacheKey]?.let { return it }
         }
 
-        val raw = normalizeNaturalLanguageInput(rawInput)
+        val normalizedInput = normalizeNaturalLanguageInputWithRanges(rawInput)
+        val raw = normalizedInput.normalized
 
         val claimTracker = ClaimTracker()
         val parserContext = ParserContext(
@@ -1345,11 +1346,16 @@ object NaturalLanguageParser {
         val entities = EntityRules.apply(parserContext)
         val prepositionRegex = Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 
-        val sortedHighlightSpans = parserContext.expandedSpans(prepositionRegex)
+        val sortedNormalizedHighlightSpans = parserContext.expandedSpans(prepositionRegex)
+            .sortedBy { it.range.first }
+        val sortedHighlightSpans = sortedNormalizedHighlightSpans
+            .map { span -> span.copy(range = normalizedInput.toRawRange(span.range)) }
             .sortedBy { it.range.first }
         val sortedClaims = sortedHighlightSpans.map { it.range }
-        val sortedStrip = (sortedClaims + parserContext.stripOnlyRanges()).sortedBy { it.first }
-        val title = cleanNaturalLanguageTitle(raw, sortedStrip)
+        val sortedStrip = (sortedNormalizedHighlightSpans.map { it.range } + parserContext.stripOnlyRanges())
+            .map { normalizedInput.toRawRange(it) }
+            .sortedBy { it.first }
+        val title = cleanNaturalLanguageTitle(normalizedInput.raw, sortedStrip)
 
         val result = ParseState(
             due = due,

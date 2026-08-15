@@ -668,6 +668,17 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun highlightRangesMapVoiceNormalizedDateBackToOriginalText() {
+        val raw = "file receipt to day"
+        val result = NaturalLanguageParser.parse(raw, ref)
+
+        assertEquals(ref.toString(), result.due)
+        assertEquals("file receipt", result.title)
+        val slices = result.highlightRanges.map { raw.substring(it.first, it.last + 1) }
+        assertTrue(slices.any { it.equals("to day", ignoreCase = true) })
+    }
+
+    @Test
     fun highlightRangesIncludeRecurrencePhrase() {
         val raw = "every monday gym"
         val result = NaturalLanguageParser.parse(raw, ref)
