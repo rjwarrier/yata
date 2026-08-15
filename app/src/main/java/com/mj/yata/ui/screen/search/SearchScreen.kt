@@ -28,7 +28,11 @@ import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.archivedProjects
+import com.mj.yata.domain.model.effectiveTagIds
 import com.mj.yata.domain.model.effectiveTags
+import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.QuickAddHighlightType
+import com.mj.yata.util.findBestEntityMatch
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.widgets.TaskRow
 import kotlinx.coroutines.launch
@@ -156,13 +160,93 @@ internal val searchFilterPhrases = listOf(
     "marquees" to SmartFilter.FLAGGED
 )
 
-internal data class ParsedSearchQuery(val filters: List<SmartFilter>, val residualText: String)
+/** Tag/person/project/list/priority/flag recognized in the query text, resolved to real entity
+ * ids via [findBestEntityMatch] — the same fuzzy name matcher quick-add uses. A task must satisfy
+ * every populated field (AND across types, and AND within [tagIds]/[assigneeIds] too — "tagged
+ * urgent blocked" requires both tags, matching how bulk tag-assignment elsewhere in the app
+ * treats multiple tags). Deliberately excludes dates/times/recurrence: NaturalLanguageParser
+ * resolves a relative phrase like "next week" to one exact date, which is right for *setting* a
+ * due date but wrong for *filtering* by one ("next week" should match any day in that range, not
+ * one exact date) — that needs its own range-aware handling, not a reuse of this. */
+internal data class ParsedSearchEntities(
+    val tagIds: List<String> = emptyList(),
+    val assigneeIds: List<String> = emptyList(),
+    val projectId: String? = null,
+    val listId: String? = null,
+    val priority: String? = null,
+    val flag: Boolean = false
+) {
+    val isEmpty: Boolean
+        get() = tagIds.isEmpty() && assigneeIds.isEmpty() && projectId == null && listId == null && priority == null && !flag
+}
 
-/** Strips recognized filter phrases out of the typed query and reports which [SmartFilter]s
- * they correspond to — the box itself always keeps showing exactly what was typed (this only
- * changes what actually gets searched/filtered), same "detect, don't rewrite the input" rule
- * NaturalLanguageParser follows for quick-add. */
-internal fun parseSearchQuery(raw: String): ParsedSearchQuery {
+/** Keyed so a recognized entity can be individually dismissed from the current search without
+ * editing the typed text — see [ParsedSearchEntities.withoutDismissed]. */
+internal fun ParsedSearchEntities.entityKeys(): List<String> = buildList {
+    tagIds.forEach { add("tag:$it") }
+    assigneeIds.forEach { add("assignee:$it") }
+    projectId?.let { add("project:$it") }
+    listId?.let { add("list:$it") }
+    priority?.let { add("priority") }
+    if (flag) add("flag")
+}
+
+internal fun ParsedSearchEntities.withoutDismissed(dismissed: Set<String>): ParsedSearchEntities = copy(
+    tagIds = tagIds.filterNot { "tag:$it" in dismissed },
+    assigneeIds = assigneeIds.filterNot { "assignee:$it" in dismissed },
+    projectId = projectId?.takeUnless { "project:$it" in dismissed },
+    listId = listId?.takeUnless { "list:$it" in dismissed },
+    priority = priority?.takeUnless { "priority" in dismissed },
+    flag = flag && "flag" !in dismissed
+)
+
+internal fun Task.matchesSearchEntities(entities: ParsedSearchEntities, projectsById: Map<String, Project>): Boolean {
+    if (entities.tagIds.isNotEmpty()) {
+        val effectiveIds = effectiveTagIds(projectsById)
+        if (!entities.tagIds.all { it in effectiveIds }) return false
+    }
+    if (entities.assigneeIds.isNotEmpty() && !entities.assigneeIds.all { it in assigneeIds }) return false
+    if (entities.projectId != null && projectId != entities.projectId) return false
+    if (entities.listId != null && listId != entities.listId) return false
+    if (entities.priority != null && priority != entities.priority) return false
+    if (entities.flag && !flag) return false
+    return true
+}
+
+internal data class ParsedSearchQuery(
+    val filters: List<SmartFilter>,
+    val entities: ParsedSearchEntities,
+    val residualText: String
+)
+
+/** Highlight types [NaturalLanguageParser] recognizes that this reuses. Date/time/recurrence
+ * types are deliberately absent — see [ParsedSearchEntities]'s doc comment — so phrases like
+ * "next week" stay untouched in [ParsedSearchQuery.residualText] and keep matching literally
+ * against task text exactly as they did before this reuse, rather than silently vanishing. */
+private val SEARCH_ENTITY_HIGHLIGHT_TYPES = setOf(
+    QuickAddHighlightType.Project,
+    QuickAddHighlightType.List,
+    QuickAddHighlightType.Tag,
+    QuickAddHighlightType.Assignee,
+    QuickAddHighlightType.Priority,
+    QuickAddHighlightType.Flag
+)
+
+/** Strips recognized filter phrases and entities out of the typed query and reports which
+ * [SmartFilter]s/[ParsedSearchEntities] they correspond to — the box itself always keeps showing
+ * exactly what was typed (this only changes what actually gets searched/filtered), same "detect,
+ * don't rewrite the input" rule NaturalLanguageParser follows for quick-add.
+ *
+ * Runs in two passes: the canned [searchFilterPhrases] table first (unchanged), then
+ * [NaturalLanguageParser] on whatever text that pass left behind, so a canned phrase can't also
+ * get mis-recognized as an entity mention. */
+internal fun parseSearchQuery(
+    raw: String,
+    tags: List<Tag> = emptyList(),
+    people: List<Person> = emptyList(),
+    projects: List<Project> = emptyList(),
+    lists: List<YataList> = emptyList()
+): ParsedSearchQuery {
     var remaining = raw
     val matched = mutableListOf<SmartFilter>()
     for ((phrase, filter) in searchFilterPhrases) {
@@ -172,7 +256,32 @@ internal fun parseSearchQuery(raw: String): ParsedSearchQuery {
             remaining = regex.replace(remaining, " ")
         }
     }
-    return ParsedSearchQuery(matched.distinct(), remaining.replace(Regex("\\s{2,}"), " ").trim())
+    remaining = remaining.replace(Regex("\\s{2,}"), " ").trim()
+
+    val quickAdd = NaturalLanguageParser.parse(remaining)
+    // Entity spans only, removed from the end backwards so earlier indices stay valid.
+    var residual = remaining
+    quickAdd.highlightSpans
+        .filter { it.type in SEARCH_ENTITY_HIGHLIGHT_TYPES }
+        .map { it.range }
+        .sortedByDescending { it.first }
+        .forEach { range ->
+            if (range.first in residual.indices && range.last < residual.length) {
+                residual = residual.removeRange(range.first, range.last + 1)
+            }
+        }
+    residual = residual.replace(Regex("\\s{2,}"), " ").trim()
+
+    val entities = ParsedSearchEntities(
+        tagIds = quickAdd.tagNames.mapNotNull { name -> findBestEntityMatch(name, tags, nameExtractor = { it.name }) }.map { it.id }.distinct(),
+        assigneeIds = quickAdd.assigneeNames.mapNotNull { name -> findBestEntityMatch(name, people, nameExtractor = { it.name }) }.map { it.id }.distinct(),
+        projectId = quickAdd.projectName?.let { findBestEntityMatch(it, projects, nameExtractor = { p -> p.name }) }?.id,
+        listId = quickAdd.listName?.let { findBestEntityMatch(it, lists, nameExtractor = { l -> l.name }) }?.id,
+        priority = quickAdd.priority,
+        flag = quickAdd.flag
+    )
+
+    return ParsedSearchQuery(matched.distinct(), entities, residual)
 }
 
 private fun Task.matchesSearchText(
@@ -191,6 +300,37 @@ private fun Task.matchesSearchText(
         subtasks.forEach { append(it.title).append(' ') }
     }.lowercase()
     return terms.all { haystack.contains(it.lowercase()) }
+}
+
+/** A recognized-entity chip (tag/person/project/list/priority/flag) — always "on" while shown,
+ * dismissible via its trailing close icon rather than toggle-selected like [CompactSearchFilterChip],
+ * since there's no pre-existing catalog of these to toggle back on afterward. */
+@Composable
+private fun EntityFilterChip(
+    label: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    InputChip(
+        selected = true,
+        onClick = onDismiss,
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1
+            )
+        },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.action_close),
+                modifier = Modifier.size(16.dp)
+            )
+        },
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        modifier = modifier.heightIn(min = 32.dp)
+    )
 }
 
 @Composable
@@ -240,18 +380,32 @@ fun SearchScreen(
     // reports them as SmartFilter chips to auto-activate, with the phrase itself excluded from
     // the plain-text search so e.g. "high priority report" both toggles the chip and searches
     // for "report".
-    val parsedSearchQuery = remember(query) { parseSearchQuery(query) }
+    val parsedSearchQuery = remember(query, tags, people, projects, lists) {
+        parseSearchQuery(query, tags, people, projects, lists)
+    }
     val activeFilters = remember { mutableStateListOf<SmartFilter>() }
     LaunchedEffect(parsedSearchQuery.filters) {
         parsedSearchQuery.filters.forEach { filter -> if (filter !in activeFilters) activeFilters.add(filter) }
     }
     // The text field itself always reflects `query` immediately; filtering runs against
-    // `debouncedQuery`, which lags by a beat so a long task list with heavy per-row composables
-    // doesn't re-filter synchronously on every single keystroke.
+    // `debouncedQuery`/`debouncedEntities`, which lag by a beat so a long task list with heavy
+    // per-row composables doesn't re-filter synchronously on every single keystroke — same reason
+    // NaturalLanguageParser's own recognition is debounced here even though quick-add runs it
+    // live: quick-add's list of matches to redraw is one preview card, search's is every row.
     var debouncedQuery by remember { mutableStateOf("") }
+    var debouncedEntities by remember { mutableStateOf(ParsedSearchEntities()) }
     LaunchedEffect(query) {
         kotlinx.coroutines.delay(200)
         debouncedQuery = parsedSearchQuery.residualText
+        debouncedEntities = parsedSearchQuery.entities
+    }
+    // Recognized tags/people/project/list/priority/flag, shown as removable chips alongside the
+    // SmartFilter ones. Dismissing one only excludes it from matching for the current text —
+    // editing the query re-parses from scratch, which is also when a dismissal naturally falls
+    // away since it's keyed to the query, not persisted state.
+    val dismissedEntityKeys = remember(query) { mutableStateListOf<String>() }
+    val activeEntities = remember(debouncedEntities, dismissedEntityKeys.toList()) {
+        debouncedEntities.withoutDismissed(dismissedEntityKeys.toSet())
     }
     var appliedInitialSmartFilterSet by remember(initialSmartFilterSet) { mutableStateOf(false) }
     LaunchedEffect(initialSmartFilterSet, appliedInitialSmartFilterSet) {
@@ -313,8 +467,8 @@ fun SearchScreen(
     // live tasks went through a SQL FTS query (prefix-token match, no project-inherited tags),
     // archived/trash went through this substring match, so the same query could find a task in
     // one bucket and miss its otherwise-identical archived copy. One matcher, one behavior.
-    val filteredTasks = remember(tasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById) {
-        if (debouncedQuery.isBlank() && activeFilters.isEmpty() && !includeArchived && !includeTrash) {
+    val filteredTasks = remember(tasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), activeEntities, archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById) {
+        if (debouncedQuery.isBlank() && activeFilters.isEmpty() && activeEntities.isEmpty && !includeArchived && !includeTrash) {
             emptyList()
         } else {
             val today = LocalDate.now()
@@ -340,7 +494,7 @@ fun SearchScreen(
             val sourceTasks = (activeSource + archivedSource + trashSource).distinctBy { it.id }
             sourceTasks.filter { task ->
                 if (!includeArchived && task.projectId in archivedProjectIds) return@filter false
-                activeFilters.all { it.matches(task, today, myId) }
+                activeFilters.all { it.matches(task, today, myId) } && task.matchesSearchEntities(activeEntities, projectsById)
             }
         }
     }
@@ -425,6 +579,8 @@ fun SearchScreen(
                 query = query,
                 activeFilters = activeFilters,
                 onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
+                activeEntities = activeEntities,
+                onDismissEntity = { key -> dismissedEntityKeys.add(key) },
                 savedSmartFilterSets = savedSmartFilterSets,
                 canSaveCurrentSmartFilterSet = canSaveCurrentSmartFilterSet,
                 onSaveActiveFilters = { viewModel.saveSmartFilterSet(currentSmartFilterSet) },
@@ -503,6 +659,8 @@ fun SearchScreen(
                             query = query,
                             activeFilters = activeFilters,
                             onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
+                activeEntities = activeEntities,
+                onDismissEntity = { key -> dismissedEntityKeys.add(key) },
                             savedSmartFilterSets = savedSmartFilterSets,
                             canSaveCurrentSmartFilterSet = canSaveCurrentSmartFilterSet,
                             onSaveActiveFilters = { viewModel.saveSmartFilterSet(currentSmartFilterSet) },
@@ -561,6 +719,8 @@ fun SearchScreen(
                     query = query,
                     activeFilters = activeFilters,
                     onToggleFilter = { if (activeFilters.contains(it)) activeFilters.remove(it) else activeFilters.add(it) },
+                activeEntities = activeEntities,
+                onDismissEntity = { key -> dismissedEntityKeys.add(key) },
                     savedSmartFilterSets = savedSmartFilterSets,
                     canSaveCurrentSmartFilterSet = canSaveCurrentSmartFilterSet,
                     onSaveActiveFilters = { viewModel.saveSmartFilterSet(currentSmartFilterSet) },
@@ -722,6 +882,8 @@ private fun SearchResultsList(
     query: String,
     activeFilters: List<SmartFilter>,
     onToggleFilter: (SmartFilter) -> Unit,
+    activeEntities: ParsedSearchEntities,
+    onDismissEntity: (String) -> Unit,
     savedSmartFilterSets: Set<String>,
     canSaveCurrentSmartFilterSet: Boolean,
     onSaveActiveFilters: () -> Unit,
@@ -843,6 +1005,61 @@ private fun SearchResultsList(
                             onClick = onToggleIncludeTrash,
                             label = stringResource(R.string.search_filter_trash)
                         )
+                    }
+
+                    // Tags/people/project/list/priority/flag recognized in the typed text (see
+                    // parseSearchQuery) — dismissible so a mis-recognized word doesn't silently
+                    // narrow results with no visible explanation.
+                    if (!activeEntities.isEmpty) {
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            activeEntities.tagIds.forEach { id ->
+                                tagsById[id]?.let { tag ->
+                                    EntityFilterChip(
+                                        label = stringResource(R.string.voice_task_overlay_tag_chip, tag.name),
+                                        onDismiss = { onDismissEntity("tag:$id") }
+                                    )
+                                }
+                            }
+                            activeEntities.assigneeIds.forEach { id ->
+                                peopleById[id]?.let { person ->
+                                    EntityFilterChip(
+                                        label = stringResource(R.string.voice_task_overlay_assignee_chip, person.name),
+                                        onDismiss = { onDismissEntity("assignee:$id") }
+                                    )
+                                }
+                            }
+                            activeEntities.projectId?.let { id ->
+                                projectsById[id]?.let { project ->
+                                    EntityFilterChip(
+                                        label = stringResource(R.string.voice_task_overlay_project_chip, project.name),
+                                        onDismiss = { onDismissEntity("project:$id") }
+                                    )
+                                }
+                            }
+                            activeEntities.listId?.let { id ->
+                                listsById[id]?.let { list ->
+                                    EntityFilterChip(
+                                        label = stringResource(R.string.voice_task_overlay_list_chip, list.name),
+                                        onDismiss = { onDismissEntity("list:$id") }
+                                    )
+                                }
+                            }
+                            activeEntities.priority?.let { priority ->
+                                EntityFilterChip(
+                                    label = stringResource(R.string.voice_task_overlay_priority_chip, priority.replaceFirstChar { it.uppercase() }),
+                                    onDismiss = { onDismissEntity("priority") }
+                                )
+                            }
+                            if (activeEntities.flag) {
+                                EntityFilterChip(
+                                    label = stringResource(R.string.quick_add_preview_flagged),
+                                    onDismiss = { onDismissEntity("flag") }
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -20,6 +20,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   shape and size. Tap it to speak a task straight in — due date, time, priority, tags,
   project/list, and assignees are all recognized the same way typed quick-add understands them,
   and the task is created directly without opening the New Task sheet first.
+- Search now recognizes tags, people, project/list, priority, and flag mentions in the typed query
+  the same way quick-add does (e.g. "tagged urgent assigned to me" narrows to tasks with the
+  "urgent" tag assigned to you), shown as dismissible chips alongside the existing smart filters.
+  Date/time phrases ("next week") aren't part of this yet — see the code comment on why that's a
+  separate piece of work.
 
 ### Changed
 - Trash retention and Auto-archive (Settings → Data Management → Task Lifecycle) are now sliders
