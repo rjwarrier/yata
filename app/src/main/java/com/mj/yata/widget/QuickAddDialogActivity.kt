@@ -61,6 +61,7 @@ import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
+import com.mj.yata.util.resolveParsedQuickAddEntities
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -120,18 +121,60 @@ class QuickAddDialogActivity : ComponentActivity() {
                             repository.getProjectById(targetId).first()
                         } else null
                         val projectStillExists = presetProject != null
-                        val due = parsedTyped.due ?: parsedShared?.due ?: presetProject?.due ?: LocalDate.now().toString()
+                        val projectsEnabled = userPreferences.projectsFeatureEnabledFlow.first()
+                        val tagsEnabled = userPreferences.tagsFeatureEnabledFlow.first()
+                        val peopleEnabled = userPreferences.peopleFeatureEnabledFlow.first()
+                        val allLists = repository.getLists().first()
+                        val allProjects = repository.getProjects().first()
+                        val allPeople = repository.getPeople().first()
+                        val allTags = repository.getTags().first()
                         // Honours the same Auto-assign setting the New Task sheet does — a task
                         // added from the widget shouldn't differ from one added in the app.
                         val assigneeIds = if (userPreferences.autoAssignToMeFlow.first()) {
-                            listOfNotNull(repository.getPeople().first().find { it.isMe }?.id)
+                            listOfNotNull(allPeople.find { it.isMe }?.id)
                         } else emptyList()
+                        val typedResolution = resolveParsedQuickAddEntities(
+                            quickAdd = parsedTyped,
+                            baseListId = if (listStillExists) targetId else null,
+                            baseProjectId = if (projectStillExists) targetId else null,
+                            baseTagIds = emptyList(),
+                            baseAssigneeIds = assigneeIds,
+                            lists = allLists,
+                            projects = allProjects,
+                            people = allPeople,
+                            tags = allTags,
+                            projectsEnabled = projectsEnabled,
+                            tagsEnabled = tagsEnabled,
+                            peopleEnabled = peopleEnabled
+                        )
+                        val finalResolution = parsedShared?.let {
+                            resolveParsedQuickAddEntities(
+                                quickAdd = it,
+                                baseListId = typedResolution.listId,
+                                baseProjectId = typedResolution.projectId,
+                                baseTagIds = typedResolution.tagIds,
+                                baseAssigneeIds = typedResolution.assigneeIds,
+                                lists = allLists,
+                                projects = allProjects,
+                                people = allPeople,
+                                tags = allTags,
+                                projectsEnabled = projectsEnabled,
+                                tagsEnabled = tagsEnabled,
+                                peopleEnabled = peopleEnabled
+                            )
+                        } ?: typedResolution
+                        val due = parsedTyped.due
+                            ?: parsedShared?.due
+                            ?: finalResolution.projectDue
+                            ?: allProjects.find { it.id == finalResolution.projectId }?.due
+                            ?: presetProject?.due
+                            ?: LocalDate.now().toString()
                         repository.upsertTask(
                             Task(
                                 id = "t_" + UUID.randomUUID().toString(),
                                 title = parsedTyped.title.takeIf { it.isNotBlank() } ?: title,
-                                listId = if (listStillExists) targetId else null,
-                                projectId = if (projectStillExists) targetId else null,
+                                listId = finalResolution.listId,
+                                projectId = finalResolution.projectId,
                                 section = "",
                                 // Same fallback chain NewTaskSheet uses: an explicit due date
                                 // (here, one parsed from shared text) wins, otherwise the preset
@@ -147,8 +190,8 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 priority = parsedTyped.priority ?: "none",
                                 flag = parsedTyped.flag || (parsedShared?.flag == true),
                                 done = false,
-                                assigneeIds = assigneeIds,
-                                tagIds = emptyList(),
+                                assigneeIds = finalResolution.assigneeIds,
+                                tagIds = finalResolution.tagIds,
                                 recurrence = parsedTyped.recurrence ?: parsedShared?.recurrence,
                                 subtasks = emptyList(),
                                 notes = sharedNotes

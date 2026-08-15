@@ -219,10 +219,49 @@ class NaturalLanguageParserTest {
     }
 
     @Test
-    fun leavesMentionTokensUntouched() {
+    fun parsesDirectMentionTokens() {
         val result = NaturalLanguageParser.parse("tomorrow buy milk @home #errand", ref)
         assertEquals("2026-07-05", result.due)
-        assertEquals("buy milk @home #errand", result.title)
+        assertEquals("buy milk", result.title)
+        assertEquals(listOf("errand"), result.tagNames)
+        assertEquals(listOf("home"), result.assigneeNames)
+    }
+
+    @Test
+    fun entityCommandsStopBeforeDateClauses() {
+        val result = NaturalLanguageParser.parse("project Work tomorrow prepare deck", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("prepare deck", result.title)
+        assertEquals("Work", result.projectName)
+    }
+
+    @Test
+    fun parsesDirectProjectAndListTokens() {
+        val result = NaturalLanguageParser.parse("+ClientCRM =Q3Board friday review brief", ref)
+        assertEquals("2026-07-10", result.due)
+        assertEquals("review brief", result.title)
+        assertEquals("ClientCRM", result.projectName)
+        assertEquals("Q3Board", result.listName)
+    }
+
+    @Test
+    fun parsesQuotedMultiWordEntities() {
+        val result = NaturalLanguageParser.parse("review copy project \"Client Relaunch\" assign to 'Ana Maria' tomorrow", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("review copy", result.title)
+        assertEquals("Client Relaunch", result.projectName)
+        assertEquals(listOf("Ana Maria"), result.assigneeNames)
+    }
+
+    @Test
+    fun parsesUnicodeEntityNames() {
+        val result = NaturalLanguageParser.parse("preparar proposta projeto São Paulo lista März @李雷 #révision tomorrow", ref)
+        assertEquals("2026-07-05", result.due)
+        assertEquals("preparar proposta", result.title)
+        assertEquals("São Paulo", result.projectName)
+        assertEquals("März", result.listName)
+        assertEquals(listOf("révision"), result.tagNames)
+        assertEquals(listOf("李雷"), result.assigneeNames)
     }
 
     @Test

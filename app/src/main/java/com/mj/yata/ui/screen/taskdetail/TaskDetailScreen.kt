@@ -40,17 +40,25 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.R
+import com.mj.yata.domain.model.Person
+import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.SubtaskCompletionAction
+import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activePeople
+import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.domain.model.inheritedTagIds
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -65,6 +73,11 @@ import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
+import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.ParsedQuickAdd
+import com.mj.yata.util.TaskScheduleUtils
+import com.mj.yata.util.findBestEntityMatch
+import com.mj.yata.util.withParsedQuickAdd
 import java.util.UUID
 
 /** Equal-width rectangular (not pill-shaped) toggle for the Subtasks/Notes/Comments chip row —
@@ -435,6 +448,10 @@ fun TaskDetailScreen(
                 Column {
                     var isEditingTitle by remember(task.id) { mutableStateOf(false) }
                     var titleHasFocusedOnce by remember(task.id) { mutableStateOf(false) }
+                    var titleEdited by remember(task.id) { mutableStateOf(false) }
+                    var titleQuickAddDismissed by remember(task.id) { mutableStateOf(false) }
+                    var ignoredTitleQuickAddFields by remember(task.id) { mutableStateOf(setOf<String>()) }
+                    var titleEditBaseline by remember(task.id) { mutableStateOf<Task?>(null) }
                     val titleFocusRequester = remember(task.id) { FocusRequester() }
                     val titleColor = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
                     val titleStyle = MaterialTheme.typography.titleLarge.copy(
@@ -451,15 +468,53 @@ fun TaskDetailScreen(
                     // A TextFieldValue (not a plain String) so the mention detector below knows
                     // where the cursor actually is, not just the end of the string.
                     var titleBuffer by remember(task.id) {
-                        mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(task.title, androidx.compose.ui.text.TextRange(task.title.length)))
+                        mutableStateOf(TextFieldValue(task.title, TextRange(task.title.length)))
                     }
-                    val mention = remember(titleBuffer, tagsFeatureEnabled, peopleFeatureEnabled) {
+                    val quickAdd = remember(titleBuffer.text) { NaturalLanguageParser.parse(titleBuffer.text) }
+                    val quickAddMatched = isEditingTitle && titleEdited && !titleQuickAddDismissed &&
+                        quickAdd.title != titleBuffer.text.trim()
+                    val mention = remember(titleBuffer, tagsFeatureEnabled, peopleFeatureEnabled, projectsFeatureEnabled) {
                         if (!isEditingTitle) {
                             null
                         } else {
                             detectMentionToken(titleBuffer.text, titleBuffer.selection.end)
-                                ?.takeIf { (it.trigger == '#' && tagsFeatureEnabled) || (it.trigger == '@' && peopleFeatureEnabled) }
+                                ?.takeIf {
+                                    when (it.trigger) {
+                                        TRIGGER_TAG -> tagsFeatureEnabled
+                                        TRIGGER_PERSON -> peopleFeatureEnabled
+                                        TRIGGER_PROJECT -> projectsFeatureEnabled
+                                        TRIGGER_LIST -> true
+                                        else -> false
+                                    }
+                                }
                         }
+                    }
+                    fun upsertTitleEdit(rawTitle: String, parsed: ParsedQuickAdd = quickAdd) {
+                        if (rawTitle.isBlank()) return
+                        val updated = task.copy(title = rawTitle).withParsedQuickAdd(
+                            quickAdd = parsed,
+                            ignoredFields = ignoredTitleQuickAddFields,
+                            lists = lists,
+                            projects = projects,
+                            people = people,
+                            tags = tags,
+                            projectsEnabled = projectsFeatureEnabled,
+                            tagsEnabled = tagsFeatureEnabled,
+                            peopleEnabled = peopleFeatureEnabled
+                        )
+                        viewModel.upsertTask(updated)
+                    }
+                    fun finishTitleEdit() {
+                        if (titleEdited && quickAddMatched && quickAdd.title.isNotBlank()) {
+                            titleBuffer = TextFieldValue(quickAdd.title, TextRange(quickAdd.title.length))
+                            upsertTitleEdit(quickAdd.title, quickAdd)
+                        }
+                        isEditingTitle = false
+                        titleEditBaseline = null
+                    }
+                    fun restoreSmartField(field: String, restoredTask: (Task, Task?) -> Task) {
+                        ignoredTitleQuickAddFields = ignoredTitleQuickAddFields + field
+                        viewModel.upsertTask(restoredTask(task.copy(title = titleBuffer.text), titleEditBaseline))
                     }
 
                     Row(
@@ -483,7 +538,10 @@ fun TaskDetailScreen(
                                 value = titleBuffer,
                                 onValueChange = { newValue ->
                                     titleBuffer = newValue
-                                    if (newValue.text.isNotBlank()) viewModel.upsertTask(task.copy(title = newValue.text))
+                                    titleEdited = true
+                                    titleQuickAddDismissed = false
+                                    ignoredTitleQuickAddFields = emptySet()
+                                    upsertTitleEdit(newValue.text, NaturalLanguageParser.parse(newValue.text))
                                 },
                                 textStyle = titleStyle,
                                 // Wraps rather than scrolling off to the right. This is the field
@@ -499,7 +557,7 @@ fun TaskDetailScreen(
                                         if (it.isFocused) {
                                             titleHasFocusedOnce = true
                                         } else if (titleHasFocusedOnce) {
-                                            isEditingTitle = false
+                                            finishTitleEdit()
                                         }
                                     }
                             )
@@ -509,7 +567,14 @@ fun TaskDetailScreen(
                                 style = titleStyle,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clickable { isEditingTitle = true }
+                                    .clickable {
+                                        titleBuffer = TextFieldValue(task.title, TextRange(task.title.length))
+                                        titleEdited = false
+                                        titleQuickAddDismissed = false
+                                        ignoredTitleQuickAddFields = emptySet()
+                                        titleEditBaseline = task
+                                        isEditingTitle = true
+                                    }
                             )
                         }
                     }
@@ -553,8 +618,158 @@ fun TaskDetailScreen(
                                 val newTitleValue = consumeMentionToken(titleBuffer, mention)
                                 titleBuffer = newTitleValue
                                 viewModel.upsertTask(task.copy(title = newTitleValue.text, assigneeIds = task.assigneeIds + id))
+                            },
+                            projects = projects,
+                            lists = lists,
+                            onSelectProject = { project ->
+                                val newTitleValue = consumeMentionToken(titleBuffer, mention)
+                                titleBuffer = newTitleValue
+                                viewModel.upsertTask(
+                                    task.copy(
+                                        title = newTitleValue.text,
+                                        projectId = project.id,
+                                        listId = null,
+                                        due = project.due ?: task.due
+                                    )
+                                )
+                            },
+                            onSelectList = { list ->
+                                val newTitleValue = consumeMentionToken(titleBuffer, mention)
+                                titleBuffer = newTitleValue
+                                viewModel.upsertTask(task.copy(title = newTitleValue.text, listId = list.id, projectId = null))
                             }
                         )
+                    }
+
+                    if (quickAddMatched) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val detectedItems = listOfNotNull<Triple<String, () -> Unit, () -> Unit>>(
+                            quickAdd.due?.takeIf { "due" !in ignoredTitleQuickAddFields }?.let {
+                                Triple("Due ${TaskScheduleUtils.formatDueDate(it)}", { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                    restoreSmartField("due") { current, baseline -> current.copy(due = baseline?.due) }
+                                })
+                            },
+                            quickAdd.startDate?.takeIf { "start" !in ignoredTitleQuickAddFields }?.let {
+                                Triple(stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)), { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                    restoreSmartField("start") { current, baseline -> current.copy(startDate = baseline?.startDate) }
+                                })
+                            },
+                            quickAdd.time?.takeIf { "time" !in ignoredTitleQuickAddFields }?.let {
+                                Triple("Time $it", { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                    restoreSmartField("time") { current, baseline -> current.copy(time = baseline?.time) }
+                                })
+                            },
+                            quickAdd.recurrence?.takeIf { "recurrence" !in ignoredTitleQuickAddFields }?.let {
+                                Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}", { activeSheet = DetailSheetType.RecurrenceBuilder }, {
+                                    restoreSmartField("recurrence") { current, baseline -> current.copy(recurrence = baseline?.recurrence) }
+                                })
+                            },
+                            quickAdd.reminder?.takeIf { "reminder" !in ignoredTitleQuickAddFields }?.let {
+                                Triple("Remind $it", { activeSheet = DetailSheetType.ReminderPicker }, {
+                                    restoreSmartField("reminder") { current, baseline -> current.copy(reminder = baseline?.reminder) }
+                                })
+                            },
+                            quickAdd.priority?.takeIf { "priority" !in ignoredTitleQuickAddFields }?.let {
+                                Triple("${it.uppercase()} priority", { }, {
+                                    restoreSmartField("priority") { current, baseline -> current.copy(priority = baseline?.priority ?: "none") }
+                                })
+                            },
+                            "Flagged".takeIf { quickAdd.flag && "flag" !in ignoredTitleQuickAddFields }?.let {
+                                Triple(it, { viewModel.toggleTaskFlag(task.id) }, {
+                                    restoreSmartField("flag") { current, baseline -> current.copy(flag = baseline?.flag ?: false) }
+                                })
+                            },
+                            quickAdd.projectName?.takeIf { projectsFeatureEnabled && "project" !in ignoredTitleQuickAddFields }?.let {
+                                Triple("Project $it", { activeSheet = DetailSheetType.ProjectPicker }, {
+                                    restoreSmartField("project") { current, baseline ->
+                                        current.copy(projectId = baseline?.projectId, listId = baseline?.listId, due = baseline?.due)
+                                    }
+                                })
+                            },
+                            quickAdd.listName?.takeIf { "list" !in ignoredTitleQuickAddFields }?.let {
+                                Triple("List $it", { activeSheet = DetailSheetType.ListPicker }, {
+                                    restoreSmartField("list") { current, baseline ->
+                                        current.copy(listId = baseline?.listId, projectId = baseline?.projectId)
+                                    }
+                                })
+                            },
+                            quickAdd.tagNames.takeIf { tagsFeatureEnabled && it.isNotEmpty() && "tags" !in ignoredTitleQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
+                                Triple("Tags $it", { activeSheet = DetailSheetType.TagPicker }, {
+                                    restoreSmartField("tags") { current, baseline -> current.copy(tagIds = baseline?.tagIds ?: current.tagIds) }
+                                })
+                            },
+                            quickAdd.assigneeNames.takeIf { peopleFeatureEnabled && it.isNotEmpty() && "people" !in ignoredTitleQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
+                                Triple("People $it", { activeSheet = DetailSheetType.AssigneePicker }, {
+                                    restoreSmartField("people") { current, baseline -> current.copy(assigneeIds = baseline?.assigneeIds ?: current.assigneeIds) }
+                                })
+                            }
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Today,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.new_task_smart_add_summary),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.new_task_ignore_detected_date_time),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clip(CircleShape)
+                                        .clickable { titleQuickAddDismissed = true }
+                                )
+                            }
+                            Text(
+                                text = stringResource(R.string.new_task_detected_title, quickAdd.title),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                detectedItems.forEach { (item, onItemClick, onDismissItem) ->
+                                    InputChip(
+                                        selected = true,
+                                        onClick = onItemClick,
+                                        label = { Text(item) },
+                                        colors = InputChipDefaults.inputChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.surface,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                            selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                        ),
+                                        trailingIcon = {
+                                            Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = stringResource(R.string.new_task_ignore_field, item),
+                                                modifier = Modifier
+                                                    .size(16.dp)
+                                                    .clickable { onDismissItem() }
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

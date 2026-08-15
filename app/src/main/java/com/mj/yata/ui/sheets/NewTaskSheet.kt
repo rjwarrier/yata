@@ -152,6 +152,7 @@ import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.ParsedQuickAdd
 import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findSimilarTask
+import com.mj.yata.util.resolveParsedQuickAddEntities
 import java.time.LocalDate
 
 internal fun pickAccentFor(name: String): String =
@@ -633,22 +634,36 @@ fun NewTaskSheet(
             // aren't naturally per-line (project/list/section/assignees/tags/notes/subtasks).
             bulkTaskLines.forEach { line ->
                 val parsed = NaturalLanguageParser.parse(line)
+                val resolved = resolveParsedQuickAddEntities(
+                    quickAdd = parsed,
+                    baseListId = selectedListId,
+                    baseProjectId = selectedProjectId,
+                    baseTagIds = selectedTagIds.toList(),
+                    baseAssigneeIds = selectedAssigneeIds.toList(),
+                    lists = lists,
+                    projects = projects,
+                    people = people,
+                    tags = tags,
+                    projectsEnabled = projectsEnabled,
+                    tagsEnabled = tagsEnabled,
+                    peopleEnabled = peopleEnabled
+                )
                 onAddTask(
                     NewTaskDraft(
                         title = parsed.title,
-                        listId = selectedListId,
+                        listId = resolved.listId,
                         priority = parsed.priority ?: "none",
-                        assigneeIds = selectedAssigneeIds.toList(),
-                        tagIds = selectedTagIds.toList(),
+                        assigneeIds = resolved.assigneeIds,
+                        tagIds = resolved.tagIds,
                         recurrence = parsed.recurrence,
-                        due = parsed.due ?: initialDueDate,
+                        due = parsed.due ?: resolved.projectDue ?: initialDueDate,
                         // Per-line like the due date: "review draft starts monday" on one line
                         // shouldn't defer the other lines in the same bulk paste.
                         startDate = parsed.startDate,
                         time = parsed.time,
                         reminder = parsed.reminder ?: selectedReminder,
                         section = selectedSection,
-                        projectId = selectedProjectId,
+                        projectId = resolved.projectId,
                         notes = notes.trim().ifBlank { null },
                         subtasks = subtasks.toList(),
                         flag = parsed.flag,

@@ -863,6 +863,37 @@ object NaturalLanguageParser {
     }
 
     private val escapeRegex = Regex("\\\\(\\w+)")
+    private const val ENTITY_NAME_CHARS = "\\p{L}\\p{N}_\\-\\s"
+    private const val ENTITY_WORD_BOUNDARY =
+        "project|proyecto|projeto|projet|list|lista|liste|tag|etiqueta|Ã©tiquette|etiquette|" +
+            "tagged?|label|labeled?|assign(?:ed)?\\s+to|asignad[ao]\\s+a|asignar\\s+a|" +
+            "atribu[iÃ­]d[ao]\\s+a|atribuir\\s+a|assignÃ©\\s+Ã |assigne\\s+a|assigner\\s+Ã |" +
+            "give(?:n)?\\s+to|delegate|delegar|send\\s+to|assign|due|vence|Ã©chÃ©ance|echeance|" +
+            "at|a\\s+las?|Ã s?|Ã |every|cada|todo|toda|chaque|on|el|le|today|tdy|tomorrow|tmr|" +
+            "tmrw|tomrw|tonight|tonite|morning|morn|afternoon|evening|night|noon|midnight|" +
+            "next|nxt|this|in|by|before|after|starts?|start(?:ing)?|not\\s+before|!|p[1-3]|#|@|\\+|="
+    private val quotedEntityValueRegex = Regex("^\\s*(?:\"([^\"]+)\"|'([^']+)'|([$ENTITY_NAME_CHARS]+?))\\s*$")
+    private val projectEntityRegex = Regex(
+        "(?<![\\p{L}\\p{N}_])(?:\\+|in\\s+project|for\\s+project|under\\s+project|project|en\\s+proyecto|para\\s+proyecto|bajo\\s+proyecto|proyecto|em\\s+projeto|para\\s+projeto|projeto|dans\\s+projet|pour\\s+projet|projet)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        RegexOption.IGNORE_CASE
+    )
+    private val listEntityRegex = Regex(
+        "(?<![\\p{L}\\p{N}_])(?:=|in\\s+list|for\\s+list|under\\s+list|list|en\\s+lista|para\\s+lista|bajo\\s+lista|lista|em\\s+lista|dans\\s+liste|pour\\s+liste|liste)\\s*(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        RegexOption.IGNORE_CASE
+    )
+    private val tagEntityRegex = Regex(
+        "(?<![\\p{L}\\p{N}_])(?:#|tagged?\\s+as\\s+|tagged?\\s+|tag\\s+as\\s+|tag\\s+|labeled?\\s+as\\s+|labeled?\\s+|label\\s+as\\s+|label\\s+|with\\s+tag\\s+|etiquetad[ao]\\s+como\\s+|etiquetad[ao]\\s+|etiqueta\\s+como\\s+|etiqueta\\s+|con\\s+etiqueta\\s+|marcad[ao]\\s+como\\s+|rÃ³tulo\\s+|rotulo\\s+|Ã©tiquette\\s+|etiquette\\s+|avec\\s+Ã©tiquette\\s+|avec\\s+etiquette\\s+)([\\p{L}\\p{N}_\\-]+)(?![\\p{L}\\p{N}_])",
+        RegexOption.IGNORE_CASE
+    )
+    private val assigneeEntityRegex = Regex(
+        "(?<![\\p{L}\\p{N}_])(?:assign(?:ed)?\\s+to\\s+|give(?:n)?\\s+to\\s+|delegate(?:d)?\\s+to\\s+|send\\s+to\\s+|assign\\s+|asignad[ao]\\s+a\\s+|asignar\\s+a\\s+|delegad[ao]\\s+a\\s+|delegar\\s+a\\s+|enviar\\s+a\\s+|atribu[iÃ­]d[ao]\\s+a\\s+|atribuir\\s+a\\s+|delegar\\s+para\\s+|enviar\\s+para\\s+|assignÃ©\\s+Ã \\s+|assigne\\s+a\\s+|assigner\\s+Ã \\s+|assigner\\s+a\\s+|dÃ©lÃ©guÃ©\\s+Ã \\s+|delegue\\s+a\\s+|dÃ©lÃ©guer\\s+Ã \\s+|deleguer\\s+a\\s+|envoyer\\s+Ã \\s+|envoyer\\s+a\\s+|@)(\"[^\"]+\"|'[^']+'|[$ENTITY_NAME_CHARS]+?)(?=$|\\s+(?:$ENTITY_WORD_BOUNDARY))",
+        RegexOption.IGNORE_CASE
+    )
+
+    private fun entityValue(rawValue: String): String =
+        quotedEntityValueRegex.matchEntire(rawValue)?.let { m ->
+            m.groupValues.drop(1).firstOrNull { it.isNotBlank() }?.trim()
+        } ?: rawValue.trim().trim('"', '\'')
 
     // â”€â”€ Reminder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // "remind"/"remind me" phrases set the *reminder*, distinct from the due time â€” checked
@@ -1769,35 +1800,32 @@ object NaturalLanguageParser {
 
         // 7. Project, List, Tag, Assignee keywords
         var projectName: String? = null
-        firstFreeMatch(Regex("\\b(?:in\\s+project|for\\s+project|under\\s+project|project|en\\s+proyecto|para\\s+proyecto|bajo\\s+proyecto|proyecto|em\\s+projeto|para\\s+projeto|projeto|dans\\s+projet|pour\\s+projet|projet)\\s+([A-Za-zÁÉÍÓÚÜÑáéíóúüñÃÕÇãõçÀÂÊÎÔÛÄËÏÖÜàâêîôûäëïöü0-9_\\-\\s]+?)(?=$|\\s+(?:list|lista|liste|tag|etiqueta|étiquette|etiquette|tagged?|label|labeled?|#|assign(?:ed)?\\s+to|asignad[ao]\\s+a|asignar\\s+a|atribu[ií]d[ao]\\s+a|atribuir\\s+a|assigné\\s+à|assigne\\s+a|assigner\\s+à|give(?:n)?\\s+to|delegate|delegar|send\\s+to|assign|@|due|vence|échéance|echeance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|on|el|le|!|p[1-3]))", RegexOption.IGNORE_CASE))?.let { m ->
-            projectName = m.groupValues[1].trim()
+        firstFreeMatch(projectEntityRegex)?.let { m ->
+            projectName = entityValue(m.groupValues[1])
             claim(m.range)
         }
 
         var listName: String? = null
-        firstFreeMatch(Regex("\\b(?:in\\s+list|for\\s+list|under\\s+list|list|en\\s+lista|para\\s+lista|bajo\\s+lista|lista|em\\s+lista|dans\\s+liste|pour\\s+liste|liste)\\s+([A-Za-zÁÉÍÓÚÜÑáéíóúüñÃÕÇãõçÀÂÊÎÔÛÄËÏÖÜàâêîôûäëïöü0-9_\\-\\s]+?)(?=$|\\s+(?:project|proyecto|projeto|projet|tag|etiqueta|étiquette|etiquette|tagged?|label|labeled?|#|assign(?:ed)?\\s+to|asignad[ao]\\s+a|asignar\\s+a|atribu[ií]d[ao]\\s+a|atribuir\\s+a|assigné\\s+à|assigne\\s+a|assigner\\s+à|give(?:n)?\\s+to|delegate|delegar|send\\s+to|assign|@|due|vence|échéance|echeance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|on|el|le|!|p[1-3]))", RegexOption.IGNORE_CASE))?.let { m ->
-            listName = m.groupValues[1].trim()
+        firstFreeMatch(listEntityRegex)?.let { m ->
+            listName = entityValue(m.groupValues[1])
             claim(m.range)
         }
 
         val tagNames = mutableListOf<String>()
-        val tagMatches = Regex("(?<![\\p{L}\\p{N}_])(?:tagged?\\s+as\\s+|tagged?\\s+|tag\\s+as\\s+|tag\\s+|labeled?\\s+as\\s+|labeled?\\s+|label\\s+as\\s+|label\\s+|with\\s+tag\\s+|etiquetad[ao]\\s+como\\s+|etiquetad[ao]\\s+|etiqueta\\s+como\\s+|etiqueta\\s+|con\\s+etiqueta\\s+|marcad[ao]\\s+como\\s+|rótulo\\s+|rotulo\\s+|étiquette\\s+|etiquette\\s+|avec\\s+étiquette\\s+|avec\\s+etiquette\\s+)([A-Za-zÁÉÍÓÚÜÑáéíóúüñÃÕÇãõçÀÂÊÎÔÛÄËÏÖÜàâêîôûäëïöü0-9_\\-]+)(?![\\p{L}\\p{N}_])", RegexOption.IGNORE_CASE).findAll(raw)
-        for (m in tagMatches) {
+        for (m in tagEntityRegex.findAll(raw)) {
             if (isFree(m.range)) {
-                tagNames.add(m.groupValues[1].trim())
+                tagNames.add(entityValue(m.groupValues[1]))
                 claim(m.range)
             }
         }
 
         val assigneeNames = mutableListOf<String>()
-        val assigneeMatches = Regex("\\b(?:assign(?:ed)?\\s+to\\s+|give(?:n)?\\s+to\\s+|delegate(?:d)?\\s+to\\s+|send\\s+to\\s+|assign\\s+|asignad[ao]\\s+a\\s+|asignar\\s+a\\s+|delegad[ao]\\s+a\\s+|delegar\\s+a\\s+|enviar\\s+a\\s+|atribu[ií]d[ao]\\s+a\\s+|atribuir\\s+a\\s+|delegar\\s+para\\s+|enviar\\s+para\\s+|assigné\\s+à\\s+|assigne\\s+a\\s+|assigner\\s+à\\s+|assigner\\s+a\\s+|délégué\\s+à\\s+|delegue\\s+a\\s+|déléguer\\s+à\\s+|deleguer\\s+a\\s+|envoyer\\s+à\\s+|envoyer\\s+a\\s+|@)([A-Za-zÁÉÍÓÚÜÑáéíóúüñÃÕÇãõçÀÂÊÎÔÛÄËÏÖÜàâêîôûäëïöü0-9_\\-\\s]+?)(?=$|\\s+(?:project|proyecto|projeto|projet|list|lista|liste|tag|etiqueta|étiquette|etiquette|tagged?|label|labeled?|#|due|vence|échéance|echeance|at|a\\s+las?|às?|à|every|cada|todo|toda|chaque|on|el|le|!|p[1-3]))", RegexOption.IGNORE_CASE).findAll(raw)
-        for (m in assigneeMatches) {
+        for (m in assigneeEntityRegex.findAll(raw)) {
             if (isFree(m.range)) {
-                assigneeNames.add(m.groupValues[1].trim())
+                assigneeNames.add(entityValue(m.groupValues[1]))
                 claim(m.range)
             }
         }
-
         val prepositionRegex = Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 
         val expandedClaims = claimed.map { range ->

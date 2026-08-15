@@ -32,6 +32,7 @@ import com.mj.yata.util.AppLanguageController
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.withParsedQuickAdd
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -1447,16 +1448,19 @@ private data class MainNavigationState(
             val task = tasks.value.find { it.id == id } ?: return@safeLaunch
             val parsed = NaturalLanguageParser.parse(trimmed)
             val parsedTitle = parsed.title.ifBlank { trimmed }
+            val updated = task.copy(title = parsedTitle).withParsedQuickAdd(
+                quickAdd = parsed,
+                lists = lists.value,
+                projects = projects.value,
+                people = people.value,
+                tags = tags.value,
+                projectsEnabled = projectsFeatureEnabled.value,
+                tagsEnabled = tagsFeatureEnabled.value,
+                peopleEnabled = peopleFeatureEnabled.value
+            )
             repository.upsertTask(
-                task.copy(
-                    title = parsedTitle,
-                    due = parsed.due ?: task.due,
-                    time = parsed.time ?: task.time,
-                    reminder = parsed.reminder ?: task.reminder,
-                    recurrence = parsed.recurrence ?: task.recurrence,
-                    priority = parsed.priority ?: task.priority
-                ),
-                resyncReminder = parsed.due != null || parsed.time != null || parsed.reminder != null
+                updated,
+                resyncReminder = updated.due != task.due || updated.time != task.time || updated.reminder != task.reminder
             )
             userPreferences.recordRecentTask(id)
         }
