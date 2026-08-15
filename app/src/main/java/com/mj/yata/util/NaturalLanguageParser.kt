@@ -6,6 +6,7 @@ import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DateAliasTarget
 import com.mj.yata.util.nl.NaturalLanguageLexicon
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
+import com.mj.yata.util.nl.normalizeNaturalLanguageInput
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -1215,14 +1216,7 @@ object NaturalLanguageParser {
             parseCache[cacheKey]?.let { return it }
         }
 
-        val raw = rawInput
-            .replace(Regex("\\b2\\s*day\\b", RegexOption.IGNORE_CASE), "today")
-            .replace(Regex("\\bto\\s+day\\b", RegexOption.IGNORE_CASE), "today")
-            .replace(Regex("\\b(to|two|2)\\s*morrow\\b", RegexOption.IGNORE_CASE), "tomorrow")
-            .replace(Regex("\\bate\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "8 $1")
-            .replace(Regex("\\bwon\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "1 $1")
-            .replace(Regex("\\btoo\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "2 $1")
-            .replace(Regex("\\bfor\\s+(p\\.?\\s*m\\.?|a\\.?\\s*m\\.?|pm|am)\\b", RegexOption.IGNORE_CASE), "4 $1")
+        val raw = normalizeNaturalLanguageInput(rawInput)
 
         val claimTracker = ClaimTracker()
         var due: LocalDate? = null
