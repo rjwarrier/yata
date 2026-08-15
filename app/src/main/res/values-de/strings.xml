@@ -1514,6 +1514,7 @@
     <string name="remote_sync_github_config_imported">GitHub-Konfiguration für %1$s importiert.</string>
     <string name="remote_sync_activity_title">Sync-Aktivität</string>
     <string name="remote_sync_view_all_activity">Alle anzeigen</string>
+    <string name="remote_sync_load_more_activity">Mehr laden</string>
     <string name="remote_sync_activity_summary">In dieses Repository hochgeladene Snapshots, neueste zuerst.</string>
     <string name="remote_sync_activity_empty">Noch keine Snapshots hochgeladen.</string>
     <string name="remote_sync_activity_this_device">Dieses Gerät</string>

@@ -1357,6 +1357,7 @@
     <string name="remote_sync_github_config_imported">GitHub-konfiguration importerad för %1$s.</string>
     <string name="remote_sync_activity_title">Synkroniseringsaktivitet</string>
     <string name="remote_sync_view_all_activity">Visa alla</string>
+    <string name="remote_sync_load_more_activity">Läs in mer</string>
     <string name="remote_sync_activity_summary">Ögonblicksbilder som skickats till detta arkiv, nyaste först.</string>
     <string name="remote_sync_activity_empty">Inga ögonblicksbilder har skickats än.</string>
     <string name="remote_sync_activity_this_device">Den här enheten</string>

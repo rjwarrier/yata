@@ -1357,6 +1357,7 @@
     <string name="remote_sync_github_config_imported">Konfigurasi GitHub diimpor untuk %1$s.</string>
     <string name="remote_sync_activity_title">Aktivitas sinkronisasi</string>
     <string name="remote_sync_view_all_activity">Lihat semua</string>
+    <string name="remote_sync_load_more_activity">Muat lebih banyak</string>
     <string name="remote_sync_activity_summary">Snapshot yang dikirim ke repositori ini, terbaru lebih dahulu.</string>
     <string name="remote_sync_activity_empty">Belum ada snapshot yang dikirim.</string>
     <string name="remote_sync_activity_this_device">Perangkat ini</string>

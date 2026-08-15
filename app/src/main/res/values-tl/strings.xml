@@ -400,6 +400,7 @@
     <string name="remote_sync_github_force_download_title">Gamitin ang pinakabagong GitHub snapshot?</string>
     <string name="remote_sync_activity_title">Aktibidad ng sync</string>
     <string name="remote_sync_view_all_activity">Tingnan lahat</string>
+    <string name="remote_sync_load_more_activity">Mag-load pa</string>
     <string name="remote_sync_activity_summary">Mga snapshot na ipinadala sa repository na ito, pinakabago muna.</string>
     <string name="remote_sync_activity_empty">Wala pang naipadalang snapshot.</string>
     <string name="remote_sync_activity_this_device">Ang device na ito</string>

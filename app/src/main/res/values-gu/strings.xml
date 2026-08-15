@@ -400,6 +400,7 @@
     <string name="remote_sync_github_force_download_title">નવીનતમ GitHub સ્નેપશોટ વાપરવો છે?</string>
     <string name="remote_sync_activity_title">સિંક પ્રવૃત્તિ</string>
     <string name="remote_sync_view_all_activity">બધું જુઓ</string>
+    <string name="remote_sync_load_more_activity">વધુ લોડ કરો</string>
     <string name="remote_sync_activity_summary">આ રિપોઝિટરીમાં મોકલેલા સ્નેપશોટ, નવીનતમ પ્રથમ.</string>
     <string name="remote_sync_activity_empty">હજી સુધી કોઈ સ્નેપશોટ મોકલાયો નથી.</string>
     <string name="remote_sync_activity_this_device">આ ઉપકરણ</string>

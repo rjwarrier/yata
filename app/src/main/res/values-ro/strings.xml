@@ -1357,6 +1357,7 @@
     <string name="remote_sync_github_config_imported">Configurație GitHub importată pentru %1$s.</string>
     <string name="remote_sync_activity_title">Activitate de sincronizare</string>
     <string name="remote_sync_view_all_activity">Vezi tot</string>
+    <string name="remote_sync_load_more_activity">Încarcă mai multe</string>
     <string name="remote_sync_activity_summary">Instantanee trimise în acest depozit, cele mai noi primele.</string>
     <string name="remote_sync_activity_empty">Niciun instantaneu trimis încă.</string>
     <string name="remote_sync_activity_this_device">Acest dispozitiv</string>

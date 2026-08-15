@@ -1357,6 +1357,7 @@
     <string name="remote_sync_github_config_imported">Konfigurace GitHub importována pro %1$s.</string>
     <string name="remote_sync_activity_title">Aktivita synchronizace</string>
     <string name="remote_sync_view_all_activity">Zobrazit vše</string>
+    <string name="remote_sync_load_more_activity">Načíst další</string>
     <string name="remote_sync_activity_summary">Snímky odeslané do tohoto repozitáře, nejnovější první.</string>
     <string name="remote_sync_activity_empty">Zatím nebyly odeslány žádné snímky.</string>
     <string name="remote_sync_activity_this_device">Toto zařízení</string>

@@ -23,8 +23,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Remote sync → GitHub now shows the most recent sync (device, contents, when) with a "View all"
   link to a new dedicated Sync History screen — one card per snapshot, tap to expand for the
   device/task counts read from inside that snapshot, with its own Restore action. Commits not
-  written by YATA still appear, marked as unattributed. Fetching is bounded to one GitHub API page
-  (100 commits) instead of walking the whole history for what's meant to be a quick, recent view.
+  written by YATA still appear, marked as unattributed. Fetching starts bounded to one GitHub API
+  page (100 commits) instead of walking the whole history for what's meant to be a quick, recent
+  view, with a "Load more" row for anyone who's synced past that.
 - Snapshots are now labelled with your device's name from Android's Settings (About phone → Device
   name) instead of just its model, so two of the same handset are tellable apart in the sync
   activity feed. Rename the device there and future snapshots follow; ones already pushed keep the

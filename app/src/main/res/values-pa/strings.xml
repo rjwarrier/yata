@@ -400,6 +400,7 @@
     <string name="remote_sync_github_force_download_title">ਨਵੀਨਤਮ GitHub ਸਨੈਪਸ਼ਾਟ ਵਰਤਣਾ ਹੈ?</string>
     <string name="remote_sync_activity_title">ਸਿੰਕ ਗਤੀਵਿਧੀ</string>
     <string name="remote_sync_view_all_activity">ਸਭ ਵੇਖੋ</string>
+    <string name="remote_sync_load_more_activity">ਹੋਰ ਲੋਡ ਕਰੋ</string>
     <string name="remote_sync_activity_summary">ਇਸ ਰਿਪੋਜ਼ਟਰੀ ਵਿੱਚ ਭੇਜੇ ਗਏ ਸਨੈਪਸ਼ਾਟ, ਨਵੀਨਤਮ ਪਹਿਲਾਂ।</string>
     <string name="remote_sync_activity_empty">ਹਾਲੇ ਤੱਕ ਕੋਈ ਸਨੈਪਸ਼ਾਟ ਨਹੀਂ ਭੇਜਿਆ ਗਿਆ।</string>
     <string name="remote_sync_activity_this_device">ਇਹ ਡਿਵਾਈਸ</string>

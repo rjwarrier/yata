@@ -62,16 +62,22 @@ fun SyncHistoryScreen(
 
     var entries by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isLoadingMore by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    // How many restore points the next fetch asks for. GitHubSyncManager has no page cursor to
+    // resume from - listRestorePoints(limit) always re-walks from the newest commit - so "load
+    // more" means re-fetching everything up to a bigger limit and replacing the list, not
+    // appending a new page. Wasteful only in the sense of re-downloading commit metadata (cheap,
+    // and still just one GitHub API page per SYNC_HISTORY_PAGE_SIZE) already shown, not the
+    // per-card snapshot blobs, which stay cached in `summaries` regardless.
+    var requestedLimit by remember { mutableStateOf(SYNC_HISTORY_PAGE_SIZE) }
+    // If the last fetch returned fewer than it asked for, that's every restore point there is.
+    val hasMore = loadError == null && entries.size >= requestedLimit
 
-    fun load() {
-        isLoading = true
+    fun load(limit: Int, onDone: () -> Unit) {
         loadError = null
-        // Bounded to one GitHub API page: a browsable-history screen still doesn't need to walk
-        // an unlimited number of pages just to render a scrollable list, and the vast majority of
-        // repos won't have synced enough times to exceed this in the first place.
-        viewModel.listRemoteRestorePoints(limit = SYNC_HISTORY_PAGE_SIZE) { result ->
-            isLoading = false
+        viewModel.listRemoteRestorePoints(limit = limit) { result ->
+            onDone()
             result.fold(
                 onSuccess = { entries = it },
                 onFailure = { error ->
@@ -82,7 +88,20 @@ fun SyncHistoryScreen(
         }
     }
 
-    LaunchedEffect(Unit) { load() }
+    fun refresh() {
+        requestedLimit = SYNC_HISTORY_PAGE_SIZE
+        isLoading = true
+        load(requestedLimit) { isLoading = false }
+    }
+
+    fun loadMore() {
+        if (isLoadingMore || !hasMore) return
+        isLoadingMore = true
+        requestedLimit += SYNC_HISTORY_PAGE_SIZE
+        load(requestedLimit) { isLoadingMore = false }
+    }
+
+    LaunchedEffect(Unit) { refresh() }
 
     // Single-expand accordion — keeps the list scannable, and caches each fetched summary so
     // collapsing and re-expanding a card doesn't re-download the snapshot.
@@ -128,7 +147,7 @@ fun SyncHistoryScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = ::load, enabled = !isLoading) {
+                    IconButton(onClick = ::refresh, enabled = !isLoading) {
                         Icon(Icons.Default.CloudUpload, contentDescription = stringResource(R.string.action_refresh))
                     }
                 }
@@ -180,6 +199,19 @@ fun SyncHistoryScreen(
                                 inspectError = summaryErrors[entry.id],
                                 onRestore = { pendingRestore = entry }
                             )
+                        }
+                        if (hasMore) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                    if (isLoadingMore) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                    } else {
+                                        TextButton(onClick = ::loadMore) {
+                                            Text(stringResource(R.string.remote_sync_load_more_activity))
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
