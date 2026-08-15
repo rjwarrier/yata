@@ -273,7 +273,7 @@ object NaturalLanguageParser {
     private val everyWeekdayRegex = Regex("\\b$EVERY\\s+([\\p{L}-]+)\\b", RegexOption.IGNORE_CASE)
 
     // Longest names first so "sun" can't win against "sunday" and leave "day" stranded.
-    private val weekdayAlt by lazy { weekdayNames.keys.sortedByDescending { it.length }.joinToString("|") }
+    private val weekdayAlt by lazy { literalAlternation(weekdayNames.keys) }
     /**
      * "every mon, wed and fri" â€” a weekly recurrence on several days at once. Has to be tried
      * before the single-weekday rule, which would otherwise claim just the first day and leave
@@ -551,7 +551,7 @@ object NaturalLanguageParser {
         }
         put("thirty first", 31); put("thirty-first", 31); put("thirtyfirst", 31)
     }
-    private val ordinalWordAlt by lazy { ordinalWords.keys.sortedByDescending { it.length }.joinToString("|") { Regex.escape(it) } }
+    private val ordinalWordAlt by lazy { literalAlternation(ordinalWords.keys) }
     private val ordinalWordDayRegex by lazy {
         Regex("\\b(?:on\\s+)?the\\s+($ordinalWordAlt)\\b", RegexOption.IGNORE_CASE)
     }
@@ -898,7 +898,7 @@ object NaturalLanguageParser {
         "novembre" to 11,
         "déc" to 12, "decembre" to 12, "décembre" to 12
     )
-    private val monthAlt = monthNames.keys.sortedByDescending { it.length }.joinToString("|") { Regex.escape(it) }
+    private val monthAlt = literalAlternation(monthNames.keys)
     private val monthDayRegex = Regex("\\b($monthAlt)\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?\\b", RegexOption.IGNORE_CASE)
     // Optional leading "the" / mid "of" so "the 20th of july" also resolves as a full date
     // instead of falling through to the bare ordinalDayOfMonthRegex below and losing the month.
@@ -1162,12 +1162,12 @@ object NaturalLanguageParser {
      */
     private val wordRegexCache = java.util.concurrent.ConcurrentHashMap<String, Regex>()
     private fun cachedWordRegex(word: String): Regex =
-        wordRegexCache.getOrPut(word) { Regex("(?<![\\p{L}\\p{N}_])${Regex.escape(word)}(?![\\p{L}\\p{N}_])", RegexOption.IGNORE_CASE) }
+        wordRegexCache.getOrPut(word) { literalWordRegex(word) }
 
     /** As [cachedWordRegex], but also absorbing a trailing "ish"/"-ish". */
     private fun cachedIshWordRegex(word: String): Regex =
         wordRegexCache.getOrPut("ish:$word") {
-            Regex("(?<![\\p{L}\\p{N}_])${Regex.escape(word)}(?:\\s*-?\\s*ish)?(?![\\p{L}\\p{N}_])", RegexOption.IGNORE_CASE)
+            literalIshWordRegex(word)
         }
 
     /**
