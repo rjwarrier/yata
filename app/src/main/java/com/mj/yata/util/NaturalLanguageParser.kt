@@ -5,6 +5,7 @@ import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DateAliasTarget
 import com.mj.yata.util.nl.NaturalLanguageLexicon
+import com.mj.yata.util.nl.cleanNaturalLanguageTitle
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -1942,26 +1943,7 @@ object NaturalLanguageParser {
             .sortedBy { it.range.first }
         val sortedClaims = sortedHighlightSpans.map { it.range }
         val sortedStrip = (sortedClaims + claimTracker.stripOnlyRanges()).sortedBy { it.first }
-        val titleRaw = buildString {
-            var cursor = 0
-            for (range in sortedStrip) {
-                if (range.first > cursor) append(raw, cursor, range.first)
-                cursor = (range.last + 1).coerceAtLeast(cursor)
-            }
-            if (cursor < raw.length) append(raw, cursor, raw.length)
-        }.replace(Regex("\\s{2,}"), " ").trim()
-
-        var titleClean = titleRaw
-        repeat(3) {
-            titleClean = titleClean
-                .replace(Regex("\\b(a\\.?\\s*m\\.?|p\\.?\\s*m\\.?)\\b", RegexOption.IGNORE_CASE), "")
-                .replace(Regex("[.,;:_\\-/\\\\]+$"), "")
-                .replace(Regex("^\\s*[.,;:_\\-/\\\\]+"), "")
-                .replace(Regex("\\s{2,}"), " ")
-                .trim()
-        }
-
-        val title = if (titleClean.isNotBlank()) titleClean else raw.replace(Regex("[.,;:_\\-/\\\\]+$"), "").trim()
+        val title = cleanNaturalLanguageTitle(raw, sortedStrip)
 
         val result = ParsedQuickAdd(
             title = title,
