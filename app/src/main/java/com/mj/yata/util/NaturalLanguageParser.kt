@@ -4,6 +4,7 @@ import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DateAliasTarget
+import com.mj.yata.util.nl.EntityRules
 import com.mj.yata.util.nl.NaturalLanguageLexicon
 import com.mj.yata.util.nl.ParseState
 import com.mj.yata.util.nl.ParserContext
@@ -1934,33 +1935,7 @@ object NaturalLanguageParser {
         }
 
         // 7. Project, List, Tag, Assignee keywords
-        var projectName: String? = null
-        firstFreeMatch(projectEntityRegex)?.let { m ->
-            projectName = entityValue(m.groupValues[1])
-            claimProject(m.range)
-        }
-
-        var listName: String? = null
-        firstFreeMatch(listEntityRegex)?.let { m ->
-            listName = entityValue(m.groupValues[1])
-            claimList(m.range)
-        }
-
-        val tagNames = mutableListOf<String>()
-        for (m in tagEntityRegex.findAll(raw)) {
-            if (isFree(m.range)) {
-                tagNames.add(entityValue(m.groupValues[1]))
-                claimTag(m.range)
-            }
-        }
-
-        val assigneeNames = mutableListOf<String>()
-        for (m in assigneeEntityRegex.findAll(raw)) {
-            if (isFree(m.range)) {
-                assigneeNames.add(entityValue(m.groupValues[1]))
-                claimAssignee(m.range)
-            }
-        }
+        val entities = EntityRules.apply(parserContext)
         val prepositionRegex = Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 
         val sortedHighlightSpans = parserContext.expandedSpans(prepositionRegex)
@@ -1977,10 +1952,10 @@ object NaturalLanguageParser {
             reminder = reminder,
             priority = priority,
             flag = flag,
-            projectName = projectName,
-            listName = listName,
-            tagNames = tagNames,
-            assigneeNames = assigneeNames
+            projectName = entities.projectName,
+            listName = entities.listName,
+            tagNames = entities.tagNames,
+            assigneeNames = entities.assigneeNames
         ).toParsedQuickAdd(
             title = title,
             highlightRanges = sortedClaims,
