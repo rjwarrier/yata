@@ -2,7 +2,6 @@ package com.mj.yata.util
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import androidx.room.withTransaction
 import com.mj.yata.data.local.db.AppDatabase
@@ -980,19 +979,7 @@ class JsonExporter @Inject constructor(
             put("createdAt", System.currentTimeMillis())
         }
 
-    private fun deviceLabel(): String {
-        val manufacturer = Build.MANUFACTURER.orEmpty().trim()
-        val model = Build.MODEL.orEmpty().trim()
-        val cleanedModel = if (
-            manufacturer.isNotBlank() &&
-            model.startsWith(manufacturer, ignoreCase = true)
-        ) {
-            model
-        } else {
-            listOf(manufacturer, model).filter { it.isNotBlank() }.joinToString(" ")
-        }
-        return cleanedModel.ifBlank { "Unknown Android device" }
-    }
+    private fun deviceLabel(): String = context.syncDeviceLabel()
 
     private fun validateBackupPayload(root: JSONObject) {
         require(isRecognizedBackup(root)) { "File is not a recognized YATA backup" }

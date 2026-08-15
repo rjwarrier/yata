@@ -33,6 +33,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   Date/time phrases ("next week") aren't part of this yet — see the code comment on why that's a
   separate piece of work.
 
+### Fixed
+- Backup/export files now stamp the same device label (Settings device name, when set) as GitHub
+  sync commit messages. The two had drifted onto separate code paths, so a device's own snapshot
+  payload could carry its bare model name while the commit publishing it carried the name from
+  Settings.
+
 ### Changed
 - Trash retention and Auto-archive (Settings → Data Management → Task Lifecycle) are now sliders
   with more options (1/3/7/14/30/60/90/180 days, plus Forever for Trash and Off for Auto-archive)
