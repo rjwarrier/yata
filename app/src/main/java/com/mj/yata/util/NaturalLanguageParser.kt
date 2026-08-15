@@ -5,6 +5,8 @@ import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DateAliasTarget
 import com.mj.yata.util.nl.NaturalLanguageLexicon
+import com.mj.yata.util.nl.ParseState
+import com.mj.yata.util.nl.ParserContext
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
 import com.mj.yata.util.nl.normalizeNaturalLanguageInput
 import java.time.DayOfWeek
@@ -1226,6 +1228,13 @@ object NaturalLanguageParser {
         val raw = normalizeNaturalLanguageInput(rawInput)
 
         val claimTracker = ClaimTracker()
+        val parserContext = ParserContext(
+            raw = raw,
+            referenceDate = referenceDate,
+            referenceTime = referenceTime,
+            dayFirst = dayFirst,
+            claims = claimTracker
+        )
         var due: LocalDate? = null
         // Declared up here rather than in section 3 because the monthly-on-a-date recurrence rules
         // resolve a due date of their own, well before the due-date section runs.
@@ -1251,22 +1260,22 @@ object NaturalLanguageParser {
             }
         }
 
-        fun isFree(range: IntRange) = claimTracker.isFree(range)
+        fun isFree(range: IntRange) = parserContext.isFree(range)
         fun claim(range: IntRange, type: QuickAddHighlightType = QuickAddHighlightType.Other) =
-            claimTracker.claim(range, type)
-        fun claimDueDate(range: IntRange) = claim(range, QuickAddHighlightType.DueDate)
-        fun claimStartDate(range: IntRange) = claim(range, QuickAddHighlightType.StartDate)
-        fun claimTime(range: IntRange) = claim(range, QuickAddHighlightType.Time)
-        fun claimRecurrence(range: IntRange) = claim(range, QuickAddHighlightType.Recurrence)
-        fun claimReminder(range: IntRange) = claim(range, QuickAddHighlightType.Reminder)
-        fun claimPriority(range: IntRange) = claim(range, QuickAddHighlightType.Priority)
-        fun claimFlag(range: IntRange) = claim(range, QuickAddHighlightType.Flag)
-        fun claimProject(range: IntRange) = claim(range, QuickAddHighlightType.Project)
-        fun claimList(range: IntRange) = claim(range, QuickAddHighlightType.List)
-        fun claimTag(range: IntRange) = claim(range, QuickAddHighlightType.Tag)
-        fun claimAssignee(range: IntRange) = claim(range, QuickAddHighlightType.Assignee)
-        fun firstFreeMatch(regex: Regex) = claimTracker.firstFreeMatch(regex, raw)
-        fun firstFreeWord(word: String) = firstFreeMatch(cachedWordRegex(word))
+            parserContext.claim(range, type)
+        fun claimDueDate(range: IntRange) = parserContext.claimDueDate(range)
+        fun claimStartDate(range: IntRange) = parserContext.claimStartDate(range)
+        fun claimTime(range: IntRange) = parserContext.claimTime(range)
+        fun claimRecurrence(range: IntRange) = parserContext.claimRecurrence(range)
+        fun claimReminder(range: IntRange) = parserContext.claimReminder(range)
+        fun claimPriority(range: IntRange) = parserContext.claimPriority(range)
+        fun claimFlag(range: IntRange) = parserContext.claimFlag(range)
+        fun claimProject(range: IntRange) = parserContext.claimProject(range)
+        fun claimList(range: IntRange) = parserContext.claimList(range)
+        fun claimTag(range: IntRange) = parserContext.claimTag(range)
+        fun claimAssignee(range: IntRange) = parserContext.claimAssignee(range)
+        fun firstFreeMatch(regex: Regex) = parserContext.firstFreeMatch(regex)
+        fun firstFreeWord(word: String) = parserContext.firstFreeWord(word, ::cachedWordRegex)
 
         // 1. Recurrence â€” checked first so "every sunday"/"every monday" is claimed whole
         // before the later bare-weekday due-date rule can also match "sunday"/"monday".
@@ -1954,16 +1963,15 @@ object NaturalLanguageParser {
         }
         val prepositionRegex = Regex("(?:^|\\s)(for|on|at|by|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 
-        val sortedHighlightSpans = claimTracker.expandedSpans(raw, prepositionRegex)
+        val sortedHighlightSpans = parserContext.expandedSpans(prepositionRegex)
             .sortedBy { it.range.first }
         val sortedClaims = sortedHighlightSpans.map { it.range }
-        val sortedStrip = (sortedClaims + claimTracker.stripOnlyRanges()).sortedBy { it.first }
+        val sortedStrip = (sortedClaims + parserContext.stripOnlyRanges()).sortedBy { it.first }
         val title = cleanNaturalLanguageTitle(raw, sortedStrip)
 
-        val result = ParsedQuickAdd(
-            title = title,
-            due = due?.toString(),
-            startDate = startDate?.toString(),
+        val result = ParseState(
+            due = due,
+            startDate = startDate,
             time = time,
             recurrence = recurrence,
             reminder = reminder,
@@ -1972,7 +1980,9 @@ object NaturalLanguageParser {
             projectName = projectName,
             listName = listName,
             tagNames = tagNames,
-            assigneeNames = assigneeNames,
+            assigneeNames = assigneeNames
+        ).toParsedQuickAdd(
+            title = title,
             highlightRanges = sortedClaims,
             highlightSpans = sortedHighlightSpans
         )
