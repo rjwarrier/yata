@@ -8,6 +8,7 @@ import com.mj.yata.util.nl.EntityRules
 import com.mj.yata.util.nl.NaturalLanguageLexicon
 import com.mj.yata.util.nl.ParseState
 import com.mj.yata.util.nl.ParserContext
+import com.mj.yata.util.nl.PriorityFlagRules
 import com.mj.yata.util.nl.cleanNaturalLanguageTitle
 import com.mj.yata.util.nl.normalizeNaturalLanguageInput
 import java.time.DayOfWeek
@@ -1880,59 +1881,8 @@ object NaturalLanguageParser {
             }
         }
 
-        // 5. Priority shorthand â€” requires a non-alphanumeric char (or start of string) right
-        // before the "!" run so a mid-word "!" (unlikely, but e.g. "wow!1") doesn't spuriously match.
-        var priority: String? = null
-        priorityShorthandRegex.findAll(raw)
-            .firstOrNull { m -> isFree(m.range) && (m.range.first == 0 || !raw[m.range.first - 1].isLetterOrDigit()) }
-            ?.let { m ->
-                priority = when (m.groupValues[1]) {
-                    "1" -> "high"
-                    "2" -> "med"
-                    "3" -> "low"
-                    else -> null
-                }
-                claimPriority(m.range)
-            }
-        // Bare "p1"/"p2"/"p3" â€” same convention as the "!N" shorthand, checked next since
-        // it's just as explicit as that (only if "!N" didn't already match).
-        if (priority == null) {
-            firstFreeMatch(priorityBareRegex)?.let { m ->
-                priority = when (m.groupValues[1]) {
-                    "1" -> "high"
-                    "2" -> "med"
-                    "3" -> "low"
-                    else -> null
-                }
-                if (priority != null) claimPriority(m.range)
-            }
-        }
-        // Word-based priority â€” only if "!N"/"pN" above didn't already set one.
-        if (priority == null) {
-            fun followsTagCommand(range: IntRange): Boolean =
-                Regex("(?:#|hash\\s*tag|hashtag|pound\\s*tag|tag(?:ged)?(?:\\s+as)?|label(?:ed)?(?:\\s+as)?|with\\s+tag|etiqueta(?:\\s+como)?|\\u00e9tiquette|etiquette)\\s*$", RegexOption.IGNORE_CASE)
-                    .containsMatchIn(raw.substring(0, range.first))
-
-            for ((phrase, level) in priorityWordPhrases) {
-                cachedWordRegex(phrase).findAll(raw)
-                    .firstOrNull { m -> isFree(m.range) && !followsTagCommand(m.range) }
-                    ?.let { m ->
-                        priority = level
-                        claimPriority(m.range)
-                    }
-                if (priority != null) break
-            }
-        }
-
-        // 6. Flag â€” independent of priority (a task can be both flagged and low-priority).
-        var flag = false
-        for (phrase in flagPhrases) {
-            firstFreeMatch(cachedWordRegex(phrase))?.let { m ->
-                flag = true
-                claimFlag(m.range)
-            }
-            if (flag) break
-        }
+        // 5-6. Priority and flag
+        val priorityFlag = PriorityFlagRules.apply(parserContext)
 
         // 7. Project, List, Tag, Assignee keywords
         val entities = EntityRules.apply(parserContext)
@@ -1950,8 +1900,8 @@ object NaturalLanguageParser {
             time = time,
             recurrence = recurrence,
             reminder = reminder,
-            priority = priority,
-            flag = flag,
+            priority = priorityFlag.priority,
+            flag = priorityFlag.flag,
             projectName = entities.projectName,
             listName = entities.listName,
             tagNames = entities.tagNames,
