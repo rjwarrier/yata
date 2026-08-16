@@ -39,7 +39,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,7 +54,6 @@ import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
-import com.mj.yata.domain.model.effectiveTags
 import com.mj.yata.ui.screen.main.AdaptiveBottomNav
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
@@ -66,9 +64,6 @@ import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.TabEmptyState
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.YataSelectChip
-import com.mj.yata.util.AppClock
-import com.mj.yata.util.RecurrenceEvaluator
-import com.mj.yata.util.TaskScheduleUtils
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -79,44 +74,18 @@ fun RecurringTasksScreen(
     onNavigateToTaskDetail: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
-    val lists by viewModel.lists.collectAsStateWithLifecycle()
-    val projects by viewModel.projects.collectAsStateWithLifecycle()
-    val people by viewModel.people.collectAsStateWithLifecycle()
-    val tags by viewModel.tags.collectAsStateWithLifecycle()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
-
-    val recurringTasks = remember(tasks) {
-        tasks.filter { !it.done && it.recurrence != null }
-            .sortedWith(compareBy<Task> { it.due ?: "9999-99-99" }.thenBy { it.title.lowercase() })
-    }
-    val listsById = remember(lists) { lists.associateBy { it.id } }
-    val peopleById = remember(people) { people.associateBy { it.id } }
-    val projectsById = remember(projects) { projects.associateBy { it.id } }
-    val tagsById = remember(tags) { tags.associateBy { it.id } }
-    val todayIso = remember { AppClock.today.toString() }
-    val nextWeekIso = remember { AppClock.today.plusDays(7).toString() }
-    val dueSoonCount = remember(recurringTasks, todayIso, nextWeekIso) {
-        recurringTasks.count { dueSoonTask -> dueSoonTask.due?.let { it >= todayIso && it <= nextWeekIso } == true }
-    }
-    val noDueCount = remember(recurringTasks) { recurringTasks.count { it.due == null } }
+    val uiState by viewModel.recurringTasksUiState.collectAsStateWithLifecycle()
 
     Scaffold(
         bottomBar = {
             AdaptiveBottomNav(
                 selectedTab = -1,
-                todayBadgeCount = todayBadgeCount,
-                peopleEnabled = peopleFeatureEnabled,
-                tagsEnabled = tagsFeatureEnabled,
-                projectsEnabled = projectsFeatureEnabled,
-                todayEnabled = todayTabEnabled,
-                upcomingEnabled = upcomingTabEnabled,
+                todayBadgeCount = uiState.todayRemainingCount,
+                peopleEnabled = uiState.peopleFeatureEnabled,
+                tagsEnabled = uiState.tagsFeatureEnabled,
+                projectsEnabled = uiState.projectsFeatureEnabled,
+                todayEnabled = uiState.todayTabEnabled,
+                upcomingEnabled = uiState.upcomingTabEnabled,
                 onTabSelected = onNavigateToTab
             )
         },
@@ -142,7 +111,7 @@ fun RecurringTasksScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            if (recurringTasks.isEmpty()) {
+            if (uiState.rows.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     TabEmptyState(
                         icon = Icons.Default.EventRepeat,
@@ -160,32 +129,28 @@ fun RecurringTasksScreen(
                 ) {
                     item(key = "recurring_summary") {
                         RecurringSummaryCard(
-                            taskCount = recurringTasks.size,
-                            dueSoonCount = dueSoonCount,
-                            noDueCount = noDueCount,
+                            taskCount = uiState.rows.size,
+                            dueSoonCount = uiState.dueSoonCount,
+                            noDueCount = uiState.noDueCount,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp, bottom = 4.dp)
                                 .animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                         )
                     }
-                    items(recurringTasks, key = { it.id }, contentType = { "recurring_task" }) { task ->
-                        val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                        val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
-                            if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { peopleById[it] } else emptyList()
-                        }
-                        val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
-                            if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
-                        }
+                    items(uiState.rows, key = { it.task.id }, contentType = { "recurring_task" }) { row ->
+                        val task = row.task
                         RecurringTaskCard(
                             task = task,
-                            list = taskList,
-                            assignees = taskAssignees,
-                            tags = taskTags,
+                            list = row.list,
+                            assignees = row.assignees,
+                            tags = row.tags,
+                            formattedDueDate = row.formattedDueDate,
+                            recurrenceSummary = row.recurrenceSummary,
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onEditTask = { onNavigateToTaskDetail(task.id) },
-                            density = taskRowDensity,
+                            density = uiState.taskRowDensity,
                             modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                         )
                     }
@@ -281,6 +246,8 @@ private fun RecurringTaskCard(
     list: YataList?,
     assignees: List<Person>,
     tags: List<Tag>,
+    formattedDueDate: String?,
+    recurrenceSummary: String,
     onTaskClick: () -> Unit,
     onToggleDone: () -> Unit,
     onEditTask: () -> Unit,
@@ -339,13 +306,13 @@ private fun RecurringTaskCard(
                             Text(
                                 text = stringResource(
                                     R.string.recurring_next_due,
-                                    task.due?.let { TaskScheduleUtils.formatDueDate(it) } ?: stringResource(R.string.date_no_due)
+                                    formattedDueDate ?: stringResource(R.string.date_no_due)
                                 ),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = RecurrenceEvaluator.recurrenceSummary(task.recurrence),
+                                text = recurrenceSummary,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

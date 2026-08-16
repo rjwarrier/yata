@@ -29,9 +29,11 @@ import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.AnalyticsUiState
 import com.mj.yata.util.AnalyticsUtils
 import com.mj.yata.util.AppLanguageController
+import com.mj.yata.util.RecurrenceEvaluator
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.withParsedQuickAdd
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -267,6 +269,53 @@ data class MainScreenUiState(
     val todayRemainingCount: Int = 0
 )
 
+data class InboxTaskUiModel(
+    val task: Task,
+    val list: YataList?,
+    val assignees: List<Person>,
+    val tags: List<Tag>
+)
+
+data class InboxUiState(
+    val rows: List<InboxTaskUiModel> = emptyList(),
+    val lists: List<YataList> = emptyList(),
+    val projects: List<Project> = emptyList(),
+    val myPerson: Person? = null,
+    val missingDueCount: Int = 0,
+    val missingEstimateCount: Int = 0,
+    val missingHomeCount: Int = 0,
+    val missingOwnerCount: Int = 0,
+    val peopleFeatureEnabled: Boolean = true,
+    val tagsFeatureEnabled: Boolean = true,
+    val projectsFeatureEnabled: Boolean = true,
+    val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    val todayTabEnabled: Boolean = true,
+    val upcomingTabEnabled: Boolean = true,
+    val todayRemainingCount: Int = 0
+)
+
+data class RecurringTaskUiModel(
+    val task: Task,
+    val list: YataList?,
+    val assignees: List<Person>,
+    val tags: List<Tag>,
+    val formattedDueDate: String?,
+    val recurrenceSummary: String
+)
+
+data class RecurringTasksUiState(
+    val rows: List<RecurringTaskUiModel> = emptyList(),
+    val dueSoonCount: Int = 0,
+    val noDueCount: Int = 0,
+    val peopleFeatureEnabled: Boolean = true,
+    val tagsFeatureEnabled: Boolean = true,
+    val projectsFeatureEnabled: Boolean = true,
+    val taskRowDensity: TaskRowDensity = TaskRowDensity.COMFORTABLE,
+    val todayTabEnabled: Boolean = true,
+    val upcomingTabEnabled: Boolean = true,
+    val todayRemainingCount: Int = 0
+)
+
 private data class SettingsProfileState(
     val themeMode: ThemeMode,
     val appFont: AppFont,
@@ -425,6 +474,24 @@ private data class MainNavigationState(
     val upcomingTabEnabled: Boolean,
     val fabPosition: FabPosition,
     val hideCompletedToday: Boolean,
+    val todayRemainingCount: Int
+)
+
+private data class TaskListsSourceState(
+    val tasks: List<Task>,
+    val lists: List<YataList>,
+    val projects: List<Project>,
+    val people: List<Person>,
+    val tags: List<Tag>
+)
+
+private data class LightweightFeatureState(
+    val peopleFeatureEnabled: Boolean,
+    val tagsFeatureEnabled: Boolean,
+    val projectsFeatureEnabled: Boolean,
+    val taskRowDensity: TaskRowDensity,
+    val todayTabEnabled: Boolean,
+    val upcomingTabEnabled: Boolean,
     val todayRemainingCount: Int
 )
 
@@ -1168,6 +1235,201 @@ private data class MainNavigationState(
 
     val upcomingTabEnabled: StateFlow<Boolean> = userPreferences.upcomingTabEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    private val lightweightScreenSource: Flow<TaskListsSourceState> = combine(
+        tasks,
+        lists,
+        projects,
+        people,
+        tags
+    ) { tasks, lists, projects, people, tags ->
+        TaskListsSourceState(tasks, lists, projects, people, tags)
+    }
+
+    private val lightweightScreenFeatures: Flow<LightweightFeatureState> = combine(
+        combine(
+            peopleFeatureEnabled,
+            tagsFeatureEnabled,
+            projectsFeatureEnabled,
+            taskRowDensity
+        ) { peopleFeatureEnabled, tagsFeatureEnabled, projectsFeatureEnabled, taskRowDensity ->
+            MainFeatureState(
+                peopleFeatureEnabled = peopleFeatureEnabled,
+                tagsFeatureEnabled = tagsFeatureEnabled,
+                projectsFeatureEnabled = projectsFeatureEnabled,
+                taskRowDensity = taskRowDensity,
+                todayTabEnabled = true
+            )
+        },
+        todayTabEnabled,
+        upcomingTabEnabled,
+        todayRemainingCount
+    ) { feature, todayTabEnabled, upcomingTabEnabled, todayRemainingCount ->
+        LightweightFeatureState(
+            peopleFeatureEnabled = feature.peopleFeatureEnabled,
+            tagsFeatureEnabled = feature.tagsFeatureEnabled,
+            projectsFeatureEnabled = feature.projectsFeatureEnabled,
+            taskRowDensity = feature.taskRowDensity,
+            todayTabEnabled = todayTabEnabled,
+            upcomingTabEnabled = upcomingTabEnabled,
+            todayRemainingCount = todayRemainingCount
+        )
+    }
+
+    val inboxUiState: StateFlow<InboxUiState> = combine(
+        lightweightScreenSource,
+        lightweightScreenFeatures,
+        userName
+    ) { source, features, userName ->
+        buildInboxUiState(source, features, userName)
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), InboxUiState())
+
+    val recurringTasksUiState: StateFlow<RecurringTasksUiState> = combine(
+        lightweightScreenSource,
+        lightweightScreenFeatures
+    ) { source, features ->
+        buildRecurringTasksUiState(source, features)
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecurringTasksUiState())
+
+    private fun buildInboxUiState(
+        source: TaskListsSourceState,
+        features: LightweightFeatureState,
+        userName: String
+    ): InboxUiState {
+        val listsById = source.lists.associateBy { it.id }
+        val peopleById = source.people.associateBy { it.id }
+        val projectsById = source.projects.associateBy { it.id }
+        val tagsById = source.tags.associateBy { it.id }
+        val myPerson = source.people.firstOrNull { it.isMe }
+            ?: userName.takeIf { it.isNotBlank() }?.let { name ->
+                source.people.firstOrNull { it.name.equals(name, ignoreCase = true) }
+            }
+
+        var missingDueCount = 0
+        var missingEstimateCount = 0
+        var missingHomeCount = 0
+        var missingOwnerCount = 0
+        val rows = buildList {
+            source.tasks.forEach { task ->
+                if (task.done) return@forEach
+
+                val missingDue = task.due == null
+                val missingEstimate = task.estimateMinutes == null
+                val missingHome = features.projectsFeatureEnabled && task.projectId == null && task.listId == null
+                val missingOwner = features.peopleFeatureEnabled && task.assigneeIds.isEmpty()
+                if (!missingDue && !missingEstimate && !missingHome && !missingOwner) return@forEach
+
+                if (missingDue) missingDueCount++
+                if (missingEstimate) missingEstimateCount++
+                if (missingHome) missingHomeCount++
+                if (missingOwner) missingOwnerCount++
+
+                add(
+                    InboxTaskUiModel(
+                        task = task,
+                        list = listsById[task.listId],
+                        assignees = if (features.peopleFeatureEnabled) {
+                            task.assigneeIds.mapNotNull { peopleById[it] }
+                        } else {
+                            emptyList()
+                        },
+                        tags = if (features.tagsFeatureEnabled) {
+                            task.effectiveTags(projectsById, tagsById)
+                        } else {
+                            emptyList()
+                        }
+                    )
+                )
+            }
+        }.sortedWith(
+            compareBy<InboxTaskUiModel> { it.task.due ?: "9999-99-99" }
+                .thenBy { it.task.createdAt ?: Long.MAX_VALUE }
+                .thenBy { it.task.sortOrder }
+        )
+
+        return InboxUiState(
+            rows = rows,
+            lists = source.lists,
+            projects = source.projects,
+            myPerson = myPerson,
+            missingDueCount = missingDueCount,
+            missingEstimateCount = missingEstimateCount,
+            missingHomeCount = missingHomeCount,
+            missingOwnerCount = missingOwnerCount,
+            peopleFeatureEnabled = features.peopleFeatureEnabled,
+            tagsFeatureEnabled = features.tagsFeatureEnabled,
+            projectsFeatureEnabled = features.projectsFeatureEnabled,
+            taskRowDensity = features.taskRowDensity,
+            todayTabEnabled = features.todayTabEnabled,
+            upcomingTabEnabled = features.upcomingTabEnabled,
+            todayRemainingCount = features.todayRemainingCount
+        )
+    }
+
+    private fun buildRecurringTasksUiState(
+        source: TaskListsSourceState,
+        features: LightweightFeatureState
+    ): RecurringTasksUiState {
+        val listsById = source.lists.associateBy { it.id }
+        val peopleById = source.people.associateBy { it.id }
+        val projectsById = source.projects.associateBy { it.id }
+        val tagsById = source.tags.associateBy { it.id }
+        val todayIso = com.mj.yata.util.AppClock.today.toString()
+        val nextWeekIso = com.mj.yata.util.AppClock.today.plusDays(7).toString()
+
+        var dueSoonCount = 0
+        var noDueCount = 0
+        val rows = buildList {
+            source.tasks.forEach { task ->
+                val recurrence = task.recurrence ?: return@forEach
+                if (task.done) return@forEach
+
+                val due = task.due
+                if (due == null) {
+                    noDueCount++
+                } else if (due >= todayIso && due <= nextWeekIso) {
+                    dueSoonCount++
+                }
+
+                add(
+                    RecurringTaskUiModel(
+                        task = task,
+                        list = listsById[task.listId],
+                        assignees = if (features.peopleFeatureEnabled) {
+                            task.assigneeIds.mapNotNull { peopleById[it] }
+                        } else {
+                            emptyList()
+                        },
+                        tags = if (features.tagsFeatureEnabled) {
+                            task.effectiveTags(projectsById, tagsById)
+                        } else {
+                            emptyList()
+                        },
+                        formattedDueDate = due?.let { TaskScheduleUtils.formatDueDate(it) },
+                        recurrenceSummary = RecurrenceEvaluator.recurrenceSummary(recurrence)
+                    )
+                )
+            }
+        }.sortedWith(
+            compareBy<RecurringTaskUiModel> { it.task.due ?: "9999-99-99" }
+                .thenBy { it.task.title.lowercase() }
+        )
+
+        return RecurringTasksUiState(
+            rows = rows,
+            dueSoonCount = dueSoonCount,
+            noDueCount = noDueCount,
+            peopleFeatureEnabled = features.peopleFeatureEnabled,
+            tagsFeatureEnabled = features.tagsFeatureEnabled,
+            projectsFeatureEnabled = features.projectsFeatureEnabled,
+            taskRowDensity = features.taskRowDensity,
+            todayTabEnabled = features.todayTabEnabled,
+            upcomingTabEnabled = features.upcomingTabEnabled,
+            todayRemainingCount = features.todayRemainingCount
+        )
+    }
 
     val fabPosition: StateFlow<com.mj.yata.domain.model.FabPosition> = userPreferences.fabPositionFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.FabPosition.RIGHT)

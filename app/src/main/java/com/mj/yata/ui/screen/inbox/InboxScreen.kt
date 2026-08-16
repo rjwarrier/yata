@@ -63,11 +63,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
 import com.mj.yata.domain.model.Person
-import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
-import com.mj.yata.domain.model.effectiveTags
 import com.mj.yata.ui.screen.main.AdaptiveBottomNav
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.sheets.TaskMoveToPickerSheet
@@ -94,53 +92,13 @@ fun InboxScreen(
     onNavigateToTaskDetail: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
-    val lists by viewModel.lists.collectAsStateWithLifecycle()
-    val projects by viewModel.projects.collectAsStateWithLifecycle()
-    val people by viewModel.people.collectAsStateWithLifecycle()
-    val tags by viewModel.tags.collectAsStateWithLifecycle()
-    val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
-    val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
-    val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()
-    val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
-    val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
-    val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
-    val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
-    val userName by viewModel.userName.collectAsStateWithLifecycle()
+    val uiState by viewModel.inboxUiState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = LocalUndoWindowSeconds.current
     val context = androidx.compose.ui.platform.LocalContext.current
     var moveTask by remember { mutableStateOf<Task?>(null) }
-
-    val myPerson = remember(people, userName) {
-        people.firstOrNull { it.isMe } ?: userName.takeIf { it.isNotBlank() }?.let { name ->
-            people.firstOrNull { it.name.equals(name, ignoreCase = true) }
-        }
-    }
-    val inboxTasks = remember(tasks, projectsFeatureEnabled, peopleFeatureEnabled) {
-        tasks.filter { task ->
-            !task.done && (
-                task.due == null ||
-                    (projectsFeatureEnabled && task.projectId == null && task.listId == null) ||
-                    task.estimateMinutes == null ||
-                    (peopleFeatureEnabled && task.assigneeIds.isEmpty())
-                )
-        }.sortedWith(compareBy<Task> { it.due ?: "9999-99-99" }.thenBy { it.createdAt ?: Long.MAX_VALUE }.thenBy { it.sortOrder })
-    }
-    val listsById = remember(lists) { lists.associateBy { it.id } }
-    val peopleById = remember(people) { people.associateBy { it.id } }
-    val projectsById = remember(projects) { projects.associateBy { it.id } }
-    val tagsById = remember(tags) { tags.associateBy { it.id } }
-    val missingDueCount = remember(inboxTasks) { inboxTasks.count { it.due == null } }
-    val missingEstimateCount = remember(inboxTasks) { inboxTasks.count { it.estimateMinutes == null } }
-    val missingHomeCount = remember(inboxTasks, projectsFeatureEnabled) {
-        if (projectsFeatureEnabled) inboxTasks.count { it.projectId == null && it.listId == null } else 0
-    }
-    val missingOwnerCount = remember(inboxTasks, peopleFeatureEnabled) {
-        if (peopleFeatureEnabled) inboxTasks.count { it.assigneeIds.isEmpty() } else 0
-    }
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
@@ -154,12 +112,12 @@ fun InboxScreen(
         bottomBar = {
             AdaptiveBottomNav(
                 selectedTab = -1,
-                todayBadgeCount = todayBadgeCount,
-                peopleEnabled = peopleFeatureEnabled,
-                tagsEnabled = tagsFeatureEnabled,
-                projectsEnabled = projectsFeatureEnabled,
-                todayEnabled = todayTabEnabled,
-                upcomingEnabled = upcomingTabEnabled,
+                todayBadgeCount = uiState.todayRemainingCount,
+                peopleEnabled = uiState.peopleFeatureEnabled,
+                tagsEnabled = uiState.tagsFeatureEnabled,
+                projectsEnabled = uiState.projectsFeatureEnabled,
+                todayEnabled = uiState.todayTabEnabled,
+                upcomingEnabled = uiState.upcomingTabEnabled,
                 onTabSelected = onNavigateToTab
             )
         },
@@ -185,7 +143,7 @@ fun InboxScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            if (inboxTasks.isEmpty()) {
+            if (uiState.rows.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     TabEmptyState(
                         icon = Icons.Default.Inbox,
@@ -203,35 +161,29 @@ fun InboxScreen(
                 ) {
                     item(key = "inbox_summary") {
                         InboxSummaryCard(
-                            taskCount = inboxTasks.size,
-                            missingDueCount = missingDueCount,
-                            missingEstimateCount = missingEstimateCount,
-                            missingHomeCount = missingHomeCount,
-                            missingOwnerCount = missingOwnerCount,
-                            projectsEnabled = projectsFeatureEnabled,
-                            peopleEnabled = peopleFeatureEnabled,
+                            taskCount = uiState.rows.size,
+                            missingDueCount = uiState.missingDueCount,
+                            missingEstimateCount = uiState.missingEstimateCount,
+                            missingHomeCount = uiState.missingHomeCount,
+                            missingOwnerCount = uiState.missingOwnerCount,
+                            projectsEnabled = uiState.projectsFeatureEnabled,
+                            peopleEnabled = uiState.peopleFeatureEnabled,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp, bottom = 4.dp)
                                 .animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                         )
                     }
-                    items(inboxTasks, key = { it.id }, contentType = { "inbox_task" }) { task ->
-                        val taskList = remember(task.listId, listsById) { listsById[task.listId] }
-                        val taskAssignees = remember(task.assigneeIds, peopleById, peopleFeatureEnabled) {
-                            if (peopleFeatureEnabled) task.assigneeIds.mapNotNull { peopleById[it] } else emptyList()
-                        }
-                        val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
-                            if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
-                        }
+                    items(uiState.rows, key = { it.task.id }, contentType = { "inbox_task" }) { row ->
+                        val task = row.task
                         InboxTaskCard(
                             task = task,
-                            list = taskList,
-                            assignees = taskAssignees,
-                            tags = taskTags,
-                            projectsEnabled = projectsFeatureEnabled,
-                            peopleEnabled = peopleFeatureEnabled,
-                            myPerson = myPerson,
+                            list = row.list,
+                            assignees = row.assignees,
+                            tags = row.tags,
+                            projectsEnabled = uiState.projectsFeatureEnabled,
+                            peopleEnabled = uiState.peopleFeatureEnabled,
+                            myPerson = uiState.myPerson,
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onDelete = { deleteTaskWithUndo(task) },
@@ -239,7 +191,7 @@ fun InboxScreen(
                             onSetEstimate = { minutes -> viewModel.setTaskEstimate(task.id, minutes) },
                             onAssignMe = { person -> viewModel.upsertTask(task.copy(assigneeIds = listOf(person.id) + task.assigneeIds.filterNot { it == person.id })) },
                             onMove = { moveTask = task },
-                            density = taskRowDensity,
+                            density = uiState.taskRowDensity,
                             modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                         )
                     }
@@ -254,8 +206,8 @@ fun InboxScreen(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             TaskMoveToPickerSheet(
-                lists = lists,
-                projects = projects,
+                lists = uiState.lists,
+                projects = uiState.projects,
                 onSelectList = {
                     viewModel.moveTaskToList(task.id, it)
                     moveTask = null
