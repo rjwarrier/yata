@@ -207,6 +207,7 @@ fun InboxScreen(
                             onMove = { moveTask = task },
                             density = uiState.taskRowDensity,
                             animateSize = animateListChanges,
+                            animateDetails = animateListChanges,
                             modifier = Modifier.let {
                                 if (animateListChanges) {
                                     it.animateItem(
@@ -361,6 +362,7 @@ private fun InboxTaskCard(
     onMove: () -> Unit,
     density: com.mj.yata.domain.model.TaskRowDensity,
     animateSize: Boolean,
+    animateDetails: Boolean,
     modifier: Modifier = Modifier
 ) {
     val hasTriageActions = task.due == null ||
@@ -390,100 +392,36 @@ private fun InboxTaskCard(
             density = density,
             showDueDate = true
         )
-        AnimatedVisibility(
-            visible = hasTriageActions,
-            enter = expandVertically(animationSpec = tween(YataDur.sheet, easing = YataEase.emphDecel)) +
-                fadeIn(animationSpec = tween(YataDur.fade, easing = YataEase.emphDecel)),
-            exit = shrinkVertically(animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel)) +
-                fadeOut(animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel))
-        ) {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
+        if (animateDetails) {
+            AnimatedVisibility(
+                visible = hasTriageActions,
+                enter = expandVertically(animationSpec = tween(YataDur.sheet, easing = YataEase.emphDecel)) +
+                    fadeIn(animationSpec = tween(YataDur.fade, easing = YataEase.emphDecel)),
+                exit = shrinkVertically(animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel)) +
+                    fadeOut(animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel))
             ) {
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (task.due == null) {
-                    val today = AppClock.today
-                    YataSelectChip(
-                        label = stringResource(R.string.inbox_due_today),
-                        selected = true,
-                        showCheck = false,
-                        tint = MaterialTheme.colorScheme.primary,
-                        leading = { ChipIcon(Icons.Default.Today, MaterialTheme.colorScheme.primary) },
-                        onClick = { onSetDue(today.toString()) }
-                    )
-                    YataSelectChip(
-                        label = stringResource(R.string.inbox_due_tomorrow),
-                        selected = true,
-                        showCheck = false,
-                        tint = MaterialTheme.colorScheme.primary,
-                        leading = { ChipIcon(Icons.Default.Today, MaterialTheme.colorScheme.primary) },
-                        onClick = { onSetDue(today.plusDays(1).toString()) }
-                    )
-                    YataSelectChip(
-                        label = stringResource(R.string.inbox_due_next_week),
-                        selected = true,
-                        showCheck = false,
-                        tint = MaterialTheme.colorScheme.primary,
-                        leading = { ChipIcon(Icons.Default.Today, MaterialTheme.colorScheme.primary) },
-                        onClick = { onSetDue(today.plusWeeks(1).toString()) }
-                    )
-                }
-                if (task.estimateMinutes == null) {
-                    YataSelectChip(
-                        label = stringResource(R.string.inbox_estimate_15m),
-                        selected = true,
-                        showCheck = false,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        leading = { ChipIcon(Icons.Default.AccessTime, MaterialTheme.colorScheme.tertiary) },
-                        onClick = { onSetEstimate(15) }
-                    )
-                    YataSelectChip(
-                        label = stringResource(R.string.inbox_estimate_30m),
-                        selected = true,
-                        showCheck = false,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        leading = { ChipIcon(Icons.Default.AccessTime, MaterialTheme.colorScheme.tertiary) },
-                        onClick = { onSetEstimate(30) }
-                    )
-                    YataSelectChip(
-                        label = stringResource(R.string.inbox_estimate_1h),
-                        selected = true,
-                        showCheck = false,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        leading = { ChipIcon(Icons.Default.AccessTime, MaterialTheme.colorScheme.tertiary) },
-                        onClick = { onSetEstimate(60) }
-                    )
-                }
-                if (projectsEnabled && task.projectId == null && task.listId == null) {
-                    YataSelectChip(
-                        label = stringResource(R.string.inbox_move),
-                        selected = true,
-                        showCheck = false,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        leading = { ChipIcon(Icons.Default.DriveFileMove, MaterialTheme.colorScheme.secondary) },
-                        onClick = onMove
-                    )
-                }
-                if (peopleEnabled && task.assigneeIds.isEmpty() && myPerson != null) {
-                    YataSelectChip(
-                        label = stringResource(R.string.inbox_assign_me),
-                        selected = true,
-                        showCheck = false,
-                        tint = MaterialTheme.colorScheme.error,
-                        leading = { ChipIcon(Icons.Default.PersonAdd, MaterialTheme.colorScheme.error) },
-                        onClick = { onAssignMe(myPerson) }
-                    )
-                }
+                InboxTriageActions(
+                    task = task,
+                    projectsEnabled = projectsEnabled,
+                    peopleEnabled = peopleEnabled,
+                    myPerson = myPerson,
+                    onSetDue = onSetDue,
+                    onSetEstimate = onSetEstimate,
+                    onAssignMe = onAssignMe,
+                    onMove = onMove
+                )
             }
-            }
+        } else if (hasTriageActions) {
+            InboxTriageActions(
+                task = task,
+                projectsEnabled = projectsEnabled,
+                peopleEnabled = peopleEnabled,
+                myPerson = myPerson,
+                onSetDue = onSetDue,
+                onSetEstimate = onSetEstimate,
+                onAssignMe = onAssignMe,
+                onMove = onMove
+            )
         }
         if (!hasTriageActions) {
             Row(
@@ -502,6 +440,107 @@ private fun InboxTaskCard(
             }
         }
         Spacer(modifier = Modifier.height(2.dp))
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun InboxTriageActions(
+    task: Task,
+    projectsEnabled: Boolean,
+    peopleEnabled: Boolean,
+    myPerson: Person?,
+    onSetDue: (String?) -> Unit,
+    onSetEstimate: (Int?) -> Unit,
+    onAssignMe: (Person) -> Unit,
+    onMove: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (task.due == null) {
+                val today = AppClock.today
+                YataSelectChip(
+                    label = stringResource(R.string.inbox_due_today),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.primary,
+                    leading = { ChipIcon(Icons.Default.Today, MaterialTheme.colorScheme.primary) },
+                    onClick = { onSetDue(today.toString()) }
+                )
+                YataSelectChip(
+                    label = stringResource(R.string.inbox_due_tomorrow),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.primary,
+                    leading = { ChipIcon(Icons.Default.Today, MaterialTheme.colorScheme.primary) },
+                    onClick = { onSetDue(today.plusDays(1).toString()) }
+                )
+                YataSelectChip(
+                    label = stringResource(R.string.inbox_due_next_week),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.primary,
+                    leading = { ChipIcon(Icons.Default.Today, MaterialTheme.colorScheme.primary) },
+                    onClick = { onSetDue(today.plusWeeks(1).toString()) }
+                )
+            }
+            if (task.estimateMinutes == null) {
+                YataSelectChip(
+                    label = stringResource(R.string.inbox_estimate_15m),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    leading = { ChipIcon(Icons.Default.AccessTime, MaterialTheme.colorScheme.tertiary) },
+                    onClick = { onSetEstimate(15) }
+                )
+                YataSelectChip(
+                    label = stringResource(R.string.inbox_estimate_30m),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    leading = { ChipIcon(Icons.Default.AccessTime, MaterialTheme.colorScheme.tertiary) },
+                    onClick = { onSetEstimate(30) }
+                )
+                YataSelectChip(
+                    label = stringResource(R.string.inbox_estimate_1h),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    leading = { ChipIcon(Icons.Default.AccessTime, MaterialTheme.colorScheme.tertiary) },
+                    onClick = { onSetEstimate(60) }
+                )
+            }
+            if (projectsEnabled && task.projectId == null && task.listId == null) {
+                YataSelectChip(
+                    label = stringResource(R.string.inbox_move),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    leading = { ChipIcon(Icons.Default.DriveFileMove, MaterialTheme.colorScheme.secondary) },
+                    onClick = onMove
+                )
+            }
+            if (peopleEnabled && task.assigneeIds.isEmpty() && myPerson != null) {
+                YataSelectChip(
+                    label = stringResource(R.string.inbox_assign_me),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.error,
+                    leading = { ChipIcon(Icons.Default.PersonAdd, MaterialTheme.colorScheme.error) },
+                    onClick = { onAssignMe(myPerson) }
+                )
+            }
+        }
     }
 }
 

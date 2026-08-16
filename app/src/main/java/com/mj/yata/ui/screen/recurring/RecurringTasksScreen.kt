@@ -1,12 +1,7 @@
 package com.mj.yata.ui.screen.recurring
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -308,72 +303,78 @@ private fun RecurringTaskCard(
             density = density,
             showDueDate = true
         )
-        AnimatedVisibility(
-            visible = true,
-            enter = expandVertically(animationSpec = tween(YataDur.sheet, easing = YataEase.emphDecel)) +
-                fadeIn(animationSpec = tween(YataDur.fade, easing = YataEase.emphDecel)),
-            exit = shrinkVertically(animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel)) +
-                fadeOut(animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel))
+        RecurringTaskDetails(
+            formattedDueDate = formattedDueDate,
+            recurrenceSummary = recurrenceSummary,
+            onEditTask = onEditTask
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RecurringTaskDetails(
+    formattedDueDate: String?,
+    recurrenceSummary: String,
+    onEditTask: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.EventRepeat,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .padding(9.dp)
-                                    .size(18.dp)
-                            )
-                        }
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                text = stringResource(
-                                    R.string.recurring_next_due,
-                                    formattedDueDate ?: stringResource(R.string.date_no_due)
-                                ),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = recurrenceSummary,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        YataSelectChip(
-                            label = stringResource(R.string.task_row_edit_title),
-                            selected = true,
-                            showCheck = false,
-                            tint = MaterialTheme.colorScheme.primary,
-                            leading = { RecurringChipIcon(Icons.Default.Edit, MaterialTheme.colorScheme.primary) },
-                            onClick = onEditTask
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.EventRepeat,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(9.dp)
+                            .size(18.dp)
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = stringResource(
+                            R.string.recurring_next_due,
+                            formattedDueDate ?: stringResource(R.string.date_no_due)
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = recurrenceSummary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                YataSelectChip(
+                    label = stringResource(R.string.task_row_edit_title),
+                    selected = true,
+                    showCheck = false,
+                    tint = MaterialTheme.colorScheme.primary,
+                    leading = { RecurringChipIcon(Icons.Default.Edit, MaterialTheme.colorScheme.primary) },
+                    onClick = onEditTask
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(2.dp))
     }
 }
 
