@@ -405,17 +405,15 @@ fun MainScreen(
                             }
                         }
                     }
-                    if (tagsFeatureEnabled) {
-                        item {
-                            DrawerItem(stringResource(R.string.tab_tags), Icons.AutoMirrored.Filled.Label, selectedTab == 3) {
-                                selectedTab = 3
-                                scope.launch { drawerState.close() }
-                            }
+                    item {
+                        DrawerItem(stringResource(R.string.inbox_title), Icons.Default.Inbox, false) {
+                            onNavigateToInbox()
+                            scope.launch { drawerState.close() }
                         }
                     }
                     item {
-                        DrawerItem(stringResource(R.string.tab_upcoming), Icons.Default.CalendarViewWeek, selectedTab == 4) {
-                            selectedTab = 4
+                        DrawerItem(stringResource(R.string.recurring_tasks_title), Icons.Default.EventRepeat, false) {
+                            onNavigateToRecurringTasks()
                             scope.launch { drawerState.close() }
                         }
                     }
