@@ -65,6 +65,8 @@ import com.mj.yata.ui.widgets.TabEmptyState
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.YataSelectChip
 
+private const val LIGHTWEIGHT_SCREEN_ANIMATION_ROW_LIMIT = 80
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun RecurringTasksScreen(
@@ -75,6 +77,7 @@ fun RecurringTasksScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.recurringTasksUiState.collectAsStateWithLifecycle()
+    val animateListChanges = uiState.rows.size <= LIGHTWEIGHT_SCREEN_ANIMATION_ROW_LIMIT
 
     Scaffold(
         bottomBar = {
@@ -132,10 +135,21 @@ fun RecurringTasksScreen(
                             taskCount = uiState.rows.size,
                             dueSoonCount = uiState.dueSoonCount,
                             noDueCount = uiState.noDueCount,
+                            animateSize = animateListChanges,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp, bottom = 4.dp)
-                                .animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
+                                .let {
+                                    if (animateListChanges) {
+                                        it.animateItem(
+                                            fadeInSpec = yataItemFade,
+                                            placementSpec = yataItemPlacement,
+                                            fadeOutSpec = yataItemFade
+                                        )
+                                    } else {
+                                        it
+                                    }
+                                }
                         )
                     }
                     items(uiState.rows, key = { it.task.id }, contentType = { "recurring_task" }) { row ->
@@ -151,7 +165,18 @@ fun RecurringTasksScreen(
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onEditTask = { onNavigateToTaskDetail(task.id) },
                             density = uiState.taskRowDensity,
-                            modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
+                            animateSize = animateListChanges,
+                            modifier = Modifier.let {
+                                if (animateListChanges) {
+                                    it.animateItem(
+                                        fadeInSpec = yataItemFade,
+                                        placementSpec = yataItemPlacement,
+                                        fadeOutSpec = yataItemFade
+                                    )
+                                } else {
+                                    it
+                                }
+                            }
                         )
                     }
                 }
@@ -166,14 +191,21 @@ private fun RecurringSummaryCard(
     taskCount: Int,
     dueSoonCount: Int,
     noDueCount: Int,
+    animateSize: Boolean,
     modifier: Modifier = Modifier
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.72f),
         shape = RoundedCornerShape(28.dp),
-        modifier = modifier.animateContentSize(
-            animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
-        )
+        modifier = modifier.let {
+            if (animateSize) {
+                it.animateContentSize(
+                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                )
+            } else {
+                it
+            }
+        }
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -252,12 +284,19 @@ private fun RecurringTaskCard(
     onToggleDone: () -> Unit,
     onEditTask: () -> Unit,
     density: com.mj.yata.domain.model.TaskRowDensity,
+    animateSize: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize(animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized))
+            .let {
+                if (animateSize) {
+                    it.animateContentSize(animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized))
+                } else {
+                    it
+                }
+            }
     ) {
         TaskRow(
             task = task,

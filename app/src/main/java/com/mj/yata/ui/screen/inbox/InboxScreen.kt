@@ -83,6 +83,8 @@ import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.util.AppClock
 import kotlinx.coroutines.launch
 
+private const val LIGHTWEIGHT_SCREEN_ANIMATION_ROW_LIMIT = 80
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun InboxScreen(
@@ -99,6 +101,7 @@ fun InboxScreen(
     val undoWindowSeconds = LocalUndoWindowSeconds.current
     val context = androidx.compose.ui.platform.LocalContext.current
     var moveTask by remember { mutableStateOf<Task?>(null) }
+    val animateListChanges = uiState.rows.size <= LIGHTWEIGHT_SCREEN_ANIMATION_ROW_LIMIT
 
     fun deleteTaskWithUndo(task: Task) {
         scope.launch {
@@ -168,10 +171,21 @@ fun InboxScreen(
                             missingOwnerCount = uiState.missingOwnerCount,
                             projectsEnabled = uiState.projectsFeatureEnabled,
                             peopleEnabled = uiState.peopleFeatureEnabled,
+                            animateSize = animateListChanges,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp, bottom = 4.dp)
-                                .animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
+                                .let {
+                                    if (animateListChanges) {
+                                        it.animateItem(
+                                            fadeInSpec = yataItemFade,
+                                            placementSpec = yataItemPlacement,
+                                            fadeOutSpec = yataItemFade
+                                        )
+                                    } else {
+                                        it
+                                    }
+                                }
                         )
                     }
                     items(uiState.rows, key = { it.task.id }, contentType = { "inbox_task" }) { row ->
@@ -192,7 +206,18 @@ fun InboxScreen(
                             onAssignMe = { person -> viewModel.upsertTask(task.copy(assigneeIds = listOf(person.id) + task.assigneeIds.filterNot { it == person.id })) },
                             onMove = { moveTask = task },
                             density = uiState.taskRowDensity,
-                            modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
+                            animateSize = animateListChanges,
+                            modifier = Modifier.let {
+                                if (animateListChanges) {
+                                    it.animateItem(
+                                        fadeInSpec = yataItemFade,
+                                        placementSpec = yataItemPlacement,
+                                        fadeOutSpec = yataItemFade
+                                    )
+                                } else {
+                                    it
+                                }
+                            }
                         )
                     }
                 }
@@ -231,14 +256,21 @@ private fun InboxSummaryCard(
     missingOwnerCount: Int,
     projectsEnabled: Boolean,
     peopleEnabled: Boolean,
+    animateSize: Boolean,
     modifier: Modifier = Modifier
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.72f),
         shape = RoundedCornerShape(28.dp),
-        modifier = modifier.animateContentSize(
-            animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
-        )
+        modifier = modifier.let {
+            if (animateSize) {
+                it.animateContentSize(
+                    animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized)
+                )
+            } else {
+                it
+            }
+        }
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -328,6 +360,7 @@ private fun InboxTaskCard(
     onAssignMe: (Person) -> Unit,
     onMove: () -> Unit,
     density: com.mj.yata.domain.model.TaskRowDensity,
+    animateSize: Boolean,
     modifier: Modifier = Modifier
 ) {
     val hasTriageActions = task.due == null ||
@@ -338,7 +371,13 @@ private fun InboxTaskCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize(animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized))
+            .let {
+                if (animateSize) {
+                    it.animateContentSize(animationSpec = tween(durationMillis = YataDur.sheet, easing = YataEase.emphasized))
+                } else {
+                    it
+                }
+            }
     ) {
         TaskRow(
             task = task,
