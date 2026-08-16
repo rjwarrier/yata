@@ -235,8 +235,6 @@ fun InboxScreen(
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onDelete = { deleteTaskWithUndo(task) },
-                            onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
-                            onRename = { viewModel.renameTask(task.id, it) },
                             onSetDue = { due -> viewModel.upsertTask(task.copy(due = due)) },
                             onSetEstimate = { minutes -> viewModel.setTaskEstimate(task.id, minutes) },
                             onAssignMe = { person -> viewModel.upsertTask(task.copy(assigneeIds = listOf(person.id) + task.assigneeIds.filterNot { it == person.id })) },
@@ -373,8 +371,6 @@ private fun InboxTaskCard(
     onTaskClick: () -> Unit,
     onToggleDone: () -> Unit,
     onDelete: () -> Unit,
-    onQuickSnooze: (com.mj.yata.domain.model.QuickSnoozePreset) -> Unit,
-    onRename: (String) -> Unit,
     onSetDue: (String?) -> Unit,
     onSetEstimate: (Int?) -> Unit,
     onAssignMe: (Person) -> Unit,
@@ -400,8 +396,6 @@ private fun InboxTaskCard(
             onToggleDone = onToggleDone,
             onTaskClick = onTaskClick,
             onSwipeToDelete = onDelete,
-            onQuickSnooze = onQuickSnooze,
-            onRenameTask = onRename,
             density = density,
             showDueDate = true
         )
