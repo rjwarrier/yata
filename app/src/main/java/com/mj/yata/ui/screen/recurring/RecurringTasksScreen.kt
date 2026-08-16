@@ -184,8 +184,6 @@ fun RecurringTasksScreen(
                             tags = taskTags,
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
-                            onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
-                            onRename = { viewModel.renameTask(task.id, it) },
                             onEditTask = { onNavigateToTaskDetail(task.id) },
                             density = taskRowDensity,
                             modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
@@ -240,7 +238,7 @@ private fun RecurringSummaryCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = stringResource(R.string.recurring_notice),
+                        text = stringResource(R.string.recurring_empty_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -285,8 +283,6 @@ private fun RecurringTaskCard(
     tags: List<Tag>,
     onTaskClick: () -> Unit,
     onToggleDone: () -> Unit,
-    onQuickSnooze: (com.mj.yata.domain.model.QuickSnoozePreset) -> Unit,
-    onRename: (String) -> Unit,
     onEditTask: () -> Unit,
     density: com.mj.yata.domain.model.TaskRowDensity,
     modifier: Modifier = Modifier
@@ -303,8 +299,6 @@ private fun RecurringTaskCard(
             tags = tags,
             onToggleDone = onToggleDone,
             onTaskClick = onTaskClick,
-            onQuickSnooze = onQuickSnooze,
-            onRenameTask = onRename,
             density = density,
             showDueDate = true
         )
