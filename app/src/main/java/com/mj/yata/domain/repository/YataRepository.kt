@@ -7,6 +7,8 @@ interface YataRepository {
     // Tasks
     fun getTasks(): Flow<List<Task>>
     fun getTaskById(id: String): Flow<Task?>
+    fun getInboxCandidateTasks(): Flow<List<Task>>
+    fun getRecurringTasks(): Flow<List<Task>>
     fun getTasksForList(listId: String): Flow<List<Task>>
     fun getTasksForProject(projectId: String): Flow<List<Task>>
     fun getTasksForPerson(personId: String): Flow<List<Task>>

@@ -1236,8 +1236,14 @@ private data class LightweightFeatureState(
     val upcomingTabEnabled: StateFlow<Boolean> = userPreferences.upcomingTabEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    private val lightweightScreenSource: Flow<TaskListsSourceState> = combine(
-        tasks,
+    private val inboxCandidateTasks: StateFlow<List<Task>> = repository.getInboxCandidateTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val recurringScreenTasks: StateFlow<List<Task>> = repository.getRecurringTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private fun taskListsSource(taskFlow: Flow<List<Task>>): Flow<TaskListsSourceState> = combine(
+        taskFlow,
         lists,
         projects,
         people,
@@ -1277,7 +1283,7 @@ private data class LightweightFeatureState(
     }
 
     val inboxUiState: StateFlow<InboxUiState> = combine(
-        lightweightScreenSource,
+        taskListsSource(inboxCandidateTasks),
         lightweightScreenFeatures,
         userName
     ) { source, features, userName ->
@@ -1286,7 +1292,7 @@ private data class LightweightFeatureState(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), InboxUiState())
 
     val recurringTasksUiState: StateFlow<RecurringTasksUiState> = combine(
-        lightweightScreenSource,
+        taskListsSource(recurringScreenTasks),
         lightweightScreenFeatures
     ) { source, features ->
         buildRecurringTasksUiState(source, features)

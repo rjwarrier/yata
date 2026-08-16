@@ -28,6 +28,19 @@ class DemoRepository @Inject constructor() : YataRepository {
 
     override fun getTasks(): Flow<List<Task>> = dataset.map { it.tasks }
     override fun getTaskById(id: String): Flow<Task?> = dataset.map { d -> d.tasks.find { it.id == id } }
+    override fun getInboxCandidateTasks(): Flow<List<Task>> = dataset.map { d ->
+        d.tasks.filter { task ->
+            !task.done && (
+                task.due == null ||
+                    task.estimateMinutes == null ||
+                    (task.projectId == null && task.listId == null) ||
+                    task.assigneeIds.isEmpty()
+                )
+        }
+    }
+    override fun getRecurringTasks(): Flow<List<Task>> = dataset.map { d ->
+        d.tasks.filter { !it.done && it.recurrence != null }
+    }
     override fun getTasksForList(listId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { it.listId == listId } }
     override fun getTasksForProject(projectId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { it.projectId == projectId } }
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = dataset.map { d -> d.tasks.filter { personId in it.assigneeIds } }

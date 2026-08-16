@@ -32,6 +32,12 @@ class YataRepositoryImpl @Inject constructor(
     override fun getTasks(): Flow<List<Task>> = db.taskDao().getTasksWithRelations()
         .map { list -> list.map { it.toDomain() } }
 
+    override fun getInboxCandidateTasks(): Flow<List<Task>> = db.taskDao().getInboxCandidateTasksWithRelations()
+        .map { list -> list.map { it.toDomain() } }
+
+    override fun getRecurringTasks(): Flow<List<Task>> = db.taskDao().getRecurringTasksWithRelations()
+        .map { list -> list.map { it.toDomain() } }
+
     override fun getTaskById(id: String): Flow<Task?> {
         return db.taskDao().getTaskWithRelationsById(id).map { it?.toDomain() }
     }

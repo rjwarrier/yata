@@ -157,6 +157,36 @@ interface TaskDao {
     fun getTasksWithRelations(): Flow<List<TaskWithRelations>>
 
     @Transaction
+    @Query("""
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL
+            AND archived = 0
+            AND done = 0
+            AND (
+                dueDate IS NULL
+                OR estimateMinutes IS NULL
+                OR (projectId IS NULL AND listId IS NULL)
+                OR NOT EXISTS (
+                    SELECT 1 FROM task_person_cross_ref r
+                    WHERE r.taskId = tasks.id
+                )
+            )
+        ORDER BY COALESCE(dueDate, '9999-99-99') ASC, COALESCE(createdAt, 9223372036854775807) ASC, sortOrder ASC
+    """)
+    fun getInboxCandidateTasksWithRelations(): Flow<List<TaskWithRelations>>
+
+    @Transaction
+    @Query("""
+        SELECT * FROM tasks
+        WHERE deletedAt IS NULL
+            AND archived = 0
+            AND done = 0
+            AND recurrenceJson IS NOT NULL
+        ORDER BY COALESCE(dueDate, '9999-99-99') ASC, LOWER(title) ASC
+    """)
+    fun getRecurringTasksWithRelations(): Flow<List<TaskWithRelations>>
+
+    @Transaction
     @Query("SELECT * FROM tasks WHERE deletedAt IS NULL AND archived = 1 ORDER BY sortOrder ASC")
     fun getArchivedTasksWithRelations(): Flow<List<TaskWithRelations>>
 

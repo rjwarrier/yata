@@ -44,6 +44,8 @@ class RoutingYataRepository @Inject constructor(
 
     override fun getTasks(): Flow<List<Task>> = routed(real.getTasks(), demo.getTasks())
     override fun getTaskById(id: String): Flow<Task?> = routed(real.getTaskById(id), demo.getTaskById(id))
+    override fun getInboxCandidateTasks(): Flow<List<Task>> = routed(real.getInboxCandidateTasks(), demo.getInboxCandidateTasks())
+    override fun getRecurringTasks(): Flow<List<Task>> = routed(real.getRecurringTasks(), demo.getRecurringTasks())
     override fun getTasksForList(listId: String): Flow<List<Task>> = routed(real.getTasksForList(listId), demo.getTasksForList(listId))
     override fun getTasksForProject(projectId: String): Flow<List<Task>> = routed(real.getTasksForProject(projectId), demo.getTasksForProject(projectId))
     override fun getTasksForPerson(personId: String): Flow<List<Task>> = routed(real.getTasksForPerson(personId), demo.getTasksForPerson(personId))
