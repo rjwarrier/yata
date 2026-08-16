@@ -15,11 +15,23 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.93.1] - 2026-08-16
+
+`versionCode 21`. Upgrades in place over 0.93.
+
 ### Added
 - Added an Inbox triage screen for open tasks missing a due date, estimate, owner, or project/list,
   with quick chips for due dates, estimates, assigning yourself, and moving tasks into a home.
 - Added a Recurring Tasks screen that lists every repeating task, shows the next due date and repeat
-  summary, and lets you skip the next occurrence or clear the repeat rule.
+  summary, and opens the task detail/edit screen from a single Edit task button.
+
+### Changed
+- The hamburger menu now offers Inbox and Recurring Tasks shortcuts in place of the previous Tags
+  and Upcoming rows.
+
+### Fixed
+- Inbox and Recurring Tasks cards no longer show the inline rename pencil or snooze clock inherited
+  from generic task rows, keeping their actions focused on triage or Edit task.
 
 ## [0.93] - 2026-08-16
 
@@ -860,7 +872,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.93...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.93.1...HEAD
+[0.93.1]: https://github.com/rjwarrier/yata/releases/tag/v0.93.1
 [0.93]: https://github.com/rjwarrier/yata/releases/tag/v0.93
 [0.92.2]: https://github.com/rjwarrier/yata/releases/tag/v0.92.2
 [0.90.1 beta]: https://github.com/rjwarrier/yata/releases/tag/v0.90.1-beta
