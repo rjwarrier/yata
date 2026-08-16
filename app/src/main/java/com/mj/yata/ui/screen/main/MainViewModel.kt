@@ -1301,13 +1301,17 @@ private data class LightweightFeatureState(
         userName: String
     ): InboxUiState {
         val listsById = source.lists.associateBy { it.id }
-        val peopleById = source.people.associateBy { it.id }
-        val projectsById = source.projects.associateBy { it.id }
-        val tagsById = source.tags.associateBy { it.id }
-        val myPerson = source.people.firstOrNull { it.isMe }
-            ?: userName.takeIf { it.isNotBlank() }?.let { name ->
-                source.people.firstOrNull { it.name.equals(name, ignoreCase = true) }
-            }
+        val peopleById = if (features.peopleFeatureEnabled) source.people.associateBy { it.id } else emptyMap()
+        val projectsById = if (features.tagsFeatureEnabled) source.projects.associateBy { it.id } else emptyMap()
+        val tagsById = if (features.tagsFeatureEnabled) source.tags.associateBy { it.id } else emptyMap()
+        val myPerson = if (features.peopleFeatureEnabled) {
+            source.people.firstOrNull { it.isMe }
+                ?: userName.takeIf { it.isNotBlank() }?.let { name ->
+                    source.people.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                }
+        } else {
+            null
+        }
 
         var missingDueCount = 0
         var missingEstimateCount = 0
@@ -1375,9 +1379,9 @@ private data class LightweightFeatureState(
         features: LightweightFeatureState
     ): RecurringTasksUiState {
         val listsById = source.lists.associateBy { it.id }
-        val peopleById = source.people.associateBy { it.id }
-        val projectsById = source.projects.associateBy { it.id }
-        val tagsById = source.tags.associateBy { it.id }
+        val peopleById = if (features.peopleFeatureEnabled) source.people.associateBy { it.id } else emptyMap()
+        val projectsById = if (features.tagsFeatureEnabled) source.projects.associateBy { it.id } else emptyMap()
+        val tagsById = if (features.tagsFeatureEnabled) source.tags.associateBy { it.id } else emptyMap()
         val todayIso = com.mj.yata.util.AppClock.today.toString()
         val nextWeekIso = com.mj.yata.util.AppClock.today.plusDays(7).toString()
 
