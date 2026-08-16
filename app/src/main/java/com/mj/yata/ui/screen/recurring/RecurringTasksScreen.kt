@@ -27,28 +27,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EventRepeat
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -75,11 +66,9 @@ import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.TabEmptyState
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.YataSelectChip
-import com.mj.yata.ui.widgets.YataSnackbar
 import com.mj.yata.util.AppClock
 import com.mj.yata.util.RecurrenceEvaluator
 import com.mj.yata.util.TaskScheduleUtils
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -103,11 +92,6 @@ fun RecurringTasksScreen(
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val context = androidx.compose.ui.platform.LocalContext.current
-    var clearRepeatTask by remember { mutableStateOf<Task?>(null) }
-
     val recurringTasks = remember(tasks) {
         tasks.filter { !it.done && it.recurrence != null }
             .sortedWith(compareBy<Task> { it.due ?: "9999-99-99" }.thenBy { it.title.lowercase() })
@@ -124,7 +108,6 @@ fun RecurringTasksScreen(
     val noDueCount = remember(recurringTasks) { recurringTasks.count { it.due == null } }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) { data -> YataSnackbar(data) } },
         bottomBar = {
             AdaptiveBottomNav(
                 selectedTab = -1,
@@ -203,11 +186,7 @@ fun RecurringTasksScreen(
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                             onRename = { viewModel.renameTask(task.id, it) },
-                            onSkipNext = {
-                                viewModel.skipTaskOccurrence(task.id)
-                                scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.task_occurrence_skipped)) }
-                            },
-                            onClearRepeat = { clearRepeatTask = task },
+                            onEditTask = { onNavigateToTaskDetail(task.id) },
                             density = taskRowDensity,
                             modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                         )
@@ -215,30 +194,6 @@ fun RecurringTasksScreen(
                 }
             }
         }
-    }
-
-    clearRepeatTask?.let { task ->
-        AlertDialog(
-            onDismissRequest = { clearRepeatTask = null },
-            title = { Text(stringResource(R.string.recurring_clear_repeat_title)) },
-            text = { Text(stringResource(R.string.recurring_clear_repeat_body, task.title)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.upsertTask(task.copy(recurrence = null))
-                        clearRepeatTask = null
-                        scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.recurring_repeat_cleared)) }
-                    }
-                ) {
-                    Text(stringResource(R.string.recurring_clear_repeat_action), color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { clearRepeatTask = null }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
-        )
     }
 }
 
@@ -332,8 +287,7 @@ private fun RecurringTaskCard(
     onToggleDone: () -> Unit,
     onQuickSnooze: (com.mj.yata.domain.model.QuickSnoozePreset) -> Unit,
     onRename: (String) -> Unit,
-    onSkipNext: () -> Unit,
-    onClearRepeat: () -> Unit,
+    onEditTask: () -> Unit,
     density: com.mj.yata.domain.model.TaskRowDensity,
     modifier: Modifier = Modifier
 ) {
@@ -408,20 +362,12 @@ private fun RecurringTaskCard(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         YataSelectChip(
-                            label = stringResource(R.string.recurring_skip_next),
+                            label = stringResource(R.string.task_row_edit_title),
                             selected = true,
                             showCheck = false,
                             tint = MaterialTheme.colorScheme.primary,
-                            leading = { RecurringChipIcon(Icons.Default.SkipNext, MaterialTheme.colorScheme.primary) },
-                            onClick = onSkipNext
-                        )
-                        YataSelectChip(
-                            label = stringResource(R.string.recurring_clear_repeat_action),
-                            selected = true,
-                            showCheck = false,
-                            tint = MaterialTheme.colorScheme.error,
-                            leading = { RecurringChipIcon(Icons.Default.Clear, MaterialTheme.colorScheme.error) },
-                            onClick = onClearRepeat
+                            leading = { RecurringChipIcon(Icons.Default.Edit, MaterialTheme.colorScheme.primary) },
+                            onClick = onEditTask
                         )
                     }
                 }
