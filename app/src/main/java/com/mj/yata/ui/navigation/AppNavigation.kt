@@ -28,9 +28,11 @@ import android.widget.Toast
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
 import com.mj.yata.ui.screen.analytics.AnalyticsScreen
+import com.mj.yata.ui.screen.inbox.InboxScreen
 import com.mj.yata.ui.screen.main.MainScreen
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.screen.nextdays.NextDaysScreen
+import com.mj.yata.ui.screen.recurring.RecurringTasksScreen
 import com.mj.yata.ui.screen.taskdetail.TaskDetailScreen
 import com.mj.yata.ui.screen.project.ProjectDetailScreen
 import com.mj.yata.ui.screen.person.PersonAnalyticsScreen
@@ -157,6 +159,8 @@ fun AppNavigation(
                 },
                 onNavigateToAnalytics = { navController.navigate(Screen.Analytics.route) },
                 onNavigateToStaffAnalytics = { navController.navigate(Screen.StaffAnalytics.route) },
+                onNavigateToInbox = { navController.navigate(Screen.Inbox.route) },
+                onNavigateToRecurringTasks = { navController.navigate(Screen.RecurringTasks.route) },
                 onNavigateToNextDays = { navController.navigate(Screen.NextDays.route) },
                 onNavigateToSearch = { navController.navigate(Screen.Search.createRoute()) },
                 onNavigateToSavedSearch = { filters -> navController.navigate(Screen.Search.createRoute(filters)) },
@@ -455,6 +459,32 @@ fun AppNavigation(
         composable(Screen.Archive.route) { backStackEntry ->
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
             ArchiveScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                }
+            )
+        }
+
+        // -- Inbox / triage --------------------------------------------------
+        composable(Screen.Inbox.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            InboxScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                }
+            )
+        }
+
+        // -- Recurring task manager -----------------------------------------
+        composable(Screen.RecurringTasks.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            RecurringTasksScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToTab = onNavigateToTab,

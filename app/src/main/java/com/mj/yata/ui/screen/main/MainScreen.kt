@@ -89,6 +89,8 @@ fun MainScreen(
     onNavigateToHelpAbout: () -> Unit,
     onNavigateToAnalytics: () -> Unit,
     onNavigateToStaffAnalytics: () -> Unit,
+    onNavigateToInbox: () -> Unit,
+    onNavigateToRecurringTasks: () -> Unit,
     onNavigateToNextDays: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToSavedSearch: (String) -> Unit = {},
@@ -1011,6 +1013,14 @@ fun MainScreen(
                 showCommandPalette = false
                 onNavigateToAnalytics()
             },
+            onInbox = {
+                showCommandPalette = false
+                onNavigateToInbox()
+            },
+            onRecurringTasks = {
+                showCommandPalette = false
+                onNavigateToRecurringTasks()
+            },
             onNextDays = {
                 showCommandPalette = false
                 onNavigateToNextDays()
@@ -1336,6 +1346,8 @@ private fun CommandPaletteDialog(
     onSearch: () -> Unit,
     onSettings: () -> Unit,
     onAnalytics: () -> Unit,
+    onInbox: () -> Unit,
+    onRecurringTasks: () -> Unit,
     onNextDays: () -> Unit,
     onSavedSearch: (String) -> Unit,
     onSelectTab: (Int) -> Unit,
@@ -1350,6 +1362,8 @@ private fun CommandPaletteDialog(
         if (peopleEnabled) PaletteEntry(stringResource(R.string.tab_people), stringResource(R.string.main_palette_people_subtitle), Icons.Default.People) { onSelectTab(2) } else null,
         if (tagsEnabled) PaletteEntry(stringResource(R.string.tab_tags), stringResource(R.string.main_palette_tags_subtitle), Icons.AutoMirrored.Filled.Label) { onSelectTab(3) } else null,
         PaletteEntry(stringResource(R.string.tab_upcoming), stringResource(R.string.main_palette_upcoming_subtitle), Icons.Default.CalendarViewWeek) { onSelectTab(4) },
+        PaletteEntry(stringResource(R.string.inbox_title), stringResource(R.string.main_palette_inbox_subtitle), Icons.Default.Inbox, onInbox),
+        PaletteEntry(stringResource(R.string.recurring_tasks_title), stringResource(R.string.main_palette_recurring_subtitle), Icons.Default.Repeat, onRecurringTasks),
         PaletteEntry(stringResource(R.string.today_next_10_days), stringResource(R.string.main_palette_next_days_subtitle), Icons.Default.DateRange, onNextDays),
         // Formerly the drawer's "Tools" section. They're preset searches, so the palette — which
         // already filters by title and subtitle — is a better home than eight fixed menu rows:

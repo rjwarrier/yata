@@ -759,6 +759,8 @@
     <string name="main_palette_people_subtitle">Abrir personas</string>
     <string name="main_palette_tags_subtitle">Abrir etiquetas</string>
     <string name="main_palette_upcoming_subtitle">Abrir calendario y agenda</string>
+    <string name="main_palette_inbox_subtitle">Ordena las tareas capturadas</string>
+    <string name="main_palette_recurring_subtitle">Revisa tareas repetitivas</string>
     <string name="main_palette_next_days_subtitle">Abrir la lista enfocada por fecha</string>
     <string name="main_palette_my_work">Mi trabajo</string>
     <string name="main_palette_my_work_subtitle">Tareas asignadas a ti</string>
@@ -775,6 +777,20 @@
     <string name="new_task_remove_subtask">Quitar subtarea</string>
     <string name="new_task_treat_as_a_single_task_instead">Tratar como una sola tarea</string>
     <string name="notification_helper_this_task_is_due">Esta tarea vence</string>
+    <string name="inbox_title">Bandeja de entrada</string>
+    <string name="inbox_notice">Organiza tareas a las que les falta fecha, estimación, responsable o ubicación.</string>
+    <string name="inbox_empty_title">Bandeja vacía</string>
+    <string name="inbox_empty_body">Todas las tareas abiertas tienen suficientes detalles para aparecer donde corresponden.</string>
+    <string name="inbox_empty_action">Volver a Hoy</string>
+    <string name="inbox_due_today">Hoy</string>
+    <string name="inbox_due_tomorrow">Mañana</string>
+    <string name="inbox_due_next_week">Próxima semana</string>
+    <string name="inbox_estimate_15m">15m</string>
+    <string name="inbox_estimate_30m">30m</string>
+    <string name="inbox_estimate_1h">1h</string>
+    <string name="inbox_move">Mover</string>
+    <string name="inbox_assign_me">Asignarme</string>
+    <string name="inbox_ready">Lista</string>
 
     <string name="people_add_person">Añadir persona</string>
     <string name="people_add_to_group">Añadir al grupo</string>
@@ -1297,6 +1313,17 @@
     <string name="detail_search_no_matches">Sin matching tasks.</string>
     <string name="next_days_all_clear">All clear</string>
     <string name="next_days_nothing_due">Nothing due in the next %1$d days.</string>
+    <string name="recurring_tasks_title">Tareas repetitivas</string>
+    <string name="recurring_notice">Revisa todas las tareas repetitivas abiertas, omite la próxima ocurrencia o detén la repetición.</string>
+    <string name="recurring_empty_title">No hay tareas repetitivas</string>
+    <string name="recurring_empty_body">Las tareas con reglas de repetición aparecerán aquí.</string>
+    <string name="recurring_empty_action">Crear una</string>
+    <string name="recurring_next_due">Próximo vencimiento: %1$s</string>
+    <string name="recurring_skip_next">Omitir próxima</string>
+    <string name="recurring_clear_repeat_action">Quitar repetición</string>
+    <string name="recurring_clear_repeat_title">¿Quitar repetición?</string>
+    <string name="recurring_clear_repeat_body">“%1$s” seguirá como una tarea normal y dejará de crear ocurrencias futuras.</string>
+    <string name="recurring_repeat_cleared">Repetición quitada</string>
     <string name="upcoming_view_mode_upcoming">Próximas</string>
     <string name="upcoming_view_mode_calendar">Calendar</string>
     <string name="diagnostics_reminder_health">Reminder Health</string>

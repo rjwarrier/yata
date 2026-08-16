@@ -66,6 +66,8 @@ sealed class Screen(val route: String) {
     object Analytics : Screen("analytics")
     object Trash : Screen("trash")
     object Archive : Screen("archive")
+    object Inbox : Screen("inbox")
+    object RecurringTasks : Screen("recurring_tasks")
     object NextDays : Screen("next_days")
     object CrashLog : Screen("crash_log")
     object ShareApp : Screen("share_app")

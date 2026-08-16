@@ -736,6 +736,8 @@
     <string name="main_palette_people_subtitle">Personen öffnen</string>
     <string name="main_palette_tags_subtitle">Tags öffnen</string>
     <string name="main_palette_upcoming_subtitle">Kalender und Agenda öffnen</string>
+    <string name="main_palette_inbox_subtitle">Erfasste Aufgaben aufräumen</string>
+    <string name="main_palette_recurring_subtitle">Wiederholende Aufgaben prüfen</string>
     <string name="main_palette_next_days_subtitle">Die fokussierte Datumsliste öffnen</string>
     <string name="main_palette_my_work">Meine Arbeit</string>
     <string name="main_palette_my_work_subtitle">Dir zugewiesene Aufgaben</string>
@@ -752,6 +754,20 @@
     <string name="new_task_remove_subtask">Unteraufgabe entfernen</string>
     <string name="new_task_treat_as_a_single_task_instead">Stattdessen als einzelne Aufgabe behandeln</string>
     <string name="notification_helper_this_task_is_due">Diese Aufgabe ist fällig</string>
+    <string name="inbox_title">Eingang</string>
+    <string name="inbox_notice">Sortiere Aufgaben, denen Datum, Schätzung, Besitzer oder Ablage fehlen.</string>
+    <string name="inbox_empty_title">Eingang leer</string>
+    <string name="inbox_empty_body">Jede offene Aufgabe hat genug Details, um dort zu erscheinen, wo sie hingehört.</string>
+    <string name="inbox_empty_action">Zurück zu Heute</string>
+    <string name="inbox_due_today">Heute</string>
+    <string name="inbox_due_tomorrow">Morgen</string>
+    <string name="inbox_due_next_week">Nächste Woche</string>
+    <string name="inbox_estimate_15m">15m</string>
+    <string name="inbox_estimate_30m">30m</string>
+    <string name="inbox_estimate_1h">1h</string>
+    <string name="inbox_move">Verschieben</string>
+    <string name="inbox_assign_me">Mir zuweisen</string>
+    <string name="inbox_ready">Bereit</string>
     <string name="people_add_person">Person hinzufügen</string>
     <string name="people_add_to_group">Zur Gruppe hinzufügen</string>
     <string name="people_details">Details</string>
@@ -1435,6 +1451,17 @@
     <string name="detail_search_no_matches">Keine passenden Aufgaben.</string>
     <string name="next_days_all_clear">Alles frei</string>
     <string name="next_days_nothing_due">In den nächsten %1$d Tagen nichts fällig.</string>
+    <string name="recurring_tasks_title">Wiederholende Aufgaben</string>
+    <string name="recurring_notice">Prüfe alle offenen wiederholenden Aufgaben, überspringe den nächsten Termin oder beende die Wiederholung.</string>
+    <string name="recurring_empty_title">Keine wiederholenden Aufgaben</string>
+    <string name="recurring_empty_body">Aufgaben mit Wiederholungsregeln erscheinen hier.</string>
+    <string name="recurring_empty_action">Eine erstellen</string>
+    <string name="recurring_next_due">Nächste Fälligkeit: %1$s</string>
+    <string name="recurring_skip_next">Nächste überspringen</string>
+    <string name="recurring_clear_repeat_action">Wiederholung löschen</string>
+    <string name="recurring_clear_repeat_title">Wiederholung löschen?</string>
+    <string name="recurring_clear_repeat_body">„%1$s“ bleibt als normale Aufgabe erhalten und erstellt keine zukünftigen Vorkommen mehr.</string>
+    <string name="recurring_repeat_cleared">Wiederholung gelöscht</string>
     <string name="upcoming_view_mode_upcoming">Demnächst</string>
     <string name="upcoming_view_mode_calendar">Kalender</string>
 

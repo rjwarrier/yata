@@ -15,6 +15,12 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+- Added an Inbox triage screen for open tasks missing a due date, estimate, owner, or project/list,
+  with quick chips for due dates, estimates, assigning yourself, and moving tasks into a home.
+- Added a Recurring Tasks screen that lists every repeating task, shows the next due date and repeat
+  summary, and lets you skip the next occurrence or clear the repeat rule.
+
 ## [0.93] - 2026-08-16
 
 `versionCode 20`. Upgrades in place over 0.92.2.

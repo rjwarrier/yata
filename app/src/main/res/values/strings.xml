@@ -813,6 +813,8 @@
     <string name="main_palette_people_subtitle">Open people</string>
     <string name="main_palette_tags_subtitle">Open tags</string>
     <string name="main_palette_upcoming_subtitle">Open calendar and agenda</string>
+    <string name="main_palette_inbox_subtitle">Clean up captured tasks</string>
+    <string name="main_palette_recurring_subtitle">Review repeating tasks</string>
     <string name="main_palette_next_days_subtitle">Open the focused date list</string>
     <string name="main_palette_my_work">My Work</string>
     <string name="main_palette_my_work_subtitle">Tasks assigned to you</string>
@@ -829,6 +831,20 @@
     <string name="new_task_remove_subtask">Remove subtask</string>
     <string name="new_task_treat_as_a_single_task_instead">Treat as a single task instead</string>
     <string name="notification_helper_this_task_is_due">This task is due</string>
+    <string name="inbox_title">Inbox</string>
+    <string name="inbox_notice">Triage tasks that are missing a date, estimate, owner, or home.</string>
+    <string name="inbox_empty_title">Inbox clear</string>
+    <string name="inbox_empty_body">Every open task has enough detail to show up where it belongs.</string>
+    <string name="inbox_empty_action">Back to Today</string>
+    <string name="inbox_due_today">Today</string>
+    <string name="inbox_due_tomorrow">Tomorrow</string>
+    <string name="inbox_due_next_week">Next week</string>
+    <string name="inbox_estimate_15m">15m</string>
+    <string name="inbox_estimate_30m">30m</string>
+    <string name="inbox_estimate_1h">1h</string>
+    <string name="inbox_move">Move</string>
+    <string name="inbox_assign_me">Assign me</string>
+    <string name="inbox_ready">Ready</string>
     <string name="people_add_person">Add person</string>
     <string name="people_add_to_group">Add to group</string>
     <string name="people_details">Details</string>
@@ -1534,6 +1550,17 @@
     <string name="detail_search_no_matches">No matching tasks.</string>
     <string name="next_days_all_clear">All clear</string>
     <string name="next_days_nothing_due">Nothing due in the next %1$d days.</string>
+    <string name="recurring_tasks_title">Recurring tasks</string>
+    <string name="recurring_notice">Review every open repeating task, skip the next occurrence, or stop a task from repeating.</string>
+    <string name="recurring_empty_title">No repeating tasks</string>
+    <string name="recurring_empty_body">Tasks with repeat rules will appear here.</string>
+    <string name="recurring_empty_action">Create one</string>
+    <string name="recurring_next_due">Next due: %1$s</string>
+    <string name="recurring_skip_next">Skip next</string>
+    <string name="recurring_clear_repeat_action">Clear repeat</string>
+    <string name="recurring_clear_repeat_title">Clear repeat?</string>
+    <string name="recurring_clear_repeat_body">“%1$s” will stay as a normal task and stop creating future occurrences.</string>
+    <string name="recurring_repeat_cleared">Repeat cleared</string>
     <string name="upcoming_view_mode_upcoming">Upcoming</string>
     <string name="upcoming_view_mode_calendar">Calendar</string>
 
