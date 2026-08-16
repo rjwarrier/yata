@@ -32,6 +32,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.ui.widgets.showUndoSnackbar
@@ -139,6 +140,9 @@ fun TagDetailScreen(
             com.mj.yata.ui.widgets.ListDetailShimmer()
         }
         return
+    }
+    val tagDescription = remember(tag.description) {
+        tag.description?.trim()?.takeIf { it.isNotEmpty() }
     }
 
     val tagColor = if (tag.color == "error") {
@@ -399,6 +403,17 @@ fun TagDetailScreen(
                     accentColor = tagColor,
                     progress = progress,
                     primaryText = "$openTasks open · $doneTasks completed",
+                    secondaryContent = tagDescription?.let { description ->
+                        {
+                            Text(
+                                text = description,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    },
                     overdueCount = overdueCount,
                     highPriorityCount = highPriorityCount,
                     dueTodayCount = dueTodayCount,

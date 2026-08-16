@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -529,6 +530,7 @@ private fun TagRow(
     val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
     val accents = LocalYataAccents.current
     val tagColor = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
+    val tagDescription = tag.description?.trim()?.takeIf { it.isNotEmpty() }
 
     Card(
         modifier = modifier
@@ -583,6 +585,15 @@ private fun TagRow(
                         fontSize = 13.sp
                     )
                 )
+                if (tagDescription != null) {
+                    Text(
+                        text = tagDescription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))
