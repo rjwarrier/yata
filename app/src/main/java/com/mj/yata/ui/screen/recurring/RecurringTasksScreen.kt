@@ -34,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -59,6 +60,8 @@ import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.TabEmptyState
 import com.mj.yata.ui.widgets.TaskRow
 import com.mj.yata.ui.widgets.YataSelectChip
+import com.mj.yata.util.RecurrenceEvaluator
+import com.mj.yata.util.TaskScheduleUtils
 
 private const val LIGHTWEIGHT_SCREEN_ANIMATION_ROW_LIMIT = 80
 
@@ -154,8 +157,6 @@ fun RecurringTasksScreen(
                             list = row.list,
                             assignees = row.assignees,
                             tags = row.tags,
-                            formattedDueDate = row.formattedDueDate,
-                            recurrenceSummary = row.recurrenceSummary,
                             onTaskClick = { onNavigateToTaskDetail(task.id) },
                             onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
                             onEditTask = { onNavigateToTaskDetail(task.id) },
@@ -273,8 +274,6 @@ private fun RecurringTaskCard(
     list: YataList?,
     assignees: List<Person>,
     tags: List<Tag>,
-    formattedDueDate: String?,
-    recurrenceSummary: String,
     onTaskClick: () -> Unit,
     onToggleDone: () -> Unit,
     onEditTask: () -> Unit,
@@ -282,6 +281,13 @@ private fun RecurringTaskCard(
     animateSize: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val formattedDueDate = remember(task.due) {
+        task.due?.let { TaskScheduleUtils.formatDueDate(it) }
+    }
+    val recurrenceSummary = remember(task.recurrence) {
+        RecurrenceEvaluator.recurrenceSummary(task.recurrence)
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()

@@ -29,11 +29,9 @@ import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.AnalyticsUiState
 import com.mj.yata.util.AnalyticsUtils
 import com.mj.yata.util.AppLanguageController
-import com.mj.yata.util.RecurrenceEvaluator
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
-import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.withParsedQuickAdd
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -298,9 +296,7 @@ data class RecurringTaskUiModel(
     val task: Task,
     val list: YataList?,
     val assignees: List<Person>,
-    val tags: List<Tag>,
-    val formattedDueDate: String?,
-    val recurrenceSummary: String
+    val tags: List<Tag>
 )
 
 data class RecurringTasksUiState(
@@ -1412,9 +1408,7 @@ private data class LightweightFeatureState(
                             task.effectiveTags(projectsById, tagsById)
                         } else {
                             emptyList()
-                        },
-                        formattedDueDate = due?.let { TaskScheduleUtils.formatDueDate(it) },
-                        recurrenceSummary = RecurrenceEvaluator.recurrenceSummary(recurrence)
+                        }
                     )
                 )
             }
