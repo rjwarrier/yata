@@ -103,7 +103,8 @@ fun MainScreen(
     requestedTab: Int = -1,
     onTabRequestHandled: () -> Unit = {},
     initialShowNewTaskSheet: Boolean = false,
-    initialQuickAddListId: String? = null
+    initialQuickAddListId: String? = null,
+    initialQuickCapture: Boolean = false
 ) {
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
@@ -178,15 +179,37 @@ fun MainScreen(
     // Sheet states
     var activeSheet by rememberSaveable { mutableStateOf(MainSheetType.None) }
     var newTaskHasDraft by rememberSaveable { mutableStateOf(false) }
+    var quickCaptureMode by rememberSaveable { mutableStateOf(false) }
     var showDiscardNewTaskDialog by rememberSaveable { mutableStateOf(false) }
     var isNewListSheetOpen by remember { mutableStateOf(false) }
     var showCommandPalette by remember { mutableStateOf(false) }
     var showTodayVoiceOverlay by remember { mutableStateOf(false) }
 
+    fun openNewTask() {
+        quickCaptureMode = false
+        activeSheet = MainSheetType.NewTask
+    }
+
+    fun openQuickCapture() {
+        quickCaptureMode = true
+        activeSheet = MainSheetType.NewTask
+    }
+
+    fun NewTaskDraft.asInboxCaptureDraft(): NewTaskDraft = copy(
+        listId = null,
+        projectId = null,
+        assigneeIds = emptyList(),
+        tagIds = emptyList(),
+        estimateMinutes = null
+    )
+
     // "Quick Add" launcher shortcut / widget tap lands here with this set — open the sheet once,
-    // pre-selecting a list if the Quick Add widget's list chip was what was tapped.
-    LaunchedEffect(initialShowNewTaskSheet) {
-        if (initialShowNewTaskSheet) activeSheet = MainSheetType.NewTask
+    // pre-selecting a list if the Quick Add widget's list chip was what was tapped. Quick Capture
+    // uses the same sheet but clears defaults so the saved task remains an Inbox triage item.
+    LaunchedEffect(initialShowNewTaskSheet, initialQuickCapture) {
+        if (initialShowNewTaskSheet) {
+            if (initialQuickCapture) openQuickCapture() else openNewTask()
+        }
     }
 
     // Database updates flows
@@ -403,6 +426,12 @@ fun MainScreen(
                                 selectedTab = 2
                                 scope.launch { drawerState.close() }
                             }
+                        }
+                    }
+                    item {
+                        DrawerItem(stringResource(R.string.quick_add_dialog_quick_add), Icons.Default.Add, false) {
+                            openQuickCapture()
+                            scope.launch { drawerState.close() }
                         }
                     }
                     item {
@@ -726,6 +755,7 @@ fun MainScreen(
                         val (fabLabel, sheetType) = fabTarget ?: ("New task" to MainSheetType.NewTask)
                         PressableScaleBox(
                             onClick = {
+                                quickCaptureMode = false
                                 activeSheet = sheetType
                             },
                             // No navigationBarsPadding here. CustomBottomNav already consumes the
@@ -784,7 +814,7 @@ fun MainScreen(
                                     true
                                 }
                                 Key.N -> {
-                                    activeSheet = MainSheetType.NewTask
+                                    openNewTask()
                                     true
                                 }
                                 Key.F -> {
@@ -834,7 +864,7 @@ fun MainScreen(
                             showMenuButton = !useWideNavigation,
                             onSearchClick = onNavigateToSearch,
                             onNextDaysClick = onNavigateToNextDays,
-                            onNewTaskClick = { activeSheet = MainSheetType.NewTask },
+                            onNewTaskClick = { openNewTask() },
                             onProfileClick = onNavigateToSettings,
                             onTaskClick = onNavigateToTaskDetail,
                             onToggleDone = { toggleDoneWithUndo(it) },
@@ -997,7 +1027,11 @@ fun MainScreen(
             onDismiss = { showCommandPalette = false },
             onNewTask = {
                 showCommandPalette = false
-                activeSheet = MainSheetType.NewTask
+                openNewTask()
+            },
+            onQuickCapture = {
+                showCommandPalette = false
+                openQuickCapture()
             },
             onSearch = {
                 showCommandPalette = false
@@ -1043,7 +1077,10 @@ fun MainScreen(
         if (activeSheet == MainSheetType.NewTask) {
             val requestDismissNewTask = {
                 if (newTaskHasDraft) showDiscardNewTaskDialog = true
-                else activeSheet = MainSheetType.None
+                else {
+                    activeSheet = MainSheetType.None
+                    quickCaptureMode = false
+                }
             }
             androidx.compose.ui.window.Dialog(
                 onDismissRequest = requestDismissNewTask,
@@ -1061,49 +1098,51 @@ fun MainScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = if (useWideNavigation) Alignment.Center else Alignment.TopStart
                 ) {
-                NewTaskSheet(
-                    lists = lists,
-                    projects = activeProjects,
-                    people = activePeople,
-                    tags = tags,
-                    tasks = tasks,
-                    onAddTask = { draft ->
-                        viewModel.addTask(draft)
-                        newTaskHasDraft = false
-                        activeSheet = MainSheetType.None
-                    },
-                    onAddTaskAndContinue = { draft ->
-                        viewModel.addTask(draft)
-                    },
-                    onGoToExistingTask = { id ->
-                        newTaskHasDraft = false
-                        activeSheet = MainSheetType.None
-                        onNavigateToTaskDetail(id)
-                    },
-                    autoAssignToMe = autoAssignToMe,
-                onCreateTag = { id, name, color ->
-                        viewModel.upsertTag(Tag(id = id, name = name, color = color))
-                    },
-                    onCreatePerson = { id, name, color ->
-                        viewModel.upsertPerson(
-                            Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false)
-                        )
-                    },
-                    onDismiss = requestDismissNewTask,
-                    initialListId = initialQuickAddListId,
-                    initialDueDateOverride = if (selectedTab == 4) calendarSelectedDay.toString() else null,
-                    projectsEnabled = projectsFeatureEnabled,
-                    tagsEnabled = tagsFeatureEnabled,
-                    peopleEnabled = peopleFeatureEnabled,
-                    voiceLanguage = voiceLanguage,
-                    defaultDueDate = defaultDueDate,
-                    defaultPriority = defaultPriority,
-                    defaultProjectId = defaultProjectId,
-                    defaultTagIds = defaultTagIds,
-                    defaultEstimateMinutes = defaultEstimateMinutes,
-                    onDraftStateChanged = { newTaskHasDraft = it },
-                    modifier = newTaskSheetModifier
-                )
+                    NewTaskSheet(
+                        lists = if (quickCaptureMode) emptyList() else lists,
+                        projects = if (quickCaptureMode) emptyList() else activeProjects,
+                        people = if (quickCaptureMode) emptyList() else activePeople,
+                        tags = if (quickCaptureMode) emptyList() else tags,
+                        tasks = tasks,
+                        onAddTask = { draft ->
+                            viewModel.addTask(if (quickCaptureMode) draft.asInboxCaptureDraft() else draft)
+                            newTaskHasDraft = false
+                            activeSheet = MainSheetType.None
+                            quickCaptureMode = false
+                        },
+                        onAddTaskAndContinue = { draft ->
+                            viewModel.addTask(if (quickCaptureMode) draft.asInboxCaptureDraft() else draft)
+                        },
+                        onGoToExistingTask = { id ->
+                            newTaskHasDraft = false
+                            activeSheet = MainSheetType.None
+                            quickCaptureMode = false
+                            onNavigateToTaskDetail(id)
+                        },
+                        autoAssignToMe = if (quickCaptureMode) false else autoAssignToMe,
+                        onCreateTag = { id, name, color ->
+                            viewModel.upsertTag(Tag(id = id, name = name, color = color))
+                        },
+                        onCreatePerson = { id, name, color ->
+                            viewModel.upsertPerson(
+                                Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false)
+                            )
+                        },
+                        onDismiss = requestDismissNewTask,
+                        initialListId = if (quickCaptureMode) null else initialQuickAddListId,
+                        initialDueDateOverride = if (!quickCaptureMode && selectedTab == 4) calendarSelectedDay.toString() else null,
+                        projectsEnabled = !quickCaptureMode && projectsFeatureEnabled,
+                        tagsEnabled = !quickCaptureMode && tagsFeatureEnabled,
+                        peopleEnabled = !quickCaptureMode && peopleFeatureEnabled,
+                        voiceLanguage = voiceLanguage,
+                        defaultDueDate = if (quickCaptureMode) DefaultDueDate.NONE else defaultDueDate,
+                        defaultPriority = defaultPriority,
+                        defaultProjectId = if (quickCaptureMode) null else defaultProjectId,
+                        defaultTagIds = if (quickCaptureMode) emptySet() else defaultTagIds,
+                        defaultEstimateMinutes = if (quickCaptureMode) null else defaultEstimateMinutes,
+                        onDraftStateChanged = { newTaskHasDraft = it },
+                        modifier = newTaskSheetModifier
+                    )
                 }
             }
         } else {
@@ -1211,6 +1250,7 @@ fun MainScreen(
                     showDiscardNewTaskDialog = false
                     newTaskHasDraft = false
                     activeSheet = MainSheetType.None
+                    quickCaptureMode = false
                 }) {
                     Text(stringResource(R.string.action_discard), color = MaterialTheme.colorScheme.error)
                 }
@@ -1341,6 +1381,7 @@ private fun CommandPaletteDialog(
     savedSmartFilterSets: Set<String> = emptySet(),
     onDismiss: () -> Unit,
     onNewTask: () -> Unit,
+    onQuickCapture: () -> Unit,
     onSearch: () -> Unit,
     onSettings: () -> Unit,
     onAnalytics: () -> Unit,
@@ -1354,6 +1395,7 @@ private fun CommandPaletteDialog(
     var query by remember { mutableStateOf("") }
     val commandEntries = listOfNotNull(
         PaletteEntry(stringResource(R.string.new_task_title), stringResource(R.string.main_palette_new_task_subtitle), Icons.Default.Add, onNewTask),
+        PaletteEntry(stringResource(R.string.quick_add_dialog_quick_add), stringResource(R.string.main_palette_inbox_subtitle), Icons.Default.Inbox, onQuickCapture),
         PaletteEntry(stringResource(R.string.cd_search), stringResource(R.string.main_palette_search_subtitle), Icons.Default.Search, onSearch),
         PaletteEntry(stringResource(R.string.tab_today), stringResource(R.string.main_palette_today_subtitle), Icons.Default.Today) { onSelectTab(0) },
         if (projectsEnabled) PaletteEntry(stringResource(R.string.tab_projects), stringResource(R.string.main_palette_projects_subtitle), Icons.Default.Layers) { onSelectTab(1) } else null,

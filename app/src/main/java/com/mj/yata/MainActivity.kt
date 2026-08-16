@@ -468,7 +468,12 @@ class MainActivity : AppCompatActivity() {
                                 }
                             } else if (shortcutAction == "quick_add") {
                                 navController.navigate(
-                                    com.mj.yata.ui.navigation.Screen.Main.createRoute(tab = 0, quickAdd = true, quickAddListId = listId)
+                                    com.mj.yata.ui.navigation.Screen.Main.createRoute(
+                                        tab = 0,
+                                        quickAdd = true,
+                                        quickAddListId = listId,
+                                        quickCapture = listId.isNullOrEmpty()
+                                    )
                                 ) {
                                     popUpTo(com.mj.yata.ui.navigation.Screen.Main.route) { inclusive = true }
                                     launchSingleTop = true

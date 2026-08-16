@@ -22,9 +22,15 @@ object DeepLink {
 }
 
 sealed class Screen(val route: String) {
-    object Main : Screen("main?tab={tab}&quickAdd={quickAdd}&quickAddListId={quickAddListId}") {
-        fun createRoute(tab: Int, quickAdd: Boolean = false, quickAddListId: String? = null) =
-            "main?tab=$tab&quickAdd=$quickAdd" + (quickAddListId?.let { "&quickAddListId=$it" } ?: "")
+    object Main : Screen("main?tab={tab}&quickAdd={quickAdd}&quickAddListId={quickAddListId}&quickCapture={quickCapture}") {
+        fun createRoute(
+            tab: Int,
+            quickAdd: Boolean = false,
+            quickAddListId: String? = null,
+            quickCapture: Boolean = false
+        ) = "main?tab=$tab&quickAdd=$quickAdd" +
+            (quickAddListId?.let { "&quickAddListId=$it" } ?: "") +
+            "&quickCapture=$quickCapture"
     }
     
     object TaskDetail : Screen("task_detail/{taskId}") {

@@ -163,12 +163,16 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 peopleEnabled = peopleEnabled
                             )
                         } ?: typedResolution
+                        val hasDestination = finalResolution.listId != null ||
+                            finalResolution.projectId != null ||
+                            presetList != null ||
+                            presetProject != null
                         val due = parsedTyped.due
                             ?: parsedShared?.due
                             ?: finalResolution.projectDue
                             ?: allProjects.find { it.id == finalResolution.projectId }?.due
                             ?: presetProject?.due
-                            ?: LocalDate.now().toString()
+                            ?: if (hasDestination) LocalDate.now().toString() else null
                         repository.upsertTask(
                             Task(
                                 id = "t_" + UUID.randomUUID().toString(),
@@ -176,9 +180,9 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 listId = finalResolution.listId,
                                 projectId = finalResolution.projectId,
                                 section = "",
-                                // Same fallback chain NewTaskSheet uses: an explicit due date
-                                // (here, one parsed from shared text) wins, otherwise the preset
-                                // project's own due date, otherwise today.
+                                // Destination-specific quick add stays Today-oriented. With no
+                                // preset or typed destination, this is capture-to-Inbox: no due
+                                // date unless the text explicitly supplied one.
                                 due = due,
                                 // No preset/today fallback, unlike due: a start date only exists
                                 // if the text actually said so. Defaulting one would defer every

@@ -132,12 +132,14 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("tab") { type = NavType.IntType; defaultValue = -1 },
                 navArgument("quickAdd") { type = NavType.BoolType; defaultValue = false },
-                navArgument("quickAddListId") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("quickAddListId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("quickCapture") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
             val initialTab = backStackEntry.arguments?.getInt("tab") ?: -1
             val initialShowNewTaskSheet = backStackEntry.arguments?.getBoolean("quickAdd") ?: false
             val initialQuickAddListId = backStackEntry.arguments?.getString("quickAddListId")
+            val initialQuickCapture = backStackEntry.arguments?.getBoolean("quickCapture") ?: false
             val requestedTab = backStackEntry.savedStateHandle
                 .getStateFlow(MAIN_TAB_REQUEST_KEY, -1)
                 .collectAsStateWithLifecycle()
@@ -153,6 +155,7 @@ fun AppNavigation(
                 },
                 initialShowNewTaskSheet = initialShowNewTaskSheet,
                 initialQuickAddListId = initialQuickAddListId,
+                initialQuickCapture = initialQuickCapture,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
                 onNavigateToHelpAbout = {
                     navController.navigate(Screen.SettingsSection.createRoute(SettingsDestination.HELP_ABOUT.routeSegment))
