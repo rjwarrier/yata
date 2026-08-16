@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+- Tags now support an optional description in the create/edit sheet, and tag image/PDF exports show
+  it as subtext below the tag name.
+
 ## [0.93.1] - 2026-08-16
 
 `versionCode 21`. Upgrades in place over 0.93.

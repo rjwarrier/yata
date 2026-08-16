@@ -47,6 +47,7 @@ private const val NAME_LIMIT = 100
 /** Cap for Person/Tag name fields, which can hold several comma-separated names at once in
  * create mode — higher than [NAME_LIMIT] so a legitimate multi-name paste isn't truncated. */
 private const val BULK_NAME_FIELD_LIMIT = 300
+private const val TAG_DESCRIPTION_LIMIT = 160
 
 /** One-shot picker sheet: tap a group row to assign, or create a new one. Used for bulk "Add to group" actions. */
 @Composable
@@ -674,9 +675,10 @@ fun TagEditorSheet(
     initialColor: String = "accentA",
     initialGroupId: String? = null,
     initialHideCompletedByDefault: Boolean = false,
+    initialDescription: String? = null,
     groups: List<com.mj.yata.domain.model.TagGroup> = emptyList(),
     existingNames: List<String> = emptyList(),
-    onSave: (String, String, String?, Boolean, com.mj.yata.domain.model.TagGroup?) -> Unit,
+    onSave: (String, String, String?, Boolean, String?, com.mj.yata.domain.model.TagGroup?) -> Unit,
     onCreateGroup: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -685,6 +687,7 @@ fun TagEditorSheet(
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedGroupId by remember { mutableStateOf(initialGroupId) }
     var hideCompletedByDefault by remember { mutableStateOf(initialHideCompletedByDefault) }
+    var description by remember { mutableStateOf(initialDescription.orEmpty()) }
     var pendingCreatedGroup by remember { mutableStateOf<com.mj.yata.domain.model.TagGroup?>(null) }
     var newGroupDraftName by remember { mutableStateOf("") }
     val visibleGroups = remember(groups, pendingCreatedGroup) {
@@ -727,6 +730,18 @@ fun TagEditorSheet(
             } else null,
             singleLine = true,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
+            colors = com.mj.yata.ui.widgets.yataFieldColors(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        TextField(
+            value = description,
+            onValueChange = { if (it.length <= TAG_DESCRIPTION_LIMIT) description = it },
+            label = { Text(stringResource(R.string.entity_editors_description)) },
+            supportingText = { Text(stringResource(R.string.editor_char_counter, description.length, TAG_DESCRIPTION_LIMIT)) },
+            minLines = 2,
+            maxLines = 5,
+            shape = com.mj.yata.ui.widgets.YataFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
@@ -805,10 +820,11 @@ fun TagEditorSheet(
                     }
                     val groupIdToSave = existingDraftGroup?.id ?: draftedGroup?.id ?: selectedGroupId
                     val selectedPendingGroup = draftedGroup ?: pendingCreatedGroup?.takeIf { it.id == groupIdToSave }
+                    val descriptionToSave = description.trim().ifBlank { null }
                     if (isCreateMode) {
-                        bulkNames.forEach { onSave(it, selectedColor, groupIdToSave, hideCompletedByDefault, selectedPendingGroup) }
+                        bulkNames.forEach { onSave(it, selectedColor, groupIdToSave, hideCompletedByDefault, descriptionToSave, selectedPendingGroup) }
                     } else if (name.isNotBlank()) {
-                        onSave(name, selectedColor, groupIdToSave, hideCompletedByDefault, selectedPendingGroup)
+                        onSave(name, selectedColor, groupIdToSave, hideCompletedByDefault, descriptionToSave, selectedPendingGroup)
                     }
                 },
                 enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()

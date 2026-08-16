@@ -720,6 +720,44 @@ class AppDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate31To32_addsTagDescription() {
+        context.deleteDatabase(TEST_DB)
+        createVersion31TagsTableDatabase().apply {
+            execSQL(
+                "INSERT INTO `tags` (`id`,`name`,`color`,`groupId`,`starred`,`hideCompletedByDefault`) " +
+                    "VALUES ('tag-client','Client','#5B8DEF',NULL,1,0)"
+            )
+            close()
+        }
+
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(32) {
+                override fun onCreate(db: SupportSQLiteDatabase) = Unit
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    AppDatabase.MIGRATION_31_32.migrate(db)
+                }
+            })
+            .build()
+
+        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase.apply {
+            query("PRAGMA table_info(`tags`)").use { cursor ->
+                val columnNames = mutableSetOf<String>()
+                while (cursor.moveToNext()) {
+                    columnNames += cursor.getString(cursor.getColumnIndexOrThrow("name"))
+                }
+                assertTrue(columnNames.contains("description"))
+            }
+            query("SELECT `name`, `description` FROM `tags` WHERE `id` = 'tag-client'").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("Client", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+                assertTrue(cursor.isNull(cursor.getColumnIndexOrThrow("description")))
+            }
+            close()
+        }
+    }
+
     /** Minimal — only the `lists` table, since MIGRATION_21_22 only touches that one. */
     private fun createVersion21ListsTableDatabase(): SupportSQLiteDatabase {
         val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
@@ -746,6 +784,24 @@ class AppDatabaseMigrationTest {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS `people` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `initials` TEXT NOT NULL, `color` TEXT NOT NULL, `photoUri` TEXT, `isMe` INTEGER NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+                    )
+                }
+                override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+            })
+            .build()
+        return FrameworkSQLiteOpenHelperFactory()
+            .create(configuration)
+            .writableDatabase
+    }
+
+    /** Minimal — only the `tags` table, since MIGRATION_31_32 only touches that one. */
+    private fun createVersion31TagsTableDatabase(): SupportSQLiteDatabase {
+        val configuration = SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(TEST_DB)
+            .callback(object : SupportSQLiteOpenHelper.Callback(31) {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS `tags` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, `groupId` TEXT, `starred` INTEGER NOT NULL, `hideCompletedByDefault` INTEGER NOT NULL, PRIMARY KEY(`id`))"
                     )
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit

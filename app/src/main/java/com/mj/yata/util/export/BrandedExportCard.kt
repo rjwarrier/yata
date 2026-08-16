@@ -129,6 +129,7 @@ private fun spacingFor(density: ExportDensity) = when (density) {
 fun BrandedExportCard(
     entityKind: String,
     entityName: String,
+    entitySubtitle: String? = null,
     accentColor: Color,
     doneCount: Int,
     totalCount: Int,
@@ -211,6 +212,14 @@ fun BrandedExportCard(
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    entitySubtitle?.takeIf { it.isNotBlank() }?.let { subtitle ->
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

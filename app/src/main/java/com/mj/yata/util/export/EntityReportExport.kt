@@ -20,6 +20,7 @@ suspend fun exportEntityReport(
     format: ExportFormat,
     entityKind: String,
     entityName: String,
+    entitySubtitle: String? = null,
     accentColor: Color,
     doneCount: Int,
     totalCount: Int,
@@ -46,6 +47,7 @@ suspend fun exportEntityReport(
         BrandedExportCard(
             entityKind = entityKind,
             entityName = entityName,
+            entitySubtitle = entitySubtitle,
             accentColor = accentColor,
             doneCount = doneCount,
             totalCount = totalCount,

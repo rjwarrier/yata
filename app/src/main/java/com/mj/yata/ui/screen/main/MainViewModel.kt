@@ -1734,6 +1734,7 @@ private data class MainNavigationState(
         color: String,
         groupId: String? = null,
         hideCompletedByDefault: Boolean = false,
+        description: String? = null,
         pendingGroup: TagGroup? = null
     ) {
         safeLaunch {
@@ -1742,7 +1743,8 @@ private data class MainNavigationState(
                 name = name.trim(),
                 color = color,
                 groupId = groupId,
-                hideCompletedByDefault = hideCompletedByDefault
+                hideCompletedByDefault = hideCompletedByDefault,
+                description = description?.trim()?.ifBlank { null }
             )
             repository.upsertTags(listOf(tag), pendingGroup)
         }

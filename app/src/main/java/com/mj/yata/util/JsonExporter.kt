@@ -345,6 +345,7 @@ class JsonExporter @Inject constructor(
                 o.put("id", t.id)
                 o.put("name", t.name)
                 o.put("color", t.color)
+                o.put("description", t.description ?: JSONObject.NULL)
                 o.put("groupId", t.groupId ?: JSONObject.NULL)
                 o.put("starred", t.starred)
                 o.put("hideCompletedByDefault", t.hideCompletedByDefault)
@@ -761,6 +762,7 @@ class JsonExporter @Inject constructor(
             row.requiredString("name", "tags[$id]")
             row.requiredString("color", "tags[$id]")
             row.nullableString("groupId")?.let { require(it in tagGroups) }
+            row.requireOptionalString("description")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("hideCompletedByDefault")
         }
@@ -1063,6 +1065,7 @@ class JsonExporter @Inject constructor(
             row.requiredString("name", "tags[$id]")
             row.requiredString("color", "tags[$id]")
             row.nullableString("groupId")?.let { require(it in tagGroups) { "Tag references missing group $it" } }
+            row.requireOptionalString("description")
             row.requireOptionalBoolean("starred")
             row.requireOptionalBoolean("hideCompletedByDefault")
         }
@@ -1343,7 +1346,7 @@ class JsonExporter @Inject constructor(
                                 starred = o.optBoolean("starred", false),
                                 commonTagIds = commonTagIds,
                                 defaultReminder = if (o.isNull("defaultReminder")) null else o.optString("defaultReminder", null),
-                                description = if (o.isNull("description")) null else o.optString("description", null),
+                                description = if (o.isNull("description")) null else o.getString("description"),
                                 excludeFromToday = o.optBoolean("excludeFromToday", false),
                                 sortOrder = o.optInt("sortOrder", 0),
                                 archived = o.optBoolean("archived", false),
@@ -1402,7 +1405,8 @@ class JsonExporter @Inject constructor(
                                 color = o.getString("color"),
                                 groupId = if (o.isNull("groupId")) null else o.optString("groupId", null),
                                 starred = o.optBoolean("starred", false),
-                                hideCompletedByDefault = o.optBoolean("hideCompletedByDefault", false)
+                                hideCompletedByDefault = o.optBoolean("hideCompletedByDefault", false),
+                                description = if (o.isNull("description")) null else o.getString("description")
                             )
                         )
                     }

@@ -88,7 +88,8 @@ data class Tag(
     val color: String, // accentA - accentP or "error"
     val groupId: String? = null,
     val starred: Boolean = false,
-    val hideCompletedByDefault: Boolean = false
+    val hideCompletedByDefault: Boolean = false,
+    val description: String? = null
 )
 
 data class TagGroup(

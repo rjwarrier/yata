@@ -1138,8 +1138,8 @@ fun MainScreen(
                     MainSheetType.NewTag -> TagEditorSheet(
                         groups = tagGroups,
                         existingNames = tags.map { it.name },
-                        onSave = { name, color, groupId, hideCompletedByDefault, pendingGroup ->
-                            viewModel.addTag(name, color, groupId, hideCompletedByDefault, pendingGroup)
+                        onSave = { name, color, groupId, hideCompletedByDefault, description, pendingGroup ->
+                            viewModel.addTag(name, color, groupId, hideCompletedByDefault, description, pendingGroup)
                             activeSheet = MainSheetType.None
                         },
                         onCreateGroup = { id, name, color ->

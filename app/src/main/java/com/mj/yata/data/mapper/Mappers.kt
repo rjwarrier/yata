@@ -135,8 +135,8 @@ fun Project.toEntity() = ProjectEntity(
 fun ListEntity.toDomain() = YataList(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)
 fun YataList.toEntity() = ListEntity(id, name, color, icon, starred, excludeFromToday, sortOrder, archived)
 
-fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault)
-fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault)
+fun TagEntity.toDomain() = Tag(id, name, color, groupId, starred, hideCompletedByDefault, description)
+fun Tag.toEntity() = TagEntity(id, name, color, groupId, starred, hideCompletedByDefault, description)
 
 fun TagGroupEntity.toDomain() = TagGroup(id, name, color)
 fun TagGroup.toEntity() = TagGroupEntity(id, name, color)
