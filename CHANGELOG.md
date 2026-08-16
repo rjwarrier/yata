@@ -22,12 +22,17 @@ test-only changes belong in the commit message, not here, unless they change beh
 ### Added
 - Added an Inbox triage screen for open tasks missing a due date, estimate, owner, or project/list,
   with quick chips for due dates, estimates, assigning yourself, and moving tasks into a home.
-- Added a Recurring Tasks screen that lists every repeating task, shows the next due date and repeat
-  summary, and opens the task detail/edit screen from a single Edit task button.
+- Added a Recurring Tasks screen that lists every open repeating task, shows the next due date and
+  repeat summary, and opens the task detail/edit screen from a single Edit task button.
 
 ### Changed
 - The hamburger menu now offers Inbox and Recurring Tasks shortcuts in place of the previous Tags
   and Upcoming rows.
+- Inbox and Recurring Tasks use the same rounded summary panels, animated action chips, and list
+  item motion as the rest of the app's task screens.
+- Sync History now reuses the fresh GitHub restore-point list that Remote Sync just fetched when
+  navigating into the full history view, avoiding a duplicate API call; tapping Refresh still
+  forces a current fetch.
 
 ### Fixed
 - Inbox and Recurring Tasks cards no longer show the inline rename pencil or snooze clock inherited
