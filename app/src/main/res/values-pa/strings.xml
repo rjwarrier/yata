@@ -987,6 +987,11 @@
     <string name="task_deleted">ਕਾਰਜ ਮਿਟਾਇਆ</string>
     <string name="task_marked_open">ਕਾਰਜ ਨੂੰ ਖੁੱਲ੍ਹਾ ਵਜੋਂ ਚਿੰਨ੍ਹਿਤ ਕੀਤਾ ਗਿਆ</string>
     <string name="task_completed">ਕਾਰਜ ਪੂਰਾ ਹੋਇਆ</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d ਸਾਂਝਾ ਕੀਤਾ ਕਾਰਜ ਇਨਬਾਕਸ ਵਿੱਚ ਜੋੜਿਆ ਗਿਆ</item>
+        <item quantity="other">%1$d ਸਾਂਝੇ ਕੀਤੇ ਕਾਰਜ ਇਨਬਾਕਸ ਵਿੱਚ ਜੋੜੇ ਗਏ</item>
+    </plurals>
+    <string name="task_transfer_import_failed">ਇਹ YATA ਕਾਰਜ ਲਿੰਕ ਆਯਾਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ।</string>
     <string name="export_failed">ਨਿਰਯਾਤ ਅਸਫਲ।</string>
     <string name="reminder_before_due_error">ਰੀਮਾਈਂਡਰ ਨਿਯਤ ਸਮੇਂ ਤੋਂ ਪਹਿਲਾਂ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ।</string>
     <string name="reminder_in_past_error">ਉਹ ਰੀਮਾਈਂਡਰ ਸਮਾਂ ਅੱਜ ਪਹਿਲਾਂ ਹੀ ਲੰਘ ਚੁੱਕਾ ਹੈ।</string>

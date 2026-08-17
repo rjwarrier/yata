@@ -987,6 +987,11 @@
     <string name="task_deleted">பணி நீக்கப்பட்டது</string>
     <string name="task_marked_open">பணி திறந்ததாகக் குறிக்கப்பட்டது</string>
     <string name="task_completed">பணி முடிந்தது</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d பகிரப்பட்ட பணி உள்பெட்டியில் சேர்க்கப்பட்டது</item>
+        <item quantity="other">%1$d பகிரப்பட்ட பணிகள் உள்பெட்டியில் சேர்க்கப்பட்டன</item>
+    </plurals>
+    <string name="task_transfer_import_failed">இந்த YATA பணி இணைப்பை இறக்குமதி செய்ய முடியவில்லை.</string>
     <string name="export_failed">ஏற்றுமதி தோல்வியடைந்தது.</string>
     <string name="reminder_before_due_error">நினைவூட்டல் கடைசி நேரத்திற்கு முன் இருக்க வேண்டும்.</string>
     <string name="reminder_in_past_error">அந்த நினைவூட்டல் நேரம் இன்று ஏற்கனவே கடந்துவிட்டது.</string>

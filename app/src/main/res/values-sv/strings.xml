@@ -904,6 +904,11 @@
     <string name="task_deleted">Uppgift borttagen</string>
     <string name="task_marked_open">Uppgift markerad som öppen</string>
     <string name="task_completed">Uppgift slutförd</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d delad uppgift har lagts till i Inkorgen</item>
+        <item quantity="other">%1$d delade uppgifter har lagts till i Inkorgen</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Det gick inte att importera den här YATA-uppgiftslänken.</string>
     <string name="export_failed">Export misslyckades.</string>
     <string name="reminder_before_due_error">Påminnelsen måste vara innan förfallotiden.</string>
     <string name="reminder_in_past_error">Den påminnelsetiden har redan passerat idag.</string>

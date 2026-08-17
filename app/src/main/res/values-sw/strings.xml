@@ -987,6 +987,11 @@
     <string name="task_deleted">Kazi imefutwa</string>
     <string name="task_marked_open">Kazi imewekwa alama wazi</string>
     <string name="task_completed">Kazi imekamilika</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">Kazi %1$d iliyoshirikiwa imeongezwa kwenye Kikasha</item>
+        <item quantity="other">Kazi %1$d zilizoshirikiwa zimeongezwa kwenye Kikasha</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Imeshindwa kuingiza kiungo hiki cha kazi cha YATA.</string>
     <string name="export_failed">Kuhamisha kumeshindwa.</string>
     <string name="reminder_before_due_error">Ukumbusho lazima uwe kabla ya muda wa mwisho.</string>
     <string name="reminder_in_past_error">Muda huo wa ukumbusho tayari umepita leo.</string>

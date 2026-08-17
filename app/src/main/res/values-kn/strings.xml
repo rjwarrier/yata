@@ -987,6 +987,11 @@
     <string name="task_deleted">ಕಾರ್ಯ ಅಳಿಸಲಾಗಿದೆ</string>
     <string name="task_marked_open">ಕಾರ್ಯವನ್ನು ತೆರೆದಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ</string>
     <string name="task_completed">ಕಾರ್ಯ ಪೂರ್ಣಗೊಂಡಿದೆ</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d ಹಂಚಿಕೊಂಡ ಕಾರ್ಯವನ್ನು ಇನ್‌ಬಾಕ್ಸ್‌ಗೆ ಸೇರಿಸಲಾಗಿದೆ</item>
+        <item quantity="other">%1$d ಹಂಚಿಕೊಂಡ ಕಾರ್ಯಗಳನ್ನು ಇನ್‌ಬಾಕ್ಸ್‌ಗೆ ಸೇರಿಸಲಾಗಿದೆ</item>
+    </plurals>
+    <string name="task_transfer_import_failed">ಈ YATA ಕಾರ್ಯ ಲಿಂಕ್ ಅನ್ನು ಆಮದು ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.</string>
     <string name="export_failed">ರಫ್ತು ವಿಫಲವಾಗಿದೆ.</string>
     <string name="reminder_before_due_error">ಜ್ಞಾಪನೆಯು ಗಡುವಿನ ಸಮಯಕ್ಕಿಂತ ಮೊದಲು ಇರಬೇಕು.</string>
     <string name="reminder_in_past_error">ಆ ಜ್ಞಾಪನೆ ಸಮಯ ಇಂದು ಈಗಾಗಲೇ ಕಳೆದುಹೋಗಿದೆ.</string>

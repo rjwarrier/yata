@@ -904,6 +904,11 @@
     <string name="task_deleted">Đã xóa việc cần làm</string>
     <string name="task_marked_open">Đã mở lại việc cần làm</string>
     <string name="task_completed">Đã hoàn thành việc cần làm</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">Đã thêm %1$d việc cần làm được chia sẻ vào Hộp vào</item>
+        <item quantity="other">Đã thêm %1$d việc cần làm được chia sẻ vào Hộp vào</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Không thể nhập liên kết việc cần làm YATA này.</string>
     <string name="export_failed">Xuất thất bại.</string>
     <string name="reminder_before_due_error">Nhắc nhở phải trước giờ đến hạn.</string>
     <string name="reminder_in_past_error">Giờ nhắc nhở đó đã qua hôm nay.</string>

@@ -408,6 +408,11 @@
     <string name="task_deleted">Tarea eliminada</string>
     <string name="task_marked_open">Tarea marcada como abierta</string>
     <string name="task_completed">Tarea completada</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">Se añadió %1$d tarea compartida a la bandeja de entrada</item>
+        <item quantity="other">Se añadieron %1$d tareas compartidas a la bandeja de entrada</item>
+    </plurals>
+    <string name="task_transfer_import_failed">No se pudo importar este enlace de tarea de YATA.</string>
     <string name="export_failed">Error al exportar.</string>
     <string name="reminder_before_due_error">El recordatorio debe ser antes de la hora límite.</string>
     <string name="reminder_in_past_error">Esa hora de recordatorio ya pasó hoy.</string>

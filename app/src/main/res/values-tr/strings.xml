@@ -904,6 +904,11 @@
     <string name="task_deleted">Görev silindi</string>
     <string name="task_marked_open">Görev açık olarak işaretlendi</string>
     <string name="task_completed">Görev tamamlandı</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d paylaşılan görev Gelen kutusuna eklendi</item>
+        <item quantity="other">%1$d paylaşılan görev Gelen kutusuna eklendi</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Bu YATA görev bağlantısı içe aktarılamadı.</string>
     <string name="export_failed">Dışa aktarma başarısız oldu.</string>
     <string name="reminder_before_due_error">Hatırlatıcı, bitiş saatinden önce olmalıdır.</string>
     <string name="reminder_in_past_error">O hatırlatma saati bugün için zaten geçti.</string>

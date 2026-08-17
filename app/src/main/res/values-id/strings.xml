@@ -904,6 +904,11 @@
     <string name="task_deleted">Tugas dihapus</string>
     <string name="task_marked_open">Tugas ditandai terbuka</string>
     <string name="task_completed">Tugas selesai</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d tugas yang dibagikan ditambahkan ke Kotak Masuk</item>
+        <item quantity="other">%1$d tugas yang dibagikan ditambahkan ke Kotak Masuk</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Tidak dapat mengimpor tautan tugas YATA ini.</string>
     <string name="export_failed">Ekspor gagal.</string>
     <string name="reminder_before_due_error">Pengingat harus sebelum waktu jatuh tempo.</string>
     <string name="reminder_in_past_error">Waktu pengingat itu sudah lewat hari ini.</string>

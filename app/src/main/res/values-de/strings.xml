@@ -1120,6 +1120,11 @@
     <string name="task_deleted">Aufgabe gelöscht</string>
     <string name="task_marked_open">Aufgabe als offen markiert</string>
     <string name="task_completed">Aufgabe erledigt</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d geteilte Aufgabe zum Eingang hinzugefügt</item>
+        <item quantity="other">%1$d geteilte Aufgaben zum Eingang hinzugefügt</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Dieser YATA-Aufgabenlink konnte nicht importiert werden.</string>
     <string name="export_failed">Export fehlgeschlagen.</string>
     <string name="reminder_before_due_error">Die Erinnerung muss vor der Fälligkeitszeit liegen.</string>
     <string name="reminder_in_past_error">Diese Erinnerungszeit ist heute bereits verstrichen.</string>

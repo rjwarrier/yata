@@ -987,6 +987,11 @@
     <string name="task_deleted">ટાસ્ક કાઢી નાખવામાં આવ્યો</string>
     <string name="task_marked_open">ટાસ્ક ખુલ્લા તરીકે ચિહ્નિત થયું</string>
     <string name="task_completed">ટાસ્ક પૂર્ણ થયું</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d શેર કરેલ ટાસ્ક ઇનબોક્સમાં ઉમેરાયો</item>
+        <item quantity="other">%1$d શેર કરેલ ટાસ્ક ઇનબોક્સમાં ઉમેરાયા</item>
+    </plurals>
+    <string name="task_transfer_import_failed">આ YATA ટાસ્ક લિંક આયાત કરી શકાઈ નથી.</string>
     <string name="export_failed">એક્સપોર્ટ નિષ્ફળ.</string>
     <string name="reminder_before_due_error">રિમાઇન્ડર નિયત સમય પહેલા હોવું જોઈએ.</string>
     <string name="reminder_in_past_error">તે રિમાઇન્ડર સમય આજે પહેલેથી પસાર થઈ ગયો છે.</string>

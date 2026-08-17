@@ -904,6 +904,11 @@
     <string name="task_deleted">Úkol smazán</string>
     <string name="task_marked_open">Úkol označen jako otevřený</string>
     <string name="task_completed">Úkol dokončen</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">Do schránky přidán %1$d sdílený úkol</item>
+        <item quantity="other">Do schránky přidáno %1$d sdílených úkolů</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Tento odkaz na úkol YATA se nepodařilo importovat.</string>
     <string name="export_failed">Export selhal.</string>
     <string name="reminder_before_due_error">Připomenutí musí být před časem termínu.</string>
     <string name="reminder_in_past_error">Tento čas připomenutí už dnes uplynul.</string>

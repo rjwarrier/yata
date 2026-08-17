@@ -1012,6 +1012,11 @@
     <string name="task_deleted">कार्य हटा दिया गया</string>
     <string name="task_marked_open">कार्य को खुला चिह्नित किया गया</string>
     <string name="task_completed">कार्य पूर्ण हुआ</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d साझा किया गया कार्य इनबॉक्स में जोड़ा गया</item>
+        <item quantity="other">%1$d साझा किए गए कार्य इनबॉक्स में जोड़े गए</item>
+    </plurals>
+    <string name="task_transfer_import_failed">यह YATA कार्य लिंक आयात नहीं किया जा सका।</string>
     <string name="export_failed">निर्यात विफल रहा।</string>
     <string name="reminder_before_due_error">रिमाइंडर नियत समय से पहले होना चाहिए।</string>
     <string name="reminder_in_past_error">वह रिमाइंडर समय आज पहले ही बीत चुका है।</string>

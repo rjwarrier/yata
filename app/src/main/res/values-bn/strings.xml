@@ -904,6 +904,11 @@
     <string name="task_deleted">টাস্ক মুছে ফেলা হয়েছে</string>
     <string name="task_marked_open">টাস্ক খোলা হিসেবে চিহ্নিত হয়েছে</string>
     <string name="task_completed">টাস্ক সম্পন্ন হয়েছে</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$dটি শেয়ার করা টাস্ক ইনবক্সে যোগ করা হয়েছে</item>
+        <item quantity="other">%1$dটি শেয়ার করা টাস্ক ইনবক্সে যোগ করা হয়েছে</item>
+    </plurals>
+    <string name="task_transfer_import_failed">এই YATA টাস্ক লিঙ্ক আমদানি করা যায়নি।</string>
     <string name="export_failed">রপ্তানি ব্যর্থ হয়েছে।</string>
     <string name="reminder_before_due_error">রিমাইন্ডার অবশ্যই শেষ সময়ের আগে হতে হবে।</string>
     <string name="reminder_in_past_error">সেই রিমাইন্ডারের সময় আজ ইতিমধ্যে পার হয়ে গেছে।</string>

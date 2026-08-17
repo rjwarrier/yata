@@ -987,6 +987,11 @@
     <string name="task_deleted">कार्य हटवले</string>
     <string name="task_marked_open">कार्य खुले म्हणून चिन्हांकित केले</string>
     <string name="task_completed">कार्य पूर्ण झाले</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d सामायिक केलेले कार्य इनबॉक्समध्ये जोडले</item>
+        <item quantity="other">%1$d सामायिक केलेली कार्ये इनबॉक्समध्ये जोडली</item>
+    </plurals>
+    <string name="task_transfer_import_failed">हा YATA कार्य दुवा आयात करता आला नाही.</string>
     <string name="export_failed">निर्यात अयशस्वी.</string>
     <string name="reminder_before_due_error">स्मरणपत्र देय वेळेच्या आधी असणे आवश्यक आहे.</string>
     <string name="reminder_in_past_error">ती स्मरणपत्र वेळ आज आधीच निघून गेली आहे.</string>

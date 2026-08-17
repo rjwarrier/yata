@@ -904,6 +904,11 @@
     <string name="task_deleted">Sarcină ștearsă</string>
     <string name="task_marked_open">Sarcină marcată ca deschisă</string>
     <string name="task_completed">Sarcină finalizată</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d sarcină partajată adăugată în Inbox</item>
+        <item quantity="other">%1$d sarcini partajate adăugate în Inbox</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Acest link de sarcină YATA nu a putut fi importat.</string>
     <string name="export_failed">Export eșuat.</string>
     <string name="reminder_before_due_error">Memento-ul trebuie să fie înainte de ora termenului.</string>
     <string name="reminder_in_past_error">Acea oră de memento a trecut deja azi.</string>

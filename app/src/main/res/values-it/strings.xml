@@ -904,6 +904,11 @@
     <string name="task_deleted">Attività eliminata</string>
     <string name="task_marked_open">Attività contrassegnata come aperta</string>
     <string name="task_completed">Attività completata</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d attività condivisa aggiunta alla Posta in arrivo</item>
+        <item quantity="other">%1$d attività condivise aggiunte alla Posta in arrivo</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Impossibile importare questo link attività YATA.</string>
     <string name="export_failed">Esportazione non riuscita.</string>
     <string name="reminder_before_due_error">Il promemoria deve essere prima dell\'orario di scadenza.</string>
     <string name="reminder_in_past_error">Quell\'orario di promemoria è già passato oggi.</string>

@@ -987,6 +987,11 @@
     <string name="task_deleted">ടാസ്ക് ഇല്ലാതാക്കി</string>
     <string name="task_marked_open">ടാസ്ക് തുറന്നതായി അടയാളപ്പെടുത്തി</string>
     <string name="task_completed">ടാസ്ക് പൂർത്തിയാക്കി</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d പങ്കിട്ട ടാസ്ക് ഇൻബോക്സിലേക്ക് ചേർത്തു</item>
+        <item quantity="other">%1$d പങ്കിട്ട ടാസ്കുകൾ ഇൻബോക്സിലേക്ക് ചേർത്തു</item>
+    </plurals>
+    <string name="task_transfer_import_failed">ഈ YATA ടാസ്ക് ലിങ്ക് ഇറക്കുമതി ചെയ്യാനായില്ല.</string>
     <string name="export_failed">എക്സ്പോർട്ട് പരാജയപ്പെട്ടു.</string>
     <string name="reminder_before_due_error">ഓർമ്മപ്പെടുത്തൽ സമയപരിധിക്ക് മുൻപ് ആയിരിക്കണം.</string>
     <string name="reminder_in_past_error">ആ ഓർമ്മപ്പെടുത്തൽ സമയം ഇന്ന് ഇതിനകം കഴിഞ്ഞു.</string>

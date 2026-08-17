@@ -1012,6 +1012,11 @@
     <string name="task_deleted">Taak verwijderd</string>
     <string name="task_marked_open">Taak gemarkeerd als open</string>
     <string name="task_completed">Taak voltooid</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d gedeelde taak toegevoegd aan Inbox</item>
+        <item quantity="other">%1$d gedeelde taken toegevoegd aan Inbox</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Deze YATA-taaklink kon niet worden geïmporteerd.</string>
     <string name="export_failed">Exporteren mislukt.</string>
     <string name="reminder_before_due_error">Herinnering moet vóór de vervaltijd liggen.</string>
     <string name="reminder_in_past_error">Die herinneringstijd is vandaag al voorbij.</string>

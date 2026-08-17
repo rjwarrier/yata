@@ -772,6 +772,11 @@
     <string name="task_deleted">Tarefa excluída</string>
     <string name="task_marked_open">Tarefa marcada como aberta</string>
     <string name="task_completed">Tarefa concluída</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d tarefa compartilhada adicionada à Caixa de entrada</item>
+        <item quantity="other">%1$d tarefas compartilhadas adicionadas à Caixa de entrada</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Não foi possível importar este link de tarefa do YATA.</string>
     <string name="export_failed">Falha na exportação.</string>
     <string name="reminder_before_due_error">O lembrete deve ser antes do prazo.</string>
     <string name="reminder_in_past_error">Esse tempo de lembrete já passou hoje.</string>

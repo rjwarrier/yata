@@ -904,6 +904,11 @@
     <string name="task_deleted">Zadanie usunięte</string>
     <string name="task_marked_open">Zadanie oznaczone jako otwarte</string>
     <string name="task_completed">Zadanie ukończone</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">Dodano %1$d udostępnione zadanie do skrzynki</item>
+        <item quantity="other">Dodano %1$d udostępnionych zadań do skrzynki</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Nie udało się zaimportować tego linku zadania YATA.</string>
     <string name="export_failed">Eksport nie powiódł się.</string>
     <string name="reminder_before_due_error">Przypomnienie musi być przed godziną terminu.</string>
     <string name="reminder_in_past_error">Ta godzina przypomnienia już minęła dzisiaj.</string>

@@ -987,6 +987,11 @@
     <string name="task_deleted">టాస్క్ తొలగించబడింది</string>
     <string name="task_marked_open">టాస్క్ తెరిచినట్లు గుర్తించబడింది</string>
     <string name="task_completed">టాస్క్ పూర్తయింది</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d భాగస్వామ్యం చేసిన టాస్క్ ఇన్‌బాక్స్‌కు జోడించబడింది</item>
+        <item quantity="other">%1$d భాగస్వామ్యం చేసిన టాస్క్‌లు ఇన్‌బాక్స్‌కు జోడించబడ్డాయి</item>
+    </plurals>
+    <string name="task_transfer_import_failed">ఈ YATA టాస్క్ లింక్‌ను దిగుమతి చేయలేకపోయింది.</string>
     <string name="export_failed">ఎగుమతి విఫలమైంది.</string>
     <string name="reminder_before_due_error">రిమైండర్ గడువు సమయానికి ముందు ఉండాలి.</string>
     <string name="reminder_in_past_error">ఆ రిమైండర్ సమయం ఈరోజు ఇప్పటికే గడిచిపోయింది.</string>
