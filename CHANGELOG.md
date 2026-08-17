@@ -29,7 +29,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   of the two encodings is actually shorter for the text being shared, instead of guessing from the
   task's shape — which had made a single shared task up to twice as long in Hindi, Tamil, Telugu,
   Bengali and Malayalam. Sharing several simple tasks at once also produces a shorter, readable
-  link now.
+  link now, and readable links can carry notes and subtasks instead of falling back to the
+  encoded form. Links shared before this change keep importing correctly.
 
 ## [0.93.1] - 2026-08-16
 

@@ -31,10 +31,16 @@ private const val TRANSFER_SCHEME = "yata"
 private const val LEGACY_HOST = "import"
 private const val LEGACY_PATH = "/tasks"
 
-// Current (v2) links. Raw-deflate-compressed compact positional JSON; the format version lives
-// in the host, not the payload, so the importer can dispatch before spending work decompressing.
-// See docs/app-links-v2-plan.md.
+// Current links, all under one host. The encoding is identified by which query parameter carries
+// the payload, which costs no characters at all — a "v=3" parameter would spend four, and a
+// second host letter per version would leave isTaskTransferUri knowing every historical letter
+// forever. See docs/app-links-v2-plan.md and docs/app-links-v3-plan.md.
+//   t=…  plaintext form (repeated, one per task)
+//   e=…  v3 compressed payload
+//   d=…  v2 compressed payload (decode only; no longer generated)
 private const val HOST = "i"
+private const val PARAM_V3_PAYLOAD = "e"
+private const val PARAM_V2_PAYLOAD = "d"
 
 private const val MAX_DECODED_BYTES = 256_000
 
@@ -131,9 +137,11 @@ private fun buildCompressedTransferLink(
     val tagIndex = tags.mapIndexed { index, tag -> tag.id to index }.toMap()
     val personIndex = people.mapIndexed { index, person -> person.id to index }.toMap()
 
+    // v3 layout: [version, lists, projects, tags, people, tasks]. v2 carried the share title at
+    // index 1, which no importer ever read — the share text around the link already shows it —
+    // so every compressed link was paying 16-24 characters for a field nobody consumed.
     val payload = JSONArray()
-        .put(2)
-        .put(title)
+        .put(3)
         .put(JSONArray().also { array -> lists.forEach { array.put(it.toTransferRow()) } })
         .put(JSONArray().also { array -> projects.forEach { array.put(it.toTransferRow(tagIndex)) } })
         .put(JSONArray().also { array -> tags.forEach { array.put(it.toTransferRow()) } })
@@ -153,41 +161,42 @@ private fun buildCompressedTransferLink(
             }
         })
 
-    val encoded = encodeV2Payload(payload)
-    val uri = Uri.Builder()
-        .scheme(TRANSFER_SCHEME)
-        .authority(HOST)
-        .appendQueryParameter("s", if (includeStructure) "1" else "0")
-        .appendQueryParameter("d", encoded)
-        .build()
-        .toString()
-    return TaskTransferLink(uri = uri, includesStructure = includeStructure)
+    val builder = Uri.Builder().scheme(TRANSFER_SCHEME).authority(HOST)
+    // "s" is emitted only when set: the import side already reads absence as false, so spelling
+    // out the default cost four characters to say nothing.
+    if (includeStructure) builder.appendQueryParameter("s", "1")
+    builder.appendQueryParameter(PARAM_V3_PAYLOAD, encodeCompressedPayload(payload))
+    return TaskTransferLink(uri = builder.build().toString(), includesStructure = includeStructure)
 }
 
 /** Readable, uncompressed alternative encoding: the task titles ride in the query string as-is,
- * so the receiver can see what they're about to import before tapping. Returns null when the
- * share carries anything this form can't express (structure, notes, subtasks) — the caller then
- * has only the compressed candidate to use. Being *representable* is not the same as being
- * *shorter*; the caller decides that by measuring both. */
+ * so the receiver can see what they're about to import before tapping. Returns null only when the
+ * share copies structure, which this form deliberately doesn't express — an index-referenced
+ * dictionary costs more in query parameters than it saves, and it is exactly the high-volume case
+ * DEFLATE handles best. Being *representable* is not the same as being *shorter*; the caller
+ * decides that by measuring both. */
 private fun buildPlaintextTransferLink(
     tasks: List<Task>,
     includeStructure: Boolean,
     includeNotes: Boolean
 ): TaskTransferLink? {
     if (tasks.isEmpty() || includeStructure) return null
-    if (tasks.any { it.subtasks.isNotEmpty() }) return null
-    if (includeNotes && tasks.any { !it.notes.isNullOrBlank() }) return null
 
     val builder = Uri.Builder().scheme(TRANSFER_SCHEME).authority(HOST)
     tasks.forEach { builder.appendQueryParameter("t", it.title) }
-    // Priority/flag are carried as "p<index>"/"f<index>" against the task's position in the "t"
-    // list, so a task holding the default can simply be left out. Emitting them positionally
-    // instead would mean spending 8 characters per task on values that are almost always the
-    // default, just to keep later tasks aligned.
+    // Everything per-task is keyed by the task's index in the "t" list rather than written
+    // positionally, so a task holding a default can be left out entirely. Positional encoding
+    // would mean spending characters on every task's defaults purely to keep later tasks
+    // aligned. Subtasks repeat their indexed key ("b0" twice = two subtasks on task 0), which
+    // keeps per-task grouping without needing a delimiter inside the value.
     tasks.forEachIndexed { index, task ->
         val priorityIndex = PRIORITIES.indexOf(task.priority).coerceAtLeast(0)
         if (priorityIndex != 0) builder.appendQueryParameter("p$index", priorityIndex.toString())
         if (task.flag) builder.appendQueryParameter("f$index", "1")
+        task.notes?.takeIf { includeNotes && it.isNotBlank() }?.let {
+            builder.appendQueryParameter("n$index", it)
+        }
+        task.subtasks.forEach { builder.appendQueryParameter("b$index", it.title) }
     }
     return TaskTransferLink(uri = builder.build().toString(), includesStructure = false)
 }
@@ -284,7 +293,7 @@ private fun JSONArray.trimTrailingDefaults(defaultTag3: JSONArray? = null, defau
     return this
 }
 
-private fun encodeV2Payload(payload: JSONArray): String {
+private fun encodeCompressedPayload(payload: JSONArray): String {
     val bytes = payload.toString().toByteArray(Charsets.UTF_8)
     val deflater = Deflater(Deflater.BEST_COMPRESSION, true)
     val zipped = ByteArrayOutputStream().use { bytesOut ->
@@ -324,16 +333,15 @@ class TaskTransferImporter @Inject constructor(
 ) {
     suspend fun importFrom(uri: Uri): TaskTransferImportResult {
         require(isTaskTransferUri(uri)) { "Not a YATA task import link." }
-        if (uri.host != LEGACY_HOST && isPlaintextTransferUri(uri)) {
-            return importPlaintext(uri)
-        }
-        val encoded = uri.getQueryParameter("d").orEmpty()
+        // Absence of "s" reads as false, which is what lets the builder omit it at its default.
         val copyStructure = uri.getQueryParameter("s") == "1"
-        return if (uri.host == LEGACY_HOST) {
-            importLegacyV1(encoded, copyStructure)
-        } else {
-            importV2(encoded, copyStructure)
+        if (uri.host == LEGACY_HOST) {
+            return importLegacyV1(uri.getQueryParameter(PARAM_V2_PAYLOAD).orEmpty(), copyStructure)
         }
+        if (isPlaintextTransferUri(uri)) return importPlaintext(uri)
+        uri.getQueryParameter(PARAM_V3_PAYLOAD)?.let { return importV3(it, copyStructure) }
+        uri.getQueryParameter(PARAM_V2_PAYLOAD)?.let { return importV2(it, copyStructure) }
+        throw IllegalArgumentException("Unsupported YATA task link.")
     }
 
     private suspend fun importPlaintext(uri: Uri): TaskTransferImportResult {
@@ -363,8 +371,12 @@ class TaskTransferImporter @Inject constructor(
                 assigneeIds = emptyList(),
                 tagIds = emptyList(),
                 recurrence = null,
-                subtasks = emptyList(),
-                notes = null,
+                subtasks = uri.getQueryParameters("b$index").mapIndexedNotNull { subIndex, rawSub ->
+                    val subTitle = rawSub.trim()
+                    if (subTitle.isBlank()) return@mapIndexedNotNull null
+                    Subtask(id = newId("import_subtask"), title = subTitle, done = false, parentSubtaskId = null, sortOrder = subIndex)
+                },
+                notes = uri.getQueryParameter("n$index")?.trim()?.takeIf { it.isNotBlank() },
                 sortOrder = System.currentTimeMillis().toInt(),
                 seriesId = null,
                 archived = false,
@@ -378,18 +390,33 @@ class TaskTransferImporter @Inject constructor(
         return TaskTransferImportResult(tasks.size, false)
     }
 
-    // --- v2 -------------------------------------------------------------------------------
+    // --- v2 / v3 ---------------------------------------------------------------------------
+    //
+    // The two differ only in whether a (never-read) share title sits at index 1, so the section
+    // indices shift by one. Task row layout is identical, which is the bulk of the parsing —
+    // hence one decoder taking the offset rather than two near-copies that could drift apart.
 
-    private suspend fun importV2(encoded: String, copyStructure: Boolean): TaskTransferImportResult {
+    private suspend fun importV3(encoded: String, copyStructure: Boolean) =
+        importCompressed(encoded, copyStructure, expectedVersion = 3, dictionaryBase = 1)
+
+    private suspend fun importV2(encoded: String, copyStructure: Boolean) =
+        importCompressed(encoded, copyStructure, expectedVersion = 2, dictionaryBase = 2)
+
+    private suspend fun importCompressed(
+        encoded: String,
+        copyStructure: Boolean,
+        expectedVersion: Int,
+        dictionaryBase: Int
+    ): TaskTransferImportResult {
         val payload = JSONArray(decodeCompressedPayload(encoded, inflate = true))
-        require(payload.optInt(0) == 2) { "Unsupported YATA task link." }
+        require(payload.optInt(0) == expectedVersion) { "Unsupported YATA task link." }
 
-        val tagMap = if (copyStructure) importTagsV2(payload.optJSONArray(4)) else emptyList()
-        val listMap = if (copyStructure) importListsV2(payload.optJSONArray(2)) else emptyList()
-        val projectMap = if (copyStructure) importProjectsV2(payload.optJSONArray(3), tagMap) else emptyList()
-        val personMap = if (copyStructure) importPeopleV2(payload.optJSONArray(5)) else emptyList()
+        val tagMap = if (copyStructure) importTagsV2(payload.optJSONArray(dictionaryBase + 2)) else emptyList()
+        val listMap = if (copyStructure) importListsV2(payload.optJSONArray(dictionaryBase)) else emptyList()
+        val projectMap = if (copyStructure) importProjectsV2(payload.optJSONArray(dictionaryBase + 1), tagMap) else emptyList()
+        val personMap = if (copyStructure) importPeopleV2(payload.optJSONArray(dictionaryBase + 3)) else emptyList()
 
-        val tasks = payload.optJSONArray(6).orEmptySequence().mapNotNull { value ->
+        val tasks = payload.optJSONArray(dictionaryBase + 4).orEmptySequence().mapNotNull { value ->
             val row = value as? JSONArray ?: return@mapNotNull null
             val title = row.optString(0).trim()
             if (title.isBlank()) return@mapNotNull null

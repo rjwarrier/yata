@@ -145,19 +145,41 @@ class TaskTransferLinkTest {
         assertTrue(withStructure.includesStructure)
         assertEquals("1", Uri.parse(withStructure.uri).getQueryParameter("s"))
 
-        // A subtask forces the compressed form — plaintext can't express one, so this can't drift
-        // back onto the readable path the way a task-count-based trigger did once size-based
-        // selection landed. The plaintext path has no "s" param at all and is covered separately.
+        // Non-Latin text is what reliably forces the compressed form now: plaintext can express
+        // every field except structure, so the only thing that rules it out on a
+        // structure-free share is losing on length. (An earlier revision of this test used a
+        // subtask, which stopped working the moment plaintext learned to carry subtasks.)
         val withoutStructure = buildTaskTransferLink(
-            title = "Work",
-            tasks = listOf(
-                task("t1", listId = "list1", subtasks = listOf(Subtask(id = "s1", title = "Step", done = false)))
-            ),
+            title = "பணிகள்",
+            tasks = listOf(task("t1", title = "மின்சார கட்டணம் செலுத்து", listId = "list1")),
             listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
+        assertNotNull(Uri.parse(withoutStructure.uri).getQueryParameter("e"))
         assertFalse(withoutStructure.includesStructure)
-        assertEquals("0", Uri.parse(withoutStructure.uri).getQueryParameter("s"))
+        // "s" is omitted rather than spelled out as 0 — absence already means "don't copy
+        // structure" on the import side, so writing the default cost four characters to say
+        // nothing (docs/app-links-v3-plan.md §D).
+        assertNull(Uri.parse(withoutStructure.uri).getQueryParameter("s"))
+    }
+
+    @Test
+    fun absentStructureFlag_importsIdenticallyToAnExplicitZero() = runTest {
+        val payload = JSONArray().put(3).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
+            .put(JSONArray().put(JSONArray().put("Task")))
+
+        val absent = FakeYataRepository()
+        TaskTransferImporter(absent).importFrom(manualCompressedUri(payload, "e"))
+
+        val explicitZero = FakeYataRepository()
+        val withZero = Uri.parse(manualCompressedUri(payload, "e").toString() + "&s=0")
+        TaskTransferImporter(explicitZero).importFrom(withZero)
+
+        assertEquals(1, absent.tasksFlow.value.size)
+        assertEquals(
+            absent.tasksFlow.value.single().title,
+            explicitZero.tasksFlow.value.single().title
+        )
     }
 
     @Test
@@ -325,9 +347,13 @@ class TaskTransferLinkTest {
 
     @Test
     fun subtasks_titlesAndOrderSurvive_butDoneAndParentAreReset() = runTest {
+        // Pinned on the compressed path specifically (forced via a non-Latin title) — the
+        // plaintext path carries subtasks too now and is covered separately, and this assertion
+        // should keep holding for both rather than silently following whichever one wins.
         val repo = FakeYataRepository()
         val importer = TaskTransferImporter(repo)
         val original = task(
+            title = "மின்சார கட்டணம் செலுத்து",
             subtasks = listOf(
                 Subtask(id = "s1", title = "Check amount", done = true, sortOrder = 0),
                 Subtask(id = "s2", title = "Confirm payee", done = false, parentSubtaskId = "s1", sortOrder = 1)
@@ -338,6 +364,7 @@ class TaskTransferLinkTest {
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
+        assertNotNull(Uri.parse(link.uri).getQueryParameter("e"))
 
         importer.importFrom(importUri(link.uri))
 
@@ -405,7 +432,7 @@ class TaskTransferLinkTest {
             includeStructure = false, includeNotes = false
         )
         val uri = Uri.parse(link.uri)
-        assertNull(uri.getQueryParameter("d"))
+        assertNull(uri.getQueryParameter("e"))
         assertEquals("Pay electricity bill", uri.getQueryParameter("t"))
         // Default priority/flag are omitted entirely, not just zeroed, to keep the readable link short.
         assertNull(uri.getQueryParameter("p0"))
@@ -424,7 +451,7 @@ class TaskTransferLinkTest {
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        assertNotNull(Uri.parse(link.uri).getQueryParameter("d"))
+        assertNotNull(Uri.parse(link.uri).getQueryParameter("e"))
         assertNull(Uri.parse(link.uri).getQueryParameter("t"))
     }
 
@@ -504,13 +531,75 @@ class TaskTransferLinkTest {
     }
 
     @Test
-    fun taskWithNotes_doesNotUseThePlaintextPath_whenNotesAreIncluded() {
+    fun plaintextForm_canNowCarryNotesAndSubtasks_andRoundTripsThem() = runTest {
+        // Phase C: previously these forced the compressed form regardless of whether it was
+        // shorter. Now they're expressible, so size selection gets to consider both.
+        val repo = FakeYataRepository()
+        val original = task(
+            notes = "call first",
+            subtasks = listOf(
+                Subtask(id = "s1", title = "Check amount", done = true, sortOrder = 0),
+                Subtask(id = "s2", title = "Confirm payee", done = false, sortOrder = 1)
+            )
+        )
         val link = buildTaskTransferLink(
-            title = "Pay bill", tasks = listOf(task(notes = "call first")), listsById = emptyMap(),
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = true
         )
-        assertNull(Uri.parse(link.uri).getQueryParameter("t"))
+        assertNotNull(Uri.parse(link.uri).getQueryParameter("t"))
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("call first", imported.notes)
+        assertEquals(listOf("Check amount", "Confirm payee"), imported.subtasks.map { it.title })
+        // Same normalization as the compressed path: subtasks always arrive not-done and flat.
+        assertTrue(imported.subtasks.none { it.done })
+        assertTrue(imported.subtasks.all { it.parentSubtaskId == null })
+    }
+
+    @Test
+    fun plaintextForm_keepsNotesAndSubtasksOnTheRightTask() = runTest {
+        // Per-task alignment across repeated/indexed parameters, with the middle task the only
+        // one carrying anything — the case a naive positional encoding gets wrong.
+        val repo = FakeYataRepository()
+        val tasks = listOf(
+            task("t1", title = "First", priority = "none"),
+            task("t2", title = "Second", priority = "none", notes = "only note",
+                subtasks = listOf(Subtask(id = "s1", title = "Only subtask", done = false))),
+            task("t3", title = "Third", priority = "none")
+        )
+        val link = buildTaskTransferLink(
+            title = "Work", tasks = tasks, listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = true
+        )
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.associateBy { it.title }
+        assertEquals(3, imported.size)
+        assertNull(imported.getValue("First").notes)
+        assertEquals("only note", imported.getValue("Second").notes)
+        assertNull(imported.getValue("Third").notes)
+        assertTrue(imported.getValue("First").subtasks.isEmpty())
+        assertEquals(listOf("Only subtask"), imported.getValue("Second").subtasks.map { it.title })
+        assertTrue(imported.getValue("Third").subtasks.isEmpty())
+    }
+
+    @Test
+    fun notesAreStillDroppedFromThePlaintextForm_whenNotesAreExcluded() = runTest {
+        val repo = FakeYataRepository()
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task(notes = "secret")), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertNull(Uri.parse(link.uri).getQueryParameter("n0"))
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+        assertNull(repo.tasksFlow.value.single().notes)
     }
 
     @Test
@@ -660,10 +749,10 @@ class TaskTransferLinkTest {
 
     @Test
     fun emptyTasksArray_isRejected() = runTest {
-        val payload = JSONArray().put(2).put("x").put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
-        val uri = manualV2Uri(payload)
+        // v3 layout: [version, lists, projects, tags, people, tasks] — no share title.
+        val payload = JSONArray().put(3).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
         try {
-            TaskTransferImporter(FakeYataRepository()).importFrom(uri)
+            TaskTransferImporter(FakeYataRepository()).importFrom(manualCompressedUri(payload, "e"))
             fail("expected import of an empty task list to be rejected")
         } catch (e: IllegalArgumentException) {
             assertTrue(e.message.orEmpty().contains("No tasks found"))
@@ -672,15 +761,47 @@ class TaskTransferLinkTest {
 
     @Test
     fun unsupportedVersion_isRejected() = runTest {
-        val payload = JSONArray().put(99).put("x").put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
+        val payload = JSONArray().put(99).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
             .put(JSONArray().put(JSONArray().put("Task")))
-        val uri = manualV2Uri(payload)
         try {
-            TaskTransferImporter(FakeYataRepository()).importFrom(uri)
+            TaskTransferImporter(FakeYataRepository()).importFrom(manualCompressedUri(payload, "e"))
             fail("expected an unrecognized version to be rejected")
         } catch (e: IllegalArgumentException) {
             assertTrue(e.message.orEmpty().contains("Unsupported"))
         }
+    }
+
+    @Test
+    fun v2CompressedPayload_stillImports() = runTest {
+        // Links generated before the title field was dropped. v2 kept the (unread) share title at
+        // index 1, so every section sits one slot later than in v3.
+        val repo = FakeYataRepository()
+        val payload = JSONArray().put(2).put("Shared task set")
+            .put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
+            .put(JSONArray().put(JSONArray().put("Pay electricity bill").put(3).put(true)))
+
+        val result = TaskTransferImporter(repo).importFrom(manualCompressedUri(payload, "d"))
+
+        assertEquals(1, result.taskCount)
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("Pay electricity bill", imported.title)
+        assertEquals("high", imported.priority)
+        assertTrue(imported.flag)
+    }
+
+    @Test
+    fun v2CompressedPayload_withStructure_stillResolvesDictionaryIndexes() = runTest {
+        val repo = FakeYataRepository()
+        val payload = JSONArray().put(2).put("Work")
+            .put(JSONArray().put(JSONArray().put("Work").put("accentA").put("folder")))
+            .put(JSONArray()).put(JSONArray()).put(JSONArray())
+            .put(JSONArray().put(JSONArray().put("Task").put(0).put(false).put("").put(0)))
+
+        TaskTransferImporter(repo).importFrom(manualCompressedUri(payload, "d", copyStructure = true))
+
+        val list = repo.listsFlow.value.single()
+        assertEquals("Work", list.name)
+        assertEquals(list.id, repo.tasksFlow.value.single().listId)
     }
 
     @Test
@@ -726,10 +847,11 @@ class TaskTransferLinkTest {
         }
     }
 
-    /** Hand-builds a yata://i link from a raw v2 payload array, bypassing the production
-     * encoder — used only to exercise importer-side validation (version, empty tasks) that
-     * [buildTaskTransferLink] can't produce on its own. */
-    private fun manualV2Uri(payload: JSONArray): Uri {
+    /** Hand-builds a yata://i link from a raw payload array under the given payload parameter
+     * ("e" = v3, "d" = v2), bypassing the production encoder. Needed both for importer-side
+     * validation that [buildTaskTransferLink] can't produce (bad version, empty task list) and
+     * for v2 payloads, which the builder no longer emits at all. */
+    private fun manualCompressedUri(payload: JSONArray, param: String, copyStructure: Boolean = false): Uri {
         val bytes = payload.toString().toByteArray(Charsets.UTF_8)
         val deflater = java.util.zip.Deflater(java.util.zip.Deflater.BEST_COMPRESSION, true)
         val zipped = ByteArrayOutputStream().use { out ->
@@ -738,8 +860,8 @@ class TaskTransferLinkTest {
         }
         val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(zipped)
         return Uri.Builder().scheme("yata").authority("i")
-            .appendQueryParameter("s", "0")
-            .appendQueryParameter("d", encoded)
+            .also { if (copyStructure) it.appendQueryParameter("s", "1") }
+            .appendQueryParameter(param, encoded)
             .build()
     }
 
