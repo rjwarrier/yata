@@ -42,6 +42,20 @@ private const val HOST = "i"
 private const val PARAM_V3_PAYLOAD = "e"
 private const val PARAM_V2_PAYLOAD = "d"
 
+// Shared links are https, not yata://, because messaging apps only linkify known schemes — a
+// custom-scheme link arrives as inert text the recipient cannot tap, which made the whole feature
+// unusable over chat. The yata:// form is still accepted (already-shared links, Tasker,
+// automation) but is no longer what gets handed to a human.
+//
+// The payload rides in the URL **fragment**, never the query string: fragments are not sent to
+// the server, and messaging apps fetch link previews server-side, so a query-string payload would
+// hand task titles and notes to every preview crawler that touches the message. With the payload
+// in the fragment the crawler fetches a bare URL and learns nothing.
+// See docs/app-links-reliability-plan.md §0.
+private const val WEB_SCHEME = "https"
+private const val WEB_HOST = "ranjithj.in"
+private const val WEB_PATH = "/yata/i"
+
 private const val MAX_DECODED_BYTES = 256_000
 
 // Above this, some messaging/email apps stop turning the link into something tappable — see
@@ -166,7 +180,7 @@ private fun buildCompressedTransferLink(
     // out the default cost four characters to say nothing.
     if (includeStructure) builder.appendQueryParameter("s", "1")
     builder.appendQueryParameter(PARAM_V3_PAYLOAD, encodeCompressedPayload(payload))
-    return TaskTransferLink(uri = builder.build().toString(), includesStructure = includeStructure)
+    return TaskTransferLink(uri = webTransferUri(builder.build()), includesStructure = includeStructure)
 }
 
 /** Readable, uncompressed alternative encoding: the task titles ride in the query string as-is,
@@ -198,15 +212,38 @@ private fun buildPlaintextTransferLink(
         }
         task.subtasks.forEach { builder.appendQueryParameter("b$index", it.title) }
     }
-    return TaskTransferLink(uri = builder.build().toString(), includesStructure = false)
+    return TaskTransferLink(uri = webTransferUri(builder.build()), includesStructure = false)
 }
 
 private fun isPlaintextTransferUri(uri: Uri): Boolean = uri.getQueryParameter("t") != null
 
 fun isTaskTransferUri(uri: Uri?): Boolean {
-    if (uri?.scheme != TRANSFER_SCHEME) return false
+    if (uri == null) return false
+    if (isWebTransferUri(uri)) return true
+    if (uri.scheme != TRANSFER_SCHEME) return false
     return uri.host == HOST || (uri.host == LEGACY_HOST && uri.path == LEGACY_PATH)
 }
+
+private fun isWebTransferUri(uri: Uri): Boolean =
+    uri.scheme == WEB_SCHEME && uri.host == WEB_HOST && uri.path == WEB_PATH
+
+/** Rewrites the https form into the parameter-bearing shape the rest of this file reads.
+ *
+ * The payload lives in the fragment, so there are no query parameters to read directly. Parsing
+ * `"?" + fragment` turns it back into a Uri whose getQueryParameter(s) work exactly as they do for
+ * the yata:// form, which keeps every decoder below unaware of which transport delivered it. */
+private fun transferParams(uri: Uri): Uri =
+    if (isWebTransferUri(uri)) Uri.parse("?" + uri.encodedFragment.orEmpty()) else uri
+
+/** Wraps already-built transfer parameters into the shareable https link. */
+private fun webTransferUri(params: Uri): String =
+    Uri.Builder()
+        .scheme(WEB_SCHEME)
+        .authority(WEB_HOST)
+        .path(WEB_PATH)
+        .encodedFragment(params.encodedQuery)
+        .build()
+        .toString()
 
 // --- v2 row shapes -------------------------------------------------------------------------
 //
@@ -333,14 +370,17 @@ class TaskTransferImporter @Inject constructor(
 ) {
     suspend fun importFrom(uri: Uri): TaskTransferImportResult {
         require(isTaskTransferUri(uri)) { "Not a YATA task import link." }
+        // Everything below reads parameters, not the transport: the https form carries them in the
+        // fragment, the yata:// form in the query string, and transferParams normalises the two.
+        val params = transferParams(uri)
         // Absence of "s" reads as false, which is what lets the builder omit it at its default.
-        val copyStructure = uri.getQueryParameter("s") == "1"
-        if (uri.host == LEGACY_HOST) {
-            return importLegacyV1(uri.getQueryParameter(PARAM_V2_PAYLOAD).orEmpty(), copyStructure)
+        val copyStructure = params.getQueryParameter("s") == "1"
+        if (uri.scheme == TRANSFER_SCHEME && uri.host == LEGACY_HOST) {
+            return importLegacyV1(params.getQueryParameter(PARAM_V2_PAYLOAD).orEmpty(), copyStructure)
         }
-        if (isPlaintextTransferUri(uri)) return importPlaintext(uri)
-        uri.getQueryParameter(PARAM_V3_PAYLOAD)?.let { return importV3(it, copyStructure) }
-        uri.getQueryParameter(PARAM_V2_PAYLOAD)?.let { return importV2(it, copyStructure) }
+        if (isPlaintextTransferUri(params)) return importPlaintext(params)
+        params.getQueryParameter(PARAM_V3_PAYLOAD)?.let { return importV3(it, copyStructure) }
+        params.getQueryParameter(PARAM_V2_PAYLOAD)?.let { return importV2(it, copyStructure) }
         throw IllegalArgumentException("Unsupported YATA task link.")
     }
 

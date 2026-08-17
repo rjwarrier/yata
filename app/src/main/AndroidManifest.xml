@@ -75,13 +75,31 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!-- Deep links: yata://task/<id> and friends, so a task can be linked from a note,
-                 an email, or an automation. Custom scheme rather than an https App Link, which
-                 would need a verified assetlinks.json on a domain this app doesn't have. -->
+                 an email, or an automation. Kept for links already shared and for Tasker, but no
+                 longer the form handed to a person: messaging apps only linkify known schemes, so
+                 a yata:// link arrives as text nobody can tap. -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="yata" />
+            </intent-filter>
+            <!-- Shared task links. https so chat apps turn them into something tappable, and
+                 verified via https://ranjithj.in/.well-known/assetlinks.json so they open YATA
+                 directly — on Android 12+ an *unverified* https link goes straight to the browser
+                 with no chooser, so autoVerify is doing real work here, not decoration.
+                 assetlinks.json must list the SHA-256 fingerprints of BOTH the release and debug
+                 signing certs, or verification silently fails on debug builds.
+                 The task payload travels in the URL fragment, which is never sent to the server —
+                 see docs/app-links-reliability-plan.md §0. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="ranjithj.in"
+                    android:pathPrefix="/yata/i" />
             </intent-filter>
             <meta-data
                 android:name="android.app.shortcuts"

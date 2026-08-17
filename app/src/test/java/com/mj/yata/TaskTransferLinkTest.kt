@@ -84,6 +84,12 @@ class TaskTransferLinkTest {
 
     private fun importUri(link: String): Uri = Uri.parse(link)
 
+    /** Shared links carry their payload in the URL fragment (so link-preview crawlers never
+     * receive it), so the parameters aren't reachable via getQueryParameter on the link itself.
+     * This reproduces the same fragment-to-parameters step the importer does. */
+    private fun linkParams(link: String): Uri =
+        Uri.parse("?" + Uri.parse(link).encodedFragment.orEmpty())
+
     // --- isTaskTransferUri -------------------------------------------------------------
 
     @Test
@@ -106,6 +112,73 @@ class TaskTransferLinkTest {
         assertTrue(isTaskTransferUri(Uri.parse("yata://import/tasks?s=0&d=x")))
     }
 
+    @Test
+    fun shareableHttpsLink_isRecognized() {
+        assertTrue(isTaskTransferUri(Uri.parse("https://ranjithj.in/yata/i#e=x")))
+    }
+
+    @Test
+    fun otherPathsOnTheSameDomain_areNotTransferLinks() {
+        // The site has other pages; only the import path may be claimed by the app, or tapping
+        // any link to the website would open YATA.
+        assertFalse(isTaskTransferUri(Uri.parse("https://ranjithj.in/yata/")))
+        assertFalse(isTaskTransferUri(Uri.parse("https://ranjithj.in/")))
+    }
+
+    @Test
+    fun yataSchemeLink_stillImports_soAlreadySharedLinksAndTaskerKeepWorking() = runTest {
+        val repo = FakeYataRepository()
+        // The yata:// form carries its parameters in the query string rather than the fragment.
+        val uri = Uri.Builder().scheme("yata").authority("i")
+            .appendQueryParameter("t", "Pay electricity bill")
+            .appendQueryParameter("p0", "3")
+            .build()
+
+        val result = TaskTransferImporter(repo).importFrom(uri)
+
+        assertEquals(1, result.taskCount)
+        assertEquals("Pay electricity bill", repo.tasksFlow.value.single().title)
+        assertEquals("high", repo.tasksFlow.value.single().priority)
+    }
+
+    @Test
+    fun httpsLink_roundTripsThroughTheFragment() = runTest {
+        val repo = FakeYataRepository()
+        val original = task(title = "Pay electricity bill", priority = "high", flag = true)
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertTrue(link.uri.startsWith("https://"))
+
+        val result = TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        assertEquals(1, result.taskCount)
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("Pay electricity bill", imported.title)
+        assertEquals("high", imported.priority)
+        assertTrue(imported.flag)
+    }
+
+    @Test
+    fun httpsCompressedLink_roundTripsWithStructure() = runTest {
+        val repo = FakeYataRepository()
+        val list = YataList(id = "list1", name = "Work", color = "accentA", icon = "folder")
+        val original = task(title = "மின்சார கட்டணம் செலுத்து", listId = list.id)
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = mapOf(list.id to list),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = true, includeNotes = false
+        )
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val importedList = repo.listsFlow.value.single()
+        assertEquals("Work", importedList.name)
+        assertEquals(importedList.id, repo.tasksFlow.value.single().listId)
+    }
+
     // --- build/share text ---------------------------------------------------------------
 
     @Test
@@ -118,7 +191,11 @@ class TaskTransferLinkTest {
         val text = link.asShareText("Pay bill", 1)
         assertTrue(text.contains("shared task: Pay bill"))
         assertTrue(text.contains(link.uri))
-        assertTrue(link.uri.startsWith("yata://i?"))
+        // Shared links are https so chat apps linkify them, with the payload in the fragment.
+        assertTrue(link.uri, link.uri.startsWith("https://ranjithj.in/yata/i#"))
+        // The payload must never sit in the query string: link-preview crawlers fetch the URL
+        // server-side, and anything before the "#" would be handed to them.
+        assertNull(Uri.parse(link.uri).query)
     }
 
     @Test
@@ -143,7 +220,7 @@ class TaskTransferLinkTest {
             includeStructure = true, includeNotes = false
         )
         assertTrue(withStructure.includesStructure)
-        assertEquals("1", Uri.parse(withStructure.uri).getQueryParameter("s"))
+        assertEquals("1", linkParams(withStructure.uri).getQueryParameter("s"))
 
         // Non-Latin text is what reliably forces the compressed form now: plaintext can express
         // every field except structure, so the only thing that rules it out on a
@@ -155,12 +232,12 @@ class TaskTransferLinkTest {
             listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        assertNotNull(Uri.parse(withoutStructure.uri).getQueryParameter("e"))
+        assertNotNull(linkParams(withoutStructure.uri).getQueryParameter("e"))
         assertFalse(withoutStructure.includesStructure)
         // "s" is omitted rather than spelled out as 0 — absence already means "don't copy
         // structure" on the import side, so writing the default cost four characters to say
         // nothing (docs/app-links-v3-plan.md §D).
-        assertNull(Uri.parse(withoutStructure.uri).getQueryParameter("s"))
+        assertNull(linkParams(withoutStructure.uri).getQueryParameter("s"))
     }
 
     @Test
@@ -191,7 +268,9 @@ class TaskTransferLinkTest {
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        assertTrue("v2 link unexpectedly long: ${link.uri.length}", link.uri.length < 80)
+        // Budget covers the https prefix ("https://ranjithj.in/yata/i#" — 27 chars) that replaced
+        // "yata://i?"; the point is still that the payload itself stayed compact.
+        assertTrue("link unexpectedly long: ${link.uri.length}", link.uri.length < 100)
     }
 
     // --- round trip: no structure ---------------------------------------------------------
@@ -364,7 +443,7 @@ class TaskTransferLinkTest {
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        assertNotNull(Uri.parse(link.uri).getQueryParameter("e"))
+        assertNotNull(linkParams(link.uri).getQueryParameter("e"))
 
         importer.importFrom(importUri(link.uri))
 
@@ -431,7 +510,7 @@ class TaskTransferLinkTest {
             listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        val uri = Uri.parse(link.uri)
+        val uri = linkParams(link.uri)
         assertNull(uri.getQueryParameter("e"))
         assertEquals("Pay electricity bill", uri.getQueryParameter("t"))
         // Default priority/flag are omitted entirely, not just zeroed, to keep the readable link short.
@@ -451,8 +530,8 @@ class TaskTransferLinkTest {
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        assertNotNull(Uri.parse(link.uri).getQueryParameter("e"))
-        assertNull(Uri.parse(link.uri).getQueryParameter("t"))
+        assertNotNull(linkParams(link.uri).getQueryParameter("e"))
+        assertNull(linkParams(link.uri).getQueryParameter("t"))
     }
 
     @Test
@@ -494,9 +573,13 @@ class TaskTransferLinkTest {
                     tagsById = emptyMap(), peopleById = emptyMap(),
                     includeStructure = false, includeNotes = false
                 ).uri
-                val plaintextEquivalent = Uri.Builder().scheme("yata").authority("i").also { b ->
+                // Same https wrapper the production path applies, so the comparison is
+                // like-for-like rather than penalising the chosen link by its URL prefix.
+                val plaintextParams = Uri.Builder().scheme("yata").authority("i").also { b ->
                     tasks.forEach { b.appendQueryParameter("t", it.title) }
-                }.build().toString()
+                }.build()
+                val plaintextEquivalent = Uri.Builder().scheme("https").authority("ranjithj.in")
+                    .path("/yata/i").encodedFragment(plaintextParams.encodedQuery).build().toString()
 
                 assertTrue(
                     "\"$title\" x$count produced a ${chosen.length}-char link when a " +
@@ -547,7 +630,7 @@ class TaskTransferLinkTest {
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = true
         )
-        assertNotNull(Uri.parse(link.uri).getQueryParameter("t"))
+        assertNotNull(linkParams(link.uri).getQueryParameter("t"))
 
         TaskTransferImporter(repo).importFrom(importUri(link.uri))
 
@@ -596,7 +679,7 @@ class TaskTransferLinkTest {
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        assertNull(Uri.parse(link.uri).getQueryParameter("n0"))
+        assertNull(linkParams(link.uri).getQueryParameter("n0"))
 
         TaskTransferImporter(repo).importFrom(importUri(link.uri))
         assertNull(repo.tasksFlow.value.single().notes)
@@ -610,7 +693,7 @@ class TaskTransferLinkTest {
             listsById = mapOf("list1" to list), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = true, includeNotes = false
         )
-        assertNull(Uri.parse(link.uri).getQueryParameter("t"))
+        assertNull(linkParams(link.uri).getQueryParameter("t"))
     }
 
     @Test
@@ -628,7 +711,7 @@ class TaskTransferLinkTest {
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        assertEquals(listOf("First", "Second", "Third"), Uri.parse(link.uri).getQueryParameters("t"))
+        assertEquals(listOf("First", "Second", "Third"), linkParams(link.uri).getQueryParameters("t"))
 
         TaskTransferImporter(repo).importFrom(importUri(link.uri))
 
