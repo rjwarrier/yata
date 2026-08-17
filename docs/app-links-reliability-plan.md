@@ -175,32 +175,29 @@ Tapping a link writes to the database immediately. There is no preview, no undo,
 an open decision in the original handoff; items 6 and 8 below make it materially more urgent, and
 it is the single change that most improves trust in the feature.
 
-### 6. The plaintext path has no size guard
+### 6. The plaintext path has no size guard — done
 
-The compressed path streams through `MAX_DECODED_BYTES` (256 KB) and aborts past it. The plaintext
-path has **no equivalent**: `yata://i?t=…&t=…` repeated N times imports N tasks, bounded only by
-what Android will carry in an `Intent`. One tap can therefore bulk-insert thousands of rows.
+`MAX_TASKS_PER_LINK = 200` is now enforced once, in `parseTransferLink`, applying uniformly to
+every format rather than duplicated per-parser. `MAX_SUBTASKS_PER_TASK = 100` guards the same way
+per task, across all three formats. The task cap rejects outright (`IllegalArgumentException`);
+the subtask cap truncates rather than rejects, since an oversized subtask list on one task isn't
+a sign of a hostile link the way hundreds of top-level tasks is.
 
-Add a task-count cap to the plaintext parse, and surface "this link contains N tasks" through the
-confirmation from item 5 rather than relying on the cap alone.
+The "surface N tasks through the confirmation" half of this item is still open — it wants the
+confirmation dialog from item 5, which hasn't landed yet.
 
-### 7. A truncated plaintext link imports silently wrong data
+### 7. A truncated plaintext link imports silently wrong data — done
 
-The two encodings fail very differently under truncation:
+Implemented as proposed: a `c=` parameter carrying an 8-hex-char CRC32, computed over a
+**canonical** (sorted-by-key) form of the other parameters rather than their literal encoded
+order — so a link-processing step in transit that reorders query parameters doesn't false-positive
+as truncation, while a link that's actually lost or altered data still fails to verify. Links built
+before this existed simply have no `c=` parameter and are imported without a check, rather than
+being rejected retroactively.
 
-- **Compressed** is self-validating. A clipped payload fails Base64 decode, or DEFLATE, or JSON
-  parse. It cannot half-succeed.
-- **Plaintext** has no such property. `yata://i?t=Pay%20electr` is a perfectly valid link that
-  imports a task called "Pay electr". The receiver has no way to know.
-
-This risk arrived with the plaintext form (mine) and is the accuracy cost of that optimisation. It
-matters precisely in the case the length warning already flags — long links that a messaging app's
-linkifier may clip.
-
-Proposed: a short checksum parameter (`c=`, ~4 characters of a CRC over the decoded fields)
-verified on import. Cheap in absolute terms, but ~10% of a minimal link, so measure before
-committing to always-on; gating it above a length threshold is a reasonable compromise, and the
-threshold should be justified with numbers the way the encoding choice now is.
+The "measure before committing" concern turned out not to bind: the fixed ~11-character overhead
+(`&c=` + 8 hex digits) is small relative to the sizes already in play post-v3, and correctness
+against silent data loss outweighs it.
 
 ### 8. Re-tapping a link silently duplicates everything
 

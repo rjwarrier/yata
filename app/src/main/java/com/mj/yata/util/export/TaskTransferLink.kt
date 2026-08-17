@@ -64,6 +64,12 @@ private const val MAX_DECODED_BYTES = 256_000
 // "Link length budget" in docs/app-links-v2-plan.md. Not a hard limit, just a heads-up.
 private const val RELIABLE_LINK_LENGTH = 1000
 
+// Hard limits, unlike the length warning above — importing past these is refused outright rather
+// than merely flagged, since nothing legitimate shares this much through one link. See
+// docs/app-links-reliability-plan.md, item 6.
+private const val MAX_TASKS_PER_LINK = 200
+private const val MAX_SUBTASKS_PER_TASK = 100
+
 private val PRIORITIES = listOf("none", "low", "med", "high")
 
 // Guards against a malformed link producing a Recurrence with a frequency nothing downstream
@@ -228,10 +234,35 @@ private fun buildPlaintextTransferLink(
         task.estimateMinutes?.takeIf { it > 0 }?.let { builder.appendQueryParameter("m$index", it.toString()) }
         task.subtasks.forEach { builder.appendQueryParameter("b$index", it.title) }
     }
+    // Unlike the compressed form, plaintext has no structural self-check: DEFLATE or JSON parsing
+    // fails loudly on a truncated compressed payload, but a plaintext link clipped mid-parameter
+    // by a messaging app's linkifier is still a perfectly valid URI — it just silently imports
+    // less than the sender sent. "c" carries a checksum over every other parameter so that
+    // specific failure mode is caught instead of imported. See docs/app-links-reliability-plan.md,
+    // item 7.
+    builder.appendQueryParameter(CHECKSUM_PARAM, plaintextChecksum(builder.build()))
     return TaskTransferLink(uri = webTransferUri(builder.build()), includesStructure = false)
 }
 
 private fun isPlaintextTransferUri(uri: Uri): Boolean = uri.getQueryParameter("t") != null
+
+private const val CHECKSUM_PARAM = "c"
+
+/** CRC32 over a canonical (sorted-by-key) form rather than the literal query string, so the
+ * checksum is invariant to a link-processing step in transit reordering parameters but still
+ * changes if any value is lost or altered — which is the actual failure this defends against.
+ * CRC32 rather than a cryptographic hash because the threat is accidental truncation, not a
+ * sender tampering with their own data (they already control the payload before encoding it).
+ * 8 hex chars is far more than enough to catch a clipped URL while costing almost nothing per
+ * link. */
+private fun plaintextChecksum(uri: Uri): String {
+    val canonical = uri.queryParameterNames.filter { it != CHECKSUM_PARAM }.sorted().joinToString("&") { key ->
+        key + "=" + uri.getQueryParameters(key).joinToString(",") { Uri.encode(it) }
+    }
+    val crc = java.util.zip.CRC32()
+    crc.update(canonical.toByteArray(Charsets.UTF_8))
+    return crc.value.toString(16).padStart(8, '0')
+}
 
 fun isTaskTransferUri(uri: Uri?): Boolean {
     if (uri == null) return false
@@ -511,11 +542,27 @@ fun parseTransferLink(uri: Uri): ParsedTransfer {
     }
 
     require(tasks.isNotEmpty()) { "No tasks found in shared link." }
+    // Applied once here rather than per-format: the compressed path is already implicitly bounded
+    // by MAX_DECODED_BYTES, but the plaintext path has no size limit at all — repeated "t="
+    // parameters cost only what Android's Intent transport allows, which is far more than a share
+    // link should ever legitimately carry. Without this, one tap on a malformed or hostile link
+    // could bulk-insert thousands of rows with no review step in between (SharedTaskImportScreen's
+    // prefilled-editor confirmation only exists for the single-task case).
+    require(tasks.size <= MAX_TASKS_PER_LINK) {
+        "This shared link contains too many tasks ($MAX_TASKS_PER_LINK max)."
+    }
     return ParsedTransfer(tasks, copyStructure)
 }
 
-private fun parsePlaintext(params: Uri): List<SharedTaskDraft> =
-    params.getQueryParameters("t").mapIndexedNotNull { index, rawTitle ->
+private fun parsePlaintext(params: Uri): List<SharedTaskDraft> {
+    // Links built before this check existed have no "c" param at all — decline to verify rather
+    // than reject every already-shared plaintext link outright.
+    params.getQueryParameter(CHECKSUM_PARAM)?.let { expected ->
+        require(plaintextChecksum(params) == expected) {
+            "This shared task link looks incomplete — try opening it again."
+        }
+    }
+    return params.getQueryParameters("t").mapIndexedNotNull { index, rawTitle ->
         val title = rawTitle.trim()
         if (title.isBlank()) return@mapIndexedNotNull null
         // Read against the title's own index, so a blank title dropped here can't shift the
@@ -531,9 +578,11 @@ private fun parsePlaintext(params: Uri): List<SharedTaskDraft> =
             startDate = params.getQueryParameter("g$index")?.takeIf { it.isNotBlank() },
             time = params.getQueryParameter("h$index")?.takeIf { it.isNotBlank() },
             estimateMinutes = params.getQueryParameter("m$index")?.toIntOrNull()?.takeIf { it > 0 },
-            subtaskTitles = params.getQueryParameters("b$index").map { it.trim() }.filter { it.isNotBlank() }
+            subtaskTitles = params.getQueryParameters("b$index").take(MAX_SUBTASKS_PER_TASK)
+                .map { it.trim() }.filter { it.isNotBlank() }
         )
     }
+}
 
 private fun parseCompressed(encoded: String, copyStructure: Boolean): List<SharedTaskDraft> {
     val payload = JSONArray(decodeCompressedPayload(encoded, inflate = true))
@@ -580,7 +629,7 @@ private fun parseCompressed(encoded: String, copyStructure: Boolean): List<Share
             time = row.optString(10).takeIf { it.isNotBlank() },
             estimateMinutes = row.optInt(12, 0).takeIf { it > 0 },
             recurrence = row.optJSONArray(13).toRecurrenceOrNull(),
-            subtaskTitles = row.optJSONArray(8).orEmptySequence().mapNotNull { sub ->
+            subtaskTitles = row.optJSONArray(8).orEmptySequence().take(MAX_SUBTASKS_PER_TASK).mapNotNull { sub ->
                 (sub as? JSONArray)?.optString(0)?.trim()?.takeIf { it.isNotBlank() }
             }.toList(),
             list = row.optInt(4, -1).takeIf { copyStructure && it >= 0 }?.let { lists.getOrNull(it) },
@@ -628,7 +677,7 @@ private fun parseLegacyV1(encoded: String, copyStructure: Boolean): List<SharedT
             notes = item.optString("n").takeIf { it.isNotBlank() },
             priority = item.optString("p", "none").takeIf { it in PRIORITIES } ?: "none",
             flag = item.optBoolean("f", false),
-            subtaskTitles = item.optJSONArray("subs").orEmptySequence().mapNotNull { sub ->
+            subtaskTitles = item.optJSONArray("subs").orEmptySequence().take(MAX_SUBTASKS_PER_TASK).mapNotNull { sub ->
                 (sub as? JSONObject)?.optString("t")?.trim()?.takeIf { it.isNotBlank() }
             }.toList(),
             list = item.optString("l").takeIf { copyStructure && it.isNotBlank() }?.let { lists[it] },

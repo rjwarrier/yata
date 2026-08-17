@@ -608,11 +608,15 @@ class TaskTransferLinkTest {
                 }.build()
                 val plaintextEquivalent = Uri.Builder().scheme("https").authority("ranjithj.in")
                     .path("/yata/i").encodedFragment(plaintextParams.encodedQuery).build().toString()
+                // The real plaintext form always carries a trailing "&c=<8 hex chars>" checksum
+                // (see plaintextChecksum) that this hand-built baseline omits — add the same fixed
+                // overhead here so the comparison stays like-for-like.
+                val plaintextEquivalentLength = plaintextEquivalent.length + "&c=".length + 8
 
                 assertTrue(
                     "\"$title\" x$count produced a ${chosen.length}-char link when a " +
-                        "${plaintextEquivalent.length}-char plaintext one was available",
-                    chosen.length <= plaintextEquivalent.length
+                        "$plaintextEquivalentLength-char plaintext one was available",
+                    chosen.length <= plaintextEquivalentLength
                 )
             }
         }
@@ -1074,6 +1078,126 @@ class TaskTransferLinkTest {
 
         assertEquals(1, repo.listsFlow.value.size)
         assertEquals("Work", repo.tasksFlow.value.single().let { task -> repo.listsFlow.value.first { it.id == task.listId }.name })
+    }
+
+    // --- hardening: caps and truncation detection -------------------------------------------
+
+    @Test
+    fun tooManyTasksInACompressedLink_isRejected() = runTest {
+        val rows = JSONArray().also { array -> repeat(201) { array.put(JSONArray().put("Task $it")) } }
+        val payload = JSONArray().put(3).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(rows)
+        try {
+            TaskTransferImporter(FakeYataRepository()).importFrom(manualCompressedUri(payload, "e"))
+            fail("expected a link with 201 tasks to be rejected")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message.orEmpty().contains("too many tasks"))
+        }
+    }
+
+    @Test
+    fun exactlyTheTaskCapImports_oneOverDoesNot() = runTest {
+        fun rowsPayload(count: Int) = JSONArray().put(3).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
+            .put(JSONArray().also { array -> repeat(count) { array.put(JSONArray().put("Task $it")) } })
+
+        val result = TaskTransferImporter(FakeYataRepository()).importFrom(manualCompressedUri(rowsPayload(200), "e"))
+        assertEquals(200, result.taskCount)
+
+        try {
+            TaskTransferImporter(FakeYataRepository()).importFrom(manualCompressedUri(rowsPayload(201), "e"))
+            fail("expected 201 tasks to exceed the cap")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message.orEmpty().contains("too many tasks"))
+        }
+    }
+
+    @Test
+    fun tooManySubtasks_areTruncatedRatherThanRejected() = runTest {
+        // Unlike the task-count cap, an oversized subtask list on one task isn't a sign of a
+        // hostile link the way hundreds of top-level tasks is — trimming it is enough.
+        val repo = FakeYataRepository()
+        val original = task(
+            subtasks = (0 until 150).map { Subtask(id = "s$it", title = "Step $it", done = false, sortOrder = it) }
+        )
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        assertEquals(100, repo.tasksFlow.value.single().subtasks.size)
+    }
+
+    @Test
+    fun plaintextLink_carriesAChecksum_andRoundTripsCleanly() = runTest {
+        val repo = FakeYataRepository()
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task(priority = "none")), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertNotNull(linkParams(link.uri).getQueryParameter("t"))
+        assertNotNull(linkParams(link.uri).getQueryParameter("c"))
+
+        // A checksum that verifies clean is exactly as important as one that catches damage —
+        // otherwise this feature could silently start rejecting every legitimate link instead.
+        val result = TaskTransferImporter(repo).importFrom(importUri(link.uri))
+        assertEquals(1, result.taskCount)
+    }
+
+    @Test
+    fun truncatedPlaintextLink_isRejectedRatherThanImportedShort() = runTest {
+        // The exact failure mode a checksum exists for: a compressed link fails to decode when
+        // clipped, but a plaintext link clipped by a messaging app's linkifier is still a
+        // syntactically valid URI, so without this check it would import an incomplete task with
+        // no indication anything was lost.
+        val link = buildTaskTransferLink(
+            title = "Pay electricity bill this month", tasks = listOf(task(title = "Pay electricity bill this month", priority = "none")),
+            listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        // Drops part of the checksum's hex digits rather than the whole "&c=xxxxxxxx" param
+        // (which is exactly 10 chars) — dropping all of it would leave no checksum to verify at
+        // all, silently skipping the very check this test exists to exercise.
+        val truncated = Uri.parse(link.uri.dropLast(3))
+
+        try {
+            TaskTransferImporter(FakeYataRepository()).importFrom(truncated)
+            fail("expected a truncated plaintext link to be rejected")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message.orEmpty().contains("incomplete"))
+        }
+    }
+
+    @Test
+    fun preChecksumPlaintextLinks_stillImport_sinceTheyHaveNoChecksumToVerify() = runTest {
+        // A link shared before this feature existed has no "c" param at all — must not be
+        // rejected outright just because a check that didn't exist yet can't run.
+        val repo = FakeYataRepository()
+        val uri = Uri.parse("https://ranjithj.in/yata/i#t=Pay%20electricity%20bill")
+
+        val result = TaskTransferImporter(repo).importFrom(uri)
+
+        assertEquals(1, result.taskCount)
+        assertEquals("Pay electricity bill", repo.tasksFlow.value.single().title)
+    }
+
+    @Test
+    fun checksumIsInvariantToParameterReordering() {
+        // Some link-processing steps in transit reorder query parameters; the checksum must not
+        // false-positive as "truncated" purely because of that. Build a real link, then verify a
+        // parameter-reordered copy of its own query (with the same checksum) still passes.
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task(title = "Pay bill", priority = "high", flag = true)),
+            listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        val fragment = Uri.parse(link.uri).encodedFragment.orEmpty()
+        val reorderedFragment = fragment.split("&").reversed().joinToString("&")
+        val reorderedUri = Uri.parse("https://ranjithj.in/yata/i#$reorderedFragment")
+
+        parseTransferLink(reorderedUri) // must not throw
     }
 
     // --- error paths -----------------------------------------------------------------------

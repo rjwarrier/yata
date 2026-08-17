@@ -48,6 +48,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   locally" against any repo with a snapshot from before tags supported descriptions — that field
   was never added to the sync format's schema-drift normalization, unlike every other nullable
   field added the same way over time.
+- A shared task link clipped in transit by a messaging app's linkifier could import silently
+  short (a truncated title, a dropped due date) with no indication anything was lost. The
+  compressed link form already failed loudly on truncation; the shorter, human-readable form now
+  carries a checksum so the same failure is caught there too, rather than importing partial data.
 
 ## [0.93.1] - 2026-08-16
 
