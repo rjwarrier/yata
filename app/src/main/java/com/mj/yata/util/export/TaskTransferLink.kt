@@ -82,13 +82,36 @@ fun buildTaskTransferLink(
     includeStructure: Boolean,
     includeNotes: Boolean
 ): TaskTransferLink {
-    val soleTask = tasks.singleOrNull()
-    if (soleTask != null && !includeStructure && soleTask.subtasks.isEmpty() &&
-        (soleTask.notes.isNullOrBlank() || !includeNotes)
-    ) {
-        return buildPlaintextTransferLink(soleTask)
-    }
+    val compressed = buildCompressedTransferLink(
+        title = title,
+        tasks = tasks,
+        listsById = listsById,
+        projectsById = projectsById,
+        tagsById = tagsById,
+        peopleById = peopleById,
+        includeStructure = includeStructure,
+        includeNotes = includeNotes
+    )
+    // The plaintext form is only *sometimes* shorter, and which way it falls is not something a
+    // rule about task shape can predict: percent-encoding costs 3 chars per UTF-8 byte, so a
+    // Latin title rides nearly 1:1 while an Indic one (3 bytes/char) costs 9 chars per character
+    // and loses badly to Base64. Picking by shape rather than size made single-task links up to
+    // 2x *longer* for the nine Indic locales YATA ships. So: build both, measure, take the
+    // shorter. See docs/app-links-v3-plan.md.
+    val plaintext = buildPlaintextTransferLink(tasks, includeStructure, includeNotes)
+    return if (plaintext != null && plaintext.uri.length < compressed.uri.length) plaintext else compressed
+}
 
+private fun buildCompressedTransferLink(
+    title: String,
+    tasks: List<Task>,
+    listsById: Map<String, YataList>,
+    projectsById: Map<String, Project>,
+    tagsById: Map<String, Tag>,
+    peopleById: Map<String, Person>,
+    includeStructure: Boolean,
+    includeNotes: Boolean
+): TaskTransferLink {
     val listIds = if (includeStructure) tasks.mapNotNull { it.listId }.toSet() else emptySet()
     val projectIds = if (includeStructure) tasks.mapNotNull { it.projectId }.toSet() else emptySet()
     val tagIds = if (includeStructure) {
@@ -141,17 +164,31 @@ fun buildTaskTransferLink(
     return TaskTransferLink(uri = uri, includesStructure = includeStructure)
 }
 
-/** Fast path for the most common share: one task, no structure, no notes, no subtasks. Skips
- * Base64/compression entirely — the receiver can read what they're about to import straight out
- * of the URL, and it's shorter than the compressed blob for anything this small. */
-private fun buildPlaintextTransferLink(task: Task): TaskTransferLink {
-    val builder = Uri.Builder()
-        .scheme(TRANSFER_SCHEME)
-        .authority(HOST)
-        .appendQueryParameter("t", task.title)
-    val priorityIndex = PRIORITIES.indexOf(task.priority).coerceAtLeast(0)
-    if (priorityIndex != 0) builder.appendQueryParameter("p", priorityIndex.toString())
-    if (task.flag) builder.appendQueryParameter("f", "1")
+/** Readable, uncompressed alternative encoding: the task titles ride in the query string as-is,
+ * so the receiver can see what they're about to import before tapping. Returns null when the
+ * share carries anything this form can't express (structure, notes, subtasks) — the caller then
+ * has only the compressed candidate to use. Being *representable* is not the same as being
+ * *shorter*; the caller decides that by measuring both. */
+private fun buildPlaintextTransferLink(
+    tasks: List<Task>,
+    includeStructure: Boolean,
+    includeNotes: Boolean
+): TaskTransferLink? {
+    if (tasks.isEmpty() || includeStructure) return null
+    if (tasks.any { it.subtasks.isNotEmpty() }) return null
+    if (includeNotes && tasks.any { !it.notes.isNullOrBlank() }) return null
+
+    val builder = Uri.Builder().scheme(TRANSFER_SCHEME).authority(HOST)
+    tasks.forEach { builder.appendQueryParameter("t", it.title) }
+    // Priority/flag are carried as "p<index>"/"f<index>" against the task's position in the "t"
+    // list, so a task holding the default can simply be left out. Emitting them positionally
+    // instead would mean spending 8 characters per task on values that are almost always the
+    // default, just to keep later tasks aligned.
+    tasks.forEachIndexed { index, task ->
+        val priorityIndex = PRIORITIES.indexOf(task.priority).coerceAtLeast(0)
+        if (priorityIndex != 0) builder.appendQueryParameter("p$index", priorityIndex.toString())
+        if (task.flag) builder.appendQueryParameter("f$index", "1")
+    }
     return TaskTransferLink(uri = builder.build().toString(), includesStructure = false)
 }
 
@@ -300,39 +337,45 @@ class TaskTransferImporter @Inject constructor(
     }
 
     private suspend fun importPlaintext(uri: Uri): TaskTransferImportResult {
-        val title = uri.getQueryParameter("t").orEmpty().trim()
-        require(title.isNotBlank()) { "No tasks found in shared link." }
-        val priorityIndex = uri.getQueryParameter("p")?.toIntOrNull()?.coerceIn(0, PRIORITIES.lastIndex) ?: 0
-        val task = Task(
-            id = newId("import_task"),
-            title = title,
-            listId = null,
-            projectId = null,
-            section = "",
-            due = null,
-            startDate = null,
-            time = null,
-            reminder = null,
-            priority = PRIORITIES[priorityIndex],
-            flag = uri.getQueryParameter("f") == "1",
-            done = false,
-            completedAt = null,
-            createdAt = System.currentTimeMillis(),
-            deletedAt = null,
-            assigneeIds = emptyList(),
-            tagIds = emptyList(),
-            recurrence = null,
-            subtasks = emptyList(),
-            notes = null,
-            sortOrder = System.currentTimeMillis().toInt(),
-            seriesId = null,
-            archived = false,
-            followUpAt = null,
-            estimateMinutes = null
-        )
-        repository.upsertTasks(listOf(task), notify = false)
+        val tasks = uri.getQueryParameters("t").mapIndexedNotNull { index, rawTitle ->
+            val title = rawTitle.trim()
+            if (title.isBlank()) return@mapIndexedNotNull null
+            // Read against the title's own index, so a blank title dropped above can't shift the
+            // remaining tasks' priorities onto the wrong rows.
+            val priorityIndex = uri.getQueryParameter("p$index")?.toIntOrNull()
+                ?.coerceIn(0, PRIORITIES.lastIndex) ?: 0
+            Task(
+                id = newId("import_task"),
+                title = title,
+                listId = null,
+                projectId = null,
+                section = "",
+                due = null,
+                startDate = null,
+                time = null,
+                reminder = null,
+                priority = PRIORITIES[priorityIndex],
+                flag = uri.getQueryParameter("f$index") == "1",
+                done = false,
+                completedAt = null,
+                createdAt = System.currentTimeMillis(),
+                deletedAt = null,
+                assigneeIds = emptyList(),
+                tagIds = emptyList(),
+                recurrence = null,
+                subtasks = emptyList(),
+                notes = null,
+                sortOrder = System.currentTimeMillis().toInt(),
+                seriesId = null,
+                archived = false,
+                followUpAt = null,
+                estimateMinutes = null
+            )
+        }
+        require(tasks.isNotEmpty()) { "No tasks found in shared link." }
+        repository.upsertTasks(tasks, notify = false)
         repository.notifyTasksChanged()
-        return TaskTransferImportResult(1, false)
+        return TaskTransferImportResult(tasks.size, false)
     }
 
     // --- v2 -------------------------------------------------------------------------------

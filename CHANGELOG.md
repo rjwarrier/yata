@@ -24,6 +24,13 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Tags now support an optional description in the create/edit sheet, and tag image/PDF exports show
   it as subtext below the tag name.
 
+### Fixed
+- Task import links are no longer needlessly long for non-Latin languages. Links now use whichever
+  of the two encodings is actually shorter for the text being shared, instead of guessing from the
+  task's shape — which had made a single shared task up to twice as long in Hindi, Tamil, Telugu,
+  Bengali and Malayalam. Sharing several simple tasks at once also produces a shorter, readable
+  link now.
+
 ## [0.93.1] - 2026-08-16
 
 `versionCode 21`. Upgrades in place over 0.93.

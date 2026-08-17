@@ -21,6 +21,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -144,12 +145,15 @@ class TaskTransferLinkTest {
         assertTrue(withStructure.includesStructure)
         assertEquals("1", Uri.parse(withStructure.uri).getQueryParameter("s"))
 
-        // Two tasks so this doesn't take the plaintext fast path, which has no "s" param at all
-        // (covered separately by the plaintext tests below) — this is specifically pinning the
-        // compressed-blob path's "s" flag.
+        // A subtask forces the compressed form — plaintext can't express one, so this can't drift
+        // back onto the readable path the way a task-count-based trigger did once size-based
+        // selection landed. The plaintext path has no "s" param at all and is covered separately.
         val withoutStructure = buildTaskTransferLink(
-            title = "Work", tasks = listOf(task("t1", listId = "list1"), task("t2")), listsById = emptyMap(),
-            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            title = "Work",
+            tasks = listOf(
+                task("t1", listId = "list1", subtasks = listOf(Subtask(id = "s1", title = "Step", done = false)))
+            ),
+            listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
         assertFalse(withoutStructure.includesStructure)
@@ -394,7 +398,7 @@ class TaskTransferLinkTest {
     // --- plaintext fast path -----------------------------------------------------------------
 
     @Test
-    fun simpleSingleTask_usesThePlaintextFastPath_notTheCompressedBlob() {
+    fun simpleAsciiSingleTask_usesThePlaintextForm_notTheCompressedBlob() {
         val link = buildTaskTransferLink(
             title = "Pay bill", tasks = listOf(task(priority = "none", flag = false)),
             listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
@@ -404,8 +408,76 @@ class TaskTransferLinkTest {
         assertNull(uri.getQueryParameter("d"))
         assertEquals("Pay electricity bill", uri.getQueryParameter("t"))
         // Default priority/flag are omitted entirely, not just zeroed, to keep the readable link short.
-        assertNull(uri.getQueryParameter("p"))
-        assertNull(uri.getQueryParameter("f"))
+        assertNull(uri.getQueryParameter("p0"))
+        assertNull(uri.getQueryParameter("f0"))
+    }
+
+    @Test
+    fun nonLatinTitle_usesTheCompressedForm_becausePercentEncodingIsFarWorseThere() {
+        // The regression this closes (docs/app-links-v3-plan.md §A): selection used to be by task
+        // *shape*, so a single Indic-script task always took the plaintext path — where each
+        // 3-byte character costs 9 percent-encoded chars, making the link up to 2x LONGER than
+        // the compressed form. YATA ships nine Indic locales, so this was not an edge case.
+        val tamil = task(title = "மின்சார கட்டணம் செலுத்து", priority = "none")
+        val link = buildTaskTransferLink(
+            title = tamil.title, tasks = listOf(tamil), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertNotNull(Uri.parse(link.uri).getQueryParameter("d"))
+        assertNull(Uri.parse(link.uri).getQueryParameter("t"))
+    }
+
+    @Test
+    fun nonLatinTitle_stillRoundTripsThroughWhicheverFormWasChosen() = runTest {
+        val repo = FakeYataRepository()
+        val hindi = task(title = "बिजली का बिल भरना", priority = "high", flag = true)
+        val link = buildTaskTransferLink(
+            title = hindi.title, tasks = listOf(hindi), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("बिजली का बिल भरना", imported.title)
+        assertEquals("high", imported.priority)
+        assertTrue(imported.flag)
+    }
+
+    @Test
+    fun emittedLinkIsNeverLongerThanThePlaintextAlternative() {
+        // The invariant that replaces the old shape heuristic. Stated once, over a spread of
+        // scripts and task counts, so no future "just take the readable one when X" shortcut can
+        // quietly reintroduce a case where YATA hands the user the longer of two links.
+        // The plaintext candidate is rebuilt here with the same Uri.Builder encoding the
+        // production path uses, so the comparison is like-for-like rather than approximate.
+        val samples = listOf(
+            "Pay electricity bill",             // Latin, plaintext should win
+            "மின்சார கட்டணம் செலுத்து",          // Tamil, compressed should win
+            "बिजली का बिल भरना",                 // Devanagari
+            "Zahlung der Stromrechnung heute"   // longer Latin
+        )
+        samples.forEach { title ->
+            listOf(1, 3, 8).forEach { count ->
+                val tasks = (0 until count).map { task("t$it", title = "$title $it", priority = "none") }
+                val chosen = buildTaskTransferLink(
+                    title = title, tasks = tasks, listsById = emptyMap(), projectsById = emptyMap(),
+                    tagsById = emptyMap(), peopleById = emptyMap(),
+                    includeStructure = false, includeNotes = false
+                ).uri
+                val plaintextEquivalent = Uri.Builder().scheme("yata").authority("i").also { b ->
+                    tasks.forEach { b.appendQueryParameter("t", it.title) }
+                }.build().toString()
+
+                assertTrue(
+                    "\"$title\" x$count produced a ${chosen.length}-char link when a " +
+                        "${plaintextEquivalent.length}-char plaintext one was available",
+                    chosen.length <= plaintextEquivalent.length
+                )
+            }
+        }
     }
 
     @Test
@@ -453,13 +525,55 @@ class TaskTransferLinkTest {
     }
 
     @Test
-    fun multipleTasks_doesNotUseThePlaintextPath() {
+    fun multipleSimpleAsciiTasks_nowUseThePlaintextForm_andRoundTripWithTheirPriorities() = runTest {
+        // Previously excluded by the shape gate even though plaintext stays shorter well past one
+        // task for Latin scripts (measured: it wins up to n=8 — docs/app-links-v3-plan.md §A).
+        val repo = FakeYataRepository()
+        val tasks = listOf(
+            task("t1", title = "First", priority = "none", flag = false),
+            task("t2", title = "Second", priority = "high", flag = true),
+            task("t3", title = "Third", priority = "low", flag = false)
+        )
         val link = buildTaskTransferLink(
-            title = "Work", tasks = listOf(task("t1"), task("t2")), listsById = emptyMap(),
+            title = "Work", tasks = tasks, listsById = emptyMap(),
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
-        assertNull(Uri.parse(link.uri).getQueryParameter("t"))
+        assertEquals(listOf("First", "Second", "Third"), Uri.parse(link.uri).getQueryParameters("t"))
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.associateBy { it.title }
+        assertEquals(3, imported.size)
+        // Indexed p/f must land on the right rows — the whole reason they aren't positional.
+        assertEquals("none", imported.getValue("First").priority)
+        assertEquals("high", imported.getValue("Second").priority)
+        assertEquals("low", imported.getValue("Third").priority)
+        assertFalse(imported.getValue("First").flag)
+        assertTrue(imported.getValue("Second").flag)
+        assertFalse(imported.getValue("Third").flag)
+    }
+
+    @Test
+    fun plaintextForm_keepsPriorityAlignedWhenAnEarlierTitleIsBlank() = runTest {
+        // A blank title is dropped on import; the indices of the survivors must still resolve
+        // against their own original positions rather than sliding up by one.
+        val repo = FakeYataRepository()
+        val tasks = listOf(
+            task("t1", title = "   ", priority = "none"),
+            task("t2", title = "Real", priority = "high")
+        )
+        val link = buildTaskTransferLink(
+            title = "Work", tasks = tasks, listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("Real", imported.title)
+        assertEquals("high", imported.priority)
     }
 
     // --- link length warning -----------------------------------------------------------------
