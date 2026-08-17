@@ -1224,6 +1224,11 @@
         <item quantity="other">%1$d shared tasks added to Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Could not import this YATA task link.</string>
+    <string name="shared_task_import_title">Shared Task</string>
+    <string name="shared_task_import_create_missing_title">Create missing items?</string>
+    <string name="shared_task_import_create_missing_message">%1$s aren\'t in your workspace yet. Create them and add this task?</string>
+    <string name="shared_task_import_create_and_add">Create &amp; Add</string>
+    <string name="shared_task_import_skip">Skip</string>
     <string name="export_failed">Export failed.</string>
     <string name="reminder_before_due_error">Reminder must be before the due time.</string>
     <string name="reminder_in_past_error">That reminder time has already passed today.</string>

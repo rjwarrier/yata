@@ -3,10 +3,10 @@ package com.mj.yata.ui.navigation
 import android.net.Uri
 
 /**
- * Custom scheme backing the app's deep links (`yata://task/<id>`). A custom scheme rather than
- * an https App Link because App Links require hosting a verified assetlinks.json on a domain —
- * this app has no web presence, and an unverified https filter would show a disambiguation
- * chooser instead of opening directly.
+ * Custom scheme backing the app's deep links (`yata://task/<id>`). Kept as a custom scheme for
+ * these rather than moved to the verified https App Link now used for shared task links
+ * (`https://ranjithj.in/yata/i`, see `TaskTransferLink.kt`) — that domain only claims the one
+ * import path, not this whole family of in-app links.
  *
  * These are stable, user-visible identifiers once anyone pastes one into a note or a message —
  * treat the patterns as an API and don't rename them casually.
@@ -79,4 +79,7 @@ sealed class Screen(val route: String) {
     object ShareApp : Screen("share_app")
     object RemoteSync : Screen("remote_sync")
     object SyncHistory : Screen("sync_history")
+    object SharedTaskImport : Screen("shared_task_import?link={link}") {
+        fun createRoute(link: String) = "shared_task_import?link=${Uri.encode(link)}"
+    }
 }

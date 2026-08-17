@@ -342,6 +342,25 @@ fun AppNavigation(
             )
         }
 
+        // ── Shared task import ──────────────────────────────────────────────
+        composable(
+            route = Screen.SharedTaskImport.route,
+            arguments = listOf(navArgument("link") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            val link = backStackEntry.arguments?.getString("link").orEmpty()
+            com.mj.yata.ui.screen.sharedimport.SharedTaskImportScreen(
+                viewModel = viewModel,
+                link = link,
+                onDismiss = { navController.popBackStack() },
+                onImported = {
+                    navController.navigate(Screen.Inbox.route) {
+                        popUpTo(Screen.SharedTaskImport.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         // ── Settings ─────────────────────────────────────────────────────────
         composable(Screen.Settings.route) { backStackEntry ->
             val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)

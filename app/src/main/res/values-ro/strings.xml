@@ -909,6 +909,11 @@
         <item quantity="other">%1$d sarcini partajate adăugate în Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Acest link de sarcină YATA nu a putut fi importat.</string>
+    <string name="shared_task_import_title">Sarcină partajată</string>
+    <string name="shared_task_import_create_missing_title">Creați elementele lipsă?</string>
+    <string name="shared_task_import_create_missing_message">%1$s nu există încă în spațiul tău de lucru. Le creăm și adăugăm această sarcină?</string>
+    <string name="shared_task_import_create_and_add">Creează și adaugă</string>
+    <string name="shared_task_import_skip">Omite</string>
     <string name="export_failed">Export eșuat.</string>
     <string name="reminder_before_due_error">Memento-ul trebuie să fie înainte de ora termenului.</string>
     <string name="reminder_in_past_error">Acea oră de memento a trecut deja azi.</string>

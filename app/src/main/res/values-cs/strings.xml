@@ -909,6 +909,11 @@
         <item quantity="other">Do schránky přidáno %1$d sdílených úkolů</item>
     </plurals>
     <string name="task_transfer_import_failed">Tento odkaz na úkol YATA se nepodařilo importovat.</string>
+    <string name="shared_task_import_title">Sdílený úkol</string>
+    <string name="shared_task_import_create_missing_title">Vytvořit chybějící položky?</string>
+    <string name="shared_task_import_create_missing_message">%1$s zatím nejsou ve vašem pracovním prostoru. Vytvořit je a přidat tento úkol?</string>
+    <string name="shared_task_import_create_and_add">Vytvořit a přidat</string>
+    <string name="shared_task_import_skip">Přeskočit</string>
     <string name="export_failed">Export selhal.</string>
     <string name="reminder_before_due_error">Připomenutí musí být před časem termínu.</string>
     <string name="reminder_in_past_error">Tento čas připomenutí už dnes uplynul.</string>

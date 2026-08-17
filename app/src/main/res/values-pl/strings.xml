@@ -909,6 +909,11 @@
         <item quantity="other">Dodano %1$d udostępnionych zadań do skrzynki</item>
     </plurals>
     <string name="task_transfer_import_failed">Nie udało się zaimportować tego linku zadania YATA.</string>
+    <string name="shared_task_import_title">Udostępnione zadanie</string>
+    <string name="shared_task_import_create_missing_title">Utworzyć brakujące elementy?</string>
+    <string name="shared_task_import_create_missing_message">%1$s nie istnieją jeszcze w Twojej przestrzeni roboczej. Utworzyć je i dodać to zadanie?</string>
+    <string name="shared_task_import_create_and_add">Utwórz i dodaj</string>
+    <string name="shared_task_import_skip">Pomiń</string>
     <string name="export_failed">Eksport nie powiódł się.</string>
     <string name="reminder_before_due_error">Przypomnienie musi być przed godziną terminu.</string>
     <string name="reminder_in_past_error">Ta godzina przypomnienia już minęła dzisiaj.</string>

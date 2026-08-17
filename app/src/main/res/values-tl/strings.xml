@@ -992,6 +992,11 @@
         <item quantity="other">Naidagdag ang %1$d na ibinahaging gawain sa Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Hindi ma-import ang link ng gawain ng YATA na ito.</string>
+    <string name="shared_task_import_title">Ibinahaging Gawain</string>
+    <string name="shared_task_import_create_missing_title">Gawin ang mga nawawalang item?</string>
+    <string name="shared_task_import_create_missing_message">Wala pa ang %1$s sa iyong workspace. Gawin ang mga ito at idagdag ang gawaing ito?</string>
+    <string name="shared_task_import_create_and_add">Gawin at Idagdag</string>
+    <string name="shared_task_import_skip">Laktawan</string>
     <string name="export_failed">Nabigo ang pag-export.</string>
     <string name="reminder_before_due_error">Dapat nauna ang paalala sa oras ng takdang petsa.</string>
     <string name="reminder_in_past_error">Nakalipas na ang oras ng paalalang iyon ngayon.</string>

@@ -992,6 +992,11 @@
         <item quantity="other">%1$d പങ്കിട്ട ടാസ്കുകൾ ഇൻബോക്സിലേക്ക് ചേർത്തു</item>
     </plurals>
     <string name="task_transfer_import_failed">ഈ YATA ടാസ്ക് ലിങ്ക് ഇറക്കുമതി ചെയ്യാനായില്ല.</string>
+    <string name="shared_task_import_title">പങ്കിട്ട ടാസ്ക്</string>
+    <string name="shared_task_import_create_missing_title">കാണാത്ത ഇനങ്ങൾ സൃഷ്ടിക്കണോ?</string>
+    <string name="shared_task_import_create_missing_message">%1$s ഇതുവരെ നിങ്ങളുടെ വർക്ക്‌സ്‌പെയ്‌സിൽ ഇല്ല. അവ സൃഷ്ടിച്ച് ഈ ടാസ്ക് ചേർക്കണോ?</string>
+    <string name="shared_task_import_create_and_add">സൃഷ്ടിച്ച് ചേർക്കുക</string>
+    <string name="shared_task_import_skip">ഒഴിവാക്കുക</string>
     <string name="export_failed">എക്സ്പോർട്ട് പരാജയപ്പെട്ടു.</string>
     <string name="reminder_before_due_error">ഓർമ്മപ്പെടുത്തൽ സമയപരിധിക്ക് മുൻപ് ആയിരിക്കണം.</string>
     <string name="reminder_in_past_error">ആ ഓർമ്മപ്പെടുത്തൽ സമയം ഇന്ന് ഇതിനകം കഴിഞ്ഞു.</string>

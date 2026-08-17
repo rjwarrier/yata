@@ -80,7 +80,7 @@ data class TaskTransferLink(
         appendLine("YATA shared ${if (count == 1) "task" else "$count tasks"}: $title")
         appendLine()
         if (includesStructure) {
-            appendLine("Add to Inbox (creates any missing lists, projects, tags, and people):")
+            appendLine("Add to Inbox (creates any missing lists, projects, and tags):")
         } else {
             appendLine("Add to Inbox:")
         }

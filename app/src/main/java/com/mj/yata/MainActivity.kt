@@ -451,6 +451,21 @@ class MainActivity : AppCompatActivity() {
                             val importUri = intent.data?.takeIf { isTaskTransferUri(it) }
                             if (intent.action == Intent.ACTION_VIEW && importUri != null) {
                                 currentIntent = null
+                                // Parsing (no repository access) decides how to route before
+                                // anything is written: a single task opens a prefilled editor so
+                                // the receiver can review it, matching how every other task
+                                // creation path in the app works; a multi-task link — sharing a
+                                // whole list/project/tag/person's tasks — still imports directly,
+                                // since there's no single editor screen for several tasks yet
+                                // (see docs/app-links-team-sharing-design.md — single-task first).
+                                val parsed = runCatching { com.mj.yata.util.export.parseTransferLink(importUri) }
+                                val taskCount = parsed.getOrNull()?.tasks?.size ?: 0
+                                if (taskCount == 1) {
+                                    navController.navigate(
+                                        com.mj.yata.ui.navigation.Screen.SharedTaskImport.createRoute(importUri.toString())
+                                    )
+                                    return@LaunchedEffect
+                                }
                                 runCatching { taskTransferImporter.importFrom(importUri) }
                                     .onSuccess { result ->
                                         Toast.makeText(

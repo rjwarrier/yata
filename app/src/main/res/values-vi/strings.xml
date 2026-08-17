@@ -909,6 +909,11 @@
         <item quantity="other">Đã thêm %1$d việc cần làm được chia sẻ vào Hộp vào</item>
     </plurals>
     <string name="task_transfer_import_failed">Không thể nhập liên kết việc cần làm YATA này.</string>
+    <string name="shared_task_import_title">Việc Được Chia Sẻ</string>
+    <string name="shared_task_import_create_missing_title">Tạo các mục còn thiếu?</string>
+    <string name="shared_task_import_create_missing_message">%1$s chưa có trong không gian làm việc của bạn. Tạo chúng và thêm việc cần làm này?</string>
+    <string name="shared_task_import_create_and_add">Tạo và Thêm</string>
+    <string name="shared_task_import_skip">Bỏ qua</string>
     <string name="export_failed">Xuất thất bại.</string>
     <string name="reminder_before_due_error">Nhắc nhở phải trước giờ đến hạn.</string>
     <string name="reminder_in_past_error">Giờ nhắc nhở đó đã qua hôm nay.</string>

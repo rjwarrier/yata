@@ -909,6 +909,11 @@
         <item quantity="other">%1$d paylaşılan görev Gelen kutusuna eklendi</item>
     </plurals>
     <string name="task_transfer_import_failed">Bu YATA görev bağlantısı içe aktarılamadı.</string>
+    <string name="shared_task_import_title">Paylaşılan Görev</string>
+    <string name="shared_task_import_create_missing_title">Eksik öğeler oluşturulsun mu?</string>
+    <string name="shared_task_import_create_missing_message">%1$s henüz çalışma alanınızda yok. Bunlar oluşturulup bu görev eklensin mi?</string>
+    <string name="shared_task_import_create_and_add">Oluştur ve Ekle</string>
+    <string name="shared_task_import_skip">Atla</string>
     <string name="export_failed">Dışa aktarma başarısız oldu.</string>
     <string name="reminder_before_due_error">Hatırlatıcı, bitiş saatinden önce olmalıdır.</string>
     <string name="reminder_in_past_error">O hatırlatma saati bugün için zaten geçti.</string>

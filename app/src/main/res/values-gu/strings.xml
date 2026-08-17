@@ -992,6 +992,11 @@
         <item quantity="other">%1$d શેર કરેલ ટાસ્ક ઇનબોક્સમાં ઉમેરાયા</item>
     </plurals>
     <string name="task_transfer_import_failed">આ YATA ટાસ્ક લિંક આયાત કરી શકાઈ નથી.</string>
+    <string name="shared_task_import_title">શેર કરેલ ટાસ્ક</string>
+    <string name="shared_task_import_create_missing_title">ખૂટતી વસ્તુઓ બનાવવી છે?</string>
+    <string name="shared_task_import_create_missing_message">%1$s હજુ તમારા વર્કસ્પેસમાં નથી. તે બનાવીને આ ટાસ્ક ઉમેરવો છે?</string>
+    <string name="shared_task_import_create_and_add">બનાવો અને ઉમેરો</string>
+    <string name="shared_task_import_skip">છોડી દો</string>
     <string name="export_failed">એક્સપોર્ટ નિષ્ફળ.</string>
     <string name="reminder_before_due_error">રિમાઇન્ડર નિયત સમય પહેલા હોવું જોઈએ.</string>
     <string name="reminder_in_past_error">તે રિમાઇન્ડર સમય આજે પહેલેથી પસાર થઈ ગયો છે.</string>

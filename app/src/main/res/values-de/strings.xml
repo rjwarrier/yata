@@ -1125,6 +1125,11 @@
         <item quantity="other">%1$d geteilte Aufgaben zum Eingang hinzugefügt</item>
     </plurals>
     <string name="task_transfer_import_failed">Dieser YATA-Aufgabenlink konnte nicht importiert werden.</string>
+    <string name="shared_task_import_title">Geteilte Aufgabe</string>
+    <string name="shared_task_import_create_missing_title">Fehlende Elemente erstellen?</string>
+    <string name="shared_task_import_create_missing_message">%1$s gibt es in deinem Arbeitsbereich noch nicht. Erstellen und diese Aufgabe hinzufügen?</string>
+    <string name="shared_task_import_create_and_add">Erstellen &amp; hinzufügen</string>
+    <string name="shared_task_import_skip">Überspringen</string>
     <string name="export_failed">Export fehlgeschlagen.</string>
     <string name="reminder_before_due_error">Die Erinnerung muss vor der Fälligkeitszeit liegen.</string>
     <string name="reminder_in_past_error">Diese Erinnerungszeit ist heute bereits verstrichen.</string>

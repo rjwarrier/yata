@@ -909,6 +909,11 @@
         <item quantity="other">%1$d attività condivise aggiunte alla Posta in arrivo</item>
     </plurals>
     <string name="task_transfer_import_failed">Impossibile importare questo link attività YATA.</string>
+    <string name="shared_task_import_title">Attività condivisa</string>
+    <string name="shared_task_import_create_missing_title">Creare gli elementi mancanti?</string>
+    <string name="shared_task_import_create_missing_message">%1$s non esistono ancora nel tuo spazio di lavoro. Crearli e aggiungere questa attività?</string>
+    <string name="shared_task_import_create_and_add">Crea e aggiungi</string>
+    <string name="shared_task_import_skip">Salta</string>
     <string name="export_failed">Esportazione non riuscita.</string>
     <string name="reminder_before_due_error">Il promemoria deve essere prima dell\'orario di scadenza.</string>
     <string name="reminder_in_past_error">Quell\'orario di promemoria è già passato oggi.</string>

@@ -992,6 +992,11 @@
         <item quantity="other">%1$d ਸਾਂਝੇ ਕੀਤੇ ਕਾਰਜ ਇਨਬਾਕਸ ਵਿੱਚ ਜੋੜੇ ਗਏ</item>
     </plurals>
     <string name="task_transfer_import_failed">ਇਹ YATA ਕਾਰਜ ਲਿੰਕ ਆਯਾਤ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ।</string>
+    <string name="shared_task_import_title">ਸਾਂਝਾ ਕੀਤਾ ਕਾਰਜ</string>
+    <string name="shared_task_import_create_missing_title">ਗੁੰਮ ਆਈਟਮਾਂ ਬਣਾਉਣੀਆਂ ਹਨ?</string>
+    <string name="shared_task_import_create_missing_message">%1$s ਅਜੇ ਤੁਹਾਡੇ ਵਰਕਸਪੇਸ ਵਿੱਚ ਨਹੀਂ ਹਨ। ਇਹਨਾਂ ਨੂੰ ਬਣਾ ਕੇ ਇਹ ਕਾਰਜ ਜੋੜਨਾ ਹੈ?</string>
+    <string name="shared_task_import_create_and_add">ਬਣਾਓ ਅਤੇ ਜੋੜੋ</string>
+    <string name="shared_task_import_skip">ਛੱਡੋ</string>
     <string name="export_failed">ਨਿਰਯਾਤ ਅਸਫਲ।</string>
     <string name="reminder_before_due_error">ਰੀਮਾਈਂਡਰ ਨਿਯਤ ਸਮੇਂ ਤੋਂ ਪਹਿਲਾਂ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ।</string>
     <string name="reminder_in_past_error">ਉਹ ਰੀਮਾਈਂਡਰ ਸਮਾਂ ਅੱਜ ਪਹਿਲਾਂ ਹੀ ਲੰਘ ਚੁੱਕਾ ਹੈ।</string>

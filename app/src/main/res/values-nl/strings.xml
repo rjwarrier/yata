@@ -1017,6 +1017,11 @@
         <item quantity="other">%1$d gedeelde taken toegevoegd aan Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Deze YATA-taaklink kon niet worden geïmporteerd.</string>
+    <string name="shared_task_import_title">Gedeelde taak</string>
+    <string name="shared_task_import_create_missing_title">Ontbrekende items aanmaken?</string>
+    <string name="shared_task_import_create_missing_message">%1$s bestaan nog niet in je werkruimte. Aanmaken en deze taak toevoegen?</string>
+    <string name="shared_task_import_create_and_add">Aanmaken &amp; toevoegen</string>
+    <string name="shared_task_import_skip">Overslaan</string>
     <string name="export_failed">Exporteren mislukt.</string>
     <string name="reminder_before_due_error">Herinnering moet vóór de vervaltijd liggen.</string>
     <string name="reminder_in_past_error">Die herinneringstijd is vandaag al voorbij.</string>

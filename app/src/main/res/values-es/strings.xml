@@ -413,6 +413,11 @@
         <item quantity="other">Se añadieron %1$d tareas compartidas a la bandeja de entrada</item>
     </plurals>
     <string name="task_transfer_import_failed">No se pudo importar este enlace de tarea de YATA.</string>
+    <string name="shared_task_import_title">Tarea compartida</string>
+    <string name="shared_task_import_create_missing_title">¿Crear los elementos que faltan?</string>
+    <string name="shared_task_import_create_missing_message">%1$s aún no existen en tu espacio de trabajo. ¿Los creamos y añadimos esta tarea?</string>
+    <string name="shared_task_import_create_and_add">Crear y añadir</string>
+    <string name="shared_task_import_skip">Omitir</string>
     <string name="export_failed">Error al exportar.</string>
     <string name="reminder_before_due_error">El recordatorio debe ser antes de la hora límite.</string>
     <string name="reminder_in_past_error">Esa hora de recordatorio ya pasó hoy.</string>

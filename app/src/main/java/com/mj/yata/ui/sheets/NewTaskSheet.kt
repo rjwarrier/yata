@@ -190,6 +190,76 @@ data class NewTaskDraft(
     val estimateMinutes: Int?
 )
 
+/** Lists/projects/tags a shared task named that don't exist locally yet. Populated only for the
+ * kinds the sender's structure-copy choice actually carried. Presenting this before anything is
+ * created is what turns "tap a link, silently gain three new lists" into a choice the receiver
+ * made — see docs/app-links-team-sharing-design.md §5. */
+data class PendingSharedStructure(
+    val listName: String?,
+    val projectName: String?,
+    val tagNames: List<String>
+) {
+    val isEmpty: Boolean get() = listName == null && projectName == null && tagNames.isEmpty()
+}
+
+data class ResolvedSharedTask(val draft: NewTaskDraft, val pending: PendingSharedStructure)
+
+/**
+ * Matches a [com.mj.yata.util.export.SharedTaskDraft] against locally-known lists/projects/tags
+ * by name (case-insensitively, same convention [com.mj.yata.util.export.TaskTransferImporter]
+ * uses for its own direct-import path), and reports whatever it named but couldn't find.
+ *
+ * People are deliberately absent here: a shared task never resolves or creates a
+ * [com.mj.yata.domain.model.Person] on this device (see
+ * docs/app-links-team-sharing-design.md §4) — [NewTaskDraft.assigneeIds] is always empty, which
+ * leaves the sheet's normal "assign to me" default to apply exactly as it would for a task
+ * created by hand.
+ */
+fun com.mj.yata.util.export.SharedTaskDraft.resolveAgainstLocalData(
+    lists: List<YataList>,
+    projects: List<Project>,
+    tags: List<Tag>
+): ResolvedSharedTask {
+    fun findByName(name: String, candidates: List<Pair<String, String>>): String? =
+        candidates.firstOrNull { (candidateName, _) -> candidateName.trim().equals(name.trim(), ignoreCase = true) }?.second
+
+    val listNames = lists.map { it.name to it.id }
+    val projectNames = projects.map { it.name to it.id }
+    val tagNames = tags.map { it.name to it.id }
+
+    val listId = list?.let { findByName(it.name, listNames) }
+    val projectId = project?.let { findByName(it.name, projectNames) }
+    val resolvedTagIds = this.tags.mapNotNull { findByName(it.name, tagNames) }
+    val missingTagNames = this.tags.filter { findByName(it.name, tagNames) == null }.map { it.name }
+
+    val draft = NewTaskDraft(
+        title = title,
+        listId = listId,
+        priority = priority,
+        assigneeIds = emptyList(),
+        tagIds = resolvedTagIds,
+        recurrence = recurrence,
+        due = due,
+        startDate = startDate,
+        time = time,
+        reminder = null,
+        section = "",
+        projectId = projectId,
+        notes = notes,
+        subtasks = subtaskTitles.mapIndexed { index, subtitle ->
+            Subtask(id = "sub_" + java.util.UUID.randomUUID().toString(), title = subtitle, done = false, sortOrder = index)
+        },
+        flag = flag,
+        estimateMinutes = estimateMinutes
+    )
+    val pending = PendingSharedStructure(
+        listName = list?.name?.takeIf { listId == null },
+        projectName = project?.name?.takeIf { projectId == null },
+        tagNames = missingTagNames
+    )
+    return ResolvedSharedTask(draft, pending)
+}
+
 private val stringStateListSaver: Saver<SnapshotStateList<String>, Any> = listSaver(
     save = { it.toList() },
     restore = { it.map(Any?::toString).toMutableStateList() }
@@ -298,6 +368,14 @@ fun NewTaskSheet(
     initialListId: String? = null,
     initialTagId: String? = null,
     initialDueDateOverride: String? = null,
+    /** Prefills the sheet from an already-resolved shared task (see [resolveAgainstLocalData])
+     * instead of building a task from scratch. Deliberately one field rather than yet more
+     * `initial*` parameters — see [NewTaskDraft]'s doc comment on why that path is dangerous
+     * here. */
+    initialDraft: NewTaskDraft? = null,
+    /** Lets the shared-task-import flow show "Shared Task" instead of "New Task" in the header,
+     * without a separate copy of this screen's chrome. */
+    @androidx.annotation.StringRes headerTitleRes: Int = R.string.new_task_title,
     projectsEnabled: Boolean = true,
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
@@ -311,19 +389,21 @@ fun NewTaskSheet(
     defaultTagIds: Set<String> = emptySet(),
     onDraftStateChanged: (Boolean) -> Unit = {}
 ) {
-    var title by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue("")) }
-    val effectiveInitialProjectId = remember(initialProjectId, defaultProjectId, projectsEnabled, projects) {
-        initialProjectId ?: defaultProjectId?.takeIf { id ->
+    var title by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(initialDraft?.title ?: ""))
+    }
+    val effectiveInitialProjectId = remember(initialProjectId, defaultProjectId, projectsEnabled, projects, initialDraft) {
+        initialDraft?.projectId ?: initialProjectId ?: defaultProjectId?.takeIf { id ->
             projectsEnabled && projects.any { it.id == id }
         }
     }
-    var selectedListId by rememberSaveable { mutableStateOf(initialListId) }
+    var selectedListId by rememberSaveable { mutableStateOf(initialDraft?.listId ?: initialListId) }
     var selectedProjectId by rememberSaveable { mutableStateOf(effectiveInitialProjectId) }
-    var selectedPriority by rememberSaveable { mutableStateOf(defaultPriority) }
+    var selectedPriority by rememberSaveable { mutableStateOf(initialDraft?.priority ?: defaultPriority) }
     // No manual toggle exists for this yet (unlike due/time/priority below) — quick-add is
     // currently the only way to flag a task before it's created, so there's no "manually set"
     // state to protect it from being overwritten.
-    var selectedFlag by rememberSaveable { mutableStateOf(false) }
+    var selectedFlag by rememberSaveable { mutableStateOf(initialDraft?.flag ?: false) }
     // No section chosen at creation — there's no picker here (adding one risks tipping this
     // form's parameter count over the register-allocation limit it already hit once, see
     // NewTaskDraft's doc comment). A new task starts in the project's implicit "No section"
@@ -332,9 +412,13 @@ fun NewTaskSheet(
 
     // Initial due date: an explicit override (e.g. the day tapped on the calendar) wins,
     // otherwise the pre-selected project's due date, otherwise the user's configured default
-    // (which is TODAY unless changed, preserving the previous hardcoded behavior).
-    val initialDueDate = remember(projects, effectiveInitialProjectId, initialDueDateOverride, defaultDueDate) {
-        if (initialDueDateOverride != null) {
+    // (which is TODAY unless changed, preserving the previous hardcoded behavior). A shared
+    // task's own due date takes priority over all of that — it describes the work, not this
+    // device's usual defaults.
+    val initialDueDate = remember(projects, effectiveInitialProjectId, initialDueDateOverride, defaultDueDate, initialDraft) {
+        if (initialDraft?.due != null) {
+            initialDraft.due
+        } else if (initialDueDateOverride != null) {
             initialDueDateOverride
         } else if (effectiveInitialProjectId != null) {
             val projectObj = projects.find { it.id == effectiveInitialProjectId }
@@ -344,11 +428,16 @@ fun NewTaskSheet(
         }
     }
     var selectedDueDate by rememberSaveable { mutableStateOf<String?>(initialDueDate) }
-    var selectedStartDate by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedTime by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedStartDate by rememberSaveable { mutableStateOf(initialDraft?.startDate) }
+    var selectedTime by rememberSaveable { mutableStateOf(initialDraft?.time) }
+    // A shared task's reminder is never carried (it's the sender's own nudge preference, not the
+    // recipient's — see docs/app-links-team-sharing-design.md §2), so initialDraft.reminder is
+    // always null here; nothing to seed.
     var selectedReminder by rememberSaveable { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
-    var selectedRecurrence by rememberSaveable(stateSaver = recurrenceSaver) { mutableStateOf<Recurrence?>(null) }
+    var selectedRecurrence by rememberSaveable(stateSaver = recurrenceSaver) {
+        mutableStateOf(initialDraft?.recurrence)
+    }
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showCustomStartOffsetDialog by remember { mutableStateOf(false) }
@@ -362,14 +451,17 @@ fun NewTaskSheet(
     // Quick-add: typing a date/time phrase in the title (e.g. "tomorrow 3pm") prefills these
     // chips. Once the user picks a due date/time manually, their choice always wins over
     // further parsing — see setDueDate/setTime below.
-    var dueManuallySet by rememberSaveable { mutableStateOf(initialDueDateOverride != null) }
-    var startDateManuallySet by rememberSaveable { mutableStateOf(false) }
+    // A shared task's own values are as deliberate as anything the user picks by hand, so each
+    // is marked manually-set the same way a tap on its picker would — otherwise quick-add's
+    // parse of the (already-final) title could silently overwrite what the sender actually sent.
+    var dueManuallySet by rememberSaveable { mutableStateOf(initialDueDateOverride != null || initialDraft?.due != null) }
+    var startDateManuallySet by rememberSaveable { mutableStateOf(initialDraft?.startDate != null) }
     var startDateDaysBeforeDue by rememberSaveable { mutableStateOf<Int?>(null) }
-    var timeManuallySet by rememberSaveable { mutableStateOf(false) }
-    var recurrenceManuallySet by rememberSaveable { mutableStateOf(false) }
+    var timeManuallySet by rememberSaveable { mutableStateOf(initialDraft?.time != null) }
+    var recurrenceManuallySet by rememberSaveable { mutableStateOf(initialDraft?.recurrence != null) }
     var reminderManuallySet by rememberSaveable { mutableStateOf(false) }
-    var priorityManuallySet by rememberSaveable { mutableStateOf(false) }
-    var quickAddDismissed by rememberSaveable { mutableStateOf(false) }
+    var priorityManuallySet by rememberSaveable { mutableStateOf(initialDraft != null) }
+    var quickAddDismissed by rememberSaveable { mutableStateOf(initialDraft != null) }
     var ignoredQuickAddFields by rememberSaveable(stateSaver = stringSetSaver) { mutableStateOf(setOf<String>()) }
     var keepAdding by rememberSaveable { mutableStateOf(false) }
     val setDueDate: (String?) -> Unit = {
@@ -407,12 +499,12 @@ fun NewTaskSheet(
         }
     }
 
-    val effectiveInitialTagIds = remember(initialTagId, defaultTagIds, tagsEnabled, tags) {
+    val effectiveInitialTagIds = remember(initialTagId, defaultTagIds, tagsEnabled, tags, initialDraft) {
         if (!tagsEnabled) {
             emptySet()
         } else {
             val existingTagIds = tags.map { it.id }.toSet()
-            (defaultTagIds.filter { it in existingTagIds } + listOfNotNull(initialTagId)).toSet()
+            (defaultTagIds.filter { it in existingTagIds } + listOfNotNull(initialTagId) + (initialDraft?.tagIds ?: emptyList())).toSet()
         }
     }
     val selectedTagIds = rememberSaveable(saver = stringStateListSaver) { mutableStateListOf<String>() }
@@ -423,8 +515,10 @@ fun NewTaskSheet(
     }
     var activePanel by remember { mutableStateOf<String?>(null) }
 
-    var notes by rememberSaveable { mutableStateOf("") }
-    val subtasks = rememberSaveable(saver = subtaskStateListSaver) { mutableStateListOf<Subtask>() }
+    var notes by rememberSaveable { mutableStateOf(initialDraft?.notes ?: "") }
+    val subtasks = rememberSaveable(saver = subtaskStateListSaver) {
+        mutableStateListOf(*(initialDraft?.subtasks ?: emptyList()).toTypedArray())
+    }
     var newSubtaskTitle by rememberSaveable { mutableStateOf("") }
 
     val accents = LocalYataAccents.current
@@ -705,7 +799,7 @@ fun NewTaskSheet(
                     notes = notes.trim().ifBlank { null },
                     subtasks = subtasks.toList(),
                     flag = selectedFlag,
-                    estimateMinutes = defaultEstimateMinutes
+                    estimateMinutes = initialDraft?.estimateMinutes ?: defaultEstimateMinutes
                 )
             )
             if (keepAdding && onAddTaskAndContinue != null) {
@@ -745,7 +839,7 @@ fun NewTaskSheet(
         TopAppBar(
             title = {
                 Text(
-                    text = stringResource(R.string.new_task_title),
+                    text = stringResource(headerTitleRes),
                     style = MaterialTheme.typography.titleMedium
                 )
             },

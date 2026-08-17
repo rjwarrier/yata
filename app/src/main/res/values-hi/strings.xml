@@ -1017,6 +1017,11 @@
         <item quantity="other">%1$d साझा किए गए कार्य इनबॉक्स में जोड़े गए</item>
     </plurals>
     <string name="task_transfer_import_failed">यह YATA कार्य लिंक आयात नहीं किया जा सका।</string>
+    <string name="shared_task_import_title">साझा किया गया कार्य</string>
+    <string name="shared_task_import_create_missing_title">गुम आइटम बनाएं?</string>
+    <string name="shared_task_import_create_missing_message">%1$s अभी आपके वर्कस्पेस में नहीं हैं। इन्हें बनाकर यह कार्य जोड़ें?</string>
+    <string name="shared_task_import_create_and_add">बनाएं और जोड़ें</string>
+    <string name="shared_task_import_skip">छोड़ें</string>
     <string name="export_failed">निर्यात विफल रहा।</string>
     <string name="reminder_before_due_error">रिमाइंडर नियत समय से पहले होना चाहिए।</string>
     <string name="reminder_in_past_error">वह रिमाइंडर समय आज पहले ही बीत चुका है।</string>

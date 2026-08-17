@@ -992,6 +992,11 @@
         <item quantity="other">%1$d பகிரப்பட்ட பணிகள் உள்பெட்டியில் சேர்க்கப்பட்டன</item>
     </plurals>
     <string name="task_transfer_import_failed">இந்த YATA பணி இணைப்பை இறக்குமதி செய்ய முடியவில்லை.</string>
+    <string name="shared_task_import_title">பகிரப்பட்ட பணி</string>
+    <string name="shared_task_import_create_missing_title">இல்லாத உருப்படிகளை உருவாக்கவா?</string>
+    <string name="shared_task_import_create_missing_message">%1$s இன்னும் உங்கள் பணியிடத்தில் இல்லை. அவற்றை உருவாக்கி இந்தப் பணியைச் சேர்க்கவா?</string>
+    <string name="shared_task_import_create_and_add">உருவாக்கிச் சேர்</string>
+    <string name="shared_task_import_skip">தவிர்</string>
     <string name="export_failed">ஏற்றுமதி தோல்வியடைந்தது.</string>
     <string name="reminder_before_due_error">நினைவூட்டல் கடைசி நேரத்திற்கு முன் இருக்க வேண்டும்.</string>
     <string name="reminder_in_past_error">அந்த நினைவூட்டல் நேரம் இன்று ஏற்கனவே கடந்துவிட்டது.</string>

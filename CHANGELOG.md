@@ -29,6 +29,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   they carry the task's due date, start date, time, estimate and repeat rule so a shared task
   arrives with its schedule intact. Personal details deliberately stay behind: the sender's
   reminder, their section, and whether they had already completed it.
+- Tapping a single-task share link now opens it in the task editor, prefilled, instead of adding
+  it straight to Inbox — review or change anything before it's saved. If the sender's list,
+  project, or tags don't exist yet, you're asked before anything is created. Links carrying several
+  tasks still add them directly, as before. Shared tasks no longer create or reassign to the
+  sender's people — a shared task now arrives unassigned rather than to a stranger's contact.
 
 ### Fixed
 - Task import links are no longer needlessly long for non-Latin languages. Links now use whichever

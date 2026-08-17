@@ -777,6 +777,11 @@
         <item quantity="other">%1$d tâches partagées ajoutées à la boîte de réception</item>
     </plurals>
     <string name="task_transfer_import_failed">Impossible d\'importer ce lien de tâche YATA.</string>
+    <string name="shared_task_import_title">Tâche partagée</string>
+    <string name="shared_task_import_create_missing_title">Créer les éléments manquants ?</string>
+    <string name="shared_task_import_create_missing_message">%1$s n\'existent pas encore dans votre espace de travail. Les créer et ajouter cette tâche ?</string>
+    <string name="shared_task_import_create_and_add">Créer et ajouter</string>
+    <string name="shared_task_import_skip">Ignorer</string>
     <string name="export_failed">L\'exportation a échoué.</string>
     <string name="reminder_before_due_error">Le rappel doit être effectué avant l\'heure prévue.</string>
     <string name="reminder_in_past_error">Ce temps de rappel est déjà passé aujourd’hui.</string>

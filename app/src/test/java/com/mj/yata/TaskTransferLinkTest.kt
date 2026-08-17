@@ -16,6 +16,7 @@ import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.export.TaskTransferImporter
 import com.mj.yata.util.export.buildTaskTransferLink
 import com.mj.yata.util.export.isTaskTransferUri
+import com.mj.yata.util.export.parseTransferLink
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
@@ -975,6 +976,60 @@ class TaskTransferLinkTest {
         assertNull(imported.due)
         assertNull(imported.recurrence)
         assertNull(imported.estimateMinutes)
+    }
+
+    // --- parseTransferLink: read-only decode for the prefilled-editor flow -------------------
+
+    @Test
+    fun parseTransferLink_touchesNoRepository_andReturnsTheTaskUnwritten() {
+        val original = task(
+            title = "மின்சார கட்டணம் செலுத்து", priority = "high", flag = true,
+            listId = "list1", tagIds = listOf("tag1")
+        )
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original),
+            listsById = mapOf("list1" to YataList(id = "list1", name = "Work", color = "accentA", icon = "folder")),
+            projectsById = emptyMap(), tagsById = mapOf("tag1" to Tag(id = "tag1", name = "Urgent", color = "error")),
+            peopleById = emptyMap(), includeStructure = true, includeNotes = false
+        )
+
+        val parsed = parseTransferLink(importUri(link.uri))
+
+        assertTrue(parsed.copyStructure)
+        val draft = parsed.tasks.single()
+        assertEquals(original.title, draft.title)
+        assertEquals("high", draft.priority)
+        assertTrue(draft.flag)
+        // Structure is surfaced by name, not id — the sender's ids mean nothing on this device;
+        // resolving them to local rows is resolveAgainstLocalData's job, not the parser's.
+        assertEquals("Work", draft.list?.name)
+        assertEquals(listOf("Urgent"), draft.tags.map { it.name })
+    }
+
+    @Test
+    fun parseTransferLink_carriesScheduleFieldsForThePreview() {
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task()), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        val draft = parseTransferLink(importUri(link.uri)).tasks.single()
+
+        assertEquals("2026-08-20", draft.due)
+        assertEquals("2026-08-18", draft.startDate)
+        assertEquals("2:00 PM", draft.time)
+        assertEquals(30, draft.estimateMinutes)
+    }
+
+    @Test
+    fun parseTransferLink_rejectsMalformedLinks_theSameWayImportDoes() {
+        try {
+            parseTransferLink(Uri.parse("yata://i?e=not-valid-base64-!!!"))
+            fail("expected malformed payload to throw")
+        } catch (e: IllegalArgumentException) {
+            // expected
+        }
     }
 
     // --- v1 legacy links still import ------------------------------------------------------
