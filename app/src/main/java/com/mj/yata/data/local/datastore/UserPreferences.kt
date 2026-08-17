@@ -178,6 +178,7 @@ class UserPreferences @Inject constructor(
         val GITHUB_API_BASE         = stringPreferencesKey("github_api_base")
         val GITHUB_TOKEN_EXPIRES_AT = longPreferencesKey("github_token_expires_at")
         val GITHUB_LAST_HEAD_SHA    = stringPreferencesKey("github_last_head_sha")
+        val GITHUB_LAST_CANONICAL_HASH = stringPreferencesKey("github_last_canonical_hash")
         // The theme_schedule_* keys that lived here went with the SCHEDULED theme mode. Any values
         // already written stay in the file harmlessly — nothing reads that name any more.
         val REDUCE_MOTION_ENABLED   = booleanPreferencesKey("reduce_motion_enabled")
@@ -426,6 +427,7 @@ class UserPreferences @Inject constructor(
     val githubApiBaseFlow: Flow<String> = prefsFlow.map { it[GITHUB_API_BASE] ?: "https://api.github.com" }
     val githubTokenExpiresAtFlow: Flow<Long?> = prefsFlow.map { it[GITHUB_TOKEN_EXPIRES_AT] }
     val githubLastHeadShaFlow: Flow<String?> = prefsFlow.map { it[GITHUB_LAST_HEAD_SHA] }
+    val githubLastCanonicalHashFlow: Flow<String?> = prefsFlow.map { it[GITHUB_LAST_CANONICAL_HASH] }
     val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_TODAY] ?: false }
     val todayShowUpcomingWhenEmptyFlow: Flow<Boolean> = prefsFlow.map { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] ?: false }
     val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PROJECT] ?: false }
@@ -931,6 +933,7 @@ class UserPreferences @Inject constructor(
             prefs[GITHUB_API_BASE] = normalizedApiBase
             prefs[REMOTE_BACKUP_PROTOCOL] = com.mj.yata.domain.model.RemoteBackupProtocol.GITHUB.name
             prefs.remove(GITHUB_LAST_HEAD_SHA)
+            prefs.remove(GITHUB_LAST_CANONICAL_HASH)
         }
     }
 
@@ -943,6 +946,23 @@ class UserPreferences @Inject constructor(
     suspend fun setGitHubLastHeadSha(sha: String?) {
         dataStore.edit { prefs ->
             if (!sha.isNullOrBlank()) prefs[GITHUB_LAST_HEAD_SHA] = sha else prefs.remove(GITHUB_LAST_HEAD_SHA)
+        }
+    }
+
+    suspend fun setGitHubLastCanonicalHash(hash: String?) {
+        dataStore.edit { prefs ->
+            if (!hash.isNullOrBlank()) prefs[GITHUB_LAST_CANONICAL_HASH] = hash else prefs.remove(GITHUB_LAST_CANONICAL_HASH)
+        }
+    }
+
+    suspend fun setGitHubSyncedState(headSha: String?, canonicalHash: String?) {
+        dataStore.edit { prefs ->
+            if (!headSha.isNullOrBlank()) prefs[GITHUB_LAST_HEAD_SHA] = headSha else prefs.remove(GITHUB_LAST_HEAD_SHA)
+            if (!canonicalHash.isNullOrBlank()) {
+                prefs[GITHUB_LAST_CANONICAL_HASH] = canonicalHash
+            } else {
+                prefs.remove(GITHUB_LAST_CANONICAL_HASH)
+            }
         }
     }
 

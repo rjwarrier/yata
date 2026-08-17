@@ -13,7 +13,6 @@ import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.data.github.GitHubApiBase
 import com.mj.yata.data.github.GitHubNotFoundException
-import com.mj.yata.data.github.GitHubPermissionException
 import com.mj.yata.data.github.GitHubPublicRepoException
 import com.mj.yata.data.github.GitHubConfigTransfer
 import com.mj.yata.data.github.GitHubConfigTransferPayload
@@ -2642,9 +2641,6 @@ private data class LightweightFeatureState(
                         } else {
                             throw e
                         }
-                    }
-                    if (!remoteRepo.canPush) {
-                        throw GitHubPermissionException()
                     }
                     if (!remoteRepo.isPrivate) {
                         throw GitHubPublicRepoException()

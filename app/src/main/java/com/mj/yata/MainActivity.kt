@@ -52,6 +52,8 @@ import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.PlainTextImporter
+import com.mj.yata.util.export.TaskTransferLinkError
+import com.mj.yata.util.export.TaskTransferLinkException
 import com.mj.yata.util.export.TaskTransferImporter
 import com.mj.yata.util.export.isTaskTransferUri
 import dagger.hilt.android.AndroidEntryPoint
@@ -451,41 +453,22 @@ class MainActivity : AppCompatActivity() {
                             val importUri = intent.data?.takeIf { isTaskTransferUri(it) }
                             if (intent.action == Intent.ACTION_VIEW && importUri != null) {
                                 currentIntent = null
-                                // Parsing (no repository access) decides how to route before
-                                // anything is written: a single task opens a prefilled editor so
-                                // the receiver can review it, matching how every other task
-                                // creation path in the app works; a multi-task link — sharing a
-                                // whole list/project/tag/person's tasks — still imports directly,
-                                // since there's no single editor screen for several tasks yet
-                                // (see docs/app-links-team-sharing-design.md — single-task first).
-                                val parsed = runCatching { com.mj.yata.util.export.parseTransferLink(importUri) }
-                                val taskCount = parsed.getOrNull()?.tasks?.size ?: 0
-                                if (taskCount == 1) {
-                                    navController.navigate(
-                                        com.mj.yata.ui.navigation.Screen.SharedTaskImport.createRoute(importUri.toString())
-                                    )
-                                    return@LaunchedEffect
-                                }
-                                runCatching { taskTransferImporter.importFrom(importUri) }
-                                    .onSuccess { result ->
-                                        Toast.makeText(
-                                            this@MainActivity,
-                                            resources.getQuantityString(
-                                                R.plurals.task_transfer_imported,
-                                                result.taskCount,
-                                                result.taskCount
-                                            ),
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                        navController.navigate(com.mj.yata.ui.navigation.Screen.Inbox.route) {
-                                            launchSingleTop = true
-                                        }
+                                // Parsing is still read-only here: it only decides whether this
+                                // really is an importable YATA task link. The shared-import screen
+                                // owns the user-facing review step for both single-task and
+                                // multi-task links before anything is written.
+                                runCatching { com.mj.yata.util.export.parseTransferLink(importUri) }
+                                    .onSuccess {
+                                        navController.navigate(
+                                            com.mj.yata.ui.navigation.Screen.SharedTaskImport.createRoute(importUri.toString())
+                                        )
+                                        return@LaunchedEffect
                                     }
                                     .onFailure { error ->
-                                        Log.w("MainActivity", "Task transfer link import failed", error)
+                                        Log.w("MainActivity", "Task transfer link parse failed", error)
                                         Toast.makeText(
                                             this@MainActivity,
-                                            getString(R.string.task_transfer_import_failed),
+                                            getString(taskTransferImportErrorMessage(error)),
                                             Toast.LENGTH_LONG
                                         ).show()
                                     }
@@ -570,7 +553,8 @@ class MainActivity : AppCompatActivity() {
                                 onImportRequested  = { importLauncher.launch(arrayOf("application/json")) },
                                 onImportPlainTextRequested = { plainTextImportLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) },
                                 onExportCsvRequested = { exportCsvLauncher.launch("yata_tasks.csv") },
-                                onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") }
+                                onExportIcsRequested = { icsExportLauncher.launch("yata_calendar.ics") },
+                                taskTransferImporter = taskTransferImporter
                             )
                             SnackbarHost(
                                 hostState = errorHostState,
@@ -583,3 +567,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+private fun taskTransferImportErrorMessage(error: Throwable): Int =
+    when ((error as? TaskTransferLinkException)?.reason) {
+        TaskTransferLinkError.Incomplete -> R.string.task_transfer_import_incomplete
+        TaskTransferLinkError.TooManyTasks -> R.string.task_transfer_import_too_many_tasks
+        TaskTransferLinkError.TooLarge -> R.string.task_transfer_import_too_large
+        TaskTransferLinkError.Unsupported -> R.string.task_transfer_import_unsupported
+        TaskTransferLinkError.NotATaskLink,
+        TaskTransferLinkError.Empty,
+        TaskTransferLinkError.Malformed,
+        null -> R.string.task_transfer_import_failed
+    }

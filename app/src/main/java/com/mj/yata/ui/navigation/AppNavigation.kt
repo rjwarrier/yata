@@ -50,6 +50,7 @@ import com.mj.yata.ui.screen.trash.TrashScreen
 import com.mj.yata.ui.screen.welcome.WelcomeScreen
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
+import com.mj.yata.util.export.TaskTransferImporter
 
 private const val MAIN_TAB_REQUEST_KEY = "main_tab_request"
 private const val EXIT_BACK_PRESS_WINDOW_MS = 2_000L
@@ -61,7 +62,8 @@ fun AppNavigation(
     onImportRequested: () -> Unit,
     onImportPlainTextRequested: () -> Unit,
     onExportCsvRequested: () -> Unit,
-    onExportIcsRequested: () -> Unit
+    onExportIcsRequested: () -> Unit,
+    taskTransferImporter: TaskTransferImporter
 ) {
     val context = LocalContext.current
     val currentBackStackEntry = navController.currentBackStackEntryAsState().value
@@ -352,8 +354,18 @@ fun AppNavigation(
             com.mj.yata.ui.screen.sharedimport.SharedTaskImportScreen(
                 viewModel = viewModel,
                 link = link,
+                taskTransferImporter = taskTransferImporter,
                 onDismiss = { navController.popBackStack() },
-                onImported = {
+                onImported = { result ->
+                    Toast.makeText(
+                        context,
+                        context.resources.getQuantityString(
+                            R.plurals.task_transfer_imported,
+                            result.taskCount,
+                            result.taskCount
+                        ),
+                        Toast.LENGTH_LONG
+                    ).show()
                     navController.navigate(Screen.Inbox.route) {
                         popUpTo(Screen.SharedTaskImport.route) { inclusive = true }
                     }

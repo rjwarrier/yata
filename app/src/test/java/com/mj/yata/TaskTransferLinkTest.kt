@@ -14,6 +14,8 @@ import com.mj.yata.domain.model.TaskComment
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.export.TaskTransferImporter
+import com.mj.yata.util.export.TaskTransferLinkError
+import com.mj.yata.util.export.TaskTransferLinkException
 import com.mj.yata.util.export.buildTaskTransferLink
 import com.mj.yata.util.export.isTaskTransferUri
 import com.mj.yata.util.export.parseTransferLink
@@ -36,12 +38,10 @@ import java.util.Base64
 import java.util.zip.GZIPOutputStream
 
 /**
- * Guards docs/app-links-v2-plan.md's v2 link format (compact positional payload, single link,
- * raw-deflate compression, yata://i host) and pins that links already shared in v1 form
- * (yata://import/tasks, gzip, verbose JSON) still import correctly. android.net.Uri is a
- * method-stub-only class on the plain JVM (like org.json used to be — see
- * JsonExporterFieldsTest), so this runs under Robolectric rather than the bare JUnit runner the
- * rest of the util tests use.
+ * Guards the task-link formats: current HTTPS fragment links, compact compressed payloads,
+ * readable plaintext links, and links already shared in older yata:// forms. android.net.Uri is a
+ * method-stub-only class on the plain JVM (like org.json used to be — see JsonExporterFieldsTest),
+ * so this runs under Robolectric rather than the bare JUnit runner the rest of the util tests use.
  */
 @RunWith(RobolectricTestRunner::class)
 class TaskTransferLinkTest {
@@ -99,6 +99,15 @@ class TaskTransferLinkTest {
      * This reproduces the same fragment-to-parameters step the importer does. */
     private fun linkParams(link: String): Uri =
         Uri.parse("?" + Uri.parse(link).encodedFragment.orEmpty())
+
+    private suspend fun assertTransferError(reason: TaskTransferLinkError, action: suspend () -> Unit) {
+        try {
+            action()
+            fail("expected $reason")
+        } catch (error: TaskTransferLinkException) {
+            assertEquals(reason, error.reason)
+        }
+    }
 
     // --- isTaskTransferUri -------------------------------------------------------------
 
@@ -360,7 +369,7 @@ class TaskTransferLinkTest {
     // --- round trip: with structure -------------------------------------------------------
 
     @Test
-    fun withStructure_createsMissingListsProjectsTagsPeople() = runTest {
+    fun withStructure_createsMissingListsProjectsTags_butNeverPeople() = runTest {
         val repo = FakeYataRepository()
         val importer = TaskTransferImporter(repo)
         val list = YataList(id = "list1", name = "Work", color = "accentA", icon = "folder")
@@ -402,6 +411,29 @@ class TaskTransferLinkTest {
         assertEquals(listOf(importedTag.id), imported.tagIds)
         // The task arrives unassigned rather than pointing at a fabricated person row.
         assertTrue(imported.assigneeIds.isEmpty())
+    }
+
+    @Test
+    fun newCompressedStructureLinks_doNotCarrySenderPeopleAssignments() {
+        val list = YataList(id = "list1", name = "Work", color = "accentA", icon = "folder")
+        val person = Person(id = "person1", name = "Ranjith", initials = "R", color = "accentC")
+        val original = task(
+            title = "மின்சார கட்டணம் செலுத்து",
+            listId = list.id,
+            assigneeIds = listOf(person.id)
+        )
+
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original),
+            listsById = mapOf(list.id to list), projectsById = emptyMap(), tagsById = emptyMap(),
+            peopleById = mapOf(person.id to person), includeStructure = true, includeNotes = false
+        )
+
+        val parsed = parseTransferLink(importUri(link.uri))
+
+        assertTrue(parsed.copyStructure)
+        assertNotNull(linkParams(link.uri).getQueryParameter("e"))
+        assertTrue(parsed.tasks.single().assigneeNames.isEmpty())
     }
 
     @Test
@@ -1184,6 +1216,79 @@ class TaskTransferLinkTest {
     }
 
     @Test
+    fun goldenPlaintextHttpsLink_withChecksum_stillParses() {
+        // Fixed current-format readable link: if the checksum algorithm, fragment parsing, or
+        // plaintext parameter names drift, this catches it without depending on the generator.
+        val parsed = parseTransferLink(Uri.parse("https://ranjithj.in/yata/i#t=Pay%20bill&c=d0072d0f"))
+
+        assertFalse(parsed.copyStructure)
+        assertEquals("Pay bill", parsed.tasks.single().title)
+    }
+
+    @Test
+    fun goldenV2CompressedLink_stillImports() = runTest {
+        val uri = Uri.parse(
+            "yata://i?d=izbSUQrOSCxKTVEoSSzOVihOLVHSiY5FQtFKAYmVCqk5qcklRZnJmSWVCkmZOTlKOsY6JUWlqbGxsQA"
+        )
+        val repo = FakeYataRepository()
+
+        val result = TaskTransferImporter(repo).importFrom(uri)
+
+        assertEquals(1, result.taskCount)
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("Pay electricity bill", imported.title)
+        assertEquals("high", imported.priority)
+        assertTrue(imported.flag)
+    }
+
+    @Test
+    fun goldenV3CompressedHttpsLink_stillParses() {
+        val parsed = parseTransferLink(
+            Uri.parse(
+                "https://ranjithj.in/yata/i#e=izbWiY5FQtFKAYmVCqk5qcklRZnJmSWVCkmZOTlKOsY6JUWlqbGxsQA"
+            )
+        )
+
+        assertFalse(parsed.copyStructure)
+        val draft = parsed.tasks.single()
+        assertEquals("Pay electricity bill", draft.title)
+        assertEquals("high", draft.priority)
+        assertTrue(draft.flag)
+        assertNull(draft.due)
+    }
+
+    @Test
+    fun goldenV4CompressedHttpsLink_stillParsesScheduleAndRecurrence() {
+        val parsed = parseTransferLink(
+            Uri.parse(
+                "https://ranjithj.in/yata/i#e=TYvLCsIwEEV_Jdz1DMykPor_IHQfZlFLxMBoocZF_t4WQYWzuZdz0o6S_ZEwjC1kz1NdylRqC5fiDuqoLq9MALFufAtEiQeWnqNgHSeRMJzxu7VfY6GE-_yoN2-guGW6J8wf7cii3CnoOvozm5m9AQ"
+            )
+        )
+
+        val draft = parsed.tasks.single()
+        assertEquals("Pay electricity bill", draft.title)
+        assertEquals("2026-08-20", draft.due)
+        assertEquals("2:00 PM", draft.time)
+        assertEquals("2026-08-18", draft.startDate)
+        assertEquals(30, draft.estimateMinutes)
+        assertEquals(RecurrenceEnds.On("2027-01-31"), draft.recurrence?.ends)
+        assertEquals("monthly", draft.recurrence?.freq)
+    }
+
+    @Test
+    fun goldenLegacyV1Link_stillImports() = runTest {
+        val uri = Uri.parse(
+            "yata://import/tasks?s=0&d=H4sIAAAAAAAC_x2MsQ6AIBBDf8V0dnHlK9wcDIOSUy6QQOAwMcZ_93Br-9o-uGCmEcISCQZLKgFqtxoqzPpANJy3e6BITgo7lnvYOUYtZUWeT6_ygJHSqA_PvrNKKeV-2XVt-5--9v0AoDDYa3EAAAA"
+        )
+        val repo = FakeYataRepository()
+
+        val result = TaskTransferImporter(repo).importFrom(uri)
+
+        assertEquals(1, result.taskCount)
+        assertEquals("Pay electricity bill", repo.tasksFlow.value.single().title)
+    }
+
+    @Test
     fun checksumIsInvariantToParameterReordering() {
         // Some link-processing steps in transit reorder query parameters; the checksum must not
         // false-positive as "truncated" purely because of that. Build a real link, then verify a
@@ -1206,11 +1311,8 @@ class TaskTransferLinkTest {
     fun emptyTasksArray_isRejected() = runTest {
         // v3 layout: [version, lists, projects, tags, people, tasks] — no share title.
         val payload = JSONArray().put(3).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
-        try {
-            TaskTransferImporter(FakeYataRepository()).importFrom(manualCompressedUri(payload, "e"))
-            fail("expected import of an empty task list to be rejected")
-        } catch (e: IllegalArgumentException) {
-            assertTrue(e.message.orEmpty().contains("No tasks found"))
+        assertTransferError(TaskTransferLinkError.Empty) {
+            parseTransferLink(manualCompressedUri(payload, "e"))
         }
     }
 
@@ -1218,11 +1320,8 @@ class TaskTransferLinkTest {
     fun unsupportedVersion_isRejected() = runTest {
         val payload = JSONArray().put(99).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
             .put(JSONArray().put(JSONArray().put("Task")))
-        try {
-            TaskTransferImporter(FakeYataRepository()).importFrom(manualCompressedUri(payload, "e"))
-            fail("expected an unrecognized version to be rejected")
-        } catch (e: IllegalArgumentException) {
-            assertTrue(e.message.orEmpty().contains("Unsupported"))
+        assertTransferError(TaskTransferLinkError.Unsupported) {
+            parseTransferLink(manualCompressedUri(payload, "e"))
         }
     }
 
@@ -1266,11 +1365,8 @@ class TaskTransferLinkTest {
             .appendQueryParameter("d", "not-valid-base64-!!!")
             .build()
         val repo = FakeYataRepository()
-        try {
+        assertTransferError(TaskTransferLinkError.Malformed) {
             TaskTransferImporter(repo).importFrom(uri)
-            fail("expected malformed payload to throw")
-        } catch (e: IllegalArgumentException) {
-            // expected — Base64 decoding rejects it before any repository write happens.
         }
         assertTrue(repo.tasksFlow.value.isEmpty())
     }

@@ -56,7 +56,7 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
-    fun tokenWithoutPushPermission_failsBeforeMergeOrCommit() = runTest {
+    fun repoMetadataWithoutPushPermission_stillAttemptsPublish() = runTest {
         val api = FakeGitHubApi().apply {
             canPush = false
             seedHead("server".bytes())
@@ -77,10 +77,10 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.exceptionOrNull() is GitHubPermissionException)
-        assertFalse(prepared)
-        assertFalse(committed)
-        assertEquals(0, api.updateRefCalls)
+        assertTrue(result.isSuccess)
+        assertTrue(prepared)
+        assertTrue(committed)
+        assertEquals(1, api.updateRefCalls)
     }
 
     @Test
@@ -324,11 +324,78 @@ class GitHubSnapshotPublisherTest {
             seedHead("same".bytes())
         }
         var committed = false
+        var syncedHead: String? = null
+        var syncedHash: String? = null
         val publisher = GitHubSnapshotPublisher(
             api = api,
             prepare = { remoteBytes, _, _ ->
                 assertEquals("same", remoteBytes?.string())
-                GitHubPreparedSnapshot(canonicalBytes = "same".bytes(), remoteNeedsPublish = false)
+                GitHubPreparedSnapshot(
+                    canonicalBytes = "same".bytes(),
+                    remoteNeedsPublish = false,
+                    canonicalHash = "hash-same"
+                )
+            },
+            commit = { committed = true; 0 },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "no-op" },
+            onHeadSynced = { head, hash ->
+                syncedHead = head
+                syncedHash = hash
+            }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.isSuccess)
+        assertTrue(committed)
+        assertEquals(api.headCommitSha, syncedHead)
+        assertEquals("hash-same", syncedHash)
+        assertEquals(0, api.createRefCalls)
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
+    fun failedLocalCommit_doesNotReportSyncedHeadOrHash() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("server".bytes())
+        }
+        var synced = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _, _ ->
+                GitHubPreparedSnapshot(
+                    canonicalBytes = "merged".bytes(),
+                    remoteNeedsPublish = true,
+                    canonicalHash = "hash-merged"
+                )
+            },
+            commit = { error("local apply failed") },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "test commit" },
+            onHeadSynced = { _, _ -> synced = true }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertFalse(synced)
+        assertEquals(1, api.updateRefCalls)
+    }
+
+    @Test
+    fun decodedRemoteEqualToCanonical_skipsPublishEvenIfPreparedWasMarkedDirty() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("same".bytes())
+        }
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { remoteBytes, _, _ ->
+                assertEquals("same", remoteBytes?.string())
+                GitHubPreparedSnapshot(canonicalBytes = "same".bytes(), remoteNeedsPublish = true)
             },
             commit = { committed = true; 0 },
             encode = { it },

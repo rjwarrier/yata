@@ -266,6 +266,11 @@ internal object SnapshotMerger {
     fun equivalent(left: JSONObject, right: JSONObject): Boolean =
         canonical(left) == canonical(right)
 
+    fun canonicalHash(value: Any?): String =
+        MessageDigest.getInstance("SHA-256")
+            .digest(canonical(value).toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+
     fun differenceSummary(left: JSONObject, right: JSONObject): String? =
         firstDifference(left, right, "$")
 
@@ -671,6 +676,9 @@ internal data class PreparedSnapshotSync(
 ) {
     val canonicalBytes: ByteArray
         get() = canonical.toString(2).toByteArray(Charsets.UTF_8)
+
+    val canonicalHash: String
+        get() = SnapshotMerger.canonicalHash(canonical)
 }
 
 data class InitialSyncSnapshotSummary(
@@ -790,6 +798,10 @@ class SnapshotSyncEngine @Inject constructor(
         val candidate = normalized(bytes)
         jsonExporter.validateBytesForSync(candidate.toString().toByteArray(Charsets.UTF_8))
     }.isSuccess
+
+    internal suspend fun localCanonicalHash(): String = withContext(Dispatchers.IO) {
+        SnapshotMerger.canonicalHash(normalized(jsonExporter.exportToBytes()))
+    }
 
     private fun normalized(bytes: ByteArray): JSONObject =
         SnapshotMerger.normalizeForSync(JSONObject(String(bytes, Charsets.UTF_8)))

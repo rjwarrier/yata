@@ -13,6 +13,7 @@ internal data class GitHubSyncConfig(
 internal data class GitHubPreparedSnapshot(
     val canonicalBytes: ByteArray,
     val remoteNeedsPublish: Boolean,
+    val canonicalHash: String? = null,
     val token: Any? = null
 )
 
@@ -25,17 +26,13 @@ internal class GitHubSnapshotPublisher(
     private val validateRemoteSnapshot: (ByteArray) -> Boolean = { true },
     private val commitMessage: (ByteArray) -> String,
     private val lastObservedHead: suspend () -> String? = { null },
-    private val onHeadObserved: suspend (String?) -> Unit = {},
-    private val onHeadPublished: suspend (String) -> Unit = {},
+    private val onHeadSynced: suspend (String?, String?) -> Unit = { _, _ -> },
     private val retryDelay: suspend (Long) -> Unit = { delay(it) }
 ) {
     suspend fun sync(config: GitHubSyncConfig, progress: (Int, String) -> Unit): Result<SyncRunReport> {
         try {
             progress(12, "Connecting to GitHub")
             val repo = api.getRepo(config.owner, config.repo)
-            if (!repo.canPush) {
-                throw GitHubPermissionException()
-            }
             // Re-checked every sync, not just at connect time - the repo could be made public on
             // GitHub's side (or the config transferred/imported to a device that never ran the
             // connect-time check) after YATA started syncing to it.
@@ -49,7 +46,6 @@ internal class GitHubSnapshotPublisher(
                 progress(30, "Reading GitHub repo")
                 val head = readHead(config)
                 ensureHeadHasNotRewound(config, head.commitSha)
-                onHeadObserved(head.commitSha)
                 val remoteSnapshot = readRemoteSnapshot(config, head, progress)
 
                 progress(56, "Merging GitHub changes")
@@ -58,8 +54,12 @@ internal class GitHubSnapshotPublisher(
                     scopeKey(config),
                     remoteSnapshot.isRecovery
                 )
+                val remoteAlreadyCanonical =
+                    !remoteSnapshot.isRecovery &&
+                        remoteSnapshot.bytes?.contentEquals(prepared.canonicalBytes) == true
+                var syncedHeadSha: String?
 
-                if (prepared.remoteNeedsPublish || head.snapshotBlobSha == null || remoteSnapshot.isRecovery) {
+                if ((prepared.remoteNeedsPublish && !remoteAlreadyCanonical) || head.snapshotBlobSha == null || remoteSnapshot.isRecovery) {
                     progress(74, "Publishing GitHub commit")
                     val encoded = encode(prepared.canonicalBytes)
                     // GitHub's blob endpoint caps content around 100MB after base64 encoding; this
@@ -109,7 +109,6 @@ internal class GitHubSnapshotPublisher(
                             expectedCommitSha = newCommit.sha,
                             expectedBlobSha = blobSha
                         )
-                        onHeadPublished(newCommit.sha)
                         if (!publishStillCurrent) {
                             if (attempt < MAX_CAS_ATTEMPTS) {
                                 delayBeforeRetry(attempt)
@@ -117,6 +116,7 @@ internal class GitHubSnapshotPublisher(
                             }
                             throw exhaustedConflict()
                         }
+                        syncedHeadSha = newCommit.sha
                     } catch (e: GitHubConflictException) {
                         if (attempt < MAX_CAS_ATTEMPTS) {
                             delayBeforeRetry(attempt)
@@ -134,10 +134,12 @@ internal class GitHubSnapshotPublisher(
                         }
                         throw exhaustedConflict()
                     }
+                    syncedHeadSha = latestHead.commitSha
                 }
 
                 progress(88, "Applying GitHub updates")
                 val conflictsResolved = commit(prepared)
+                onHeadSynced(syncedHeadSha, prepared.canonicalHash)
                 return Result.success(SyncRunReport(conflictsResolved = conflictsResolved))
             }
         } catch (e: Exception) {

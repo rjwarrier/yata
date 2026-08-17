@@ -35,7 +35,7 @@ data class EntityExportOptions(
     val fileNameBase: String,
     val pdfPageSize: ExportPdfPageSize,
     val imageScale: ExportImageScale,
-    // Whether the share text accompanying the exported image/PDF carries a yata:// import link.
+    // Whether the share text accompanying the exported image/PDF carries a YATA import link.
     // Independent of privacyMode: privacy mode controls what the link itself carries if it's
     // included at all (structure/notes), not whether it appears in the first place — someone
     // exporting purely as a shareable snapshot, with no expectation the recipient has YATA, may

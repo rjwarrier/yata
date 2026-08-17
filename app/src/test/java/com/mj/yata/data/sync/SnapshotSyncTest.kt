@@ -188,6 +188,33 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun normalization_ignoresBackupMetadataDeviceNameAndTimestamp() {
+        val pixel = snapshot()
+            .put(
+                "backupMetadata",
+                JSONObject()
+                    .put("createdByDevice", "Pixel 10")
+                    .put("createdAt", 1_000L)
+            )
+        val pad = snapshot()
+            .put(
+                "backupMetadata",
+                JSONObject()
+                    .put("createdByDevice", "Sages Wisdom")
+                    .put("createdAt", 2_000L)
+            )
+
+        val normalizedPixel = SnapshotMerger.normalizeForSync(pixel)
+        val normalizedPad = SnapshotMerger.normalizeForSync(pad)
+
+        assertTrue(SnapshotMerger.equivalent(normalizedPixel, normalizedPad))
+        assertEquals(
+            SnapshotMerger.canonicalHash(normalizedPixel),
+            SnapshotMerger.canonicalHash(normalizedPad)
+        )
+    }
+
+    @Test
     fun normalization_dropsMalformedPortableSettings() {
         val raw = snapshot(
             settings = listOf(

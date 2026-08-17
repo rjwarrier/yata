@@ -51,7 +51,8 @@ class GitHubSyncManager @Inject constructor(
                 // half-applied local snapshot replace does not, so that part still needs the guard.
                 val config = config()
                 val api = api(config)
-                var syncResult = publisher(api, options).sync(config, progress)
+                var syncResult = fastUnchangedSync(config, api, progress, options)
+                    ?: publisher(api, options).sync(config, progress)
                 userPreferences.setGitHubTokenExpiresAt(api.tokenExpiresAtEpochMillis)
                 syncResult = syncResult.map { report ->
                     report.copy(details = report.details + githubSyncDetails(api.tokenExpiresAtEpochMillis))
@@ -102,7 +103,7 @@ class GitHubSyncManager @Inject constructor(
                     )
                 }
                 if (jsonExporter.importBytes(bytes)) {
-                    userPreferences.setGitHubLastHeadSha(id)
+                    userPreferences.setGitHubSyncedState(id, snapshotSyncEngine.localCanonicalHash())
                     Result.success(Unit)
                 } else {
                     Result.failure(IllegalStateException("Restore failed - backup file unreadable"))
@@ -181,6 +182,7 @@ class GitHubSyncManager @Inject constructor(
                 GitHubPreparedSnapshot(
                     canonicalBytes = prepared.canonicalBytes,
                     remoteNeedsPublish = prepared.remoteNeedsPublish,
+                    canonicalHash = prepared.canonicalHash,
                     token = prepared
                 )
             },
@@ -196,9 +198,43 @@ class GitHubSyncManager @Inject constructor(
             validateRemoteSnapshot = snapshotSyncEngine::isValidRemoteSnapshot,
             commitMessage = ::commitMessage,
             lastObservedHead = { userPreferences.githubLastHeadShaFlow.first() },
-            onHeadObserved = { userPreferences.setGitHubLastHeadSha(it) },
-            onHeadPublished = { userPreferences.setGitHubLastHeadSha(it) }
+            onHeadSynced = { headSha, canonicalHash ->
+                userPreferences.setGitHubSyncedState(headSha, canonicalHash)
+            }
         )
+
+    private suspend fun fastUnchangedSync(
+        config: GitHubSyncConfig,
+        api: HttpGitHubApi,
+        progress: (Int, String) -> Unit,
+        options: SyncRunOptions
+    ): Result<SyncRunReport>? {
+        if (options.allowInitialJoinMerge) return null
+
+        val localHash = snapshotSyncEngine.localCanonicalHash()
+        val lastHash = userPreferences.githubLastCanonicalHashFlow.first()?.takeIf { it.isNotBlank() }
+            ?: return null
+        if (localHash != lastHash) return null
+
+        val lastHead = userPreferences.githubLastHeadShaFlow.first()?.takeIf { it.isNotBlank() }
+            ?: return null
+
+        progress(12, "Checking GitHub")
+        val repo = api.getRepo(config.owner, config.repo)
+        if (!repo.isPrivate) {
+            throw GitHubPublicRepoException()
+        }
+        val currentHead = try {
+            api.getRef(config.owner, config.repo, config.branch).sha
+        } catch (_: GitHubNotFoundException) {
+            return null
+        }
+        if (currentHead != lastHead) return null
+
+        progress(74, "GitHub already up to date")
+        progress(88, "No local changes")
+        return Result.success(SyncRunReport(details = listOf("unchanged")))
+    }
 
     private fun api(config: GitHubSyncConfig): HttpGitHubApi =
         HttpGitHubApi(

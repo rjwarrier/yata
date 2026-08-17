@@ -38,10 +38,13 @@ private const val LEGACY_PATH = "/tasks"
 // second host letter per version would leave isTaskTransferUri knowing every historical letter
 // forever. See docs/app-links-v2-plan.md and docs/app-links-v3-plan.md.
 //   t=…  plaintext form (repeated, one per task)
-//   e=…  v3 compressed payload
+//   e=…  current compressed payload
 //   d=…  v2 compressed payload (decode only; no longer generated)
 private const val HOST = "i"
-private const val PARAM_V3_PAYLOAD = "e"
+private const val CURRENT_COMPRESSED_VERSION = 4
+private const val MIN_SUPPORTED_COMPRESSED_VERSION = 2
+private const val MAX_SUPPORTED_COMPRESSED_VERSION = CURRENT_COMPRESSED_VERSION
+private const val PARAM_COMPRESSED_PAYLOAD = "e"
 private const val PARAM_V2_PAYLOAD = "d"
 
 // Shared links are https, not yata://, because messaging apps only linkify known schemes — a
@@ -104,6 +107,25 @@ data class TaskTransferImportResult(
     val copiedStructure: Boolean
 )
 
+enum class TaskTransferLinkError {
+    NotATaskLink,
+    Unsupported,
+    Empty,
+    TooManyTasks,
+    Incomplete,
+    TooLarge,
+    Malformed
+}
+
+class TaskTransferLinkException(
+    val reason: TaskTransferLinkError,
+    message: String,
+    cause: Throwable? = null
+) : IllegalArgumentException(message, cause)
+
+private fun taskLinkError(reason: TaskTransferLinkError, message: String, cause: Throwable? = null): Nothing =
+    throw TaskTransferLinkException(reason, message, cause)
+
 fun buildTaskTransferLink(
     title: String,
     tasks: List<Task>,
@@ -140,6 +162,7 @@ private fun buildCompressedTransferLink(
     listsById: Map<String, YataList>,
     projectsById: Map<String, Project>,
     tagsById: Map<String, Tag>,
+    @Suppress("UNUSED_PARAMETER")
     peopleById: Map<String, Person>,
     includeStructure: Boolean,
     includeNotes: Boolean
@@ -151,28 +174,26 @@ private fun buildCompressedTransferLink(
     } else {
         emptySet()
     }
-    val personIds = if (includeStructure) tasks.flatMap { it.assigneeIds }.toSet() else emptySet()
-
     val lists = listIds.mapNotNull { listsById[it] }
     val projects = projectIds.mapNotNull { projectsById[it] }
     val tags = tagIds.mapNotNull { tagsById[it] }
-    val people = personIds.mapNotNull { peopleById[it] }
 
     val listIndex = lists.mapIndexed { index, list -> list.id to index }.toMap()
     val projectIndex = projects.mapIndexed { index, project -> project.id to index }.toMap()
     val tagIndex = tags.mapIndexed { index, tag -> tag.id to index }.toMap()
-    val personIndex = people.mapIndexed { index, person -> person.id to index }.toMap()
 
     // v3/v4 layout: [version, lists, projects, tags, people, tasks]. v2 carried the share title
     // at index 1, which no importer ever read — the share text around the link already shows it —
     // so every compressed link was paying 16-24 characters for a field nobody consumed.
-    // v4 differs from v3 only in the task row, which gained the schedule fields.
+    // v4 differs from v3 in the task row, which gained the schedule fields. The people section
+    // remains as an empty compatibility slot only: new links deliberately do not carry sender
+    // identities, while older links that already did still decode through the same parser.
     val payload = JSONArray()
-        .put(4)
+        .put(CURRENT_COMPRESSED_VERSION)
         .put(JSONArray().also { array -> lists.forEach { array.put(it.toTransferRow()) } })
         .put(JSONArray().also { array -> projects.forEach { array.put(it.toTransferRow(tagIndex)) } })
         .put(JSONArray().also { array -> tags.forEach { array.put(it.toTransferRow()) } })
-        .put(JSONArray().also { array -> people.forEach { array.put(it.toTransferRow()) } })
+        .put(JSONArray())
         .put(JSONArray().also { array ->
             tasks.forEach { task ->
                 array.put(
@@ -181,8 +202,7 @@ private fun buildCompressedTransferLink(
                         includeNotes = includeNotes,
                         listIndex = listIndex,
                         projectIndex = projectIndex,
-                        tagIndex = tagIndex,
-                        personIndex = personIndex
+                        tagIndex = tagIndex
                     )
                 )
             }
@@ -192,7 +212,7 @@ private fun buildCompressedTransferLink(
     // "s" is emitted only when set: the import side already reads absence as false, so spelling
     // out the default cost four characters to say nothing.
     if (includeStructure) builder.appendQueryParameter("s", "1")
-    builder.appendQueryParameter(PARAM_V3_PAYLOAD, encodeCompressedPayload(payload))
+    builder.appendQueryParameter(PARAM_COMPRESSED_PAYLOAD, encodeCompressedPayload(payload))
     return TaskTransferLink(uri = webTransferUri(builder.build()), includesStructure = includeStructure)
 }
 
@@ -321,8 +341,7 @@ private fun Task.toTransferRow(
     includeNotes: Boolean,
     listIndex: Map<String, Int>,
     projectIndex: Map<String, Int>,
-    tagIndex: Map<String, Int>,
-    personIndex: Map<String, Int>
+    tagIndex: Map<String, Int>
 ): JSONArray {
     val row = JSONArray()
         .put(title)
@@ -334,9 +353,7 @@ private fun Task.toTransferRow(
         .put(JSONArray().also { array ->
             if (includeStructure) tagIds.mapNotNull { tagIndex[it] }.forEach { array.put(it) }
         })
-        .put(JSONArray().also { array ->
-            if (includeStructure) assigneeIds.mapNotNull { personIndex[it] }.forEach { array.put(it) }
-        })
+        .put(JSONArray())
         .put(JSONArray().also { array -> subtasks.forEach { array.put(JSONArray().put(it.title)) } })
         // v4 additions: fields that describe *the work* rather than the sender's personal
         // scheduling, so they belong to the recipient too. Absolute ISO dates, never offsets —
@@ -466,7 +483,9 @@ private fun decodeCompressedPayload(encoded: String, inflate: Boolean): String {
                 val read = input.read(buffer)
                 if (read <= 0) break
                 total += read
-                require(total <= MAX_DECODED_BYTES) { "Shared task link is too large." }
+                if (total > MAX_DECODED_BYTES) {
+                    taskLinkError(TaskTransferLinkError.TooLarge, "Shared task link is too large.")
+                }
                 bytesOut.write(buffer, 0, read)
             }
         }
@@ -522,34 +541,47 @@ data class ParsedTransfer(
 )
 
 /** Decodes a transfer link. Pure: touches no storage and writes nothing, so callers can inspect
- * what a link contains before deciding whether to act on it. Throws [IllegalArgumentException]
+ * what a link contains before deciding whether to act on it. Throws [TaskTransferLinkException]
  * for anything malformed, unsupported, oversized, or carrying no usable task. */
 fun parseTransferLink(uri: Uri): ParsedTransfer {
-    require(isTaskTransferUri(uri)) { "Not a YATA task import link." }
+    if (!isTaskTransferUri(uri)) {
+        taskLinkError(TaskTransferLinkError.NotATaskLink, "Not a YATA task import link.")
+    }
     val params = transferParams(uri)
     val copyStructure = params.getQueryParameter("s") == "1"
 
-    val tasks = when {
-        uri.scheme == TRANSFER_SCHEME && uri.host == LEGACY_HOST ->
-            parseLegacyV1(params.getQueryParameter(PARAM_V2_PAYLOAD).orEmpty(), copyStructure)
-        isPlaintextTransferUri(params) -> parsePlaintext(params)
-        else -> {
-            val encoded = params.getQueryParameter(PARAM_V3_PAYLOAD)
-                ?: params.getQueryParameter(PARAM_V2_PAYLOAD)
-                ?: throw IllegalArgumentException("Unsupported YATA task link.")
-            parseCompressed(encoded, copyStructure)
+    val tasks = try {
+        when {
+            uri.scheme == TRANSFER_SCHEME && uri.host == LEGACY_HOST ->
+                parseLegacyV1(params.getQueryParameter(PARAM_V2_PAYLOAD).orEmpty(), copyStructure)
+            isPlaintextTransferUri(params) -> parsePlaintext(params)
+            else -> {
+                val encoded = params.getQueryParameter(PARAM_COMPRESSED_PAYLOAD)
+                    ?: params.getQueryParameter(PARAM_V2_PAYLOAD)
+                    ?: taskLinkError(TaskTransferLinkError.Unsupported, "Unsupported YATA task link.")
+                parseCompressed(encoded, copyStructure)
+            }
         }
+    } catch (error: TaskTransferLinkException) {
+        throw error
+    } catch (error: RuntimeException) {
+        taskLinkError(TaskTransferLinkError.Malformed, "Malformed YATA task link.", error)
     }
 
-    require(tasks.isNotEmpty()) { "No tasks found in shared link." }
+    if (tasks.isEmpty()) {
+        taskLinkError(TaskTransferLinkError.Empty, "No tasks found in shared link.")
+    }
     // Applied once here rather than per-format: the compressed path is already implicitly bounded
     // by MAX_DECODED_BYTES, but the plaintext path has no size limit at all — repeated "t="
     // parameters cost only what Android's Intent transport allows, which is far more than a share
     // link should ever legitimately carry. Without this, one tap on a malformed or hostile link
     // could bulk-insert thousands of rows with no review step in between (SharedTaskImportScreen's
     // prefilled-editor confirmation only exists for the single-task case).
-    require(tasks.size <= MAX_TASKS_PER_LINK) {
-        "This shared link contains too many tasks ($MAX_TASKS_PER_LINK max)."
+    if (tasks.size > MAX_TASKS_PER_LINK) {
+        taskLinkError(
+            TaskTransferLinkError.TooManyTasks,
+            "This shared link contains too many tasks ($MAX_TASKS_PER_LINK max)."
+        )
     }
     return ParsedTransfer(tasks, copyStructure)
 }
@@ -558,8 +590,11 @@ private fun parsePlaintext(params: Uri): List<SharedTaskDraft> {
     // Links built before this check existed have no "c" param at all — decline to verify rather
     // than reject every already-shared plaintext link outright.
     params.getQueryParameter(CHECKSUM_PARAM)?.let { expected ->
-        require(plaintextChecksum(params) == expected) {
-            "This shared task link looks incomplete — try opening it again."
+        if (plaintextChecksum(params) != expected) {
+            taskLinkError(
+                TaskTransferLinkError.Incomplete,
+                "This shared task link looks incomplete — try opening it again."
+            )
         }
     }
     return params.getQueryParameters("t").mapIndexedNotNull { index, rawTitle ->
@@ -587,7 +622,9 @@ private fun parsePlaintext(params: Uri): List<SharedTaskDraft> {
 private fun parseCompressed(encoded: String, copyStructure: Boolean): List<SharedTaskDraft> {
     val payload = JSONArray(decodeCompressedPayload(encoded, inflate = true))
     val version = payload.optInt(0)
-    require(version in 2..4) { "Unsupported YATA task link." }
+    if (version !in MIN_SUPPORTED_COMPRESSED_VERSION..MAX_SUPPORTED_COMPRESSED_VERSION) {
+        taskLinkError(TaskTransferLinkError.Unsupported, "Unsupported YATA task link.")
+    }
     // v2 carried a share title at index 1 that nothing ever read, so its sections sit one slot
     // later. v4 only extended the task row, so it shares v3's layout here.
     val base = if (version == 2) 2 else 1
@@ -646,7 +683,9 @@ private fun parseCompressed(encoded: String, copyStructure: Boolean): List<Share
 
 private fun parseLegacyV1(encoded: String, copyStructure: Boolean): List<SharedTaskDraft> {
     val payload = JSONObject(decodeCompressedPayload(encoded, inflate = false))
-    require(payload.optInt("v") == 1) { "Unsupported YATA task link." }
+    if (payload.optInt("v") != 1) {
+        taskLinkError(TaskTransferLinkError.Unsupported, "Unsupported YATA task link.")
+    }
 
     // v1 dictionaries are keyed by the sender's ids rather than by position.
     fun refsById(key: String, iconKey: String?, defaultIcon: String?): Map<String, SharedEntityRef> =

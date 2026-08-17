@@ -1,114 +1,142 @@
 # App Links Handoff
 
-## Current status
+## Current Status
 
-YATA task image/PDF exports now include app deep links in the share text. A receiver can tap a `yata://import/tasks...` link to import the shared task or task set into their Inbox.
+YATA task image/PDF exports can include one import link in the system share text. A receiver taps
+the link to add the shared task or task set to their Inbox.
 
-Two links are generated for each share:
+Generated human-facing links are verified HTTPS App Links:
 
-- Inbox-only import: adds the task(s) to Inbox without copying list, project, tag, or people structure.
-- Inbox + structure import: adds the task(s) to Inbox and creates/reuses missing lists, projects, tags, and people by name.
+```text
+https://ranjithj.in/yata/i#...
+```
 
-Privacy mode keeps the transfer payload leaner and safer by omitting notes and structure.
+The task payload lives in the URL fragment after `#`. Fragments are not sent to the web server or
+to link-preview crawlers, so task titles and notes do not leak through preview fetches. Older
+`yata://` links remain accepted for compatibility, automation, and links already shared before the
+HTTPS transport landed.
 
-## Main files
+## Main Files
 
 - `app/src/main/java/com/mj/yata/util/export/TaskTransferLink.kt`
-  - Builds compressed transfer links.
-  - Parses transfer links.
-  - Imports tasks and optionally creates missing structure.
+  - Builds transfer links.
+  - Chooses the shorter of readable plaintext parameters and compressed payloads.
+  - Parses legacy and current links.
+  - Imports confirmed multi-task links.
 - `app/src/main/java/com/mj/yata/MainActivity.kt`
-  - Handles `yata://import/tasks` deep links.
-  - Imports tasks, shows result toast, and navigates to Inbox.
+  - Detects task import links before ordinary deep-link routing.
+  - Parses links without writing and routes valid task links to the shared import screen.
+- `app/src/main/java/com/mj/yata/ui/screen/sharedimport/SharedTaskImportScreen.kt`
+  - Shows a single shared task in the normal task editor before saving.
+  - Shows multi-task links in a preview screen with Import/Cancel confirmation.
+  - Asks before creating missing list/project/tag structure.
+- `app/src/main/java/com/mj/yata/ui/sheets/NewTaskSheet.kt`
+  - Contains `resolveAgainstLocalData`, the single-task bridge from parsed shared task to draft.
 - `app/src/main/java/com/mj/yata/util/export/ExportFileUtils.kt`
-  - Adds optional share text alongside exported files.
+  - Adds optional `Intent.EXTRA_TEXT` alongside shared image/PDF files.
 - `app/src/main/java/com/mj/yata/util/export/TaskReportExport.kt`
-  - Passes transfer text through task image/PDF export.
+  - Passes import-link share text through task image/PDF export.
 - `app/src/main/java/com/mj/yata/util/export/EntityReportExport.kt`
-  - Passes transfer text through list/project/tag/person task image/PDF export.
-- Export call sites:
-  - `app/src/main/java/com/mj/yata/ui/screen/taskdetail/TaskDetailScreen.kt`
-  - `app/src/main/java/com/mj/yata/ui/screen/project/ProjectDetailScreen.kt`
-  - `app/src/main/java/com/mj/yata/ui/screen/list/ListDetailScreen.kt`
-  - `app/src/main/java/com/mj/yata/ui/screen/tag/TagDetailScreen.kt`
-  - `app/src/main/java/com/mj/yata/ui/screen/person/PersonDetailScreen.kt`
+  - Passes import-link share text through list/project/tag/person report export.
 
-## Current link format
+Export call sites:
 
-Links use the custom app scheme:
+- `app/src/main/java/com/mj/yata/ui/screen/taskdetail/TaskDetailScreen.kt`
+- `app/src/main/java/com/mj/yata/ui/screen/project/ProjectDetailScreen.kt`
+- `app/src/main/java/com/mj/yata/ui/screen/list/ListDetailScreen.kt`
+- `app/src/main/java/com/mj/yata/ui/screen/tag/TagDetailScreen.kt`
+- `app/src/main/java/com/mj/yata/ui/screen/person/PersonDetailScreen.kt`
 
-```text
-yata://import/tasks?s=0&d=...
-yata://import/tasks?s=1&d=...
-```
+## Link Formats
 
-Where:
+Current generated formats:
 
-- `s=0` means Inbox-only.
-- `s=1` means copy missing structure.
-- `d` is a URL-safe Base64 encoded, gzip-compressed JSON payload.
+- `https://ranjithj.in/yata/i#t=...&c=...`
+  - Plaintext form, repeated `t` per task.
+  - Used only when it is shorter than the compressed form.
+  - Carries a CRC32 checksum in `c` so truncated readable links are rejected.
+- `https://ranjithj.in/yata/i#e=...`
+  - Current compressed form.
+  - Raw DEFLATE plus URL-safe Base64.
+  - Current compressed payload version is `4`.
 
-This is not an Android verified HTTPS App Link yet. It is an app-specific deep link through the existing `yata` scheme.
+Decode-only compatibility formats:
 
-## Import behavior
+- `yata://i?...`
+- `yata://import/tasks?s=...&d=...`
+- v2 compressed payloads under `d=...`
+- legacy v1 gzip/verbose JSON links
 
-Imported tasks are intentionally normalized so they land in Inbox:
+## Shared Fields
 
-- New task IDs are always generated.
-- Tasks are imported as not done.
-- Due date, start date, reminder, recurrence, time, section, estimate, archive, and delete state are cleared.
-- Title, priority, flag, optional notes, and subtasks are preserved.
-- Tags, list, project, and people are preserved only when the receiver chooses the structure-copy link.
-- Missing structure is matched case-insensitively by name before creating new rows.
+Shared tasks preserve fields that describe the work:
 
-## Verification already run
+- title
+- priority
+- flag
+- notes, only when export options include notes and privacy mode is off
+- subtasks, flattened and reopened
+- due date
+- start date
+- time
+- estimate minutes
+- recurrence
+- list/project/tags, only when structure copy is included
 
-Before commit `7db50e9 Add task import links to exports`, these passed:
+Shared tasks deliberately do not preserve sender-local or identity fields:
 
-```text
-:app:compileDebugKotlin
-:app:assembleDebug
-git diff --check
-```
+- reminder
+- section
+- completed/done state
+- follow-up
+- archive/trash state
+- people assignments
 
-The debug APK was also installed successfully on the connected device.
+People are intentionally not copied or assigned. Lists, projects, and tags are shared vocabulary
+that can be matched by name; people are local identity records and are left behind.
 
-## Link shortening opportunities
+## Import Behavior
 
-The current payload is compressed but still uses readable JSON. The best next optimization is a compact payload version while keeping everything offline and private.
+Single-task links:
 
-Recommended next step:
+- Parse without writing.
+- Open the shared task in `NewTaskSheet`.
+- Let the receiver edit before saving.
+- Ask before creating missing lists/projects/tags.
 
-1. Add payload version `v=2`.
-2. Replace verbose JSON object keys with compact keys.
-3. Omit all default/empty values.
-4. Store structure as dictionaries once, then reference dictionary indexes from tasks.
-5. Store tasks/subtasks as fixed-position arrays rather than nested objects.
-6. Keep the existing importer compatible with `v=1` links.
+Multi-task links:
 
-Example direction:
+- Parse fully before any write.
+- Show a preview/confirmation screen before importing.
+- Create new task IDs.
+- Import tasks as open, unarchived, and not deleted.
+- Continue local `sortOrder` from the existing task count.
+- If structure copy is enabled, reuse or create missing lists/projects/tags by case-insensitive
+  name.
+- Never create people and never assign imported tasks to sender people.
 
-```json
-{
-  "v": 2,
-  "n": "Shared task set",
-  "x": {
-    "l": ["Work"],
-    "p": ["Launch"],
-    "g": ["Urgent"],
-    "u": ["Ranjith"]
-  },
-  "t": [
-    ["Pay bill", "high", 1, "notes", [0], 0, 0, [0], [["Check amount"]]]
-  ]
-}
-```
+## Hardening
 
-Further shortening would require server-backed short links, for example `yata://import/tasks?id=abc123`, but that introduces backend storage, expiry, privacy, sync, and abuse-handling decisions.
+Current guards:
 
-## Open decisions
+- Max decoded compressed payload: `256_000` bytes.
+- Max tasks per link: `200`.
+- Max subtasks per task: `100`.
+- Unsupported payload versions rejected.
+- Blank task titles skipped; links with no usable tasks rejected.
+- Blank entity names ignored.
+- Plaintext checksum catches clipped links.
+- Compressed payload corruption fails before writing.
+- Parser failures are surfaced as `TaskTransferLinkException` with a typed
+  `TaskTransferLinkError` reason, so UI code should switch on the reason rather than matching
+  exception message text.
 
-- Whether custom `yata://` links are enough, or whether YATA should add verified HTTPS App Links later.
-- Whether to embed clickable links inside generated PDFs in addition to share-sheet text.
-- Whether to show a confirmation/import preview screen before creating tasks.
-- Whether to warn users when a large task set produces a very long link that some apps may not auto-link.
+Tests live in:
+
+- `app/src/test/java/com/mj/yata/TaskTransferLinkTest.kt`
+- `app/src/test/java/com/mj/yata/ui/sheets/SharedTaskResolverTest.kt`
+
+## Open Follow-Ups
+
+- Add an App Link verification diagnostic in Settings/About for debug and release builds.
+- Consider warning before share when a generated link exceeds the practical auto-linking budget.

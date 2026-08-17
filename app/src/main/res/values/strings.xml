@@ -1226,11 +1226,22 @@
         <item quantity="other">%1$d shared tasks added to Inbox</item>
     </plurals>
     <string name="task_transfer_import_failed">Could not import this YATA task link.</string>
+    <string name="task_transfer_import_incomplete">This shared task link looks incomplete. Try opening it from the original message.</string>
+    <string name="task_transfer_import_too_many_tasks">This shared task link contains too many tasks to import at once.</string>
+    <string name="task_transfer_import_too_large">This shared task link is too large to import.</string>
+    <string name="task_transfer_import_unsupported">This shared task link was made by an unsupported YATA version.</string>
     <string name="shared_task_import_title">Shared Task</string>
     <string name="shared_task_import_create_missing_title">Create missing items?</string>
     <string name="shared_task_import_create_missing_message">%1$s aren\'t in your workspace yet. Create them and add this task?</string>
     <string name="shared_task_import_create_and_add">Create &amp; Add</string>
     <string name="shared_task_import_skip">Skip</string>
+    <string name="shared_tasks_import_title">Shared Tasks</string>
+    <string name="shared_tasks_import_count">%1$d tasks ready to import</string>
+    <string name="shared_tasks_import_copy_structure">Tasks will land in Inbox and create missing lists, projects, and tags.</string>
+    <string name="shared_tasks_import_inbox_only">Tasks will land in Inbox without copying structure.</string>
+    <string name="shared_tasks_import_structure_ready">Structure already exists</string>
+    <string name="shared_tasks_import_more_structure">+%1$d more</string>
+    <string name="shared_tasks_import_action">Import</string>
     <string name="export_failed">Export failed.</string>
     <string name="reminder_before_due_error">Reminder must be before the due time.</string>
     <string name="reminder_in_past_error">That reminder time has already passed today.</string>

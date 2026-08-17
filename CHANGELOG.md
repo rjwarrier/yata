@@ -20,7 +20,7 @@ test-only changes belong in the commit message, not here, unless they change beh
   shows that entity's archived tasks in their own section below Completed; toggles to "Hide
   archive" while shown.
 - Image/PDF task exports now include a single YATA import link in the share text: tapping it adds
-  the shared task(s) to Inbox, creating any missing list/project/tag/person names only when the
+  the shared task(s) to Inbox, creating any missing list/project/tag names only when the
   sender chose to include them (privacy mode omits structure from the link entirely, rather than
   just hiding it). Links are compact — a single-task share now fits well under 100 characters.
   Links shared before this change keep importing correctly.
@@ -28,6 +28,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   it as subtext below the tag name.
 - Task/list/project/tag/person image and PDF exports have a new "Include import link" toggle
   (on by default), for sharing a snapshot with someone who isn't expected to import it.
+- New compressed task import links no longer spend payload space carrying sender-side people
+  records that the receiver deliberately never imports or assigns.
+- Task import link failures now use typed internal error reasons, so the app can show the right
+  message for incomplete, oversized, unsupported, or too-large task links without fragile text
+  matching.
 
 ### Changed
 - Shared task links now open the app from a chat instead of arriving as text nobody can tap, and
@@ -37,10 +42,21 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Tapping a single-task share link now opens it in the task editor, prefilled, instead of adding
   it straight to Inbox — review or change anything before it's saved. If the sender's list,
   project, or tags don't exist yet, you're asked before anything is created. Links carrying several
-  tasks still add them directly, as before. Shared tasks no longer create or reassign to the
-  sender's people — a shared task now arrives unassigned rather than to a stranger's contact.
+  tasks now show a preview and require confirmation before the bulk import writes anything. Shared
+  tasks no longer create or reassign to the sender's people — a shared task now arrives unassigned
+  rather than to a stranger's contact.
 
 ### Fixed
+- GitHub sync no longer rejects a private repo solely because GitHub's repository metadata reports
+  `push=false`; the actual upload request now decides whether the token really lacks write access,
+  avoiding a false "no write access" failure on devices using fine-grained tokens.
+- GitHub sync errors now include GitHub's own 403 reason and whether the failure happened while
+  accessing the repo, writing objects, or updating the branch.
+- GitHub sync now skips publishing a new commit when the decoded remote snapshot already matches
+  the prepared canonical snapshot, avoiding duplicate no-op commits in sync history.
+- GitHub sync now remembers the last metadata-free canonical snapshot hash with the last synced
+  GitHub head, so a device with no local changes can skip the expensive read/merge/upload path
+  after a cheap branch-head check.
 - Task import links are no longer needlessly long for non-Latin languages. Links now use whichever
   of the two encodings is actually shorter for the text being shared, instead of guessing from the
   task's shape — which had made a single shared task up to twice as long in Hindi, Tamil, Telugu,

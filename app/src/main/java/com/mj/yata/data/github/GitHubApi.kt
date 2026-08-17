@@ -355,7 +355,7 @@ class HttpGitHubApi(
                 } else {
                     connection.errorStream?.use { it.readBytesCompat() } ?: ByteArray(0)
                 }
-                if (status !in 200..299) throw mapError(status, connection, endpoint)
+                if (status !in 200..299) throw mapError(status, connection, method, endpoint, bytes)
                 bytes
             } catch (e: GitHubException) {
                 throw e
@@ -388,7 +388,13 @@ class HttpGitHubApi(
         return connection
     }
 
-    private fun mapError(status: Int, connection: HttpURLConnection, endpoint: String): GitHubException =
+    private fun mapError(
+        status: Int,
+        connection: HttpURLConnection,
+        method: String,
+        endpoint: String,
+        body: ByteArray
+    ): GitHubException =
         when {
             status == 401 -> GitHubAuthException()
             status == 403 && connection.getHeaderField("x-ratelimit-remaining") == "0" ->
@@ -400,7 +406,7 @@ class HttpGitHubApi(
             // access for what is actually a transient throttle that clears itself.
             status == 403 && connection.getHeaderField("retry-after") != null ->
                 GitHubRateLimitException(connection.secondaryRateLimitResetEpochSeconds())
-            status == 403 -> GitHubPermissionException()
+            status == 403 -> GitHubPermissionException(forbiddenMessage(method, endpoint, body))
             status == 404 -> GitHubNotFoundException()
             status == 429 -> GitHubRateLimitException(connection.secondaryRateLimitResetEpochSeconds())
             // A ref update genuinely races another writer and returns 409/422 - that's the
@@ -414,6 +420,33 @@ class HttpGitHubApi(
             status >= 500 -> GitHubTransportException("GitHub is temporarily unavailable")
             else -> GitHubTransportException("GitHub request was rejected")
         }
+
+    private fun forbiddenMessage(method: String, endpoint: String, body: ByteArray): String {
+        val githubReason = githubErrorMessage(body)
+        val action = when {
+            method == "GET" -> "access this repo"
+            endpoint.contains("/git/refs/") && method == "PATCH" -> "update this branch"
+            method == "POST" || method == "PATCH" -> "write to this repo"
+            else -> "use this repo"
+        }
+        return buildString {
+            append("GitHub token cannot ").append(action)
+            githubReason?.let { append(": ").append(it) }
+        }
+    }
+
+    private fun githubErrorMessage(body: ByteArray): String? {
+        val raw = body.toString(Charsets.UTF_8).trim()
+        if (raw.isBlank()) return null
+        return try {
+            JSONObject(raw).optString("message")
+                .trim()
+                .takeIf { it.isNotBlank() }
+                ?.take(220)
+        } catch (_: Exception) {
+            raw.replace(Regex("\\s+"), " ").take(220)
+        }
+    }
 
     private fun HttpURLConnection.secondaryRateLimitResetEpochSeconds(): Long? =
         getHeaderField("retry-after")?.toLongOrNull()?.let { retryAfterSeconds ->

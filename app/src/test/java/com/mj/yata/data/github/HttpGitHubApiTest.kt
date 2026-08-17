@@ -107,7 +107,7 @@ class HttpGitHubApiTest {
     }
 
     @Test
-    fun plainForbiddenStaysPermissionFailure() = runTest {
+    fun plainForbiddenIncludesGitHubReason() = runTest {
         val api = HttpGitHubApi(
             tokenProvider = { "token" },
             connectionFactory = {
@@ -118,7 +118,26 @@ class HttpGitHubApiTest {
 
         val result = runCatching { api.getUser() }
 
-        assertTrue(result.exceptionOrNull() is GitHubPermissionException)
+        val error = result.exceptionOrNull()
+        assertTrue(error is GitHubPermissionException)
+        assertEquals("GitHub token cannot access this repo: no access", error?.message)
+    }
+
+    @Test
+    fun forbiddenWriteIncludesPublishContextAndGitHubReason() = runTest {
+        val api = HttpGitHubApi(
+            tokenProvider = { "token" },
+            connectionFactory = {
+                FakeConnection(status = 403, body = """{"message":"Protected branch update failed"}""")
+            },
+            retryDelay = {}
+        )
+
+        val result = runCatching { api.updateRef("owner", "repo", "main", "sha") }
+
+        val error = result.exceptionOrNull()
+        assertTrue(error is GitHubPermissionException)
+        assertEquals("GitHub token cannot update this branch: Protected branch update failed", error?.message)
     }
 
     @Test
