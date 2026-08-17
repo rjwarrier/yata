@@ -30,10 +30,15 @@ HTTPS transport landed.
   - Shows a single shared task in the normal task editor before saving.
   - Shows multi-task links in a preview screen with Import/Cancel confirmation.
   - Asks before creating missing list/project/tag structure.
+- `app/src/main/java/com/mj/yata/ui/screen/settings/HelpAboutScreen.kt`
+  - Shows a task-link diagnostic card under Settings > About.
+  - Reads Android 12+'s domain verification state for `ranjithj.in` and opens system link settings.
 - `app/src/main/java/com/mj/yata/ui/sheets/NewTaskSheet.kt`
   - Contains `resolveAgainstLocalData`, the single-task bridge from parsed shared task to draft.
 - `app/src/main/java/com/mj/yata/util/export/ExportFileUtils.kt`
   - Adds optional `Intent.EXTRA_TEXT` alongside shared image/PDF files.
+- `app/src/main/java/com/mj/yata/util/export/LongTaskLinkWarning.kt`
+  - Shows a sender-side confirmation when an import link exceeds the practical auto-link budget.
 - `app/src/main/java/com/mj/yata/util/export/TaskReportExport.kt`
   - Passes import-link share text through task image/PDF export.
 - `app/src/main/java/com/mj/yata/util/export/EntityReportExport.kt`
@@ -138,5 +143,5 @@ Tests live in:
 
 ## Open Follow-Ups
 
-- Add an App Link verification diagnostic in Settings/About for debug and release builds.
-- Consider warning before share when a generated link exceeds the practical auto-linking budget.
+- Broaden App Link and import-flow coverage with UI/Robolectric tests that run under workspace
+  `user.home`.

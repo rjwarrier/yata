@@ -28,6 +28,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   it as subtext below the tag name.
 - Task/list/project/tag/person image and PDF exports have a new "Include import link" toggle
   (on by default), for sharing a snapshot with someone who isn't expected to import it.
+- Settings > About now shows a task-link diagnostic card so you can see whether Android currently
+  verifies `ranjithj.in/yata/i` links for YATA and jump straight to the system link settings.
 - New compressed task import links no longer spend payload space carrying sender-side people
   records that the receiver deliberately never imports or assigns.
 - Task import link failures now use typed internal error reasons, so the app can show the right
@@ -45,6 +47,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   tasks now show a preview and require confirmation before the bulk import writes anything. Shared
   tasks no longer create or reassign to the sender's people — a shared task now arrives unassigned
   rather than to a stranger's contact.
+- Sharing a task export now warns first when the import link is long enough that some messaging
+  apps may fail to make it tappable.
 
 ### Fixed
 - GitHub sync no longer rejects a private repo solely because GitHub's repository metadata reports

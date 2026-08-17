@@ -261,6 +261,7 @@ fun TaskDetailScreen(
     val context = LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
+    val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
@@ -1893,8 +1894,24 @@ fun TaskDetailScreen(
         val exportDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
         fun runExport(options: com.mj.yata.util.export.TaskExportOptions) {
-            exportFormatPending = null
-            scope.launch {
+            val transferLink = if (options.includeImportLink) {
+                com.mj.yata.util.export.buildTaskTransferLink(
+                    title = task.title,
+                    tasks = listOf(task),
+                    listsById = listsById,
+                    projectsById = projectsById,
+                    tagsById = tagsById,
+                    peopleById = peopleById,
+                    includeStructure = !options.privacyMode,
+                    includeNotes = !options.privacyMode && options.includeNotes
+                )
+            } else {
+                null
+            }
+
+            fun startExport() {
+                exportFormatPending = null
+                scope.launch {
                 exportInProgress = true
                 val exportResult = runCatching {
                     com.mj.yata.util.export.exportTaskReport(
@@ -1946,20 +1963,7 @@ fun TaskDetailScreen(
                         fileNameBase = options.fileNameBase,
                         pdfPageSize = options.pdfPageSize,
                         imageScale = options.imageScale,
-                        transferText = if (options.includeImportLink) {
-                            com.mj.yata.util.export.buildTaskTransferLink(
-                                title = task.title,
-                                tasks = listOf(task),
-                                listsById = listsById,
-                                projectsById = projectsById,
-                                tagsById = tagsById,
-                                peopleById = peopleById,
-                                includeStructure = !options.privacyMode,
-                                includeNotes = !options.privacyMode && options.includeNotes
-                            ).asShareText(task.title, 1)
-                        } else {
-                            null
-                        }
+                        transferText = transferLink?.asShareText(task.title, 1)
                     )
                 }
                 exportInProgress = false
@@ -1968,6 +1972,13 @@ fun TaskDetailScreen(
                 }.onFailure { error ->
                     snackbarHostState.showError(error.message ?: context.getString(R.string.export_failed))
                 }
+            }
+            }
+
+            if (options.destination == com.mj.yata.util.export.ExportDestination.SHARE) {
+                longTaskLinkWarningGate.runOrConfirm(transferLink, taskCount = 1, action = ::startExport)
+            } else {
+                startExport()
             }
         }
 
@@ -1988,6 +1999,7 @@ fun TaskDetailScreen(
     if (exportInProgress) {
         com.mj.yata.util.export.ExportProgressDialog()
     }
+    com.mj.yata.util.export.LongTaskLinkWarningDialog(longTaskLinkWarningGate)
 
     pendingParentCompletionSubtasks?.let { completedSubtasks ->
         AlertDialog(
@@ -2145,7 +2157,6 @@ fun MetaRowItem(
         }
     }
 }
-
 
 
 

@@ -1,5 +1,12 @@
 package com.mj.yata.ui.screen.settings
 
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.verify.domain.DomainVerificationUserState
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,10 +25,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.RestoreFromTrash
@@ -37,13 +48,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,11 +66,22 @@ import com.mj.yata.ui.screen.main.AdaptiveBottomNav
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.util.AdaptiveContentBox
 
+private const val TASK_LINK_HOST = "ranjithj.in"
+private const val TASK_LINK_PATH = "/yata/i"
+private const val TASK_LINK_SAMPLE_URL = "https://ranjithj.in/yata/i#t=Test"
+
 private data class HelpSection(
     @androidx.annotation.StringRes val title: Int,
     val description: String,
     val bullets: List<String>,
     val icon: ImageVector
+)
+
+private enum class AppLinkDiagnosticStatus { Verified, UserSelected, NotVerified, Unknown }
+
+private data class AppLinkDiagnosticUiState(
+    val status: AppLinkDiagnosticStatus,
+    val resolverPackage: String?
 )
 
 private val helpSections = listOf(
@@ -198,12 +223,14 @@ fun HelpAboutScreen(
     onNavigateToTab: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val todayBadgeCount = viewModel.todayRemainingCount.collectAsStateWithLifecycle().value
     val peopleFeatureEnabled = viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle().value
     val tagsFeatureEnabled = viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle().value
     val projectsFeatureEnabled = viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle().value
     val todayTabEnabled = viewModel.todayTabEnabled.collectAsStateWithLifecycle().value
     val upcomingTabEnabled = viewModel.upcomingTabEnabled.collectAsStateWithLifecycle().value
+    val appLinkDiagnostic = remember(context) { context.taskAppLinkDiagnostic() }
 
     Scaffold(
         bottomBar = {
@@ -257,12 +284,130 @@ fun HelpAboutScreen(
                 )
             }
 
+            item {
+                AppLinkDiagnosticCard(
+                    diagnostic = appLinkDiagnostic,
+                    onOpenSettings = { context.openAppLinkSettings() }
+                )
+            }
+
             items(helpSections) { section ->
                 HelpSectionCard(section = section)
             }
 
         }
         }
+    }
+}
+
+@Composable
+private fun AppLinkDiagnosticCard(
+    diagnostic: AppLinkDiagnosticUiState,
+    onOpenSettings: () -> Unit
+) {
+    val ok = diagnostic.status == AppLinkDiagnosticStatus.Verified ||
+        diagnostic.status == AppLinkDiagnosticStatus.UserSelected
+    val tint = when (diagnostic.status) {
+        AppLinkDiagnosticStatus.Verified,
+        AppLinkDiagnosticStatus.UserSelected -> MaterialTheme.colorScheme.primary
+        AppLinkDiagnosticStatus.NotVerified -> MaterialTheme.colorScheme.error
+        AppLinkDiagnosticStatus.Unknown -> MaterialTheme.colorScheme.tertiary
+    }
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(tint.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (ok) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = stringResource(R.string.app_links_diagnostic_title),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(diagnostic.status.summaryRes()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+
+            DiagnosticLine(
+                icon = Icons.Default.Link,
+                label = stringResource(R.string.app_links_diagnostic_host),
+                value = "$TASK_LINK_HOST$TASK_LINK_PATH"
+            )
+            DiagnosticLine(
+                icon = Icons.AutoMirrored.Default.OpenInNew,
+                label = stringResource(R.string.app_links_diagnostic_resolver),
+                value = diagnostic.resolverPackage ?: stringResource(R.string.diagnostics_status_unknown)
+            )
+
+            TextButton(onClick = onOpenSettings, modifier = Modifier.align(Alignment.End)) {
+                Icon(Icons.AutoMirrored.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(
+                    text = stringResource(R.string.app_links_diagnostic_open_settings),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticLine(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.width(96.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -332,5 +477,55 @@ private fun HelpSectionCard(section: HelpSection) {
                 }
             }
         }
+    }
+}
+
+private fun Context.taskAppLinkDiagnostic(): AppLinkDiagnosticUiState {
+    val resolverPackage = taskLinkResolverPackage()
+    val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        domainVerificationStatus()
+    } else {
+        if (resolverPackage == packageName) AppLinkDiagnosticStatus.UserSelected else AppLinkDiagnosticStatus.Unknown
+    }
+    return AppLinkDiagnosticUiState(status = status, resolverPackage = resolverPackage)
+}
+
+private fun Context.taskLinkResolverPackage(): String? {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(TASK_LINK_SAMPLE_URL)).apply {
+        addCategory(Intent.CATEGORY_BROWSABLE)
+    }
+    return packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        ?.activityInfo
+        ?.packageName
+}
+
+private fun Context.openAppLinkSettings() {
+    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Intent(Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS, Uri.parse("package:$packageName"))
+    } else {
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+    }
+    startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+private fun AppLinkDiagnosticStatus.summaryRes(): Int =
+    when (this) {
+        AppLinkDiagnosticStatus.Verified -> R.string.app_links_diagnostic_verified
+        AppLinkDiagnosticStatus.UserSelected -> R.string.app_links_diagnostic_user_selected
+        AppLinkDiagnosticStatus.NotVerified -> R.string.app_links_diagnostic_not_verified
+        AppLinkDiagnosticStatus.Unknown -> R.string.app_links_diagnostic_unknown
+    }
+
+private fun Context.domainVerificationStatus(): AppLinkDiagnosticStatus {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return AppLinkDiagnosticStatus.Unknown
+    val manager = getSystemService(android.content.pm.verify.domain.DomainVerificationManager::class.java)
+        ?: return AppLinkDiagnosticStatus.Unknown
+    val state = runCatching { manager.getDomainVerificationUserState(packageName) }.getOrNull()
+        ?: return AppLinkDiagnosticStatus.Unknown
+    return when (state.hostToStateMap[TASK_LINK_HOST]) {
+        DomainVerificationUserState.DOMAIN_STATE_VERIFIED -> AppLinkDiagnosticStatus.Verified
+        DomainVerificationUserState.DOMAIN_STATE_SELECTED -> AppLinkDiagnosticStatus.UserSelected
+        DomainVerificationUserState.DOMAIN_STATE_NONE -> AppLinkDiagnosticStatus.NotVerified
+        else -> AppLinkDiagnosticStatus.Unknown
     }
 }

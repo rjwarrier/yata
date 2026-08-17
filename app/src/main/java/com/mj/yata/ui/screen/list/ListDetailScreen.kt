@@ -93,6 +93,7 @@ fun ListDetailScreen(
     val exportContext = androidx.compose.ui.platform.LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
     var exportInProgress by remember { mutableStateOf(false) }
+    val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // A list's tasks are already scoped to this one list, so the export's subheading groups
@@ -891,7 +892,6 @@ fun ListDetailScreen(
             itemPreviews = listTasks.map { com.mj.yata.util.export.ExportItemPreview(it.done, it.completedAt) },
             onDismiss = { exportFormatPending = null },
             onConfirm = { options ->
-                exportFormatPending = null
                 val cutoffMillis = options.excludeCompletedOlderThanDays?.takeIf { it > 0 }?.let {
                     System.currentTimeMillis() - it.toLong() * 24 * 60 * 60 * 1000
                 }
@@ -900,7 +900,22 @@ fun ListDetailScreen(
                     if (!options.includeCompleted) return@filter false
                     cutoffMillis == null || (task.completedAt != null && task.completedAt >= cutoffMillis)
                 }
-                scope.launch {
+                val transferLink = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
+                    com.mj.yata.util.export.buildTaskTransferLink(
+                        title = list.name,
+                        tasks = sharedTasks,
+                        listsById = listsById,
+                        projectsById = projectsById,
+                        tagsById = tagsById,
+                        peopleById = peopleById,
+                        includeStructure = !options.privacyMode,
+                        includeNotes = !options.privacyMode
+                    )
+                }
+
+                fun startExport() {
+                    exportFormatPending = null
+                    scope.launch {
                     exportInProgress = true
                     val exportResult = runCatching {
                         com.mj.yata.util.export.exportEntityReport(
@@ -928,18 +943,7 @@ fun ListDetailScreen(
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
                             imageScale = options.imageScale,
-                            transferText = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
-                                com.mj.yata.util.export.buildTaskTransferLink(
-                                    title = list.name,
-                                    tasks = sharedTasks,
-                                    listsById = listsById,
-                                    projectsById = projectsById,
-                                    tagsById = tagsById,
-                                    peopleById = peopleById,
-                                    includeStructure = !options.privacyMode,
-                                    includeNotes = !options.privacyMode
-                                ).asShareText(list.name, sharedTasks.size)
-                            }
+                            transferText = transferLink?.asShareText(list.name, exportTasks.size)
                         )
                     }
                     exportInProgress = false
@@ -949,12 +953,19 @@ fun ListDetailScreen(
                         snackbarHostState.showError(error.message ?: exportContext.getString(R.string.export_failed))
                     }
                 }
+                }
+
+                if (options.destination == com.mj.yata.util.export.ExportDestination.SHARE) {
+                    longTaskLinkWarningGate.runOrConfirm(transferLink, exportTasks.size, ::startExport)
+                } else {
+                    startExport()
+                }
             }
         )
     }
     if (exportInProgress) {
         com.mj.yata.util.export.ExportProgressDialog()
     }
+    com.mj.yata.util.export.LongTaskLinkWarningDialog(longTaskLinkWarningGate)
 }
-
 

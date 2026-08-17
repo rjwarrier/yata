@@ -1218,6 +1218,9 @@
     <string name="task_archive_action">Archive task</string>
     <string name="task_unarchive_action">Unarchive task</string>
     <string name="task_link_copied">Task link copied</string>
+    <string name="task_link_long_warning_title">Long import link</string>
+    <string name="task_link_long_warning_body">This import link is %1$d characters for %2$d tasks. Some apps may send it as plain text instead of a tappable link.</string>
+    <string name="task_link_long_warning_share_anyway">Share anyway</string>
     <string name="task_deleted">Task deleted</string>
     <string name="task_marked_open">Task marked open</string>
     <string name="task_completed">Task completed</string>
@@ -1605,6 +1608,14 @@
     <string name="diagnostics_status_ok">OK</string>
     <string name="diagnostics_status_attention">Attention</string>
     <string name="diagnostics_status_unknown">Unknown</string>
+    <string name="app_links_diagnostic_title">Task links</string>
+    <string name="app_links_diagnostic_verified">Verified links open directly in YATA.</string>
+    <string name="app_links_diagnostic_user_selected">YATA is selected for task links on this device.</string>
+    <string name="app_links_diagnostic_not_verified">Android has not verified YATA for task links.</string>
+    <string name="app_links_diagnostic_unknown">Link verification status is unavailable on this device.</string>
+    <string name="app_links_diagnostic_host">Host</string>
+    <string name="app_links_diagnostic_resolver">Resolver</string>
+    <string name="app_links_diagnostic_open_settings">Open link settings</string>
     <string name="diagnostics_notification_access">Notification access</string>
     <string name="diagnostics_exact_alarm_timing">Exact alarm timing</string>
     <string name="diagnostics_background_delivery">Background delivery</string>
