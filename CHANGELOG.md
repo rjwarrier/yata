@@ -23,6 +23,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   Links shared before this change keep importing correctly.
 - Tags now support an optional description in the create/edit sheet, and tag image/PDF exports show
   it as subtext below the tag name.
+- Task/list/project/tag/person image and PDF exports have a new "Include import link" toggle
+  (on by default), for sharing a snapshot with someone who isn't expected to import it.
 
 ### Changed
 - Shared task links now open the app from a chat instead of arriving as text nobody can tap, and
@@ -42,6 +44,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   Bengali and Malayalam. Sharing several simple tasks at once also produces a shorter, readable
   link now, and readable links can carry notes and subtasks instead of falling back to the
   encoded form. Links shared before this change keep importing correctly.
+- GitHub sync could fail with "local verification failed at $/tags[0]/description is missing
+  locally" against any repo with a snapshot from before tags supported descriptions — that field
+  was never added to the sync format's schema-drift normalization, unlike every other nullable
+  field added the same way over time.
 
 ## [0.93.1] - 2026-08-16
 

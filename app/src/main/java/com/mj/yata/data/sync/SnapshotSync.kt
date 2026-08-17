@@ -192,6 +192,17 @@ internal object SnapshotMerger {
                 }
             }
         }
+        // Tags gained "description" in 6cea2b7 and always carry "groupId" (JsonExporter.kt) —
+        // but an older snapshot already on GitHub, published before that, has neither key at
+        // all. Without normalizing them the same way projects/tasks are below, that schema drift
+        // reads as a real difference: "$/tags[0]/description is missing locally" on every sync
+        // against a repo with any pre-description snapshot in its history, even though both sides
+        // agree the tag simply has no description.
+        normalized.optJSONArray("tags")?.let { tags ->
+            for (i in 0 until tags.length()) {
+                tags.optJSONObject(i)?.normalizeNullableFields("description", "groupId")
+            }
+        }
         normalized.optJSONArray("tasks")?.let { tasks ->
             for (i in 0 until tasks.length()) {
                 val task = tasks.optJSONObject(i) ?: continue

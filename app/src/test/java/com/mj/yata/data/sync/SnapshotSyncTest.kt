@@ -229,6 +229,12 @@ class SnapshotSyncTest {
     fun normalization_treatsMissingOptionalFieldsAsNull() {
         val missing = snapshot(
             projects = listOf(project("p1")),
+            // A tag row shaped exactly like one published before tags had a "description" field
+            // (6cea2b7) — the real-world case that produced "$/tags[0]/description is missing
+            // locally" on every sync against a repo with any pre-description snapshot in its
+            // history, because this test's own fixture is what caught the gap: normalizeForSync
+            // handled the same drift for projects.description below but not tags.description.
+            tags = listOf(tag("tag1")),
             tasks = listOf(task("t1", "undated"))
         )
         val explicitNulls = snapshot(
@@ -238,6 +244,7 @@ class SnapshotSyncTest {
                     .put("defaultReminder", JSONObject.NULL)
                     .put("description", JSONObject.NULL)
             ),
+            tags = listOf(tag("tag1").put("description", JSONObject.NULL)),
             tasks = listOf(
                 task("t1", "undated")
                     .put("due", JSONObject.NULL)
