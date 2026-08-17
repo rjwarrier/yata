@@ -34,7 +34,13 @@ data class EntityExportOptions(
     val destination: ExportDestination,
     val fileNameBase: String,
     val pdfPageSize: ExportPdfPageSize,
-    val imageScale: ExportImageScale
+    val imageScale: ExportImageScale,
+    // Whether the share text accompanying the exported image/PDF carries a yata:// import link.
+    // Independent of privacyMode: privacy mode controls what the link itself carries if it's
+    // included at all (structure/notes), not whether it appears in the first place — someone
+    // exporting purely as a shareable snapshot, with no expectation the recipient has YATA, may
+    // want the file with no link attached.
+    val includeImportLink: Boolean = true
 )
 
 data class TaskExportOptions(
@@ -48,7 +54,8 @@ data class TaskExportOptions(
     val fileNameBase: String,
     val pdfPageSize: ExportPdfPageSize,
     val imageScale: ExportImageScale,
-    val imageDarkTheme: Boolean = false
+    val imageDarkTheme: Boolean = false,
+    val includeImportLink: Boolean = true
 )
 
 data class ExportOutcome(
@@ -84,6 +91,7 @@ private object ExportPrefKeys {
     const val TASK_INCLUDE_SCHEDULE = "task_include_schedule"
     const val TASK_IMAGE_DARK_THEME = "task_image_dark_theme"
     const val TASK_IMAGE_DARK_THEME_SET = "task_image_dark_theme_set"
+    const val INCLUDE_IMPORT_LINK = "include_import_link"
 }
 
 internal fun defaultEntityExportOptions(context: Context, entityName: String): EntityExportOptions {
@@ -101,7 +109,8 @@ internal fun defaultEntityExportOptions(context: Context, entityName: String): E
         destination = enumValueOrDefault(prefs.getString(ExportPrefKeys.DESTINATION, null), ExportDestination.SHARE),
         fileNameBase = "yata_${sanitizeExportFileName(entityName)}",
         pdfPageSize = enumValueOrDefault(prefs.getString(ExportPrefKeys.PDF_PAGE_SIZE, null), ExportPdfPageSize.A4),
-        imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD)
+        imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD),
+        includeImportLink = prefs.getBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, true)
     )
 }
 
@@ -131,7 +140,8 @@ internal fun defaultTaskExportOptions(context: Context, title: String, systemDar
         fileNameBase = "yata_${sanitizeExportFileName(title)}",
         pdfPageSize = enumValueOrDefault(prefs.getString(ExportPrefKeys.PDF_PAGE_SIZE, null), ExportPdfPageSize.A4),
         imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD),
-        imageDarkTheme = imageDarkTheme
+        imageDarkTheme = imageDarkTheme,
+        includeImportLink = prefs.getBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, true)
     )
 }
 
@@ -148,6 +158,7 @@ internal fun rememberEntityExportOptions(context: Context, options: EntityExport
         .putString(ExportPrefKeys.DESTINATION, options.destination.name)
         .putString(ExportPrefKeys.PDF_PAGE_SIZE, options.pdfPageSize.name)
         .putString(ExportPrefKeys.IMAGE_SCALE, options.imageScale.name)
+        .putBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, options.includeImportLink)
         .apply()
 }
 
@@ -164,6 +175,7 @@ internal fun rememberTaskExportOptions(context: Context, options: TaskExportOpti
         .putString(ExportPrefKeys.IMAGE_SCALE, options.imageScale.name)
         .putBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME, options.imageDarkTheme)
         .putBoolean(ExportPrefKeys.TASK_IMAGE_DARK_THEME_SET, true)
+        .putBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, options.includeImportLink)
         .apply()
 }
 

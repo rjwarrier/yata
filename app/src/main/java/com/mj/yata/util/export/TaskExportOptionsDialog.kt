@@ -65,6 +65,7 @@ fun TaskExportOptionsDialog(
     var pdfPageSize by remember { mutableStateOf(defaults.pdfPageSize) }
     var imageScale by remember { mutableStateOf(defaults.imageScale) }
     var imageDarkTheme by remember { mutableStateOf(defaults.imageDarkTheme) }
+    var includeImportLink by remember { mutableStateOf(defaults.includeImportLink) }
     var fileNameText by remember { mutableStateOf(defaults.fileNameBase) }
 
     // The IMAGE card (TaskShareCard) is a fixed portrait layout matching its reference design and
@@ -176,6 +177,11 @@ fun TaskExportOptionsDialog(
                     checked = showMadeWithFooter,
                     onCheckedChange = { showMadeWithFooter = it }
                 )
+                ToggleRow(
+                    title = stringResource(R.string.export_include_import_link),
+                    checked = includeImportLink,
+                    onCheckedChange = { includeImportLink = it }
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -225,7 +231,8 @@ fun TaskExportOptionsDialog(
                             fileNameBase = fileNameText,
                             pdfPageSize = pdfPageSize,
                             imageScale = imageScale,
-                            imageDarkTheme = imageDarkTheme
+                            imageDarkTheme = imageDarkTheme,
+                            includeImportLink = includeImportLink
                         )
                         rememberTaskExportOptions(context, options)
                         onConfirm(options)

@@ -304,6 +304,8 @@
     <string name="action_export_as_image">Resim olarak dışa aktar</string>
     <string name="action_refresh">Yenile</string>
     <string name="action_export_as_pdf">PDF olarak dışa aktar</string>
+    <string name="action_view_archived">Arşivi görüntüle</string>
+    <string name="action_hide_archive">Arşivi gizle</string>
     <string name="action_go_to_existing_task">Var olan göreve git</string>
     <string name="action_ignore_and_create">Yoksay ve oluştur</string>
     <string name="action_select_tags">Etiket seç</string>
@@ -931,6 +933,7 @@
     <string name="export_show_tags">Etiketleri göster</string>
     <string name="export_show_assignees">Atanan kişiyi göster</string>
     <string name="export_show_footer">\"YATA ile yapıldı\" altbilgisini göster</string>
+    <string name="export_include_import_link">İçe aktarma bağlantısını dahil et</string>
     <string name="export_section_format">Biçim</string>
     <string name="export_density_relaxed">Rahat</string>
     <string name="export_density_compact">Sıkışık</string>

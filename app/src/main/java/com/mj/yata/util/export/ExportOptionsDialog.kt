@@ -63,6 +63,7 @@ fun ExportOptionsDialog(
     var destination by remember { mutableStateOf(defaults.destination) }
     var pdfPageSize by remember { mutableStateOf(defaults.pdfPageSize) }
     var imageScale by remember { mutableStateOf(defaults.imageScale) }
+    var includeImportLink by remember { mutableStateOf(defaults.includeImportLink) }
     var fileNameText by remember { mutableStateOf(defaults.fileNameBase) }
 
     val selectedCount = filteredExportPreviewCount(itemPreviews, includeCompleted, daysText.toIntOrNull())
@@ -197,6 +198,11 @@ fun ExportOptionsDialog(
                     checked = showMadeWithFooter,
                     onCheckedChange = { showMadeWithFooter = it }
                 )
+                ToggleRow(
+                    title = stringResource(R.string.export_include_import_link),
+                    checked = includeImportLink,
+                    onCheckedChange = { includeImportLink = it }
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
@@ -248,7 +254,8 @@ fun ExportOptionsDialog(
                             destination = destination,
                             fileNameBase = fileNameText,
                             pdfPageSize = pdfPageSize,
-                            imageScale = imageScale
+                            imageScale = imageScale,
+                            includeImportLink = includeImportLink
                         )
                         rememberEntityExportOptions(context, options)
                         onConfirm(options)

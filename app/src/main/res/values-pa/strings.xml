@@ -299,6 +299,8 @@
     <string name="action_export_as_image">ਚਿੱਤਰ ਵਜੋਂ ਨਿਰਯਾਤ ਕਰੋ</string>
     <string name="action_refresh">ਰਿਫ੍ਰੈਸ਼ ਕਰੋ</string>
     <string name="action_export_as_pdf">PDF ਵਜੋਂ ਨਿਰਯਾਤ ਕਰੋ</string>
+    <string name="action_view_archived">ਆਰਕਾਈਵ ਵੇਖੋ</string>
+    <string name="action_hide_archive">ਆਰਕਾਈਵ ਲੁਕਾਓ</string>
     <string name="action_go_to_existing_task">ਮੌਜੂਦਾ ਕਾਰਜ \'ਤੇ ਜਾਓ</string>
     <string name="action_ignore_and_create">ਅਣਡਿੱਠ ਕਰੋ ਅਤੇ ਬਣਾਓ</string>
     <string name="action_select_tags">ਟੈਗ ਚੁਣੋ</string>
@@ -1014,6 +1016,7 @@
     <string name="export_show_tags">ਟੈਗ ਦਿਖਾਓ</string>
     <string name="export_show_assignees">ਸੌਂਪਿਆ ਵਿਅਕਤੀ ਦਿਖਾਓ</string>
     <string name="export_show_footer">\"Made with YATA\" ਫੁੱਟਰ ਦਿਖਾਓ</string>
+    <string name="export_include_import_link">ਆਯਾਤ ਲਿੰਕ ਸ਼ਾਮਲ ਕਰੋ</string>
     <string name="export_section_format">ਫਾਰਮੈਟ</string>
     <string name="export_density_relaxed">ਢਿੱਲਾ</string>
     <string name="export_density_compact">ਸੰਖੇਪ</string>

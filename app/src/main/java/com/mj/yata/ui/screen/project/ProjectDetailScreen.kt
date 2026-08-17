@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -124,6 +125,11 @@ fun ProjectDetailScreen(
     val hideCompleted by viewModel.hideCompletedProject.collectAsStateWithLifecycle()
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var showArchived by remember { mutableStateOf(false) }
+    val archivedTasks by viewModel.archivedTasks.collectAsStateWithLifecycle()
+    val archivedProjectTasks = remember(archivedTasks, projectId) {
+        archivedTasks.filter { it.projectId == projectId }
+    }
 
     val showMissingProject = com.mj.yata.ui.widgets.rememberMissingContentVisible(projectId, project == null)
     if (project == null) {
@@ -401,6 +407,20 @@ fun ProjectDetailScreen(
                                     showOverdueRolloverDialog = true
                                 },
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (showArchived) R.string.action_hide_archive else R.string.action_view_archived
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showArchived = !showArchived
+                                },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
                             )
                             if (project.archived) {
                                 DropdownMenuItem(
@@ -684,6 +704,10 @@ fun ProjectDetailScreen(
                         item(key = "completed_header") { TaskSectionHeader("COMPLETED", completedProjectTasks.size) }
                         items(completedProjectTasks, key = { "completed_" + it.id }) { task -> taskRowFor(task) }
                     }
+                    if (showArchived && archivedProjectTasks.isNotEmpty()) {
+                        item(key = "archived_header") { TaskSectionHeader("ARCHIVED", archivedProjectTasks.size) }
+                        items(archivedProjectTasks, key = { "archived_" + it.id }) { task -> taskRowFor(task) }
+                    }
                 }
             } else {
                 val showPendingHeader = !hideCompleted && pendingProjectTasks.isNotEmpty()
@@ -713,6 +737,10 @@ fun ProjectDetailScreen(
                                     )
                                 )
                             }
+                        }
+                        if (showArchived && archivedProjectTasks.isNotEmpty()) {
+                            item(key = "archived_header") { TaskSectionHeader("ARCHIVED", archivedProjectTasks.size) }
+                            items(archivedProjectTasks, key = { "archived_" + it.id }) { task -> taskRowFor(task) }
                         }
                     }
                 ) { task -> taskRowFor(task) }
@@ -923,7 +951,7 @@ fun ProjectDetailScreen(
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
                             imageScale = options.imageScale,
-                            transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
+                            transferText = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
                                 com.mj.yata.util.export.buildTaskTransferLink(
                                     title = project.name,
                                     tasks = sharedTasks,

@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -178,6 +179,11 @@ fun TagDetailScreen(
     }
     val completedTaggedTasks = remember(allTaggedTasks, hideCompleted, searchQuery) {
         if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) }
+    }
+    var showArchived by remember { mutableStateOf(false) }
+    val archivedTasksAll by viewModel.archivedTasks.collectAsStateWithLifecycle()
+    val archivedTaggedTasks = remember(archivedTasksAll, projectsById, tag.id) {
+        archivedTasksAll.filter { it.effectiveTagIds(projectsById).contains(tag.id) }
     }
 
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
@@ -367,6 +373,20 @@ fun TagDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
                             DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (showArchived) R.string.action_hide_archive else R.string.action_view_archived
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showArchived = !showArchived
+                                },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
                                 text = { Text(stringResource(R.string.tag_detail_delete_tag)) },
                                 onClick = {
                                     showMenu = false
@@ -440,7 +460,9 @@ fun TagDetailScreen(
             }
 
             // 2. Tasks list — split into Pending/Completed; headers vanish while hiding completed.
-            if (pendingTaggedTasks.isEmpty() && completedTaggedTasks.isEmpty()) {
+            if (pendingTaggedTasks.isEmpty() && completedTaggedTasks.isEmpty() &&
+                !(showArchived && archivedTaggedTasks.isNotEmpty())
+            ) {
                 item {
                     Box(
                         modifier = Modifier
@@ -523,6 +545,12 @@ fun TagDetailScreen(
                             modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade
                             )
                         )
+                    }
+                }
+                if (showArchived && archivedTaggedTasks.isNotEmpty()) {
+                    item(key = "archived_header") { TaskSectionHeader("ARCHIVED", archivedTaggedTasks.size) }
+                    items(archivedTaggedTasks, key = { "archived_" + it.id }, contentType = { "task" }) { task ->
+                        taskRowFor(task = task)
                     }
                 }
             }
@@ -790,7 +818,7 @@ fun TagDetailScreen(
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
                             imageScale = options.imageScale,
-                            transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
+                            transferText = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
                                 com.mj.yata.util.export.buildTaskTransferLink(
                                     title = tag.name,
                                     tasks = sharedTasks,

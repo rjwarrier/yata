@@ -304,6 +304,8 @@
     <string name="action_export_as_image">Xuất thành hình ảnh</string>
     <string name="action_refresh">Làm mới</string>
     <string name="action_export_as_pdf">Xuất thành PDF</string>
+    <string name="action_view_archived">Xem lưu trữ</string>
+    <string name="action_hide_archive">Ẩn lưu trữ</string>
     <string name="action_go_to_existing_task">Đi đến việc đã có</string>
     <string name="action_ignore_and_create">Bỏ qua và tạo mới</string>
     <string name="action_select_tags">Chọn thẻ</string>
@@ -931,6 +933,7 @@
     <string name="export_show_tags">Hiện thẻ</string>
     <string name="export_show_assignees">Hiện người được giao</string>
     <string name="export_show_footer">Hiện chân trang Made with YATA</string>
+    <string name="export_include_import_link">Bao gồm liên kết nhập</string>
     <string name="export_section_format">Định dạng</string>
     <string name="export_density_relaxed">Thoáng</string>
     <string name="export_density_compact">Gọn</string>

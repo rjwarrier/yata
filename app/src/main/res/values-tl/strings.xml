@@ -299,6 +299,8 @@
     <string name="action_export_as_image">I-export bilang larawan</string>
     <string name="action_refresh">I-refresh</string>
     <string name="action_export_as_pdf">I-export bilang PDF</string>
+    <string name="action_view_archived">Tingnan ang archive</string>
+    <string name="action_hide_archive">Itago ang archive</string>
     <string name="action_go_to_existing_task">Pumunta sa umiiral nang gawain</string>
     <string name="action_ignore_and_create">Huwag pansinin at gawin</string>
     <string name="action_select_tags">Pumili ng mga tag</string>
@@ -1014,6 +1016,7 @@
     <string name="export_show_tags">Ipakita ang mga tag</string>
     <string name="export_show_assignees">Ipakita ang naitalaga</string>
     <string name="export_show_footer">Ipakita ang footer na Ginawa gamit ang YATA</string>
+    <string name="export_include_import_link">Isama ang link ng pag-import</string>
     <string name="export_section_format">Format</string>
     <string name="export_density_relaxed">Maluwag</string>
     <string name="export_density_compact">Compact</string>

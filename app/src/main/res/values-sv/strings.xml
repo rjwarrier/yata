@@ -304,6 +304,8 @@
     <string name="action_export_as_image">Exportera som bild</string>
     <string name="action_refresh">Uppdatera</string>
     <string name="action_export_as_pdf">Exportera som PDF</string>
+    <string name="action_view_archived">Visa arkiv</string>
+    <string name="action_hide_archive">Dölj arkiv</string>
     <string name="action_go_to_existing_task">Gå till befintlig uppgift</string>
     <string name="action_ignore_and_create">Ignorera och skapa</string>
     <string name="action_select_tags">Välj taggar</string>
@@ -931,6 +933,7 @@
     <string name="export_show_tags">Visa taggar</string>
     <string name="export_show_assignees">Visa tilldelad till</string>
     <string name="export_show_footer">Visa \"Skapad med YATA\"-fot</string>
+    <string name="export_include_import_link">Inkludera importlänk</string>
     <string name="export_section_format">Format</string>
     <string name="export_density_relaxed">Rymlig</string>
     <string name="export_density_compact">Kompakt</string>

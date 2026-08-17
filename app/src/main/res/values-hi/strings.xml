@@ -384,6 +384,8 @@
     <string name="action_export_as_image">छवि के रूप में निर्यात करें</string>
     <string name="action_refresh">रिफ़्रेश करें</string>
     <string name="action_export_as_pdf">PDF के रूप में निर्यात करें</string>
+    <string name="action_view_archived">आर्काइव देखें</string>
+    <string name="action_hide_archive">आर्काइव छिपाएं</string>
     <string name="action_go_to_existing_task">मौजूदा कार्य पर जाएं</string>
     <string name="action_ignore_and_create">नज़रअंदाज़ करें और बनाएं</string>
     <string name="action_select_tags">टैग चुनें</string>
@@ -1039,6 +1041,7 @@
     <string name="export_show_tags">टैग दिखाएं</string>
     <string name="export_show_assignees">सौंपा गया व्यक्ति दिखाएं</string>
     <string name="export_show_footer">\"Made with YATA\" फ़ुटर दिखाएं</string>
+    <string name="export_include_import_link">आयात लिंक शामिल करें</string>
     <string name="export_section_format">प्रारूप</string>
     <string name="export_density_relaxed">आरामदायक</string>
     <string name="export_density_compact">संक्षिप्त</string>

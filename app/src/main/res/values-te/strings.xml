@@ -299,6 +299,8 @@
     <string name="action_export_as_image">చిత్రంగా ఎగుమతి చేయండి</string>
     <string name="action_refresh">రిఫ్రెష్ చేయండి</string>
     <string name="action_export_as_pdf">PDFగా ఎగుమతి చేయండి</string>
+    <string name="action_view_archived">ఆర్కైవ్ చూడండి</string>
+    <string name="action_hide_archive">ఆర్కైవ్ దాచండి</string>
     <string name="action_go_to_existing_task">ఇప్పటికే ఉన్న టాస్క్‌కు వెళ్ళండి</string>
     <string name="action_ignore_and_create">వదిలేసి సృష్టించండి</string>
     <string name="action_select_tags">ట్యాగ్‌లు ఎంచుకోండి</string>
@@ -1014,6 +1016,7 @@
     <string name="export_show_tags">ట్యాగ్‌లు చూపండి</string>
     <string name="export_show_assignees">కేటాయించినవారు చూపండి</string>
     <string name="export_show_footer">Made with YATA ఫుటర్ చూపండి</string>
+    <string name="export_include_import_link">దిగుమతి లింక్‌ను చేర్చు</string>
     <string name="export_section_format">ఫార్మాట్</string>
     <string name="export_density_relaxed">సడలింది</string>
     <string name="export_density_compact">కాంపాక్ట్</string>

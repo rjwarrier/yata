@@ -299,6 +299,8 @@
     <string name="action_export_as_image">प्रतिमा म्हणून निर्यात करा</string>
     <string name="action_refresh">रिफ्रेश करा</string>
     <string name="action_export_as_pdf">PDF म्हणून निर्यात करा</string>
+    <string name="action_view_archived">संग्रह पहा</string>
+    <string name="action_hide_archive">संग्रह लपवा</string>
     <string name="action_go_to_existing_task">अस्तित्वात असलेल्या कार्यावर जा</string>
     <string name="action_ignore_and_create">दुर्लक्ष करा आणि तयार करा</string>
     <string name="action_select_tags">टॅग्ज निवडा</string>
@@ -1014,6 +1016,7 @@
     <string name="export_show_tags">टॅग्ज दाखवा</string>
     <string name="export_show_assignees">नियुक्त व्यक्ती दाखवा</string>
     <string name="export_show_footer">\"Made with YATA\" तळटीप दाखवा</string>
+    <string name="export_include_import_link">आयात दुवा समाविष्ट करा</string>
     <string name="export_section_format">स्वरूप</string>
     <string name="export_density_relaxed">विरळ</string>
     <string name="export_density_compact">संक्षिप्त</string>

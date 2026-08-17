@@ -436,6 +436,7 @@
     <string name="export_show_tags">Mostrar etiquetas</string>
     <string name="export_show_assignees">Mostrar asignados</string>
     <string name="export_show_footer">Mostrar pie “Hecho con YATA”</string>
+    <string name="export_include_import_link">Incluir enlace de importación</string>
     <string name="export_section_format">Formato</string>
     <string name="export_density_relaxed">Relajada</string>
     <string name="export_density_compact">Compacta</string>
@@ -659,6 +660,8 @@
     <string name="action_export_as_image">Exportar como imagen</string>
     <string name="action_refresh">Actualizar</string>
     <string name="action_export_as_pdf">Exportar como PDF</string>
+    <string name="action_view_archived">Ver archivo</string>
+    <string name="action_hide_archive">Ocultar archivo</string>
     <string name="action_go_to_existing_task">Ir a la tarea existente</string>
     <string name="action_ignore_and_create">Ignorar y crear</string>
     <string name="action_select_tags">Seleccionar etiquetas</string>

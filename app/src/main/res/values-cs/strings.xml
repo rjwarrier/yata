@@ -304,6 +304,8 @@
     <string name="action_export_as_image">Exportovat jako obrázek</string>
     <string name="action_refresh">Obnovit</string>
     <string name="action_export_as_pdf">Exportovat jako PDF</string>
+    <string name="action_view_archived">Zobrazit archiv</string>
+    <string name="action_hide_archive">Skrýt archiv</string>
     <string name="action_go_to_existing_task">Přejít na existující úkol</string>
     <string name="action_ignore_and_create">Ignorovat a vytvořit</string>
     <string name="action_select_tags">Vybrat štítky</string>
@@ -931,6 +933,7 @@
     <string name="export_show_tags">Zobrazit štítky</string>
     <string name="export_show_assignees">Zobrazit přiřazenou osobu</string>
     <string name="export_show_footer">Zobrazit patičku „Vytvořeno pomocí YATA“</string>
+    <string name="export_include_import_link">Zahrnout importovací odkaz</string>
     <string name="export_section_format">Formát</string>
     <string name="export_density_relaxed">Volný</string>
     <string name="export_density_compact">Kompaktní</string>

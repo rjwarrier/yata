@@ -299,6 +299,8 @@
     <string name="action_export_as_image">Hamisha kama picha</string>
     <string name="action_refresh">Onyesha upya</string>
     <string name="action_export_as_pdf">Hamisha kama PDF</string>
+    <string name="action_view_archived">Ona hifadhi</string>
+    <string name="action_hide_archive">Ficha hifadhi</string>
     <string name="action_go_to_existing_task">Nenda kwenye kazi iliyopo</string>
     <string name="action_ignore_and_create">Puuza na uunde</string>
     <string name="action_select_tags">Chagua lebo</string>
@@ -1014,6 +1016,7 @@
     <string name="export_show_tags">Onyesha lebo</string>
     <string name="export_show_assignees">Onyesha waliokabidhiwa</string>
     <string name="export_show_footer">Onyesha maelezo ya chini ya Imetengenezwa na YATA</string>
+    <string name="export_include_import_link">Jumuisha kiungo cha kuagiza</string>
     <string name="export_section_format">Muundo</string>
     <string name="export_density_relaxed">Nafuu</string>
     <string name="export_density_compact">Fupi</string>

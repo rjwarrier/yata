@@ -299,6 +299,8 @@
     <string name="action_export_as_image">ઇમેજ તરીકે એક્સપોર્ટ કરો</string>
     <string name="action_refresh">રિફ્રેશ કરો</string>
     <string name="action_export_as_pdf">PDF તરીકે એક્સપોર્ટ કરો</string>
+    <string name="action_view_archived">આર્કાઇવ જુઓ</string>
+    <string name="action_hide_archive">આર્કાઇવ છુપાવો</string>
     <string name="action_go_to_existing_task">હાલના ટાસ્ક પર જાઓ</string>
     <string name="action_ignore_and_create">અવગણો અને બનાવો</string>
     <string name="action_select_tags">ટૅગ્સ પસંદ કરો</string>
@@ -1014,6 +1016,7 @@
     <string name="export_show_tags">ટૅગ્સ બતાવો</string>
     <string name="export_show_assignees">સોંપાયેલ બતાવો</string>
     <string name="export_show_footer">\"Made with YATA\" ફૂટર બતાવો</string>
+    <string name="export_include_import_link">આયાત લિંક શામેલ કરો</string>
     <string name="export_section_format">ફોર્મેટ</string>
     <string name="export_density_relaxed">હળવું</string>
     <string name="export_density_compact">કોમ્પેક્ટ</string>

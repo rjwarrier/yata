@@ -304,6 +304,8 @@
     <string name="action_export_as_image">ছবি হিসেবে রপ্তানি করুন</string>
     <string name="action_refresh">রিফ্রেশ</string>
     <string name="action_export_as_pdf">PDF হিসেবে রপ্তানি করুন</string>
+    <string name="action_view_archived">সংরক্ষণাগার দেখুন</string>
+    <string name="action_hide_archive">সংরক্ষণাগার লুকান</string>
     <string name="action_go_to_existing_task">বিদ্যমান টাস্কে যান</string>
     <string name="action_ignore_and_create">উপেক্ষা করে তৈরি করুন</string>
     <string name="action_select_tags">ট্যাগ নির্বাচন করুন</string>
@@ -931,6 +933,7 @@
     <string name="export_show_tags">ট্যাগ দেখান</string>
     <string name="export_show_assignees">নিয়োগপ্রাপ্ত দেখান</string>
     <string name="export_show_footer">\"Made with YATA\" ফুটার দেখান</string>
+    <string name="export_include_import_link">আমদানি লিঙ্ক অন্তর্ভুক্ত করুন</string>
     <string name="export_section_format">ফরম্যাট</string>
     <string name="export_density_relaxed">শিথিল</string>
     <string name="export_density_compact">সংক্ষিপ্ত</string>

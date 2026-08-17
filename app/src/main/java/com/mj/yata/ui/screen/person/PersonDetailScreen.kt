@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
@@ -93,6 +94,11 @@ fun PersonDetailScreen(
     var isNewTaskSheetOpen by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val hideCompleted by viewModel.hideCompletedPerson.collectAsStateWithLifecycle()
+    var showArchived by remember { mutableStateOf(false) }
+    val archivedTasksAll by viewModel.archivedTasks.collectAsStateWithLifecycle()
+    val archivedPersonTasks = remember(archivedTasksAll, personId) {
+        archivedTasksAll.filter { it.assigneeIds.contains(personId) }
+    }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -344,6 +350,20 @@ fun PersonDetailScreen(
                                     exportFormatPending = com.mj.yata.util.export.ExportFormat.PDF
                                 },
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (showArchived) R.string.action_hide_archive else R.string.action_view_archived
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showArchived = !showArchived
+                                },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
                             )
                             if (!person.isMe) {
                                 DropdownMenuItem(
@@ -693,6 +713,46 @@ fun PersonDetailScreen(
                     }
                 }
             }
+
+            if (showArchived && archivedPersonTasks.isNotEmpty()) {
+                item(key = "archived_header") {
+                    com.mj.yata.ui.widgets.TaskSectionHeader("ARCHIVED", archivedPersonTasks.size)
+                }
+                items(archivedPersonTasks, key = { "archived_" + it.id }, contentType = { "task" }) { task ->
+                    val taskList = remember(task.listId, listsById) { listsById[task.listId] }
+                    val taskAssignees = remember(task.assigneeIds, peopleById) {
+                        task.assigneeIds.mapNotNull { pid -> peopleById[pid] }
+                    }
+                    val taskTags = remember(task, projectsById, tagsById, tagsFeatureEnabled) {
+                        if (tagsFeatureEnabled) task.effectiveTags(projectsById, tagsById) else emptyList()
+                    }
+
+                    TaskRow(
+                        task = task,
+                        list = taskList,
+                        assignees = taskAssignees,
+                        tags = taskTags,
+                        onToggleDone = { viewModel.toggleTaskDone(task.id) {} },
+                        onTaskClick = {
+                            if (selectionMode) {
+                                if (selectedIds.contains(task.id)) selectedIds.remove(task.id) else selectedIds.add(task.id)
+                            } else {
+                                onNavigateToTaskDetail(task.id)
+                            }
+                        },
+                        selectionMode = selectionMode,
+                        selected = selectedIds.contains(task.id),
+                        onLongClick = { if (!selectedIds.contains(task.id)) selectedIds.add(task.id) },
+                        onCommentClick = { pendingCommentTask = task },
+                        onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
+                        onRenameTask = { viewModel.renameTask(task.id, it) },
+                        density = taskRowDensity,
+                        onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
+                        swipeEnabled = !selectionMode,
+                        showDueDate = true
+                    )
+                }
+            }
             } // !hideCompleted
         }
         }
@@ -953,7 +1013,7 @@ fun PersonDetailScreen(
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
                             imageScale = options.imageScale,
-                            transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
+                            transferText = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
                                 com.mj.yata.util.export.buildTaskTransferLink(
                                     title = person.name,
                                     tasks = sharedTasks,

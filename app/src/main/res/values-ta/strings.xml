@@ -299,6 +299,8 @@
     <string name="action_export_as_image">படமாக ஏற்றுமதி செய்</string>
     <string name="action_refresh">புதுப்பிக்கவும்</string>
     <string name="action_export_as_pdf">PDF ஆக ஏற்றுமதி செய்</string>
+    <string name="action_view_archived">காப்பகத்தைக் காட்டு</string>
+    <string name="action_hide_archive">காப்பகத்தை மறை</string>
     <string name="action_go_to_existing_task">இருக்கும் பணிக்குச் செல்</string>
     <string name="action_ignore_and_create">புறக்கணித்து உருவாக்கு</string>
     <string name="action_select_tags">குறிச்சொற்களைத் தேர்ந்தெடு</string>
@@ -1014,6 +1016,7 @@
     <string name="export_show_tags">குறிச்சொற்களைக் காட்டு</string>
     <string name="export_show_assignees">ஒதுக்கப்பட்டவரைக் காட்டு</string>
     <string name="export_show_footer">YATA மூலம் உருவாக்கப்பட்டது என்ற அடிக்குறிப்பைக் காட்டு</string>
+    <string name="export_include_import_link">இறக்குமதி இணைப்பைச் சேர்</string>
     <string name="export_section_format">வடிவம்</string>
     <string name="export_density_relaxed">தளர்வானது</string>
     <string name="export_density_compact">சுருக்கமானது</string>

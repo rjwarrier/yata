@@ -509,6 +509,8 @@
     <string name="action_export_as_image">Export as image</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_export_as_pdf">Export as PDF</string>
+    <string name="action_view_archived">View archived</string>
+    <string name="action_hide_archive">Hide archive</string>
     <string name="action_import">Import</string>
     <string name="action_go_to_existing_task">Go to existing task</string>
     <string name="action_ignore_and_create">Ignore and create</string>
@@ -1246,6 +1248,7 @@
     <string name="export_show_tags">Show tags</string>
     <string name="export_show_assignees">Show assigned to</string>
     <string name="export_show_footer">Show Made with YATA footer</string>
+    <string name="export_include_import_link">Include import link</string>
     <string name="export_section_format">Format</string>
     <string name="export_density_relaxed">Relaxed</string>
     <string name="export_density_compact">Compact</string>

@@ -384,6 +384,8 @@
     <string name="action_export_as_image">Exporteren als afbeelding</string>
     <string name="action_refresh">Vernieuwen</string>
     <string name="action_export_as_pdf">Exporteren als PDF</string>
+    <string name="action_view_archived">Archief weergeven</string>
+    <string name="action_hide_archive">Archief verbergen</string>
     <string name="action_go_to_existing_task">Ga naar bestaande taak</string>
     <string name="action_ignore_and_create">Negeren en aanmaken</string>
     <string name="action_select_tags">Tags selecteren</string>
@@ -1039,6 +1041,7 @@
     <string name="export_show_tags">Tags tonen</string>
     <string name="export_show_assignees">Toegewezen aan tonen</string>
     <string name="export_show_footer">Voettekst \"Gemaakt met YATA\" tonen</string>
+    <string name="export_include_import_link">Importlink toevoegen</string>
     <string name="export_section_format">Formaat</string>
     <string name="export_density_relaxed">Ruim</string>
     <string name="export_density_compact">Compact</string>

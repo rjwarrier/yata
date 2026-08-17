@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Delete
@@ -118,6 +119,11 @@ fun ListDetailScreen(
     val hideCompleted by viewModel.hideCompletedList.collectAsStateWithLifecycle()
     var searchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var showArchived by remember { mutableStateOf(false) }
+    val archivedTasksAll by viewModel.archivedTasks.collectAsStateWithLifecycle()
+    val archivedListTasks = remember(archivedTasksAll, listId) {
+        archivedTasksAll.filter { it.listId == listId }
+    }
 
     val showMissingList = com.mj.yata.ui.widgets.rememberMissingContentVisible(listId, list == null)
     if (list == null) {
@@ -352,6 +358,20 @@ fun ListDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
                             DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (showArchived) R.string.action_hide_archive else R.string.action_view_archived
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showArchived = !showArchived
+                                },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
                                 text = { Text(stringResource(R.string.list_detail_delete_list)) },
                                 onClick = {
                                     showMenu = false
@@ -554,7 +574,9 @@ fun ListDetailScreen(
                         items(statFilteredTasks, key = { it.id }) { task -> taskRowFor(task) }
                     }
                 }
-            } else if (pendingListTasks.isEmpty() && completedListTasks.isEmpty()) {
+            } else if (pendingListTasks.isEmpty() && completedListTasks.isEmpty() &&
+                !(showArchived && archivedListTasks.isNotEmpty())
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -595,6 +617,10 @@ fun ListDetailScreen(
                                     )
                                 )
                             }
+                        }
+                        if (showArchived && archivedListTasks.isNotEmpty()) {
+                            item(key = "archived_header") { TaskSectionHeader("ARCHIVED", archivedListTasks.size) }
+                            items(archivedListTasks, key = { "archived_" + it.id }) { task -> taskRowFor(task) }
                         }
                     }
                 ) { task -> taskRowFor(task) }
@@ -902,7 +928,7 @@ fun ListDetailScreen(
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
                             imageScale = options.imageScale,
-                            transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
+                            transferText = exportTasks.takeIf { it.isNotEmpty() && options.includeImportLink }?.let { sharedTasks ->
                                 com.mj.yata.util.export.buildTaskTransferLink(
                                     title = list.name,
                                     tasks = sharedTasks,

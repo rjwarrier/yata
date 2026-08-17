@@ -304,6 +304,8 @@
     <string name="action_export_as_image">Esporta come immagine</string>
     <string name="action_refresh">Aggiorna</string>
     <string name="action_export_as_pdf">Esporta come PDF</string>
+    <string name="action_view_archived">Visualizza archivio</string>
+    <string name="action_hide_archive">Nascondi archivio</string>
     <string name="action_go_to_existing_task">Vai all\'attività esistente</string>
     <string name="action_ignore_and_create">Ignora e crea</string>
     <string name="action_select_tags">Seleziona tag</string>
@@ -931,6 +933,7 @@
     <string name="export_show_tags">Mostra tag</string>
     <string name="export_show_assignees">Mostra assegnatario</string>
     <string name="export_show_footer">Mostra il piè di pagina \"Realizzato con YATA\"</string>
+    <string name="export_include_import_link">Includi link di importazione</string>
     <string name="export_section_format">Formato</string>
     <string name="export_density_relaxed">Rilassata</string>
     <string name="export_density_compact">Compatta</string>

@@ -304,6 +304,8 @@
     <string name="action_export_as_image">Ekspor sebagai gambar</string>
     <string name="action_refresh">Segarkan</string>
     <string name="action_export_as_pdf">Ekspor sebagai PDF</string>
+    <string name="action_view_archived">Lihat arsip</string>
+    <string name="action_hide_archive">Sembunyikan arsip</string>
     <string name="action_go_to_existing_task">Buka tugas yang sudah ada</string>
     <string name="action_ignore_and_create">Abaikan dan buat</string>
     <string name="action_select_tags">Pilih tag</string>
@@ -931,6 +933,7 @@
     <string name="export_show_tags">Tampilkan tag</string>
     <string name="export_show_assignees">Tampilkan ditugaskan ke</string>
     <string name="export_show_footer">Tampilkan footer Dibuat dengan YATA</string>
+    <string name="export_include_import_link">Sertakan tautan impor</string>
     <string name="export_section_format">Format</string>
     <string name="export_density_relaxed">Longgar</string>
     <string name="export_density_compact">Kompak</string>

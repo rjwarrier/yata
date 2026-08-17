@@ -299,6 +299,8 @@
     <string name="action_export_as_image">ചിത്രമായി എക്സ്പോർട്ട് ചെയ്യുക</string>
     <string name="action_refresh">പുതുക്കുക</string>
     <string name="action_export_as_pdf">PDF ആയി എക്സ്പോർട്ട് ചെയ്യുക</string>
+    <string name="action_view_archived">ആർക്കൈവ് കാണുക</string>
+    <string name="action_hide_archive">ആർക്കൈവ് മറയ്ക്കുക</string>
     <string name="action_go_to_existing_task">നിലവിലുള്ള ടാസ്കിലേക്ക് പോകുക</string>
     <string name="action_ignore_and_create">അവഗണിച്ച് സൃഷ്ടിക്കുക</string>
     <string name="action_select_tags">ടാഗുകൾ തിരഞ്ഞെടുക്കുക</string>
@@ -1014,6 +1016,7 @@
     <string name="export_show_tags">ടാഗുകൾ കാണിക്കുക</string>
     <string name="export_show_assignees">ഏൽപ്പിച്ചത് കാണിക്കുക</string>
     <string name="export_show_footer">Made with YATA ഫൂട്ടർ കാണിക്കുക</string>
+    <string name="export_include_import_link">ഇറക്കുമതി ലിങ്ക് ഉൾപ്പെടുത്തുക</string>
     <string name="export_section_format">ഫോർമാറ്റ്</string>
     <string name="export_density_relaxed">അയഞ്ഞത്</string>
     <string name="export_density_compact">ഒതുക്കമുള്ളത്</string>

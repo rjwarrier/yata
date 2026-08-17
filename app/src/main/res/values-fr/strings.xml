@@ -345,6 +345,8 @@
     <string name="action_export_as_image">Exporter sous forme d\'image</string>
     <string name="action_refresh">Actualiser</string>
     <string name="action_export_as_pdf">Exporter au format PDF</string>
+    <string name="action_view_archived">Voir les archives</string>
+    <string name="action_hide_archive">Masquer les archives</string>
     <string name="action_go_to_existing_task">Aller à la tâche existante</string>
     <string name="action_ignore_and_create">Ignorer et créer</string>
     <string name="action_select_tags">Sélectionnez les balises</string>
@@ -799,6 +801,7 @@
     <string name="export_show_tags">Afficher les balises</string>
     <string name="export_show_assignees">Afficher attribué à</string>
     <string name="export_show_footer">Afficher le pied de page Réalisé avec YATA</string>
+    <string name="export_include_import_link">Inclure le lien d\'importation</string>
     <string name="export_section_format">Format</string>
     <string name="export_density_relaxed">Détendu</string>
     <string name="export_density_compact">Compact</string>

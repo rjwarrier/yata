@@ -16,6 +16,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Project, List, Tag, and Person detail screens' overflow menu now has a "View archived" item that
+  shows that entity's archived tasks in their own section below Completed; toggles to "Hide
+  archive" while shown.
 - Image/PDF task exports now include a single YATA import link in the share text: tapping it adds
   the shared task(s) to Inbox, creating any missing list/project/tag/person names only when the
   sender chose to include them (privacy mode omits structure from the link entirely, rather than

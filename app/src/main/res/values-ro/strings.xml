@@ -304,6 +304,8 @@
     <string name="action_export_as_image">Exportă ca imagine</string>
     <string name="action_refresh">Reîmprospătează</string>
     <string name="action_export_as_pdf">Exportă ca PDF</string>
+    <string name="action_view_archived">Vezi arhiva</string>
+    <string name="action_hide_archive">Ascunde arhiva</string>
     <string name="action_go_to_existing_task">Mergi la sarcina existentă</string>
     <string name="action_ignore_and_create">Ignoră și creează</string>
     <string name="action_select_tags">Selectează etichete</string>
@@ -931,6 +933,7 @@
     <string name="export_show_tags">Arată etichetele</string>
     <string name="export_show_assignees">Arată persoana atribuită</string>
     <string name="export_show_footer">Arată subsolul „Realizat cu YATA”</string>
+    <string name="export_include_import_link">Include linkul de import</string>
     <string name="export_section_format">Format</string>
     <string name="export_density_relaxed">Relaxat</string>
     <string name="export_density_compact">Compact</string>
