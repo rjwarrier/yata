@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -466,9 +467,10 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     }
                                     .onFailure { error ->
+                                        Log.w("MainActivity", "Task transfer link import failed", error)
                                         Toast.makeText(
                                             this@MainActivity,
-                                            error.message ?: getString(R.string.task_transfer_import_failed),
+                                            getString(R.string.task_transfer_import_failed),
                                             Toast.LENGTH_LONG
                                         ).show()
                                     }

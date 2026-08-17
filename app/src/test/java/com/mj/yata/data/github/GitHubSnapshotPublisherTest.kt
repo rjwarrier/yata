@@ -103,9 +103,13 @@ class GitHubSnapshotPublisherTest {
 
     @Test
     fun repeatedStaleRefs_failWithoutCommit() = runTest {
+        // Must exceed MAX_CAS_ATTEMPTS to exhaust every retry, not just outlast the old budget of
+        // 3 (bumped to 6 in 2fa507f "Harden GitHub multi-device sync") — otherwise the attempt
+        // that would have exhausted retries instead succeeds and the test stops exercising the
+        // "gave up" path it's named for.
         val api = FakeGitHubApi().apply {
             seedHead("server".bytes())
-            failUpdateRefTimes = 3
+            failUpdateRefTimes = GitHubSnapshotPublisher.MAX_CAS_ATTEMPTS
         }
         var committed = false
         val publisher = publisher(api, canonical = "merged".bytes()) { committed = true }
