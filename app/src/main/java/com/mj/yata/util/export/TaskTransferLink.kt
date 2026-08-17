@@ -443,395 +443,344 @@ private fun decodeCompressedPayload(encoded: String, inflate: Boolean): String {
     }
 }
 
+// ============================================================================================
+// Parsing
+//
+// Decoding a link is deliberately separate from importing it. The share flow opens a prefilled
+// editor and writes nothing until the user saves, so it needs the link's contents without any
+// repository access at all. Keeping one parser as the source of truth (rather than a preview
+// path beside the import path) is also what stops the two from drifting — the sort of drift that
+// already bit this file once, when a blank-name guard survived in the v1 readers and was lost
+// from their v2 replacements.
+//
+// Entities are surfaced by *name*, not id: the sender's ids mean nothing on this device, and
+// resolving names to local rows is the importer's job, not the format's.
+// ============================================================================================
+
+/** A list, project, tag or person as named by the sender. [icon] and [description] are only
+ * populated for the entity kinds that have them. */
+data class SharedEntityRef(
+    val name: String,
+    val color: String,
+    val icon: String? = null,
+    val description: String? = null,
+    val commonTagNames: List<String> = emptyList()
+)
+
+/** One task as described by a link, before it has been reconciled against local data. */
+data class SharedTaskDraft(
+    val title: String,
+    val notes: String? = null,
+    val priority: String = "none",
+    val flag: Boolean = false,
+    val due: String? = null,
+    val startDate: String? = null,
+    val time: String? = null,
+    val estimateMinutes: Int? = null,
+    val recurrence: Recurrence? = null,
+    val subtaskTitles: List<String> = emptyList(),
+    val list: SharedEntityRef? = null,
+    val project: SharedEntityRef? = null,
+    val tags: List<SharedEntityRef> = emptyList(),
+    val assigneeNames: List<String> = emptyList()
+)
+
+data class ParsedTransfer(
+    val tasks: List<SharedTaskDraft>,
+    val copyStructure: Boolean
+)
+
+/** Decodes a transfer link. Pure: touches no storage and writes nothing, so callers can inspect
+ * what a link contains before deciding whether to act on it. Throws [IllegalArgumentException]
+ * for anything malformed, unsupported, oversized, or carrying no usable task. */
+fun parseTransferLink(uri: Uri): ParsedTransfer {
+    require(isTaskTransferUri(uri)) { "Not a YATA task import link." }
+    val params = transferParams(uri)
+    val copyStructure = params.getQueryParameter("s") == "1"
+
+    val tasks = when {
+        uri.scheme == TRANSFER_SCHEME && uri.host == LEGACY_HOST ->
+            parseLegacyV1(params.getQueryParameter(PARAM_V2_PAYLOAD).orEmpty(), copyStructure)
+        isPlaintextTransferUri(params) -> parsePlaintext(params)
+        else -> {
+            val encoded = params.getQueryParameter(PARAM_V3_PAYLOAD)
+                ?: params.getQueryParameter(PARAM_V2_PAYLOAD)
+                ?: throw IllegalArgumentException("Unsupported YATA task link.")
+            parseCompressed(encoded, copyStructure)
+        }
+    }
+
+    require(tasks.isNotEmpty()) { "No tasks found in shared link." }
+    return ParsedTransfer(tasks, copyStructure)
+}
+
+private fun parsePlaintext(params: Uri): List<SharedTaskDraft> =
+    params.getQueryParameters("t").mapIndexedNotNull { index, rawTitle ->
+        val title = rawTitle.trim()
+        if (title.isBlank()) return@mapIndexedNotNull null
+        // Read against the title's own index, so a blank title dropped here can't shift the
+        // remaining tasks' values onto the wrong rows.
+        SharedTaskDraft(
+            title = title,
+            notes = params.getQueryParameter("n$index")?.trim()?.takeIf { it.isNotBlank() },
+            priority = PRIORITIES[
+                params.getQueryParameter("p$index")?.toIntOrNull()?.coerceIn(0, PRIORITIES.lastIndex) ?: 0
+            ],
+            flag = params.getQueryParameter("f$index") == "1",
+            due = params.getQueryParameter("d$index")?.takeIf { it.isNotBlank() },
+            startDate = params.getQueryParameter("g$index")?.takeIf { it.isNotBlank() },
+            time = params.getQueryParameter("h$index")?.takeIf { it.isNotBlank() },
+            estimateMinutes = params.getQueryParameter("m$index")?.toIntOrNull()?.takeIf { it > 0 },
+            subtaskTitles = params.getQueryParameters("b$index").map { it.trim() }.filter { it.isNotBlank() }
+        )
+    }
+
+private fun parseCompressed(encoded: String, copyStructure: Boolean): List<SharedTaskDraft> {
+    val payload = JSONArray(decodeCompressedPayload(encoded, inflate = true))
+    val version = payload.optInt(0)
+    require(version in 2..4) { "Unsupported YATA task link." }
+    // v2 carried a share title at index 1 that nothing ever read, so its sections sit one slot
+    // later. v4 only extended the task row, so it shares v3's layout here.
+    val base = if (version == 2) 2 else 1
+
+    val tags = payload.optJSONArray(base + 2).entityRows { row ->
+        SharedEntityRef(
+            name = row.optString(0).trim(),
+            color = row.optString(1, "accentA"),
+            description = row.optString(2).takeIf { it.isNotBlank() }
+        )
+    }
+    val lists = payload.optJSONArray(base).entityRows { row ->
+        SharedEntityRef(row.optString(0).trim(), row.optString(1, "accentA"), row.optString(2, "folder"))
+    }
+    val projects = payload.optJSONArray(base + 1).entityRows { row ->
+        SharedEntityRef(
+            name = row.optString(0).trim(),
+            color = row.optString(1, "accentA"),
+            icon = row.optString(2, "layers"),
+            commonTagNames = row.optJSONArray(3).intValues().mapNotNull { tags.getOrNull(it)?.name }
+        )
+    }
+    val people = payload.optJSONArray(base + 3).entityRows { row ->
+        SharedEntityRef(row.optString(0).trim(), row.optString(2, "accentA"))
+    }
+
+    return payload.optJSONArray(base + 4).orEmptySequence().mapNotNull { value ->
+        val row = value as? JSONArray ?: return@mapNotNull null
+        val title = row.optString(0).trim()
+        if (title.isBlank()) return@mapNotNull null
+        SharedTaskDraft(
+            title = title,
+            notes = row.optString(3).trim().takeIf { it.isNotBlank() },
+            priority = PRIORITIES[row.optInt(1, 0).coerceIn(0, PRIORITIES.lastIndex)],
+            flag = row.optBoolean(2, false),
+            // v4 fields; a v2/v3 row stops short of these and they read as absent.
+            due = row.optString(9).takeIf { it.isNotBlank() },
+            startDate = row.optString(11).takeIf { it.isNotBlank() },
+            time = row.optString(10).takeIf { it.isNotBlank() },
+            estimateMinutes = row.optInt(12, 0).takeIf { it > 0 },
+            recurrence = row.optJSONArray(13).toRecurrenceOrNull(),
+            subtaskTitles = row.optJSONArray(8).orEmptySequence().mapNotNull { sub ->
+                (sub as? JSONArray)?.optString(0)?.trim()?.takeIf { it.isNotBlank() }
+            }.toList(),
+            list = row.optInt(4, -1).takeIf { copyStructure && it >= 0 }?.let { lists.getOrNull(it) },
+            project = row.optInt(5, -1).takeIf { copyStructure && it >= 0 }?.let { projects.getOrNull(it) },
+            tags = if (copyStructure) row.optJSONArray(6).intValues().mapNotNull { tags.getOrNull(it) } else emptyList(),
+            assigneeNames = if (copyStructure) {
+                row.optJSONArray(7).intValues().mapNotNull { people.getOrNull(it)?.name }
+            } else {
+                emptyList()
+            }
+        )
+    }.toList()
+}
+
+private fun parseLegacyV1(encoded: String, copyStructure: Boolean): List<SharedTaskDraft> {
+    val payload = JSONObject(decodeCompressedPayload(encoded, inflate = false))
+    require(payload.optInt("v") == 1) { "Unsupported YATA task link." }
+
+    // v1 dictionaries are keyed by the sender's ids rather than by position.
+    fun refsById(key: String, iconKey: String?, defaultIcon: String?): Map<String, SharedEntityRef> =
+        payload.optJSONArray(key).orEmptySequence().mapNotNull { it as? JSONObject }
+            .mapNotNull { item ->
+                val id = item.optString("id")
+                val name = item.optString("n").trim()
+                if (id.isBlank() || name.isBlank()) return@mapNotNull null
+                id to SharedEntityRef(
+                    name = name,
+                    color = item.optString("c", "accentA"),
+                    icon = iconKey?.let { item.optString(it, defaultIcon.orEmpty()) },
+                    description = item.optString("d").takeIf { it.isNotBlank() }
+                )
+            }.toMap()
+
+    val lists = refsById("lists", "i", "folder")
+    val projects = refsById("projects", "i", "layers")
+    val tags = refsById("tags", null, null)
+    val people = refsById("people", null, null)
+
+    return payload.optJSONArray("tasks").orEmptySequence().mapNotNull { value ->
+        val item = value as? JSONObject ?: return@mapNotNull null
+        val title = item.optString("t").trim()
+        if (title.isBlank()) return@mapNotNull null
+        SharedTaskDraft(
+            title = title,
+            notes = item.optString("n").takeIf { it.isNotBlank() },
+            priority = item.optString("p", "none").takeIf { it in PRIORITIES } ?: "none",
+            flag = item.optBoolean("f", false),
+            subtaskTitles = item.optJSONArray("subs").orEmptySequence().mapNotNull { sub ->
+                (sub as? JSONObject)?.optString("t")?.trim()?.takeIf { it.isNotBlank() }
+            }.toList(),
+            list = item.optString("l").takeIf { copyStructure && it.isNotBlank() }?.let { lists[it] },
+            project = item.optString("pr").takeIf { copyStructure && it.isNotBlank() }?.let { projects[it] },
+            tags = if (copyStructure) item.optJSONArray("tags").stringValues().mapNotNull { tags[it] } else emptyList(),
+            assigneeNames = if (copyStructure) {
+                item.optJSONArray("people").stringValues().mapNotNull { people[it]?.name }
+            } else {
+                emptyList()
+            }
+        )
+    }.toList()
+}
+
+/** Maps dictionary rows, dropping blank-named ones **without collapsing the list** — task rows
+ * address entries by position, so removing one would silently repoint every later reference. A
+ * blank entry stays as a null hole that resolves to "no list/project/tag" instead. */
+private fun JSONArray?.entityRows(build: (JSONArray) -> SharedEntityRef): List<SharedEntityRef?> =
+    orEmptySequence().map { value ->
+        val row = value as? JSONArray ?: return@map null
+        build(row).takeIf { it.name.isNotBlank() }
+    }.toList()
+
 @Singleton
 class TaskTransferImporter @Inject constructor(
     private val repository: YataRepository
 ) {
+    /** Imports every task a link carries. Used for multi-task links; a single-task link goes
+     * through the prefilled editor instead, so the user reviews it before anything is written. */
     suspend fun importFrom(uri: Uri): TaskTransferImportResult {
-        require(isTaskTransferUri(uri)) { "Not a YATA task import link." }
-        // Everything below reads parameters, not the transport: the https form carries them in the
-        // fragment, the yata:// form in the query string, and transferParams normalises the two.
-        val params = transferParams(uri)
-        // Absence of "s" reads as false, which is what lets the builder omit it at its default.
-        val copyStructure = params.getQueryParameter("s") == "1"
-        if (uri.scheme == TRANSFER_SCHEME && uri.host == LEGACY_HOST) {
-            return importLegacyV1(params.getQueryParameter(PARAM_V2_PAYLOAD).orEmpty(), copyStructure)
-        }
-        if (isPlaintextTransferUri(params)) return importPlaintext(params)
-        // v3 and v4 share the "e" parameter — the version inside the payload picks the reader,
-        // since a separate parameter per version would spend characters to say what the payload
-        // already states.
-        params.getQueryParameter(PARAM_V3_PAYLOAD)?.let { encoded ->
-            val version = peekCompressedVersion(encoded)
-            return if (version == 4) importV4(encoded, copyStructure) else importV3(encoded, copyStructure)
-        }
-        params.getQueryParameter(PARAM_V2_PAYLOAD)?.let { return importV2(it, copyStructure) }
-        throw IllegalArgumentException("Unsupported YATA task link.")
+        // Parsing happens in full before the first write. Previously the structure dictionaries
+        // were imported and only then was the task list checked, so a link carrying structure but
+        // no usable task created lists, projects, tags and people and *then* reported failure —
+        // leaving the receiver with entities they never asked for and no way to trace them.
+        val parsed = parseTransferLink(uri)
+        val tasks = materialise(parsed)
+        repository.upsertTasks(tasks, notify = false)
+        repository.notifyTasksChanged()
+        return TaskTransferImportResult(tasks.size, parsed.copyStructure)
     }
 
-    private suspend fun importPlaintext(uri: Uri): TaskTransferImportResult {
-        val tasks = uri.getQueryParameters("t").mapIndexedNotNull { index, rawTitle ->
-            val title = rawTitle.trim()
-            if (title.isBlank()) return@mapIndexedNotNull null
-            // Read against the title's own index, so a blank title dropped above can't shift the
-            // remaining tasks' priorities onto the wrong rows.
-            val priorityIndex = uri.getQueryParameter("p$index")?.toIntOrNull()
-                ?.coerceIn(0, PRIORITIES.lastIndex) ?: 0
+    /** Resolves a parsed transfer against local data, creating any missing structure, and returns
+     * the tasks ready to persist. */
+    private suspend fun materialise(parsed: ParsedTransfer): List<Task> {
+        val resolver = if (parsed.copyStructure) StructureResolver() else null
+        // sortOrder continues the existing run rather than restarting: taking the low 32 bits of
+        // currentTimeMillis (as this used to) overflows Int to a large negative number, and hands
+        // every task in one import the same value, discarding the order the sender chose.
+        val baseSortOrder = repository.getTasks().first().size
+
+        return parsed.tasks.mapIndexed { index, draft ->
             Task(
                 id = newId("import_task"),
-                title = title,
-                listId = null,
-                projectId = null,
+                title = draft.title,
+                listId = draft.list?.let { resolver?.listId(it) },
+                projectId = draft.project?.let { resolver?.projectId(it) },
                 section = "",
-                due = uri.getQueryParameter("d$index")?.takeIf { it.isNotBlank() },
-                startDate = uri.getQueryParameter("g$index")?.takeIf { it.isNotBlank() },
-                time = uri.getQueryParameter("h$index")?.takeIf { it.isNotBlank() },
+                due = draft.due,
+                startDate = draft.startDate,
+                time = draft.time,
                 reminder = null,
-                priority = PRIORITIES[priorityIndex],
-                flag = uri.getQueryParameter("f$index") == "1",
+                priority = draft.priority,
+                flag = draft.flag,
                 done = false,
                 completedAt = null,
                 createdAt = System.currentTimeMillis(),
                 deletedAt = null,
                 assigneeIds = emptyList(),
-                tagIds = emptyList(),
-                recurrence = null,
-                subtasks = uri.getQueryParameters("b$index").mapIndexedNotNull { subIndex, rawSub ->
-                    val subTitle = rawSub.trim()
-                    if (subTitle.isBlank()) return@mapIndexedNotNull null
-                    Subtask(id = newId("import_subtask"), title = subTitle, done = false, parentSubtaskId = null, sortOrder = subIndex)
+                tagIds = draft.tags.mapNotNull { tag -> resolver?.tagId(tag) },
+                recurrence = draft.recurrence,
+                subtasks = draft.subtaskTitles.mapIndexed { subIndex, subtitle ->
+                    Subtask(
+                        id = newId("import_subtask"),
+                        title = subtitle,
+                        done = false,
+                        parentSubtaskId = null,
+                        sortOrder = subIndex
+                    )
                 },
-                notes = uri.getQueryParameter("n$index")?.trim()?.takeIf { it.isNotBlank() },
-                sortOrder = System.currentTimeMillis().toInt(),
+                notes = draft.notes,
+                sortOrder = baseSortOrder + index,
                 seriesId = null,
                 archived = false,
                 followUpAt = null,
-                estimateMinutes = uri.getQueryParameter("m$index")?.toIntOrNull()?.takeIf { it > 0 }
+                estimateMinutes = draft.estimateMinutes
             )
         }
-        require(tasks.isNotEmpty()) { "No tasks found in shared link." }
-        repository.upsertTasks(tasks, notify = false)
-        repository.notifyTasksChanged()
-        return TaskTransferImportResult(tasks.size, false)
     }
 
-    // --- v2 / v3 / v4 -----------------------------------------------------------------------
-    //
-    // v2 carried a (never-read) share title at index 1, so its section indices sit one slot later
-    // than v3's and v4's. v4 differs from v3 only in the task row, which gained the schedule
-    // fields at positions 9-13; older rows simply stop before those, and reading a missing index
-    // yields the same default as an explicitly-empty one. Hence one decoder parameterised by
-    // offset rather than three near-copies that could drift apart.
+    /** Finds or creates the local rows a shared task refers to, matching case-insensitively by
+     * name. Entities created during one import are remembered, so two tasks naming the same
+     * project share it rather than racing to create two. */
+    private inner class StructureResolver {
+        private val lists = mutableMapOf<String, String>()
+        private val projects = mutableMapOf<String, String>()
+        private val tags = mutableMapOf<String, String>()
+        private var loaded = false
 
-    /** Reads just the leading version int so dispatch can pick a reader. Decoding twice is
-     * wasteful but bounded by the same MAX_DECODED_BYTES guard, and it keeps the alternative —
-     * a version parameter in the URL — from costing every link characters. */
-    private fun peekCompressedVersion(encoded: String): Int =
-        runCatching { JSONArray(decodeCompressedPayload(encoded, inflate = true)).optInt(0) }.getOrDefault(-1)
-
-    private suspend fun importV4(encoded: String, copyStructure: Boolean) =
-        importCompressed(encoded, copyStructure, expectedVersion = 4, dictionaryBase = 1)
-
-    private suspend fun importV3(encoded: String, copyStructure: Boolean) =
-        importCompressed(encoded, copyStructure, expectedVersion = 3, dictionaryBase = 1)
-
-    private suspend fun importV2(encoded: String, copyStructure: Boolean) =
-        importCompressed(encoded, copyStructure, expectedVersion = 2, dictionaryBase = 2)
-
-    private suspend fun importCompressed(
-        encoded: String,
-        copyStructure: Boolean,
-        expectedVersion: Int,
-        dictionaryBase: Int
-    ): TaskTransferImportResult {
-        val payload = JSONArray(decodeCompressedPayload(encoded, inflate = true))
-        require(payload.optInt(0) == expectedVersion) { "Unsupported YATA task link." }
-
-        val tagMap = if (copyStructure) importTagsV2(payload.optJSONArray(dictionaryBase + 2)) else emptyList()
-        val listMap = if (copyStructure) importListsV2(payload.optJSONArray(dictionaryBase)) else emptyList()
-        val projectMap = if (copyStructure) importProjectsV2(payload.optJSONArray(dictionaryBase + 1), tagMap) else emptyList()
-        val personMap = if (copyStructure) importPeopleV2(payload.optJSONArray(dictionaryBase + 3)) else emptyList()
-
-        val tasks = payload.optJSONArray(dictionaryBase + 4).orEmptySequence().mapNotNull { value ->
-            val row = value as? JSONArray ?: return@mapNotNull null
-            val title = row.optString(0).trim()
-            if (title.isBlank()) return@mapNotNull null
-            val priorityIndex = row.optInt(1, 0).coerceIn(0, PRIORITIES.lastIndex)
-            val listIdx = row.optInt(4, -1)
-            val projIdx = row.optInt(5, -1)
-            Task(
-                id = newId("import_task"),
-                title = title,
-                listId = listIdx.takeIf { copyStructure && it >= 0 }?.let { listMap.getOrNull(it) },
-                projectId = projIdx.takeIf { copyStructure && it >= 0 }?.let { projectMap.getOrNull(it) },
-                section = "",
-                // v4 fields; a v2/v3 row is simply shorter and these read as absent.
-                due = row.optString(9).takeIf { it.isNotBlank() },
-                startDate = row.optString(11).takeIf { it.isNotBlank() },
-                time = row.optString(10).takeIf { it.isNotBlank() },
-                // Still dropped on purpose: the sender's reminder is their nudge preference,
-                // not something to impose on the recipient.
-                reminder = null,
-                priority = PRIORITIES[priorityIndex],
-                flag = row.optBoolean(2, false),
-                done = false,
-                completedAt = null,
-                createdAt = System.currentTimeMillis(),
-                deletedAt = null,
-                assigneeIds = if (copyStructure) row.optJSONArray(7).intValues().mapNotNull { personMap.getOrNull(it) } else emptyList(),
-                tagIds = if (copyStructure) row.optJSONArray(6).intValues().mapNotNull { tagMap.getOrNull(it) } else emptyList(),
-                recurrence = row.optJSONArray(13).toRecurrenceOrNull(),
-                subtasks = row.optJSONArray(8).orEmptySequence().mapIndexedNotNull { index, subValue ->
-                    val sub = subValue as? JSONArray ?: return@mapIndexedNotNull null
-                    val subTitle = sub.optString(0).trim()
-                    if (subTitle.isBlank()) return@mapIndexedNotNull null
-                    Subtask(id = newId("import_subtask"), title = subTitle, done = false, parentSubtaskId = null, sortOrder = index)
-                }.toList(),
-                notes = row.optString(3).trim().takeIf { it.isNotBlank() },
-                sortOrder = System.currentTimeMillis().toInt(),
-                seriesId = null,
-                archived = false,
-                followUpAt = null,
-                estimateMinutes = row.optInt(12, 0).takeIf { it > 0 }
-            )
-        }.toList()
-
-        require(tasks.isNotEmpty()) { "No tasks found in shared link." }
-        repository.upsertTasks(tasks, notify = false)
-        repository.notifyTasksChanged()
-        return TaskTransferImportResult(tasks.size, copyStructure)
-    }
-
-    // Sequence.map's transform is lazily replayed by its Iterator, which the compiler can't run
-    // suspend calls through — these build the index-ordered result with forEach + a mutable
-    // list instead, matching the pattern the legacy v1 importers already use below.
-
-    private suspend fun importListsV2(array: JSONArray?): List<String> {
-        val existing = repository.getLists().first().associateBy { it.name.normalizedName() }.toMutableMap()
-        val result = mutableListOf<String>()
-        array.orEmptySequence().mapNotNull { it as? JSONArray }.forEach { row ->
-            val name = row.optString(0).trim()
-            val match = existing[name.normalizedName()]
-            val target = if (match != null) {
-                match.id
-            } else {
-                val id = newId("import_list")
-                val created = YataList(id = id, name = name, color = row.optString(1, "accentA"), icon = row.optString(2, "folder"))
-                repository.upsertList(created)
-                existing[name.normalizedName()] = created
-                id
-            }
-            result.add(target)
+        private suspend fun load() {
+            if (loaded) return
+            repository.getLists().first().forEach { lists[it.name.normalizedName()] = it.id }
+            repository.getProjects().first().forEach { projects[it.name.normalizedName()] = it.id }
+            repository.getTags().first().forEach { tags[it.name.normalizedName()] = it.id }
+            loaded = true
         }
-        return result
-    }
 
-    private suspend fun importProjectsV2(array: JSONArray?, tagMap: List<String>): List<String> {
-        val existing = repository.getProjects().first().associateBy { it.name.normalizedName() }.toMutableMap()
-        val result = mutableListOf<String>()
-        array.orEmptySequence().mapNotNull { it as? JSONArray }.forEach { row ->
-            val name = row.optString(0).trim()
-            val match = existing[name.normalizedName()]
-            val target = if (match != null) {
-                match.id
-            } else {
-                val id = newId("import_project")
-                val commonTagIds = row.optJSONArray(3).intValues().mapNotNull { tagMap.getOrNull(it) }
-                val created = Project(
-                    id = id, name = name, color = row.optString(1, "accentA"), icon = row.optString(2, "layers"),
-                    commonTagIds = commonTagIds
+        suspend fun listId(ref: SharedEntityRef): String? = resolve(ref, lists) {
+            val id = newId("import_list")
+            repository.upsertList(
+                YataList(id = id, name = ref.name, color = ref.color, icon = ref.icon ?: "folder")
+            )
+            id
+        }
+
+        suspend fun projectId(ref: SharedEntityRef): String? = resolve(ref, projects) {
+            val id = newId("import_project")
+            repository.upsertProject(
+                Project(
+                    id = id,
+                    name = ref.name,
+                    color = ref.color,
+                    icon = ref.icon ?: "layers",
+                    // Carried so a project's common tags aren't created as rows attached to
+                    // nothing, which is what happened before they were imported here.
+                    commonTagIds = ref.commonTagNames.mapNotNull { name ->
+                        tagId(SharedEntityRef(name = name, color = "accentA"))
+                    }
                 )
-                repository.upsertProject(created)
-                existing[name.normalizedName()] = created
-                id
-            }
-            result.add(target)
-        }
-        return result
-    }
-
-    private suspend fun importTagsV2(array: JSONArray?): List<String> {
-        val existing = repository.getTags().first().associateBy { it.name.normalizedName() }.toMutableMap()
-        val result = mutableListOf<String>()
-        array.orEmptySequence().mapNotNull { it as? JSONArray }.forEach { row ->
-            val name = row.optString(0).trim()
-            val match = existing[name.normalizedName()]
-            val target = if (match != null) {
-                match.id
-            } else {
-                val id = newId("import_tag")
-                val created = Tag(id = id, name = name, color = row.optString(1, "accentA"), description = row.optString(2).takeIf { it.isNotBlank() })
-                repository.upsertTag(created)
-                existing[name.normalizedName()] = created
-                id
-            }
-            result.add(target)
-        }
-        return result
-    }
-
-    private suspend fun importPeopleV2(array: JSONArray?): List<String> {
-        val existing = repository.getPeople().first().associateBy { it.name.normalizedName() }.toMutableMap()
-        val result = mutableListOf<String>()
-        array.orEmptySequence().mapNotNull { it as? JSONArray }.forEach { row ->
-            val name = row.optString(0).trim()
-            val match = existing[name.normalizedName()]
-            val target = if (match != null) {
-                match.id
-            } else {
-                val id = newId("import_person")
-                val initials = row.optString(1).takeIf { it.isNotBlank() } ?: initialsFor(name)
-                val created = Person(id = id, name = name, initials = initials, color = row.optString(2, "accentA"))
-                repository.upsertPerson(created)
-                existing[name.normalizedName()] = created
-                id
-            }
-            result.add(target)
-        }
-        return result
-    }
-
-    // --- v1 (legacy decode only) -----------------------------------------------------------
-
-    private suspend fun importLegacyV1(encoded: String, copyStructure: Boolean): TaskTransferImportResult {
-        val payload = JSONObject(decodeCompressedPayload(encoded, inflate = false))
-        require(payload.optInt("v") == 1) { "Unsupported YATA task link." }
-
-        val listMap = if (copyStructure) importLegacyLists(payload.optJSONArray("lists")) else emptyMap()
-        val tagMap = if (copyStructure) importLegacyTags(payload.optJSONArray("tags")) else emptyMap()
-        val projectMap = if (copyStructure) importLegacyProjects(payload.optJSONArray("projects")) else emptyMap()
-        val personMap = if (copyStructure) importLegacyPeople(payload.optJSONArray("people")) else emptyMap()
-
-        val tasks = payload.optJSONArray("tasks").orEmptySequence().mapNotNull { value ->
-            val item = value as? JSONObject ?: return@mapNotNull null
-            val title = item.optString("t").trim()
-            if (title.isBlank()) return@mapNotNull null
-            Task(
-                id = newId("import_task"),
-                title = title,
-                listId = item.optString("l").takeIf { copyStructure && it.isNotBlank() }?.let { listMap[it] },
-                projectId = item.optString("pr").takeIf { copyStructure && it.isNotBlank() }?.let { projectMap[it] },
-                section = "",
-                due = null,
-                startDate = null,
-                time = null,
-                reminder = null,
-                priority = item.optString("p", "none").takeIf { it in PRIORITIES } ?: "none",
-                flag = item.optBoolean("f", false),
-                done = false,
-                completedAt = null,
-                createdAt = System.currentTimeMillis(),
-                deletedAt = null,
-                assigneeIds = if (copyStructure) item.optJSONArray("people").stringValues().mapNotNull { personMap[it] } else emptyList(),
-                tagIds = if (copyStructure) item.optJSONArray("tags").stringValues().mapNotNull { tagMap[it] } else emptyList(),
-                recurrence = null,
-                subtasks = item.optJSONArray("subs").orEmptySequence().mapIndexedNotNull { index, subValue ->
-                    val sub = subValue as? JSONObject ?: return@mapIndexedNotNull null
-                    val subTitle = sub.optString("t").trim()
-                    if (subTitle.isBlank()) return@mapIndexedNotNull null
-                    Subtask(id = newId("import_subtask"), title = subTitle, done = false, parentSubtaskId = null, sortOrder = sub.optInt("o", index))
-                }.toList(),
-                notes = item.optString("n").takeIf { it.isNotBlank() },
-                sortOrder = System.currentTimeMillis().toInt(),
-                seriesId = null,
-                archived = false,
-                followUpAt = null,
-                estimateMinutes = null
             )
-        }.toList()
-
-        require(tasks.isNotEmpty()) { "No tasks found in shared link." }
-        repository.upsertTasks(tasks, notify = false)
-        repository.notifyTasksChanged()
-        return TaskTransferImportResult(tasks.size, copyStructure)
-    }
-
-    private suspend fun importLegacyLists(array: JSONArray?): Map<String, String> {
-        val existing = repository.getLists().first().associateBy { it.name.normalizedName() }.toMutableMap()
-        val result = mutableMapOf<String, String>()
-        array.orEmptySequence().mapNotNull { it as? JSONObject }.forEach { item ->
-            val oldId = item.optString("id")
-            val name = item.optString("n").trim()
-            if (oldId.isBlank() || name.isBlank()) return@forEach
-            val match = existing[name.normalizedName()]
-            val target = if (match != null) {
-                match.id
-            } else {
-                val id = newId("import_list")
-                val created = YataList(id = id, name = name, color = item.optString("c", "accentA"), icon = item.optString("i", "folder"))
-                repository.upsertList(created)
-                existing[name.normalizedName()] = created
-                id
-            }
-            result[oldId] = target
+            id
         }
-        return result
-    }
 
-    private suspend fun importLegacyProjects(array: JSONArray?): Map<String, String> {
-        val existing = repository.getProjects().first().associateBy { it.name.normalizedName() }.toMutableMap()
-        val result = mutableMapOf<String, String>()
-        array.orEmptySequence().mapNotNull { it as? JSONObject }.forEach { item ->
-            val oldId = item.optString("id")
-            val name = item.optString("n").trim()
-            if (oldId.isBlank() || name.isBlank()) return@forEach
-            val match = existing[name.normalizedName()]
-            val target = if (match != null) {
-                match.id
-            } else {
-                val id = newId("import_project")
-                val created = Project(id = id, name = name, color = item.optString("c", "accentA"), icon = item.optString("i", "layers"))
-                repository.upsertProject(created)
-                existing[name.normalizedName()] = created
-                id
-            }
-            result[oldId] = target
+        suspend fun tagId(ref: SharedEntityRef): String? = resolve(ref, tags) {
+            val id = newId("import_tag")
+            repository.upsertTag(
+                Tag(id = id, name = ref.name, color = ref.color, description = ref.description)
+            )
+            id
         }
-        return result
-    }
 
-    private suspend fun importLegacyTags(array: JSONArray?): Map<String, String> {
-        val existing = repository.getTags().first().associateBy { it.name.normalizedName() }.toMutableMap()
-        val result = mutableMapOf<String, String>()
-        array.orEmptySequence().mapNotNull { it as? JSONObject }.forEach { item ->
-            val oldId = item.optString("id")
-            val name = item.optString("n").trim()
-            if (oldId.isBlank() || name.isBlank()) return@forEach
-            val match = existing[name.normalizedName()]
-            val target = if (match != null) {
-                match.id
-            } else {
-                val id = newId("import_tag")
-                val created = Tag(id = id, name = name, color = item.optString("c", "accentA"), description = item.optString("d").takeIf { it.isNotBlank() })
-                repository.upsertTag(created)
-                existing[name.normalizedName()] = created
-                id
-            }
-            result[oldId] = target
+        private suspend fun resolve(
+            ref: SharedEntityRef,
+            cache: MutableMap<String, String>,
+            create: suspend () -> String
+        ): String? {
+            // A blank name would create an entity called "" — the v1 readers guarded against this
+            // and their v2 replacements silently dropped the check.
+            if (ref.name.isBlank()) return null
+            load()
+            val key = ref.name.normalizedName()
+            return cache[key] ?: create().also { cache[key] = it }
         }
-        return result
-    }
-
-    private suspend fun importLegacyPeople(array: JSONArray?): Map<String, String> {
-        val existing = repository.getPeople().first().associateBy { it.name.normalizedName() }.toMutableMap()
-        val result = mutableMapOf<String, String>()
-        array.orEmptySequence().mapNotNull { it as? JSONObject }.forEach { item ->
-            val oldId = item.optString("id")
-            val name = item.optString("n").trim()
-            if (oldId.isBlank() || name.isBlank()) return@forEach
-            val match = existing[name.normalizedName()]
-            val target = if (match != null) {
-                match.id
-            } else {
-                val id = newId("import_person")
-                val created = Person(id = id, name = name, initials = item.optString("in").takeIf { it.isNotBlank() } ?: initialsFor(name), color = item.optString("c", "accentA"))
-                repository.upsertPerson(created)
-                existing[name.normalizedName()] = created
-                id
-            }
-            result[oldId] = target
-        }
-        return result
     }
 }
 

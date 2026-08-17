@@ -383,16 +383,24 @@ class TaskTransferLinkTest {
         val importedList = repo.listsFlow.value.single { it.name == "Work" }
         val importedProject = repo.projectsFlow.value.single { it.name == "Launch" }
         val importedTag = repo.tagsFlow.value.single { it.name == "Urgent" }
-        val importedPerson = repo.peopleFlow.value.single { it.name == "Ranjith" }
         assertTrue(importedList.id != list.id)
         assertTrue(importedTag.id != tag.id)
         assertEquals("time sensitive", importedTag.description)
+
+        // People are deliberately NOT created from a link, unlike lists/projects/tags.
+        // Teammates keep separate data, so importing the sender's colleagues produces
+        // near-duplicate rows under whatever spelling the sender used ("Ravi K" vs "Ravi
+        // Kumar") and name matching then assigns work to the wrong person. Lists, projects and
+        // tags are shared vocabulary and are safe to match by name; people are identity and are
+        // not. See docs/app-links-team-sharing-design.md §4.
+        assertTrue(repo.peopleFlow.value.isEmpty())
 
         val imported = repo.tasksFlow.value.single()
         assertEquals(importedList.id, imported.listId)
         assertEquals(importedProject.id, imported.projectId)
         assertEquals(listOf(importedTag.id), imported.tagIds)
-        assertEquals(listOf(importedPerson.id), imported.assigneeIds)
+        // The task arrives unassigned rather than pointing at a fabricated person row.
+        assertTrue(imported.assigneeIds.isEmpty())
     }
 
     @Test
