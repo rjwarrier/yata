@@ -4,6 +4,8 @@ import android.net.Uri
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.PersonGroup
 import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.Recurrence
+import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.TagGroup
@@ -81,6 +83,13 @@ class TaskTransferLinkTest {
         followUpAt = null,
         estimateMinutes = 30
     )
+
+    /** A task carrying none of the schedule fields, for the tests about *encoding size* rather
+     * than fidelity. [task] deliberately sets due/start/time/estimate so fidelity tests have
+     * something to carry, which makes it a poor subject for "is the link short" assertions. */
+    private fun bareTask(id: String = "t1", title: String = "Pay electricity bill", priority: String = "none") =
+        task(id = id, title = title, priority = priority)
+            .copy(due = null, startDate = null, time = null, reminder = null, estimateMinutes = null)
 
     private fun importUri(link: String): Uri = Uri.parse(link)
 
@@ -264,13 +273,15 @@ class TaskTransferLinkTest {
         // Not a specific byte target — just confirms the compaction is actually happening, since
         // this is the whole point of docs/app-links-v2-plan.md.
         val link = buildTaskTransferLink(
-            title = "Pay bill", tasks = listOf(task(notes = null)), listsById = emptyMap(),
+            title = "Pay bill", tasks = listOf(bareTask()), listsById = emptyMap(),
             projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
             includeStructure = false, includeNotes = false
         )
         // Budget covers the https prefix ("https://ranjithj.in/yata/i#" — 27 chars) that replaced
-        // "yata://i?"; the point is still that the payload itself stayed compact.
-        assertTrue("link unexpectedly long: ${link.uri.length}", link.uri.length < 100)
+        // "yata://i?"; the point is still that the payload itself stayed compact. Uses a task with
+        // no schedule fields, since carrying a due date legitimately makes a link longer and would
+        // turn this into a test of the fidelity policy rather than of the encoding.
+        assertTrue("link unexpectedly long: ${link.uri.length}", link.uri.length < 70)
     }
 
     // --- round trip: no structure ---------------------------------------------------------
@@ -301,15 +312,19 @@ class TaskTransferLinkTest {
         assertNull(imported.projectId)
         assertTrue(imported.tagIds.isEmpty())
         assertTrue(imported.assigneeIds.isEmpty())
-        assertNull(imported.due)
-        assertNull(imported.startDate)
-        assertNull(imported.time)
+        // Schedule fields now travel — they describe the work, not the sender's own planning, so
+        // stripping them was losing exactly what a teammate needed
+        // (docs/app-links-team-sharing-design.md §2).
+        assertEquals("2026-08-20", imported.due)
+        assertEquals("2026-08-18", imported.startDate)
+        assertEquals("2:00 PM", imported.time)
+        assertEquals(30, imported.estimateMinutes)
+        // These stay behind: personal scheduling, sender-local layout, and sender-side lifecycle.
         assertNull(imported.reminder)
         assertNull(imported.recurrence)
         assertFalse(imported.done)
         assertNull(imported.completedAt)
         assertNull(imported.followUpAt)
-        assertNull(imported.estimateMinutes)
         assertEquals("", imported.section)
         assertFalse(imported.archived)
         assertNull(imported.deletedAt)
@@ -567,7 +582,11 @@ class TaskTransferLinkTest {
         )
         samples.forEach { title ->
             listOf(1, 3, 8).forEach { count ->
-                val tasks = (0 until count).map { task("t$it", title = "$title $it", priority = "none") }
+                // Bare tasks so the titles-only baseline below is a like-for-like alternative:
+                // a task with a due date makes the real plaintext form carry extra parameters,
+                // and comparing against a baseline that silently omits them would be comparing
+                // against a link that loses data.
+                val tasks = (0 until count).map { bareTask("t$it", title = "$title $it") }
                 val chosen = buildTaskTransferLink(
                     title = title, tasks = tasks, listsById = emptyMap(), projectsById = emptyMap(),
                     tagsById = emptyMap(), peopleById = emptyMap(),
@@ -701,10 +720,13 @@ class TaskTransferLinkTest {
         // Previously excluded by the shape gate even though plaintext stays shorter well past one
         // task for Latin scripts (measured: it wins up to n=8 — docs/app-links-v3-plan.md §A).
         val repo = FakeYataRepository()
+        // Bare tasks: with a full schedule attached the plaintext form legitimately grows past
+        // the compressed one and loses selection, which would make this a test of the fidelity
+        // policy rather than of multi-task plaintext encoding.
         val tasks = listOf(
-            task("t1", title = "First", priority = "none", flag = false),
-            task("t2", title = "Second", priority = "high", flag = true),
-            task("t3", title = "Third", priority = "low", flag = false)
+            bareTask("t1", title = "First", priority = "none"),
+            bareTask("t2", title = "Second", priority = "high").copy(flag = true),
+            bareTask("t3", title = "Third", priority = "low")
         )
         val link = buildTaskTransferLink(
             title = "Work", tasks = tasks, listsById = emptyMap(),
@@ -783,6 +805,169 @@ class TaskTransferLinkTest {
     }
 
     private fun importer(repo: FakeYataRepository) = TaskTransferImporter(repo)
+
+    // --- v4 fidelity: fields that describe the work travel -----------------------------------
+
+    @Test
+    fun scheduleFieldsDescribingTheWork_survive_butPersonalOnesDoNot() = runTest {
+        // docs/app-links-team-sharing-design.md §2: a deadline belongs to the task, a reminder
+        // belongs to whoever set it. Forced onto the compressed path with a non-Latin title so
+        // this pins the v4 payload rather than whichever encoding happened to win.
+        val repo = FakeYataRepository()
+        val original = task(title = "மின்சார கட்டணம் செலுத்து")
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertNotNull(linkParams(link.uri).getQueryParameter("e"))
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("2026-08-20", imported.due)
+        assertEquals("2026-08-18", imported.startDate)
+        assertEquals("2:00 PM", imported.time)
+        assertEquals(30, imported.estimateMinutes)
+        // Deliberately not carried.
+        assertNull(imported.reminder)
+        assertEquals("", imported.section)
+        assertNull(imported.followUpAt)
+        assertFalse(imported.done)
+        assertNull(imported.completedAt)
+    }
+
+    @Test
+    fun scheduleFieldsAlsoSurviveThePlaintextForm() = runTest {
+        val repo = FakeYataRepository()
+        val original = task(title = "Pay bill")
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertNotNull(linkParams(link.uri).getQueryParameter("t"))
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("2026-08-20", imported.due)
+        assertEquals("2026-08-18", imported.startDate)
+        assertEquals("2:00 PM", imported.time)
+        assertEquals(30, imported.estimateMinutes)
+        assertNull(imported.reminder)
+    }
+
+    @Test
+    fun datesTravelAsAbsoluteValues_notOffsets() = runTest {
+        // A link opened days after it was sent must still mean the same date.
+        val repo = FakeYataRepository()
+        val original = task(title = "Pay bill")
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertTrue(link.uri, link.uri.contains("2026-08-20") || linkParams(link.uri).getQueryParameter("e") != null)
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+        assertEquals(original.due, repo.tasksFlow.value.single().due)
+    }
+
+    @Test
+    fun recurrence_roundTripsWithAllItsParts() = runTest {
+        val repo = FakeYataRepository()
+        val recurring = task(title = "Weekly report").copy(
+            recurrence = Recurrence(
+                freq = "weekly",
+                interval = 2,
+                byday = listOf("MO", "TH"),
+                bymonthday = null,
+                ends = RecurrenceEnds.After(5),
+                basedOnCompletion = true
+            )
+        )
+        val link = buildTaskTransferLink(
+            title = recurring.title, tasks = listOf(recurring), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        // Recurrence has no readable spelling, so this must take the compressed path rather than
+        // silently dropping it to keep the prettier encoding.
+        assertNotNull(linkParams(link.uri).getQueryParameter("e"))
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.single().recurrence
+        assertNotNull(imported)
+        assertEquals("weekly", imported!!.freq)
+        assertEquals(2, imported.interval)
+        assertEquals(listOf("MO", "TH"), imported.byday)
+        assertEquals(RecurrenceEnds.After(5), imported.ends)
+        assertTrue(imported.basedOnCompletion)
+    }
+
+    @Test
+    fun recurrenceEndingOnADate_roundTrips() = runTest {
+        val repo = FakeYataRepository()
+        val recurring = task(title = "Monthly review").copy(
+            recurrence = Recurrence(
+                freq = "monthly", interval = 1, byday = null, bymonthday = 15,
+                ends = RecurrenceEnds.On("2027-01-31"), basedOnCompletion = false
+            )
+        )
+        val link = buildTaskTransferLink(
+            title = recurring.title, tasks = listOf(recurring), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        TaskTransferImporter(repo).importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.single().recurrence
+        assertNotNull(imported)
+        assertEquals(15, imported!!.bymonthday)
+        assertEquals(RecurrenceEnds.On("2027-01-31"), imported.ends)
+        assertNull(imported.byday)
+    }
+
+    @Test
+    fun malformedRecurrenceFrequency_isDroppedRatherThanImported() = runTest {
+        // An unknown frequency would make every downstream date calculation nonsense, so it must
+        // not survive into the database.
+        val repo = FakeYataRepository()
+        val payload = JSONArray().put(4).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
+            .put(
+                JSONArray().put(
+                    JSONArray().put("Task").put(0).put(false).put("").put(-1).put(-1)
+                        .put(JSONArray()).put(JSONArray()).put(JSONArray())
+                        .put("").put("").put("").put(0)
+                        .put(JSONArray().put("fortnightly").put(1))
+                )
+            )
+
+        TaskTransferImporter(repo).importFrom(manualCompressedUri(payload, "e"))
+
+        assertNull(repo.tasksFlow.value.single().recurrence)
+    }
+
+    @Test
+    fun v3PayloadWithoutScheduleFields_stillImports() = runTest {
+        // Links shared before v4. The row simply stops before the schedule slots.
+        val repo = FakeYataRepository()
+        val payload = JSONArray().put(3).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
+            .put(JSONArray().put(JSONArray().put("Pay electricity bill").put(3).put(true)))
+
+        val result = TaskTransferImporter(repo).importFrom(manualCompressedUri(payload, "e"))
+
+        assertEquals(1, result.taskCount)
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("Pay electricity bill", imported.title)
+        assertEquals("high", imported.priority)
+        assertNull(imported.due)
+        assertNull(imported.recurrence)
+        assertNull(imported.estimateMinutes)
+    }
 
     // --- v1 legacy links still import ------------------------------------------------------
 

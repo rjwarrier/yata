@@ -3,6 +3,8 @@ package com.mj.yata.util.export
 import android.net.Uri
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.Recurrence
+import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
@@ -63,6 +65,10 @@ private const val MAX_DECODED_BYTES = 256_000
 private const val RELIABLE_LINK_LENGTH = 1000
 
 private val PRIORITIES = listOf("none", "low", "med", "high")
+
+// Guards against a malformed link producing a Recurrence with a frequency nothing downstream
+// knows how to evaluate; matches the set RecurrenceEvaluator handles.
+private val RECURRENCE_FREQUENCIES = setOf("daily", "weekly", "monthly", "yearly")
 
 data class TaskTransferLink(
     val uri: String,
@@ -151,11 +157,12 @@ private fun buildCompressedTransferLink(
     val tagIndex = tags.mapIndexed { index, tag -> tag.id to index }.toMap()
     val personIndex = people.mapIndexed { index, person -> person.id to index }.toMap()
 
-    // v3 layout: [version, lists, projects, tags, people, tasks]. v2 carried the share title at
-    // index 1, which no importer ever read — the share text around the link already shows it —
+    // v3/v4 layout: [version, lists, projects, tags, people, tasks]. v2 carried the share title
+    // at index 1, which no importer ever read — the share text around the link already shows it —
     // so every compressed link was paying 16-24 characters for a field nobody consumed.
+    // v4 differs from v3 only in the task row, which gained the schedule fields.
     val payload = JSONArray()
-        .put(3)
+        .put(4)
         .put(JSONArray().also { array -> lists.forEach { array.put(it.toTransferRow()) } })
         .put(JSONArray().also { array -> projects.forEach { array.put(it.toTransferRow(tagIndex)) } })
         .put(JSONArray().also { array -> tags.forEach { array.put(it.toTransferRow()) } })
@@ -195,6 +202,11 @@ private fun buildPlaintextTransferLink(
     includeNotes: Boolean
 ): TaskTransferLink? {
     if (tasks.isEmpty() || includeStructure) return null
+    // Recurrence is the one carried field with no compact readable spelling — expressing it here
+    // would cost more than the compressed form and read as noise to a human. A recurring task
+    // therefore has only the compressed candidate, which is correct: silently dropping it to keep
+    // the pretty encoding would lose data the sender expects to travel.
+    if (tasks.any { it.recurrence != null }) return null
 
     val builder = Uri.Builder().scheme(TRANSFER_SCHEME).authority(HOST)
     tasks.forEach { builder.appendQueryParameter("t", it.title) }
@@ -210,6 +222,10 @@ private fun buildPlaintextTransferLink(
         task.notes?.takeIf { includeNotes && it.isNotBlank() }?.let {
             builder.appendQueryParameter("n$index", it)
         }
+        task.due?.takeIf { it.isNotBlank() }?.let { builder.appendQueryParameter("d$index", it) }
+        task.time?.takeIf { it.isNotBlank() }?.let { builder.appendQueryParameter("h$index", it) }
+        task.startDate?.takeIf { it.isNotBlank() }?.let { builder.appendQueryParameter("g$index", it) }
+        task.estimateMinutes?.takeIf { it > 0 }?.let { builder.appendQueryParameter("m$index", it.toString()) }
         task.subtasks.forEach { builder.appendQueryParameter("b$index", it.title) }
     }
     return TaskTransferLink(uri = webTransferUri(builder.build()), includesStructure = false)
@@ -291,7 +307,63 @@ private fun Task.toTransferRow(
             if (includeStructure) assigneeIds.mapNotNull { personIndex[it] }.forEach { array.put(it) }
         })
         .put(JSONArray().also { array -> subtasks.forEach { array.put(JSONArray().put(it.title)) } })
+        // v4 additions: fields that describe *the work* rather than the sender's personal
+        // scheduling, so they belong to the recipient too. Absolute ISO dates, never offsets —
+        // a link opened two days after it was sent must still mean the same Friday.
+        // Deliberately still absent: reminder (my nudge preference, not theirs), section (the
+        // sender's private project layout), followUpAt, and done/completedAt.
+        .put(due.orEmpty())
+        .put(time.orEmpty())
+        .put(startDate.orEmpty())
+        .put(estimateMinutes ?: 0)
+        .put(recurrence?.toTransferRow() ?: JSONArray())
     return row.trimTrailingTaskDefaults()
+}
+
+/** Mirrors the field set `JsonExporter` already persists for a recurrence, positionally:
+ * [freq, interval, byday, bymonthday, endsType, endsValue, basedOnCompletion]. Kept in step with
+ * that encoding on purpose — two different notions of "a serialized recurrence" in one codebase
+ * is how they drift apart. */
+private fun Recurrence.toTransferRow(): JSONArray = JSONArray()
+    .put(freq)
+    .put(interval)
+    .put(JSONArray().also { array -> byday?.forEach { day -> array.put(day) } })
+    .put(bymonthday ?: 0)
+    .put(
+        when (ends) {
+            is RecurrenceEnds.Never -> ""
+            is RecurrenceEnds.After -> "a"
+            is RecurrenceEnds.On -> "o"
+        }
+    )
+    .put(
+        when (val e = ends) {
+            is RecurrenceEnds.Never -> ""
+            is RecurrenceEnds.After -> e.count.toString()
+            is RecurrenceEnds.On -> e.date
+        }
+    )
+    .put(basedOnCompletion)
+
+private fun JSONArray?.toRecurrenceOrNull(): Recurrence? {
+    val row = this ?: return null
+    val freq = row.optString(0).takeIf { it.isNotBlank() } ?: return null
+    if (freq !in RECURRENCE_FREQUENCIES) return null
+    val endsValue = row.optString(5)
+    return Recurrence(
+        freq = freq,
+        // A non-positive interval would make every downstream date calculation nonsense, and
+        // JsonExporter rejects it outright on import for the same reason.
+        interval = row.optInt(1, 1).coerceAtLeast(1),
+        byday = row.optJSONArray(2).stringValues().takeIf { it.isNotEmpty() },
+        bymonthday = row.optInt(3, 0).takeIf { it != 0 },
+        ends = when (row.optString(4)) {
+            "a" -> endsValue.toIntOrNull()?.takeIf { it > 0 }?.let { RecurrenceEnds.After(it) } ?: RecurrenceEnds.Never
+            "o" -> endsValue.takeIf { it.isNotBlank() }?.let { RecurrenceEnds.On(it) } ?: RecurrenceEnds.Never
+            else -> RecurrenceEnds.Never
+        },
+        basedOnCompletion = row.optBoolean(6, false)
+    )
 }
 
 /** Drops trailing elements while they equal the "unset" value for their position, so a simple
@@ -299,15 +371,22 @@ private fun Task.toTransferRow(
  * scanning from the end — an earlier default in the middle is kept, since position is meaning. */
 private fun JSONArray.trimTrailingTaskDefaults(): JSONArray {
     // Positions: 0 title(required), 1 priority(0), 2 flag(false), 3 notes(""), 4 listIdx(-1),
-    // 5 projIdx(-1), 6 tagIdx([]), 7 personIdx([]), 8 subs([]).
+    // 5 projIdx(-1), 6 tagIdx([]), 7 personIdx([]), 8 subs([]),
+    // 9 due(""), 10 time(""), 11 startDate(""), 12 estimateMinutes(0), 13 recurrence([]).
+    //
+    // The v4 fields are appended rather than slotted in by likelihood-of-being-set, which would
+    // truncate more often. A task with only a due date therefore still pays for placeholder
+    // slots 4-8 — but those are a highly repetitive run across every task in a payload, which is
+    // exactly what DEFLATE removes, so the compressed cost is far below the raw one.
     while (length() > 1) {
         val last = length() - 1
         val isDefault = when (last) {
             1 -> optInt(1) == 0
             2 -> !optBoolean(2)
-            3 -> optString(3).isEmpty()
+            3, 9, 10, 11 -> optString(last).isEmpty()
             4, 5 -> optInt(last) == -1
-            6, 7, 8 -> optJSONArray(last)?.length() == 0
+            6, 7, 8, 13 -> optJSONArray(last)?.length() == 0
+            12 -> optInt(12) == 0
             else -> false
         }
         if (!isDefault) break
@@ -379,7 +458,13 @@ class TaskTransferImporter @Inject constructor(
             return importLegacyV1(params.getQueryParameter(PARAM_V2_PAYLOAD).orEmpty(), copyStructure)
         }
         if (isPlaintextTransferUri(params)) return importPlaintext(params)
-        params.getQueryParameter(PARAM_V3_PAYLOAD)?.let { return importV3(it, copyStructure) }
+        // v3 and v4 share the "e" parameter — the version inside the payload picks the reader,
+        // since a separate parameter per version would spend characters to say what the payload
+        // already states.
+        params.getQueryParameter(PARAM_V3_PAYLOAD)?.let { encoded ->
+            val version = peekCompressedVersion(encoded)
+            return if (version == 4) importV4(encoded, copyStructure) else importV3(encoded, copyStructure)
+        }
         params.getQueryParameter(PARAM_V2_PAYLOAD)?.let { return importV2(it, copyStructure) }
         throw IllegalArgumentException("Unsupported YATA task link.")
     }
@@ -398,9 +483,9 @@ class TaskTransferImporter @Inject constructor(
                 listId = null,
                 projectId = null,
                 section = "",
-                due = null,
-                startDate = null,
-                time = null,
+                due = uri.getQueryParameter("d$index")?.takeIf { it.isNotBlank() },
+                startDate = uri.getQueryParameter("g$index")?.takeIf { it.isNotBlank() },
+                time = uri.getQueryParameter("h$index")?.takeIf { it.isNotBlank() },
                 reminder = null,
                 priority = PRIORITIES[priorityIndex],
                 flag = uri.getQueryParameter("f$index") == "1",
@@ -421,7 +506,7 @@ class TaskTransferImporter @Inject constructor(
                 seriesId = null,
                 archived = false,
                 followUpAt = null,
-                estimateMinutes = null
+                estimateMinutes = uri.getQueryParameter("m$index")?.toIntOrNull()?.takeIf { it > 0 }
             )
         }
         require(tasks.isNotEmpty()) { "No tasks found in shared link." }
@@ -430,11 +515,22 @@ class TaskTransferImporter @Inject constructor(
         return TaskTransferImportResult(tasks.size, false)
     }
 
-    // --- v2 / v3 ---------------------------------------------------------------------------
+    // --- v2 / v3 / v4 -----------------------------------------------------------------------
     //
-    // The two differ only in whether a (never-read) share title sits at index 1, so the section
-    // indices shift by one. Task row layout is identical, which is the bulk of the parsing —
-    // hence one decoder taking the offset rather than two near-copies that could drift apart.
+    // v2 carried a (never-read) share title at index 1, so its section indices sit one slot later
+    // than v3's and v4's. v4 differs from v3 only in the task row, which gained the schedule
+    // fields at positions 9-13; older rows simply stop before those, and reading a missing index
+    // yields the same default as an explicitly-empty one. Hence one decoder parameterised by
+    // offset rather than three near-copies that could drift apart.
+
+    /** Reads just the leading version int so dispatch can pick a reader. Decoding twice is
+     * wasteful but bounded by the same MAX_DECODED_BYTES guard, and it keeps the alternative —
+     * a version parameter in the URL — from costing every link characters. */
+    private fun peekCompressedVersion(encoded: String): Int =
+        runCatching { JSONArray(decodeCompressedPayload(encoded, inflate = true)).optInt(0) }.getOrDefault(-1)
+
+    private suspend fun importV4(encoded: String, copyStructure: Boolean) =
+        importCompressed(encoded, copyStructure, expectedVersion = 4, dictionaryBase = 1)
 
     private suspend fun importV3(encoded: String, copyStructure: Boolean) =
         importCompressed(encoded, copyStructure, expectedVersion = 3, dictionaryBase = 1)
@@ -469,9 +565,12 @@ class TaskTransferImporter @Inject constructor(
                 listId = listIdx.takeIf { copyStructure && it >= 0 }?.let { listMap.getOrNull(it) },
                 projectId = projIdx.takeIf { copyStructure && it >= 0 }?.let { projectMap.getOrNull(it) },
                 section = "",
-                due = null,
-                startDate = null,
-                time = null,
+                // v4 fields; a v2/v3 row is simply shorter and these read as absent.
+                due = row.optString(9).takeIf { it.isNotBlank() },
+                startDate = row.optString(11).takeIf { it.isNotBlank() },
+                time = row.optString(10).takeIf { it.isNotBlank() },
+                // Still dropped on purpose: the sender's reminder is their nudge preference,
+                // not something to impose on the recipient.
                 reminder = null,
                 priority = PRIORITIES[priorityIndex],
                 flag = row.optBoolean(2, false),
@@ -481,7 +580,7 @@ class TaskTransferImporter @Inject constructor(
                 deletedAt = null,
                 assigneeIds = if (copyStructure) row.optJSONArray(7).intValues().mapNotNull { personMap.getOrNull(it) } else emptyList(),
                 tagIds = if (copyStructure) row.optJSONArray(6).intValues().mapNotNull { tagMap.getOrNull(it) } else emptyList(),
-                recurrence = null,
+                recurrence = row.optJSONArray(13).toRecurrenceOrNull(),
                 subtasks = row.optJSONArray(8).orEmptySequence().mapIndexedNotNull { index, subValue ->
                     val sub = subValue as? JSONArray ?: return@mapIndexedNotNull null
                     val subTitle = sub.optString(0).trim()
@@ -493,7 +592,7 @@ class TaskTransferImporter @Inject constructor(
                 seriesId = null,
                 archived = false,
                 followUpAt = null,
-                estimateMinutes = null
+                estimateMinutes = row.optInt(12, 0).takeIf { it > 0 }
             )
         }.toList()
 

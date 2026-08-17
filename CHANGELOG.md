@@ -24,6 +24,12 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Tags now support an optional description in the create/edit sheet, and tag image/PDF exports show
   it as subtext below the tag name.
 
+### Changed
+- Shared task links now open the app from a chat instead of arriving as text nobody can tap, and
+  they carry the task's due date, start date, time, estimate and repeat rule so a shared task
+  arrives with its schedule intact. Personal details deliberately stay behind: the sender's
+  reminder, their section, and whether they had already completed it.
+
 ### Fixed
 - Task import links are no longer needlessly long for non-Latin languages. Links now use whichever
   of the two encodings is actually shorter for the text being shared, instead of guessing from the
