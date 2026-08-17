@@ -83,6 +83,7 @@ fun ListDetailScreen(
     val list = remember(lists, listId) { lists.find { it.id == listId } }
     val accents = LocalYataAccents.current
     val scope = rememberCoroutineScope()
+    val listsById = remember(lists) { lists.associateBy { it.id } }
     val projectsById = remember(projects) { projects.associateBy { it.id } }
     val tagsById = remember(tags) { tags.associateBy { it.id } }
     val peopleById = remember(people) { people.associateBy { it.id } }
@@ -900,7 +901,19 @@ fun ListDetailScreen(
                             destination = options.destination,
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
-                            imageScale = options.imageScale
+                            imageScale = options.imageScale,
+                            transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
+                                com.mj.yata.util.export.buildTaskTransferLinks(
+                                    title = list.name,
+                                    tasks = sharedTasks,
+                                    listsById = listsById,
+                                    projectsById = projectsById,
+                                    tagsById = tagsById,
+                                    peopleById = peopleById,
+                                    includeStructure = !options.privacyMode,
+                                    includeNotes = !options.privacyMode
+                                ).asShareText(list.name, sharedTasks.size)
+                            }
                         )
                     }
                     exportInProgress = false

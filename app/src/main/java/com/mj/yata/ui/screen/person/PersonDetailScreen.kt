@@ -952,7 +952,19 @@ fun PersonDetailScreen(
                             destination = options.destination,
                             fileNameBase = options.fileNameBase,
                             pdfPageSize = options.pdfPageSize,
-                            imageScale = options.imageScale
+                            imageScale = options.imageScale,
+                            transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
+                                com.mj.yata.util.export.buildTaskTransferLinks(
+                                    title = person.name,
+                                    tasks = sharedTasks,
+                                    listsById = listsById,
+                                    projectsById = projectsById,
+                                    tagsById = tagsById,
+                                    peopleById = peopleById,
+                                    includeStructure = !options.privacyMode,
+                                    includeNotes = !options.privacyMode
+                                ).asShareText(person.name, sharedTasks.size)
+                            }
                         )
                     }
                     exportInProgress = false

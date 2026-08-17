@@ -34,7 +34,8 @@ suspend fun exportEntityReport(
     destination: ExportDestination = ExportDestination.SHARE,
     fileNameBase: String = "yata_${sanitizeExportFileName(entityName)}",
     pdfPageSize: ExportPdfPageSize = ExportPdfPageSize.A4,
-    imageScale: ExportImageScale = ExportImageScale.STANDARD
+    imageScale: ExportImageScale = ExportImageScale.STANDARD,
+    transferText: String? = null
 ): ExportOutcome {
     val displayDensity = context.resources.displayMetrics.density
     val widthPx = (cardWidth(imageScale).value * displayDensity).toInt()
@@ -68,7 +69,7 @@ suspend fun exportEntityReport(
     when (format) {
         ExportFormat.IMAGE -> {
             val file = saveBitmapAsPng(context, bitmap, "$baseName.png")
-            return deliverExportedFile(context, file, "image/png", "Share $entityName", destination)
+            return deliverExportedFile(context, file, "image/png", "Share $entityName", destination, transferText)
         }
         ExportFormat.PDF -> {
             val file = saveBitmapAsPdf(context, bitmap, "$baseName.pdf", rowBreaks, pdfPageSize)
@@ -79,7 +80,7 @@ suspend fun exportEntityReport(
                 subject = "$entityKind task report for $entityName ($doneCount/$totalCount done)",
                 keywords = "YATA, $entityKind, $entityName, tasks, report"
             )
-            return deliverExportedFile(context, file, "application/pdf", "Share $entityName", destination)
+            return deliverExportedFile(context, file, "application/pdf", "Share $entityName", destination, transferText)
         }
     }
 }

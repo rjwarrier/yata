@@ -16,6 +16,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Added
+- Image/PDF task exports now include YATA import links in the share text: receivers can add the
+  shared task(s) to Inbox only, or add them to Inbox while also creating any missing
+  list/project/tag/person names.
 - Tags now support an optional description in the create/edit sheet, and tag image/PDF exports show
   it as subtext below the tag name.
 

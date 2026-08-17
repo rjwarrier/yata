@@ -162,11 +162,12 @@ fun applyPdfMetadata(
     }
 }
 
-fun shareExportedFile(context: Context, file: File, mimeType: String, chooserTitle: String) {
+fun shareExportedFile(context: Context, file: File, mimeType: String, chooserTitle: String, extraText: String? = null) {
     val uri = shareUriFor(context, file)
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
+        extraText?.takeIf { it.isNotBlank() }?.let { putExtra(Intent.EXTRA_TEXT, it) }
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, chooserTitle))
@@ -177,10 +178,11 @@ fun deliverExportedFile(
     file: File,
     mimeType: String,
     chooserTitle: String,
-    destination: ExportDestination
+    destination: ExportDestination,
+    extraText: String? = null
 ): ExportOutcome {
     if (destination == ExportDestination.SHARE) {
-        shareExportedFile(context, file, mimeType, chooserTitle)
+        shareExportedFile(context, file, mimeType, chooserTitle, extraText)
         return ExportOutcome(file = file, destination = destination, pageCount = if (mimeType == "application/pdf") countPdfPages(context, file) else 1)
     }
     val saved = copyExportToDownloads(context, file, mimeType)

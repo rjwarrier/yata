@@ -1219,6 +1219,11 @@
     <string name="task_deleted">Task deleted</string>
     <string name="task_marked_open">Task marked open</string>
     <string name="task_completed">Task completed</string>
+    <plurals name="task_transfer_imported">
+        <item quantity="one">%1$d shared task added to Inbox</item>
+        <item quantity="other">%1$d shared tasks added to Inbox</item>
+    </plurals>
+    <string name="task_transfer_import_failed">Could not import this YATA task link.</string>
     <string name="export_failed">Export failed.</string>
     <string name="reminder_before_due_error">Reminder must be before the due time.</string>
     <string name="reminder_in_past_error">That reminder time has already passed today.</string>

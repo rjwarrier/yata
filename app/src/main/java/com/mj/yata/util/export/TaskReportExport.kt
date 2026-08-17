@@ -51,7 +51,8 @@ suspend fun exportTaskReport(
     destination: ExportDestination = ExportDestination.SHARE,
     fileNameBase: String = "yata_${sanitizeExportFileName(title)}",
     pdfPageSize: ExportPdfPageSize = ExportPdfPageSize.A4,
-    imageScale: ExportImageScale = ExportImageScale.STANDARD
+    imageScale: ExportImageScale = ExportImageScale.STANDARD,
+    transferText: String? = null
 ): ExportOutcome {
     val generatedOn = LocalDateTime.now().localized()
     val baseName = sanitizeExportFileName(fileNameBase)
@@ -85,7 +86,7 @@ suspend fun exportTaskReport(
                 )
             }
             val file = saveBitmapAsJpeg(context, bitmap, "$baseName.jpg")
-            return deliverExportedFile(context, file, "image/jpeg", "Share $title", destination)
+            return deliverExportedFile(context, file, "image/jpeg", "Share $title", destination, transferText)
         }
         ExportFormat.PDF -> {
             val displayDensity = context.resources.displayMetrics.density
@@ -128,7 +129,7 @@ suspend fun exportTaskReport(
                 subject = "YATA task export: $title",
                 keywords = "YATA, task, $title"
             )
-            return deliverExportedFile(context, file, "application/pdf", "Share $title", destination)
+            return deliverExportedFile(context, file, "application/pdf", "Share $title", destination, transferText)
         }
     }
 }

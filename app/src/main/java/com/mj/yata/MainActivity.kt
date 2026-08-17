@@ -51,6 +51,8 @@ import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.PlainTextImporter
+import com.mj.yata.util.export.TaskTransferImporter
+import com.mj.yata.util.export.isTaskTransferUri
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -67,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var jsonExporter: JsonExporter
     @Inject lateinit var icsExporter: IcsExporter
     @Inject lateinit var plainTextImporter: PlainTextImporter
+    @Inject lateinit var taskTransferImporter: TaskTransferImporter
     @Inject lateinit var userPreferences: UserPreferences
     @Inject lateinit var errorBus: com.mj.yata.ui.error.AppErrorBus
 
@@ -229,7 +232,8 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
         currentIntent = intent
         if (intent.action == Intent.ACTION_VIEW &&
-            intent.data?.scheme == com.mj.yata.ui.navigation.DeepLink.SCHEME
+            intent.data?.scheme == com.mj.yata.ui.navigation.DeepLink.SCHEME &&
+            !isTaskTransferUri(intent.data)
         ) {
             pendingDeepLinkIntent = intent
         }
@@ -443,6 +447,33 @@ class MainActivity : AppCompatActivity() {
                         // relevant screen if launched from a long-press launcher shortcut.
                         LaunchedEffect(currentIntent) {
                             val intent = currentIntent ?: return@LaunchedEffect
+                            val importUri = intent.data?.takeIf { isTaskTransferUri(it) }
+                            if (intent.action == Intent.ACTION_VIEW && importUri != null) {
+                                currentIntent = null
+                                runCatching { taskTransferImporter.importFrom(importUri) }
+                                    .onSuccess { result ->
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            resources.getQuantityString(
+                                                R.plurals.task_transfer_imported,
+                                                result.taskCount,
+                                                result.taskCount
+                                            ),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        navController.navigate(com.mj.yata.ui.navigation.Screen.Inbox.route) {
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                    .onFailure { error ->
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            error.message ?: getString(R.string.task_transfer_import_failed),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                return@LaunchedEffect
+                            }
                             val navigateTo = intent.getStringExtra("navigate_to")
                             val taskId = intent.getStringExtra("task_id")
                             val shortcutAction = intent.getStringExtra("shortcut_action")

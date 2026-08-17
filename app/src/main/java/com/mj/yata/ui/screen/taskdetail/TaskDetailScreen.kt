@@ -1945,7 +1945,17 @@ fun TaskDetailScreen(
                         destination = options.destination,
                         fileNameBase = options.fileNameBase,
                         pdfPageSize = options.pdfPageSize,
-                        imageScale = options.imageScale
+                        imageScale = options.imageScale,
+                        transferText = com.mj.yata.util.export.buildTaskTransferLinks(
+                            title = task.title,
+                            tasks = listOf(task),
+                            listsById = listsById,
+                            projectsById = projectsById,
+                            tagsById = tagsById,
+                            peopleById = peopleById,
+                            includeStructure = !options.privacyMode,
+                            includeNotes = !options.privacyMode && options.includeNotes
+                        ).asShareText(task.title, 1)
                     )
                 }
                 exportInProgress = false
