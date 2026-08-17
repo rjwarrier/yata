@@ -201,6 +201,11 @@ fun TodayTab(
     val overdueCount = remember(progressBaseTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(progressBaseTasks) }
     val highPriorityCount = remember(progressBaseTasks) { progressBaseTasks.count { !it.done && it.priority == "high" } }
     val dueTodayCount = remember(progressBaseTasks, todayStr) { progressBaseTasks.count { !it.done && it.due == todayStr } }
+    val showHeroStats = overdueCount > 0 || highPriorityCount > 0 || dueTodayCount > 0
+
+    LaunchedEffect(showHeroStats) {
+        if (!showHeroStats) activeStatFilter = null
+    }
 
     // Flat list, no more Morning/Afternoon grouping — split into Pending/Completed instead of
     // interleaving them in raw sortOrder. Hiding completed drops both the tasks and the section
@@ -474,8 +479,23 @@ fun TodayTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                TodayHeader(modifier = Modifier.weight(0.9f))
-                TodayStats(modifier = Modifier.weight(1.1f))
+                TodayHeader(modifier = Modifier.weight(if (showHeroStats) 0.9f else 1f))
+                if (showHeroStats) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) + scaleIn(
+                            initialScale = 0.96f,
+                            animationSpec = tween(YataDur.sheet, easing = YataEase.emphasized)
+                        ),
+                        exit = fadeOut(tween(YataDur.fade, easing = YataEase.emphAccel)) + scaleOut(
+                            targetScale = 0.96f,
+                            animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel)
+                        ),
+                        modifier = Modifier.weight(1.1f)
+                    ) {
+                        TodayStats()
+                    }
+                }
             }
         } else {
         // 2. Header row
@@ -542,36 +562,21 @@ fun TodayTab(
 
         // 2.5 Overdue/high-priority/due-today stats — tap one to filter Pending in place,
         // matching the same tap-to-filter stat row on the Person/Project/List/Tag hero sections.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        AnimatedVisibility(
+            visible = showHeroStats,
+            enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) + scaleIn(
+                initialScale = 0.96f,
+                animationSpec = tween(YataDur.sheet, easing = YataEase.emphasized)
+            ),
+            exit = fadeOut(tween(YataDur.fade, easing = YataEase.emphAccel)) + scaleOut(
+                targetScale = 0.96f,
+                animationSpec = tween(YataDur.fade, easing = YataEase.emphAccel)
+            )
         ) {
-            com.mj.yata.ui.widgets.HeroStatCell(
-                label = stringResource(R.string.today_stat_overdue),
-                value = overdueCount,
-                accentColor = MaterialTheme.colorScheme.primary,
-                valueColor = if (overdueCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.OVERDUE) null else com.mj.yata.ui.widgets.HeroStatKind.OVERDUE },
-                modifier = Modifier.weight(1f)
-            )
-            com.mj.yata.ui.widgets.HeroStatCell(
-                label = stringResource(R.string.today_stat_high_priority),
-                value = highPriorityCount,
-                accentColor = MaterialTheme.colorScheme.primary,
-                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY) null else com.mj.yata.ui.widgets.HeroStatKind.HIGH_PRIORITY },
-                modifier = Modifier.weight(1f)
-            )
-            com.mj.yata.ui.widgets.HeroStatCell(
-                label = stringResource(R.string.today_stat_due_today),
-                value = dueTodayCount,
-                accentColor = MaterialTheme.colorScheme.primary,
-                active = activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY,
-                onClick = { activeStatFilter = if (activeStatFilter == com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY) null else com.mj.yata.ui.widgets.HeroStatKind.DUE_TODAY },
-                modifier = Modifier.weight(1f)
+            TodayStats(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
             )
         }
         }
