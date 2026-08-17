@@ -411,6 +411,9 @@ dependencies {
     // org.json ships in android.jar as method stubs that throw at runtime, so anything touching
     // JSONObject is untestable on the JVM without a real implementation on the test classpath.
     testImplementation(libs.org.json)
+    // android.net.Uri is a method-stub-only class on the JVM too; Robolectric provides a real
+    // implementation for tests that build/parse yata:// links (e.g. TaskTransferLinkTest).
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

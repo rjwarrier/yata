@@ -1946,7 +1946,7 @@ fun TaskDetailScreen(
                         fileNameBase = options.fileNameBase,
                         pdfPageSize = options.pdfPageSize,
                         imageScale = options.imageScale,
-                        transferText = com.mj.yata.util.export.buildTaskTransferLinks(
+                        transferText = com.mj.yata.util.export.buildTaskTransferLink(
                             title = task.title,
                             tasks = listOf(task),
                             listsById = listsById,

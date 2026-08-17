@@ -1,0 +1,756 @@
+package com.mj.yata
+
+import android.net.Uri
+import com.mj.yata.domain.model.Person
+import com.mj.yata.domain.model.PersonGroup
+import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.Subtask
+import com.mj.yata.domain.model.Tag
+import com.mj.yata.domain.model.TagGroup
+import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.TaskComment
+import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.util.export.TaskTransferImporter
+import com.mj.yata.util.export.buildTaskTransferLink
+import com.mj.yata.util.export.isTaskTransferUri
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
+import org.json.JSONArray
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import java.io.ByteArrayOutputStream
+import java.util.Base64
+import java.util.zip.GZIPOutputStream
+
+/**
+ * Guards docs/app-links-v2-plan.md's v2 link format (compact positional payload, single link,
+ * raw-deflate compression, yata://i host) and pins that links already shared in v1 form
+ * (yata://import/tasks, gzip, verbose JSON) still import correctly. android.net.Uri is a
+ * method-stub-only class on the plain JVM (like org.json used to be — see
+ * JsonExporterFieldsTest), so this runs under Robolectric rather than the bare JUnit runner the
+ * rest of the util tests use.
+ */
+@RunWith(RobolectricTestRunner::class)
+class TaskTransferLinkTest {
+
+    private fun task(
+        id: String = "t1",
+        title: String = "Pay electricity bill",
+        listId: String? = null,
+        projectId: String? = null,
+        priority: String = "high",
+        flag: Boolean = false,
+        notes: String? = null,
+        tagIds: List<String> = emptyList(),
+        assigneeIds: List<String> = emptyList(),
+        subtasks: List<Subtask> = emptyList()
+    ) = Task(
+        id = id,
+        title = title,
+        listId = listId,
+        projectId = projectId,
+        section = "Morning",
+        due = "2026-08-20",
+        startDate = "2026-08-18",
+        time = "2:00 PM",
+        reminder = "15 min before",
+        priority = priority,
+        flag = flag,
+        done = true,
+        completedAt = 1_700_000_000_000L,
+        createdAt = 1_600_000_000_000L,
+        deletedAt = null,
+        assigneeIds = assigneeIds,
+        tagIds = tagIds,
+        recurrence = null,
+        subtasks = subtasks,
+        notes = notes,
+        sortOrder = 5,
+        seriesId = "series1",
+        archived = false,
+        followUpAt = null,
+        estimateMinutes = 30
+    )
+
+    private fun importUri(link: String): Uri = Uri.parse(link)
+
+    // --- isTaskTransferUri -------------------------------------------------------------
+
+    @Test
+    fun httpsUri_isNotRecognizedAsTransferLink() {
+        assertFalse(isTaskTransferUri(Uri.parse("https://example.com/i?s=0&d=x")))
+    }
+
+    @Test
+    fun wrongHost_isNotRecognizedAsTransferLink() {
+        assertFalse(isTaskTransferUri(Uri.parse("yata://other?s=0&d=x")))
+    }
+
+    @Test
+    fun nullUri_isNotRecognizedAsTransferLink() {
+        assertFalse(isTaskTransferUri(null))
+    }
+
+    @Test
+    fun legacyV1Host_isStillRecognizedAsTransferLink() {
+        assertTrue(isTaskTransferUri(Uri.parse("yata://import/tasks?s=0&d=x")))
+    }
+
+    // --- build/share text ---------------------------------------------------------------
+
+    @Test
+    fun shareText_singularCount_usesSingularWord() {
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task()), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        val text = link.asShareText("Pay bill", 1)
+        assertTrue(text.contains("shared task: Pay bill"))
+        assertTrue(text.contains(link.uri))
+        assertTrue(link.uri.startsWith("yata://i?"))
+    }
+
+    @Test
+    fun shareText_pluralCount_usesTaskCount() {
+        val link = buildTaskTransferLink(
+            title = "Work", tasks = listOf(task("t1"), task("t2")), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertTrue(link.asShareText("Work", 2).contains("shared 2 tasks: Work"))
+    }
+
+    @Test
+    fun onlyOneLinkIsProduced_flagReflectsWhatWasActuallyEmbedded() {
+        // The v1 format's bug this closes: a privacy-mode export used to still hand out a
+        // second "copies structure" link whose payload had no structure in it. Now there is
+        // exactly one link, and its flag can't disagree with its payload.
+        val withStructure = buildTaskTransferLink(
+            title = "Work", tasks = listOf(task(listId = "list1")),
+            listsById = mapOf("list1" to YataList(id = "list1", name = "Work", color = "accentA", icon = "folder")),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = true, includeNotes = false
+        )
+        assertTrue(withStructure.includesStructure)
+        assertEquals("1", Uri.parse(withStructure.uri).getQueryParameter("s"))
+
+        // Two tasks so this doesn't take the plaintext fast path, which has no "s" param at all
+        // (covered separately by the plaintext tests below) — this is specifically pinning the
+        // compressed-blob path's "s" flag.
+        val withoutStructure = buildTaskTransferLink(
+            title = "Work", tasks = listOf(task("t1", listId = "list1"), task("t2")), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertFalse(withoutStructure.includesStructure)
+        assertEquals("0", Uri.parse(withoutStructure.uri).getQueryParameter("s"))
+    }
+
+    @Test
+    fun simpleTask_producesAShorterLinkThanTheOldFormat() {
+        // Not a specific byte target — just confirms the compaction is actually happening, since
+        // this is the whole point of docs/app-links-v2-plan.md.
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task(notes = null)), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertTrue("v2 link unexpectedly long: ${link.uri.length}", link.uri.length < 80)
+    }
+
+    // --- round trip: no structure ---------------------------------------------------------
+
+    @Test
+    fun singleTask_noStructure_importLandsInInboxNormalized() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val original = task(
+            listId = "list1", projectId = "proj1", priority = "high", flag = true,
+            notes = "secret notes", tagIds = listOf("tag1"), assigneeIds = listOf("person1")
+        )
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        val result = importer.importFrom(importUri(link.uri))
+
+        assertEquals(1, result.taskCount)
+        assertFalse(result.copiedStructure)
+        val imported = repo.tasksFlow.value.single()
+        assertEquals(original.title, imported.title)
+        assertEquals("high", imported.priority)
+        assertTrue(imported.flag)
+        assertNull(imported.listId)
+        assertNull(imported.projectId)
+        assertTrue(imported.tagIds.isEmpty())
+        assertTrue(imported.assigneeIds.isEmpty())
+        assertNull(imported.due)
+        assertNull(imported.startDate)
+        assertNull(imported.time)
+        assertNull(imported.reminder)
+        assertNull(imported.recurrence)
+        assertFalse(imported.done)
+        assertNull(imported.completedAt)
+        assertNull(imported.followUpAt)
+        assertNull(imported.estimateMinutes)
+        assertEquals("", imported.section)
+        assertFalse(imported.archived)
+        assertNull(imported.deletedAt)
+        assertTrue(imported.id != original.id)
+        assertNull(imported.notes)
+    }
+
+    @Test
+    fun notes_excludedUnlessIncludeNotesRequested() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val original = task(notes = "call before arriving")
+
+        val withoutNotes = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        importer.importFrom(importUri(withoutNotes.uri))
+        assertNull(repo.tasksFlow.value.single().notes)
+
+        repo.tasksFlow.value = emptyList()
+        val withNotes = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = true
+        )
+        importer.importFrom(importUri(withNotes.uri))
+        assertEquals("call before arriving", repo.tasksFlow.value.single().notes)
+    }
+
+    // --- round trip: with structure -------------------------------------------------------
+
+    @Test
+    fun withStructure_createsMissingListsProjectsTagsPeople() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val list = YataList(id = "list1", name = "Work", color = "accentA", icon = "folder")
+        val project = Project(id = "proj1", name = "Launch", color = "accentB", icon = "layers")
+        val tag = Tag(id = "tag1", name = "Urgent", color = "error", description = "time sensitive")
+        val person = Person(id = "person1", name = "Ranjith", initials = "R", color = "accentC")
+        val original = task(
+            listId = list.id, projectId = project.id, tagIds = listOf(tag.id), assigneeIds = listOf(person.id)
+        )
+
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original),
+            listsById = mapOf(list.id to list), projectsById = mapOf(project.id to project),
+            tagsById = mapOf(tag.id to tag), peopleById = mapOf(person.id to person),
+            includeStructure = true, includeNotes = false
+        )
+
+        val result = importer.importFrom(importUri(link.uri))
+
+        assertTrue(result.copiedStructure)
+        val importedList = repo.listsFlow.value.single { it.name == "Work" }
+        val importedProject = repo.projectsFlow.value.single { it.name == "Launch" }
+        val importedTag = repo.tagsFlow.value.single { it.name == "Urgent" }
+        val importedPerson = repo.peopleFlow.value.single { it.name == "Ranjith" }
+        assertTrue(importedList.id != list.id)
+        assertTrue(importedTag.id != tag.id)
+        assertEquals("time sensitive", importedTag.description)
+
+        val imported = repo.tasksFlow.value.single()
+        assertEquals(importedList.id, imported.listId)
+        assertEquals(importedProject.id, imported.projectId)
+        assertEquals(listOf(importedTag.id), imported.tagIds)
+        assertEquals(listOf(importedPerson.id), imported.assigneeIds)
+    }
+
+    @Test
+    fun withStructure_reusesExistingEntityByCaseInsensitiveName() = runTest {
+        val repo = FakeYataRepository()
+        val existing = YataList(id = "existing-list", name = "work", color = "accentD", icon = "star")
+        repo.listsFlow.value = listOf(existing)
+        val importer = TaskTransferImporter(repo)
+        val list = YataList(id = "list1", name = "Work", color = "accentA", icon = "folder")
+        val original = task(listId = list.id)
+
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = mapOf(list.id to list),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = true, includeNotes = false
+        )
+        importer.importFrom(importUri(link.uri))
+
+        assertEquals(1, repo.listsFlow.value.size)
+        assertEquals(existing.id, repo.tasksFlow.value.single().listId)
+    }
+
+    @Test
+    fun projectCommonTagIds_areCarriedOntoTheImportedProject() = runTest {
+        // Regression test for the orphan-tag bug flagged in docs/app-links-v2-plan.md's phase 3:
+        // a project's common tags used to be exported into the tag dictionary (so the tag got
+        // created) but never attached to anything on import — not the task, not the project.
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val tag = Tag(id = "tag1", name = "Urgent", color = "error")
+        val project = Project(id = "proj1", name = "Launch", color = "accentB", icon = "layers", commonTagIds = listOf(tag.id))
+        val original = task(projectId = project.id) // task itself doesn't carry the tag directly
+
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original),
+            listsById = emptyMap(), projectsById = mapOf(project.id to project),
+            tagsById = mapOf(tag.id to tag), peopleById = emptyMap(),
+            includeStructure = true, includeNotes = false
+        )
+        importer.importFrom(importUri(link.uri))
+
+        val importedTag = repo.tagsFlow.value.single { it.name == "Urgent" }
+        val importedProject = repo.projectsFlow.value.single { it.name == "Launch" }
+        assertEquals(listOf(importedTag.id), importedProject.commonTagIds)
+    }
+
+    @Test
+    fun subtasks_titlesAndOrderSurvive_butDoneAndParentAreReset() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val original = task(
+            subtasks = listOf(
+                Subtask(id = "s1", title = "Check amount", done = true, sortOrder = 0),
+                Subtask(id = "s2", title = "Confirm payee", done = false, parentSubtaskId = "s1", sortOrder = 1)
+            )
+        )
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        importer.importFrom(importUri(link.uri))
+
+        val imported = repo.tasksFlow.value.single().subtasks
+        assertEquals(listOf("Check amount", "Confirm payee"), imported.map { it.title })
+        assertTrue(imported.none { it.done })
+        assertTrue(imported.all { it.parentSubtaskId == null })
+    }
+
+    @Test
+    fun multipleTasks_allImportInOneLink() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val link = buildTaskTransferLink(
+            title = "Work", tasks = listOf(task("t1", title = "First"), task("t2", title = "Second")),
+            listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        val result = importer.importFrom(importUri(link.uri))
+
+        assertEquals(2, result.taskCount)
+        assertEquals(setOf("First", "Second"), repo.tasksFlow.value.map { it.title }.toSet())
+    }
+
+    @Test
+    fun blankTitleTasks_areSkipped() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val link = buildTaskTransferLink(
+            title = "Work", tasks = listOf(task("t1", title = "Real task"), task("t2", title = "   ")),
+            listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        val result = importer.importFrom(importUri(link.uri))
+
+        assertEquals(1, result.taskCount)
+        assertEquals("Real task", repo.tasksFlow.value.single().title)
+    }
+
+    @Test
+    fun priorityAtEachLevel_roundTripsThroughTheOrdinalEncoding() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        listOf("none", "low", "med", "high").forEach { priority ->
+            repo.tasksFlow.value = emptyList()
+            val link = buildTaskTransferLink(
+                title = "T", tasks = listOf(task(priority = priority)), listsById = emptyMap(),
+                projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+                includeStructure = false, includeNotes = false
+            )
+            importer.importFrom(importUri(link.uri))
+            assertEquals(priority, repo.tasksFlow.value.single().priority)
+        }
+    }
+
+    // --- plaintext fast path -----------------------------------------------------------------
+
+    @Test
+    fun simpleSingleTask_usesThePlaintextFastPath_notTheCompressedBlob() {
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task(priority = "none", flag = false)),
+            listsById = emptyMap(), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        val uri = Uri.parse(link.uri)
+        assertNull(uri.getQueryParameter("d"))
+        assertEquals("Pay electricity bill", uri.getQueryParameter("t"))
+        // Default priority/flag are omitted entirely, not just zeroed, to keep the readable link short.
+        assertNull(uri.getQueryParameter("p"))
+        assertNull(uri.getQueryParameter("f"))
+    }
+
+    @Test
+    fun simpleSingleTask_plaintextLink_roundTrips() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val original = task(priority = "med", flag = true)
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        val result = importer.importFrom(importUri(link.uri))
+
+        assertEquals(1, result.taskCount)
+        assertFalse(result.copiedStructure)
+        val imported = repo.tasksFlow.value.single()
+        assertEquals(original.title, imported.title)
+        assertEquals("med", imported.priority)
+        assertTrue(imported.flag)
+        assertFalse(imported.done)
+        assertNull(imported.listId)
+    }
+
+    @Test
+    fun taskWithNotes_doesNotUseThePlaintextPath_whenNotesAreIncluded() {
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task(notes = "call first")), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = true
+        )
+        assertNull(Uri.parse(link.uri).getQueryParameter("t"))
+    }
+
+    @Test
+    fun taskWithStructure_doesNotUseThePlaintextPath() {
+        val list = YataList(id = "list1", name = "Work", color = "accentA", icon = "folder")
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task(listId = "list1")),
+            listsById = mapOf("list1" to list), projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = true, includeNotes = false
+        )
+        assertNull(Uri.parse(link.uri).getQueryParameter("t"))
+    }
+
+    @Test
+    fun multipleTasks_doesNotUseThePlaintextPath() {
+        val link = buildTaskTransferLink(
+            title = "Work", tasks = listOf(task("t1"), task("t2")), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertNull(Uri.parse(link.uri).getQueryParameter("t"))
+    }
+
+    // --- link length warning -----------------------------------------------------------------
+
+    @Test
+    fun shortLink_doesNotWarnAboutLength() {
+        val link = buildTaskTransferLink(
+            title = "Pay bill", tasks = listOf(task()), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+        assertFalse(link.mayNotAutoLinkEverywhere)
+        assertFalse(link.asShareText("Pay bill", 1).contains("some apps may not"))
+    }
+
+    @Test
+    fun veryLongPayload_flagsThatItMayNotAutoLink() = runTest {
+        // Deflate crushes repeated text almost to nothing, so a length-warning test needs content
+        // that doesn't compress — a fixed-seed random string stands in for that reliably.
+        val random = kotlin.random.Random(42)
+        val alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 "
+        val hugeNotes = (1..2000).map { alphabet[random.nextInt(alphabet.length)] }.joinToString("")
+        val original = task(notes = hugeNotes)
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = true
+        )
+        assertTrue(link.mayNotAutoLinkEverywhere)
+        assertTrue(link.asShareText(original.title, 1).contains("some apps may not"))
+        // Sanity: it's still a well-formed, importable link, just a long one.
+        val repo = FakeYataRepository()
+        importer(repo).importFrom(importUri(link.uri))
+        assertEquals(1, repo.tasksFlow.value.size)
+    }
+
+    private fun importer(repo: FakeYataRepository) = TaskTransferImporter(repo)
+
+    // --- v1 legacy links still import ------------------------------------------------------
+
+    @Test
+    fun legacyV1Link_stillImportsCorrectly() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val uri = legacyV1Uri(
+            JSONObject().put("v", 1).put("title", "Work").put(
+                "tasks",
+                JSONArray().put(
+                    JSONObject().put("t", "Pay electricity bill").put("p", "high").put("f", true)
+                        .put("tags", JSONArray()).put("people", JSONArray()).put("subs", JSONArray())
+                )
+            ),
+            copyStructure = false
+        )
+
+        val result = importer.importFrom(uri)
+
+        assertEquals(1, result.taskCount)
+        val imported = repo.tasksFlow.value.single()
+        assertEquals("Pay electricity bill", imported.title)
+        assertEquals("high", imported.priority)
+        assertTrue(imported.flag)
+        assertFalse(imported.done)
+    }
+
+    @Test
+    fun legacyV1Link_withStructure_stillCreatesEntities() = runTest {
+        val repo = FakeYataRepository()
+        val importer = TaskTransferImporter(repo)
+        val uri = legacyV1Uri(
+            JSONObject().put("v", 1).put("title", "Work")
+                .put("tasks", JSONArray().put(JSONObject().put("t", "Task").put("p", "none").put("f", false).put("l", "list1").put("tags", JSONArray()).put("people", JSONArray()).put("subs", JSONArray())))
+                .put("lists", JSONArray().put(JSONObject().put("id", "list1").put("n", "Work").put("c", "accentA").put("i", "folder"))),
+            copyStructure = true
+        )
+
+        importer.importFrom(uri)
+
+        assertEquals(1, repo.listsFlow.value.size)
+        assertEquals("Work", repo.tasksFlow.value.single().let { task -> repo.listsFlow.value.first { it.id == task.listId }.name })
+    }
+
+    // --- error paths -----------------------------------------------------------------------
+
+    @Test
+    fun emptyTasksArray_isRejected() = runTest {
+        val payload = JSONArray().put(2).put("x").put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
+        val uri = manualV2Uri(payload)
+        try {
+            TaskTransferImporter(FakeYataRepository()).importFrom(uri)
+            fail("expected import of an empty task list to be rejected")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message.orEmpty().contains("No tasks found"))
+        }
+    }
+
+    @Test
+    fun unsupportedVersion_isRejected() = runTest {
+        val payload = JSONArray().put(99).put("x").put(JSONArray()).put(JSONArray()).put(JSONArray()).put(JSONArray())
+            .put(JSONArray().put(JSONArray().put("Task")))
+        val uri = manualV2Uri(payload)
+        try {
+            TaskTransferImporter(FakeYataRepository()).importFrom(uri)
+            fail("expected an unrecognized version to be rejected")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message.orEmpty().contains("Unsupported"))
+        }
+    }
+
+    @Test
+    fun malformedBase64Payload_throwsAndWritesNothing() = runTest {
+        val uri = Uri.Builder().scheme("yata").authority("i")
+            .appendQueryParameter("s", "0")
+            .appendQueryParameter("d", "not-valid-base64-!!!")
+            .build()
+        val repo = FakeYataRepository()
+        try {
+            TaskTransferImporter(repo).importFrom(uri)
+            fail("expected malformed payload to throw")
+        } catch (e: IllegalArgumentException) {
+            // expected — Base64 decoding rejects it before any repository write happens.
+        }
+        assertTrue(repo.tasksFlow.value.isEmpty())
+    }
+
+    @Test
+    fun oversizedPayload_isRejected() = runTest {
+        val hugeNotes = "x".repeat(300_000)
+        val original = task(notes = hugeNotes)
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = true
+        )
+        try {
+            TaskTransferImporter(FakeYataRepository()).importFrom(importUri(link.uri))
+            fail("expected an oversized decompressed payload to be rejected")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message.orEmpty().contains("too large"))
+        }
+    }
+
+    @Test
+    fun notATransferUri_isRejectedByImporter() = runTest {
+        try {
+            TaskTransferImporter(FakeYataRepository()).importFrom(Uri.parse("https://example.com"))
+            fail("expected a non-transfer uri to be rejected")
+        } catch (e: IllegalArgumentException) {
+            // expected
+        }
+    }
+
+    /** Hand-builds a yata://i link from a raw v2 payload array, bypassing the production
+     * encoder — used only to exercise importer-side validation (version, empty tasks) that
+     * [buildTaskTransferLink] can't produce on its own. */
+    private fun manualV2Uri(payload: JSONArray): Uri {
+        val bytes = payload.toString().toByteArray(Charsets.UTF_8)
+        val deflater = java.util.zip.Deflater(java.util.zip.Deflater.BEST_COMPRESSION, true)
+        val zipped = ByteArrayOutputStream().use { out ->
+            java.util.zip.DeflaterOutputStream(out, deflater).use { it.write(bytes) }
+            out.toByteArray()
+        }
+        val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(zipped)
+        return Uri.Builder().scheme("yata").authority("i")
+            .appendQueryParameter("s", "0")
+            .appendQueryParameter("d", encoded)
+            .build()
+    }
+
+    /** Hand-builds a legacy yata://import/tasks link (gzip + verbose JSON object), matching
+     * exactly what commit 7db50e9's encoder used to produce, to prove already-shared links keep
+     * working after the v2 switch. */
+    private fun legacyV1Uri(payload: JSONObject, copyStructure: Boolean): Uri {
+        val bytes = payload.toString().toByteArray(Charsets.UTF_8)
+        val zipped = ByteArrayOutputStream().use { out ->
+            GZIPOutputStream(out).use { it.write(bytes) }
+            out.toByteArray()
+        }
+        val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(zipped)
+        return Uri.Builder().scheme("yata").authority("import").path("/tasks")
+            .appendQueryParameter("s", if (copyStructure) "1" else "0")
+            .appendQueryParameter("d", encoded)
+            .build()
+    }
+}
+
+/** Minimal in-memory [YataRepository] covering only what [TaskTransferImporter] touches.
+ * Everything else throws if called, so a test that accidentally depends on unimplemented
+ * behaviour fails loudly instead of silently no-opping. */
+private class FakeYataRepository : YataRepository {
+    val tasksFlow = MutableStateFlow<List<Task>>(emptyList())
+    val listsFlow = MutableStateFlow<List<YataList>>(emptyList())
+    val projectsFlow = MutableStateFlow<List<Project>>(emptyList())
+    val tagsFlow = MutableStateFlow<List<Tag>>(emptyList())
+    val peopleFlow = MutableStateFlow<List<Person>>(emptyList())
+
+    override fun getTasks(): Flow<List<Task>> = tasksFlow
+    override fun getTaskById(id: String): Flow<Task?> = TODO("not used by TaskTransferImporter")
+    override fun getInboxCandidateTasks(): Flow<List<Task>> = TODO()
+    override fun getRecurringTasks(): Flow<List<Task>> = TODO()
+    override fun getTasksForList(listId: String): Flow<List<Task>> = TODO()
+    override fun getTasksForProject(projectId: String): Flow<List<Task>> = TODO()
+    override fun getTasksForPerson(personId: String): Flow<List<Task>> = TODO()
+    override suspend fun getTaskStreak(taskId: String): Int = TODO()
+
+    override suspend fun upsertTask(task: Task, notify: Boolean, resyncReminder: Boolean) {
+        tasksFlow.value = tasksFlow.value + task
+    }
+
+    override suspend fun upsertTasks(
+        tasks: List<Task>,
+        notify: Boolean,
+        resyncReminder: Boolean,
+        preserveExistingCreatedAt: Boolean
+    ) {
+        tasksFlow.value = tasksFlow.value + tasks
+    }
+
+    override suspend fun toggleTaskDone(id: String, notify: Boolean): Unit = TODO()
+    override suspend fun skipTaskOccurrence(id: String): Unit = TODO()
+    override suspend fun setTaskFlag(id: String, flag: Boolean, notify: Boolean): Unit = TODO()
+    override suspend fun setTaskPriority(id: String, priority: String, notify: Boolean): Unit = TODO()
+    override suspend fun setTaskContainer(id: String, listId: String?, projectId: String?, sortOrder: Int, notify: Boolean): Unit = TODO()
+    override suspend fun setTaskSortOrder(id: String, sortOrder: Int, notify: Boolean): Unit = TODO()
+
+    override fun notifyTasksChanged() {}
+
+    override suspend fun deleteTask(task: Task, notify: Boolean): Unit = TODO()
+    override fun getDeletedTasks(): Flow<List<Task>> = TODO()
+    override suspend fun restoreTask(id: String): Unit = TODO()
+    override fun getArchivedTasks(): Flow<List<Task>> = TODO()
+    override suspend fun setTaskArchived(id: String, archived: Boolean): Unit = TODO()
+    override suspend fun permanentlyDeleteTask(task: Task): Unit = TODO()
+    override suspend fun emptyTrash(): Unit = TODO()
+    override suspend fun purgeOldTrash(): Unit = TODO()
+    override suspend fun autoArchiveOldCompleted(): Unit = TODO()
+
+    override fun getCommentsForTask(taskId: String): Flow<List<TaskComment>> = TODO()
+    override fun getAllComments(): Flow<List<TaskComment>> = TODO()
+    override suspend fun addComment(taskId: String, body: String, authorId: String?): Unit = TODO()
+    override suspend fun upsertComment(comment: TaskComment): Unit = TODO()
+    override suspend fun deleteComment(comment: TaskComment): Unit = TODO()
+
+    override fun getProjects(): Flow<List<Project>> = projectsFlow
+    override fun getActiveProjects(): Flow<List<Project>> = TODO()
+    override fun getArchivedProjects(): Flow<List<Project>> = TODO()
+    override fun getProjectById(id: String): Flow<Project?> = TODO()
+    override suspend fun upsertProject(project: Project) {
+        projectsFlow.value = projectsFlow.value.filterNot { it.id == project.id } + project
+    }
+    override suspend fun deleteProject(project: Project): Unit = TODO()
+    override suspend fun deleteProjectOnly(project: Project): Unit = TODO()
+    override suspend fun setProjectsArchived(ids: List<String>, archived: Boolean): Unit = TODO()
+
+    override fun getLists(): Flow<List<YataList>> = listsFlow
+    override fun getActiveLists(): Flow<List<YataList>> = TODO()
+    override fun getArchivedLists(): Flow<List<YataList>> = TODO()
+    override fun getListById(id: String): Flow<YataList?> = TODO()
+    override suspend fun upsertList(list: YataList) {
+        listsFlow.value = listsFlow.value.filterNot { it.id == list.id } + list
+    }
+    override suspend fun deleteList(list: YataList): Unit = TODO()
+    override suspend fun deleteListOnly(list: YataList): Unit = TODO()
+    override suspend fun setListsArchived(ids: List<String>, archived: Boolean): Unit = TODO()
+
+    override fun getPeople(): Flow<List<Person>> = peopleFlow
+    override fun getActivePeople(): Flow<List<Person>> = TODO()
+    override fun getArchivedPeople(): Flow<List<Person>> = TODO()
+    override fun getPersonById(id: String): Flow<Person?> = TODO()
+    override suspend fun upsertPerson(person: Person) {
+        peopleFlow.value = peopleFlow.value.filterNot { it.id == person.id } + person
+    }
+    override suspend fun deletePerson(person: Person): Unit = TODO()
+
+    override fun getPersonGroups(): Flow<List<PersonGroup>> = TODO()
+    override suspend fun upsertPersonGroup(group: PersonGroup): Unit = TODO()
+    override suspend fun deletePersonGroup(group: PersonGroup): Unit = TODO()
+
+    override fun getTags(): Flow<List<Tag>> = tagsFlow
+    override fun getTagById(id: String): Flow<Tag?> = TODO()
+    override suspend fun upsertTag(tag: Tag) {
+        tagsFlow.value = tagsFlow.value.filterNot { it.id == tag.id } + tag
+    }
+    override suspend fun upsertTags(tags: List<Tag>, pendingGroup: TagGroup?): Unit = TODO()
+    override suspend fun setTagsGroup(tagIds: List<String>, groupId: String?, pendingGroup: TagGroup?): Unit = TODO()
+    override suspend fun deleteTag(tag: Tag): Unit = TODO()
+
+    override fun getTagGroups(): Flow<List<TagGroup>> = TODO()
+    override suspend fun upsertTagGroup(group: TagGroup): Unit = TODO()
+    override suspend fun deleteTagGroup(group: TagGroup): Unit = TODO()
+
+    override suspend fun seedInitialDataIfNeeded(): Unit = TODO()
+    override suspend fun deleteAllData(): Unit = TODO()
+}

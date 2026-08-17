@@ -903,7 +903,7 @@ fun ListDetailScreen(
                             pdfPageSize = options.pdfPageSize,
                             imageScale = options.imageScale,
                             transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
-                                com.mj.yata.util.export.buildTaskTransferLinks(
+                                com.mj.yata.util.export.buildTaskTransferLink(
                                     title = list.name,
                                     tasks = sharedTasks,
                                     listsById = listsById,

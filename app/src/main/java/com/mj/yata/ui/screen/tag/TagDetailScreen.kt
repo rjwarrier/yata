@@ -791,7 +791,7 @@ fun TagDetailScreen(
                             pdfPageSize = options.pdfPageSize,
                             imageScale = options.imageScale,
                             transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
-                                com.mj.yata.util.export.buildTaskTransferLinks(
+                                com.mj.yata.util.export.buildTaskTransferLink(
                                     title = tag.name,
                                     tasks = sharedTasks,
                                     listsById = listsById,

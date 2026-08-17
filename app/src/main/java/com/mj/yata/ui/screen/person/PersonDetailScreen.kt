@@ -954,7 +954,7 @@ fun PersonDetailScreen(
                             pdfPageSize = options.pdfPageSize,
                             imageScale = options.imageScale,
                             transferText = exportTasks.takeIf { it.isNotEmpty() }?.let { sharedTasks ->
-                                com.mj.yata.util.export.buildTaskTransferLinks(
+                                com.mj.yata.util.export.buildTaskTransferLink(
                                     title = person.name,
                                     tasks = sharedTasks,
                                     listsById = listsById,

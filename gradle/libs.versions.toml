@@ -31,6 +31,7 @@ orgJson = "20240303"
 sshj = "0.38.0"
 commonsNet = "3.11.1"
 androidxTest = "1.5.0"             # androidx.test core-ktx + rules
+robolectric = "4.13"                # JVM unit tests needing android.net.Uri (e.g. TaskTransferLinkTest)
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -82,6 +83,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTest" }
 androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTest" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
