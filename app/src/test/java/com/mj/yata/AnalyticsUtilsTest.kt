@@ -38,7 +38,8 @@ class AnalyticsUtilsTest {
         assignees: List<String> = emptyList(),
         listId: String? = null,
         priority: String = "none",
-        estimate: Int? = null
+        estimate: Int? = null,
+        postponementCount: Int = 0
     ) = Task(
         id = id,
         title = "Task $id",
@@ -58,7 +59,8 @@ class AnalyticsUtilsTest {
         recurrence = null,
         subtasks = emptyList(),
         notes = null,
-        estimateMinutes = estimate
+        estimateMinutes = estimate,
+        postponementCount = postponementCount
     )
 
     private val me = Person("me", "Me", "M", "accentA", isMe = true)
@@ -227,6 +229,22 @@ class AnalyticsUtilsTest {
     fun byList_omitsEmptyLists() {
         val lists = listOf(YataList("l1", "Work", "accentA", "work"))
         assertTrue(AnalyticsUtils.byList(emptyList(), lists).isEmpty())
+    }
+
+    // ── Postponements ─────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun mostPostponedTasks_ranksOpenTasksByPostponementCount() {
+        val tasks = listOf(
+            task("low", due = "2026-06-20", postponementCount = 1),
+            task("done", done = true, due = "2026-06-20", postponementCount = 9),
+            task("high", due = "2026-06-19", postponementCount = 4),
+            task("none", due = "2026-06-18")
+        )
+        val stats = AnalyticsUtils.mostPostponedTasks(tasks)
+        assertEquals(listOf("high", "low"), stats.map { it.id })
+        assertEquals(2, AnalyticsUtils.postponedOpenTaskCount(tasks))
+        assertEquals(4, AnalyticsUtils.maxPostponementCount(tasks))
     }
 
     // ── Insights ────────────────────────────────────────────────────────────────────────────

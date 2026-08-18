@@ -263,6 +263,18 @@ fun TaskDetailScreen(
     var exportInProgress by remember { mutableStateOf(false) }
     val longTaskLinkWarningGate = com.mj.yata.util.export.rememberLongTaskLinkWarningGate()
 
+    LaunchedEffect(Unit) {
+        viewModel.postponementWarnings.collect { warning ->
+            snackbarHostState.showSnackbar(
+                context.getString(
+                    R.string.task_postponement_warning,
+                    warning.taskTitle,
+                    warning.postponementCount
+                )
+            )
+        }
+    }
+
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()

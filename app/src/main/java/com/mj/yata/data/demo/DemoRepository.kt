@@ -51,7 +51,8 @@ class DemoRepository @Inject constructor() : YataRepository {
         tasks: List<Task>,
         notify: Boolean,
         resyncReminder: Boolean,
-        preserveExistingCreatedAt: Boolean
+        preserveExistingCreatedAt: Boolean,
+        trackPostponements: Boolean
     ) = Unit
     override suspend fun toggleTaskDone(id: String, notify: Boolean) = Unit
     override suspend fun skipTaskOccurrence(id: String) = Unit

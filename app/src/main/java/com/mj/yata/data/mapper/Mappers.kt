@@ -168,7 +168,8 @@ fun TaskEntity.toDomain(assigneeIds: List<String>, tagIds: List<String>, subtask
     seriesId = seriesId,
     archived = archived,
     followUpAt = followUpAt,
-    estimateMinutes = estimateMinutes
+    estimateMinutes = estimateMinutes,
+    postponementCount = postponementCount
 )
 
 fun Task.toEntity() = TaskEntity(
@@ -194,7 +195,8 @@ fun Task.toEntity() = TaskEntity(
     archived = archived,
     followUpAt = followUpAt,
     estimateMinutes = estimateMinutes,
-    ownerId = assigneeIds.firstOrNull()
+    ownerId = assigneeIds.firstOrNull(),
+    postponementCount = postponementCount
 )
 
 fun TaskWithRelations.toDomain() = task.toDomain(

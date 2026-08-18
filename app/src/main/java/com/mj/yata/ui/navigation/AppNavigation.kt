@@ -472,6 +472,9 @@ fun AppNavigation(
                 },
                 onNavigateToList = { listId ->
                     navController.navigate(Screen.ListDetail.createRoute(listId))
+                },
+                onNavigateToTaskDetail = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 }
             )
         }

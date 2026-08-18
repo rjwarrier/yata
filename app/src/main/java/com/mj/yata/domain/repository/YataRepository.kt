@@ -32,7 +32,8 @@ interface YataRepository {
         tasks: List<Task>,
         notify: Boolean = true,
         resyncReminder: Boolean = true,
-        preserveExistingCreatedAt: Boolean = true
+        preserveExistingCreatedAt: Boolean = true,
+        trackPostponements: Boolean = true
     )
     suspend fun toggleTaskDone(id: String, notify: Boolean = true)
     suspend fun skipTaskOccurrence(id: String)

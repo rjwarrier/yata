@@ -490,9 +490,17 @@ private data class LightweightFeatureState(
     val todayRemainingCount: Int
 )
 
+data class PostponementWarning(
+    val taskTitle: String,
+    val postponementCount: Int
+)
+
     // Data streams
     val tasks: StateFlow<List<Task>> = repository.getTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _postponementWarnings = MutableSharedFlow<PostponementWarning>()
+    val postponementWarnings: SharedFlow<PostponementWarning> = _postponementWarnings.asSharedFlow()
 
     val projects: StateFlow<List<Project>> = repository.getProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -1702,7 +1710,20 @@ private data class LightweightFeatureState(
 
     fun upsertTask(task: Task) {
         safeLaunch {
-            repository.upsertTask(task)
+            val previous = tasks.value.find { it.id == task.id }
+            val updated = previous?.let {
+                task.copy(
+                    postponementCount = nextPostponementCount(
+                        previousDue = it.due,
+                        nextDue = task.due,
+                        previousCount = it.postponementCount
+                    )
+                )
+            } ?: task
+            repository.upsertTask(updated)
+            if (updated.postponementCount > (previous?.postponementCount ?: 0)) {
+                warnIfPostponedOften(updated)
+            }
         }
     }
 
@@ -1764,15 +1785,21 @@ private data class LightweightFeatureState(
 
     fun quickSnoozeTask(id: String, preset: QuickSnoozePreset) {
         safeLaunch {
-            taskOperations.quickSnooze(id, preset)
+            taskOperations.quickSnooze(id, preset)?.let { warnIfPostponedOften(it) }
             userPreferences.recordRecentTask(id)
         }
     }
 
     fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset) {
         safeLaunch {
-            taskOperations.bulkReschedule(ids, preset)
+            taskOperations.bulkReschedule(ids, preset).forEach { warnIfPostponedOften(it) }
             ids.take(8).forEach { userPreferences.recordRecentTask(it) }
+        }
+    }
+
+    private suspend fun warnIfPostponedOften(task: Task) {
+        if (task.postponementCount >= POSTPONEMENT_WARNING_THRESHOLD) {
+            _postponementWarnings.emit(PostponementWarning(task.title, task.postponementCount))
         }
     }
 

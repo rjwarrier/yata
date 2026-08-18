@@ -84,7 +84,8 @@ class YataRepositoryImpl @Inject constructor(
         tasks: List<Task>,
         notify: Boolean,
         resyncReminder: Boolean,
-        preserveExistingCreatedAt: Boolean
+        preserveExistingCreatedAt: Boolean,
+        trackPostponements: Boolean
     ) {
         if (tasks.isEmpty()) return
 
@@ -103,21 +104,30 @@ class YataRepositoryImpl @Inject constructor(
             // an existing task would otherwise restamp createdAt with the time of the edit. Take
             // the stored value where there is one; fall back to the incoming task's (a restore
             // from backup carries its own); only then treat it as newly created.
-            val existingCreatedAt = if (preserveExistingCreatedAt) {
-                db.taskDao().getCreatedAtForTasks(taskIds).associate { it.id to it.createdAt }
-            } else {
-                emptyMap()
-            }
+            val writeSnapshots = db.taskDao().getWriteSnapshotsForTasks(taskIds).associateBy { it.id }
             val now = System.currentTimeMillis()
 
             sanitizedTasks.forEach { task ->
+                val existing = writeSnapshots[task.id]
                 val entity = task.toEntity().let {
                     it.copy(
                         createdAt = if (preserveExistingCreatedAt) {
-                            existingCreatedAt[task.id] ?: it.createdAt ?: now
+                            existing?.createdAt ?: it.createdAt ?: now
                         } else {
                             it.createdAt
-                        }
+                        },
+                        postponementCount = if (trackPostponements && existing != null) {
+                            maxOf(
+                                it.postponementCount,
+                                nextPostponementCount(
+                                    previousDue = existing.dueDate,
+                                    nextDue = it.dueDate,
+                                    previousCount = existing.postponementCount
+                                )
+                            )
+                        } else {
+                            it.postponementCount
+                        }.coerceAtLeast(0)
                     )
                 }
                 db.taskDao().insert(entity)

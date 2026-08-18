@@ -176,7 +176,10 @@ data class Task(
     // "no idea yet" and "this takes no time" are different answers and only the former should be
     // excluded from a day's planned total. Never inferred or auto-filled: a guessed estimate is
     // worse than none, because it makes the capacity figure look authoritative when it isn't.
-    val estimateMinutes: Int? = null
+    val estimateMinutes: Int? = null,
+    // Number of times this task's due date has been moved later. First assigning a due date,
+    // clearing it, or moving it earlier does not count as a postponement.
+    val postponementCount: Int = 0
 )
 
 /**

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,6 +43,7 @@ import com.mj.yata.util.DayActivity
 import com.mj.yata.util.EntityStat
 import com.mj.yata.util.EstimateUtils
 import com.mj.yata.util.PriorityStat
+import com.mj.yata.util.PostponedTaskStat
 import com.mj.yata.util.label
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
@@ -86,6 +88,7 @@ fun AnalyticsScreen(
     onNavigateToPerson: (String) -> Unit = {},
     onNavigateToTag: (String) -> Unit = {},
     onNavigateToList: (String) -> Unit = {},
+    onNavigateToTaskDetail: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
@@ -114,6 +117,7 @@ fun AnalyticsScreen(
     val projectStats = stats.projectStats
     val tagStats = stats.tagStats
     val listStats = stats.listStats
+    val mostPostponedTasks = stats.mostPostponedTasks
     val insights = stats.insights
 
     Scaffold(
@@ -273,6 +277,28 @@ fun AnalyticsScreen(
                     value = "$dueNext30",
                     label = stringResource(R.string.analytics_due_in_30_days)
                 )
+            }
+
+            if (stats.postponedOpenTaskCount > 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    InsightChip(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Snooze,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        value = stats.postponedOpenTaskCount.toString(),
+                        label = stringResource(R.string.analytics_postponed_tasks)
+                    )
+                    InsightChip(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.WarningAmber,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        value = stats.maxPostponementCount.toString(),
+                        label = stringResource(R.string.analytics_most_postponed)
+                    )
+                }
             }
 
             // What the on-time rate rests on. Without it, a rate over four tasks and a rate over
@@ -550,6 +576,13 @@ fun AnalyticsScreen(
                         }
                     }
                 }
+            }
+
+            if (mostPostponedTasks.isNotEmpty()) {
+                MostPostponedSection(
+                    tasks = mostPostponedTasks,
+                    onTaskClick = onNavigateToTaskDetail
+                )
             }
 
             // Each breakdown row names an entity that already has a detail screen listing exactly
@@ -866,6 +899,82 @@ private fun AgingBucketRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         DrillDownChevron(visible = onClick != null)
+    }
+}
+
+@Composable
+private fun MostPostponedSection(
+    tasks: List<PostponedTaskStat>,
+    onTaskClick: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.analytics_most_postponed),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                tasks.forEachIndexed { index, task ->
+                    MostPostponedTaskRow(
+                        task = task,
+                        onClick = { onTaskClick(task.id) }
+                    )
+                    if (index != tasks.lastIndex) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MostPostponedTaskRow(
+    task: PostponedTaskStat,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .drillDown(onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.error)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = task.due ?: stringResource(R.string.date_no_due),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            text = stringResource(R.string.analytics_postponed_times, task.postponementCount),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.error
+        )
+        DrillDownChevron(visible = true)
     }
 }
 

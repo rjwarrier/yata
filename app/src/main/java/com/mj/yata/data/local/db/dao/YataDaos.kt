@@ -248,6 +248,9 @@ interface TaskDao {
     @Query("SELECT id, createdAt FROM tasks WHERE id IN (:taskIds)")
     suspend fun getCreatedAtForTasks(taskIds: List<String>): List<TaskCreatedAt>
 
+    @Query("SELECT id, dueDate, createdAt, postponementCount FROM tasks WHERE id IN (:taskIds)")
+    suspend fun getWriteSnapshotsForTasks(taskIds: List<String>): List<TaskWriteSnapshot>
+
     @Upsert
     suspend fun insert(task: TaskEntity)
 

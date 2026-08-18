@@ -10,6 +10,14 @@ data class TaskCreatedAt(
     val createdAt: Long?
 )
 
+/** Minimal old row data needed while rewriting tasks through repository upserts. */
+data class TaskWriteSnapshot(
+    val id: String,
+    val dueDate: String?,
+    val createdAt: Long?,
+    val postponementCount: Int
+)
+
 data class TaskWithRelations(
     @Embedded val task: TaskEntity,
     @Relation(

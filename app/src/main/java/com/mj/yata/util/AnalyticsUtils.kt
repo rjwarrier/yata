@@ -89,6 +89,13 @@ data class CapacitySnapshot(
     val unestimatedOpenCount: Int
 )
 
+data class PostponedTaskStat(
+    val id: String,
+    val title: String,
+    val postponementCount: Int,
+    val due: String?
+)
+
 /**
  * The weekday work actually gets finished on, when one stands out.
  *
@@ -214,6 +221,9 @@ data class AnalyticsUiState(
     val openWithoutDueDate: Int = 0,
     /** Planned effort still outstanding. Null when nothing open is estimated. */
     val capacity: CapacitySnapshot? = null,
+    val postponedOpenTaskCount: Int = 0,
+    val maxPostponementCount: Int = 0,
+    val mostPostponedTasks: List<PostponedTaskStat> = emptyList(),
     /** Completions this figure rests on, so a rate over a handful of tasks can be told apart from
      * a rate over hundreds. */
     val onTimeRateSampleSize: Int = 0
@@ -305,6 +315,9 @@ object AnalyticsUtils {
             oldestOpenAgeDays = oldestOpenAge(tasks, today),
             openWithoutDueDate = tasks.count { !it.done && it.due == null },
             capacity = capacitySnapshot(tasks, today),
+            postponedOpenTaskCount = postponedOpenTaskCount(tasks),
+            maxPostponementCount = maxPostponementCount(tasks),
+            mostPostponedTasks = mostPostponedTasks(tasks),
             onTimeRateSampleSize = onTimeRateSampleSize(tasks),
             insights = buildInsights(
                 tasks = tasks,
@@ -529,6 +542,31 @@ object AnalyticsUtils {
             unestimatedOpenCount = EstimateUtils.unestimatedCount(open)
         )
     }
+
+    fun postponedOpenTaskCount(tasks: List<Task>): Int =
+        tasks.count { !it.done && it.postponementCount > 0 }
+
+    fun maxPostponementCount(tasks: List<Task>): Int =
+        tasks.filter { !it.done }.maxOfOrNull { it.postponementCount } ?: 0
+
+    fun mostPostponedTasks(tasks: List<Task>, limit: Int = 5): List<PostponedTaskStat> =
+        tasks.asSequence()
+            .filter { !it.done && it.postponementCount > 0 }
+            .sortedWith(
+                compareByDescending<Task> { it.postponementCount }
+                    .thenBy { it.due ?: "9999-99-99" }
+                    .thenBy { it.title.lowercase() }
+            )
+            .take(limit)
+            .map { task ->
+                PostponedTaskStat(
+                    id = task.id,
+                    title = task.title,
+                    postponementCount = task.postponementCount,
+                    due = task.due
+                )
+            }
+            .toList()
 
     /**
      * The weekday completions cluster on, across all recorded history rather than the selected

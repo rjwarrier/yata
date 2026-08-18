@@ -3,6 +3,7 @@ package com.mj.yata.domain.usecase
 import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.nextPostponementCount
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.TaskScheduleUtils
 import kotlinx.coroutines.flow.first
@@ -201,26 +202,39 @@ class TaskOperations @Inject constructor(
         )
     }
 
-    suspend fun quickSnooze(id: String, preset: QuickSnoozePreset) {
-        val task = currentTasks().find { it.id == id } ?: return
+    suspend fun quickSnooze(id: String, preset: QuickSnoozePreset): Task? {
+        val task = currentTasks().find { it.id == id } ?: return null
         val (dueDate, dueTime) = presetSchedule(preset)
-        repository.upsertTask(
-            task.copy(
-                due = dueDate.toString(),
-                time = dueTime,
-                done = false,
-                completedAt = null
-            )
+        val due = dueDate.toString()
+        val postponementCount = nextPostponementCount(task.due, due, task.postponementCount)
+        val updated = task.copy(
+            due = due,
+            time = dueTime,
+            done = false,
+            completedAt = null,
+            postponementCount = postponementCount
         )
+        repository.upsertTask(
+            updated
+        )
+        return updated.takeIf { it.postponementCount > task.postponementCount }
     }
 
-    suspend fun bulkReschedule(ids: List<String>, preset: QuickSnoozePreset) {
+    suspend fun bulkReschedule(ids: List<String>, preset: QuickSnoozePreset): List<Task> {
         val byId = currentTasks().associateBy { it.id }
         val (dueDate, dueTime) = presetSchedule(preset)
-        val updated = ids.mapNotNull { byId[it] }.map {
-            it.copy(due = dueDate.toString(), time = dueTime, done = false, completedAt = null)
+        val due = dueDate.toString()
+        val updated = ids.mapNotNull { byId[it] }.map { task ->
+            task.copy(
+                due = due,
+                time = dueTime,
+                done = false,
+                completedAt = null,
+                postponementCount = nextPostponementCount(task.due, due, task.postponementCount)
+            )
         }
         repository.upsertTasks(updated, notify = true, resyncReminder = true)
+        return updated.filter { task -> task.postponementCount > (byId[task.id]?.postponementCount ?: 0) }
     }
 
     private suspend fun presetSchedule(preset: QuickSnoozePreset): Pair<LocalDate, String> {
