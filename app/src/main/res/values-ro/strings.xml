@@ -1468,4 +1468,27 @@
         <item quantity="other">%1$d zile înainte de scadență</item>
     </plurals>
 
+    <!-- English fallbacks pending translation. -->
+    <string name="task_link_long_warning_title">Long import link</string>
+    <string name="task_link_long_warning_body">This import link is %1$d characters for %2$d tasks. Some apps may send it as plain text instead of a tappable link.</string>
+    <string name="task_link_long_warning_share_anyway">Share anyway</string>
+    <string name="task_transfer_import_incomplete">This shared task link looks incomplete. Try opening it from the original message.</string>
+    <string name="task_transfer_import_too_many_tasks">This shared task link contains too many tasks to import at once.</string>
+    <string name="task_transfer_import_too_large">This shared task link is too large to import.</string>
+    <string name="task_transfer_import_unsupported">This shared task link was made by an unsupported YATA version.</string>
+    <string name="shared_tasks_import_title">Shared Tasks</string>
+    <string name="shared_tasks_import_count">%1$d tasks ready to import</string>
+    <string name="shared_tasks_import_copy_structure">Tasks will land in Inbox and create missing lists, projects, and tags.</string>
+    <string name="shared_tasks_import_inbox_only">Tasks will land in Inbox without copying structure.</string>
+    <string name="shared_tasks_import_structure_ready">Structure already exists</string>
+    <string name="shared_tasks_import_more_structure">+%1$d more</string>
+    <string name="shared_tasks_import_action">Import</string>
+    <string name="app_links_diagnostic_title">Task links</string>
+    <string name="app_links_diagnostic_verified">Verified links open directly in YATA.</string>
+    <string name="app_links_diagnostic_user_selected">YATA is selected for task links on this device.</string>
+    <string name="app_links_diagnostic_not_verified">Android has not verified YATA for task links.</string>
+    <string name="app_links_diagnostic_unknown">Link verification status is unavailable on this device.</string>
+    <string name="app_links_diagnostic_host">Host</string>
+    <string name="app_links_diagnostic_resolver">Resolver</string>
+    <string name="app_links_diagnostic_open_settings">Open link settings</string>
 </resources>

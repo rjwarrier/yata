@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.94] - 2026-08-18
+
+`versionCode 22`. Upgrades in place over 0.93.1.
+
 ### Added
 - Project, List, Tag, and Person detail screens' overflow menu now has a "View archived" item that
   shows that entity's archived tasks in their own section below Completed; toggles to "Hide
@@ -51,6 +55,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   apps may fail to make it tappable.
 
 ### Fixed
+- Inline entity autocomplete no longer pre-applies fuzzy smart-add matches while you are still
+  choosing from the dropdown, so picking one `@person`, `#tag`, `+project`, or `=list` suggestion
+  applies only the item you selected.
 - GitHub sync no longer rejects a private repo solely because GitHub's repository metadata reports
   `push=false`; the actual upload request now decides whether the token really lacks write access,
   avoiding a false "no write access" failure on devices using fine-grained tokens.
@@ -75,6 +82,8 @@ test-only changes belong in the commit message, not here, unless they change beh
   short (a truncated title, a dropped due date) with no indication anything was lost. The
   compressed link form already failed loudly on truncation; the shorter, human-readable form now
   carries a checksum so the same failure is caught there too, rather than importing partial data.
+- New share/import and app-link diagnostic text now has fallback entries in every supported locale,
+  and Vietnamese analytics trend text no longer trips Android's percent-format parser.
 
 ## [0.93.1] - 2026-08-16
 
