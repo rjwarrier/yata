@@ -386,15 +386,25 @@ fun TodayTab(
             // Gets the container too — it's the same class of control in the same bar, and
             // leaving it flat would make the one button on the left look unfinished next to the
             // filled cluster on the right.
-            if (showMenuButton) {
-                com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = stringResource(R.string.cd_open_drawer)
-                    )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (showMenuButton) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onMenuClick) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = stringResource(R.string.cd_open_drawer)
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
-            } else {
-                Spacer(modifier = Modifier.width(4.dp))
+                if (backupSyncEnabled) {
+                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSyncClick, enabled = syncButtonEnabled) {
+                        SyncStatusIcon(lastSyncSucceeded = if (syncing) null else lastSyncSucceeded)
+                    }
+                }
             }
             // Icon colours come from IconButtonDefaults via LocalContentColor rather than a
             // hardcoded `tint` on each Icon, so these follow the theme (including the disabled
@@ -403,11 +413,6 @@ fun TodayTab(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (backupSyncEnabled) {
-                    com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = onSyncClick, enabled = syncButtonEnabled) {
-                        SyncStatusIcon(lastSyncSucceeded = if (syncing) null else lastSyncSucceeded)
-                    }
-                }
                 com.mj.yata.ui.widgets.TaskSortMenuButton(
                     current = sortMode,
                     onSelect = onSortModeChange,

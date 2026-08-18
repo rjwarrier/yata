@@ -429,12 +429,6 @@ fun MainScreen(
                         }
                     }
                     item {
-                        DrawerItem(stringResource(R.string.quick_add_dialog_quick_add), Icons.Default.Add, false) {
-                            openQuickCapture()
-                            scope.launch { drawerState.close() }
-                        }
-                    }
-                    item {
                         DrawerItem(stringResource(R.string.inbox_title), Icons.Default.Inbox, false) {
                             onNavigateToInbox()
                             scope.launch { drawerState.close() }
