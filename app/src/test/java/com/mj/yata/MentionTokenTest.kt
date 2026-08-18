@@ -5,6 +5,7 @@ import com.mj.yata.ui.widgets.TRIGGER_PERSON
 import com.mj.yata.ui.widgets.TRIGGER_PROJECT
 import com.mj.yata.ui.widgets.TRIGGER_TAG
 import com.mj.yata.ui.widgets.detectMentionToken
+import com.mj.yata.ui.widgets.quickAddFieldsOwnedByMention
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -79,5 +80,14 @@ class MentionTokenTest {
         val token = detectMentionToken(text, 9) // just after "+milk"
         assertEquals(TRIGGER_PROJECT, token?.trigger)
         assertEquals("milk", token?.query)
+    }
+
+    @Test
+    fun activeMentionOwnsMatchingQuickAddEntityField() {
+        assertEquals(setOf("people"), quickAddFieldsOwnedByMention(detect("buy milk @a")))
+        assertEquals(setOf("tags"), quickAddFieldsOwnedByMention(detect("buy milk #u")))
+        assertEquals(setOf("project"), quickAddFieldsOwnedByMention(detect("buy milk +w")))
+        assertEquals(setOf("list"), quickAddFieldsOwnedByMention(detect("buy milk =g")))
+        assertEquals(emptySet<String>(), quickAddFieldsOwnedByMention(detect("buy milk @alan ")))
     }
 }

@@ -72,9 +72,10 @@ data class ParsedQuickAdd(
 
 /**
  * Rule-based date/time/recurrence extraction for the quick-add title field. Deliberately
- * doesn't touch #tag/@person tokens â€” NewTaskSheet's own mention autocomplete already owns
- * that convention (see detectMentionToken in NewTaskSheet.kt), so re-parsing them here would
- * double-handle the same syntax two different ways.
+ * parses direct entity tokens like #tag, @person, +project, and =list so pasted text, widgets,
+ * voice cleanup, and non-autocomplete flows can resolve them. UI fields with a live mention
+ * dropdown must suppress that entity field while the token is still under the cursor; otherwise
+ * the parser and autocomplete can double-handle the same partial syntax.
  *
  * Every rule searches the *original* string and records the matched range instead of
  * destructively consuming a shrinking "remaining" copy â€” that's what lets the caller

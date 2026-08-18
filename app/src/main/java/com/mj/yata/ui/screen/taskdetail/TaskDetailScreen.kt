@@ -494,11 +494,18 @@ fun TaskDetailScreen(
                                 }
                         }
                     }
-                    fun upsertTitleEdit(rawTitle: String, parsed: ParsedQuickAdd = quickAdd) {
+                    val effectiveIgnoredTitleQuickAddFields = remember(ignoredTitleQuickAddFields, mention) {
+                        ignoredTitleQuickAddFields + quickAddFieldsOwnedByMention(mention)
+                    }
+                    fun upsertTitleEdit(value: TextFieldValue, parsed: ParsedQuickAdd = quickAdd) {
+                        val rawTitle = value.text
                         if (rawTitle.isBlank()) return
+                        val activeMentionIgnoredFields = quickAddFieldsOwnedByMention(
+                            detectMentionToken(rawTitle, value.selection.end)
+                        )
                         val updated = task.copy(title = rawTitle).withParsedQuickAdd(
                             quickAdd = parsed,
-                            ignoredFields = ignoredTitleQuickAddFields,
+                            ignoredFields = ignoredTitleQuickAddFields + activeMentionIgnoredFields,
                             lists = lists,
                             projects = projects,
                             people = people,
@@ -511,8 +518,9 @@ fun TaskDetailScreen(
                     }
                     fun finishTitleEdit() {
                         if (titleEdited && quickAddMatched && quickAdd.title.isNotBlank()) {
-                            titleBuffer = TextFieldValue(quickAdd.title, TextRange(quickAdd.title.length))
-                            upsertTitleEdit(quickAdd.title, quickAdd)
+                            val finalTitleValue = TextFieldValue(quickAdd.title, TextRange(quickAdd.title.length))
+                            titleBuffer = finalTitleValue
+                            upsertTitleEdit(finalTitleValue, quickAdd)
                         }
                         isEditingTitle = false
                         titleEditBaseline = null
@@ -546,7 +554,7 @@ fun TaskDetailScreen(
                                     titleEdited = true
                                     titleQuickAddDismissed = false
                                     ignoredTitleQuickAddFields = emptySet()
-                                    upsertTitleEdit(newValue.text, NaturalLanguageParser.parse(newValue.text))
+                                    upsertTitleEdit(newValue, NaturalLanguageParser.parse(newValue.text))
                                 },
                                 textStyle = titleStyle,
                                 // Wraps rather than scrolling off to the right. This is the field
@@ -650,117 +658,118 @@ fun TaskDetailScreen(
                     if (quickAddMatched) {
                         Spacer(modifier = Modifier.height(8.dp))
                         val detectedItems = listOfNotNull<Triple<String, () -> Unit, () -> Unit>>(
-                            quickAdd.due?.takeIf { "due" !in ignoredTitleQuickAddFields }?.let {
+                            quickAdd.due?.takeIf { "due" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple("Due ${TaskScheduleUtils.formatDueDate(it)}", { activeSheet = DetailSheetType.ScheduleEditor }, {
                                     restoreSmartField("due") { current, baseline -> current.copy(due = baseline?.due) }
                                 })
                             },
-                            quickAdd.startDate?.takeIf { "start" !in ignoredTitleQuickAddFields }?.let {
+                            quickAdd.startDate?.takeIf { "start" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple(stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)), { activeSheet = DetailSheetType.ScheduleEditor }, {
                                     restoreSmartField("start") { current, baseline -> current.copy(startDate = baseline?.startDate) }
                                 })
                             },
-                            quickAdd.time?.takeIf { "time" !in ignoredTitleQuickAddFields }?.let {
+                            quickAdd.time?.takeIf { "time" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple("Time $it", { activeSheet = DetailSheetType.ScheduleEditor }, {
                                     restoreSmartField("time") { current, baseline -> current.copy(time = baseline?.time) }
                                 })
                             },
-                            quickAdd.recurrence?.takeIf { "recurrence" !in ignoredTitleQuickAddFields }?.let {
+                            quickAdd.recurrence?.takeIf { "recurrence" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}", { activeSheet = DetailSheetType.RecurrenceBuilder }, {
                                     restoreSmartField("recurrence") { current, baseline -> current.copy(recurrence = baseline?.recurrence) }
                                 })
                             },
-                            quickAdd.reminder?.takeIf { "reminder" !in ignoredTitleQuickAddFields }?.let {
+                            quickAdd.reminder?.takeIf { "reminder" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple("Remind $it", { activeSheet = DetailSheetType.ReminderPicker }, {
                                     restoreSmartField("reminder") { current, baseline -> current.copy(reminder = baseline?.reminder) }
                                 })
                             },
-                            quickAdd.priority?.takeIf { "priority" !in ignoredTitleQuickAddFields }?.let {
+                            quickAdd.priority?.takeIf { "priority" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple("${it.uppercase()} priority", { }, {
                                     restoreSmartField("priority") { current, baseline -> current.copy(priority = baseline?.priority ?: "none") }
                                 })
                             },
-                            "Flagged".takeIf { quickAdd.flag && "flag" !in ignoredTitleQuickAddFields }?.let {
+                            "Flagged".takeIf { quickAdd.flag && "flag" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple(it, { viewModel.toggleTaskFlag(task.id) }, {
                                     restoreSmartField("flag") { current, baseline -> current.copy(flag = baseline?.flag ?: false) }
                                 })
                             },
-                            quickAdd.projectName?.takeIf { projectsFeatureEnabled && "project" !in ignoredTitleQuickAddFields }?.let {
+                            quickAdd.projectName?.takeIf { projectsFeatureEnabled && "project" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple("Project $it", { activeSheet = DetailSheetType.ProjectPicker }, {
                                     restoreSmartField("project") { current, baseline ->
                                         current.copy(projectId = baseline?.projectId, listId = baseline?.listId, due = baseline?.due)
                                     }
                                 })
                             },
-                            quickAdd.listName?.takeIf { "list" !in ignoredTitleQuickAddFields }?.let {
+                            quickAdd.listName?.takeIf { "list" !in effectiveIgnoredTitleQuickAddFields }?.let {
                                 Triple("List $it", { activeSheet = DetailSheetType.ListPicker }, {
                                     restoreSmartField("list") { current, baseline ->
                                         current.copy(listId = baseline?.listId, projectId = baseline?.projectId)
                                     }
                                 })
                             },
-                            quickAdd.tagNames.takeIf { tagsFeatureEnabled && it.isNotEmpty() && "tags" !in ignoredTitleQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
+                            quickAdd.tagNames.takeIf { tagsFeatureEnabled && it.isNotEmpty() && "tags" !in effectiveIgnoredTitleQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
                                 Triple("Tags $it", { activeSheet = DetailSheetType.TagPicker }, {
                                     restoreSmartField("tags") { current, baseline -> current.copy(tagIds = baseline?.tagIds ?: current.tagIds) }
                                 })
                             },
-                            quickAdd.assigneeNames.takeIf { peopleFeatureEnabled && it.isNotEmpty() && "people" !in ignoredTitleQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
+                            quickAdd.assigneeNames.takeIf { peopleFeatureEnabled && it.isNotEmpty() && "people" !in effectiveIgnoredTitleQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
                                 Triple("People $it", { activeSheet = DetailSheetType.AssigneePicker }, {
                                     restoreSmartField("people") { current, baseline -> current.copy(assigneeIds = baseline?.assigneeIds ?: current.assigneeIds) }
                                 })
                             }
                         )
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        if (detectedItems.isNotEmpty()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(
-                                    Icons.Default.Today,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(14.dp)
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Today,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.new_task_smart_add_summary),
+                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.new_task_ignore_detected_date_time),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .clickable { titleQuickAddDismissed = true }
+                                    )
+                                }
                                 Text(
-                                    text = stringResource(R.string.new_task_smart_add_summary),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.weight(1f)
+                                    text = stringResource(R.string.new_task_detected_title, quickAdd.title),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.new_task_ignore_detected_date_time),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .clip(CircleShape)
-                                        .clickable { titleQuickAddDismissed = true }
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.new_task_detected_title, quickAdd.title),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                detectedItems.forEach { (item, onItemClick, onDismissItem) ->
-                                    InputChip(
-                                        selected = true,
-                                        onClick = onItemClick,
-                                        label = { Text(item) },
-                                        colors = InputChipDefaults.inputChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.surface,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    detectedItems.forEach { (item, onItemClick, onDismissItem) ->
+                                        InputChip(
+                                            selected = true,
+                                            onClick = onItemClick,
+                                            label = { Text(item) },
+                                            colors = InputChipDefaults.inputChipColors(
+                                                selectedContainerColor = MaterialTheme.colorScheme.surface,
+                                                selectedLabelColor = MaterialTheme.colorScheme.onSurface,
                                             selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
                                         ),
                                         trailingIcon = {
@@ -777,6 +786,7 @@ fun TaskDetailScreen(
                             }
                         }
                     }
+                }
                 }
             }
 
@@ -2157,7 +2167,3 @@ fun MetaRowItem(
         }
     }
 }
-
-
-
-

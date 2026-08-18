@@ -13,7 +13,7 @@ YATA ("Yet Another Task App", pronounced **"YAH-tuh"** — *ya* as in *yard*, *t
 All commands run from the repo root using the Gradle wrapper (`./gradlew` on Bash, `gradlew.bat` on native Windows shells).
 
 ```bash
-# Compile Kotlin only (fast correctness check, no packaging) — use this while iterating
+# Default verification for small Kotlin/UI changes: fast correctness check, no packaging.
 ./gradlew :app:compileDebugKotlin -q
 
 # Full debug build
@@ -22,7 +22,8 @@ All commands run from the repo root using the Gradle wrapper (`./gradlew` on Bas
 # Install to a connected/emulated device
 ./gradlew :app:installDebug -q
 
-# Unit tests (JVM, no device) — e.g. RecurrenceEvaluatorTest, NaturalLanguageParserTest
+# Unit tests (JVM, no device). Run only when the touched logic needs test coverage or the user asks;
+# even a focused --tests run still walks a much heavier Android unit-test graph than compileDebugKotlin.
 ./gradlew :app:testDebugUnitTest
 ./gradlew :app:testDebugUnitTest --tests "com.mj.yata.RecurrenceEvaluatorTest"
 ./gradlew :app:testDebugUnitTest --tests "com.mj.yata.RecurrenceEvaluatorTest.testWeeklyRecurrence"

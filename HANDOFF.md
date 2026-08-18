@@ -124,11 +124,10 @@ capacity/weekday-pattern insights).
 
 ## 4. Standing workflow conventions for this repo (established this session, likely to continue)
 
-- Verification loop after any batch of changes: `./gradlew :app:compileDebugKotlin -q` →
-  `./gradlew :app:testDebugUnitTest -q` (check
-  `grep -l 'failures="[1-9]\|errors="[1-9]' app/build/test-results/testDebugUnitTest/*.xml`
-  reports nothing) → `adb devices` + `./gradlew :app:installDebug -q` if a device is connected →
-  commit. Push only when explicitly asked.
+- Default verification after small Kotlin/UI changes: `./gradlew :app:compileDebugKotlin -q`.
+  Add `:app:testDebugUnitTest` only when touched logic needs coverage or the user asks; even
+  focused `--tests` runs spend much longer in the Android unit-test graph. Install only when
+  explicitly needed for on-device/manual verification. Push only when explicitly asked.
 - Commit messages: heredoc, ending `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
 - Reuse-before-create for string resources: grep `strings.xml` for an exact-text match before
   adding a new key, to avoid duplicate/drifting translations across the three locale files.

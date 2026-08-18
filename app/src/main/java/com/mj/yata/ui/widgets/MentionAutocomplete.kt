@@ -95,6 +95,20 @@ internal fun consumeMentionToken(value: TextFieldValue, mention: MentionToken): 
     return TextFieldValue(before + after, TextRange(before.length))
 }
 
+/**
+ * While a mention is still under the cursor, the autocomplete owns that entity choice. Quick-add
+ * may also parse the same partial token (for example "@a"), but applying it before the row click
+ * can attach the wrong matching entity as each typed character changes the best fuzzy match.
+ */
+internal fun quickAddFieldsOwnedByMention(mention: MentionToken?): Set<String> =
+    when (mention?.trigger) {
+        TRIGGER_TAG -> setOf("tags")
+        TRIGGER_PERSON -> setOf("people")
+        TRIGGER_PROJECT -> setOf("project")
+        TRIGGER_LIST -> setOf("list")
+        else -> emptySet()
+    }
+
 @Composable
 internal fun MentionSuggestions(
     mention: MentionToken,

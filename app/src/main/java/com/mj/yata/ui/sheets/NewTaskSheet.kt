@@ -134,6 +134,7 @@ import com.mj.yata.ui.widgets.PriorityBars
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.consumeMentionToken
 import com.mj.yata.ui.widgets.detectMentionToken
+import com.mj.yata.ui.widgets.quickAddFieldsOwnedByMention
 import com.mj.yata.ui.widgets.rememberQuickAddHighlightTransformation
 import com.mj.yata.ui.widgets.TRIGGER_LIST
 import com.mj.yata.ui.widgets.TRIGGER_PERSON
@@ -573,6 +574,9 @@ fun NewTaskSheet(
         else NaturalLanguageParser.parse(title.text)
     }
     val quickAddMatched = !isBulkTasks && !quickAddDismissed && quickAdd.title != title.text.trim()
+    val effectiveIgnoredQuickAddFields = remember(ignoredQuickAddFields, mention) {
+        ignoredQuickAddFields + quickAddFieldsOwnedByMention(mention)
+    }
     val finalTitlePreview = remember(title.text, quickAddMatched, quickAdd.title) {
         if (quickAddMatched) quickAdd.title else title.text.trim()
     }
@@ -590,29 +594,29 @@ fun NewTaskSheet(
             }.take(2)
         }
     }
-    LaunchedEffect(quickAdd, quickAddDismissed, isBulkTasks, ignoredQuickAddFields) {
+    LaunchedEffect(quickAdd, quickAddDismissed, isBulkTasks, effectiveIgnoredQuickAddFields) {
         if (!quickAddDismissed && !isBulkTasks) {
-            if ("due" !in ignoredQuickAddFields && !dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
-            if ("start" !in ignoredQuickAddFields && !startDateManuallySet && quickAdd.startDate != null) selectedStartDate = quickAdd.startDate
-            if ("time" !in ignoredQuickAddFields && !timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
-            if ("recurrence" !in ignoredQuickAddFields && !recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
-            if ("reminder" !in ignoredQuickAddFields && !reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
-            if ("priority" !in ignoredQuickAddFields && !priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
-            if ("flag" !in ignoredQuickAddFields && quickAdd.flag) selectedFlag = true
+            if ("due" !in effectiveIgnoredQuickAddFields && !dueManuallySet && quickAdd.due != null) selectedDueDate = quickAdd.due
+            if ("start" !in effectiveIgnoredQuickAddFields && !startDateManuallySet && quickAdd.startDate != null) selectedStartDate = quickAdd.startDate
+            if ("time" !in effectiveIgnoredQuickAddFields && !timeManuallySet && quickAdd.time != null) selectedTime = quickAdd.time
+            if ("recurrence" !in effectiveIgnoredQuickAddFields && !recurrenceManuallySet && quickAdd.recurrence != null) selectedRecurrence = quickAdd.recurrence
+            if ("reminder" !in effectiveIgnoredQuickAddFields && !reminderManuallySet && quickAdd.reminder != null) selectedReminder = quickAdd.reminder
+            if ("priority" !in effectiveIgnoredQuickAddFields && !priorityManuallySet && quickAdd.priority != null) selectedPriority = quickAdd.priority
+            if ("flag" !in effectiveIgnoredQuickAddFields && quickAdd.flag) selectedFlag = true
 
-            if ("project" !in ignoredQuickAddFields && selectedProjectId == null && quickAdd.projectName != null) {
+            if ("project" !in effectiveIgnoredQuickAddFields && selectedProjectId == null && quickAdd.projectName != null) {
                 findBestEntityMatch(quickAdd.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
             }
-            if ("list" !in ignoredQuickAddFields && selectedListId == null && quickAdd.listName != null) {
+            if ("list" !in effectiveIgnoredQuickAddFields && selectedListId == null && quickAdd.listName != null) {
                 findBestEntityMatch(quickAdd.listName, lists, { it.name })?.let { selectedListId = it.id }
             }
-            if ("tags" !in ignoredQuickAddFields && quickAdd.tagNames.isNotEmpty()) {
+            if ("tags" !in effectiveIgnoredQuickAddFields && quickAdd.tagNames.isNotEmpty()) {
                 val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
                     findBestEntityMatch(target, tags, { it.name })?.id
                 }.distinct().filterNot { it in selectedTagIds }
                 selectedTagIds.addAll(matchedTagIds)
             }
-            if ("people" !in ignoredQuickAddFields && quickAdd.assigneeNames.isNotEmpty()) {
+            if ("people" !in effectiveIgnoredQuickAddFields && quickAdd.assigneeNames.isNotEmpty()) {
                 val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
                     findBestEntityMatch(target, activePeople, { it.name })?.id
                 }.distinct().filterNot { it in selectedAssigneeIds }
@@ -638,7 +642,7 @@ fun NewTaskSheet(
         val projectObj = projects.find { it.id == selectedProjectId }
         if (projectObj != null && projectObj.id != lastLoadedProjectId) {
             lastLoadedProjectId = projectObj.id
-            val dueAlreadyClaimed = dueManuallySet || ("due" !in ignoredQuickAddFields && quickAdd.due != null)
+            val dueAlreadyClaimed = dueManuallySet || ("due" !in effectiveIgnoredQuickAddFields && quickAdd.due != null)
             if (!dueAlreadyClaimed) {
                 // Not routed through setDueDate(): this is a default, not a manual pick, and
                 // marking it dueManuallySet would incorrectly block quick-add from ever
@@ -1037,11 +1041,11 @@ fun NewTaskSheet(
                     tags = tags,
                     people = activePeople,
                     onSelectTag = { tag ->
-                        selectedTagIds.add(tag.id)
+                        if (tag.id !in selectedTagIds) selectedTagIds.add(tag.id)
                         title = consumeMentionToken(title, mention)
                     },
                     onSelectPerson = { person ->
-                        selectedAssigneeIds.add(person.id)
+                        if (person.id !in selectedAssigneeIds) selectedAssigneeIds.add(person.id)
                         title = consumeMentionToken(title, mention)
                     },
                     onCreateTag = { name ->
@@ -1102,13 +1106,13 @@ fun NewTaskSheet(
                 }
             } else if (quickAddMatched) {
                 val detectedItems = listOfNotNull<Triple<String, () -> Unit, () -> Unit>>(
-                    quickAdd.due?.takeIf { "due" !in ignoredQuickAddFields }?.let {
+                    quickAdd.due?.takeIf { "due" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple("Due ${TaskScheduleUtils.formatDueDate(it)}", { activePanel = "DueDate" }, {
                             setDueDate(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "due"
                         })
                     },
-                    quickAdd.startDate?.takeIf { "start" !in ignoredQuickAddFields }?.let {
+                    quickAdd.startDate?.takeIf { "start" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple(
                             stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)),
                             { activePanel = "StartDate" },
@@ -1118,13 +1122,13 @@ fun NewTaskSheet(
                             }
                         )
                     },
-                    quickAdd.time?.takeIf { "time" !in ignoredQuickAddFields }?.let {
+                    quickAdd.time?.takeIf { "time" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple("Time $it", { activePanel = "Time" }, {
                             setTime(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "time"
                         })
                     },
-                    quickAdd.recurrence?.takeIf { "recurrence" !in ignoredQuickAddFields }?.let {
+                    quickAdd.recurrence?.takeIf { "recurrence" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}", {
                             activePanel = null
                             showRecurrenceSheet = true
@@ -1133,37 +1137,37 @@ fun NewTaskSheet(
                             ignoredQuickAddFields = ignoredQuickAddFields + "recurrence"
                         })
                     },
-                    quickAdd.reminder?.takeIf { "reminder" !in ignoredQuickAddFields }?.let {
+                    quickAdd.reminder?.takeIf { "reminder" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple("Remind $it", { activePanel = "Reminder" }, {
                             setReminder(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "reminder"
                         })
                     },
-                    quickAdd.priority?.takeIf { "priority" !in ignoredQuickAddFields }?.let {
+                    quickAdd.priority?.takeIf { "priority" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple("${it.uppercase()} priority", { activePanel = "Priority" }, {
                             setPriority("none")
                             ignoredQuickAddFields = ignoredQuickAddFields + "priority"
                         })
                     },
-                    "Flagged".takeIf { quickAdd.flag && "flag" !in ignoredQuickAddFields }?.let {
+                    "Flagged".takeIf { quickAdd.flag && "flag" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple(it, { selectedFlag = !selectedFlag }, {
                             selectedFlag = false
                             ignoredQuickAddFields = ignoredQuickAddFields + "flag"
                         })
                     },
-                    quickAdd.projectName?.takeIf { "project" !in ignoredQuickAddFields }?.let {
+                    quickAdd.projectName?.takeIf { "project" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple("Project $it", { activePanel = "Project" }, {
                             selectedProjectId = null
                             ignoredQuickAddFields = ignoredQuickAddFields + "project"
                         })
                     },
-                    quickAdd.listName?.takeIf { "list" !in ignoredQuickAddFields }?.let {
+                    quickAdd.listName?.takeIf { "list" !in effectiveIgnoredQuickAddFields }?.let {
                         Triple("List $it", { activePanel = "List" }, {
                             selectedListId = null
                             ignoredQuickAddFields = ignoredQuickAddFields + "list"
                         })
                     },
-                    quickAdd.tagNames.takeIf { it.isNotEmpty() && "tags" !in ignoredQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
+                    quickAdd.tagNames.takeIf { it.isNotEmpty() && "tags" !in effectiveIgnoredQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
                         Triple("Tags $it", { activePanel = "Tags" }, {
                             val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
                                 findBestEntityMatch(target, tags, { tag -> tag.name })?.id
@@ -1172,7 +1176,7 @@ fun NewTaskSheet(
                             ignoredQuickAddFields = ignoredQuickAddFields + "tags"
                         })
                     },
-                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() && "people" !in ignoredQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
+                    quickAdd.assigneeNames.takeIf { it.isNotEmpty() && "people" !in effectiveIgnoredQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
                         Triple("People $it", { activePanel = "People" }, {
                             val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
                                 findBestEntityMatch(target, activePeople, { person -> person.name })?.id
@@ -1182,26 +1186,27 @@ fun NewTaskSheet(
                         })
                     }
                 )
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(tween(com.mj.yata.ui.theme.YataDur.micro)) + expandVertically(tween(com.mj.yata.ui.theme.YataDur.micro)),
-                    exit = fadeOut(tween(com.mj.yata.ui.theme.YataDur.micro)) + shrinkVertically(tween(com.mj.yata.ui.theme.YataDur.micro))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            // Solid, not primaryContainer at 45% alpha. That alpha was the whole
-                            // legibility problem: blending the container down over the sheet
-                            // background produces a colour that is neither primaryContainer nor
-                            // surface, so `onPrimaryContainer` — which is only guaranteed to
-                            // contrast against the *solid* container — stopped being the right
-                            // pair for it, and the text washed out. M3 colour roles come in pairs;
-                            // putting alpha on one half of a pair breaks the guarantee.
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                if (detectedItems.isNotEmpty()) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(com.mj.yata.ui.theme.YataDur.micro)) + expandVertically(tween(com.mj.yata.ui.theme.YataDur.micro)),
+                        exit = fadeOut(tween(com.mj.yata.ui.theme.YataDur.micro)) + shrinkVertically(tween(com.mj.yata.ui.theme.YataDur.micro))
                     ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                // Solid, not primaryContainer at 45% alpha. That alpha was the whole
+                                // legibility problem: blending the container down over the sheet
+                                // background produces a colour that is neither primaryContainer nor
+                                // surface, so `onPrimaryContainer` — which is only guaranteed to
+                                // contrast against the *solid* container — stopped being the right
+                                // pair for it, and the text washed out. M3 colour roles come in pairs;
+                                // putting alpha on one half of a pair breaks the guarantee.
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1300,6 +1305,7 @@ fun NewTaskSheet(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
+                        }
                     }
                 }
             }
