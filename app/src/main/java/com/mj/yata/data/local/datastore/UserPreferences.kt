@@ -15,6 +15,9 @@ import com.mj.yata.domain.model.MotionMode
 import com.mj.yata.domain.model.SavedThemePreset
 import com.mj.yata.domain.model.SubtaskCompletionAction
 import com.mj.yata.domain.model.ThemeMode
+import com.mj.yata.domain.model.DEFAULT_POSTPONEMENT_WARNING_THRESHOLD
+import com.mj.yata.domain.model.MAX_POSTPONEMENT_WARNING_THRESHOLD
+import com.mj.yata.domain.model.MIN_POSTPONEMENT_WARNING_THRESHOLD
 import com.mj.yata.util.decodeSalt
 import com.mj.yata.util.encodeSalt
 import com.mj.yata.util.EntitySortMode
@@ -132,6 +135,7 @@ class UserPreferences @Inject constructor(
         val DEFAULT_PROJECT_ID      = stringPreferencesKey("default_project_id")
         val DEFAULT_TAG_IDS         = stringSetPreferencesKey("default_tag_ids")
         val DEFAULT_ESTIMATE_MINUTES = intPreferencesKey("default_estimate_minutes")
+        val POSTPONEMENT_WARNING_THRESHOLD = intPreferencesKey("postponement_warning_threshold")
         val START_OF_WEEK_SUNDAY    = booleanPreferencesKey("start_of_week_sunday")
         val DEFAULT_REMINDER_HOUR   = intPreferencesKey("default_reminder_hour")
         val DEFAULT_REMINDER_MINUTE = intPreferencesKey("default_reminder_minute")
@@ -450,6 +454,10 @@ class UserPreferences @Inject constructor(
     val defaultEstimateMinutesFlow: Flow<Int?> = prefsFlow.map { prefs ->
         prefs[DEFAULT_ESTIMATE_MINUTES]?.takeIf { it > 0 }
     }
+    val postponementWarningThresholdFlow: Flow<Int> = prefsFlow.map { prefs ->
+        (prefs[POSTPONEMENT_WARNING_THRESHOLD] ?: DEFAULT_POSTPONEMENT_WARNING_THRESHOLD)
+            .coerceIn(MIN_POSTPONEMENT_WARNING_THRESHOLD, MAX_POSTPONEMENT_WARNING_THRESHOLD)
+    }
     val subtaskCompletionActionFlow: Flow<SubtaskCompletionAction> = prefsFlow.map { prefs ->
         SubtaskCompletionAction.entries.firstOrNull { it.name == prefs[SUBTASK_COMPLETION_ACTION] }
             ?: SubtaskCompletionAction.ASK
@@ -729,6 +737,15 @@ class UserPreferences @Inject constructor(
 
     suspend fun setDefaultPriority(priority: String) {
         dataStore.edit { it[DEFAULT_PRIORITY] = priority }
+    }
+
+    suspend fun setPostponementWarningThreshold(threshold: Int) {
+        dataStore.edit {
+            it[POSTPONEMENT_WARNING_THRESHOLD] = threshold.coerceIn(
+                MIN_POSTPONEMENT_WARNING_THRESHOLD,
+                MAX_POSTPONEMENT_WARNING_THRESHOLD
+            )
+        }
     }
 
     suspend fun setSubtaskCompletionAction(action: SubtaskCompletionAction) {

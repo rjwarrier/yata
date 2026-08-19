@@ -1492,4 +1492,10 @@
     <string name="analytics_most_postponed">MOST POSTPONED</string>
     <string name="analytics_postponed_times">Postponed %1$d times</string>
     <string name="analytics_no_postponed_tasks">No postponed tasks yet.</string>
-    <string name="task_postponement_warning">&quot;%1$s&quot; has been postponed %2$d times.</string></resources>
+    <string name="task_postponement_warning">&quot;%1$s&quot; has been postponed %2$d times.</string>    <plurals name="settings_postponement_threshold_value">
+        <item quantity="one">%1$d సారి</item>
+        <item quantity="other">%1$d సార్లు</item>
+    </plurals>
+    <string name="settings_postponement_warning_threshold">వాయిదా హెచ్చరిక పరిమితి</string>
+    <string name="settings_postponement_warning_threshold_desc">హెచ్చరించడానికి ముందు సాధారణ ప్రాధాన్యత పనిని ఎన్నిసార్లు వాయిదా వేయవచ్చు. మధ్యస్థ ప్రాధాన్యత %1$d తర్వాత, అధిక ప్రాధాన్యత %2$d తర్వాత హెచ్చరిస్తుంది.</string>
+</resources>

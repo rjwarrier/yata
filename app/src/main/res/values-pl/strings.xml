@@ -1495,4 +1495,10 @@
     <string name="analytics_most_postponed">MOST POSTPONED</string>
     <string name="analytics_postponed_times">Postponed %1$d times</string>
     <string name="analytics_no_postponed_tasks">No postponed tasks yet.</string>
-    <string name="task_postponement_warning">&quot;%1$s&quot; has been postponed %2$d times.</string></resources>
+    <string name="task_postponement_warning">&quot;%1$s&quot; has been postponed %2$d times.</string>    <plurals name="settings_postponement_threshold_value">
+        <item quantity="one">%1$d raz</item>
+        <item quantity="other">%1$d razy</item>
+    </plurals>
+    <string name="settings_postponement_warning_threshold">Próg ostrzeżenia o odłożeniu</string>
+    <string name="settings_postponement_warning_threshold_desc">Liczba odłożeń zadania o zwykłym priorytecie przed wyświetleniem ostrzeżenia. Średni priorytet ostrzega po %1$d, a wysoki po %2$d.</string>
+</resources>

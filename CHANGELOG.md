@@ -15,6 +15,12 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+- Added a "Postponement warning threshold" slider (1–10) in Settings → Task Defaults for controlling
+  how many times a task can be postponed before showing a warning snackbar. The configured value
+  applies to normal-priority tasks; medium priority tasks warn 2 postponements earlier, and high
+  priority tasks warn 4 earlier (with a minimum threshold of 1).
+
 ## [0.94] - 2026-08-18
 
 `versionCode 22`. Upgrades in place over 0.93.1.

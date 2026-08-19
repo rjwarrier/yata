@@ -1003,6 +1003,13 @@ data class PostponementWarning(
     val defaultPriority: StateFlow<String> = userPreferences.defaultPriorityFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "none")
 
+    val postponementWarningThreshold: StateFlow<Int> = userPreferences.postponementWarningThresholdFlow
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            DEFAULT_POSTPONEMENT_WARNING_THRESHOLD
+        )
+
     val subtaskCompletionAction: StateFlow<com.mj.yata.domain.model.SubtaskCompletionAction> =
         userPreferences.subtaskCompletionActionFlow
             .stateIn(
@@ -1118,6 +1125,10 @@ data class PostponementWarning(
 
     fun setDefaultPriority(priority: String) {
         safeLaunch { userPreferences.setDefaultPriority(priority) }
+    }
+
+    fun setPostponementWarningThreshold(threshold: Int) {
+        safeLaunch { userPreferences.setPostponementWarningThreshold(threshold) }
     }
 
     fun setDefaultProjectId(id: String) {
@@ -1798,7 +1809,9 @@ data class PostponementWarning(
     }
 
     private suspend fun warnIfPostponedOften(task: Task) {
-        if (task.postponementCount >= POSTPONEMENT_WARNING_THRESHOLD) {
+        val normalThreshold = userPreferences.postponementWarningThresholdFlow.first()
+        val effectiveThreshold = postponementWarningThresholdFor(task.priority, normalThreshold)
+        if (task.postponementCount >= effectiveThreshold) {
             _postponementWarnings.emit(PostponementWarning(task.title, task.postponementCount))
         }
     }

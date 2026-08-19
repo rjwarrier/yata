@@ -1492,4 +1492,10 @@
     <string name="analytics_most_postponed">MOST POSTPONED</string>
     <string name="analytics_postponed_times">Postponed %1$d times</string>
     <string name="analytics_no_postponed_tasks">No postponed tasks yet.</string>
-    <string name="task_postponement_warning">&quot;%1$s&quot; has been postponed %2$d times.</string></resources>
+    <string name="task_postponement_warning">&quot;%1$s&quot; has been postponed %2$d times.</string>    <plurals name="settings_postponement_threshold_value">
+        <item quantity="one">%1$d തവണ</item>
+        <item quantity="other">%1$d തവണ</item>
+    </plurals>
+    <string name="settings_postponement_warning_threshold">മാറ്റിവയ്ക്കൽ മുന്നറിയിപ്പ് പരിധി</string>
+    <string name="settings_postponement_warning_threshold_desc">മുന്നറിയിപ്പ് നൽകുന്നതിന് മുൻപ് സാധാരണ മുൻഗണനയുള്ള ടാസ്ക് എത്ര തവണ മാറ്റിവയ്ക്കാം. ഇടത്തരം മുൻഗണന %1$d-ന് ശേഷവും ഉയർന്ന മുൻഗണന %2$d-ന് ശേഷവും മുന്നറിയിപ്പ് നൽകുന്നു.</string>
+</resources>

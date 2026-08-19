@@ -110,6 +110,7 @@ import androidx.compose.ui.unit.sp
 import com.mj.yata.R
 import com.mj.yata.data.backup.BackupDiff
 import com.mj.yata.domain.model.AppFont
+import com.mj.yata.domain.model.postponementWarningThresholdFor
 import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
 import com.mj.yata.domain.model.DateAliasDefinition
@@ -305,6 +306,7 @@ fun SettingsScreen(
     val snoozeTomorrowMinute by viewModel.snoozeTomorrowMinute.collectAsStateWithLifecycle()
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
+    val postponementWarningThreshold by viewModel.postponementWarningThreshold.collectAsStateWithLifecycle()
     val subtaskCompletionAction by viewModel.subtaskCompletionAction.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val todayShowUpcomingWhenEmpty by viewModel.todayShowUpcomingWhenEmpty.collectAsStateWithLifecycle()
@@ -437,7 +439,7 @@ fun SettingsScreen(
         SettingsSearchTarget("manage", stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Build),
         SettingsSearchTarget("tasker", "Tasker", "Automation access for creating tasks", "tasker automation plugin create task", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic voice language speech recognition", SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
-        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week assign assignee me subtask complete completion auto ask undo window swipe confetti", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
+        SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week assign assignee me subtask complete completion auto ask undo window swipe confetti postponement postpone warning threshold", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
         SettingsSearchTarget("date_aliases", "Date aliases", "Custom quick-add words for due dates", "quick add natural language date aliases keywords today tomorrow", SettingsDestination.TASK_DEFAULTS, Icons.Default.CalendarMonth),
         SettingsSearchTarget("notifications", stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
         SettingsSearchTarget("privacy_security", stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), "privacy lock pin timeout security", SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
@@ -1533,6 +1535,35 @@ fun SettingsScreen(
                                 -1 -> estimateCustomLabel
                                 else -> EstimateUtils.format(minutes)
                             }
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                run {
+                    val postponementOptions = (1..10).toList()
+                    val postponementLabels = postponementOptions.map { count ->
+                        pluralStringResource(R.plurals.settings_postponement_threshold_value, count, count)
+                    }
+                    var sliderThreshold by remember(postponementWarningThreshold) {
+                        mutableIntStateOf(postponementWarningThreshold)
+                    }
+                    val medThreshold = postponementWarningThresholdFor("med", sliderThreshold)
+                    val highThreshold = postponementWarningThresholdFor("high", sliderThreshold)
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_postponement_warning_threshold),
+                        description = stringResource(
+                            R.string.settings_postponement_warning_threshold_desc,
+                            medThreshold,
+                            highThreshold
+                        ),
+                        stopLabels = postponementLabels,
+                        selectedIndex = postponementOptions.indexOf(sliderThreshold).coerceAtLeast(0),
+                        onSelect = {
+                            val selected = postponementOptions[it]
+                            sliderThreshold = selected
+                            viewModel.setPostponementWarningThreshold(selected)
                         }
                     )
                 }

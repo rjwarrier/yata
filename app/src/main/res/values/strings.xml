@@ -1665,4 +1665,10 @@
     <string name="cd_expand_section">Expand section</string>
     <string name="cd_collapse_section">Collapse section</string>
 
+    <plurals name="settings_postponement_threshold_value">
+        <item quantity="one">%1$d time</item>
+        <item quantity="other">%1$d times</item>
+    </plurals>
+    <string name="settings_postponement_warning_threshold">Postponement warning threshold</string>
+    <string name="settings_postponement_warning_threshold_desc">Number of times a normal-priority task can be postponed before warning. Medium priority warns after %1$d and high priority after %2$d.</string>
 </resources>
