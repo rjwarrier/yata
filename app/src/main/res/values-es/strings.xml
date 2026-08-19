@@ -814,19 +814,19 @@
     <string name="person_detail_edit_person">Editar persona</string>
     <string name="person_detail_expand">Expandir</string>
     <string name="person_detail_search_this_person_s_tasks">Buscar tareas de esta persona</string>
-    <string name="person_analytics_title">Performance</string>
-    <string name="person_analytics_summary">PERFORMANCE SUMMARY</string>
-    <string name="person_analytics_completed_period">done in period</string>
-    <string name="person_analytics_on_time_sample">On-time rate from %1$d completed tasks with due dates</string>
-    <string name="person_analytics_planned_open">planned open</string>
-    <string name="person_analytics_unestimated">unestimated</string>
-    <string name="person_analytics_activity">COMPLETIONS</string>
-    <string name="person_analytics_breakdown">BREAKDOWN</string>
-    <string name="person_analytics_no_breakdown">No tasks in this group.</string>
-    <string name="person_analytics_overdue_tasks">OVERDUE TASKS</string>
-    <string name="person_analytics_no_tasks">No tasks assigned yet.</string>
-    <string name="person_analytics_open_overdue">%1$d open - %2$d overdue</string>
-    <string name="person_analytics_done_total">%1$d/%2$d done</string>
+    <string name="person_analytics_title">Rendimiento</string>
+    <string name="person_analytics_summary">RESUMEN DE RENDIMIENTO</string>
+    <string name="person_analytics_completed_period">completadas en el período</string>
+    <string name="person_analytics_on_time_sample">Tasa de puntualidad de %1$d tareas completadas con fecha de vencimiento</string>
+    <string name="person_analytics_planned_open">planificadas abiertas</string>
+    <string name="person_analytics_unestimated">sin estimación</string>
+    <string name="person_analytics_activity">COMPLETADAS</string>
+    <string name="person_analytics_breakdown">DESGLOSE</string>
+    <string name="person_analytics_no_breakdown">No hay tareas en este grupo.</string>
+    <string name="person_analytics_overdue_tasks">TAREAS VENCIDAS</string>
+    <string name="person_analytics_no_tasks">Aún no hay tareas asignadas.</string>
+    <string name="person_analytics_open_overdue">%1$d abiertas · %2$d vencidas</string>
+    <string name="person_analytics_done_total">%1$d/%2$d completadas</string>
     <string name="person_detail_their_past_assigned_tasks_and_stats_stay_t">Sus tareas asignadas anteriores y estadísticas permanecen. Se oculta de la pestaña Personas; puedes desarchivarla en cualquier momento desde este mismo menú.</string>
 
     <string name="project_detail_archive_project">Archivar proyecto</string>
@@ -1515,33 +1515,33 @@
     </plurals>
 
     <!-- English fallbacks pending translation. -->
-    <string name="task_link_long_warning_title">Long import link</string>
-    <string name="task_link_long_warning_body">This import link is %1$d characters for %2$d tasks. Some apps may send it as plain text instead of a tappable link.</string>
-    <string name="task_link_long_warning_share_anyway">Share anyway</string>
-    <string name="task_transfer_import_incomplete">This shared task link looks incomplete. Try opening it from the original message.</string>
-    <string name="task_transfer_import_too_many_tasks">This shared task link contains too many tasks to import at once.</string>
-    <string name="task_transfer_import_too_large">This shared task link is too large to import.</string>
-    <string name="task_transfer_import_unsupported">This shared task link was made by an unsupported YATA version.</string>
-    <string name="shared_tasks_import_title">Shared Tasks</string>
-    <string name="shared_tasks_import_count">%1$d tasks ready to import</string>
-    <string name="shared_tasks_import_copy_structure">Tasks will land in Inbox and create missing lists, projects, and tags.</string>
-    <string name="shared_tasks_import_inbox_only">Tasks will land in Inbox without copying structure.</string>
-    <string name="shared_tasks_import_structure_ready">Structure already exists</string>
-    <string name="shared_tasks_import_more_structure">+%1$d more</string>
-    <string name="shared_tasks_import_action">Import</string>
-    <string name="app_links_diagnostic_title">Task links</string>
-    <string name="app_links_diagnostic_verified">Verified links open directly in YATA.</string>
-    <string name="app_links_diagnostic_user_selected">YATA is selected for task links on this device.</string>
-    <string name="app_links_diagnostic_not_verified">Android has not verified YATA for task links.</string>
-    <string name="app_links_diagnostic_unknown">Link verification status is unavailable on this device.</string>
+    <string name="task_link_long_warning_title">Enlace de importación largo</string>
+    <string name="task_link_long_warning_body">Este enlace tiene %1$d caracteres para %2$d tareas. Algunas aplicaciones podrían enviarlo como texto sin formato.</string>
+    <string name="task_link_long_warning_share_anyway">Compartir de todos modos</string>
+    <string name="task_transfer_import_incomplete">Este enlace compartido parece incompleto. Intente abrirlo desde el mensaje original.</string>
+    <string name="task_transfer_import_too_many_tasks">Este enlace contiene demasiadas tareas para importar a la vez.</string>
+    <string name="task_transfer_import_too_large">Este enlace compartido es demasiado grande para importarlo.</string>
+    <string name="task_transfer_import_unsupported">Este enlace fue creado con una versión incompatible de YATA.</string>
+    <string name="shared_tasks_import_title">Tareas compartidas</string>
+    <string name="shared_tasks_import_count">%1$d tareas listas para importar</string>
+    <string name="shared_tasks_import_copy_structure">Las tareas irán a la Bandeja de entrada y crearán listas, proyectos y etiquetas faltantes.</string>
+    <string name="shared_tasks_import_inbox_only">Las tareas irán a la Bandeja de entrada sin copiar la estructura.</string>
+    <string name="shared_tasks_import_structure_ready">La estructura ya existe</string>
+    <string name="shared_tasks_import_more_structure">+%1$d más</string>
+    <string name="shared_tasks_import_action">Importar</string>
+    <string name="app_links_diagnostic_title">Enlaces de tareas</string>
+    <string name="app_links_diagnostic_verified">Los enlaces verificados se abren directamente en YATA.</string>
+    <string name="app_links_diagnostic_user_selected">YATA está seleccionada para enlaces de tareas en este dispositivo.</string>
+    <string name="app_links_diagnostic_not_verified">Android no ha verificado YATA para enlaces de tareas.</string>
+    <string name="app_links_diagnostic_unknown">El estado de verificación de enlaces no está disponible en este dispositivo.</string>
     <string name="app_links_diagnostic_host">Host</string>
-    <string name="app_links_diagnostic_resolver">Resolver</string>
-    <string name="app_links_diagnostic_open_settings">Open link settings</string>
-    <string name="analytics_postponed_tasks">postponed tasks</string>
-    <string name="analytics_most_postponed">MOST POSTPONED</string>
-    <string name="analytics_postponed_times">Postponed %1$d times</string>
-    <string name="analytics_no_postponed_tasks">No postponed tasks yet.</string>
-    <string name="task_postponement_warning">&quot;%1$s&quot; has been postponed %2$d times.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="app_links_diagnostic_resolver">Resolutor</string>
+    <string name="app_links_diagnostic_open_settings">Abrir ajustes de enlaces</string>
+    <string name="analytics_postponed_tasks">tareas pospuestas</string>
+    <string name="analytics_most_postponed">MÁS POSPUESTAS</string>
+    <string name="analytics_postponed_times">Pospuesta %1$d veces</string>
+    <string name="analytics_no_postponed_tasks">Aún no hay tareas pospuestas.</string>
+    <string name="task_postponement_warning">«%1$s» se ha pospuesto %2$d veces.</string>    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d vez</item>
         <item quantity="other">%1$d veces</item>
     </plurals>
