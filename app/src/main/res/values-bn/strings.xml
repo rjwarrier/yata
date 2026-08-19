@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Tasker একীকরণ</string>
     <string name="settings_tasker_integration_summary">Yata প্লাগইনের মাধ্যমে Tasker প্রোফাইলকে টাস্ক তৈরি করার অনুমতি দিন।</string>
     <string name="settings_date_aliases">তারিখের ছদ্মনাম</string>
-    <string name="settings_date_aliases_summary">দ্রুত যোগ-কে নিজের তারিখের শব্দ শেখান।</string>
+    <string name="settings_date_aliases_summary">কাজ তৈরি করার সময় স্বয়ংক্রিয়ভাবে নির্ধারিত তারিখ সেট করার জন্য কাস্টম শর্টকাট শব্দ (যেমন আগামীকালের জন্য "tmrw")।</string>
     <string name="settings_date_alias_word_label">শব্দ</string>
     <string name="settings_add_alias">ছদ্মনাম যোগ করুন</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1499,6 +1499,9 @@
         <item quantity="one">%1$d বার</item>
         <item quantity="other">%1$d বার</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">স্থগিত সতর্কতার সীমা</string>
-    <string name="settings_postponement_warning_threshold_desc">সতর্ক করার আগে একটি সাধারণ-অগ্রাধিকারের কাজ যতবার স্থগিত করা যেতে পারে। মাঝারি অগ্রাধিকার %1$d বার পরে এবং উচ্চ অগ্রাধিকার %2$d বার পরে সতর্ক করে।</string>
+    <string name="settings_postponement_warning_threshold">স্থগিতাদেশ সতর্কবার্তা সীমা</string>
+    <string name="settings_postponement_warning_threshold_desc">সতর্কতা দেখানোর আগে একটি স্বাভাবিক অগ্রাধিকারের কাজ যতবার স্থগিত করা যেতে পারে। মাঝারি অগ্রাধিকারে %1$d বার এবং উচ্চ অগ্রাধিকারে %2$d বার পর সতর্ক করা হয়।</string>
+    <string name="action_reopen">পুনরায় খুলুন</string>
+    <string name="action_complete">সম্পন্ন করুন</string>
+    <string name="action_open">খুলুন</string>
 </resources>

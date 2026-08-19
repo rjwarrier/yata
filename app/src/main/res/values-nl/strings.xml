@@ -149,7 +149,7 @@
     <string name="settings_tasker_integration">Tasker-integratie</string>
     <string name="settings_tasker_integration_summary">Sta Tasker-profielen toe om taken te maken via de Yata-plugin.</string>
     <string name="settings_date_aliases">Datumaliassen</string>
-    <string name="settings_date_aliases_summary">Leer snel toevoegen je eigen datumwoorden.</string>
+    <string name="settings_date_aliases_summary">Aangepaste snelkoppelingswoorden bij het maken van taken om automatisch de vervaldatum in te stellen (bijv. "tmrw" voor Morgen).</string>
     <string name="settings_date_alias_word_label">Woord</string>
     <string name="settings_add_alias">Alias toevoegen</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1500,6 +1500,9 @@
         <item quantity="one">%1$d keer</item>
         <item quantity="other">%1$d keer</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">Drempel voor uitstelwaarschuwing</string>
+    <string name="settings_postponement_warning_threshold">Waarschuwingsdrempel uitstel</string>
     <string name="settings_postponement_warning_threshold_desc">Aantal keren dat een taak met normale prioriteit kan worden uitgesteld voor een waarschuwing. Gemiddelde prioriteit waarschuwt na %1$d en hoge prioriteit na %2$d.</string>
+    <string name="action_reopen">Heropenen</string>
+    <string name="action_complete">Voltooien</string>
+    <string name="action_open">Openen</string>
 </resources>

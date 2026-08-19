@@ -987,7 +987,7 @@
     <string name="settings_tasker_integration">Intégration Tasker</string>
     <string name="settings_tasker_integration_summary">Autorisez les profils Tasker à créer des tâches via le plugin Yata.</string>
     <string name="settings_date_aliases">Alias de date</string>
-    <string name="settings_date_aliases_summary">Apprenez vos propres mots de date à l\'ajout rapide.</string>
+    <string name="settings_date_aliases_summary">Mots-clés personnalisés reconnus lors de la création de tâches pour définir automatiquement la date d\'échéance (ex. « tmrw » pour Demain).</string>
     <string name="settings_date_alias_word_label">Mot</string>
     <string name="settings_add_alias">Ajouter un alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1503,4 +1503,7 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">Seuil d\'avertissement de report</string>
     <string name="settings_postponement_warning_threshold_desc">Nombre de reports autorisés pour une tâche de priorité normale avant avertissement. La priorité moyenne avertit après %1$d et la priorité haute après %2$d.</string>
+    <string name="action_reopen">Rouvrir</string>
+    <string name="action_complete">Terminer</string>
+    <string name="action_open">Ouvrir</string>
 </resources>

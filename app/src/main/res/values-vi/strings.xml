@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Tích hợp Tasker</string>
     <string name="settings_tasker_integration_summary">Cho phép hồ sơ Tasker tạo việc cần làm qua plugin Yata.</string>
     <string name="settings_date_aliases">Bí danh ngày tháng</string>
-    <string name="settings_date_aliases_summary">Dạy cho thêm nhanh những từ chỉ ngày của riêng bạn.</string>
+    <string name="settings_date_aliases_summary">Từ phím tắt tùy chỉnh được nhận diện khi tạo công việc để tự động đặt ngày hết hạn (ví dụ: "tmrw" cho Ngày mai).</string>
     <string name="settings_date_alias_word_label">Từ</string>
     <string name="settings_add_alias">Thêm bí danh</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1499,6 +1499,9 @@
         <item quantity="one">%1$d lần</item>
         <item quantity="other">%1$d lần</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">Ngưỡng cảnh báo hoãn lại</string>
-    <string name="settings_postponement_warning_threshold_desc">Số lần một công việc có mức ưu tiên bình thường có thể bị hoãn trước khi cảnh báo. Mức ưu tiên trung bình cảnh báo sau %1$d lần hoãn và mức cao sau %2$d lần.</string>
+    <string name="settings_postponement_warning_threshold">Ngưỡng cảnh báo hoãn công việc</string>
+    <string name="settings_postponement_warning_threshold_desc">Số lần một công việc mức ưu tiên bình thường có thể bị hoãn trước khi cảnh báo. Mức ưu tiên trung bình cảnh báo sau %1$d lần và mức cao sau %2$d lần.</string>
+    <string name="action_reopen">Mở lại</string>
+    <string name="action_complete">Hoàn thành</string>
+    <string name="action_open">Mở</string>
 </resources>

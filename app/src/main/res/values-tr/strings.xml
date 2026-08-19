@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Tasker entegrasyonu</string>
     <string name="settings_tasker_integration_summary">Tasker profillerinin Yata eklentisi üzerinden görev oluşturmasına izin verin.</string>
     <string name="settings_date_aliases">Tarih takma adları</string>
-    <string name="settings_date_aliases_summary">Hızlı eklemeye kendi tarih sözcüklerinizi öğretin.</string>
+    <string name="settings_date_aliases_summary">Görev oluştururken son tarihi otomatik ayarlamak için tanınan özel kısayol sözcükleri (ör. Yarın için "tmrw").</string>
     <string name="settings_date_alias_word_label">Sözcük</string>
     <string name="settings_add_alias">Takma ad ekle</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1501,4 +1501,7 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">Erteleme uyarı eşiği</string>
     <string name="settings_postponement_warning_threshold_desc">Normal öncelikli bir görevin uyarılmadan önce kaç kez ertelenebileceği. Orta öncelik %1$d ertelemeden sonra, yüksek öncelik %2$d ertelemeden sonra uyarır.</string>
+    <string name="action_reopen">Yeniden aç</string>
+    <string name="action_complete">Tamamla</string>
+    <string name="action_open">Aç</string>
 </resources>

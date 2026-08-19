@@ -23,6 +23,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.mj.yata.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -128,13 +130,19 @@ fun TaskPreviewPane(
                     onClick = { onToggleTask(task) },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(if (task.done) "Reopen" else "Complete")
+                    Text(
+                        text = if (task.done) {
+                            stringResource(R.string.action_reopen)
+                        } else {
+                            stringResource(R.string.action_complete)
+                        }
+                    )
                 }
                 Button(
                     onClick = { onOpenTask(task.id) },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Open")
+                    Text(stringResource(R.string.action_open))
                 }
             }
         }

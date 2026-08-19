@@ -124,7 +124,7 @@
     <string name="settings_tasker_integration">Tasker ಸಂಯೋಜನೆ</string>
     <string name="settings_tasker_integration_summary">Yata ಪ್ಲಗಿನ್ ಮೂಲಕ ಕಾರ್ಯಗಳನ್ನು ರಚಿಸಲು Tasker ಪ್ರೊಫೈಲ್‌ಗಳಿಗೆ ಅನುಮತಿಸಿ.</string>
     <string name="settings_date_aliases">ದಿನಾಂಕ ಅಲಿಯಾಸ್‌ಗಳು</string>
-    <string name="settings_date_aliases_summary">ತ್ವರಿತ ಸೇರ್ಪಡೆಗೆ ನಿಮ್ಮದೇ ದಿನಾಂಕ ಪದಗಳನ್ನು ಕಲಿಸಿ.</string>
+    <string name="settings_date_aliases_summary">ಕಾರ್ಯಗಳನ್ನು ರಚಿಸುವಾಗ ನಿಗದಿತ ದಿನಾಂಕವನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಹೊಂದಿಸಲು ಗುರುತಿಸಲಾದ ಕಸ್ಟಮ್ ಶಾರ್ಟ್‌ಕಟ್ ಪದಗಳು (ಉದಾ. ನಾಳೆಗಾಗಿ "tmrw").</string>
     <string name="settings_date_alias_word_label">ಪದ</string>
     <string name="settings_add_alias">ಅಲಿಯಾಸ್ ಸೇರಿಸಿ</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1496,6 +1496,9 @@
         <item quantity="one">%1$d ಬಾರಿ</item>
         <item quantity="other">%1$d ಬಾರಿ</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">ಮುಂದೂಡುವಿಕೆ ಎಚ್ಚರಿಕೆಯ ಮಿತಿ</string>
+    <string name="settings_postponement_warning_threshold">ಮುಂದೂಡಿಕೆ ಎಚ್ಚರಿಕೆ ಮಿತಿ</string>
     <string name="settings_postponement_warning_threshold_desc">ಎಚ್ಚರಿಕೆ ನೀಡುವ ಮೊದಲು ಸಾಮಾನ್ಯ ಆದ್ಯತೆಯ ಕಾರ್ಯವನ್ನು ಎಷ್ಟು ಬಾರಿ ಮುಂದೂಡಬಹುದು. ಮಧ್ಯಮ ಆದ್ಯತೆಯು %1$d ನಂತರ ಮತ್ತು ಹೆಚ್ಚಿನ ಆದ್ಯತೆಯು %2$d ನಂತರ ಎಚ್ಚರಿಸುತ್ತದೆ.</string>
+    <string name="action_reopen">ಪುನಃ ತೆರೆಯಿರಿ</string>
+    <string name="action_complete">ಪೂರ್ಣಗೊಳಿಸಿ</string>
+    <string name="action_open">ತೆರೆಯಿರಿ</string>
 </resources>

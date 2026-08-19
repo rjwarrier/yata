@@ -178,7 +178,7 @@
     <string name="settings_tasker_integration">Tasker-Integration</string>
     <string name="settings_tasker_integration_summary">Tasker-Profilen erlauben, über das YATA-Plugin Aufgaben zu erstellen.</string>
     <string name="settings_date_aliases">Datumsalias</string>
-    <string name="settings_date_aliases_summary">Bringe der Schnellerfassung eigene Datumswörter bei.</string>
+    <string name="settings_date_aliases_summary">Eigene Kurzwörter, die beim Erstellen von Aufgaben erkannt werden, um das Fälligkeitsdatum automatisch festzulegen (z. B. „tmrw“ für Morgen).</string>
     <string name="settings_date_alias_word_label">Wort</string>
     <string name="settings_add_alias">Alias hinzufügen</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1656,6 +1656,9 @@
         <item quantity="one">%1$d Mal</item>
         <item quantity="other">%1$d Mal</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">Verschiebewarnungs-Schwellenwert</string>
+    <string name="settings_postponement_warning_threshold">Warnschwelle für Verschiebungen</string>
     <string name="settings_postponement_warning_threshold_desc">Anzahl der erlaubten Verschiebungen bei normaler Priorität vor einer Warnung. Mittlere Priorität warnt nach %1$d und hohe Priorität nach %2$d.</string>
+    <string name="action_reopen">Wieder öffnen</string>
+    <string name="action_complete">Erledigen</string>
+    <string name="action_open">Öffnen</string>
 </resources>

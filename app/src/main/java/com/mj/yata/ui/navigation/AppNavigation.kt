@@ -202,7 +202,12 @@ fun AppNavigation(
                 viewModel = viewModel,
                 taskId = taskId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToTab = onNavigateToTab
+                onNavigateToTab = onNavigateToTab,
+                onNavigateToTaskDetail = { newTaskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(newTaskId)) {
+                        popUpTo(Screen.TaskDetail.route) { inclusive = true }
+                    }
+                }
             )
         }
 

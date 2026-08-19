@@ -124,7 +124,7 @@
     <string name="settings_tasker_integration">Tasker एकत्रीकरण</string>
     <string name="settings_tasker_integration_summary">Yata प्लगइनद्वारे Tasker प्रोफाइलना कार्ये तयार करण्याची परवानगी द्या.</string>
     <string name="settings_date_aliases">तारीख उपनावे</string>
-    <string name="settings_date_aliases_summary">झटपट जोडाला तुमचे स्वतःचे तारखेचे शब्द शिकवा.</string>
+    <string name="settings_date_aliases_summary">कार्ये तयार करताना देय तारीख आपोआप सेट करण्यासाठी सानुकूल शॉर्टकट शब्द (उदा. उद्यासाठी "tmrw").</string>
     <string name="settings_date_alias_word_label">शब्द</string>
     <string name="settings_add_alias">उपनाव जोडा</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1497,5 +1497,8 @@
         <item quantity="other">%1$d वेळा</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">पुढे ढकलण्याची चेतावणी मर्यादा</string>
-    <string name="settings_postponement_warning_threshold_desc">चेतावणी देण्यापूर्वी सामान्य प्राधान्य कार्य किती वेळा पुढे ढकलले जाऊ शकते. मध्यम प्राधान्य %1$d नंतर आणि उच्च प्राधान्य %2$d नंतर चेतावणी देते.</string>
+    <string name="settings_postponement_warning_threshold_desc">चेतावणी देण्यापूर्वी सामान्य प्राधान्य कार्य किती वेळा पुढे ढकलले जाऊ शकते. मध्यम प्राधान्य %1$d वेळा नंतर आणि उच्च प्राधान्य %2$d वेळा नंतर चेतावणी देते.</string>
+    <string name="action_reopen">पुन्हा उघडा</string>
+    <string name="action_complete">पूर्ण करा</string>
+    <string name="action_open">उघडा</string>
 </resources>

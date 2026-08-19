@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Integrazione Tasker</string>
     <string name="settings_tasker_integration_summary">Consenti ai profili Tasker di creare attività tramite il plugin Yata.</string>
     <string name="settings_date_aliases">Alias per le date</string>
-    <string name="settings_date_aliases_summary">Insegna all\'aggiunta rapida le tue parole per le date.</string>
+    <string name="settings_date_aliases_summary">Scorciatoie personalizzate riconosciute durante la creazione delle attività per impostare la scadenza (es. "tmrw" per Domani).</string>
     <string name="settings_date_alias_word_label">Parola</string>
     <string name="settings_add_alias">Aggiungi alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1499,6 +1499,9 @@
         <item quantity="one">%1$d volta</item>
         <item quantity="other">%1$d volte</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">Soglia avviso di rinvio</string>
+    <string name="settings_postponement_warning_threshold">Soglia avviso rinvio</string>
     <string name="settings_postponement_warning_threshold_desc">Numero di rinvii consentiti per un\'attività a priorità normale prima dell\'avviso. La priorità media avvisa dopo %1$d e quella alta dopo %2$d.</string>
+    <string name="action_reopen">Riapri</string>
+    <string name="action_complete">Completa</string>
+    <string name="action_open">Apri</string>
 </resources>

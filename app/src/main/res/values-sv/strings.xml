@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Tasker-integration</string>
     <string name="settings_tasker_integration_summary">Tillåt Tasker-profiler att skapa uppgifter via Yata-tillägget.</string>
     <string name="settings_date_aliases">Datumalias</string>
-    <string name="settings_date_aliases_summary">Lär snabbläggning dina egna datumord.</string>
+    <string name="settings_date_aliases_summary">Anpassade genvägsord vid skapande av uppgifter för att automatiskt ange förfallodatum (t.ex. "tmrw" för Imorgon).</string>
     <string name="settings_date_alias_word_label">Ord</string>
     <string name="settings_add_alias">Lägg till alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1499,6 +1499,9 @@
         <item quantity="one">%1$d gång</item>
         <item quantity="other">%1$d gånger</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">Tröskel för uppskjutningsvarning</string>
+    <string name="settings_postponement_warning_threshold">Varningströskel för uppskjutning</string>
     <string name="settings_postponement_warning_threshold_desc">Antal gånger en uppgift med normal prioritet kan skjutas upp innan en varning visas. Medelprioritet varnar efter %1$d och hög prioritet efter %2$d.</string>
+    <string name="action_reopen">Öppna igen</string>
+    <string name="action_complete">Slutför</string>
+    <string name="action_open">Öppna</string>
 </resources>

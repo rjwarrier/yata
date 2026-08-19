@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Integrace s Taskerem</string>
     <string name="settings_tasker_integration_summary">Umožnit profilům Tasker vytvářet úkoly přes zásuvný modul Yata.</string>
     <string name="settings_date_aliases">Aliasy dat</string>
-    <string name="settings_date_aliases_summary">Naučte rychlé přidávání vlastní slova pro data.</string>
+    <string name="settings_date_aliases_summary">Vlastní zkratky rozpoznávané při vytváření úkolů pro automatické nastavení termínu (např. „tmrw“ pro Zítra).</string>
     <string name="settings_date_alias_word_label">Slovo</string>
     <string name="settings_add_alias">Přidat alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1501,4 +1501,7 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">Limit upozornění na odložení</string>
     <string name="settings_postponement_warning_threshold_desc">Počet odložení úkolu s běžnou prioritou před zobrazením upozornění. Střední priorita upozorní po %1$d a vysoká po %2$d.</string>
+    <string name="action_reopen">Znovu otevřít</string>
+    <string name="action_complete">Dokončit</string>
+    <string name="action_open">Otevřít</string>
 </resources>

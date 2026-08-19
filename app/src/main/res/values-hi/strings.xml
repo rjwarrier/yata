@@ -149,7 +149,7 @@
     <string name="settings_tasker_integration">टास्कर एकीकरण</string>
     <string name="settings_tasker_integration_summary">टास्कर प्रोफ़ाइल को Yata प्लगइन के ज़रिए कार्य बनाने की अनुमति दें।</string>
     <string name="settings_date_aliases">तारीख उपनाम</string>
-    <string name="settings_date_aliases_summary">झटपट जोड़ें को अपने खुद के तारीख शब्द सिखाएं।</string>
+    <string name="settings_date_aliases_summary">कार्य बनाते समय नियत तारीख स्वचालित रूप से सेट करने के लिए कस्टम शॉर्टकट शब्द (जैसे कल के लिए "tmrw")।</string>
     <string name="settings_date_alias_word_label">शब्द</string>
     <string name="settings_add_alias">उपनाम जोड़ें</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1501,4 +1501,7 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">स्थगन चेतावनी सीमा</string>
     <string name="settings_postponement_warning_threshold_desc">चेतावनी देने से पहले सामान्य प्राथमिकता वाले कार्य को कितनी बार स्थगित किया जा सकता है। मध्यम प्राथमिकता %1$d बार के बाद और उच्च प्राथमिकता %2$d बार के बाद चेतावनी देती है।</string>
+    <string name="action_reopen">फिर से खोलें</string>
+    <string name="action_complete">पूरा करें</string>
+    <string name="action_open">खोलें</string>
 </resources>

@@ -1,6 +1,13 @@
 package com.mj.yata.ui.screen.main
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.platform.LocalContext
 import com.mj.yata.util.backupResultMessage
 import com.mj.yata.util.initialSyncConfirmationRequired
@@ -685,45 +692,48 @@ fun MainScreen(
             floatingActionButton = {
                 // Each tab offers its own primary creation action; others show no FAB.
                 val fabTarget = when (selectedTab) {
-                    0 -> "New task" to MainSheetType.NewTask
-                    1 -> "New project" to MainSheetType.NewProject
-                    2 -> "Add person" to MainSheetType.NewPerson
-                    3 -> "New tag" to MainSheetType.NewTag
-                    4 -> "New task" to MainSheetType.NewTask
+                    0 -> stringResource(R.string.new_task_title) to MainSheetType.NewTask
+                    1 -> stringResource(R.string.projects_new_project) to MainSheetType.NewProject
+                    2 -> stringResource(R.string.people_add_person) to MainSheetType.NewPerson
+                    3 -> stringResource(R.string.tags_new_tag) to MainSheetType.NewTag
+                    4 -> stringResource(R.string.new_task_title) to MainSheetType.NewTask
                     else -> null
                 }
 
+                val fabAlign = if (fabPosition == com.mj.yata.domain.model.FabPosition.LEFT) {
+                    Alignment.Start
+                } else {
+                    Alignment.End
+                }
+
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = fabAlign,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    // Forces both FABs below to the width of whichever one is wider ("Speak" vs.
-                    // "New task", and their translations vary in length across 24 locales) rather
-                    // than each hugging its own text — otherwise the shorter one reads as a
-                    // different, smaller control instead of a matching pair.
                     modifier = Modifier.width(IntrinsicSize.Max)
                 ) {
-                    // Today-only voice capture, stacked above the main FAB below. Same
-                    // AnimatedVisibility scale in/out as the main FAB so both bubbles appear and
-                    // disappear the same way when the tab or FAB visibility changes.
+                    // Today-only voice capture, stacked above the main FAB below.
+                    // Matched in size to the main FAB on Today screen via IntrinsicSize.Max & fillMaxWidth.
                     AnimatedVisibility(
                         visible = selectedTab == 0 && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
-                        enter = scaleIn(),
-                        exit = scaleOut()
+                        enter = fadeIn(tween(180)) + scaleIn(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                            initialScale = 0.85f
+                        ) + expandVertically(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                            expandFrom = Alignment.Bottom
+                        ),
+                        exit = fadeOut(tween(120)) + scaleOut(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow),
+                            targetScale = 0.85f
+                        ) + shrinkVertically(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow),
+                            shrinkTowards = Alignment.Bottom
+                        )
                     ) {
                         PressableScaleBox(
                             onClick = { showTodayVoiceOverlay = true },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Same size as the main FAB below (matched via the shared
-                            // IntrinsicSize.Max width and heightIn(min = 56.dp)), but a fully
-                            // rounded chip shape rather than its rounded-rectangle one — a visual
-                            // cue that this is the secondary action, not a mismatched pairing.
-                            // primaryContainer/onPrimaryContainer is a deliberately different tonal
-                            // step of the same brand hue as the main FAB's `primary`: in this app's
-                            // dark theme that tone is darker and more muted, reading as clearly
-                            // secondary while still visually paired with it (unlike
-                            // secondaryContainer, which this app already uses as its
-                            // "selected/active" signal elsewhere and so read as urgent here).
                             Surface(
                                 color = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -746,7 +756,9 @@ fun MainScreen(
                                     )
                                     Text(
                                         text = stringResource(R.string.today_voice_fab_label),
-                                        style = MaterialTheme.typography.labelLarge
+                                        style = MaterialTheme.typography.labelLarge,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -755,8 +767,14 @@ fun MainScreen(
 
                     AnimatedVisibility(
                         visible = fabTarget != null && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
-                        enter = scaleIn(),
-                        exit = scaleOut()
+                        enter = scaleIn(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+                            initialScale = 0.85f
+                        ) + fadeIn(tween(180)),
+                        exit = scaleOut(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow),
+                            targetScale = 0.85f
+                        ) + fadeOut(tween(120))
                     ) {
                         val (fabLabel, sheetType) = fabTarget ?: ("New task" to MainSheetType.NewTask)
                         PressableScaleBox(
@@ -764,14 +782,6 @@ fun MainScreen(
                                 quickCaptureMode = false
                                 activeSheet = sheetType
                             },
-                            // No navigationBarsPadding here. CustomBottomNav already consumes the
-                            // system navigation inset in both modes — the floating variant on its
-                            // outer Box, the docked variant on its inner one — and Scaffold positions
-                            // the FAB relative to the bottomBar's *outer* height. Applying the inset
-                            // again added the full nav-bar height a second time, which is why the FAB
-                            // floated well clear of the panel: ~24dp on gesture nav, ~48dp with the
-                            // three-button bar. Scaffold's own 16dp FAB-to-bottomBar spacing is the
-                            // only gap needed, and it's the M3 default.
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Surface(
@@ -791,16 +801,41 @@ fun MainScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = null)
-                                    androidx.compose.animation.AnimatedContent(
+                                    AnimatedContent(
                                         targetState = fabLabel,
                                         transitionSpec = {
-                                            (androidx.compose.animation.slideInVertically { height -> height } + fadeIn()).togetherWith(
-                                                androidx.compose.animation.slideOutVertically { height -> -height } + fadeOut()
+                                            val enterAnim = slideInVertically(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.85f,
+                                                    stiffness = Spring.StiffnessMediumLow
+                                                )
+                                            ) { height -> height } + fadeIn(tween(180))
+                                            val exitAnim = slideOutVertically(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.95f,
+                                                    stiffness = Spring.StiffnessMediumLow
+                                                )
+                                            ) { height -> -height } + fadeOut(tween(120))
+                                            enterAnim.togetherWith(exitAnim).using(
+                                                SizeTransform(
+                                                    clip = false,
+                                                    sizeAnimationSpec = { _, _ ->
+                                                        spring(
+                                                            dampingRatio = 0.85f,
+                                                            stiffness = Spring.StiffnessMediumLow
+                                                        )
+                                                    }
+                                                )
                                             )
                                         },
                                         label = "fabLabelAnim"
                                     ) { targetLabel ->
-                                        Text(targetLabel, style = MaterialTheme.typography.labelLarge)
+                                        Text(
+                                            text = targetLabel,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
                                     }
                                 }
                             }
@@ -881,7 +916,7 @@ fun MainScreen(
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
-                            onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            onBulkDuplicate = { ids -> viewModel.bulkDuplicateTasks(ids) { single -> onNavigateToTaskDetail(single.id) } },
                             onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
                             onBulkReschedule = { ids, preset -> viewModel.bulkRescheduleTasks(ids, preset) },
                             onRenameTask = { id, title -> viewModel.renameTask(id, title) },
@@ -1002,7 +1037,7 @@ fun MainScreen(
                             onBulkAddTag = { ids, tagId -> viewModel.bulkAddTag(ids, tagId) },
                             onBulkSetProject = { ids, projectId -> viewModel.bulkSetProject(ids, projectId) },
                             onBulkSetList = { ids, listId -> viewModel.bulkSetList(ids, listId) },
-                            onBulkDuplicate = { viewModel.bulkDuplicateTasks(it) },
+                            onBulkDuplicate = { ids -> viewModel.bulkDuplicateTasks(ids) { single -> onNavigateToTaskDetail(single.id) } },
                             onBulkAssignPerson = { ids, personId -> viewModel.bulkAssignPerson(ids, personId) },
                             onBulkReschedule = { ids, preset -> viewModel.bulkRescheduleTasks(ids, preset) },
                             onRenameTask = { id, title -> viewModel.renameTask(id, title) },

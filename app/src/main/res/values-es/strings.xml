@@ -1031,7 +1031,7 @@
     <string name="settings_tasker_integration">Integración con Tasker</string>
     <string name="settings_tasker_integration_summary">Permite que los perfiles de Tasker creen tareas a través del complemento Yata.</string>
     <string name="settings_date_aliases">Alias de fecha</string>
-    <string name="settings_date_aliases_summary">Enseña a la adición rápida tus propias palabras de fecha.</string>
+    <string name="settings_date_aliases_summary">Palabras clave personalizadas al crear tareas para asignar automáticamente la fecha de vencimiento (p. ej., «tmrw» para Mañana).</string>
     <string name="settings_date_alias_word_label">Palabra</string>
     <string name="settings_add_alias">Añadir alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1547,4 +1547,7 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">Límite de aviso por posposición</string>
     <string name="settings_postponement_warning_threshold_desc">Número de veces que se puede posponer una tarea de prioridad normal antes de avisar. La prioridad media avisa tras %1$d y la alta tras %2$d.</string>
+    <string name="action_reopen">Reabrir</string>
+    <string name="action_complete">Completar</string>
+    <string name="action_open">Abrir</string>
 </resources>

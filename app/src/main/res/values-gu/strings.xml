@@ -124,7 +124,7 @@
     <string name="settings_tasker_integration">Tasker ઇન્ટિગ્રેશન</string>
     <string name="settings_tasker_integration_summary">Yata પ્લગઇન દ્વારા Tasker પ્રોફાઇલને ટાસ્ક બનાવવાની મંજૂરી આપો.</string>
     <string name="settings_date_aliases">તારીખ ઉપનામો</string>
-    <string name="settings_date_aliases_summary">ઝડપી ઉમેરાને તમારા પોતાના તારીખ શબ્દો શીખવો.</string>
+    <string name="settings_date_aliases_summary">કાર્ય બનાવતી વખતે નિયત તારીખ આપમેળે સેટ કરવા માટે કસ્ટમ શૉર્ટકટ શબ્દો (દા.ત. આવતીકાલ માટે "tmrw").</string>
     <string name="settings_date_alias_word_label">શબ્દ</string>
     <string name="settings_add_alias">ઉપનામ ઉમેરો</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1496,6 +1496,9 @@
         <item quantity="one">%1$d વખત</item>
         <item quantity="other">%1$d વખત</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">મોકૂફ ચેતવણી મર્યાદા</string>
-    <string name="settings_postponement_warning_threshold_desc">ચેતવણી આપતા પહેલા સામાન્ય-પ્રાથમિકતા કાર્યને કેટલી વાર મોકૂફ રાખી શકાય. મધ્યમ પ્રાથમિકતા %1$d વખત પછી અને ઉચ્ચ પ્રાથમિકતા %2$d વખત પછી ચેતવણી આપે છે.</string>
+    <string name="settings_postponement_warning_threshold">મોકૂફી ચેતવણી મર્યાદા</string>
+    <string name="settings_postponement_warning_threshold_desc">ચેતવણી આપતા પહેલા સામાન્ય પ્રાથમિકતાવાળા કાર્યને કેટલી વાર મોકૂફ રાખી શકાય. મધ્યમ પ્રાથમિકતા %1$d વખત પછી અને ઉચ્ચ પ્રાથમિકતા %2$d વખત પછી ચેતવણી આપે છે.</string>
+    <string name="action_reopen">ફરીથી ખોલો</string>
+    <string name="action_complete">પૂર્ણ કરો</string>
+    <string name="action_open">ખોલો</string>
 </resources>

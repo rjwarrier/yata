@@ -19,7 +19,13 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Added a "Postponement warning threshold" slider (1–10) in Settings → Task Defaults for controlling
   how many times a task can be postponed before showing a warning snackbar. The configured value
   applies to normal-priority tasks; medium priority tasks warn 2 postponements earlier, and high
-  priority tasks warn 4 earlier (with a minimum threshold of 1).
+  priority tasks warn 4 earlier (with high priority reduced to 0 when medium is 1).
+
+### Changed
+- Duplicating a task now automatically appends "Duplicate" to the cloned task's title and immediately
+  opens the new task in the task edit screen.
+- Smoothed the primary FAB size and label morph animation between tabs so the button pill fluidly
+  expands/contracts with natural spring physics without visual jerking.
 
 ## [0.94] - 2026-08-18
 

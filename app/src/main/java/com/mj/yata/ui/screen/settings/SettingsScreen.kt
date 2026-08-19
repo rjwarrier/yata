@@ -1541,35 +1541,6 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                run {
-                    val postponementOptions = (1..10).toList()
-                    val postponementLabels = postponementOptions.map { count ->
-                        pluralStringResource(R.plurals.settings_postponement_threshold_value, count, count)
-                    }
-                    var sliderThreshold by remember(postponementWarningThreshold) {
-                        mutableIntStateOf(postponementWarningThreshold)
-                    }
-                    val medThreshold = postponementWarningThresholdFor("med", sliderThreshold)
-                    val highThreshold = postponementWarningThresholdFor("high", sliderThreshold)
-                    StopSliderSetting(
-                        title = stringResource(R.string.settings_postponement_warning_threshold),
-                        description = stringResource(
-                            R.string.settings_postponement_warning_threshold_desc,
-                            medThreshold,
-                            highThreshold
-                        ),
-                        stopLabels = postponementLabels,
-                        selectedIndex = postponementOptions.indexOf(sliderThreshold).coerceAtLeast(0),
-                        onSelect = {
-                            val selected = postponementOptions[it]
-                            sliderThreshold = selected
-                            viewModel.setPostponementWarningThreshold(selected)
-                        }
-                    )
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
                 Box {
                     SettingsPickerSurface(
                         label = stringResource(R.string.settings_default_list),
@@ -1714,6 +1685,35 @@ fun SettingsScreen(
                     value = TaskScheduleUtils.displayTime(defaultReminderHour, defaultReminderMinute),
                     onClick = { showReminderTimePicker = true }
                 )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                run {
+                    val postponementOptions = (1..10).toList()
+                    val postponementLabels = postponementOptions.map { count ->
+                        pluralStringResource(R.plurals.settings_postponement_threshold_value, count, count)
+                    }
+                    var sliderThreshold by remember(postponementWarningThreshold) {
+                        mutableIntStateOf(postponementWarningThreshold)
+                    }
+                    val medThreshold = postponementWarningThresholdFor("med", sliderThreshold)
+                    val highThreshold = postponementWarningThresholdFor("high", sliderThreshold)
+                    StopSliderSetting(
+                        title = stringResource(R.string.settings_postponement_warning_threshold),
+                        description = stringResource(
+                            R.string.settings_postponement_warning_threshold_desc,
+                            medThreshold,
+                            highThreshold
+                        ),
+                        stopLabels = postponementLabels,
+                        selectedIndex = postponementOptions.indexOf(sliderThreshold).coerceAtLeast(0),
+                        onSelect = {
+                            val selected = postponementOptions[it]
+                            sliderThreshold = selected
+                            viewModel.setPostponementWarningThreshold(selected)
+                        }
+                    )
+                }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 

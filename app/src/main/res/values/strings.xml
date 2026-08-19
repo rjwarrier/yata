@@ -191,7 +191,7 @@
     <string name="settings_tasker_integration">Tasker integration</string>
     <string name="settings_tasker_integration_summary">Allow Tasker profiles to create tasks through the Yata plugin.</string>
     <string name="settings_date_aliases">Date aliases</string>
-    <string name="settings_date_aliases_summary">Teach quick add your own date words.</string>
+    <string name="settings_date_aliases_summary">Custom shortcut words recognized when creating tasks to automatically set due dates (e.g. "tmrw" for Tomorrow).</string>
     <string name="settings_date_alias_word_label">Word</string>
     <string name="settings_add_alias">Add alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1671,4 +1671,7 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">Postponement warning threshold</string>
     <string name="settings_postponement_warning_threshold_desc">Number of times a normal-priority task can be postponed before warning. Medium priority warns after %1$d and high priority after %2$d.</string>
+    <string name="action_reopen">Reopen</string>
+    <string name="action_complete">Complete</string>
+    <string name="action_open">Open</string>
 </resources>

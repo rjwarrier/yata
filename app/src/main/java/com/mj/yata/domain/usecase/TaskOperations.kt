@@ -123,18 +123,20 @@ class TaskOperations @Inject constructor(
         taskId: String,
         dueAdjustment: (LocalDate) -> LocalDate = { it },
         notify: Boolean = true
-    ) {
-        val task = currentTasks().find { it.id == taskId } ?: return
+    ): Task? {
+        val task = currentTasks().find { it.id == taskId } ?: return null
+        val duplicated = duplicateTask(task, dueAdjustment, appendDuplicateTitle = true)
         repository.upsertTasks(
-            listOf(duplicateTask(task, dueAdjustment)),
+            listOf(duplicated),
             notify = notify,
             resyncReminder = true
         )
+        return duplicated
     }
 
-    suspend fun bulkDuplicate(ids: List<String>) {
+    suspend fun bulkDuplicate(ids: List<String>): List<Task> {
         val byId = currentTasks().associateBy { it.id }
-        val duplicated = ids.mapNotNull { id -> byId[id]?.let(::duplicateTask) }
+        val duplicated = ids.mapNotNull { id -> byId[id]?.let { duplicateTask(it, appendDuplicateTitle = true) } }
         if (duplicated.isNotEmpty()) {
             repository.upsertTasks(
                 duplicated,
@@ -142,12 +144,13 @@ class TaskOperations @Inject constructor(
                 resyncReminder = true
             )
         }
+        return duplicated
     }
 
     suspend fun rolloverProjectTasks(projectId: String) {
         val duplicated = currentTasks()
             .filter { it.projectId == projectId && !it.done && it.recurrence == null }
-            .map { duplicateTask(it) { due -> due.plusMonths(1) } }
+            .map { duplicateTask(it, dueAdjustment = { due -> due.plusMonths(1) }) }
         if (duplicated.isNotEmpty()) {
             repository.upsertTasks(
                 duplicated,
@@ -167,11 +170,11 @@ class TaskOperations @Inject constructor(
                     task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true
             }
             .map { task ->
-                duplicateTask(task) { due ->
+                duplicateTask(task, dueAdjustment = { due ->
                     var next = due.plusMonths(1)
                     while (next.isBefore(today)) next = next.plusMonths(1)
                     next
-                }
+                })
             }
         if (duplicated.isNotEmpty()) {
             repository.upsertTasks(
@@ -184,7 +187,8 @@ class TaskOperations @Inject constructor(
 
     private fun duplicateTask(
         task: Task,
-        dueAdjustment: (LocalDate) -> LocalDate = { it }
+        dueAdjustment: (LocalDate) -> LocalDate = { it },
+        appendDuplicateTitle: Boolean = false
     ): Task {
         val newDue = task.due?.let { due ->
             try {
@@ -193,8 +197,14 @@ class TaskOperations @Inject constructor(
                 due
             }
         }
+        val newTitle = if (appendDuplicateTitle) {
+            duplicateTaskTitle(task.title)
+        } else {
+            task.title
+        }
         return task.copy(
             id = "t_" + UUID.randomUUID().toString(),
+            title = newTitle,
             due = newDue,
             done = false,
             completedAt = null,
@@ -285,4 +295,9 @@ class TaskOperations @Inject constructor(
             resyncReminder = false
         )
     }
+}
+
+fun duplicateTaskTitle(title: String): String {
+    val base = title.trim()
+    return if (base.isEmpty()) "Duplicate" else "$base Duplicate"
 }

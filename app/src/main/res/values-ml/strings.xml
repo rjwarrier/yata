@@ -124,7 +124,7 @@
     <string name="settings_tasker_integration">Tasker സംയോജനം</string>
     <string name="settings_tasker_integration_summary">Yata പ്ലഗിൻ വഴി ടാസ്കുകൾ സൃഷ്ടിക്കാൻ Tasker പ്രൊഫൈലുകളെ അനുവദിക്കുക.</string>
     <string name="settings_date_aliases">തീയതി ഓമനപ്പേരുകൾ</string>
-    <string name="settings_date_aliases_summary">നിങ്ങളുടെ സ്വന്തം തീയതി വാക്കുകൾ പെട്ടെന്ന് ചേർക്കലിനെ പഠിപ്പിക്കുക.</string>
+    <string name="settings_date_aliases_summary">ടാസ്‌ക്കുകൾ നിർമ്മിക്കുമ്പോൾ അവസാന തീയതി സ്വയമേവ നൽകുന്നതിനുള്ള ഇഷ്‌ടാനുസൃത കുറുക്കുവഴികൾ (ഉദാ. നാളേയ്ക്കായി "tmrw").</string>
     <string name="settings_date_alias_word_label">വാക്ക്</string>
     <string name="settings_add_alias">ഓമനപ്പേര് ചേർക്കുക</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1497,5 +1497,8 @@
         <item quantity="other">%1$d തവണ</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">മാറ്റിവയ്ക്കൽ മുന്നറിയിപ്പ് പരിധി</string>
-    <string name="settings_postponement_warning_threshold_desc">മുന്നറിയിപ്പ് നൽകുന്നതിന് മുൻപ് സാധാരണ മുൻഗണനയുള്ള ടാസ്ക് എത്ര തവണ മാറ്റിവയ്ക്കാം. ഇടത്തരം മുൻഗണന %1$d-ന് ശേഷവും ഉയർന്ന മുൻഗണന %2$d-ന് ശേഷവും മുന്നറിയിപ്പ് നൽകുന്നു.</string>
+    <string name="settings_postponement_warning_threshold_desc">മുന്നറിയിപ്പ് നൽകുന്നതിന് മുൻപ് സാധാരണ മുൻഗണനയുള്ള ടാസ്ക് എത്ര തവണ മാറ്റിവയ്ക്കാം. ഇടത്തരം മുൻഗണന %1$d തവണയ്ക്ക് ശേഷവും ഉയർന്ന മുൻഗണന %2$d തവണയ്ക്ക് ശേഷവും മുന്നറിയിപ്പ് നൽകുന്നു.</string>
+    <string name="action_reopen">വീണ്ടും തുറക്കുക</string>
+    <string name="action_complete">പൂർത്തിയാക്കുക</string>
+    <string name="action_open">തുറക്കുക</string>
 </resources>

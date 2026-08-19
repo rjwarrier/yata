@@ -124,7 +124,7 @@
     <string name="settings_tasker_integration">Tasker இணைப்பு</string>
     <string name="settings_tasker_integration_summary">Yata செருகுநிரல் மூலம் பணிகளை உருவாக்க Tasker சுயவிவரங்களை அனுமதிக்கவும்.</string>
     <string name="settings_date_aliases">தேதி மாற்றுப் பெயர்கள்</string>
-    <string name="settings_date_aliases_summary">உங்கள் சொந்த தேதி வார்த்தைகளை விரைவு சேர்ப்புக்குக் கற்பிக்கவும்.</string>
+    <string name="settings_date_aliases_summary">பணிகளை உருவாக்கும் போது காலக்கெடுவை தானாக அமைக்க பயன்படும் தனிப்பயன் குறுக்குவழி வார்த்தைகள் (எ.கா. நாளை என்பதற்கு "tmrw").</string>
     <string name="settings_date_alias_word_label">சொல்</string>
     <string name="settings_add_alias">மாற்றுப் பெயரைச் சேர்</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1497,5 +1497,8 @@
         <item quantity="other">%1$d முறை</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">ஒத்திவைப்பு எச்சரிக்கை வரம்பு</string>
-    <string name="settings_postponement_warning_threshold_desc">எச்சரிப்பதற்கு முன் சாதாரண முன்னுரிமை பணியை எத்தனை முறை ஒத்திவைக்கலாம். நடுத்தர முன்னுரிமை %1$d-க்கு பிறகும், அதிக முன்னுரிமை %2$d-க்கு பிறகும் எச்சரிக்கும்.</string>
+    <string name="settings_postponement_warning_threshold_desc">எச்சரிப்பதற்கு முன் சாதாரண முன்னுரிமை பணியை எத்தனை முறை ஒத்திவைக்கலாம். நடுத்தர முன்னுரிமை %1$d முறைக்குப் பிறகும், அதிக முன்னுரிமை %2$d முறைக்குப் பிறகும் எச்சரிக்கும்.</string>
+    <string name="action_reopen">மீண்டும் திறக்கவும்</string>
+    <string name="action_complete">முடிக்கவும்</string>
+    <string name="action_open">திறக்கவும்</string>
 </resources>

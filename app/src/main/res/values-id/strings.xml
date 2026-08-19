@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Integrasi Tasker</string>
     <string name="settings_tasker_integration_summary">Izinkan profil Tasker membuat tugas melalui plugin Yata.</string>
     <string name="settings_date_aliases">Alias tanggal</string>
-    <string name="settings_date_aliases_summary">Ajarkan kata tanggal Anda sendiri ke tambah cepat.</string>
+    <string name="settings_date_aliases_summary">Kata pintasan khusus saat membuat tugas untuk mengatur tanggal jatuh tempo otomatis (misal: "tmrw" untuk Besok).</string>
     <string name="settings_date_alias_word_label">Kata</string>
     <string name="settings_add_alias">Tambah alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1501,4 +1501,7 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">Batas peringatan penundaan</string>
     <string name="settings_postponement_warning_threshold_desc">Berapa kali tugas prioritas normal dapat ditunda sebelum peringatan muncul. Prioritas sedang memperingatkan setelah %1$d dan prioritas tinggi setelah %2$d.</string>
+    <string name="action_reopen">Buka kembali</string>
+    <string name="action_complete">Selesai</string>
+    <string name="action_open">Buka</string>
 </resources>

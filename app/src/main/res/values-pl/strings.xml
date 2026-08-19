@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Integracja z Taskerem</string>
     <string name="settings_tasker_integration_summary">Pozwól profilom Taskera tworzyć zadania przez wtyczkę Yata.</string>
     <string name="settings_date_aliases">Aliasy dat</string>
-    <string name="settings_date_aliases_summary">Naucz szybkie dodawanie własnych słów dotyczących dat.</string>
+    <string name="settings_date_aliases_summary">Niestandardowe skróty rozpoznawane podczas tworzenia zadań do automatycznego ustawiania terminu (np. „tmrw” dla Jutro).</string>
     <string name="settings_date_alias_word_label">Słowo</string>
     <string name="settings_add_alias">Dodaj alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1501,4 +1501,7 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">Próg ostrzeżenia o odłożeniu</string>
     <string name="settings_postponement_warning_threshold_desc">Liczba odłożeń zadania o zwykłym priorytecie przed wyświetleniem ostrzeżenia. Średni priorytet ostrzega po %1$d, a wysoki po %2$d.</string>
+    <string name="action_reopen">Otwórz ponownie</string>
+    <string name="action_complete">Ukończ</string>
+    <string name="action_open">Otwórz</string>
 </resources>

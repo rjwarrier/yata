@@ -159,6 +159,7 @@ fun TaskDetailScreen(
     taskId: String,
     onNavigateBack: () -> Unit,
     onNavigateToTab: (Int) -> Unit,
+    onNavigateToTaskDetail: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val taskState by remember(taskId) { viewModel.getTaskById(taskId) }.collectAsStateWithLifecycle(initialValue = null)
@@ -357,7 +358,9 @@ fun TaskDetailScreen(
                             text = { Text(stringResource(R.string.task_detail_duplicate_task)) },
                             onClick = {
                                 showExportMenu = false
-                                viewModel.duplicateTask(task.id)
+                                viewModel.duplicateTask(task.id) { duplicated ->
+                                    onNavigateToTaskDetail(duplicated.id)
+                                }
                                 scope.launch { snackbarHostState.showSuccess(context.getString(R.string.task_duplicated)) }
                             },
                             leadingIcon = { Icon(Icons.Default.ContentCopy, contentDescription = null) }

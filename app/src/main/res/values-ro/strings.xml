@@ -129,7 +129,7 @@
     <string name="settings_tasker_integration">Integrare Tasker</string>
     <string name="settings_tasker_integration_summary">Permite profilurilor Tasker să creeze sarcini prin pluginul Yata.</string>
     <string name="settings_date_aliases">Alias-uri de dată</string>
-    <string name="settings_date_aliases_summary">Învață adăugarea rapidă propriile tale cuvinte pentru date.</string>
+    <string name="settings_date_aliases_summary">Comenzi rapide personalizate recunoscute la crearea sarcinilor pentru a seta automat data limită (de ex. „tmrw” pentru Mâine).</string>
     <string name="settings_date_alias_word_label">Cuvânt</string>
     <string name="settings_add_alias">Adaugă alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1499,6 +1499,9 @@
         <item quantity="one">%1$d dată</item>
         <item quantity="other">%1$d ori</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">Prag de avertizare pentru amânare</string>
+    <string name="settings_postponement_warning_threshold">Prag avertizare amânare</string>
     <string name="settings_postponement_warning_threshold_desc">Numărul de amânări pentru o sarcină cu prioritate normală înainte de avertizare. Prioritatea medie avertizează după %1$d, iar prioritatea ridicată după %2$d.</string>
+    <string name="action_reopen">Redeschide</string>
+    <string name="action_complete">Finalizează</string>
+    <string name="action_open">Deschide</string>
 </resources>

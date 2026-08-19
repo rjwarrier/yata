@@ -560,7 +560,7 @@ fun SearchScreen(
                     onAddTag = { showBulkTagSheet = true },
                     onMove = { showBulkMoveSheet = true },
                     onReschedule = { showBulkRescheduleSheet = true },
-                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()); selectedIds.clear() },
+                    onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()) { single -> onNavigateToTaskDetail(single.id) }; selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
                     onAssign = { showBulkAssignSheet = true },
                     tagsEnabled = tagsFeatureEnabled,

@@ -1584,8 +1584,19 @@ data class PostponementWarning(
         safeLaunch { taskOperations.bulkSetList(ids, listId) }
     }
 
-    fun duplicateTask(taskId: String, dueAdjustment: (LocalDate) -> LocalDate = { it }) {
-        safeLaunch { taskOperations.duplicate(taskId, dueAdjustment) }
+    fun duplicateTask(
+        taskId: String,
+        dueAdjustment: (LocalDate) -> LocalDate = { it },
+        onDuplicated: (Task) -> Unit = {}
+    ) {
+        safeLaunch {
+            val duplicated = taskOperations.duplicate(taskId, dueAdjustment)
+            if (duplicated != null) {
+                withContext(Dispatchers.Main) {
+                    onDuplicated(duplicated)
+                }
+            }
+        }
     }
 
     fun rolloverProjectTasks(projectId: String) {
@@ -1596,8 +1607,18 @@ data class PostponementWarning(
         safeLaunch { taskOperations.rolloverOverdueProjectTasks(projectId) }
     }
 
-    fun bulkDuplicateTasks(ids: List<String>) {
-        safeLaunch { taskOperations.bulkDuplicate(ids) }
+    fun bulkDuplicateTasks(
+        ids: List<String>,
+        onDuplicatedSingle: (Task) -> Unit = {}
+    ) {
+        safeLaunch {
+            val duplicated = taskOperations.bulkDuplicate(ids)
+            if (duplicated.size == 1) {
+                withContext(Dispatchers.Main) {
+                    onDuplicatedSingle(duplicated.first())
+                }
+            }
+        }
     }
 
     fun commitTaskOrder(orderedTasks: List<Task>) {

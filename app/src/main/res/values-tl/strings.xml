@@ -124,7 +124,7 @@
     <string name="settings_tasker_integration">Tasker integration</string>
     <string name="settings_tasker_integration_summary">Payagan ang mga Tasker profile na gumawa ng gawain sa pamamagitan ng Yata plugin.</string>
     <string name="settings_date_aliases">Mga alias ng petsa</string>
-    <string name="settings_date_aliases_summary">Turuan ang quick add ng sarili mong salita para sa petsa.</string>
+    <string name="settings_date_aliases_summary">Mga pasadyang shortcut na salita kapag gumagawa ng mga gawain upang awtomatikong itakda ang takdang petsa (hal. "tmrw" para sa Bukas).</string>
     <string name="settings_date_alias_word_label">Salita</string>
     <string name="settings_add_alias">Magdagdag ng alias</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1496,6 +1496,9 @@
         <item quantity="one">%1$d beses</item>
         <item quantity="other">%1$d beses</item>
     </plurals>
-    <string name="settings_postponement_warning_threshold">Limit ng babala sa pagpapaliban</string>
+    <string name="settings_postponement_warning_threshold">Limitasyon ng babala sa pagpapaliban</string>
     <string name="settings_postponement_warning_threshold_desc">Bilang ng beses na maaaring ipagpaliban ang normal na gawain bago magbabala. Ang katamtamang prayoridad ay nagbabala pagkatapos ng %1$d, at ang mataas pagkatapos ng %2$d.</string>
+    <string name="action_reopen">Muling buksan</string>
+    <string name="action_complete">Kumpletuhin</string>
+    <string name="action_open">Buksan</string>
 </resources>

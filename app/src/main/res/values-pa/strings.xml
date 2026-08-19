@@ -124,7 +124,7 @@
     <string name="settings_tasker_integration">Tasker ਏਕੀਕਰਨ</string>
     <string name="settings_tasker_integration_summary">Yata ਪਲੱਗਇਨ ਰਾਹੀਂ Tasker ਪ੍ਰੋਫਾਈਲਾਂ ਨੂੰ ਕਾਰਜ ਬਣਾਉਣ ਦਿਓ।</string>
     <string name="settings_date_aliases">ਮਿਤੀ ਉਪਨਾਮ</string>
-    <string name="settings_date_aliases_summary">ਤੁਰੰਤ ਜੋੜੋ ਨੂੰ ਆਪਣੇ ਮਿਤੀ ਸ਼ਬਦ ਸਿਖਾਓ।</string>
+    <string name="settings_date_aliases_summary">ਕੰਮ ਬਣਾਉਣ ਸਮੇਂ ਨਿਯਤ ਮਿਤੀ ਆਪਣੇ ਆਪ ਸੈੱਟ ਕਰਨ ਲਈ ਕਸਟਮ ਸ਼ਾਰਟਕੱਟ ਸ਼ਬਦ (ਜਿਵੇਂ ਭਲਕੇ ਲਈ "tmrw")।</string>
     <string name="settings_date_alias_word_label">ਸ਼ਬਦ</string>
     <string name="settings_add_alias">ਉਪਨਾਮ ਜੋੜੋ</string>
     <string name="settings_date_alias_mapping">%1$s -&gt; %2$s</string>
@@ -1497,5 +1497,8 @@
         <item quantity="other">%1$d ਵਾਰ</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">ਮੁਲਤਵੀ ਚੇਤਾਵਨੀ ਸੀਮਾ</string>
-    <string name="settings_postponement_warning_threshold_desc">ਚੇਤਾਵਨੀ ਦੇਣ ਤੋਂ ਪਹਿਲਾਂ ਆਮ ਤਰਜੀਹ ਵਾਲੇ ਕੰਮ ਨੂੰ ਕਿੰਨੀ ਵਾਰ ਮੁਲਤਵੀ ਕੀਤਾ ਜਾ ਸਕਦਾ ਹੈ। ਦਰਮਿਆਨੀ ਤਰਜੀਹ %1$d ਬਾਅਦ ਅਤੇ ਉੱਚ ਤਰਜੀਹ %2$d ਬਾਅਦ ਚੇਤਾਵਨੀ ਦਿੰਦੀ ਹੈ.</string>
+    <string name="settings_postponement_warning_threshold_desc">ਚੇਤਾਵਨੀ ਦੇਣ ਤੋਂ ਪਹਿਲਾਂ ਆਮ ਤਰਜੀਹ ਵਾਲੇ ਕੰਮ ਨੂੰ ਕਿੰਨੀ ਵਾਰ ਮੁਲਤਵੀ ਕੀਤਾ ਜਾ ਸਕਦਾ ਹੈ। ਦਰਮਿਆਨੀ ਤਰਜੀਹ %1$d ਵਾਰ ਬਾਅਦ ਅਤੇ ਉੱਚ ਤਰਜੀਹ %2$d ਵਾਰ ਬਾਅਦ ਚੇਤਾਵਨੀ ਦਿੰਦੀ ਹੈ।</string>
+    <string name="action_reopen">ਦੁਬਾਰਾ ਖੋਲ੍ਹੋ</string>
+    <string name="action_complete">ਪੂਰਾ ਕਰੋ</string>
+    <string name="action_open">ਖੋਲ੍ਹੋ</string>
 </resources>
