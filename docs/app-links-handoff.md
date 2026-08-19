@@ -30,8 +30,8 @@ HTTPS transport landed.
   - Shows a single shared task in the normal task editor before saving.
   - Shows multi-task links in a preview screen with Import/Cancel confirmation.
   - Asks before creating missing list/project/tag structure.
-- `app/src/main/java/com/mj/yata/ui/screen/settings/HelpAboutScreen.kt`
-  - Shows a task-link diagnostic card under Settings > About.
+- `app/src/main/java/com/mj/yata/ui/screen/crashlog/CrashLogScreen.kt`
+  - Shows a task-link diagnostic card under Settings > Diagnostics.
   - Reads Android 12+'s domain verification state for `ranjithj.in` and opens system link settings.
 - `app/src/main/java/com/mj/yata/ui/sheets/NewTaskSheet.kt`
   - Contains `resolveAgainstLocalData`, the single-task bridge from parsed shared task to draft.

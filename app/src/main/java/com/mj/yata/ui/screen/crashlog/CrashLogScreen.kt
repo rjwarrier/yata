@@ -4,6 +4,11 @@ import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.verify.domain.DomainVerificationUserState
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -11,15 +16,20 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -37,6 +47,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.app.NotificationCompat
 import com.mj.yata.R
@@ -55,6 +68,16 @@ import java.util.Date
 import java.util.Locale
 
 private const val TEST_REMINDER_NOTIFICATION_ID = 907001
+private const val TASK_LINK_HOST = "ranjithj.in"
+private const val TASK_LINK_PATH = "/yata/i"
+private const val TASK_LINK_SAMPLE_URL = "https://ranjithj.in/yata/i#t=Test"
+
+private enum class AppLinkDiagnosticStatus { Verified, UserSelected, NotVerified, Unknown }
+
+private data class AppLinkDiagnosticUiState(
+    val status: AppLinkDiagnosticStatus,
+    val resolverPackage: String?
+)
 
 /**
  * Saved crash reports, newest first. Two kinds land here: an uncaught exception that killed the
@@ -84,6 +107,21 @@ fun CrashLogScreen(
     var expandedBody by remember { mutableStateOf("") }
     var showClearConfirm by remember { mutableStateOf(false) }
     var reminderChecks by remember { mutableStateOf(readReminderHealthChecks(context)) }
+    var appLinkDiagnostic by remember { mutableStateOf(context.taskAppLinkDiagnostic()) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                reminderChecks = readReminderHealthChecks(context)
+                appLinkDiagnostic = context.taskAppLinkDiagnostic()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     // Files, not a Flow — nothing pushes an update, so the list is pulled when the screen opens.
     LaunchedEffect(Unit) {
@@ -159,6 +197,12 @@ fun CrashLogScreen(
             }
             item {
                 BackupHealthCard(entries = operationHistory.filter { it.category == "Backup" || it.category == "Sync" })
+            }
+            item {
+                AppLinkDiagnosticCard(
+                    diagnostic = appLinkDiagnostic,
+                    onOpenSettings = { context.openAppLinkSettings() }
+                )
             }
             item {
                 OperationHistoryPanel(
@@ -898,3 +942,165 @@ private fun formatTimestamp(millis: Long): String =
 @Composable
 private fun formatNullableTimestamp(millis: Long?): String =
     millis?.let(::formatTimestamp) ?: stringResource(R.string.operation_history_never)
+
+@Composable
+private fun AppLinkDiagnosticCard(
+    diagnostic: AppLinkDiagnosticUiState,
+    onOpenSettings: () -> Unit
+) {
+    val ok = diagnostic.status == AppLinkDiagnosticStatus.Verified ||
+        diagnostic.status == AppLinkDiagnosticStatus.UserSelected
+    val tint = when (diagnostic.status) {
+        AppLinkDiagnosticStatus.Verified,
+        AppLinkDiagnosticStatus.UserSelected -> MaterialTheme.colorScheme.primary
+        AppLinkDiagnosticStatus.NotVerified -> MaterialTheme.colorScheme.error
+        AppLinkDiagnosticStatus.Unknown -> MaterialTheme.colorScheme.tertiary
+    }
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(tint.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (ok) Icons.Default.CheckCircle else Icons.Default.ErrorOutline,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = stringResource(R.string.app_links_diagnostic_title),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(diagnostic.status.summaryRes()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+
+            DiagnosticLine(
+                icon = Icons.Default.Link,
+                label = stringResource(R.string.app_links_diagnostic_host),
+                value = "$TASK_LINK_HOST$TASK_LINK_PATH"
+            )
+            DiagnosticLine(
+                icon = Icons.AutoMirrored.Default.OpenInNew,
+                label = stringResource(R.string.app_links_diagnostic_resolver),
+                value = diagnostic.resolverPackage ?: stringResource(R.string.diagnostics_status_unknown)
+            )
+
+            TextButton(onClick = onOpenSettings, modifier = Modifier.align(Alignment.End)) {
+                Icon(Icons.AutoMirrored.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text(
+                    text = stringResource(R.string.app_links_diagnostic_open_settings),
+                    modifier = Modifier.padding(start = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticLine(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.width(96.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+private fun Context.taskAppLinkDiagnostic(): AppLinkDiagnosticUiState {
+    val resolverPackage = taskLinkResolverPackage()
+    val status = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        domainVerificationStatus()
+    } else {
+        if (resolverPackage == packageName) AppLinkDiagnosticStatus.UserSelected else AppLinkDiagnosticStatus.Unknown
+    }
+    return AppLinkDiagnosticUiState(status = status, resolverPackage = resolverPackage)
+}
+
+private fun Context.taskLinkResolverPackage(): String? {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(TASK_LINK_SAMPLE_URL)).apply {
+        addCategory(Intent.CATEGORY_BROWSABLE)
+    }
+    return packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        ?.activityInfo
+        ?.packageName
+}
+
+private fun Context.openAppLinkSettings() {
+    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Intent(Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS, Uri.parse("package:$packageName"))
+    } else {
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+    }
+    startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+private fun AppLinkDiagnosticStatus.summaryRes(): Int =
+    when (this) {
+        AppLinkDiagnosticStatus.Verified -> R.string.app_links_diagnostic_verified
+        AppLinkDiagnosticStatus.UserSelected -> R.string.app_links_diagnostic_user_selected
+        AppLinkDiagnosticStatus.NotVerified -> R.string.app_links_diagnostic_not_verified
+        AppLinkDiagnosticStatus.Unknown -> R.string.app_links_diagnostic_unknown
+    }
+
+private fun Context.domainVerificationStatus(): AppLinkDiagnosticStatus {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return AppLinkDiagnosticStatus.Unknown
+    val manager = getSystemService(android.content.pm.verify.domain.DomainVerificationManager::class.java)
+        ?: return AppLinkDiagnosticStatus.Unknown
+    val state = runCatching { manager.getDomainVerificationUserState(packageName) }.getOrNull()
+        ?: return AppLinkDiagnosticStatus.Unknown
+    return when (state.hostToStateMap[TASK_LINK_HOST]) {
+        DomainVerificationUserState.DOMAIN_STATE_VERIFIED -> AppLinkDiagnosticStatus.Verified
+        DomainVerificationUserState.DOMAIN_STATE_SELECTED -> AppLinkDiagnosticStatus.UserSelected
+        DomainVerificationUserState.DOMAIN_STATE_NONE -> AppLinkDiagnosticStatus.NotVerified
+        else -> AppLinkDiagnosticStatus.Unknown
+    }
+}
+
