@@ -342,7 +342,13 @@ class UserPreferences @Inject constructor(
     }
     val dateAliasDefinitionsFlow: Flow<Set<String>> = prefsFlow.map { it[DATE_ALIASES] ?: emptySet() }
     val savedThemePresetsFlow: Flow<Set<String>> = prefsFlow.map { it[SAVED_THEME_PRESETS] ?: emptySet() }
-    val taskerIntegrationEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TASKER_INTEGRATION_ENABLED] ?: true }
+    // Off by default: the plugin's FIRE_SETTING receiver (CreateTaskRunner, via
+    // taskerpluginlibrary) is exported with no permission requirement -- inherent to how the
+    // Locale/Tasker plugin API works, not something an app can enforce on the sender -- so any
+    // other app on the device can trigger it while this is on. Defaulting off means that exposure
+    // requires an explicit, informed choice rather than existing for everyone who never opened
+    // this setting.
+    val taskerIntegrationEnabledFlow: Flow<Boolean> = prefsFlow.map { it[TASKER_INTEGRATION_ENABLED] ?: false }
 
     // Off by default: the flat list is the app's existing look, and this changes every task list
     // at once, so it has to be something a user opts into rather than finds applied after update.

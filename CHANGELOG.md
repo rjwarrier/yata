@@ -28,6 +28,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   nothing once you left the app, since the same content sat visible in Overview.
 
 ### Changed
+- Tasker integration (Settings → Data Management) is now off by default rather than on. Any app on
+  the device can trigger the plugin's "Create Task" action with no permission check — that's how
+  the Tasker/Locale plugin API works everywhere, not specific to Yata — so this now requires an
+  explicit, informed opt-in instead of being exposed to every install by default.
 - Duplicating a task now automatically appends "Duplicate" to the cloned task's title and immediately
   opens the new task in the task edit screen.
 - Smoothed the primary FAB size and label morph animation between tabs so the button pill fluidly

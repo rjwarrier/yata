@@ -228,7 +228,7 @@ data class SettingsUiState(
     val githubLastHeadSha: String? = null,
     val dateAliasDefinitions: Set<String> = emptySet(),
     val savedThemePresetDefinitions: Set<String> = emptySet(),
-    val taskerIntegrationEnabled: Boolean = true,
+    val taskerIntegrationEnabled: Boolean = false,
     val todayRemainingCount: Int = 0
 )
 
