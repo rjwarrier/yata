@@ -1507,23 +1507,6 @@ fun TaskDetailScreen(
                             newComment = ""
                         }
                     }
-                    TextField(
-                        value = newComment,
-                        onValueChange = { newComment = it },
-                        placeholder = { Text(stringResource(R.string.task_detail_add_a_comment)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = com.mj.yata.ui.widgets.YataFieldShape,
-                        colors = com.mj.yata.ui.widgets.yataFieldColors(),
-                        maxLines = 6,
-                        trailingIcon = {
-                            IconButton(onClick = postComment, enabled = newComment.isNotBlank()) {
-                                Icon(
-                                    Icons.AutoMirrored.Default.Send,
-                                    contentDescription = stringResource(R.string.task_detail_post_comment)
-                                )
-                            }
-                        }
-                    )
                     comments.forEach { comment ->
                         val author = comment.authorId?.let { peopleById[it] }
                         Surface(
@@ -1560,6 +1543,23 @@ fun TaskDetailScreen(
                             }
                         }
                     }
+                    TextField(
+                        value = newComment,
+                        onValueChange = { newComment = it },
+                        placeholder = { Text(stringResource(R.string.task_detail_add_a_comment)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = com.mj.yata.ui.widgets.YataFieldShape,
+                        colors = com.mj.yata.ui.widgets.yataFieldColors(),
+                        maxLines = 6,
+                        trailingIcon = {
+                            IconButton(onClick = postComment, enabled = newComment.isNotBlank()) {
+                                Icon(
+                                    Icons.AutoMirrored.Default.Send,
+                                    contentDescription = stringResource(R.string.task_detail_post_comment)
+                                )
+                            }
+                        }
+                    )
                 }
                 }
             }
