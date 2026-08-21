@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">ಸುರಕ್ಷಿತ ಸಂಪರ್ಕ ಬಳಸಿ (FTPS)</string>
     <string name="settings_ftp_plain_warning">ಸರಳ FTP ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ಮತ್ತು ಫೈಲ್‌ಗಳನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡದೆ ಕಳುಹಿಸುತ್ತದೆ. ವಿಶ್ವಾಸಾರ್ಹ ನೆಟ್‌ವರ್ಕ್‌ನಲ್ಲಿ ಮಾತ್ರ ಇದನ್ನು ಬಳಸಿ.</string>
+    <string name="settings_ftp_strict_tls">ಕಟ್ಟುನಿಟ್ಟಾದ ಪ್ರಮಾಣಪತ್ರ ಪರಿಶೀಲನೆ</string>
+    <string name="settings_ftp_strict_tls_caption">ಸರ್ವರ್‌ನ ಪ್ರಮಾಣಪತ್ರ ಈ ಹೋಸ್ಟ್‌ನೇಮ್‌ಗೆ ಹೊಂದಿಕೆಯಾಗುತ್ತದೆಯೇ ಎಂದೂ ಪರಿಶೀಲಿಸುತ್ತದೆ. ನಿಮ್ಮ ಸರ್ವರ್ ಸ್ವಯಂ-ಸಹಿ ಮಾಡಿದ ಅಥವಾ ಹೊಂದಾಣಿಕೆಯಾಗದ ಪ್ರಮಾಣಪತ್ರ ಬಳಸದ ಹೊರತು ಇದನ್ನು ಆನ್ ಮಾಡಿ — ಹಾಗಿದ್ದಲ್ಲಿ ಆಫ್ ಇರಿಸಿ, ಇಲ್ಲದಿದ್ದರೆ ಸಂಪರ್ಕ ವಿಫಲಗೊಳ್ಳುತ್ತದೆ.</string>
     <string name="settings_sftp_backups_to_keep_summary">ಸರ್ವರ್‌ನಲ್ಲಿ ಕೊನೆಯ %1$d ಬ್ಯಾಕಪ್‌ಗಳನ್ನು ಇಡಿ — ಹಳೆಯವುಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ತೆಗೆಯಲಾಗುತ್ತದೆ.</string>
     <string name="settings_backup_dest_local">ಈ ಸಾಧನ</string>
     <string name="settings_backup_dest_self_hosted">ರಿಮೋಟ್ ಸಿಂಕ್</string>

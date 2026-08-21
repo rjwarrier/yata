@@ -424,6 +424,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Gunakan koneksi aman (FTPS)</string>
     <string name="settings_ftp_plain_warning">FTP biasa mengirim kata sandi dan file Anda tanpa enkripsi. Gunakan ini hanya pada jaringan tepercaya.</string>
+    <string name="settings_ftp_strict_tls">Verifikasi sertifikat ketat</string>
+    <string name="settings_ftp_strict_tls_caption">Juga memeriksa apakah sertifikat server cocok dengan nama host ini. Aktifkan ini kecuali server Anda menggunakan sertifikat yang ditandatangani sendiri atau tidak cocok — dalam hal itu, biarkan nonaktif atau koneksi akan gagal.</string>
     <string name="settings_sftp_backups_to_keep_summary">Simpan %1$d cadangan terakhir di server — yang lebih lama dihapus otomatis.</string>
     <string name="settings_backup_dest_local">perangkat ini</string>
     <string name="settings_backup_dest_self_hosted">sinkronisasi jarak jauh</string>

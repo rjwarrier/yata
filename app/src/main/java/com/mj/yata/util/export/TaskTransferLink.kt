@@ -73,6 +73,15 @@ private const val RELIABLE_LINK_LENGTH = 1000
 private const val MAX_TASKS_PER_LINK = 200
 private const val MAX_SUBTASKS_PER_TASK = 100
 
+// A per-field cap alongside MAX_DECODED_BYTES/MAX_TASKS_PER_LINK: those bound the payload and the
+// task count, but neither stops a single field within an otherwise-small link from being
+// pathologically long (a plaintext "t="/"n=" query parameter has no length limit of its own, and a
+// compressed link could spend its whole decoded budget on one field). No legitimate share needs a
+// title/name this long, and without this check one field could bloat a row past what the rest of
+// the app assumes for a piece of task/entity text.
+private const val MAX_TEXT_FIELD_LENGTH = 2_000
+private const val MAX_NOTES_FIELD_LENGTH = 20_000
+
 private val PRIORITIES = listOf("none", "low", "med", "high")
 
 // Guards against a malformed link producing a Recurrence with a frequency nothing downstream
@@ -583,8 +592,26 @@ fun parseTransferLink(uri: Uri): ParsedTransfer {
             "This shared link contains too many tasks ($MAX_TASKS_PER_LINK max)."
         )
     }
+    if (tasks.any { it.hasOversizedField() }) {
+        taskLinkError(
+            TaskTransferLinkError.TooLarge,
+            "This shared task link is too large to import."
+        )
+    }
     return ParsedTransfer(tasks, copyStructure)
 }
+
+/** True when any free-text field on this draft exceeds what a legitimate share would ever carry —
+ * see [MAX_TEXT_FIELD_LENGTH]/[MAX_NOTES_FIELD_LENGTH]. Checked once per task here rather than at
+ * each of the three parse formats, same reasoning as the [MAX_TASKS_PER_LINK] check above. */
+private fun SharedTaskDraft.hasOversizedField(): Boolean =
+    title.length > MAX_TEXT_FIELD_LENGTH ||
+        (notes?.length ?: 0) > MAX_NOTES_FIELD_LENGTH ||
+        subtaskTitles.any { it.length > MAX_TEXT_FIELD_LENGTH } ||
+        assigneeNames.any { it.length > MAX_TEXT_FIELD_LENGTH } ||
+        (list?.name?.length ?: 0) > MAX_TEXT_FIELD_LENGTH ||
+        (project?.name?.length ?: 0) > MAX_TEXT_FIELD_LENGTH ||
+        tags.any { it.name.length > MAX_TEXT_FIELD_LENGTH }
 
 private fun parsePlaintext(params: Uri): List<SharedTaskDraft> {
     // Links built before this check existed have no "c" param at all — decline to verify rather

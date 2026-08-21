@@ -799,6 +799,7 @@ class FtpBackupManager @Inject constructor(
         val port = userPreferences.sftpPortFlow.first()
         val username = userPreferences.sftpUsernameFlow.first()
         val useTls = userPreferences.ftpUseTlsFlow.first()
+        val strictTls = userPreferences.ftpStrictTlsFlow.first()
 
         if (host.isBlank() || username.isBlank()) {
             throw SftpNotConfiguredException("FTP host and username must be set")
@@ -812,11 +813,14 @@ class FtpBackupManager @Inject constructor(
         // different port that's uncommon on self-hosted setups.
         val client: FTPClient = if (useTls) {
             FTPSClient(false).apply {
-                // Commons Net's default trust manager only checks certificate dates. Install the
-                // platform CA trust manager explicitly, but do not enable endpoint identification:
-                // many self-hosted FTPS servers have certificates with no matching SAN, and the
-                // Settings screen exposes only "use FTPS" rather than a separate strict TLS mode.
+                // Commons Net's default trust manager only checks certificate dates, not the
+                // hostname -- install the platform CA trust manager explicitly either way, but
+                // endpoint identification (does the cert's name actually match this host?) is only
+                // turned on when the user opts into "Strict TLS": many self-hosted FTPS servers
+                // have certificates with no matching SAN, and defaulting this on would silently
+                // break those backups rather than surfacing a clear one-time choice.
                 setTrustManager(platformTrustManager())
+                if (strictTls) setEndpointCheckingEnabled(true)
             }
         } else {
             FTPClient()

@@ -424,6 +424,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Dùng kết nối bảo mật (FTPS)</string>
     <string name="settings_ftp_plain_warning">FTP thường gửi mật khẩu và tệp không mã hóa. Chỉ dùng trên mạng đáng tin cậy.</string>
+    <string name="settings_ftp_strict_tls">Xác minh chứng chỉ nghiêm ngặt</string>
+    <string name="settings_ftp_strict_tls_caption">Cũng kiểm tra xem chứng chỉ của máy chủ có khớp với tên máy chủ này không. Bật tùy chọn này trừ khi máy chủ của bạn dùng chứng chỉ tự ký hoặc không khớp — trong trường hợp đó, hãy để tắt, nếu không kết nối sẽ thất bại.</string>
     <string name="settings_sftp_backups_to_keep_summary">Giữ %1$d bản sao lưu gần nhất trên máy chủ — các bản cũ hơn sẽ tự động bị dọn bớt.</string>
     <string name="settings_backup_dest_local">thiết bị này</string>
     <string name="settings_backup_dest_self_hosted">đồng bộ từ xa</string>

@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Tumia muunganisho salama (FTPS)</string>
     <string name="settings_ftp_plain_warning">FTP ya kawaida hutuma nenosiri lako na faili bila usimbaji. Tumia hii kwenye mtandao unaouaminika pekee.</string>
+    <string name="settings_ftp_strict_tls">Uthibitishaji mkali wa cheti</string>
+    <string name="settings_ftp_strict_tls_caption">Pia inaangalia kama cheti cha seva linalingana na jina hili la mwenyeji. Washa hii isipokuwa seva yako inatumia cheti kilichojisainisha au kisicholingana — katika hali hiyo, iache imezimwa, la sivyo muunganisho utashindwa.</string>
     <string name="settings_sftp_backups_to_keep_summary">Hifadhi nakala rudufu %1$d za mwisho kwenye seva — za zamani zaidi huondolewa kiotomatiki.</string>
     <string name="settings_backup_dest_local">kifaa hiki</string>
     <string name="settings_backup_dest_self_hosted">usawazishaji wa mbali</string>

@@ -176,6 +176,11 @@ class UserPreferences @Inject constructor(
         // (FTPS, explicit AUTH TLS) and is only ever false if the user deliberately opts out,
         // which the config dialog makes an explicit, warned choice rather than a quiet toggle.
         val FTP_USE_TLS             = booleanPreferencesKey("ftp_use_tls")
+        // Off by default: commons-net's FTPSClient only checks the certificate chain unless this
+        // is on, and turning it on for an existing connection whose server certificate has no SAN
+        // matching the configured host (common on small self-hosted setups) would silently break
+        // backups that were working. See FtpBackupManager.connect for what this actually enables.
+        val FTP_STRICT_TLS          = booleanPreferencesKey("ftp_strict_tls")
         val GITHUB_OWNER            = stringPreferencesKey("github_owner")
         val GITHUB_REPO             = stringPreferencesKey("github_repo")
         val GITHUB_BRANCH           = stringPreferencesKey("github_branch")
@@ -425,6 +430,7 @@ class UserPreferences @Inject constructor(
         }
     }
     val ftpUseTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_USE_TLS] ?: true }
+    val ftpStrictTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_STRICT_TLS] ?: false }
     val githubOwnerFlow: Flow<String> = prefsFlow.map { it[GITHUB_OWNER] ?: "" }
     val githubRepoFlow: Flow<String> = prefsFlow.map { it[GITHUB_REPO] ?: "" }
     val githubBranchFlow: Flow<String> = prefsFlow.map { it[GITHUB_BRANCH] ?: "" }
@@ -876,6 +882,7 @@ class UserPreferences @Inject constructor(
     suspend fun setRemoteBackupConfiguration(
         protocol: com.mj.yata.domain.model.RemoteBackupProtocol,
         useTls: Boolean,
+        strictTls: Boolean,
         host: String,
         port: Int,
         username: String,
@@ -892,6 +899,7 @@ class UserPreferences @Inject constructor(
                 prefs[SFTP_PORT] != normalizedPort
             prefs[REMOTE_BACKUP_PROTOCOL] = protocol.name
             prefs[FTP_USE_TLS] = useTls
+            prefs[FTP_STRICT_TLS] = strictTls
             prefs[SFTP_HOST] = normalizedHost
             prefs[SFTP_PORT] = normalizedPort
             prefs[SFTP_USERNAME] = username.trim()
@@ -931,6 +939,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setFtpUseTls(useTls: Boolean) {
         dataStore.edit { it[FTP_USE_TLS] = useTls }
+    }
+
+    suspend fun setFtpStrictTls(strict: Boolean) {
+        dataStore.edit { it[FTP_STRICT_TLS] = strict }
     }
 
     suspend fun setGitHubConfiguration(

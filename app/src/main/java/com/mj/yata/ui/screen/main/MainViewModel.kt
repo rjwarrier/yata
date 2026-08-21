@@ -218,6 +218,7 @@ data class SettingsUiState(
     val sftpHostKeyFingerprint: String? = null,
     val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol = com.mj.yata.domain.model.RemoteBackupProtocol.SFTP,
     val ftpUseTls: Boolean = true,
+    val ftpStrictTls: Boolean = false,
     val sftpKeepCount: Int = 5,
     val githubOwner: String = "",
     val githubRepo: String = "",
@@ -402,6 +403,7 @@ private data class SftpStatusState(
 private data class RemoteBackupProtocolState(
     val remoteBackupProtocol: com.mj.yata.domain.model.RemoteBackupProtocol,
     val ftpUseTls: Boolean,
+    val ftpStrictTls: Boolean,
     val sftpKeepCount: Int
 )
 
@@ -752,8 +754,11 @@ data class PostponementWarning(
             combine(
                 userPreferences.remoteBackupProtocolFlow,
                 userPreferences.ftpUseTlsFlow,
+                userPreferences.ftpStrictTlsFlow,
                 userPreferences.sftpKeepCountFlow
-            ) { protocol, ftpUseTls, keepCount -> RemoteBackupProtocolState(protocol, ftpUseTls, keepCount) },
+            ) { protocol, ftpUseTls, ftpStrictTls, keepCount ->
+                RemoteBackupProtocolState(protocol, ftpUseTls, ftpStrictTls, keepCount)
+            },
             combine(
                 userPreferences.githubOwnerFlow,
                 userPreferences.githubRepoFlow,
@@ -834,6 +839,7 @@ data class PostponementWarning(
             sftpHostKeyFingerprint = sftp.status.sftpHostKeyFingerprint,
             remoteBackupProtocol = sftp.protocol.remoteBackupProtocol,
             ftpUseTls = sftp.protocol.ftpUseTls,
+            ftpStrictTls = sftp.protocol.ftpStrictTls,
             sftpKeepCount = sftp.protocol.sftpKeepCount,
             githubOwner = sftp.github.owner,
             githubRepo = sftp.github.repo,
@@ -2742,6 +2748,7 @@ data class PostponementWarning(
     fun saveRemoteBackupConfiguration(
         protocol: com.mj.yata.domain.model.RemoteBackupProtocol,
         useTls: Boolean,
+        strictTls: Boolean,
         host: String,
         port: Int,
         username: String,
@@ -2753,6 +2760,7 @@ data class PostponementWarning(
             userPreferences.setRemoteBackupConfiguration(
                 protocol = protocol,
                 useTls = useTls,
+                strictTls = strictTls,
                 host = host,
                 port = port,
                 username = username,

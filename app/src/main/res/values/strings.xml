@@ -682,6 +682,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Use secure connection (FTPS)</string>
     <string name="settings_ftp_plain_warning">Plain FTP sends your password and files unencrypted. Only use this on a trusted network.</string>
+    <string name="settings_ftp_strict_tls">Strict certificate verification</string>
+    <string name="settings_ftp_strict_tls_caption">Also checks that the server\'s certificate matches this hostname. Turn this on unless your server uses a self-signed or mismatched certificate — in that case, leave it off or the connection will fail.</string>
     <string name="settings_sftp_backups_to_keep_summary">Keep the last %1$d backups on the server — older ones are pruned automatically.</string>
     <string name="settings_backup_dest_local">this device</string>
     <string name="settings_backup_dest_self_hosted">remote sync</string>

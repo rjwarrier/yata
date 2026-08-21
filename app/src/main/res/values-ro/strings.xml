@@ -424,6 +424,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Folosește conexiune securizată (FTPS)</string>
     <string name="settings_ftp_plain_warning">FTP simplu trimite parola și fișierele necriptat. Folosește această opțiune doar pe o rețea de încredere.</string>
+    <string name="settings_ftp_strict_tls">Verificare strictă a certificatului</string>
+    <string name="settings_ftp_strict_tls_caption">Verifică și dacă certificatul serverului se potrivește cu acest nume de gazdă. Activează asta, cu excepția cazului în care serverul tău folosește un certificat autosemnat sau nepotrivit — în acest caz, lasă-l dezactivat, altfel conexiunea va eșua.</string>
     <string name="settings_sftp_backups_to_keep_summary">Păstrează ultimele %1$d backupuri pe server — cele mai vechi sunt eliminate automat.</string>
     <string name="settings_backup_dest_local">acest dispozitiv</string>
     <string name="settings_backup_dest_self_hosted">sincronizare la distanță</string>

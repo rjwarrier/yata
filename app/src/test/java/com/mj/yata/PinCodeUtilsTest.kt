@@ -59,6 +59,17 @@ class PinCodeUtilsTest {
     }
 
     @Test
+    fun legacyPbkdf2Sha1HashStillVerifiesAndIsFlaggedForUpgrade() {
+        // A PIN set after the first PBKDF2 move (SHA-1) but before the later move to SHA-256.
+        // Same non-negotiable as the plain-SHA-256 legacy case: this must never lock anyone out.
+        val salt = generateSalt()
+        val legacyHash = legacyPbkdf2Sha1("6431", salt)
+        assertTrue(verifyPin("6431", legacyHash, salt))
+        assertFalse(verifyPin("6432", legacyHash, salt))
+        assertTrue(needsRehash(legacyHash))
+    }
+
+    @Test
     fun saltSurvivesEncodingRoundTrip() {
         val salt = generateSalt()
         assertTrue(salt.contentEquals(decodeSalt(encodeSalt(salt))))
@@ -82,8 +93,9 @@ class PinCodeUtilsTest {
         // Guards against the scheme silently regressing to something cheap to brute-force.
         val salt = generateSalt()
         val hash = hashPin("0000", salt)
-        assertTrue(hash.startsWith("pbkdf2:"))
+        assertTrue(hash.startsWith("pbkdf2s256:"))
         assertNotEquals(legacySha256("0000", salt), hash)
+        assertNotEquals(legacyPbkdf2Sha1("0000", salt), hash)
         assertEquals(false, hash.contains("0000"))
     }
 
@@ -92,5 +104,13 @@ class PinCodeUtilsTest {
         val digest = MessageDigest.getInstance("SHA-256")
         digest.update(salt)
         return Base64.getEncoder().encodeToString(digest.digest(pin.toByteArray(Charsets.UTF_8)))
+    }
+
+    /** The PBKDF2-SHA1 scheme [hashPin] used before moving to SHA-256, reproduced here so the
+     * compatibility path has something to test. */
+    private fun legacyPbkdf2Sha1(pin: String, salt: ByteArray): String {
+        val spec = javax.crypto.spec.PBEKeySpec(pin.toCharArray(), salt, 120_000, 256)
+        val hash = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1").generateSecret(spec).encoded
+        return "pbkdf2:" + Base64.getEncoder().encodeToString(hash)
     }
 }

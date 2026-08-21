@@ -20,6 +20,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   how many times a task can be postponed before showing a warning snackbar. The configured value
   applies to normal-priority tasks; medium priority tasks warn 2 postponements earlier, and high
   priority tasks warn 4 earlier (with high priority reduced to 0 when medium is 1).
+- Added a "Strict certificate verification" toggle for FTPS backups (Remote sync → FTP), for
+  servers with a certificate whose name matches the configured host — off by default so an existing
+  self-signed/mismatched-certificate setup keeps working exactly as it did before.
+- Task content and the app's screens are now hidden from the recents/Overview thumbnail and blocked
+  from screenshots whenever app lock is enabled — previously the PIN/biometric gate protected
+  nothing once you left the app, since the same content sat visible in Overview.
 
 ### Changed
 - Duplicating a task now automatically appends "Duplicate" to the cloned task's title and immediately

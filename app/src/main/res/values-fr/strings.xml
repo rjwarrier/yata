@@ -382,6 +382,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Utiliser une connexion sécurisée (FTPS)</string>
     <string name="settings_ftp_plain_warning">Plain FTP envoie votre mot de passe et vos fichiers non cryptés. Utilisez-le uniquement sur un réseau de confiance.</string>
+    <string name="settings_ftp_strict_tls">Vérification stricte du certificat</string>
+    <string name="settings_ftp_strict_tls_caption">Vérifie aussi que le certificat du serveur correspond à ce nom d’hôte. Activez ceci sauf si votre serveur utilise un certificat auto-signé ou ne correspondant pas — dans ce cas, laissez-le désactivé, sinon la connexion échouera.</string>
     <string name="settings_sftp_backups_to_keep_summary">Conservez les dernières sauvegardes %1$d sur le serveur : les plus anciennes sont automatiquement supprimées.</string>
     <string name="settings_backup_dest_local">cet appareil</string>
     <string name="settings_backup_dest_self_hosted">votre serveur</string>

@@ -424,6 +424,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Použít zabezpečené připojení (FTPS)</string>
     <string name="settings_ftp_plain_warning">Nešifrované FTP odesílá heslo i soubory bez šifrování. Používejte pouze na důvěryhodné síti.</string>
+    <string name="settings_ftp_strict_tls">Přísné ověření certifikátu</string>
+    <string name="settings_ftp_strict_tls_caption">Také kontroluje, zda certifikát serveru odpovídá tomuto názvu hostitele. Zapněte to, pokud váš server nepoužívá samopodepsaný nebo neshodující se certifikát — v takovém případě to nechte vypnuté, jinak připojení selže.</string>
     <string name="settings_sftp_backups_to_keep_summary">Uchovávat posledních %1$d záloh na serveru — starší se automaticky odstraní.</string>
     <string name="settings_backup_dest_local">toto zařízení</string>
     <string name="settings_backup_dest_self_hosted">vzdálená synchronizace</string>

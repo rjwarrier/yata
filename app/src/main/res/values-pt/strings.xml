@@ -382,6 +382,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Use conexão segura (FTPS)</string>
     <string name="settings_ftp_plain_warning">O FTP simples envia sua senha e arquivos sem criptografia. Use isso apenas em uma rede confiável.</string>
+    <string name="settings_ftp_strict_tls">Verificação estrita de certificado</string>
+    <string name="settings_ftp_strict_tls_caption">Também verifica se o certificado do servidor corresponde a este nome de host. Ative isso, a menos que seu servidor use um certificado autoassinado ou incompatível — nesse caso, deixe desativado ou a conexão falhará.</string>
     <string name="settings_sftp_backups_to_keep_summary">Mantenha os últimos backups %1$d no servidor – os mais antigos são removidos automaticamente.</string>
     <string name="settings_backup_dest_local">este dispositivo</string>
     <string name="settings_backup_dest_self_hosted">seu servidor</string>

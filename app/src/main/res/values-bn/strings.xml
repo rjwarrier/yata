@@ -424,6 +424,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">নিরাপদ সংযোগ ব্যবহার করুন (FTPS)</string>
     <string name="settings_ftp_plain_warning">সাধারণ FTP আপনার পাসওয়ার্ড ও ফাইল অ-এনক্রিপ্ট অবস্থায় পাঠায়। শুধুমাত্র বিশ্বস্ত নেটওয়ার্কে এটি ব্যবহার করুন।</string>
+    <string name="settings_ftp_strict_tls">কঠোর সার্টিফিকেট যাচাইকরণ</string>
+    <string name="settings_ftp_strict_tls_caption">এটি সার্ভারের সার্টিফিকেট এই হোস্টনেমের সাথে মিলে কিনা তাও যাচাই করে। আপনার সার্ভার সেলফ-সাইনড বা অমিল সার্টিফিকেট ব্যবহার না করলে এটি চালু রাখুন — তা না হলে বন্ধ রাখুন, নইলে সংযোগ ব্যর্থ হবে।</string>
     <string name="settings_sftp_backups_to_keep_summary">সার্ভারে সর্বশেষ %1$d ব্যাকআপ রাখুন — পুরনোগুলো স্বয়ংক্রিয়ভাবে মুছে ফেলা হয়।</string>
     <string name="settings_backup_dest_local">এই ডিভাইস</string>
     <string name="settings_backup_dest_self_hosted">রিমোট সিঙ্ক</string>

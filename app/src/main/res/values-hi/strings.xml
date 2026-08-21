@@ -520,6 +520,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">सुरक्षित कनेक्शन (FTPS) उपयोग करें</string>
     <string name="settings_ftp_plain_warning">सादा FTP आपका पासवर्ड और फ़ाइलें बिना एन्क्रिप्ट किए भेजता है। इसे केवल किसी भरोसेमंद नेटवर्क पर उपयोग करें।</string>
+    <string name="settings_ftp_strict_tls">सख्त प्रमाणपत्र सत्यापन</string>
+    <string name="settings_ftp_strict_tls_caption">यह भी जांचता है कि सर्वर का प्रमाणपत्र इस होस्टनेम से मेल खाता है या नहीं। इसे तभी बंद रखें जब आपका सर्वर सेल्फ-साइन्ड या बेमेल प्रमाणपत्र उपयोग करता हो — अन्यथा इसे चालू रखें, वरना कनेक्शन विफल हो जाएगा।</string>
     <string name="settings_sftp_backups_to_keep_summary">सर्वर पर आखिरी %1$d बैकअप रखें — पुराने अपने आप हटा दिए जाते हैं।</string>
     <string name="settings_backup_dest_local">यह डिवाइस</string>
     <string name="settings_backup_dest_self_hosted">रिमोट सिंक</string>

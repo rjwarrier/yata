@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">સુરક્ષિત કનેક્શન (FTPS) વાપરો</string>
     <string name="settings_ftp_plain_warning">પ્લેન FTP તમારો પાસવર્ડ અને ફાઇલો બિનએન્ક્રિપ્ટેડ મોકલે છે. ફક્ત વિશ્વસનીય નેટવર્ક પર જ આનો ઉપયોગ કરો.</string>
+    <string name="settings_ftp_strict_tls">કડક પ્રમાણપત્ર ચકાસણી</string>
+    <string name="settings_ftp_strict_tls_caption">આ સર્વરનું પ્રમાણપત્ર આ હોસ્ટનેમ સાથે મેળ ખાય છે કે નહીં તે પણ ચકાસે છે. તમારું સર્વર સેલ્ફ-સાઇન અથવા અમેળ પ્રમાણપત્ર વાપરે નહીં ત્યાં સુધી આ ચાલુ રાખો — નહીં તો બંધ રાખો, નહીંતર જોડાણ નિષ્ફળ જશે.</string>
     <string name="settings_sftp_backups_to_keep_summary">સર્વર પર છેલ્લા %1$d બેકઅપ રાખો — જૂનાને આપોઆપ કાપી નાખવામાં આવે છે.</string>
     <string name="settings_backup_dest_local">આ ડિવાઇસ</string>
     <string name="settings_backup_dest_self_hosted">રિમોટ સિંક</string>

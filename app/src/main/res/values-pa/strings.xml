@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">ਸੁਰੱਖਿਅਤ ਕਨੈਕਸ਼ਨ ਵਰਤੋ (FTPS)</string>
     <string name="settings_ftp_plain_warning">ਸਾਦਾ FTP ਤੁਹਾਡਾ ਪਾਸਵਰਡ ਅਤੇ ਫਾਈਲਾਂ ਬਿਨਾਂ ਇਨਕ੍ਰਿਪਸ਼ਨ ਭੇਜਦਾ ਹੈ। ਸਿਰਫ਼ ਭਰੋਸੇਯੋਗ ਨੈੱਟਵਰਕ \'ਤੇ ਵਰਤੋ।</string>
+    <string name="settings_ftp_strict_tls">ਸਖ਼ਤ ਸਰਟੀਫਿਕੇਟ ਤਸਦੀਕ</string>
+    <string name="settings_ftp_strict_tls_caption">ਇਹ ਵੀ ਜਾਂਚਦਾ ਹੈ ਕਿ ਸਰਵਰ ਦਾ ਸਰਟੀਫਿਕੇਟ ਇਸ ਹੋਸਟਨੇਮ ਨਾਲ ਮੇਲ ਖਾਂਦਾ ਹੈ। ਇਸਨੂੰ ਚਾਲੂ ਰੱਖੋ ਜਦੋਂ ਤੱਕ ਤੁਹਾਡਾ ਸਰਵਰ ਸੈਲਫ-ਸਾਈਨਡ ਜਾਂ ਬੇਮੇਲ ਸਰਟੀਫਿਕੇਟ ਨਹੀਂ ਵਰਤਦਾ — ਉਸ ਸਥਿਤੀ ਵਿੱਚ ਇਸਨੂੰ ਬੰਦ ਰੱਖੋ, ਨਹੀਂ ਤਾਂ ਕਨੈਕਸ਼ਨ ਅਸਫਲ ਹੋ ਜਾਵੇਗਾ।</string>
     <string name="settings_sftp_backups_to_keep_summary">ਸਰਵਰ \'ਤੇ ਆਖਰੀ %1$d ਬੈਕਅੱਪ ਰੱਖੋ — ਪੁਰਾਣੇ ਆਪਣੇ ਆਪ ਹਟਾ ਦਿੱਤੇ ਜਾਂਦੇ ਹਨ।</string>
     <string name="settings_backup_dest_local">ਇਹ ਡਿਵਾਈਸ</string>
     <string name="settings_backup_dest_self_hosted">ਰਿਮੋਟ ਸਿੰਕ</string>

@@ -1162,6 +1162,46 @@ class TaskTransferLinkTest {
     }
 
     @Test
+    fun oversizedTitle_isRejectedRatherThanImported() = runTest {
+        // A single pathologically long field, not the task/subtask counts this time — the cap
+        // that catches a hostile or corrupt link spending its whole budget on one field.
+        val repo = FakeYataRepository()
+        val original = task(title = "x".repeat(2_001))
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = false
+        )
+
+        try {
+            TaskTransferImporter(repo).importFrom(importUri(link.uri))
+            fail("expected a 2001-character title to be rejected")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message.orEmpty().contains("too large"))
+        }
+        assertTrue(repo.tasksFlow.value.isEmpty())
+    }
+
+    @Test
+    fun oversizedNotes_isRejectedRatherThanImported() = runTest {
+        val repo = FakeYataRepository()
+        val original = task(notes = "x".repeat(20_001))
+        val link = buildTaskTransferLink(
+            title = original.title, tasks = listOf(original), listsById = emptyMap(),
+            projectsById = emptyMap(), tagsById = emptyMap(), peopleById = emptyMap(),
+            includeStructure = false, includeNotes = true
+        )
+
+        try {
+            TaskTransferImporter(repo).importFrom(importUri(link.uri))
+            fail("expected 20001 characters of notes to be rejected")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message.orEmpty().contains("too large"))
+        }
+        assertTrue(repo.tasksFlow.value.isEmpty())
+    }
+
+    @Test
     fun plaintextLink_carriesAChecksum_andRoundTripsCleanly() = runTest {
         val repo = FakeYataRepository()
         val link = buildTaskTransferLink(

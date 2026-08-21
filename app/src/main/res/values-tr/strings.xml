@@ -424,6 +424,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Güvenli bağlantı kullan (FTPS)</string>
     <string name="settings_ftp_plain_warning">Düz FTP, parolanızı ve dosyalarınızı şifrelemeden gönderir. Bunu yalnızca güvenilir bir ağda kullanın.</string>
+    <string name="settings_ftp_strict_tls">Sıkı sertifika doğrulaması</string>
+    <string name="settings_ftp_strict_tls_caption">Sunucu sertifikasının bu ana bilgisayar adıyla eşleşip eşleşmediğini de kontrol eder. Sunucunuz kendinden imzalı veya eşleşmeyen bir sertifika kullanmıyorsa bunu açın — aksi takdirde kapalı bırakın, yoksa bağlantı başarısız olur.</string>
     <string name="settings_sftp_backups_to_keep_summary">Sunucuda son %1$d yedeği tutun — daha eskiler otomatik olarak temizlenir.</string>
     <string name="settings_backup_dest_local">bu cihaz</string>
     <string name="settings_backup_dest_self_hosted">uzak senkronizasyon</string>

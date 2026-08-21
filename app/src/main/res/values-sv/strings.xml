@@ -424,6 +424,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Använd säker anslutning (FTPS)</string>
     <string name="settings_ftp_plain_warning">Vanlig FTP skickar ditt lösenord och dina filer okrypterat. Använd bara detta på ett betrott nätverk.</string>
+    <string name="settings_ftp_strict_tls">Strikt certifikatverifiering</string>
+    <string name="settings_ftp_strict_tls_caption">Kontrollerar också att serverns certifikat matchar det här värdnamnet. Slå på det här om inte din server använder ett självsignerat eller felmatchat certifikat — i så fall, lämna det avstängt, annars misslyckas anslutningen.</string>
     <string name="settings_sftp_backups_to_keep_summary">Behåll de senaste %1$d säkerhetskopiorna på servern — äldre rensas automatiskt.</string>
     <string name="settings_backup_dest_local">den här enheten</string>
     <string name="settings_backup_dest_self_hosted">fjärrsynkronisering</string>

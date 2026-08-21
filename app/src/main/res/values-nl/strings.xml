@@ -520,6 +520,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Beveiligde verbinding gebruiken (FTPS)</string>
     <string name="settings_ftp_plain_warning">Onversleutelde FTP verstuurt je wachtwoord en bestanden onbeveiligd. Gebruik dit alleen op een vertrouwd netwerk.</string>
+    <string name="settings_ftp_strict_tls">Strikte certificaatverificatie</string>
+    <string name="settings_ftp_strict_tls_caption">Controleert ook of het certificaat van de server overeenkomt met deze hostnaam. Zet dit aan, tenzij je server een zelfondertekend of niet-overeenkomend certificaat gebruikt — zet het dan uit, anders mislukt de verbinding.</string>
     <string name="settings_sftp_backups_to_keep_summary">Bewaar de laatste %1$d back-ups op de server — oudere worden automatisch opgeruimd.</string>
     <string name="settings_backup_dest_local">dit apparaat</string>
     <string name="settings_backup_dest_self_hosted">externe synchronisatie</string>

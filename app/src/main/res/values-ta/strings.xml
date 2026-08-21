@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">பாதுகாப்பான இணைப்பைப் பயன்படுத்து (FTPS)</string>
     <string name="settings_ftp_plain_warning">சாதாரண FTP உங்கள் கடவுச்சொல் மற்றும் கோப்புகளை மறைகுறியாக்கமின்றி அனுப்பும். நம்பகமான நெட்வொர்க்கில் மட்டுமே இதைப் பயன்படுத்தவும்.</string>
+    <string name="settings_ftp_strict_tls">கடுமையான சான்றிதழ் சரிபார்ப்பு</string>
+    <string name="settings_ftp_strict_tls_caption">சேவையகத்தின் சான்றிதழ் இந்த ஹோஸ்ட்பெயருடன் பொருந்துகிறதா என்பதையும் இது சரிபார்க்கிறது. உங்கள் சேவையகம் சுய-கையொப்பமிடப்பட்ட அல்லது பொருந்தாத சான்றிதழைப் பயன்படுத்தாவிட்டால் இதை இயக்கவும் — அப்படியானால் அணைத்து வையுங்கள், இல்லையெனில் இணைப்பு தோல்வியடையும்.</string>
     <string name="settings_sftp_backups_to_keep_summary">சர்வரில் கடைசி %1$d காப்புப்பிரதிகளை வைத்திருங்கள் — பழையவை தானாகவே நீக்கப்படும்.</string>
     <string name="settings_backup_dest_local">இந்தச் சாதனம்</string>
     <string name="settings_backup_dest_self_hosted">தொலைநிலை ஒத்திசைவு</string>

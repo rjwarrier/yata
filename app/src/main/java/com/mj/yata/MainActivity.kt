@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -360,7 +361,18 @@ class MainActivity : AppCompatActivity() {
                 .collectAsState(initial = com.mj.yata.domain.model.SwipeAction.DELETE)
 
             val appLockEnabledPref by userPreferences.appLockEnabledFlow.collectAsState(initial = false)
-            LaunchedEffect(appLockEnabledPref) { AppLockState.appLockEnabled = appLockEnabledPref }
+            LaunchedEffect(appLockEnabledPref) {
+                AppLockState.appLockEnabled = appLockEnabledPref
+                // Blocks screenshots and hides task content from the recents thumbnail while app
+                // lock is on — otherwise the PIN/biometric gate protects nothing, since the same
+                // content it hides behind a lock screen is sitting in the Overview switcher for
+                // anyone to see.
+                if (appLockEnabledPref) {
+                    window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
             val appLockTimeoutPref by userPreferences.appLockTimeoutMinutesFlow.collectAsState(initial = 0)
             LaunchedEffect(appLockTimeoutPref) { AppLockState.appLockTimeoutMinutes = appLockTimeoutPref }
             LaunchedEffect(Unit) {

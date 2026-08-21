@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">సురక్షిత కనెక్షన్ వాడండి (FTPS)</string>
     <string name="settings_ftp_plain_warning">సాదా FTP మీ పాస్‌వర్డ్, ఫైల్‌లను ఎన్‌క్రిప్ట్ చేయకుండా పంపుతుంది. దీన్ని నమ్మదగిన నెట్‌వర్క్‌లో మాత్రమే వాడండి.</string>
+    <string name="settings_ftp_strict_tls">కఠినమైన సర్టిఫికేట్ ధృవీకరణ</string>
+    <string name="settings_ftp_strict_tls_caption">సర్వర్ సర్టిఫికేట్ ఈ హోస్ట్‌నేమ్‌తో సరిపోతుందో లేదో కూడా ఇది తనిఖీ చేస్తుంది. మీ సర్వర్ స్వీయ-సంతకం చేసిన లేదా సరిపోలని సర్టిఫికేట్ ఉపయోగించకపోతే దీన్ని ఆన్ చేయండి — అలా అయితే దీన్ని ఆఫ్‌లో ఉంచండి, లేకపోతే కనెక్షన్ విఫలమవుతుంది.</string>
     <string name="settings_sftp_backups_to_keep_summary">సర్వర్‌లో చివరి %1$d బ్యాకప్‌లు ఉంచండి — పాతవి స్వయంచాలకంగా తొలగించబడతాయి.</string>
     <string name="settings_backup_dest_local">ఈ పరికరం</string>
     <string name="settings_backup_dest_self_hosted">రిమోట్ సింక్</string>

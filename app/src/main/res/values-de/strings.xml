@@ -601,6 +601,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Sichere Verbindung verwenden (FTPS)</string>
     <string name="settings_ftp_plain_warning">Reines FTP sendet Passwort und Dateien unverschlüsselt. Nur in einem vertrauenswürdigen Netzwerk verwenden.</string>
+    <string name="settings_ftp_strict_tls">Strenge Zertifikatsprüfung</string>
+    <string name="settings_ftp_strict_tls_caption">Prüft zusätzlich, ob das Serverzertifikat zu diesem Hostnamen passt. Aktiviere dies, außer dein Server verwendet ein selbstsigniertes oder nicht passendes Zertifikat — in diesem Fall lass es deaktiviert, sonst schlägt die Verbindung fehl.</string>
     <string name="settings_sftp_backups_to_keep_summary">Die letzten %1$d Backups auf dem Server behalten — ältere werden automatisch bereinigt.</string>
     <string name="settings_backup_dest_local">dieses Gerät</string>
     <string name="settings_backup_dest_self_hosted">Remote-Sync</string>

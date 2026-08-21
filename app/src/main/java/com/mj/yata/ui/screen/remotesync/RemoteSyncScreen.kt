@@ -94,6 +94,7 @@ fun RemoteSyncScreen(
     val sftpRemoteDir = uiState.sftpRemoteDir
     val sftpHostKeyFingerprint = uiState.sftpHostKeyFingerprint
     val ftpUseTls = uiState.ftpUseTls
+    val ftpStrictTls = uiState.ftpStrictTls
     val githubOwner = uiState.githubOwner
     val githubRepo = uiState.githubRepo
     val githubBranch = uiState.githubBranch
@@ -108,6 +109,7 @@ fun RemoteSyncScreen(
     var draftAuthMethod by remember { mutableStateOf(sftpAuthMethod) }
     var draftPrivateKey by remember { mutableStateOf("") }
     var draftFtpUseTls by remember { mutableStateOf(ftpUseTls) }
+    var draftFtpStrictTls by remember { mutableStateOf(ftpStrictTls) }
     var draftGitHubRepo by remember { mutableStateOf(listOf(githubOwner, githubRepo).filter { it.isNotBlank() }.joinToString("/")) }
     var draftGitHubBranch by remember { mutableStateOf(githubBranch.ifBlank { "main" }) }
     var draftGitHubApiBase by remember { mutableStateOf(githubApiBase) }
@@ -293,6 +295,7 @@ fun RemoteSyncScreen(
         viewModel.saveRemoteBackupConfiguration(
             protocol = draftProtocol,
             useTls = draftFtpUseTls,
+            strictTls = draftFtpStrictTls,
             host = draftHost,
             port = draftPort.toIntOrNull() ?: sftpPort,
             username = draftUsername,
@@ -650,6 +653,33 @@ fun RemoteSyncScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
+                    AnimatedVisibility(
+                        visible = draftFtpUseTls,
+                        enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphDecel)) +
+                            expandVertically(tween(YataDur.sheet, easing = YataEase.emphasized)),
+                        exit = fadeOut(tween(YataDur.fade)) +
+                            shrinkVertically(tween(YataDur.sheet, easing = YataEase.emphasized))
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_ftp_strict_tls),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Switch(checked = draftFtpStrictTls, onCheckedChange = { draftFtpStrictTls = it })
+                            }
+                            Text(
+                                text = stringResource(R.string.settings_ftp_strict_tls_caption),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

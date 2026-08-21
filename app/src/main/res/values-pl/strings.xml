@@ -424,6 +424,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Użyj bezpiecznego połączenia (FTPS)</string>
     <string name="settings_ftp_plain_warning">Zwykłe FTP wysyła hasło i pliki bez szyfrowania. Używaj tego tylko w zaufanej sieci.</string>
+    <string name="settings_ftp_strict_tls">Ścisła weryfikacja certyfikatu</string>
+    <string name="settings_ftp_strict_tls_caption">Sprawdza też, czy certyfikat serwera pasuje do tej nazwy hosta. Włącz to, chyba że twój serwer używa certyfikatu z podpisem własnym lub niepasującego — w takim przypadku zostaw wyłączone, inaczej połączenie się nie powiedzie.</string>
     <string name="settings_sftp_backups_to_keep_summary">Przechowuj ostatnie %1$d kopii zapasowych na serwerze — starsze są automatycznie usuwane.</string>
     <string name="settings_backup_dest_local">to urządzenie</string>
     <string name="settings_backup_dest_self_hosted">synchronizacja zdalna</string>

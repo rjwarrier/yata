@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">सुरक्षित कनेक्शन वापरा (FTPS)</string>
     <string name="settings_ftp_plain_warning">साधा FTP तुमचा पासवर्ड आणि फाइल्स अनएन्क्रिप्टेड पाठवतो. फक्त विश्वासार्ह नेटवर्कवरच वापरा.</string>
+    <string name="settings_ftp_strict_tls">कडक प्रमाणपत्र पडताळणी</string>
+    <string name="settings_ftp_strict_tls_caption">सर्व्हरचे प्रमाणपत्र या होस्टनेमशी जुळते का हे देखील तपासते. तुमचा सर्व्हर सेल्फ-साइन्ड किंवा न जुळणारे प्रमाणपत्र वापरत नसेल तरच हे चालू ठेवा — अन्यथा बंद ठेवा, नाहीतर कनेक्शन अयशस्वी होईल.</string>
     <string name="settings_sftp_backups_to_keep_summary">सर्व्हरवर शेवटचे %1$d बॅकअप ठेवा — जुने आपोआप काढले जातात.</string>
     <string name="settings_backup_dest_local">हे डिव्हाइस</string>
     <string name="settings_backup_dest_self_hosted">रिमोट सिंक</string>

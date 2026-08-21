@@ -127,6 +127,10 @@ Current guards:
 - Max decoded compressed payload: `256_000` bytes.
 - Max tasks per link: `200`.
 - Max subtasks per task: `100`.
+- Max length per text field (title, notes, subtask title, list/project/tag/person name):
+  `2_000` characters (`20_000` for notes specifically) — rejected outright, not truncated,
+  since a field this long in an otherwise-small link is itself a sign of a hostile or corrupt
+  link rather than something to salvage.
 - Unsupported payload versions rejected.
 - Blank task titles skipped; links with no usable tasks rejected.
 - Blank entity names ignored.

@@ -698,6 +698,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Usar conexión segura (FTPS)</string>
     <string name="settings_ftp_plain_warning">FTP sin cifrar envía tu contraseña y archivos sin protección. Úsalo solo en una red de confianza.</string>
+    <string name="settings_ftp_strict_tls">Verificación estricta de certificado</string>
+    <string name="settings_ftp_strict_tls_caption">También comprueba que el certificado del servidor coincida con este nombre de host. Actívalo salvo que tu servidor use un certificado autofirmado o no coincidente; en ese caso, déjalo desactivado o la conexión fallará.</string>
     <string name="settings_sftp_backups_to_keep_summary">Conserva las últimas %1$d copias en el servidor; las anteriores se eliminan automáticamente.</string>
     <string name="settings_sftp_host">Servidor</string>
     <string name="settings_sftp_port">Puerto</string>

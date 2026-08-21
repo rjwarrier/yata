@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">സുരക്ഷിത കണക്ഷൻ ഉപയോഗിക്കുക (FTPS)</string>
     <string name="settings_ftp_plain_warning">സാധാരണ FTP നിങ്ങളുടെ പാസ്‌വേഡും ഫയലുകളും എൻക്രിപ്റ്റ് ചെയ്യാതെ അയക്കുന്നു. വിശ്വസ്തമായ നെറ്റ്‌വർക്കിൽ മാത്രം ഇത് ഉപയോഗിക്കുക.</string>
+    <string name="settings_ftp_strict_tls">കർശന സർട്ടിഫിക്കറ്റ് പരിശോധന</string>
+    <string name="settings_ftp_strict_tls_caption">സെർവറിന്റെ സർട്ടിഫിക്കറ്റ് ഈ ഹോസ്റ്റ്നാമവുമായി പൊരുത്തപ്പെടുന്നുണ്ടോ എന്നും ഇത് പരിശോധിക്കുന്നു. നിങ്ങളുടെ സെർവർ സ്വയം ഒപ്പിട്ടതോ പൊരുത്തപ്പെടാത്തതോ ആയ സർട്ടിഫിക്കറ്റ് ഉപയോഗിക്കുന്നില്ലെങ്കിൽ ഇത് ഓണാക്കുക — അല്ലെങ്കിൽ ഇത് ഓഫാക്കി വയ്ക്കുക, അല്ലാത്തപക്ഷം കണക്ഷൻ പരാജയപ്പെടും.</string>
     <string name="settings_sftp_backups_to_keep_summary">സെർവറിൽ അവസാനത്തെ %1$d ബാക്കപ്പുകൾ സൂക്ഷിക്കുക — പഴയവ സ്വയമേവ നീക്കം ചെയ്യും.</string>
     <string name="settings_backup_dest_local">ഈ ഉപകരണം</string>
     <string name="settings_backup_dest_self_hosted">റിമോട്ട് സിങ്ക്</string>

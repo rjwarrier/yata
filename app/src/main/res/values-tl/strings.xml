@@ -507,6 +507,8 @@
     <string name="settings_sftp_protocol_ftp">FTP</string>
     <string name="settings_ftp_use_tls">Gumamit ng secure na koneksyon (FTPS)</string>
     <string name="settings_ftp_plain_warning">Ipinapadala ng plain FTP ang iyong password at mga file nang hindi naka-encrypt. Gamitin lang ito sa isang pinagkakatiwalaang network.</string>
+    <string name="settings_ftp_strict_tls">Mahigpit na pagpapatunay ng sertipiko</string>
+    <string name="settings_ftp_strict_tls_caption">Tinitingnan din nito kung tumutugma ang sertipiko ng server sa hostname na ito. I-on ito maliban kung gumagamit ang iyong server ng self-signed o hindi tumutugmang sertipiko — sa kasong iyon, iwanan itong naka-off, kung hindi mabibigo ang koneksyon.</string>
     <string name="settings_sftp_backups_to_keep_summary">Panatilihin ang huling %1$d backup sa server — awtomatikong tatanggalin ang mga mas luma.</string>
     <string name="settings_backup_dest_local">device na ito</string>
     <string name="settings_backup_dest_self_hosted">remote sync</string>

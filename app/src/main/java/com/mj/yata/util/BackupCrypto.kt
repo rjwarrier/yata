@@ -77,6 +77,10 @@ object BackupCrypto {
     private fun deriveKey(passphrase: String, salt: ByteArray): SecretKeySpec {
         val spec = PBEKeySpec(passphrase.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_BITS)
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-        return SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
+        return try {
+            SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
+        } finally {
+            spec.clearPassword()
+        }
     }
 }

@@ -15,26 +15,43 @@ import javax.crypto.spec.PBEKeySpec
  * under a second. PBKDF2 with a deliberate iteration count is the point: it doesn't make the PIN
  * stronger, it makes each attempt expensive enough that exhausting the space stops being free.
  *
- * Hashes carry an algorithm prefix so old and new can coexist. A PIN set before this change still
- * verifies against the legacy scheme and is re-hashed on the next successful unlock — see
- * `UserPreferences.verifyAppLockPin`. Nothing re-prompts the user, and nobody gets locked out by
- * the upgrade.
+ * Hashes carry an algorithm prefix so every scheme this file has ever used can coexist:
+ * `pbkdf2s256:` (current, PBKDF2WithHmacSHA256), `pbkdf2:` (the previous scheme,
+ * PBKDF2WithHmacSHA1 — the weaker MAC doesn't meaningfully undermine PBKDF2's cost, but SHA-256 is
+ * the more conservative default everywhere else in this codebase uses, and costs nothing extra to
+ * match), and no prefix at all (the original single-round SHA-256, from before PBKDF2 existed
+ * here). A PIN on any older scheme still verifies and is transparently re-hashed onto the current
+ * one on the next successful unlock — see `UserPreferences.verifyAppLockPin`. Nothing re-prompts
+ * the user, and nobody gets locked out by an upgrade.
  */
-private const val PBKDF2_PREFIX = "pbkdf2:"
+private const val PBKDF2_SHA256_PREFIX = "pbkdf2s256:"
+private const val PBKDF2_SHA1_PREFIX = "pbkdf2:"
 private const val PBKDF2_ITERATIONS = 120_000
 private const val PBKDF2_KEY_LENGTH_BITS = 256
 
 fun generateSalt(): ByteArray = ByteArray(16).also { SecureRandom().nextBytes(it) }
 
 /** The current scheme. Always used for newly set PINs. */
-fun hashPin(pin: String, salt: ByteArray): String {
+fun hashPin(pin: String, salt: ByteArray): String =
+    PBKDF2_SHA256_PREFIX + pbkdf2Hash(pin, salt, "PBKDF2WithHmacSHA256")
+
+/** The scheme [hashPin] used before moving off SHA-1. Only ever used to verify an existing PIN. */
+private fun legacyPbkdf2Sha1HashPin(pin: String, salt: ByteArray): String =
+    PBKDF2_SHA1_PREFIX + pbkdf2Hash(pin, salt, "PBKDF2WithHmacSHA1")
+
+private fun pbkdf2Hash(pin: String, salt: ByteArray, algorithm: String): String {
     val spec = PBEKeySpec(pin.toCharArray(), salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH_BITS)
-    val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
-    val hash = factory.generateSecret(spec).encoded
-    return PBKDF2_PREFIX + Base64.getEncoder().encodeToString(hash)
+    val hash = try {
+        SecretKeyFactory.getInstance(algorithm).generateSecret(spec).encoded
+    } finally {
+        // The PIN's char[] copy inside the spec would otherwise sit in the heap, uncleared, for
+        // however long the GC takes to reclaim it.
+        spec.clearPassword()
+    }
+    return Base64.getEncoder().encodeToString(hash)
 }
 
-/** The scheme used before [hashPin] moved to PBKDF2. Only ever used to verify an existing PIN. */
+/** The scheme used before any PBKDF2 existed. Only ever used to verify an existing PIN. */
 private fun legacyHashPin(pin: String, salt: ByteArray): String {
     val digest = MessageDigest.getInstance("SHA-256")
     digest.update(salt)
@@ -49,16 +66,16 @@ private fun legacyHashPin(pin: String, salt: ByteArray): String {
  * right — which, repeated, recovers the hash a character at a time.
  */
 fun verifyPin(pin: String, storedHash: String, salt: ByteArray): Boolean {
-    val candidate = if (storedHash.startsWith(PBKDF2_PREFIX)) {
-        hashPin(pin, salt)
-    } else {
-        legacyHashPin(pin, salt)
+    val candidate = when {
+        storedHash.startsWith(PBKDF2_SHA256_PREFIX) -> hashPin(pin, salt)
+        storedHash.startsWith(PBKDF2_SHA1_PREFIX) -> legacyPbkdf2Sha1HashPin(pin, salt)
+        else -> legacyHashPin(pin, salt)
     }
     return constantTimeEquals(candidate, storedHash)
 }
 
-/** True when [storedHash] predates PBKDF2 and should be rewritten after a successful verify. */
-fun needsRehash(storedHash: String): Boolean = !storedHash.startsWith(PBKDF2_PREFIX)
+/** True when [storedHash] predates the current scheme and should be rewritten after a successful verify. */
+fun needsRehash(storedHash: String): Boolean = !storedHash.startsWith(PBKDF2_SHA256_PREFIX)
 
 private fun constantTimeEquals(a: String, b: String): Boolean {
     val aBytes = a.toByteArray(Charsets.UTF_8)
