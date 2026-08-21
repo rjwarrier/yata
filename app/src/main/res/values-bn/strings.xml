@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">প্রথম সিঙ্ক পর্যালোচনা করুন</string>
     <string name="settings_initial_sync_merge_body">এই ডিভাইস এবং রিমোট সিঙ্ক স্ন্যাপশট উভয়েই ডেটা রয়েছে। YATA এগুলো একত্র করবে, পরিবর্তন প্রয়োগের আগে একটি পুনরুদ্ধার ব্যাকআপ রাখবে, এবং সরাসরি দ্বন্দ্বের ক্ষেত্রে রিমোট কপি ব্যবহার করবে।</string>
     <string name="settings_initial_sync_merge_action">এখনই একত্র করুন</string>
+    <string name="settings_empty_local_sync_title">এই ডিভাইসটি খালি মনে হচ্ছে</string>
+    <string name="settings_empty_local_sync_body">এই ডিভাইসে কোনো কাজ নেই, কিন্তু এর শেষ সিঙ্ক অবস্থা এবং রিমোট স্ন্যাপশট উভয়েতেই ডেটা রয়েছে। এটি সাধারণত নতুন ইনস্টল বা পুনরুদ্ধার করা ডিভাইস নির্দেশ করে, ইচ্ছাকৃত মুছে ফেলা নয়। রিমোট স্ন্যাপশট পুনরুদ্ধার করুন, অথবা তা সত্ত্বেও সিঙ্ক চালিয়ে যান — যা রিমোট কপি থেকেও সেই ডেটা মুছে দেবে।</string>
+    <string name="settings_empty_local_sync_restore_action">রিমোট থেকে পুনরুদ্ধার করুন</string>
+    <string name="settings_empty_local_sync_overwrite_action">তবুও সিঙ্ক করুন</string>
+    <string name="settings_remote_restore_success">সর্বশেষ রিমোট স্ন্যাপশট পুনরুদ্ধার করা হয়েছে।</string>
+    <string name="settings_remote_restore_failed">পুনরুদ্ধার ব্যর্থ হয়েছে: %1$s</string>
     <string name="settings_backup_interval">ব্যাকআপ ফ্রিকোয়েন্সি</string>
     <string name="settings_backup_interval_summary">প্রতিটি কনফিগার করা গন্তব্য এই সময়সূচী অনুযায়ী ব্যাকআপ হয়।</string>
     <string name="settings_backup_summary_loading">ব্যাকআপ পড়া হচ্ছে…</string>

@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">पहिले सिंक तपासा</string>
     <string name="settings_initial_sync_merge_body">या डिव्हाइसवर आणि रिमोट सिंक स्नॅपशॉटमध्ये दोन्हीकडे डेटा आहे. YATA ते विलीन करेल, बदल लागू करण्यापूर्वी एक पुनर्प्राप्ती बॅकअप ठेवेल, आणि थेट संघर्षांसाठी रिमोट प्रत वापरेल.</string>
     <string name="settings_initial_sync_merge_action">आता विलीन करा</string>
+    <string name="settings_empty_local_sync_title">हे डिव्हाइस रिकामे दिसत आहे</string>
+    <string name="settings_empty_local_sync_body">या डिव्हाइसवर कोणतीही कामे नाहीत, पण त्याची शेवटची सिंक स्थिती आणि रिमोट स्नॅपशॉट दोन्हीमध्ये डेटा आहे. हे सहसा नवीन इंस्टॉलेशन किंवा पुनर्संचयित डिव्हाइस दर्शवते, जाणूनबुजून मिटवणे नव्हे. रिमोट स्नॅपशॉट पुनर्संचयित करा, किंवा तरीही सिंक सुरू ठेवा — जे तो डेटा रिमोट प्रतमधूनही हटवेल.</string>
+    <string name="settings_empty_local_sync_restore_action">रिमोटवरून पुनर्संचयित करा</string>
+    <string name="settings_empty_local_sync_overwrite_action">तरीही सिंक करा</string>
+    <string name="settings_remote_restore_success">नवीनतम रिमोट स्नॅपशॉट पुनर्संचयित केला.</string>
+    <string name="settings_remote_restore_failed">पुनर्संचयित करणे अयशस्वी: %1$s</string>
     <string name="settings_backup_interval">बॅकअप वारंवारता</string>
     <string name="settings_backup_interval_summary">प्रत्येक कॉन्फिगर केलेले स्थान या वेळापत्रकानुसार बॅकअप घेतले जाते.</string>
     <string name="settings_backup_summary_loading">बॅकअप वाचत आहे…</string>

@@ -116,6 +116,7 @@ class BackupOperations @Inject constructor(
      */
     suspend fun backupAllConfigured(
         allowInitialJoinMerge: Boolean = false,
+        allowEmptyLocalOverwrite: Boolean = false,
         remoteSyncRunReason: String = "Automatic sync before backup"
     ): List<BackupRunResult> = buildList {
         // Host check as well as the toggle: the switch can be on with the server dialog never
@@ -130,7 +131,10 @@ class BackupOperations @Inject constructor(
                     syncSelfHostedWithProgress(remoteSyncRunReason) { progress ->
                         currentTransport().syncNow(
                             progress,
-                            SyncRunOptions(allowInitialJoinMerge = allowInitialJoinMerge)
+                            SyncRunOptions(
+                                allowInitialJoinMerge = allowInitialJoinMerge,
+                                allowEmptyLocalOverwrite = allowEmptyLocalOverwrite
+                            )
                         )
                     }
                 }

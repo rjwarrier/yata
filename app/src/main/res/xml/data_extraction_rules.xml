@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
+    <!-- See backup_rules.xml (the pre-Android-12 fallback) for why yata-sync/ and datastore/
+         are excluded here too: restoring the sync baseline without the Room database makes a
+         restored device look like it has synced before and deleted everything, and the app-lock
+         PIN hash shouldn't leave the device through cloud backup at all. -->
     <cloud-backup>
         <include domain="file" path="." />
+        <exclude domain="file" path="yata-sync/" />
+        <exclude domain="file" path="datastore/" />
     </cloud-backup>
     <device-transfer>
         <include domain="file" path="." />
+        <exclude domain="file" path="yata-sync/" />
+        <exclude domain="file" path="datastore/" />
     </device-transfer>
 </data-extraction-rules>

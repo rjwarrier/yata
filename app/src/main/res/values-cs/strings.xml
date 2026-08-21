@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">Zkontrolovat první synchronizaci</string>
     <string name="settings_initial_sync_merge_body">Toto zařízení i vzdálený synchronizační snímek obsahují data. YATA je sloučí, před provedením změn vytvoří záložní zálohu a u přímých konfliktů použije vzdálenou kopii.</string>
     <string name="settings_initial_sync_merge_action">Sloučit nyní</string>
+    <string name="settings_empty_local_sync_title">Toto zařízení vypadá prázdné</string>
+    <string name="settings_empty_local_sync_body">Toto zařízení nemá žádné úkoly, ale jeho poslední stav synchronizace i vzdálený snímek obsahují data. To obvykle znamená čerstvou instalaci nebo obnovené zařízení, ne úmyslné smazání. Obnovte vzdálený snímek, nebo přesto pokračujte v synchronizaci — což data smaže i ze vzdálené kopie.</string>
+    <string name="settings_empty_local_sync_restore_action">Obnovit ze vzdáleného úložiště</string>
+    <string name="settings_empty_local_sync_overwrite_action">Přesto synchronizovat</string>
+    <string name="settings_remote_restore_success">Obnoven nejnovější vzdálený snímek.</string>
+    <string name="settings_remote_restore_failed">Obnovení selhalo: %1$s</string>
     <string name="settings_backup_interval">Frekvence zálohování</string>
     <string name="settings_backup_interval_summary">Každý nakonfigurovaný cíl se zálohuje podle tohoto rozvrhu.</string>
     <string name="settings_backup_summary_loading">Čtení zálohy…</string>

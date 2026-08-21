@@ -610,6 +610,12 @@
     <string name="settings_initial_sync_merge_title">Ersten Sync prüfen</string>
     <string name="settings_initial_sync_merge_body">Dieses Gerät und der Remote-Sync-Snapshot enthalten beide Daten. YATA führt sie zusammen, erstellt vorher ein Wiederherstellungs-Backup und verwendet bei direkten Konflikten die Remote-Kopie.</string>
     <string name="settings_initial_sync_merge_action">Jetzt zusammenführen</string>
+    <string name="settings_empty_local_sync_title">Dieses Gerät wirkt leer</string>
+    <string name="settings_empty_local_sync_body">Dieses Gerät hat keine Aufgaben, aber sein letzter Sync-Stand und der Remote-Snapshot enthalten beide Daten. Das deutet meist auf eine Neuinstallation oder ein wiederhergestelltes Gerät hin, nicht auf ein absichtliches Löschen. Stelle den Remote-Snapshot wieder her, oder synchronisiere trotzdem weiter — dadurch werden die Daten auch aus der Remote-Kopie gelöscht.</string>
+    <string name="settings_empty_local_sync_restore_action">Von Remote wiederherstellen</string>
+    <string name="settings_empty_local_sync_overwrite_action">Trotzdem synchronisieren</string>
+    <string name="settings_remote_restore_success">Der neueste Remote-Snapshot wurde wiederhergestellt.</string>
+    <string name="settings_remote_restore_failed">Wiederherstellung fehlgeschlagen: %1$s</string>
     <string name="settings_backup_interval">Backup-Häufigkeit</string>
     <string name="settings_backup_interval_summary">Jedes konfigurierte Ziel wird nach diesem Zeitplan gesichert.</string>
     <plurals name="settings_backup_all_ok">

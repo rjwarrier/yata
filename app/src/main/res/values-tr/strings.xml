@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">İlk senkronizasyonu gözden geçir</string>
     <string name="settings_initial_sync_merge_body">Bu cihaz ve uzak senkronizasyon anlık görüntüsünün ikisi de veri içeriyor. YATA bunları birleştirecek, değişiklikleri uygulamadan önce bir kurtarma yedeği tutacak ve doğrudan çakışmalarda uzak kopyayı kullanacak.</string>
     <string name="settings_initial_sync_merge_action">Şimdi birleştir</string>
+    <string name="settings_empty_local_sync_title">Bu cihaz boş görünüyor</string>
+    <string name="settings_empty_local_sync_body">Bu cihazda hiç görev yok, ancak son senkronizasyon durumu ve uzak anlık görüntü ikisi de veri içeriyor. Bu genellikle kasıtlı bir silmeyi değil, yeni bir kurulumu veya geri yüklenmiş bir cihazı gösterir. Uzak anlık görüntüyü geri yükleyin veya yine de senkronizasyona devam edin — bu, verileri uzak kopyadan da silecektir.</string>
+    <string name="settings_empty_local_sync_restore_action">Uzaktan geri yükle</string>
+    <string name="settings_empty_local_sync_overwrite_action">Yine de senkronize et</string>
+    <string name="settings_remote_restore_success">En son uzak anlık görüntü geri yüklendi.</string>
+    <string name="settings_remote_restore_failed">Geri yükleme başarısız oldu: %1$s</string>
     <string name="settings_backup_interval">Yedekleme sıklığı</string>
     <string name="settings_backup_interval_summary">Yapılandırılan her hedef bu programa göre yedeklenir.</string>
     <string name="settings_backup_summary_loading">Yedek okunuyor…</string>

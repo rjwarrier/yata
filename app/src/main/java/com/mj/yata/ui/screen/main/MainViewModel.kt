@@ -2576,6 +2576,7 @@ data class PostponementWarning(
     /** Backs up every enabled destination; one result per attempted destination. */
     fun backupAllNow(
         allowInitialJoinMerge: Boolean = false,
+        allowEmptyLocalOverwrite: Boolean = false,
         onResult: (List<com.mj.yata.domain.model.BackupRunResult>) -> Unit
     ) {
         backupOperations.cancelDebouncedBackup()
@@ -2583,6 +2584,7 @@ data class PostponementWarning(
             onResult(
                 backupOperations.backupAllConfigured(
                     allowInitialJoinMerge = allowInitialJoinMerge,
+                    allowEmptyLocalOverwrite = allowEmptyLocalOverwrite,
                     remoteSyncRunReason = "Manual sync & backup started by user"
                 )
             )

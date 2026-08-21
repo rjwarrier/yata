@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">ആദ്യ സിങ്ക് അവലോകനം ചെയ്യുക</string>
     <string name="settings_initial_sync_merge_body">ഈ ഉപകരണത്തിലും റിമോട്ട് സിങ്ക് സ്നാപ്ഷോട്ടിലും ഡാറ്റയുണ്ട്. YATA അവ ലയിപ്പിക്കും, മാറ്റങ്ങൾ പ്രയോഗിക്കുന്നതിന് മുൻപ് ഒരു വീണ്ടെടുക്കൽ ബാക്കപ്പ് സൂക്ഷിക്കും, നേരിട്ടുള്ള ഏത് സംഘർഷത്തിനും റിമോട്ട് പകർപ്പ് ഉപയോഗിക്കും.</string>
     <string name="settings_initial_sync_merge_action">ഇപ്പോൾ ലയിപ്പിക്കുക</string>
+    <string name="settings_empty_local_sync_title">ഈ ഉപകരണം ശൂന്യമായി തോന്നുന്നു</string>
+    <string name="settings_empty_local_sync_body">ഈ ഉപകരണത്തിൽ ജോലികളൊന്നുമില്ല, എന്നാൽ അതിന്റെ അവസാന സിങ്ക് അവസ്ഥയിലും റിമോട്ട് സ്നാപ്ഷോട്ടിലും ഡാറ്റയുണ്ട്. ഇത് സാധാരണയായി പുതിയ ഇൻസ്റ്റാളേഷനെയോ പുനഃസ്ഥാപിച്ച ഉപകരണത്തെയോ സൂചിപ്പിക്കുന്നു, മനഃപൂർവമായ മായ്ക്കലിനെയല്ല. റിമോട്ട് സ്നാപ്ഷോട്ട് പുനഃസ്ഥാപിക്കുക, അല്ലെങ്കിൽ എന്തായാലും സിങ്ക് തുടരുക — ഇത് ആ ഡാറ്റ റിമോട്ട് പകർപ്പിൽ നിന്നും നീക്കം ചെയ്യും.</string>
+    <string name="settings_empty_local_sync_restore_action">റിമോട്ടിൽ നിന്ന് പുനഃസ്ഥാപിക്കുക</string>
+    <string name="settings_empty_local_sync_overwrite_action">എന്തായാലും സിങ്ക് ചെയ്യുക</string>
+    <string name="settings_remote_restore_success">ഏറ്റവും പുതിയ റിമോട്ട് സ്നാപ്ഷോട്ട് പുനഃസ്ഥാപിച്ചു.</string>
+    <string name="settings_remote_restore_failed">പുനഃസ്ഥാപനം പരാജയപ്പെട്ടു: %1$s</string>
     <string name="settings_backup_interval">ബാക്കപ്പ് ആവൃത്തി</string>
     <string name="settings_backup_interval_summary">കോൺഫിഗർ ചെയ്ത ഓരോ ലക്ഷ്യസ്ഥാനവും ഈ ഷെഡ്യൂളിൽ ബാക്കപ്പ് ചെയ്യും.</string>
     <string name="settings_backup_summary_loading">ബാക്കപ്പ് വായിക്കുന്നു…</string>

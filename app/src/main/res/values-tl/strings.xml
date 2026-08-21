@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">Suriin ang unang sync</string>
     <string name="settings_initial_sync_merge_body">May data ang device na ito at ang remote sync snapshot. Pagsasamahin ito ng YATA, may recovery backup muna bago isagawa ang mga pagbabago, at gagamitin ang remote copy sa anumang direktang tunggalian.</string>
     <string name="settings_initial_sync_merge_action">Pagsamahin na</string>
+    <string name="settings_empty_local_sync_title">Mukhang walang laman ang device na ito</string>
+    <string name="settings_empty_local_sync_body">Walang gawain ang device na ito, pero may data ang huli nitong sync state at ang remote snapshot. Karaniwan itong nangangahulugan ng bagong install o na-restore na device, hindi sinasadyang pagbura. I-restore ang remote snapshot, o magpatuloy pa rin sa pag-sync — na magbubura rin ng data na iyon sa remote copy.</string>
+    <string name="settings_empty_local_sync_restore_action">I-restore mula sa remote</string>
+    <string name="settings_empty_local_sync_overwrite_action">I-sync pa rin</string>
+    <string name="settings_remote_restore_success">Na-restore ang pinakabagong remote snapshot.</string>
+    <string name="settings_remote_restore_failed">Nabigo ang pag-restore: %1$s</string>
     <string name="settings_backup_interval">Dalas ng backup</string>
     <string name="settings_backup_interval_summary">Bini-backup ang bawat naka-configure na destinasyon ayon sa iskedyul na ito.</string>
     <string name="settings_backup_summary_loading">Binabasa ang backup…</string>

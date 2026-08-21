@@ -691,6 +691,12 @@
     <string name="settings_initial_sync_merge_title">Review first sync</string>
     <string name="settings_initial_sync_merge_body">This device and the remote sync snapshot both contain data. YATA will merge them, keep a recovery backup before applying changes, and use the remote copy for any direct conflicts.</string>
     <string name="settings_initial_sync_merge_action">Merge now</string>
+    <string name="settings_empty_local_sync_title">This device looks empty</string>
+    <string name="settings_empty_local_sync_body">This device has no tasks, but its last known sync state and the remote snapshot both contain data. This usually means a fresh install or a restored device rather than an intentional wipe. Restore the remote snapshot to bring that data onto this device, or continue to sync anyway — which will delete it from the remote copy too.</string>
+    <string name="settings_empty_local_sync_restore_action">Restore from remote</string>
+    <string name="settings_empty_local_sync_overwrite_action">Sync anyway</string>
+    <string name="settings_remote_restore_success">Restored the latest remote snapshot.</string>
+    <string name="settings_remote_restore_failed">Restore failed: %1$s</string>
     <string name="settings_backup_interval">Backup frequency</string>
     <string name="settings_backup_interval_summary">Every configured destination is backed up on this schedule.</string>
     <plurals name="settings_backup_all_ok">

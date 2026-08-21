@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">మొదటి సింక్ సమీక్షించండి</string>
     <string name="settings_initial_sync_merge_body">ఈ పరికరం మరియు రిమోట్ సింక్ స్నాప్‌షాట్ రెండింటిలోనూ డేటా ఉంది. యాటా వాటిని విలీనం చేసి, మార్పులు వర్తింపజేయడానికి ముందు పునరుద్ధరణ బ్యాకప్‌ను ఉంచి, ఏదైనా ప్రత్యక్ష వైరుధ్యాల కోసం రిమోట్ కాపీని వాడుతుంది.</string>
     <string name="settings_initial_sync_merge_action">ఇప్పుడు విలీనం చేయండి</string>
+    <string name="settings_empty_local_sync_title">ఈ పరికరం ఖాళీగా కనిపిస్తోంది</string>
+    <string name="settings_empty_local_sync_body">ఈ పరికరంలో ఏ పనులూ లేవు, కానీ దాని చివరి సింక్ స్థితి మరియు రిమోట్ స్నాప్‌షాట్ రెండింటిలోనూ డేటా ఉంది. ఇది సాధారణంగా కొత్త ఇన్‌స్టాలేషన్ లేదా పునరుద్ధరించిన పరికరాన్ని సూచిస్తుంది, ఉద్దేశపూర్వక తొలగింపును కాదు. రిమోట్ స్నాప్‌షాట్‌ను పునరుద్ధరించండి, లేదా అయినప్పటికీ సింక్ కొనసాగించండి — ఇది ఆ డేటాను రిమోట్ కాపీ నుండి కూడా తొలగిస్తుంది.</string>
+    <string name="settings_empty_local_sync_restore_action">రిమోట్ నుండి పునరుద్ధరించండి</string>
+    <string name="settings_empty_local_sync_overwrite_action">అయినప్పటికీ సింక్ చేయండి</string>
+    <string name="settings_remote_restore_success">ఇటీవలి రిమోట్ స్నాప్‌షాట్ పునరుద్ధరించబడింది.</string>
+    <string name="settings_remote_restore_failed">పునరుద్ధరణ విఫలమైంది: %1$s</string>
     <string name="settings_backup_interval">బ్యాకప్ ఫ్రీక్వెన్సీ</string>
     <string name="settings_backup_interval_summary">కాన్ఫిగర్ చేసిన ప్రతి గమ్యస్థానం ఈ షెడ్యూల్‌లో బ్యాకప్ చేయబడుతుంది.</string>
     <string name="settings_backup_summary_loading">బ్యాకప్ చదువుతోంది…</string>

@@ -529,6 +529,12 @@
     <string name="settings_initial_sync_merge_title">Eerste synchronisatie bekijken</string>
     <string name="settings_initial_sync_merge_body">Dit apparaat en de externe sync-snapshot bevatten beide gegevens. YATA voegt ze samen, bewaart een herstelback-up voordat wijzigingen worden toegepast, en gebruikt de externe kopie bij directe conflicten.</string>
     <string name="settings_initial_sync_merge_action">Nu samenvoegen</string>
+    <string name="settings_empty_local_sync_title">Dit apparaat lijkt leeg</string>
+    <string name="settings_empty_local_sync_body">Dit apparaat heeft geen taken, maar de laatste synchronisatiestatus en de externe snapshot bevatten beide gegevens. Dit wijst meestal op een nieuwe installatie of een hersteld apparaat, niet op een opzettelijke verwijdering. Herstel de externe snapshot, of ga toch door met synchroniseren — waardoor die gegevens ook uit de externe kopie worden verwijderd.</string>
+    <string name="settings_empty_local_sync_restore_action">Herstellen vanaf extern</string>
+    <string name="settings_empty_local_sync_overwrite_action">Toch synchroniseren</string>
+    <string name="settings_remote_restore_success">De nieuwste externe snapshot is hersteld.</string>
+    <string name="settings_remote_restore_failed">Herstellen mislukt: %1$s</string>
     <string name="settings_backup_interval">Back-upfrequentie</string>
     <string name="settings_backup_interval_summary">Elke geconfigureerde bestemming wordt volgens dit schema geback-upt.</string>
     <plurals name="settings_backup_all_ok">

@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">ਪਹਿਲੀ ਸਿੰਕ ਦੀ ਸਮੀਖਿਆ ਕਰੋ</string>
     <string name="settings_initial_sync_merge_body">ਇਸ ਡਿਵਾਈਸ ਅਤੇ ਰਿਮੋਟ ਸਿੰਕ ਸਨੈਪਸ਼ਾਟ ਦੋਵਾਂ ਵਿੱਚ ਡਾਟਾ ਹੈ। YATA ਉਨ੍ਹਾਂ ਨੂੰ ਮਿਲਾਏਗਾ, ਬਦਲਾਅ ਲਾਗੂ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਇੱਕ ਰਿਕਵਰੀ ਬੈਕਅੱਪ ਰੱਖੇਗਾ, ਅਤੇ ਕਿਸੇ ਵੀ ਸਿੱਧੇ ਟਕਰਾਅ ਲਈ ਰਿਮੋਟ ਕਾਪੀ ਵਰਤੇਗਾ।</string>
     <string name="settings_initial_sync_merge_action">ਹੁਣੇ ਮਿਲਾਓ</string>
+    <string name="settings_empty_local_sync_title">ਇਹ ਡਿਵਾਈਸ ਖਾਲੀ ਲੱਗ ਰਿਹਾ ਹੈ</string>
+    <string name="settings_empty_local_sync_body">ਇਸ ਡਿਵਾਈਸ ਉੱਤੇ ਕੋਈ ਕੰਮ ਨਹੀਂ ਹੈ, ਪਰ ਇਸਦੀ ਆਖਰੀ ਸਿੰਕ ਸਥਿਤੀ ਅਤੇ ਰਿਮੋਟ ਸਨੈਪਸ਼ਾਟ ਦੋਵਾਂ ਵਿੱਚ ਡਾਟਾ ਹੈ। ਇਹ ਆਮ ਤੌਰ ’ਤੇ ਨਵੀਂ ਇੰਸਟਾਲੇਸ਼ਨ ਜਾਂ ਬਹਾਲ ਕੀਤੇ ਡਿਵਾਈਸ ਨੂੰ ਦਰਸਾਉਂਦਾ ਹੈ, ਜਾਣਬੁੱਝ ਕੇ ਮਿਟਾਉਣ ਨੂੰ ਨਹੀਂ। ਰਿਮੋਟ ਸਨੈਪਸ਼ਾਟ ਬਹਾਲ ਕਰੋ, ਜਾਂ ਫਿਰ ਵੀ ਸਿੰਕ ਜਾਰੀ ਰੱਖੋ — ਜੋ ਉਹ ਡਾਟਾ ਰਿਮੋਟ ਕਾਪੀ ਤੋਂ ਵੀ ਹਟਾ ਦੇਵੇਗਾ।</string>
+    <string name="settings_empty_local_sync_restore_action">ਰਿਮੋਟ ਤੋਂ ਬਹਾਲ ਕਰੋ</string>
+    <string name="settings_empty_local_sync_overwrite_action">ਫਿਰ ਵੀ ਸਿੰਕ ਕਰੋ</string>
+    <string name="settings_remote_restore_success">ਨਵੀਨਤਮ ਰਿਮੋਟ ਸਨੈਪਸ਼ਾਟ ਬਹਾਲ ਕੀਤਾ ਗਿਆ।</string>
+    <string name="settings_remote_restore_failed">ਬਹਾਲੀ ਅਸਫਲ: %1$s</string>
     <string name="settings_backup_interval">ਬੈਕਅੱਪ ਬਾਰੰਬਾਰਤਾ</string>
     <string name="settings_backup_interval_summary">ਹਰੇਕ ਕੌਂਫਿਗਰ ਕੀਤੇ ਟਿਕਾਣੇ ਦਾ ਇਸ ਸਮਾਂ-ਸਾਰਣੀ \'ਤੇ ਬੈਕਅੱਪ ਹੁੰਦਾ ਹੈ।</string>
     <string name="settings_backup_summary_loading">ਬੈਕਅੱਪ ਪੜ੍ਹ ਰਿਹਾ ਹੈ…</string>

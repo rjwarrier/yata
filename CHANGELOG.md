@@ -34,6 +34,17 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Comment cards are more compact — the delete control is now a small tonal circle centred against
   the comment text, removing the empty space that the oversized touch target left below each card.
 
+### Fixed
+- A device restored from an Android backup (or a fresh reinstall that later signs back into the
+  same account) could look "already synced" to a self-hosted/GitHub sync — showing no local tasks
+  while its last known sync state still remembered data — and syncing in that state used to
+  silently delete every task from the remote copy, with no warning and no recovery backup, since
+  nothing appeared to change locally. Syncing now recognizes that shape and asks first: restore the
+  remote copy onto this device, or confirm the wipe was intentional and continue anyway. The sync
+  baseline and app preferences (including the app-lock PIN) are also no longer included in Android's
+  automatic device backup, so a restored device reaches this new prompt instead of the old silent
+  failure in the first place.
+
 ## [0.94] - 2026-08-18
 
 `versionCode 22`. Upgrades in place over 0.93.1.

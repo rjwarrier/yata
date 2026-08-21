@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">Xem lại lần đồng bộ đầu tiên</string>
     <string name="settings_initial_sync_merge_body">Thiết bị này và bản chụp đồng bộ từ xa đều có dữ liệu. YATA sẽ hợp nhất chúng, giữ một bản sao lưu khôi phục trước khi áp dụng thay đổi, và dùng bản sao từ xa cho các xung đột trực tiếp.</string>
     <string name="settings_initial_sync_merge_action">Hợp nhất ngay</string>
+    <string name="settings_empty_local_sync_title">Thiết bị này trông có vẻ trống</string>
+    <string name="settings_empty_local_sync_body">Thiết bị này không có công việc nào, nhưng trạng thái đồng bộ cuối cùng và bản chụp từ xa đều có dữ liệu. Điều này thường cho thấy một lượt cài đặt mới hoặc thiết bị được khôi phục, chứ không phải xóa có chủ ý. Khôi phục bản chụp từ xa, hoặc vẫn tiếp tục đồng bộ — điều này cũng sẽ xóa dữ liệu đó khỏi bản sao từ xa.</string>
+    <string name="settings_empty_local_sync_restore_action">Khôi phục từ xa</string>
+    <string name="settings_empty_local_sync_overwrite_action">Vẫn đồng bộ</string>
+    <string name="settings_remote_restore_success">Đã khôi phục bản chụp từ xa mới nhất.</string>
+    <string name="settings_remote_restore_failed">Khôi phục thất bại: %1$s</string>
     <string name="settings_backup_interval">Tần suất sao lưu</string>
     <string name="settings_backup_interval_summary">Mọi đích đã cấu hình đều được sao lưu theo lịch này.</string>
     <string name="settings_backup_summary_loading">Đang đọc bản sao lưu…</string>

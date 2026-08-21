@@ -155,6 +155,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.toArgb
 import com.mj.yata.util.ProfilePhotoUtils
 import com.mj.yata.util.EstimateUtils
+import com.mj.yata.util.emptyLocalDataConfirmationRequired
 import com.mj.yata.util.initialSyncConfirmationRequired
 import com.mj.yata.util.selfHostedSyncLockFailure
 import com.mj.yata.util.syncLockClearPrompt
@@ -397,6 +398,7 @@ fun SettingsScreen(
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
+    var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
     var demoModeFeedback by remember { mutableStateOf<Int?>(null) }
     var isLoadingSftpBackups by remember { mutableStateOf(false) }
     var sftpBackupList by remember { mutableStateOf<List<RestorePoint>>(emptyList()) }
@@ -2813,11 +2815,14 @@ fun SettingsScreen(
                                     isBackingUp = false
                                     val syncLockFailure = results.selfHostedSyncLockFailure()
                                     val initialJoinFailure = results.initialSyncConfirmationRequired()
+                                    val emptyLocalFailure = results.emptyLocalDataConfirmationRequired()
                                     if (syncLockFailure != null) {
                                         clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
                                         showClearSyncLockDialog = true
                                     } else if (initialJoinFailure != null) {
                                         initialSyncMergeMessage = initialJoinFailure.message
+                                    } else if (emptyLocalFailure != null) {
+                                        emptyLocalSyncMessage = emptyLocalFailure.message
                                     } else {
                                         scope.launch {
                                             reportBackupResults(results, snackbarHostState, context)
@@ -3337,6 +3342,61 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = { initialSyncMergeMessage = null }) {
                     Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (emptyLocalSyncMessage != null) {
+        AlertDialog(
+            onDismissRequest = { emptyLocalSyncMessage = null },
+            title = { Text(stringResource(R.string.settings_empty_local_sync_title)) },
+            text = { Text(emptyLocalSyncMessage ?: stringResource(R.string.settings_empty_local_sync_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        emptyLocalSyncMessage = null
+                        viewModel.restoreLatestRemoteSnapshot { result ->
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    if (result.isSuccess) {
+                                        context.getString(R.string.settings_remote_restore_success)
+                                    } else {
+                                        context.getString(
+                                            R.string.settings_remote_restore_failed,
+                                            result.exceptionOrNull()?.message ?: ""
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_empty_local_sync_restore_action))
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { emptyLocalSyncMessage = null }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                    TextButton(
+                        onClick = {
+                            emptyLocalSyncMessage = null
+                            isBackingUp = true
+                            viewModel.backupAllNow(allowEmptyLocalOverwrite = true) { results ->
+                                isBackingUp = false
+                                scope.launch {
+                                    reportBackupResults(results, snackbarHostState, context)
+                                }
+                            }
+                        }
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_empty_local_sync_overwrite_action),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         )

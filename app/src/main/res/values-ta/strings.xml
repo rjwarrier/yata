@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">முதல் ஒத்திசைவை மதிப்பாய்வு செய்</string>
     <string name="settings_initial_sync_merge_body">இந்தச் சாதனத்திலும் தொலைநிலை ஒத்திசைவு ஸ்னாப்ஷாட்டிலும் தரவு உள்ளது. YATA அவற்றை இணைக்கும், மாற்றங்களைச் செய்யும் முன் மீட்பு காப்புப்பிரதியை வைத்திருக்கும், நேரடி முரண்பாடுகளுக்கு தொலைநிலை நகலைப் பயன்படுத்தும்.</string>
     <string name="settings_initial_sync_merge_action">இப்போது இணை</string>
+    <string name="settings_empty_local_sync_title">இந்தச் சாதனம் காலியாகத் தெரிகிறது</string>
+    <string name="settings_empty_local_sync_body">இந்தச் சாதனத்தில் பணிகள் இல்லை, ஆனால் அதன் கடைசி ஒத்திசைவு நிலையிலும் தொலைநிலை ஸ்னாப்ஷாட்டிலும் தரவு உள்ளது. இது பொதுவாக புதிய நிறுவல் அல்லது மீட்டமைக்கப்பட்ட சாதனத்தைக் குறிக்கிறது, வேண்டுமென்றே அழிப்பதை அல்ல. தொலைநிலை ஸ்னாப்ஷாட்டை மீட்டமைக்கவும், அல்லது எப்படியும் ஒத்திசைவைத் தொடரவும் — இது அந்தத் தரவை தொலைநிலை நகலிலிருந்தும் நீக்கிவிடும்.</string>
+    <string name="settings_empty_local_sync_restore_action">தொலைநிலையிலிருந்து மீட்டமை</string>
+    <string name="settings_empty_local_sync_overwrite_action">எப்படியும் ஒத்திசை</string>
+    <string name="settings_remote_restore_success">சமீபத்திய தொலைநிலை ஸ்னாப்ஷாட் மீட்டமைக்கப்பட்டது.</string>
+    <string name="settings_remote_restore_failed">மீட்டமைப்பு தோல்வியடைந்தது: %1$s</string>
     <string name="settings_backup_interval">காப்புப்பிரதி அதிர்வெண்</string>
     <string name="settings_backup_interval_summary">கட்டமைக்கப்பட்ட ஒவ்வொரு இலக்கும் இந்த அட்டவணையில் காப்புப்பிரதி எடுக்கப்படும்.</string>
     <string name="settings_backup_summary_loading">காப்புப்பிரதியைப் படிக்கிறது…</string>

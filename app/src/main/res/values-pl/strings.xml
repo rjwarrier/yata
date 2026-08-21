@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">Przejrzyj pierwszą synchronizację</string>
     <string name="settings_initial_sync_merge_body">To urządzenie i zdalny zrzut synchronizacji zawierają dane. YATA scali je, zachowa kopię zapasową odzyskiwania przed zastosowaniem zmian i użyje zdalnej kopii przy bezpośrednich konfliktach.</string>
     <string name="settings_initial_sync_merge_action">Scal teraz</string>
+    <string name="settings_empty_local_sync_title">To urządzenie wygląda na puste</string>
+    <string name="settings_empty_local_sync_body">To urządzenie nie ma żadnych zadań, ale jego ostatni stan synchronizacji i zdalny zrzut zawierają dane. Zwykle oznacza to nową instalację lub przywrócone urządzenie, a nie celowe usunięcie. Przywróć zdalny zrzut lub mimo to kontynuuj synchronizację — co usunie te dane również ze zdalnej kopii.</string>
+    <string name="settings_empty_local_sync_restore_action">Przywróć ze zdalnego</string>
+    <string name="settings_empty_local_sync_overwrite_action">Synchronizuj mimo to</string>
+    <string name="settings_remote_restore_success">Przywrócono najnowszy zdalny zrzut.</string>
+    <string name="settings_remote_restore_failed">Przywracanie nie powiodło się: %1$s</string>
     <string name="settings_backup_interval">Częstotliwość kopii zapasowej</string>
     <string name="settings_backup_interval_summary">Każde skonfigurowane miejsce docelowe jest archiwizowane według tego harmonogramu.</string>
     <string name="settings_backup_summary_loading">Odczytywanie kopii zapasowej…</string>

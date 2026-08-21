@@ -1132,6 +1132,12 @@
     <string name="settings_initial_sync_merge_title">Review first sync</string>
     <string name="settings_initial_sync_merge_body">This device and the remote sync snapshot both contain data. YATA will merge them, keep a recovery backup before applying changes, and use the remote copy for any direct conflicts.</string>
     <string name="settings_initial_sync_merge_action">Merge now</string>
+    <string name="settings_empty_local_sync_title">Este dispositivo parece vacío</string>
+    <string name="settings_empty_local_sync_body">Este dispositivo no tiene tareas, pero su último estado de sincronización y la instantánea remota sí contienen datos. Esto suele indicar una instalación nueva o un dispositivo restaurado, no un borrado intencionado. Restaura la instantánea remota, o continúa sincronizando de todos modos, lo que también eliminará esos datos de la copia remota.</string>
+    <string name="settings_empty_local_sync_restore_action">Restaurar desde remoto</string>
+    <string name="settings_empty_local_sync_overwrite_action">Sincronizar de todos modos</string>
+    <string name="settings_remote_restore_success">Se restauró la última instantánea remota.</string>
+    <string name="settings_remote_restore_failed">Error al restaurar: %1$s</string>
     <string name="settings_backup_summary_device">Creard on: %1$s</string>
     <string name="settings_backup_summary_device_unknown">Unknown device</string>
     <string name="settings_clear_sync_lock">Clear sync lock</string>

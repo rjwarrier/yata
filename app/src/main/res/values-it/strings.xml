@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">Rivedi la prima sincronizzazione</string>
     <string name="settings_initial_sync_merge_body">Questo dispositivo e lo snapshot di sincronizzazione remota contengono entrambi dati. YATA li unirà, conserverà un backup di recupero prima di applicare le modifiche e userà la copia remota per eventuali conflitti diretti.</string>
     <string name="settings_initial_sync_merge_action">Unisci ora</string>
+    <string name="settings_empty_local_sync_title">Questo dispositivo sembra vuoto</string>
+    <string name="settings_empty_local_sync_body">Questo dispositivo non ha attività, ma il suo ultimo stato di sincronizzazione e lo snapshot remoto contengono entrambi dati. Questo di solito indica una nuova installazione o un dispositivo ripristinato, non una cancellazione intenzionale. Ripristina lo snapshot remoto, oppure continua comunque la sincronizzazione, il che eliminerà quei dati anche dalla copia remota.</string>
+    <string name="settings_empty_local_sync_restore_action">Ripristina da remoto</string>
+    <string name="settings_empty_local_sync_overwrite_action">Sincronizza comunque</string>
+    <string name="settings_remote_restore_success">Ripristinato l’ultimo snapshot remoto.</string>
+    <string name="settings_remote_restore_failed">Ripristino non riuscito: %1$s</string>
     <string name="settings_backup_interval">Frequenza di backup</string>
     <string name="settings_backup_interval_summary">Ogni destinazione configurata viene sottoposta a backup secondo questa pianificazione.</string>
     <string name="settings_backup_summary_loading">Lettura del backup…</string>

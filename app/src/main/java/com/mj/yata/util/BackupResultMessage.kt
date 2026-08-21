@@ -2,6 +2,7 @@ package com.mj.yata.util
 
 import android.content.Context
 import com.mj.yata.R
+import com.mj.yata.data.sync.EmptyLocalDataConfirmationRequiredException
 import com.mj.yata.data.sync.InitialSyncConfirmationRequiredException
 import com.mj.yata.domain.model.BackupDestination
 import com.mj.yata.domain.model.BackupRunResult
@@ -47,6 +48,9 @@ fun backupDestinationLabel(destination: BackupDestination): Int = when (destinat
 
 fun List<BackupRunResult>.initialSyncConfirmationRequired(): InitialSyncConfirmationRequiredException? =
     firstNotNullOfOrNull { it.error as? InitialSyncConfirmationRequiredException }
+
+fun List<BackupRunResult>.emptyLocalDataConfirmationRequired(): EmptyLocalDataConfirmationRequiredException? =
+    firstNotNullOfOrNull { it.error as? EmptyLocalDataConfirmationRequiredException }
 
 private fun failedLabel(result: BackupRunResult, context: Context): String {
     val destination = context.getString(backupDestinationLabel(result.destination))

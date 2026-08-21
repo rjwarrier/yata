@@ -529,6 +529,12 @@
     <string name="settings_initial_sync_merge_title">पहला सिंक जांचें</string>
     <string name="settings_initial_sync_merge_body">इस डिवाइस और रिमोट सिंक स्नैपशॉट दोनों में डेटा है। YATA उन्हें मिलाएगा, बदलाव लागू करने से पहले एक रिकवरी बैकअप रखेगा, और किसी भी सीधे टकराव के लिए रिमोट कॉपी का उपयोग करेगा।</string>
     <string name="settings_initial_sync_merge_action">अभी मर्ज करें</string>
+    <string name="settings_empty_local_sync_title">यह डिवाइस खाली लग रहा है</string>
+    <string name="settings_empty_local_sync_body">इस डिवाइस पर कोई कार्य नहीं है, लेकिन इसकी आखिरी सिंक स्थिति और रिमोट स्नैपशॉट दोनों में डेटा है। यह आमतौर पर नई इंस्टॉलेशन या पुनर्स्थापित डिवाइस को दर्शाता है, न कि जानबूझकर मिटाने को। रिमोट स्नैपशॉट को पुनर्स्थापित करें, या फिर भी सिंक जारी रखें — जो उस डेटा को रिमोट कॉपी से भी हटा देगा।</string>
+    <string name="settings_empty_local_sync_restore_action">रिमोट से पुनर्स्थापित करें</string>
+    <string name="settings_empty_local_sync_overwrite_action">फिर भी सिंक करें</string>
+    <string name="settings_remote_restore_success">नवीनतम रिमोट स्नैपशॉट पुनर्स्थापित किया गया।</string>
+    <string name="settings_remote_restore_failed">पुनर्स्थापना विफल: %1$s</string>
     <string name="settings_backup_interval">बैकअप आवृत्ति</string>
     <string name="settings_backup_interval_summary">हर कॉन्फ़िगर किए गए गंतव्य का बैकअप इस शेड्यूल पर होता है।</string>
     <plurals name="settings_backup_all_ok">

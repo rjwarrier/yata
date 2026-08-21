@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">Verifică prima sincronizare</string>
     <string name="settings_initial_sync_merge_body">Acest dispozitiv și instantaneul de sincronizare de la distanță conțin ambele date. YATA le va combina, va păstra un backup de recuperare înainte de a aplica modificările și va folosi copia de la distanță pentru orice conflict direct.</string>
     <string name="settings_initial_sync_merge_action">Combină acum</string>
+    <string name="settings_empty_local_sync_title">Acest dispozitiv pare gol</string>
+    <string name="settings_empty_local_sync_body">Acest dispozitiv nu are sarcini, dar ultima sa stare de sincronizare și instantaneul de la distanță conțin ambele date. Acest lucru indică de obicei o instalare nouă sau un dispozitiv restaurat, nu o ștergere intenționată. Restaurează instantaneul de la distanță sau continuă totuși sincronizarea — ceea ce va șterge acele date și din copia de la distanță.</string>
+    <string name="settings_empty_local_sync_restore_action">Restaurează de la distanță</string>
+    <string name="settings_empty_local_sync_overwrite_action">Sincronizează oricum</string>
+    <string name="settings_remote_restore_success">Cel mai recent instantaneu de la distanță a fost restaurat.</string>
+    <string name="settings_remote_restore_failed">Restaurare eșuată: %1$s</string>
     <string name="settings_backup_interval">Frecvența backupului</string>
     <string name="settings_backup_interval_summary">Fiecare destinație configurată este copiată de rezervă conform acestui program.</string>
     <string name="settings_backup_summary_loading">Se citește backupul…</string>

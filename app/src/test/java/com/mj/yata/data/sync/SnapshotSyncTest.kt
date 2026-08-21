@@ -131,6 +131,89 @@ class SnapshotSyncTest {
     }
 
     @Test
+    fun localLooksUnexpectedlyEmpty_trueWhenBaselineAndRemoteHaveDataButLocalDoesNot() {
+        // The restored/reinstalled-device shape: Android's auto-backup can bring back the sync
+        // baseline (small file) without the Room database (excluded from backup) — this device's
+        // last known state and the current remote both show real data, but local looks wiped.
+        val baseline = snapshot(tasks = listOf(task("t1", "one")))
+        val local = snapshot()
+        val remote = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertTrue(localLooksUnexpectedlyEmpty(baseline, local, remote))
+    }
+
+    @Test
+    fun localLooksUnexpectedlyEmpty_falseWithoutABaseline() {
+        // No prior sync on this device: this is a genuine first join, handled by
+        // InitialSyncConfirmationRequiredException instead, not this guard.
+        val local = snapshot()
+        val remote = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertFalse(localLooksUnexpectedlyEmpty(base = null, local = local, remote = remote))
+    }
+
+    @Test
+    fun localLooksUnexpectedlyEmpty_falseWhenRemoteIsAlsoEmpty() {
+        // Nothing left to protect: an empty remote can't be silently deleted by this merge.
+        val baseline = snapshot(tasks = listOf(task("t1", "one")))
+        val local = snapshot()
+        val remote = snapshot()
+
+        assertFalse(localLooksUnexpectedlyEmpty(baseline, local, remote))
+    }
+
+    @Test
+    fun localLooksUnexpectedlyEmpty_falseWhenLocalStillHasData() {
+        val baseline = snapshot(tasks = listOf(task("t1", "one")))
+        val local = snapshot(tasks = listOf(task("t1", "one")))
+        val remote = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertFalse(localLooksUnexpectedlyEmpty(baseline, local, remote))
+    }
+
+    @Test
+    fun mergeOfUnexpectedlyEmptyLocal_wouldSilentlyDropEveryRemoteRecordIfNotIntercepted() {
+        // Demonstrates the actual data loss this guard exists to prevent: merge() on its own,
+        // given this exact shape, drops every task with zero conflicts flagged — the record-level
+        // three-way merge sees remote unchanged from base and local "deleted" it, which is correct
+        // *if* the deletion were real. SnapshotSyncEngine.checkLocalNotUnexpectedlyEmpty is what
+        // stops this shape from ever reaching merge() in production without explicit confirmation.
+        val baseline = snapshot(tasks = listOf(task("t1", "one"), task("t2", "two")))
+        val local = snapshot()
+        val remote = snapshot(tasks = listOf(task("t1", "one"), task("t2", "two")))
+
+        val result = SnapshotMerger.merge(baseline, local, remote)
+
+        assertEquals(0, result.json.getJSONArray("tasks").length())
+        assertEquals(0, result.conflicts)
+        assertTrue(SnapshotMerger.removedAnyRecords(baseline, result.json))
+    }
+
+    @Test
+    fun removedAnyRecords_trueWhenABeforeRecordIsMissingAfter() {
+        val before = snapshot(tasks = listOf(task("t1", "one"), task("t2", "two")))
+        val after = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertTrue(SnapshotMerger.removedAnyRecords(before, after))
+    }
+
+    @Test
+    fun removedAnyRecords_falseWhenBeforeHadNothingToLose() {
+        val before = snapshot()
+        val after = snapshot(tasks = listOf(task("t1", "one")))
+
+        assertFalse(SnapshotMerger.removedAnyRecords(before, after))
+    }
+
+    @Test
+    fun removedAnyRecords_falseWhenEveryBeforeRecordSurvives() {
+        val before = snapshot(tasks = listOf(task("t1", "one")))
+        val after = snapshot(tasks = listOf(task("t1", "edited")))
+
+        assertFalse(SnapshotMerger.removedAnyRecords(before, after))
+    }
+
+    @Test
     fun firstJoin_unionsDevicesAndUsesEstablishedServerOnCollision() {
         val local = snapshot(tasks = listOf(task("same", "local"), task("local", "only")))
         val remote = snapshot(tasks = listOf(task("same", "server"), task("remote", "only")))

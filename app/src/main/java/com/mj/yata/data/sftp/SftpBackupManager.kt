@@ -218,7 +218,8 @@ class SftpBackupManager @Inject constructor(
                                     scopeKey = scopeKey,
                                     remoteIsRecovery =
                                         remote.jsonBytes != null && !remote.canonicalHeadValid,
-                                    allowInitialJoinMerge = options.allowInitialJoinMerge
+                                    allowInitialJoinMerge = options.allowInitialJoinMerge,
+                                    allowEmptyLocalOverwrite = options.allowEmptyLocalOverwrite
                                 )
                                 val publish = prepared.remoteNeedsPublish || !remote.canonicalHeadValid
                                 val canonicalBytes = if (publish) {

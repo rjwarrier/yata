@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">પ્રથમ સિંકની સમીક્ષા કરો</string>
     <string name="settings_initial_sync_merge_body">આ ડિવાઇસ અને રિમોટ સિંક સ્નેપશોટ બંનેમાં ડેટા છે. YATA તેમને મર્જ કરશે, ફેરફારો લાગુ કરતાં પહેલાં પુનઃપ્રાપ્તિ બેકઅપ રાખશે, અને કોઈપણ સીધા સંઘર્ષ માટે રિમોટ કૉપિ વાપરશે.</string>
     <string name="settings_initial_sync_merge_action">હમણાં મર્જ કરો</string>
+    <string name="settings_empty_local_sync_title">આ ડિવાઇસ ખાલી લાગે છે</string>
+    <string name="settings_empty_local_sync_body">આ ડિવાઇસમાં કોઈ કાર્ય નથી, પરંતુ તેની છેલ્લી સિંક સ્થિતિ અને રિમોટ સ્નેપશોટ બંનેમાં ડેટા છે. આ સામાન્ય રીતે નવું ઇન્સ્ટોલેશન અથવા પુનઃસ્થાપિત ડિવાઇસ સૂચવે છે, ઇરાદાપૂર્વક ડિલીટ નહીં. રિમોટ સ્નેપશોટ પુનઃસ્થાપિત કરો, અથવા છતાં પણ સિંક ચાલુ રાખો — જે તે ડેટા રિમોટ કૉપિમાંથી પણ કાઢી નાખશે.</string>
+    <string name="settings_empty_local_sync_restore_action">રિમોટમાંથી પુનઃસ્થાપિત કરો</string>
+    <string name="settings_empty_local_sync_overwrite_action">છતાં પણ સિંક કરો</string>
+    <string name="settings_remote_restore_success">નવીનતમ રિમોટ સ્નેપશોટ પુનઃસ્થાપિત કરાયો.</string>
+    <string name="settings_remote_restore_failed">પુનઃસ્થાપન નિષ્ફળ: %1$s</string>
     <string name="settings_backup_interval">બેકઅપ આવર્તન</string>
     <string name="settings_backup_interval_summary">દરેક ગોઠવેલ ડેસ્ટિનેશનનો બેકઅપ આ શેડ્યુલ પર લેવાય છે.</string>
     <string name="settings_backup_summary_loading">બેકઅપ વાંચી રહ્યા છીએ…</string>

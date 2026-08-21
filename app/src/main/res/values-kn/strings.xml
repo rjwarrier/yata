@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">ಮೊದಲ ಸಿಂಕ್ ಪರಿಶೀಲಿಸಿ</string>
     <string name="settings_initial_sync_merge_body">ಈ ಸಾಧನ ಮತ್ತು ರಿಮೋಟ್ ಸಿಂಕ್ ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ ಎರಡರಲ್ಲೂ ದತ್ತಾಂಶವಿದೆ. YATA ಅವುಗಳನ್ನು ವಿಲೀನಗೊಳಿಸುತ್ತದೆ, ಬದಲಾವಣೆಗಳನ್ನು ಅನ್ವಯಿಸುವ ಮೊದಲು ಮರುಪಡೆಯುವಿಕೆ ಬ್ಯಾಕಪ್ ಇಡುತ್ತದೆ, ಮತ್ತು ಯಾವುದೇ ನೇರ ಸಂಘರ್ಷಗಳಿಗೆ ರಿಮೋಟ್ ಪ್ರತಿಯನ್ನು ಬಳಸುತ್ತದೆ.</string>
     <string name="settings_initial_sync_merge_action">ಈಗ ವಿಲೀನಗೊಳಿಸಿ</string>
+    <string name="settings_empty_local_sync_title">ಈ ಸಾಧನ ಖಾಲಿಯಾಗಿ ಕಾಣುತ್ತಿದೆ</string>
+    <string name="settings_empty_local_sync_body">ಈ ಸಾಧನದಲ್ಲಿ ಯಾವುದೇ ಕಾರ್ಯಗಳಿಲ್ಲ, ಆದರೆ ಅದರ ಕೊನೆಯ ಸಿಂಕ್ ಸ್ಥಿತಿ ಮತ್ತು ರಿಮೋಟ್ ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ ಎರಡರಲ್ಲೂ ದತ್ತಾಂಶವಿದೆ. ಇದು ಸಾಮಾನ್ಯವಾಗಿ ಹೊಸ ಸ್ಥಾಪನೆ ಅಥವಾ ಮರುಸ್ಥಾಪಿಸಿದ ಸಾಧನವನ್ನು ಸೂಚಿಸುತ್ತದೆ, ಉದ್ದೇಶಪೂರ್ವಕ ಅಳಿಸುವಿಕೆಯನ್ನಲ್ಲ. ರಿಮೋಟ್ ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ ಅನ್ನು ಮರುಸ್ಥಾಪಿಸಿ, ಅಥವಾ ಹಾಗಿದ್ದರೂ ಸಿಂಕ್ ಮುಂದುವರಿಸಿ — ಇದು ಆ ದತ್ತಾಂಶವನ್ನು ರಿಮೋಟ್ ಪ್ರತಿಯಿಂದಲೂ ಅಳಿಸುತ್ತದೆ.</string>
+    <string name="settings_empty_local_sync_restore_action">ರಿಮೋಟ್‌ನಿಂದ ಮರುಸ್ಥಾಪಿಸಿ</string>
+    <string name="settings_empty_local_sync_overwrite_action">ಹಾಗಿದ್ದರೂ ಸಿಂಕ್ ಮಾಡಿ</string>
+    <string name="settings_remote_restore_success">ಇತ್ತೀಚಿನ ರಿಮೋಟ್ ಸ್ನ್ಯಾಪ್‌ಶಾಟ್ ಅನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ.</string>
+    <string name="settings_remote_restore_failed">ಮರುಸ್ಥಾಪನೆ ವಿಫಲವಾಗಿದೆ: %1$s</string>
     <string name="settings_backup_interval">ಬ್ಯಾಕಪ್ ಆವರ್ತನೆ</string>
     <string name="settings_backup_interval_summary">ಪ್ರತಿ ಸಂರಚಿಸಿದ ಗಮ್ಯಸ್ಥಾನವನ್ನು ಈ ವೇಳಾಪಟ್ಟಿಯಲ್ಲಿ ಬ್ಯಾಕಪ್ ಮಾಡಲಾಗುತ್ತದೆ.</string>
     <string name="settings_backup_summary_loading">ಬ್ಯಾಕಪ್ ಓದಲಾಗುತ್ತಿದೆ…</string>

@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <include domain="file" path="." />
+    <!--
+        yata-sync/ holds SnapshotSyncEngine's merge baseline — the last canonical sync snapshot this
+        device observed. Restoring it onto a device whose Room database (domain="database", never
+        included here) came back empty makes the merge think this device has synced before and now
+        has nothing, which deletes every remote record with no conflict flagged and no recovery
+        backup taken (SnapshotSyncEngine.checkLocalNotUnexpectedlyEmpty guards the *sync* path, but a
+        restored device could still reach that state before ever running the app). Excluding the
+        baseline forces a restored/reinstalled device through the explicit "both sides have data"
+        first-sync confirmation instead.
+
+        datastore/ holds UserPreferences, including the app-lock PIN's PBKDF2 hash and salt — a
+        secret that should travel through RemoteBackupCredentialsStore's EncryptedSharedPreferences
+        (already outside any backup domain) or nowhere, not through Android's device backup.
+    -->
+    <exclude domain="file" path="yata-sync/" />
+    <exclude domain="file" path="datastore/" />
 </full-backup-content>

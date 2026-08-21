@@ -516,6 +516,12 @@
     <string name="settings_initial_sync_merge_title">Kagua usawazishaji wa kwanza</string>
     <string name="settings_initial_sync_merge_body">Kifaa hiki na muundo wa usawazishaji wa mbali vyote vina data. YATA itaviunganisha, itahifadhi nakala rudufu ya kurejeshea kabla ya kufanya mabadiliko, na itatumia nakala ya mbali kwa migongano ya moja kwa moja.</string>
     <string name="settings_initial_sync_merge_action">Unganisha sasa</string>
+    <string name="settings_empty_local_sync_title">Kifaa hiki kinaonekana tupu</string>
+    <string name="settings_empty_local_sync_body">Kifaa hiki hakina kazi zozote, lakini hali yake ya mwisho ya usawazishaji na muundo wa mbali vyote vina data. Kwa kawaida hii inaonyesha usakinishaji mpya au kifaa kilichorejeshwa, si ufutaji wa makusudi. Rejesha muundo wa mbali, au endelea kusawazisha hata hivyo — jambo litakalofuta data hiyo pia kutoka kwa nakala ya mbali.</string>
+    <string name="settings_empty_local_sync_restore_action">Rejesha kutoka mbali</string>
+    <string name="settings_empty_local_sync_overwrite_action">Sawazisha hata hivyo</string>
+    <string name="settings_remote_restore_success">Muundo wa hivi karibuni wa mbali umerejeshwa.</string>
+    <string name="settings_remote_restore_failed">Kurejesha kumeshindwa: %1$s</string>
     <string name="settings_backup_interval">Marudio ya nakala rudufu</string>
     <string name="settings_backup_interval_summary">Kila marudio yaliyowashwa yanahifadhiwa kwa ratiba hii.</string>
     <string name="settings_backup_summary_loading">Inasoma nakala rudufu…</string>

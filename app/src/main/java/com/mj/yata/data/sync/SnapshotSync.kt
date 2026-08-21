@@ -275,6 +275,31 @@ internal object SnapshotMerger {
     fun differenceSummary(left: JSONObject, right: JSONObject): String? =
         firstDifference(left, right, "$")
 
+    /**
+     * True when [after] is missing a record (by its keyed id, in any [keyedCollections] entry)
+     * that [before] had. Used as a defense-in-depth signal alongside [equivalent]: two snapshots
+     * can already be pixel-identical to each other (nothing left to *write* locally) while still
+     * representing a merge that just deleted records relative to what this device is known to
+     * have had — [SnapshotSyncEngine.commit] forces a recovery backup on either signal, not just
+     * a content difference, so that case still gets a safety net.
+     */
+    fun removedAnyRecords(before: JSONObject, after: JSONObject): Boolean =
+        keyedCollections.any { (collection, idKey) ->
+            val beforeIds = idsOf(before.optJSONArray(collection), idKey)
+            if (beforeIds.isEmpty()) return@any false
+            val afterIds = idsOf(after.optJSONArray(collection), idKey)
+            !afterIds.containsAll(beforeIds)
+        }
+
+    private fun idsOf(array: JSONArray?, idKey: String): Set<String> {
+        if (array == null) return emptySet()
+        val ids = mutableSetOf<String>()
+        for (i in 0 until array.length()) {
+            array.optJSONObject(i)?.optString(idKey)?.takeIf { it.isNotEmpty() }?.let(ids::add)
+        }
+        return ids
+    }
+
     internal fun isDeviceLocalSetting(name: String): Boolean =
         name == "backup_interval_minutes" ||
             name == "remote_backup_protocol" ||
@@ -673,7 +698,10 @@ internal data class PreparedSnapshotSync(
     val canonical: JSONObject,
     val conflicts: Int,
     val conflictRecords: List<SnapshotMerger.ConflictRecord>,
-    val remoteNeedsPublish: Boolean
+    val remoteNeedsPublish: Boolean,
+    /** Whether merging dropped any record [localAtStart] had — see
+     * [SnapshotMerger.removedAnyRecords]. */
+    val recordsRemoved: Boolean = false
 ) {
     val canonicalBytes: ByteArray
         get() = canonical.toString(2).toByteArray(Charsets.UTF_8)
@@ -705,6 +733,85 @@ private fun initialSyncConfirmationMessage(
         "${remote.totalProjects} projects, ${remote.totalPeople} people.\n\n" +
         "YATA will merge them, keep a recovery backup before applying changes, and use the remote copy for any direct conflicts."
 
+/**
+ * Thrown when this device has *already* synced before (a baseline exists and it has data) but now
+ * has no local data at all, while the remote snapshot still does. That combination is what a
+ * restored/reinstalled device looks like when Android's auto-backup brought back the sync baseline
+ * and app preferences (small DataStore/file content, eligible for cloud backup) without the Room
+ * database (large SQLite file, excluded) — the device *looks* wiped to the merge even though the
+ * user never deleted anything. Merging in that state is technically correct three-way-merge
+ * behavior (local's "no records" beats an unmodified remote) but it quietly deletes every record
+ * from the remote copy too, with no conflict flagged and no recovery backup taken since nothing
+ * appeared to change locally. See [SnapshotSyncEngine.commit]'s recovery-backup guard, which this
+ * exception exists to make actually fire.
+ */
+class EmptyLocalDataConfirmationRequiredException(
+    val baselineSummary: InitialSyncSnapshotSummary,
+    val remoteSummary: InitialSyncSnapshotSummary
+) : Exception(emptyLocalDataConfirmationMessage(baselineSummary, remoteSummary))
+
+private fun emptyLocalDataConfirmationMessage(
+    baseline: InitialSyncSnapshotSummary,
+    remote: InitialSyncSnapshotSummary
+): String =
+    "This device has no tasks, but its last known sync state and the remote snapshot both contain data.\n\n" +
+        "Last known state on this device: ${baseline.totalTasks} tasks (${baseline.openTasks} open), " +
+        "${baseline.totalProjects} projects, ${baseline.totalPeople} people.\n" +
+        "Remote snapshot: ${remote.totalTasks} tasks (${remote.openTasks} open), " +
+        "${remote.totalProjects} projects, ${remote.totalPeople} people.\n\n" +
+        "This usually means a fresh install or a restored device rather than an intentional wipe. " +
+        "Restore the remote snapshot to bring that data onto this device, or continue to sync anyway " +
+        "— which will delete it from the remote copy too."
+
+/**
+ * True when [base] and [remote] both carry real data but [local] carries none — the shape of a
+ * restored/reinstalled device (see [EmptyLocalDataConfirmationRequiredException]) rather than a
+ * first-ever sync ([base] null, handled separately by [InitialSyncConfirmationRequiredException])
+ * or a device with genuinely nothing left to protect ([remote] also empty). A pure predicate over
+ * the three snapshots so it can be tested without standing up [SnapshotSyncEngine]'s Android
+ * dependencies.
+ */
+internal fun localLooksUnexpectedlyEmpty(base: JSONObject?, local: JSONObject, remote: JSONObject?): Boolean {
+    if (base == null || remote == null) return false
+    return hasUserData(base) && !hasUserData(local) && hasUserData(remote)
+}
+
+internal fun initialSyncSummary(snapshot: JSONObject): InitialSyncSnapshotSummary {
+    val tasks = snapshot.optJSONArray("tasks")
+    var openTasks = 0
+    for (i in 0 until tasks.orZero()) {
+        if (tasks?.optJSONObject(i)?.optBoolean("done", false) == false) openTasks++
+    }
+    return InitialSyncSnapshotSummary(
+        totalTasks = tasks.orZero(),
+        openTasks = openTasks,
+        totalProjects = snapshot.optJSONArray("projects").orZero(),
+        totalPeople = peopleBeyondCurrentUser(snapshot)
+    )
+}
+
+internal fun hasUserData(snapshot: JSONObject): Boolean =
+    snapshot.optJSONArray("tasks").orZero() > 0 ||
+        snapshot.optJSONArray("projects").orZero() > 0 ||
+        snapshot.optJSONArray("lists").orZero() > 0 ||
+        snapshot.optJSONArray("tags").orZero() > 0 ||
+        snapshot.optJSONArray("tagGroups").orZero() > 0 ||
+        snapshot.optJSONArray("personGroups").orZero() > 0 ||
+        snapshot.optJSONArray("comments").orZero() > 0 ||
+        peopleBeyondCurrentUser(snapshot) > 0
+
+private fun peopleBeyondCurrentUser(snapshot: JSONObject): Int {
+    val people = snapshot.optJSONArray("people") ?: return 0
+    var count = 0
+    for (i in 0 until people.length()) {
+        val person = people.optJSONObject(i) ?: continue
+        if (!person.optBoolean("isMe", false)) count++
+    }
+    return count
+}
+
+private fun JSONArray?.orZero(): Int = this?.length() ?: 0
+
 @Singleton
 class SnapshotSyncEngine @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -715,13 +822,15 @@ class SnapshotSyncEngine @Inject constructor(
         remoteBytes: ByteArray?,
         scopeKey: String,
         remoteIsRecovery: Boolean = false,
-        allowInitialJoinMerge: Boolean = false
+        allowInitialJoinMerge: Boolean = false,
+        allowEmptyLocalOverwrite: Boolean = false
     ): PreparedSnapshotSync =
         withContext(Dispatchers.IO) {
             val local = normalized(jsonExporter.exportToBytes())
             val observedRemote = remoteBytes?.let(::normalized)
             val base = readBaseline(scopeKey)
             checkInitialJoinIsExplicit(base, local, observedRemote, allowInitialJoinMerge)
+            checkLocalNotUnexpectedlyEmpty(base, local, observedRemote, allowEmptyLocalOverwrite)
             // A previous/history file is necessarily older than a missing or corrupt canonical.
             // Once this device has a baseline, auto-promoting such a copy could make a newer
             // device accept a rollback. Before the first baseline exists, though, those history
@@ -739,7 +848,8 @@ class SnapshotSyncEngine @Inject constructor(
                 conflicts = result.conflicts,
                 conflictRecords = result.conflictRecords,
                 remoteNeedsPublish =
-                    remote == null || !SnapshotMerger.equivalent(remote, result.json)
+                    remote == null || !SnapshotMerger.equivalent(remote, result.json),
+                recordsRemoved = SnapshotMerger.removedAnyRecords(local, result.json)
             ).also {
                 // Do this before a transport publishes anything; exact apply repeats validation as
                 // defense in depth, but discovering an invalid graph after upload is too late.
@@ -766,7 +876,13 @@ class SnapshotSyncEngine @Inject constructor(
         }
         val localTarget = inFlightMerge?.json ?: prepared.canonical
         val conflictRecords = prepared.conflictRecords + inFlightMerge?.conflictRecords.orEmpty()
-        if (!SnapshotMerger.equivalent(current, localTarget)) {
+        val contentChanges = !SnapshotMerger.equivalent(current, localTarget)
+        // recordsRemoved can be true even when contentChanges is false: current may already equal
+        // localTarget (nothing left to *write*) while the merge that produced it still deleted
+        // records this device is on record as having had — e.g. an already-empty local export
+        // merging against a populated baseline. That combination writes nothing but is exactly the
+        // shape of an unnoticed data loss, so it still earns a recovery backup.
+        if (contentChanges || prepared.recordsRemoved) {
             recoveryBackupManager.saveCurrent("pre_sync_apply").getOrElse { e ->
                 throw IllegalStateException(
                     "Could not create a recovery backup before applying sync; local data was not changed",
@@ -776,6 +892,8 @@ class SnapshotSyncEngine @Inject constructor(
             if (conflictRecords.isNotEmpty()) {
                 writeConflictArtifact(prepared.scopeKey, conflictRecords)
             }
+        }
+        if (contentChanges) {
             check(jsonExporter.replaceBytesForSync(localTarget.toString(2).toByteArray(Charsets.UTF_8))) {
                 "The server snapshot was published, but applying it locally failed; sync again to retry"
             }
@@ -822,41 +940,26 @@ class SnapshotSyncEngine @Inject constructor(
         }
     }
 
-    private fun initialSyncSummary(snapshot: JSONObject): InitialSyncSnapshotSummary {
-        val tasks = snapshot.optJSONArray("tasks")
-        var openTasks = 0
-        for (i in 0 until tasks.orZero()) {
-            if (tasks?.optJSONObject(i)?.optBoolean("done", false) == false) openTasks++
-        }
-        return InitialSyncSnapshotSummary(
-            totalTasks = tasks.orZero(),
-            openTasks = openTasks,
-            totalProjects = snapshot.optJSONArray("projects").orZero(),
-            totalPeople = peopleBeyondCurrentUser(snapshot)
+    /**
+     * Guards against a restored/reinstalled device silently deleting the remote copy: this device
+     * has synced before ([base] has data) and the remote still has data, but local now has none.
+     * A device that never synced ([base] null) goes through [checkInitialJoinIsExplicit] instead —
+     * that path is unaffected. A device that legitimately has nothing left to protect (remote also
+     * empty) has nothing this guard needs to stop.
+     */
+    private fun checkLocalNotUnexpectedlyEmpty(
+        base: JSONObject?,
+        local: JSONObject,
+        remote: JSONObject?,
+        allowEmptyLocalOverwrite: Boolean
+    ) {
+        if (allowEmptyLocalOverwrite || !localLooksUnexpectedlyEmpty(base, local, remote)) return
+        throw EmptyLocalDataConfirmationRequiredException(
+            // Non-null: localLooksUnexpectedlyEmpty already required base and remote non-null.
+            baselineSummary = initialSyncSummary(base!!),
+            remoteSummary = initialSyncSummary(remote!!)
         )
     }
-
-    private fun hasUserData(snapshot: JSONObject): Boolean =
-        snapshot.optJSONArray("tasks").orZero() > 0 ||
-            snapshot.optJSONArray("projects").orZero() > 0 ||
-            snapshot.optJSONArray("lists").orZero() > 0 ||
-            snapshot.optJSONArray("tags").orZero() > 0 ||
-            snapshot.optJSONArray("tagGroups").orZero() > 0 ||
-            snapshot.optJSONArray("personGroups").orZero() > 0 ||
-            snapshot.optJSONArray("comments").orZero() > 0 ||
-            peopleBeyondCurrentUser(snapshot) > 0
-
-    private fun peopleBeyondCurrentUser(snapshot: JSONObject): Int {
-        val people = snapshot.optJSONArray("people") ?: return 0
-        var count = 0
-        for (i in 0 until people.length()) {
-            val person = people.optJSONObject(i) ?: continue
-            if (!person.optBoolean("isMe", false)) count++
-        }
-        return count
-    }
-
-    private fun JSONArray?.orZero(): Int = this?.length() ?: 0
 
     private fun readBaseline(scopeKey: String): JSONObject? = try {
         val file = baselineFile(scopeKey)

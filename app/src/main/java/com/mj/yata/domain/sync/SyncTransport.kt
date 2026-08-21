@@ -25,7 +25,11 @@ data class SyncRunReport(
 )
 
 data class SyncRunOptions(
-    val allowInitialJoinMerge: Boolean = false
+    val allowInitialJoinMerge: Boolean = false,
+    /** See `SnapshotSyncEngine.checkLocalNotUnexpectedlyEmpty` — bypasses the confirmation that
+     * fires when this device looks freshly restored (empty local data, but a populated baseline
+     * and remote), letting the user proceed after explicitly confirming it's an intentional wipe. */
+    val allowEmptyLocalOverwrite: Boolean = false
 )
 
 /** Lease-based transports only; GitHub uses fast-forward refs rather than a remote lock. */

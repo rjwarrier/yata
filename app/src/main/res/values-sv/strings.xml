@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">Granska första synkroniseringen</string>
     <string name="settings_initial_sync_merge_body">Den här enheten och fjärrsynkroniseringens ögonblicksbild innehåller båda data. YATA sammanfogar dem, sparar en återställningskopia innan ändringarna tillämpas och använder fjärrkopian vid direkta konflikter.</string>
     <string name="settings_initial_sync_merge_action">Sammanfoga nu</string>
+    <string name="settings_empty_local_sync_title">Den här enheten verkar tom</string>
+    <string name="settings_empty_local_sync_body">Den här enheten har inga uppgifter, men dess senaste synkstatus och fjärrsnapshoten innehåller båda data. Det tyder oftast på en nyinstallation eller en återställd enhet, inte en avsiktlig radering. Återställ fjärrsnapshoten, eller fortsätt synka ändå — vilket även tar bort den datan från fjärrkopian.</string>
+    <string name="settings_empty_local_sync_restore_action">Återställ från fjärr</string>
+    <string name="settings_empty_local_sync_overwrite_action">Synka ändå</string>
+    <string name="settings_remote_restore_success">Den senaste fjärrsnapshoten har återställts.</string>
+    <string name="settings_remote_restore_failed">Återställning misslyckades: %1$s</string>
     <string name="settings_backup_interval">Frekvens för säkerhetskopiering</string>
     <string name="settings_backup_interval_summary">Varje konfigurerat mål säkerhetskopieras enligt detta schema.</string>
     <string name="settings_backup_summary_loading">Läser säkerhetskopia…</string>

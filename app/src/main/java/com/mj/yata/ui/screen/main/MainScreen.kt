@@ -10,6 +10,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.platform.LocalContext
 import com.mj.yata.util.backupResultMessage
+import com.mj.yata.util.emptyLocalDataConfirmationRequired
 import com.mj.yata.util.initialSyncConfirmationRequired
 import com.mj.yata.util.resolveParsedQuickAddEntities
 import com.mj.yata.util.selfHostedSyncLockFailure
@@ -137,23 +138,30 @@ fun MainScreen(
     var showClearSyncLockDialog by remember { mutableStateOf(false) }
     var clearSyncLockDialogMessage by remember { mutableStateOf<String?>(null) }
     var initialSyncMergeMessage by remember { mutableStateOf<String?>(null) }
+    var emptyLocalSyncMessage by remember { mutableStateOf<String?>(null) }
     var isClearingSyncLock by remember { mutableStateOf(false) }
 
-    fun runManualSync(allowInitialJoinMerge: Boolean = false) {
+    fun runManualSync(allowInitialJoinMerge: Boolean = false, allowEmptyLocalOverwrite: Boolean = false) {
         // Guarded rather than queued: repeated taps during a slow upload should do nothing, not
         // stack up duplicate backups of the same data.
         if (syncInProgress) return
         // Every configured destination runs from this one button. The message
         // names whichever ones failed rather than a blanket "sync failed" that would be wrong for
         // the destinations that did succeed.
-        viewModel.backupAllNow(allowInitialJoinMerge = allowInitialJoinMerge) { results ->
+        viewModel.backupAllNow(
+            allowInitialJoinMerge = allowInitialJoinMerge,
+            allowEmptyLocalOverwrite = allowEmptyLocalOverwrite
+        ) { results ->
             val syncLockFailure = results.selfHostedSyncLockFailure()
             val initialJoinFailure = results.initialSyncConfirmationRequired()
+            val emptyLocalFailure = results.emptyLocalDataConfirmationRequired()
             if (syncLockFailure != null) {
                 clearSyncLockDialogMessage = syncLockClearPrompt(context, syncLockFailure)
                 showClearSyncLockDialog = true
             } else if (initialJoinFailure != null && !allowInitialJoinMerge) {
                 initialSyncMergeMessage = initialJoinFailure.message
+            } else if (emptyLocalFailure != null && !allowEmptyLocalOverwrite) {
+                emptyLocalSyncMessage = emptyLocalFailure.message
             } else {
                 scope.launch {
                     snackbarHostState.showSnackbar(backupResultMessage(results, context).text)
@@ -1323,6 +1331,55 @@ fun MainScreen(
             dismissButton = {
                 TextButton(onClick = { initialSyncMergeMessage = null }) {
                     Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (emptyLocalSyncMessage != null) {
+        AlertDialog(
+            onDismissRequest = { emptyLocalSyncMessage = null },
+            title = { Text(stringResource(R.string.settings_empty_local_sync_title)) },
+            text = { Text(emptyLocalSyncMessage ?: stringResource(R.string.settings_empty_local_sync_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        emptyLocalSyncMessage = null
+                        viewModel.restoreLatestRemoteSnapshot { result ->
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    if (result.isSuccess) {
+                                        context.getString(R.string.settings_remote_restore_success)
+                                    } else {
+                                        context.getString(
+                                            R.string.settings_remote_restore_failed,
+                                            result.exceptionOrNull()?.message ?: ""
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_empty_local_sync_restore_action))
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { emptyLocalSyncMessage = null }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                    TextButton(
+                        onClick = {
+                            emptyLocalSyncMessage = null
+                            runManualSync(allowEmptyLocalOverwrite = true)
+                        }
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_empty_local_sync_overwrite_action),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         )

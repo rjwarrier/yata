@@ -433,6 +433,12 @@
     <string name="settings_initial_sync_merge_title">Tinjau sinkronisasi pertama</string>
     <string name="settings_initial_sync_merge_body">Perangkat ini dan snapshot sinkronisasi jarak jauh sama-sama berisi data. YATA akan menggabungkannya, menyimpan cadangan pemulihan sebelum menerapkan perubahan, dan menggunakan salinan jarak jauh untuk konflik langsung.</string>
     <string name="settings_initial_sync_merge_action">Gabungkan sekarang</string>
+    <string name="settings_empty_local_sync_title">Perangkat ini tampak kosong</string>
+    <string name="settings_empty_local_sync_body">Perangkat ini tidak memiliki tugas, tetapi status sinkronisasi terakhirnya dan snapshot jarak jauh sama-sama berisi data. Ini biasanya menandakan instalasi baru atau perangkat yang dipulihkan, bukan penghapusan yang disengaja. Pulihkan snapshot jarak jauh, atau tetap lanjutkan sinkronisasi — yang juga akan menghapus data tersebut dari salinan jarak jauh.</string>
+    <string name="settings_empty_local_sync_restore_action">Pulihkan dari jarak jauh</string>
+    <string name="settings_empty_local_sync_overwrite_action">Tetap sinkronkan</string>
+    <string name="settings_remote_restore_success">Snapshot jarak jauh terbaru telah dipulihkan.</string>
+    <string name="settings_remote_restore_failed">Pemulihan gagal: %1$s</string>
     <string name="settings_backup_interval">Frekuensi cadangan</string>
     <string name="settings_backup_interval_summary">Setiap tujuan yang dikonfigurasi dicadangkan sesuai jadwal ini.</string>
     <string name="settings_backup_summary_loading">Membaca cadangan…</string>

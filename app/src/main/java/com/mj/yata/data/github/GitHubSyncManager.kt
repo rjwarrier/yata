@@ -177,7 +177,8 @@ class GitHubSyncManager @Inject constructor(
                     remoteBytes = remoteBytes,
                     scopeKey = scopeKey,
                     remoteIsRecovery = remoteIsRecovery,
-                    allowInitialJoinMerge = options.allowInitialJoinMerge
+                    allowInitialJoinMerge = options.allowInitialJoinMerge,
+                    allowEmptyLocalOverwrite = options.allowEmptyLocalOverwrite
                 )
                 GitHubPreparedSnapshot(
                     canonicalBytes = prepared.canonicalBytes,
