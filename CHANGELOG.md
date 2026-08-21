@@ -24,11 +24,15 @@ test-only changes belong in the commit message, not here, unless they change beh
 ### Changed
 - Duplicating a task now automatically appends "Duplicate" to the cloned task's title and immediately
   opens the new task in the task edit screen.
-- Smoothed the primary FAB size and label morph animation between tabs — the button pill's width
-  now animates in step with its label instead of snapping instantly to the new tab's target width,
-  and it expands/contracts with natural spring physics without visual jerking.
+- Smoothed the primary FAB size and label morph animation between tabs so the button pill fluidly
+  expands/contracts with natural spring physics without visual jerking.
 - On task detail, the "Add a comment" field now sits below the existing comments instead of above
   them, so newest comments appear next to where you're typing.
+- Every three-dot/overflow menu across the app (task rows, task/project/list/tag/person detail,
+  sort menus, Settings pickers) now shares one rounded, shadow-lifted menu style with rounded
+  individual items, instead of the sharp-cornered flat default.
+- Comment cards are more compact — the delete control is now a small tonal circle centred against
+  the comment text, removing the empty space that the oversized touch target left below each card.
 
 ## [0.94] - 2026-08-18
 

@@ -340,9 +340,9 @@ fun TaskDetailScreen(
                     IconButton(onClick = { showExportMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                     }
-                    DropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
+                    YataDropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
                         if (task.recurrence != null && !task.done) {
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.task_detail_skip_this_occurrence)) },
                                 onClick = {
                                     showExportMenu = false
@@ -354,7 +354,7 @@ fun TaskDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
                             )
                         }
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.task_detail_duplicate_task)) },
                             onClick = {
                                 showExportMenu = false
@@ -365,7 +365,7 @@ fun TaskDetailScreen(
                             },
                             leadingIcon = { Icon(Icons.Default.ContentCopy, contentDescription = null) }
                         )
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.action_export_as_image)) },
                             onClick = {
                                 showExportMenu = false
@@ -373,7 +373,7 @@ fun TaskDetailScreen(
                             },
                             leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                         )
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.action_export_as_pdf)) },
                             onClick = {
                                 showExportMenu = false
@@ -383,7 +383,7 @@ fun TaskDetailScreen(
                         )
                         // Archive is not delete: the task keeps everything and simply leaves the
                         // normal listings until unarchived from Settings -> Archive.
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(if (task.archived) stringResource(R.string.task_unarchive_action) else stringResource(R.string.task_archive_action)) },
                             onClick = {
                                 showExportMenu = false
@@ -409,7 +409,7 @@ fun TaskDetailScreen(
                         )
                         // Deep link back to this task — paste into a note, a message, or an
                         // automation and it reopens exactly here.
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.task_detail_copy_link_to_task)) },
                             onClick = {
                                 showExportMenu = false
@@ -421,7 +421,7 @@ fun TaskDetailScreen(
                             leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) }
                         )
                         HorizontalDivider()
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(stringResource(R.string.task_detail_delete_task), color = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 showExportMenu = false
@@ -1517,8 +1517,8 @@ fun TaskDetailScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
-                                verticalAlignment = Alignment.Top
+                                    .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
@@ -1537,8 +1537,24 @@ fun TaskDetailScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                IconButton(onClick = { viewModel.deleteComment(comment) }) {
-                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.task_detail_delete_comment), modifier = Modifier.size(16.dp))
+                                // Compact tonal pill instead of a full 48dp IconButton — the default
+                                // touch target was taller than this row's two lines of text, which
+                                // padded the card out with visible empty space beneath the content.
+                                FilledTonalIconButton(
+                                    onClick = { viewModel.deleteComment(comment) },
+                                    modifier = Modifier
+                                        .padding(start = 4.dp)
+                                        .size(28.dp),
+                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.task_detail_delete_comment),
+                                        modifier = Modifier.size(14.dp)
+                                    )
                                 }
                             }
                         }

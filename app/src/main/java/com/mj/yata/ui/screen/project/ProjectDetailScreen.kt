@@ -42,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mj.yata.R
 import com.mj.yata.ui.widgets.showSuccess
+import com.mj.yata.ui.widgets.YataDropdownMenu
+import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.ui.widgets.showError
 import com.mj.yata.util.taskMatchesQuery
 import com.mj.yata.util.sortedByMode
@@ -349,11 +351,11 @@ fun ProjectDetailScreen(
                         com.mj.yata.ui.widgets.YataTopBarIconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
-                        DropdownMenu(
+                        YataDropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.project_detail_edit_project)) },
                                 onClick = {
                                     showMenu = false
@@ -361,7 +363,7 @@ fun ProjectDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.project_manage_sections)) },
                                 onClick = {
                                     showMenu = false
@@ -369,7 +371,7 @@ fun ProjectDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_markdown)) },
                                 onClick = {
                                     showMenu = false
@@ -377,7 +379,7 @@ fun ProjectDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.IosShare, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_image)) },
                                 onClick = {
                                     showMenu = false
@@ -385,7 +387,7 @@ fun ProjectDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_export_as_pdf)) },
                                 onClick = {
                                     showMenu = false
@@ -393,7 +395,7 @@ fun ProjectDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.PictureAsPdf, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.project_detail_roll_over_open_tasks)) },
                                 onClick = {
                                     showMenu = false
@@ -401,7 +403,7 @@ fun ProjectDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.project_detail_roll_overdue_forward)) },
                                 onClick = {
                                     showMenu = false
@@ -409,7 +411,7 @@ fun ProjectDetailScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.SkipNext, contentDescription = null) }
                             )
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = {
                                     Text(
                                         stringResource(
@@ -424,7 +426,7 @@ fun ProjectDetailScreen(
                                 leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null) }
                             )
                             if (project.archived) {
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(stringResource(R.string.project_detail_restore_project)) },
                                     onClick = {
                                         showMenu = false
@@ -432,7 +434,7 @@ fun ProjectDetailScreen(
                                     },
                                     leadingIcon = { Icon(Icons.Default.Visibility, contentDescription = null) }
                                 )
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(stringResource(R.string.project_detail_delete_project)) },
                                     onClick = {
                                         showMenu = false
@@ -441,7 +443,7 @@ fun ProjectDetailScreen(
                                     leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) }
                                 )
                             } else {
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(stringResource(R.string.project_detail_archive_project)) },
                                     onClick = {
                                         showMenu = false

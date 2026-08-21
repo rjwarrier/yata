@@ -138,6 +138,8 @@ import com.mj.yata.notification.OverdueEscalationWorker
 import com.mj.yata.notification.NotificationPermissionUtils
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
+import com.mj.yata.ui.widgets.YataDropdownMenu
+import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.ui.widgets.CircularImageCropper
 import com.mj.yata.ui.widgets.CustomColorPickerDialog
 import com.mj.yata.ui.widgets.PresetAvatarChoice
@@ -525,8 +527,8 @@ fun SettingsScreen(
                         IconButton(onClick = { showSettingsMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                         }
-                        DropdownMenu(expanded = showSettingsMenu, onDismissRequest = { showSettingsMenu = false }) {
-                            DropdownMenuItem(
+                        YataDropdownMenu(expanded = showSettingsMenu, onDismissRequest = { showSettingsMenu = false }) {
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.settings_reset_settings)) },
                                 leadingIcon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
                                 onClick = {
@@ -1074,9 +1076,9 @@ fun SettingsScreen(
                             value = timeFormatLabels[timeFormat].orEmpty(),
                             onClick = { showTimeFormatMenu = true }
                         )
-                        DropdownMenu(expanded = showTimeFormatMenu, onDismissRequest = { showTimeFormatMenu = false }) {
+                        YataDropdownMenu(expanded = showTimeFormatMenu, onDismissRequest = { showTimeFormatMenu = false }) {
                             TimeFormat.entries.forEach { format ->
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(timeFormatLabels[format].orEmpty()) },
                                     onClick = {
                                         viewModel.setTimeFormat(format)
@@ -1101,9 +1103,9 @@ fun SettingsScreen(
                             value = dateFormatLabels[dateFormat].orEmpty(),
                             onClick = { showDateFormatMenu = true }
                         )
-                        DropdownMenu(expanded = showDateFormatMenu, onDismissRequest = { showDateFormatMenu = false }) {
+                        YataDropdownMenu(expanded = showDateFormatMenu, onDismissRequest = { showDateFormatMenu = false }) {
                             DateFormat.entries.forEach { format ->
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(dateFormatLabels[format].orEmpty()) },
                                     onClick = {
                                         viewModel.setDateFormat(format)
@@ -1178,9 +1180,9 @@ fun SettingsScreen(
                         value = startupLabels[startupTab] ?: startupLastUsed,
                         onClick = { showStartupTabMenu = true }
                     )
-                    DropdownMenu(expanded = showStartupTabMenu, onDismissRequest = { showStartupTabMenu = false }) {
+                    YataDropdownMenu(expanded = showStartupTabMenu, onDismissRequest = { showStartupTabMenu = false }) {
                         StartupTab.entries.forEach { tab ->
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(startupLabels[tab] ?: tab.name) },
                                 onClick = {
                                     viewModel.setStartupTab(tab)
@@ -1252,14 +1254,14 @@ fun SettingsScreen(
                         value = voiceLanguages.find { it.first == voiceLanguage }?.second ?: systemDefaultVoiceLabel,
                         onClick = { showVoiceLanguageMenu = true }
                     )
-                    DropdownMenu(
+                    YataDropdownMenu(
                         expanded = showVoiceLanguageMenu,
                         onDismissRequest = { showVoiceLanguageMenu = false },
                         modifier = Modifier.widthIn(min = 220.dp)
                     ) {
                         SettingsScrollableDropdownContent(scrollState = voiceLanguageMenuScrollState) {
                             voiceLanguages.forEach { (code, label) ->
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(label) },
                                     onClick = {
                                         viewModel.setVoiceRecognitionLanguage(code)
@@ -1363,9 +1365,9 @@ fun SettingsScreen(
                             value = swipeActionLabels[swipeRightAction].orEmpty(),
                             onClick = { showSwipeRightMenu = true }
                         )
-                        DropdownMenu(expanded = showSwipeRightMenu, onDismissRequest = { showSwipeRightMenu = false }) {
+                        YataDropdownMenu(expanded = showSwipeRightMenu, onDismissRequest = { showSwipeRightMenu = false }) {
                             SwipeAction.entries.forEach { action ->
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(swipeActionLabels[action].orEmpty()) },
                                     onClick = {
                                         viewModel.setSwipeRightAction(action)
@@ -1382,9 +1384,9 @@ fun SettingsScreen(
                             value = swipeActionLabels[swipeLeftAction].orEmpty(),
                             onClick = { showSwipeLeftMenu = true }
                         )
-                        DropdownMenu(expanded = showSwipeLeftMenu, onDismissRequest = { showSwipeLeftMenu = false }) {
+                        YataDropdownMenu(expanded = showSwipeLeftMenu, onDismissRequest = { showSwipeLeftMenu = false }) {
                             SwipeAction.entries.forEach { action ->
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(swipeActionLabels[action].orEmpty()) },
                                     onClick = {
                                         viewModel.setSwipeLeftAction(action)
@@ -1547,13 +1549,13 @@ fun SettingsScreen(
                         value = lists.find { it.id == defaultListId }?.name ?: stringResource(R.string.settings_none),
                         onClick = { showDefaultListMenu = true }
                     )
-                    DropdownMenu(
+                    YataDropdownMenu(
                         expanded = showDefaultListMenu,
                         onDismissRequest = { showDefaultListMenu = false },
                         modifier = Modifier.widthIn(min = 220.dp)
                     ) {
                         SettingsScrollableDropdownContent(scrollState = defaultListMenuScrollState) {
-                            DropdownMenuItem(
+                            YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.settings_none)) },
                                 onClick = {
                                     viewModel.setDefaultListId("")
@@ -1561,7 +1563,7 @@ fun SettingsScreen(
                                 }
                             )
                             lists.forEach { list ->
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(list.name) },
                                     onClick = {
                                         viewModel.setDefaultListId(list.id)
@@ -1582,13 +1584,13 @@ fun SettingsScreen(
                             value = activeProjects.find { it.id == defaultProjectId }?.name ?: stringResource(R.string.settings_none),
                             onClick = { showDefaultProjectMenu = true }
                         )
-                        DropdownMenu(
+                        YataDropdownMenu(
                             expanded = showDefaultProjectMenu,
                             onDismissRequest = { showDefaultProjectMenu = false },
                             modifier = Modifier.widthIn(min = 220.dp)
                         ) {
                             SettingsScrollableDropdownContent(scrollState = defaultProjectMenuScrollState) {
-                                DropdownMenuItem(
+                                YataDropdownMenuItem(
                                     text = { Text(stringResource(R.string.settings_none)) },
                                     onClick = {
                                         viewModel.setDefaultProjectId("")
@@ -1596,7 +1598,7 @@ fun SettingsScreen(
                                     }
                                 )
                                 activeProjects.forEach { project ->
-                                    DropdownMenuItem(
+                                    YataDropdownMenuItem(
                                         text = { Text(project.name) },
                                         onClick = {
                                             viewModel.setDefaultProjectId(project.id)
@@ -1635,13 +1637,13 @@ fun SettingsScreen(
                                     }
                                 }
                             )
-                            DropdownMenu(
+                            YataDropdownMenu(
                                 expanded = showDefaultTagsMenu,
                                 onDismissRequest = { showDefaultTagsMenu = false },
                                 modifier = Modifier.widthIn(min = 240.dp)
                             ) {
                                 SettingsScrollableDropdownContent(scrollState = defaultTagsMenuScrollState) {
-                                    DropdownMenuItem(
+                                    YataDropdownMenuItem(
                                         text = { Text(stringResource(R.string.settings_default_tags_clear)) },
                                         onClick = {
                                             viewModel.setDefaultTagIds(emptySet())
@@ -1649,7 +1651,7 @@ fun SettingsScreen(
                                     )
                                     tags.forEach { tag ->
                                         val selected = tag.id in defaultTagIds
-                                        DropdownMenuItem(
+                                        YataDropdownMenuItem(
                                             text = { Text(tag.name) },
                                             leadingIcon = {
                                                 Checkbox(
@@ -1770,14 +1772,14 @@ fun SettingsScreen(
                                     )
                                 }
                             }
-                            DropdownMenu(
+                            YataDropdownMenu(
                                 expanded = showDateAliasTargetMenu,
                                 onDismissRequest = { showDateAliasTargetMenu = false },
                                 modifier = Modifier.widthIn(min = 168.dp)
                             ) {
                                 SettingsScrollableDropdownContent(scrollState = dateAliasTargetMenuScrollState) {
                                     DateAliasTarget.entries.forEach { target ->
-                                        DropdownMenuItem(
+                                        YataDropdownMenuItem(
                                             text = { Text(target.label) },
                                             onClick = {
                                                 selectedDateAliasTarget = target

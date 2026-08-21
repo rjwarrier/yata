@@ -709,19 +709,7 @@ fun MainScreen(
                 Column(
                     horizontalAlignment = fabAlign,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    // IntrinsicSize.Max reports each child's fully-settled target width
-                    // immediately, before its own scale/slide animation has actually reached
-                    // that size — without animateContentSize the outer Column snaps to the new
-                    // width the instant a tab switch changes the FAB label, instead of growing
-                    // or shrinking in step with the label's own transition.
-                    modifier = Modifier
-                        .width(IntrinsicSize.Max)
-                        .animateContentSize(
-                            animationSpec = spring(
-                                dampingRatio = 0.85f,
-                                stiffness = Spring.StiffnessMediumLow
-                            )
-                        )
+                    modifier = Modifier.width(IntrinsicSize.Max)
                 ) {
                     // Today-only voice capture, stacked above the main FAB below.
                     // Matched in size to the main FAB on Today screen via IntrinsicSize.Max & fillMaxWidth.

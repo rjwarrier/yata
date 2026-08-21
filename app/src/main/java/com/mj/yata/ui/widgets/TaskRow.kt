@@ -539,12 +539,12 @@ fun TaskRow(
                         modifier = Modifier.size(18.dp)
                     )
                 }
-                DropdownMenu(
+                YataDropdownMenu(
                     expanded = showSnoozeMenu,
                     onDismissRequest = { showSnoozeMenu = false }
                 ) {
                     QuickSnoozePreset.entries.forEach { preset ->
-                        DropdownMenuItem(
+                        YataDropdownMenuItem(
                             text = { Text(quickSnoozeLabel(preset)) },
                             onClick = {
                                 showSnoozeMenu = false
