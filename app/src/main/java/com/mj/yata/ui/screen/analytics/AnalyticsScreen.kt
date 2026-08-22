@@ -6,6 +6,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,9 +15,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
@@ -39,6 +43,7 @@ import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.ProgressRing
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.util.AnalyticsPeriod
+import com.mj.yata.util.CapacitySnapshot
 import com.mj.yata.util.DayActivity
 import com.mj.yata.util.EntityStat
 import com.mj.yata.util.EstimateUtils
@@ -79,7 +84,7 @@ private fun DrillDownChevron(visible: Boolean) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AnalyticsScreen(
     viewModel: MainViewModel,
@@ -218,6 +223,21 @@ fun AnalyticsScreen(
                 selectedItem = period,
                 onItemSelected = { viewModel.setAnalyticsPeriod(it) },
                 labelProvider = { it.label() }
+            )
+
+            AnalyticsOverviewCard(
+                overdue = overdue,
+                dueNext7 = dueNext7,
+                dueNext30 = dueNext30,
+                onTimeRate = overallOnTimeRate,
+                capacity = stats.capacity,
+                postponedOpenTaskCount = stats.postponedOpenTaskCount,
+                hasMostPostponedTasks = mostPostponedTasks.isNotEmpty(),
+                onOpenOverdue = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_OVERDUE) },
+                onOpenHighPriority = { onNavigateToSearch(com.mj.yata.util.SEARCH_FILTER_HIGH_PRIORITY) },
+                onOpenMostPostponed = {
+                    mostPostponedTasks.firstOrNull()?.let { onNavigateToTaskDetail(it.id) }
+                }
             )
 
             // Ranked callouts, above the tables. The breakdowns below say what the numbers are;
@@ -646,6 +666,205 @@ fun AnalyticsScreen(
     }
 }
 
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AnalyticsOverviewCard(
+    overdue: Int,
+    dueNext7: Int,
+    dueNext30: Int,
+    onTimeRate: Float?,
+    capacity: CapacitySnapshot?,
+    postponedOpenTaskCount: Int,
+    hasMostPostponedTasks: Boolean,
+    onOpenOverdue: () -> Unit,
+    onOpenHighPriority: () -> Unit,
+    onOpenMostPostponed: () -> Unit
+) {
+    val accents = LocalYataAccents.current
+    val attentionColor = when {
+        overdue > 0 -> MaterialTheme.colorScheme.error
+        dueNext7 > 0 -> MaterialTheme.colorScheme.primary
+        else -> accents.accentE
+    }
+    val title = when {
+        overdue > 0 -> stringResource(R.string.analytics_overview_needs_attention)
+        dueNext7 > 0 -> stringResource(R.string.analytics_overview_on_deck)
+        else -> stringResource(R.string.analytics_overview_all_clear)
+    }
+    val detail = when {
+        overdue > 0 -> pluralStringResource(
+            R.plurals.analytics_overview_overdue_detail,
+            overdue,
+            overdue
+        )
+        dueNext7 > 0 -> pluralStringResource(
+            R.plurals.analytics_overview_due_soon_detail,
+            dueNext7,
+            dueNext7
+        )
+        else -> stringResource(R.string.analytics_overview_all_clear_detail)
+    }
+    val confidenceText = capacity?.let {
+        if (it.unestimatedOpenCount == 0) {
+            stringResource(R.string.analytics_overview_estimates_complete)
+        } else {
+            pluralStringResource(
+                R.plurals.analytics_overview_unestimated_count,
+                it.unestimatedOpenCount,
+                it.unestimatedOpenCount
+            )
+        }
+    } ?: stringResource(R.string.analytics_overview_no_estimates)
+
+    Surface(
+        color = attentionColor.copy(alpha = 0.10f),
+        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = if (overdue > 0) Icons.Default.WarningAmber else Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = attentionColor,
+                    modifier = Modifier.size(28.dp)
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OverviewMetricPill(
+                    icon = Icons.Default.WarningAmber,
+                    iconTint = if (overdue > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    value = overdue.toString(),
+                    label = stringResource(R.string.analytics_overview_overdue)
+                )
+                OverviewMetricPill(
+                    icon = Icons.Default.Schedule,
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    value = dueNext7.toString(),
+                    label = stringResource(R.string.analytics_overview_next_7)
+                )
+                OverviewMetricPill(
+                    icon = Icons.Default.ArrowUpward,
+                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    value = dueNext30.toString(),
+                    label = stringResource(R.string.analytics_overview_next_30)
+                )
+                OverviewMetricPill(
+                    icon = Icons.Default.CheckCircle,
+                    iconTint = accents.accentE,
+                    value = onTimeRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
+                    label = stringResource(R.string.analytics_overview_on_time)
+                )
+            }
+
+            capacity?.let {
+                Text(
+                    text = stringResource(
+                        R.string.analytics_overview_effort_line,
+                        EstimateUtils.format(it.dueNext7Minutes),
+                        EstimateUtils.format(it.openMinutes)
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                text = confidenceText,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (overdue > 0) {
+                    AssistChip(
+                        onClick = onOpenOverdue,
+                        label = { Text(stringResource(R.string.analytics_action_open_overdue)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.WarningAmber, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                }
+                AssistChip(
+                    onClick = onOpenHighPriority,
+                    label = { Text(stringResource(R.string.analytics_action_high_priority)) },
+                    leadingIcon = {
+                        Icon(Icons.Default.Flag, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
+                )
+                if (postponedOpenTaskCount > 0 && hasMostPostponedTasks) {
+                    AssistChip(
+                        onClick = onOpenMostPostponed,
+                        label = { Text(stringResource(R.string.analytics_action_review_postponed)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Snooze, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewMetricPill(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    value: String,
+    label: String
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.74f),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.widthIn(min = 120.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
+            Column {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
 }
 
 @Composable

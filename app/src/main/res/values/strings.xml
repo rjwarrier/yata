@@ -551,6 +551,20 @@
     <string name="analytics_by_list">By List</string>
     <string name="analytics_nothing_in_period">Nothing in this period.</string>
     <string name="analytics_no_tasks_due_in_period">No tasks due in this period.</string>
+    <string name="analytics_overview_needs_attention">Needs attention</string>
+    <string name="analytics_overview_on_deck">On deck</string>
+    <string name="analytics_overview_all_clear">All clear</string>
+    <string name="analytics_overview_all_clear_detail">No overdue tasks. Your next work is visible below.</string>
+    <string name="analytics_overview_overdue">overdue</string>
+    <string name="analytics_overview_next_7">next 7 days</string>
+    <string name="analytics_overview_next_30">next 30 days</string>
+    <string name="analytics_overview_on_time">on time</string>
+    <string name="analytics_overview_effort_line">%1$s due this week from %2$s still open</string>
+    <string name="analytics_overview_estimates_complete">All open tasks with planned effort are covered by estimates.</string>
+    <string name="analytics_overview_no_estimates">Add task estimates to make workload forecasts more useful.</string>
+    <string name="analytics_action_open_overdue">Open overdue</string>
+    <string name="analytics_action_high_priority">High priority</string>
+    <string name="analytics_action_review_postponed">Review postponed</string>
     <string name="analytics_tasks_completed_by_day">Tasks completed, by day</string>
     <string name="analytics_tasks_completed_vs_created_by_day">Tasks completed vs created, by day</string>
     <string name="analytics_as_much_finished_as_came_in">As much finished as came in</string>
@@ -651,6 +665,18 @@
     <plurals name="analytics_unestimated_tasks">
         <item quantity="one">%d open task has no estimate</item>
         <item quantity="other">%d open tasks have no estimate</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d task is already late. Start here before reading the rest of the report.</item>
+        <item quantity="other">%d tasks are already late. Start here before reading the rest of the report.</item>
+    </plurals>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d task is due in the next 7 days. Check effort before the week fills up.</item>
+        <item quantity="other">%d tasks are due in the next 7 days. Check effort before the week fills up.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d open task has no estimate, so workload totals are partial.</item>
+        <item quantity="other">%d open tasks have no estimate, so workload totals are partial.</item>
     </plurals>
     <string name="cd_add_subtask">Add subtask</string>
     <string name="cd_add_task">Add task</string>
