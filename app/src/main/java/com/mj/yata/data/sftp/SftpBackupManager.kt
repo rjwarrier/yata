@@ -718,6 +718,11 @@ class SftpBackupManager @Inject constructor(
             )
         }
 
+        // Every sshj entry point in this class is downstream of here, so this is the one place
+        // that has to guarantee the provider is up. Deliberately not done at app startup — see
+        // BouncyCastleSupport.
+        BouncyCastleSupport.ensureRegistered()
+
         val ssh = SSHClient()
         ssh.connectTimeout = CONNECT_TIMEOUT_MS
         ssh.timeout = SOCKET_TIMEOUT_MS

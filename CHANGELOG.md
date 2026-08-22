@@ -43,6 +43,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   individual items, instead of the sharp-cornered flat default.
 - Comment cards are more compact — the delete control is now a small tonal circle centred against
   the comment text, removing the empty space that the oversized touch target left below each card.
+- The app starts faster. Cryptography support needed only by SFTP backup was being loaded on the
+  main thread at every launch, whether or not SFTP was ever configured; it is now loaded on the
+  first SFTP connection instead. The same change also hands encryption of backups back to the
+  device's hardware-accelerated implementation, so encrypted backup and restore are quicker.
 
 ### Fixed
 - A device restored from an Android backup (or a fresh reinstall that later signs back into the
