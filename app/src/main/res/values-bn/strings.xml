@@ -367,7 +367,7 @@
     <string name="remote_sync_token_label">টোকেন</string>
     <string name="cd_remote_sync_token_help">GitHub টোকেন কীভাবে তৈরি করবেন</string>
     <string name="remote_sync_repo_label">রিপো</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">মালিক/রিপো</string>
     <string name="remote_sync_branch_label">ব্রাঞ্চ</string>
     <string name="remote_sync_api_base_label">API বেস URL</string>
     <string name="remote_sync_token_scope_hint">সূক্ষ্ম-দানা টোকেন: বিষয়বস্তু পড়া/লেখা। এই ডিভাইসে এনক্রিপ্ট করে সংরক্ষিত।</string>

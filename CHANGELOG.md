@@ -62,6 +62,14 @@ test-only changes belong in the commit message, not here, unless they change beh
   baseline and app preferences (including the app-lock PIN) are also no longer included in Android's
   automatic device backup, so a restored device reaches this new prompt instead of the old silent
   failure in the first place.
+- The bottom navigation bar and the tablet/foldable navigation rail — Today, Projects, People, Tags,
+  Upcoming — were hardcoded in English and never actually localized, on every screen, in every
+  language, despite the translations for those exact labels already existing and being used
+  correctly everywhere else in the app. They now follow the app's language like everything else.
+- Fixed a batch of Spanish, French, and Portuguese strings that were left partially or fully
+  untranslated — mostly settings, diagnostics, widget configuration, and recurrence text — plus
+  smaller gaps in Filipino, German, Indonesian, and nine other languages (mainly a stray
+  untranslated "owner/repo" placeholder in the GitHub sync screen).
 
 ## [0.94] - 2026-08-18
 

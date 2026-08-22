@@ -362,7 +362,7 @@
     <string name="remote_sync_token_label">டோக்கன்</string>
     <string name="cd_remote_sync_token_help">GitHub டோக்கனை எப்படி உருவாக்குவது</string>
     <string name="remote_sync_repo_label">களஞ்சியம்</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">உரிமையாளர்/களஞ்சியம்</string>
     <string name="remote_sync_branch_label">கிளை</string>
     <string name="remote_sync_api_base_label">API அடிப்படை URL</string>
     <string name="remote_sync_token_scope_hint">நுணுக்கமான டோக்கன்: உள்ளடக்கம் படி/எழுது. இந்தச் சாதனத்தில் மறைகுறியாக்கப்பட்டு சேமிக்கப்படும்.</string>

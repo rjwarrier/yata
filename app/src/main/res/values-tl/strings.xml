@@ -49,8 +49,8 @@
     <string name="settings_section_data_management">Pamamahala ng Data</string>
     <string name="settings_section_backup">Backup at Data</string>
     <string name="settings_section_backup_sync">Backup at Sync</string>
-    <string name="settings_section_cloud_backup">Remote Backup</string>
-    <string name="settings_section_local_backup">Local Backup</string>
+    <string name="settings_section_cloud_backup">Remote na Backup</string>
+    <string name="settings_section_local_backup">Local na Backup</string>
     <string name="settings_section_help_about">Tulong at Tungkol</string>
     <string name="settings_section_navigation">Navigation</string>
     <string name="settings_startup_tab">Buksan sa</string>
@@ -90,7 +90,7 @@
     <string name="search_filter_hint">I-tap ang chip para gumawa ng focused na view.</string>
     <string name="search_filter_hint_compact">I-tap para mag-filter</string>
     <string name="search_saved_views">Naka-save na view</string>
-    <string name="search_filter_focus">Focus mode</string>
+    <string name="search_filter_focus">Mode ng Focus</string>
     <string name="search_filter_morning_review">Repaso sa umaga</string>
     <string name="search_filter_evening_review">Repaso sa gabi</string>
     <string name="search_filter_stale_tasks">Matagal nang hindi ginagalaw</string>
@@ -116,12 +116,12 @@
     <string name="settings_theme_presets">Mga theme preset</string>
     <string name="settings_theme_presets_summary">I-save ang kumbinasyong ito ng kulay, font, at tema.</string>
     <string name="cd_remove_preset">Alisin ang %1$s</string>
-    <string name="settings_motion_mode">Motion mode</string>
+    <string name="settings_motion_mode">Mode ng Motion</string>
     <string name="settings_motion_mode_summary">Kontrolin ang mga animation ng app nang hindi ginagalaw ang ibang visual na setting.</string>
     <string name="motion_mode_full">Buo</string>
     <string name="motion_mode_reduced">Nabawasan</string>
     <string name="motion_mode_off">Naka-off</string>
-    <string name="settings_tasker_integration">Tasker integration</string>
+    <string name="settings_tasker_integration">Integrasyon ng Tasker</string>
     <string name="settings_tasker_integration_summary">Payagan ang mga Tasker profile na gumawa ng gawain sa pamamagitan ng Yata plugin.</string>
     <string name="settings_date_aliases">Mga alias ng petsa</string>
     <string name="settings_date_aliases_summary">Mga pasadyang shortcut na salita kapag gumagawa ng mga gawain upang awtomatikong itakda ang takdang petsa (hal. "tmrw" para sa Bukas).</string>
@@ -166,7 +166,7 @@
     <string name="settings_fab_hidden">Nakatago</string>
     <string name="settings_completion_sound">Magpatugtog ng tunog kapag natapos</string>
     <string name="settings_completion_sound_desc">Magpatugtog ng malinaw na tunog kapag may gawaing na-mark bilang tapos.</string>
-    <string name="settings_haptic_feedback">Haptic feedback</string>
+    <string name="settings_haptic_feedback">Haptic na Feedback</string>
     <string name="settings_haptic_feedback_desc">Mag-vibrate sa checkbox, swipe, at drag na aksyon.</string>
     <string name="settings_swipe_actions">Mga swipe action</string>
     <string name="settings_swipe_actions_desc">I-swipe ang mga row para tapusin o burahin ang mga gawain.</string>
@@ -355,7 +355,7 @@
     <string name="analytics_count_late">%1$d late</string>
     <string name="analytics_overdue_count">%1$d late</string>
     <string name="analytics_on_time_percent">%1$d%% on-time</string>
-    <string name="remote_sync_title">Remote sync</string>
+    <string name="remote_sync_title">Remote na Sync</string>
     <string name="remote_sync_provider">Provider</string>
     <string name="remote_sync_repository_access">Access sa repository</string>
     <string name="remote_sync_repository_access_summary">Limitahan ang token sa pribadong sync repo na ito.</string>
@@ -390,7 +390,7 @@
     <string name="remote_sync_github_config_import_too_large">Masyadong malaki ang file na iyon para maging GitHub config export.</string>
     <string name="remote_sync_github_config_imported">Na-import ang GitHub config para kay %1$s.</string>
     <string name="remote_sync_github_config_password_hint">Gumamit ng hiwalay na transfer password. Hindi ito sino-save ng YATA.</string>
-    <string name="remote_sync_github_config_password_label">Transfer password</string>
+    <string name="remote_sync_github_config_password_label">Password ng Paglipat</string>
     <string name="remote_sync_github_config_password_mismatch">Hindi magkatugma ang mga password.</string>
     <string name="remote_sync_github_config_transfer_title">Paglipat ng config</string>
     <string name="remote_sync_github_force_download_action">Gamitin ang pinakabagong GitHub snapshot</string>
@@ -448,7 +448,7 @@
     <string name="staff_analytics_staff_table">TABLA NG STAFF</string>
     <string name="staff_analytics_subtitle">Performance ng team</string>
     <string name="staff_analytics_team_snapshot">SNAPSHOT NG TEAM</string>
-    <string name="staff_analytics_title">Staff Analytics</string>
+    <string name="staff_analytics_title">Analytics ng Staff</string>
     <string name="task_detail_all_subtasks_done_body">Gusto mo bang markahan din ang \"%1$s\" bilang tapos na?</string>
     <string name="task_detail_all_subtasks_done_title">Tapos na ba ang lahat ng subtask?</string>
     <string name="task_detail_mark_task_done">Markahan ang gawain bilang tapos</string>
@@ -493,7 +493,7 @@
     <string name="circular_image_cropper_select_new_image">Pumili ng bagong larawan</string>
     <string name="circular_image_cropper_transparent_png_hint">Tip: ang transparent na PNG na may puting hugis ay awtomatikong nagiging Material You icon</string>
     <string name="settings_section_sftp_backup">Self-Hosted na Sync at Backup</string>
-    <string name="settings_sftp_backup">Cloud sync</string>
+    <string name="settings_sftp_backup">Cloud Sync</string>
     <string name="settings_sftp_backup_summary">Mag-sync sa iba\'t ibang device at panatilihin ang naka-version na backup sa pamamagitan ng GitHub o sarili mong server. Gamitin ang parehong provider, kredensyal, at encryption passphrase sa bawat device.</string>
     <string name="settings_sftp_configure_server">Server</string>
     <string name="settings_sftp_not_configured">Hindi pa naka-configure</string>
@@ -511,7 +511,7 @@
     <string name="settings_ftp_strict_tls_caption">Tinitingnan din nito kung tumutugma ang sertipiko ng server sa hostname na ito. I-on ito maliban kung gumagamit ang iyong server ng self-signed o hindi tumutugmang sertipiko — sa kasong iyon, iwanan itong naka-off, kung hindi mabibigo ang koneksyon.</string>
     <string name="settings_sftp_backups_to_keep_summary">Panatilihin ang huling %1$d backup sa server — awtomatikong tatanggalin ang mga mas luma.</string>
     <string name="settings_backup_dest_local">device na ito</string>
-    <string name="settings_backup_dest_self_hosted">remote sync</string>
+    <string name="settings_backup_dest_self_hosted">malayong sync</string>
     <string name="settings_backup_none_configured">Walang naka-on na destinasyon ng backup.</string>
     <string name="settings_backup_all_failed">Nabigo ang backup — %1$s</string>
     <string name="settings_backup_partial">Na-backup ang %1$d, pero nabigo para sa %2$s</string>
@@ -539,11 +539,11 @@
     <string name="settings_sftp_host">Host</string>
     <string name="settings_sftp_port">Port</string>
     <string name="settings_sftp_username">Username</string>
-    <string name="settings_sftp_remote_dir">Remote folder</string>
+    <string name="settings_sftp_remote_dir">Malayong Folder</string>
     <string name="settings_sftp_auth_password">Password</string>
-    <string name="settings_sftp_auth_key">Private key</string>
+    <string name="settings_sftp_auth_key">Private Key</string>
     <string name="settings_sftp_password">Password</string>
-    <string name="settings_sftp_private_key">Private key (PEM)</string>
+    <string name="settings_sftp_private_key">Private Key (PEM)</string>
     <string name="settings_sftp_private_key_placeholder">I-paste ang private key, kasama ang mga linyang -----BEGIN/END-----</string>
     <string name="settings_sftp_passphrase">Passphrase ng key (opsyonal)</string>
     <string name="settings_sftp_test_connection">Subukan ang koneksyon</string>
@@ -634,7 +634,7 @@
     <string name="lock_biometric_title">I-unlock ang YATA</string>
     <string name="lock_biometric_subtitle">Kumpirmahing ikaw ito para buksan ang iyong mga gawain.</string>
     <string name="lock_biometric_negative">Gamitin ang PIN</string>
-    <string name="main_command_palette">Command palette</string>
+    <string name="main_command_palette">Command Palette</string>
     <string name="main_new_list">Bagong listahan</string>
     <string name="main_search_actions_or_tasks">Maghanap ng aksyon o gawain</string>
     <string name="main_palette_new_task_subtitle">Gumawa ng gawain</string>
@@ -1020,7 +1020,7 @@
     <string name="export_exclude_completed_older_than">Huwag isama ang mga natapos na gawaing higit sa ganito karaming araw na</string>
     <string name="export_strike_completed">Lagyan ng guhit ang mga natapos na gawain</string>
     <string name="export_section_display">Display</string>
-    <string name="export_privacy_mode">Privacy mode</string>
+    <string name="export_privacy_mode">Mode ng Privacy</string>
     <string name="export_show_tags">Ipakita ang mga tag</string>
     <string name="export_show_assignees">Ipakita ang naitalaga</string>
     <string name="export_show_footer">Ipakita ang footer na Ginawa gamit ang YATA</string>

@@ -362,7 +362,7 @@
     <string name="remote_sync_token_label">ടോക്കൺ</string>
     <string name="cd_remote_sync_token_help">GitHub ടോക്കൺ എങ്ങനെ സൃഷ്ടിക്കാം</string>
     <string name="remote_sync_repo_label">റെപ്പോ</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">ഉടമ/റെപ്പോ</string>
     <string name="remote_sync_branch_label">ബ്രാഞ്ച്</string>
     <string name="remote_sync_api_base_label">API ബേസ് URL</string>
     <string name="remote_sync_token_scope_hint">ഫൈൻ-ഗ്രെയിൻഡ് ടോക്കൺ: കണ്ടന്റ്സ് വായന/എഴുത്ത്. ഈ ഉപകരണത്തിൽ എൻക്രിപ്റ്റ് ചെയ്ത് സൂക്ഷിക്കും.</string>

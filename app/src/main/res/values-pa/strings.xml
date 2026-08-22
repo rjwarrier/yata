@@ -362,7 +362,7 @@
     <string name="remote_sync_token_label">ਟੋਕਨ</string>
     <string name="cd_remote_sync_token_help">GitHub ਟੋਕਨ ਕਿਵੇਂ ਬਣਾਈਏ</string>
     <string name="remote_sync_repo_label">ਰਿਪੋ</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">ਮਾਲਕ/ਰਿਪੋ</string>
     <string name="remote_sync_branch_label">ਬ੍ਰਾਂਚ</string>
     <string name="remote_sync_api_base_label">API ਬੇਸ URL</string>
     <string name="remote_sync_token_scope_hint">ਬਾਰੀਕ ਟੋਕਨ: ਸਮੱਗਰੀ ਪੜ੍ਹੋ/ਲਿਖੋ। ਇਸ ਡਿਵਾਈਸ \'ਤੇ ਇਨਕ੍ਰਿਪਟਡ ਸਟੋਰ ਕੀਤਾ ਗਿਆ।</string>

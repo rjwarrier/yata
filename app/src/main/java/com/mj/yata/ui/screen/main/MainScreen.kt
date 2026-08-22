@@ -1702,11 +1702,11 @@ private fun MainNavigationRail(
     onSettingsClick: () -> Unit
 ) {
     val items = listOfNotNull(
-        if (todayEnabled) NavIcon(0, "Today", Icons.Outlined.Today, Icons.Filled.Today) else null,
-        if (projectsEnabled) NavIcon(1, "Projects", Icons.Outlined.Layers, Icons.Filled.Layers) else null,
-        if (peopleEnabled) NavIcon(2, "People", Icons.Outlined.People, Icons.Filled.People) else null,
-        if (tagsEnabled) NavIcon(3, "Tags", Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
-        if (upcomingEnabled) NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
+        if (todayEnabled) NavIcon(0, stringResource(R.string.tab_today), Icons.Outlined.Today, Icons.Filled.Today) else null,
+        if (projectsEnabled) NavIcon(1, stringResource(R.string.tab_projects), Icons.Outlined.Layers, Icons.Filled.Layers) else null,
+        if (peopleEnabled) NavIcon(2, stringResource(R.string.tab_people), Icons.Outlined.People, Icons.Filled.People) else null,
+        if (tagsEnabled) NavIcon(3, stringResource(R.string.tab_tags), Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
+        if (upcomingEnabled) NavIcon(4, stringResource(R.string.tab_upcoming), Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
     )
 
     NavigationRail(
@@ -1808,11 +1808,11 @@ fun CustomBottomNav(
     // are hidden — filtering the list must not renumber the survivors, or a disabled tab in the
     // middle would shift every tab after it onto the wrong id.
     val items = listOfNotNull(
-        if (todayEnabled) NavIcon(0, "Today", Icons.Outlined.Today, Icons.Filled.Today) else null,
-        if (projectsEnabled) NavIcon(1, "Projects", Icons.Outlined.Layers, Icons.Filled.Layers) else null,
-        if (peopleEnabled) NavIcon(2, "People", Icons.Outlined.People, Icons.Filled.People) else null,
-        if (tagsEnabled) NavIcon(3, "Tags", Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
-        if (upcomingEnabled) NavIcon(4, "Upcoming", Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
+        if (todayEnabled) NavIcon(0, stringResource(R.string.tab_today), Icons.Outlined.Today, Icons.Filled.Today) else null,
+        if (projectsEnabled) NavIcon(1, stringResource(R.string.tab_projects), Icons.Outlined.Layers, Icons.Filled.Layers) else null,
+        if (peopleEnabled) NavIcon(2, stringResource(R.string.tab_people), Icons.Outlined.People, Icons.Filled.People) else null,
+        if (tagsEnabled) NavIcon(3, stringResource(R.string.tab_tags), Icons.AutoMirrored.Outlined.Label, Icons.AutoMirrored.Filled.Label) else null,
+        if (upcomingEnabled) NavIcon(4, stringResource(R.string.tab_upcoming), Icons.Outlined.CalendarViewWeek, Icons.Filled.CalendarViewWeek) else null
     )
 
     // Top-only hairline (per handoff's borderTop) — a Surface `border` would ring all 4 sides,

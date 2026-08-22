@@ -362,7 +362,7 @@
     <string name="remote_sync_token_label">ટોકન</string>
     <string name="cd_remote_sync_token_help">GitHub ટોકન કેવી રીતે બનાવવું</string>
     <string name="remote_sync_repo_label">રિપો</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">માલિક/રિપો</string>
     <string name="remote_sync_branch_label">બ્રાન્ચ</string>
     <string name="remote_sync_api_base_label">API બેઝ URL</string>
     <string name="remote_sync_token_scope_hint">ફાઇન-ગ્રેઇન્ડ ટોકન: સામગ્રી વાંચો/લખો. આ ડિવાઇસ પર એન્ક્રિપ્ટેડ સંગ્રહાયેલ.</string>

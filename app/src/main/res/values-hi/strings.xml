@@ -447,7 +447,7 @@
     <string name="remote_sync_token_label">टोकन</string>
     <string name="cd_remote_sync_token_help">GitHub टोकन कैसे बनाएं</string>
     <string name="remote_sync_repo_label">रिपॉज़िटरी</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">मालिक/रिपॉज़िटरी</string>
     <string name="remote_sync_branch_label">ब्रांच</string>
     <string name="remote_sync_api_base_label">API बेस URL</string>
     <string name="remote_sync_token_scope_hint">फ़ाइन-ग्रेन्ड टोकन: सामग्री पढ़ने/लिखने की अनुमति। इस डिवाइस पर एन्क्रिप्टेड रूप से संग्रहीत।</string>

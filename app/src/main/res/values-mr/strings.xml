@@ -362,7 +362,7 @@
     <string name="remote_sync_token_label">टोकन</string>
     <string name="cd_remote_sync_token_help">GitHub टोकन कसे तयार करावे</string>
     <string name="remote_sync_repo_label">रिपो</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">मालक/रिपो</string>
     <string name="remote_sync_branch_label">ब्रँच</string>
     <string name="remote_sync_api_base_label">API बेस URL</string>
     <string name="remote_sync_token_scope_hint">बारीक-नियंत्रित टोकन: Contents वाचा/लिहा. या डिव्हाइसवर एन्क्रिप्ट करून जतन केले जाते.</string>

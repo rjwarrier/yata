@@ -362,7 +362,7 @@
     <string name="remote_sync_token_label">Tokeni</string>
     <string name="cd_remote_sync_token_help">Jinsi ya kuunda tokeni ya GitHub</string>
     <string name="remote_sync_repo_label">Hifadhi</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">mmiliki/hifadhi</string>
     <string name="remote_sync_branch_label">Tawi</string>
     <string name="remote_sync_api_base_label">URL ya msingi ya API</string>
     <string name="remote_sync_token_scope_hint">Tokeni maalum: Usomaji/uandishi wa Contents. Imehifadhiwa kwa usimbaji fiche kwenye kifaa hiki.</string>

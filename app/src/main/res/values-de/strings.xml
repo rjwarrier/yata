@@ -77,7 +77,7 @@
     <string name="settings_section_privacy">Datenschutz &amp; Sicherheit</string>
     <string name="settings_section_data_management">Datenverwaltung</string>
     <string name="settings_section_backup">Backup &amp; Daten</string>
-    <string name="settings_section_backup_sync">Backup &amp; Sync</string>
+    <string name="settings_section_backup_sync">Backup &amp; Synchronisierung</string>
     <string name="settings_section_cloud_backup">Remote-Backup</string>
     <string name="settings_section_local_backup">Lokales Backup</string>
     <string name="settings_section_help_about">Hilfe &amp; Über</string>
@@ -713,7 +713,7 @@
     <string name="help_about_projects_lists">Projekte &amp; Listen</string>
     <string name="help_about_reminders">Erinnerungen</string>
     <string name="help_about_widgets">Widgets</string>
-    <string name="help_about_backup_sync">Backup &amp; Sync</string>
+    <string name="help_about_backup_sync">Backup &amp; Synchronisierung</string>
     <string name="help_about_trash">Papierkorb</string>
     <string name="list_detail_all_tasks_inside_this_list_will_be_permane">Alle Aufgaben in dieser Liste werden endgültig gelöscht.</string>
     <string name="list_detail_delete_list">Liste löschen</string>

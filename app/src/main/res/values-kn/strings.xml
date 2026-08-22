@@ -362,7 +362,7 @@
     <string name="remote_sync_token_label">ಟೋಕನ್</string>
     <string name="cd_remote_sync_token_help">GitHub ಟೋಕನ್ ಹೇಗೆ ರಚಿಸುವುದು</string>
     <string name="remote_sync_repo_label">ರೆಪೊ</string>
-    <string name="remote_sync_repo_placeholder">owner/repo</string>
+    <string name="remote_sync_repo_placeholder">ಮಾಲೀಕ/ರೆಪೊ</string>
     <string name="remote_sync_branch_label">ಬ್ರಾಂಚ್</string>
     <string name="remote_sync_api_base_label">API ಬೇಸ್ URL</string>
     <string name="remote_sync_token_scope_hint">ಸೂಕ್ಷ್ಮ-ಗ್ರೇನ್ಡ್ ಟೋಕನ್: ಕಂಟೆಂಟ್ಸ್ ಓದು/ಬರೆಯುವಿಕೆ. ಈ ಸಾಧನದಲ್ಲಿ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿ ಸಂಗ್ರಹಿಸಲಾಗಿದೆ.</string>

@@ -752,7 +752,7 @@
     <string name="tag_chip_remove_tag">Hapus tag</string>
     <string name="tag_detail_delete_tag">Hapus tag</string>
     <string name="tag_detail_delete_tag_2">Hapus tag?</string>
-    <string name="tag_detail_edit_tag">Edit tag</string>
+    <string name="tag_detail_edit_tag">Edit Tag</string>
     <string name="tag_detail_search_in_tag">Cari di tag</string>
     <string name="tag_detail_this_tag_will_be_removed_from_all_tasks">Tag ini akan dihapus dari semua tugas.</string>
     <string name="tags_delete_selected">Hapus yang dipilih</string>
