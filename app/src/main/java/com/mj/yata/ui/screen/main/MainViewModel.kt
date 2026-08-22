@@ -31,6 +31,7 @@ import com.mj.yata.util.AppLanguageController
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.initialsFor
 import com.mj.yata.util.withParsedQuickAdd
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -41,6 +42,12 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
+
+enum class WelcomeSetupPreset {
+    SIMPLE_LIST,
+    PERSONAL_PRODUCTIVITY,
+    TEAM_PROJECTS
+}
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -1939,6 +1946,190 @@ data class PostponementWarning(
                 excludeFromToday = excludeFromToday
             )
             repository.upsertProject(project)
+        }
+    }
+
+    fun applyWelcomeSetupPreset(preset: WelcomeSetupPreset) {
+        safeLaunch {
+            suspend fun ensureList(
+                id: String,
+                name: String,
+                color: String,
+                icon: String,
+                starred: Boolean = false,
+                excludeFromToday: Boolean = false
+            ): YataList {
+                val existing = lists.value.firstOrNull { it.id == id }
+                    ?: lists.value.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                val row = existing?.copy(
+                    starred = existing.starred || starred,
+                    excludeFromToday = existing.excludeFromToday || excludeFromToday
+                ) ?: YataList(
+                    id = id,
+                    name = name,
+                    color = color,
+                    icon = icon,
+                    starred = starred,
+                    excludeFromToday = excludeFromToday
+                )
+                repository.upsertList(row)
+                return row
+            }
+
+            suspend fun ensureProject(
+                id: String,
+                name: String,
+                color: String,
+                icon: String,
+                starred: Boolean = false,
+                excludeFromToday: Boolean = false
+            ): Project {
+                val existing = projects.value.firstOrNull { it.id == id }
+                    ?: projects.value.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                val row = existing?.copy(
+                    starred = existing.starred || starred,
+                    excludeFromToday = existing.excludeFromToday || excludeFromToday
+                ) ?: Project(
+                    id = id,
+                    name = name,
+                    color = color,
+                    icon = icon,
+                    starred = starred,
+                    excludeFromToday = excludeFromToday
+                )
+                repository.upsertProject(row)
+                return row
+            }
+
+            suspend fun ensurePerson(
+                id: String,
+                name: String,
+                color: String,
+                starred: Boolean = false
+            ): Person {
+                val existing = people.value.firstOrNull { it.id == id }
+                    ?: people.value.firstOrNull { it.name.equals(name, ignoreCase = true) }
+                val row = existing?.copy(starred = existing.starred || starred) ?: Person(
+                    id = id,
+                    name = name,
+                    initials = initialsFor(name).takeUnless { it == "?" } ?: "P",
+                    color = color,
+                    starred = starred
+                )
+                repository.upsertPerson(row)
+                return row
+            }
+
+            when (preset) {
+                WelcomeSetupPreset.SIMPLE_LIST -> {
+                    val personal = ensureList(
+                        id = "welcome-list-personal",
+                        name = "Personal",
+                        color = "accentA",
+                        icon = "taskalt",
+                        starred = true
+                    )
+                    userPreferences.setPeopleFeatureEnabled(false)
+                    userPreferences.setTagsFeatureEnabled(false)
+                    userPreferences.setProjectsFeatureEnabled(false)
+                    userPreferences.setTodayTabEnabled(true)
+                    userPreferences.setUpcomingTabEnabled(true)
+                    userPreferences.setDefaultListId(personal.id)
+                    userPreferences.setDefaultProjectId("")
+                    userPreferences.setDefaultDueDate(DefaultDueDate.TODAY)
+                    userPreferences.setDefaultPriority("none")
+                    userPreferences.setDefaultEstimateMinutes(null)
+                    userPreferences.setAutoAssignToMe(false)
+                }
+                WelcomeSetupPreset.PERSONAL_PRODUCTIVITY -> {
+                    ensureList(
+                        id = "welcome-list-today",
+                        name = "Today",
+                        color = "accentA",
+                        icon = "event",
+                        starred = true
+                    )
+                    ensureList(
+                        id = "welcome-list-someday",
+                        name = "Someday",
+                        color = "accentK",
+                        icon = "bookmark",
+                        starred = true,
+                        excludeFromToday = true
+                    )
+                    val goals = ensureProject(
+                        id = "welcome-project-goals",
+                        name = "Goals",
+                        color = "accentE",
+                        icon = "flag",
+                        starred = true
+                    )
+                    userPreferences.setPeopleFeatureEnabled(false)
+                    userPreferences.setTagsFeatureEnabled(true)
+                    userPreferences.setProjectsFeatureEnabled(true)
+                    userPreferences.setTodayTabEnabled(true)
+                    userPreferences.setUpcomingTabEnabled(true)
+                    userPreferences.setDefaultListId("")
+                    userPreferences.setDefaultProjectId(goals.id)
+                    userPreferences.setDefaultDueDate(DefaultDueDate.TODAY)
+                    userPreferences.setDefaultPriority("none")
+                    userPreferences.setDefaultEstimateMinutes(30)
+                    userPreferences.setAutoAssignToMe(false)
+                    userPreferences.setDailyAgendaEnabled(true)
+                    userPreferences.setOverdueNudgesEnabled(true)
+                }
+                WelcomeSetupPreset.TEAM_PROJECTS -> {
+                    ensureList(
+                        id = "welcome-list-work",
+                        name = "Work",
+                        color = "accentB",
+                        icon = "work",
+                        starred = true
+                    )
+                    val launch = ensureProject(
+                        id = "welcome-project-launch",
+                        name = "Launch",
+                        color = "accentC",
+                        icon = "campaign",
+                        starred = true
+                    )
+                    ensureProject(
+                        id = "welcome-project-backlog",
+                        name = "Backlog",
+                        color = "accentK",
+                        icon = "inventory",
+                        starred = true,
+                        excludeFromToday = true
+                    )
+                    val profileName = userPreferences.userNameFlow.first().ifBlank { "You" }
+                    val profilePhotoUri = userPreferences.userPhotoUriFlow.first()
+                    val existingMe = people.value.firstOrNull { it.isMe }
+                    if (existingMe != null) {
+                        repository.upsertPerson(
+                            existingMe.copy(
+                                name = profileName,
+                                initials = initialsFor(profileName).takeUnless { it == "?" } ?: existingMe.initials,
+                                starred = true,
+                                photoUri = profilePhotoUri
+                            )
+                        )
+                    }
+                    ensurePerson("welcome-person-teammate", "Teammate", "accentD", starred = true)
+                    userPreferences.setPeopleFeatureEnabled(true)
+                    userPreferences.setTagsFeatureEnabled(true)
+                    userPreferences.setProjectsFeatureEnabled(true)
+                    userPreferences.setTodayTabEnabled(true)
+                    userPreferences.setUpcomingTabEnabled(true)
+                    userPreferences.setDefaultListId("")
+                    userPreferences.setDefaultProjectId(launch.id)
+                    userPreferences.setDefaultDueDate(DefaultDueDate.NONE)
+                    userPreferences.setDefaultPriority("none")
+                    userPreferences.setDefaultEstimateMinutes(30)
+                    userPreferences.setAutoAssignToMe(true)
+                    userPreferences.setDailyAgendaEnabled(true)
+                    userPreferences.setOverdueNudgesEnabled(true)
+                }
+            }
         }
     }
 

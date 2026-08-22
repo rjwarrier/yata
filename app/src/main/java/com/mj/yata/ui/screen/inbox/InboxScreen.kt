@@ -74,6 +74,8 @@ import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.theme.yataItemFade
 import com.mj.yata.ui.theme.yataItemPlacement
 import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.widgets.ContextualHelpButton
+import com.mj.yata.ui.widgets.ContextualHelpTopic
 import com.mj.yata.ui.widgets.LocalUndoWindowSeconds
 import com.mj.yata.ui.widgets.TabEmptyState
 import com.mj.yata.ui.widgets.TaskRow
@@ -136,6 +138,25 @@ fun InboxScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
+                },
+                actions = {
+                    ContextualHelpButton(
+                        title = stringResource(R.string.inbox_title),
+                        topics = listOf(
+                            ContextualHelpTopic(
+                                title = "What lands here",
+                                body = "Inbox shows open tasks that are missing useful planning details: due date, estimate, owner, or a project/list home."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Quick triage",
+                                body = "Use the chips under each task to add the missing details without opening the full task editor."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Ready means done triaging",
+                                body = "A task marked Ready has enough detail to appear in the right focused views and reports."
+                            )
+                        )
+                    )
                 }
             )
         }

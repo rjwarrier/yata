@@ -61,6 +61,8 @@ import com.mj.yata.notification.NotificationHelper
 import com.mj.yata.notification.NotificationPermissionUtils
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.widgets.ContextualHelpButton
+import com.mj.yata.ui.widgets.ContextualHelpTopic
 import com.mj.yata.widget.resolveNotificationAccentColor
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -155,6 +157,23 @@ fun CrashLogScreen(
                     }
                 },
                 actions = {
+                    ContextualHelpButton(
+                        title = stringResource(R.string.diagnostics_title),
+                        topics = listOf(
+                            ContextualHelpTopic(
+                                title = "Reminder Health",
+                                body = "Checks Android notification access, exact alarm permission, and battery settings. Tap a warning row to open the relevant system setting."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Backup Health",
+                                body = "Summarizes the latest backup or sync success, latest failure, retry count, and destinations seen from background operation history."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Crash reports",
+                                body = "Crash bodies load only when expanded. Use copy or share when you need to send a report for debugging."
+                            )
+                        )
+                    )
                     if (logs.isNotEmpty()) {
                         IconButton(onClick = { showClearConfirm = true }) {
                             Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.crash_log_clear_all))
@@ -1103,4 +1122,3 @@ private fun Context.domainVerificationStatus(): AppLinkDiagnosticStatus {
         else -> AppLinkDiagnosticStatus.Unknown
     }
 }
-

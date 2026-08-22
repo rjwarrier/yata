@@ -46,6 +46,8 @@ import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.util.rememberAdaptiveLayoutInfo
 import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
+import com.mj.yata.ui.widgets.ContextualHelpButton
+import com.mj.yata.ui.widgets.ContextualHelpTopic
 import com.mj.yata.ui.widgets.TaskPreviewPane
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -644,12 +646,31 @@ fun SearchScreen(
                     }
                 },
                 trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { query = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { query = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_search))
+                            }
+                        } else {
+                            ContextualHelpButton(
+                                title = stringResource(R.string.help_about_search_saved_views),
+                                topics = listOf(
+                                    ContextualHelpTopic(
+                                        title = "Smart phrases",
+                                        body = "Typing words like overdue, flagged, assigned to me, or no due date turns on the matching filter while keeping your typed text visible."
+                                    ),
+                                    ContextualHelpTopic(
+                                        title = "Filters narrow results",
+                                        body = "Multiple filter chips combine together, so each chip makes the list more focused instead of broader."
+                                    ),
+                                    ContextualHelpTopic(
+                                        title = "Saved views",
+                                        body = "Tap the bookmark button after choosing filters to save that view. Saved views also appear in the drawer and command palette."
+                                    )
+                                )
+                            )
+                            Icon(Icons.Default.Search, contentDescription = null)
                         }
-                    } else {
-                        Icon(Icons.Default.Search, contentDescription = null)
                     }
                 }
             ) {

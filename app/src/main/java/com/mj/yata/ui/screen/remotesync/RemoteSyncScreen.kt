@@ -56,6 +56,8 @@ import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.widgets.ContextualHelpButton
+import com.mj.yata.ui.widgets.ContextualHelpTopic
 import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.YataFieldShape
@@ -404,6 +406,27 @@ fun RemoteSyncScreen(
                     }
                 },
                 actions = {
+                    ContextualHelpButton(
+                        title = stringResource(R.string.remote_sync_title),
+                        topics = listOf(
+                            ContextualHelpTopic(
+                                title = "Choose one provider",
+                                body = "GitHub sync uses a private repository and commit history. SFTP and FTP/FTPS use your own server folder with rotated backup files."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Secrets stay local",
+                                body = "Tokens, passwords, private-key passphrases, and backup encryption passphrases are stored encrypted on this device."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Test before saving",
+                                body = "Use the connect/test action after changing credentials. For SFTP, trust the host key only when the fingerprint matches your server."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Recovery actions replace data",
+                                body = "Restoring from a remote snapshot replaces local app data after creating a recovery backup, so use it when this device should match the remote copy."
+                            )
+                        )
+                    )
                     IconButton(onClick = ::save) {
                         Icon(Icons.Default.Check, contentDescription = stringResource(R.string.action_save))
                     }

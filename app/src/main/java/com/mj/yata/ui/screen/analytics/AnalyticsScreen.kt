@@ -52,6 +52,8 @@ import androidx.compose.animation.core.tween
 import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 import com.mj.yata.ui.util.AdaptiveContentBox
+import com.mj.yata.ui.widgets.ContextualHelpButton
+import com.mj.yata.ui.widgets.ContextualHelpTopic
 
 /**
  * Every number on this screen is about some set of tasks, and until now none of them said *which*.
@@ -150,6 +152,23 @@ fun AnalyticsScreen(
                     }
                 },
                 actions = {
+                    ContextualHelpButton(
+                        title = stringResource(R.string.analytics_analytics),
+                        topics = listOf(
+                            ContextualHelpTopic(
+                                title = "Period vs current numbers",
+                                body = "The segmented period changes completion and activity charts. Overdue, due-soon, and planned-effort numbers always describe the current task state."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Tap into the work",
+                                body = "Rows with a chevron open the exact project, person, tag, list, task, or search view behind that number."
+                            ),
+                            ContextualHelpTopic(
+                                title = "Planned effort",
+                                body = "Effort totals only include tasks with estimates. The coverage note tells you how much open work is still unestimated."
+                            )
+                        )
+                    )
                     IconButton(onClick = {
                         val markdown = com.mj.yata.util.buildAnalyticsMarkdown(
                             periodLabel = period.label(),

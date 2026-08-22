@@ -16,16 +16,22 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
 import com.mj.yata.ui.screen.main.MainViewModel
+import com.mj.yata.ui.screen.main.WelcomeSetupPreset
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.widgets.CircularImageCropper
@@ -71,6 +78,38 @@ private data class WelcomePage(
     val icon: ImageVector,
     @androidx.annotation.StringRes val title: Int,
     val description: String
+)
+
+private data class WelcomeSetupOption(
+    val preset: WelcomeSetupPreset,
+    val icon: ImageVector,
+    val title: String,
+    val description: String,
+    val changes: List<String>
+)
+
+private val setupOptions = listOf(
+    WelcomeSetupOption(
+        preset = WelcomeSetupPreset.SIMPLE_LIST,
+        icon = Icons.Default.TaskAlt,
+        title = "Simple list",
+        description = "A lightweight setup for personal tasks without teams, tags, or project planning.",
+        changes = listOf("Personal list", "Today + Upcoming", "New tasks due today")
+    ),
+    WelcomeSetupOption(
+        preset = WelcomeSetupPreset.PERSONAL_PRODUCTIVITY,
+        icon = Icons.Default.Person,
+        title = "Personal productivity",
+        description = "A focused personal workspace with projects, tags, estimates, and gentle daily nudges.",
+        changes = listOf("Today and Someday lists", "Goals project", "30m default estimate", "Agenda + overdue nudges")
+    ),
+    WelcomeSetupOption(
+        preset = WelcomeSetupPreset.TEAM_PROJECTS,
+        icon = Icons.Default.Groups,
+        title = "Team projects",
+        description = "A project-oriented workspace for assigning work, tracking launch/backlog items, and planning before tasks hit Today.",
+        changes = listOf("Work list", "Launch + Backlog projects", "People enabled", "Auto-assign to you")
+    )
 )
 
 private val pages = listOf(
@@ -106,8 +145,8 @@ private val pages = listOf(
     )
 )
 
-/** Total pages shown: the static tour [pages] plus one trailing interactive "profile setup" page. */
-private val totalPageCount = pages.size + 1
+/** Total pages shown: static tour pages plus profile setup, setup presets, and a final summary. */
+private val totalPageCount = pages.size + 3
 
 /** Shown automatically on first launch after install, and replayable any time from
  * Settings → About → "Show welcome tour". [onFinish] marks it seen (a no-op if already
@@ -124,6 +163,8 @@ fun WelcomeScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
     val pagerState = rememberPagerState(pageCount = { totalPageCount })
     val scope = rememberCoroutineScope()
     val accents = LocalYataAccents.current
+    var selectedPreset by remember { mutableStateOf(WelcomeSetupPreset.PERSONAL_PRODUCTIVITY) }
+    var appliedPreset by remember { mutableStateOf<WelcomeSetupPreset?>(null) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -185,7 +226,26 @@ fun WelcomeScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
                         }
                     }
                 } else {
-                    WelcomeProfileSetupPage(viewModel = viewModel, accentColor = accents.accentA)
+                    when (page - pages.size) {
+                        0 -> WelcomeProfileSetupPage(viewModel = viewModel, accentColor = accents.accentA)
+                        1 -> WelcomeSetupPresetPage(
+                            selectedPreset = selectedPreset,
+                            appliedPreset = appliedPreset,
+                            onSelectPreset = { selectedPreset = it },
+                            onApplyPreset = {
+                                viewModel.applyWelcomeSetupPreset(selectedPreset)
+                                appliedPreset = selectedPreset
+                            }
+                        )
+                        else -> WelcomeSetupSummaryPage(
+                            appliedPreset = appliedPreset,
+                            selectedPreset = selectedPreset,
+                            onApplyPreset = {
+                                viewModel.applyWelcomeSetupPreset(selectedPreset)
+                                appliedPreset = selectedPreset
+                            }
+                        )
+                    }
                 }
             }
 
@@ -246,6 +306,248 @@ fun WelcomeScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
                     )
                 }
             }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun WelcomeSetupPresetPage(
+    selectedPreset: WelcomeSetupPreset,
+    appliedPreset: WelcomeSetupPreset?,
+    onSelectPreset: (WelcomeSetupPreset) -> Unit,
+    onApplyPreset: () -> Unit
+) {
+    val selectedOption = setupOptions.first { it.preset == selectedPreset }
+    val applied = appliedPreset == selectedPreset
+
+    AdaptiveContentBox {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Tune,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(34.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "Choose your starting setup",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Pick a preset to create starter lists/projects/people and configure the features that match how you want to use YATA.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(22.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                setupOptions.forEach { option ->
+                    WelcomePresetCard(
+                        option = option,
+                        selected = option.preset == selectedPreset,
+                        applied = option.preset == appliedPreset,
+                        onClick = { onSelectPreset(option.preset) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "This will configure",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedOption.changes.forEach { change ->
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                shape = RoundedCornerShape(999.dp)
+                            ) {
+                                Text(
+                                    text = change,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(18.dp))
+            Button(
+                onClick = onApplyPreset,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = if (applied) Icons.Default.CheckCircle else Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(if (applied) "Setup applied" else "Apply this setup")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun WelcomePresetCard(
+    option: WelcomeSetupOption,
+    selected: Boolean,
+    applied: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                shape = RoundedCornerShape(20.dp)
+            )
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = if (selected) 0.72f else 1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = option.icon,
+                    contentDescription = null,
+                    tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = option.title,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    if (applied) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = option.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WelcomeSetupSummaryPage(
+    appliedPreset: WelcomeSetupPreset?,
+    selectedPreset: WelcomeSetupPreset,
+    onApplyPreset: () -> Unit
+) {
+    val option = setupOptions.first { it.preset == (appliedPreset ?: selectedPreset) }
+    val hasApplied = appliedPreset != null
+
+    AdaptiveContentBox {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (hasApplied) Icons.Default.CheckCircle else Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(26.dp))
+            Text(
+                text = if (hasApplied) "Your workspace is ready" else "Apply a setup when you're ready",
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = if (hasApplied) {
+                    "${option.title} has been applied. You can change every list, project, person, and preference later from the app."
+                } else {
+                    "You can start without a preset, or apply ${option.title} now to create the starter workspace before you continue."
+                },
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            if (!hasApplied) {
+                Spacer(modifier = Modifier.height(22.dp))
+                Button(onClick = onApplyPreset, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Apply ${option.title}")
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
