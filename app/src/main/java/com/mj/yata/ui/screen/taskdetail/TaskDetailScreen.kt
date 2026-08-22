@@ -306,8 +306,10 @@ fun TaskDetailScreen(
                 title = {
                     AnimatedVisibility(
                         visible = showToolbarTitle,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                        enter = fadeIn(tween(YataDur.fade, easing = YataEase.emphasized)) +
+                            expandVertically(tween(YataDur.fade, easing = YataEase.emphasized)),
+                        exit = fadeOut(tween(YataDur.micro, easing = YataEase.emphasized)) +
+                            shrinkVertically(tween(YataDur.micro, easing = YataEase.emphasized))
                     ) {
                         Text(
                             text = task.title,

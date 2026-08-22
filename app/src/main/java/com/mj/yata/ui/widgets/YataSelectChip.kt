@@ -94,8 +94,10 @@ fun YataSelectChip(
             )
             AnimatedVisibility(
                 visible = selected && showCheck,
-                enter = expandHorizontally() + fadeIn(),
-                exit = shrinkHorizontally() + fadeOut()
+                enter = expandHorizontally(tween(YataDur.micro, easing = YataEase.emphasized)) +
+                    fadeIn(tween(YataDur.micro, easing = YataEase.emphasized)),
+                exit = shrinkHorizontally(tween(YataDur.micro, easing = YataEase.emphasized)) +
+                    fadeOut(tween(YataDur.micro, easing = YataEase.emphasized))
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,

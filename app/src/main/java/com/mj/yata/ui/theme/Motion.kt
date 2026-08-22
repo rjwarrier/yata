@@ -2,20 +2,13 @@ package com.mj.yata.ui.theme
 
 import android.content.Context
 import android.provider.Settings
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.InfiniteRepeatableSpec
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -24,9 +17,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import com.mj.yata.domain.model.MotionMode
 
@@ -49,23 +39,6 @@ object YataEase {
     val spring: Easing = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
 }
 
-/** Expressive spring specs for Material 3 responsive micro-animations */
-object YataSpring {
-    val bouncy: AnimationSpec<Float> = spring(
-        dampingRatio = Spring.DampingRatioHighBouncy,
-        stiffness = Spring.StiffnessLow
-    )
-
-    val press: AnimationSpec<Float> = spring(
-        dampingRatio = 0.6f,
-        stiffness = Spring.StiffnessMediumLow
-    )
-
-    val checkmark: AnimationSpec<Float> = spring(
-        dampingRatio = 0.45f,
-        stiffness = Spring.StiffnessLow
-    )
-}
 
 /** Snapshot state so [applyMotionMode] registers as a state change app-wide. */
 object YataDur {
@@ -120,52 +93,6 @@ val yataItemPlacement: FiniteAnimationSpec<IntOffset>
 
 val yataItemFade: FiniteAnimationSpec<Float>
     get() = tween(durationMillis = YataDur.fade, easing = YataEase.emphasized)
-
-/**
- * Reusable M3 Expressive touch feedback modifier that shrinks slightly on press (0.96f)
- * with bouncy spring recovery upon release, automatically respecting current [MotionMode].
- */
-fun Modifier.bounceClickable(
-    enabled: Boolean = true,
-    pressedScale: Float = 0.93f,
-    onClick: () -> Unit
-): Modifier = composed {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    val targetScale = when {
-        !enabled || YataDur.modeState == MotionMode.OFF -> 1f
-        isPressed && YataDur.modeState == MotionMode.REDUCED -> 0.99f
-        isPressed -> pressedScale
-        else -> 1f
-    }
-
-    val animSpec: AnimationSpec<Float> = when (YataDur.modeState) {
-        MotionMode.FULL -> YataSpring.press
-        MotionMode.REDUCED -> tween(durationMillis = YataDur.micro)
-        MotionMode.OFF -> snap()
-    }
-
-    val animatedScale by animateFloatAsState(
-        targetValue = targetScale,
-        animationSpec = animSpec,
-        label = "bounce-scale"
-    )
-
-    this
-        .graphicsLayer {
-            scaleX = animatedScale
-            scaleY = animatedScale
-        }
-        .clickable(
-            interactionSource = interactionSource,
-            indication = null,
-            enabled = enabled,
-            onClick = onClick
-        )
-}
-
-private fun <T> snap(): AnimationSpec<T> = tween(0)
 
 /**
  * Motion-aware replacement for `rememberInfiniteTransition().animateFloat(...)`, for a loop that is

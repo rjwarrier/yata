@@ -288,8 +288,14 @@ fun TaskRow(
                     visible = task.flag,
                     enter = androidx.compose.animation.scaleIn(
                         animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
-                    ) + fadeIn(),
-                    exit = androidx.compose.animation.scaleOut() + fadeOut()
+                    ) + fadeIn(
+                        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMediumLow)
+                    ),
+                    exit = androidx.compose.animation.scaleOut(
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+                    ) + fadeOut(
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Flag,

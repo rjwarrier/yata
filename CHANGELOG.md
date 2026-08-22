@@ -34,8 +34,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   explicit, informed opt-in instead of being exposed to every install by default.
 - Duplicating a task now automatically appends "Duplicate" to the cloned task's title and immediately
   opens the new task in the task edit screen.
-- Smoothed the primary FAB size and label morph animation between tabs so the button pill fluidly
-  expands/contracts with natural spring physics without visual jerking.
+- Smoothed the Today FAB stack: the voice-capture and "new" buttons now scale and fade in step
+  with each other instead of fade finishing while the pop was still settling, and the button's
+  label no longer visibly fights its own width change when switching tabs.
+- A number of smaller in-app transitions (task flag icon, section task counts, stepper values,
+  voice overlay chip, sync history and task detail expand/collapse) now animate consistently with
+  the rest of the app and respect Reduce Motion, instead of using Compose's untouched defaults.
 - On task detail, the "Add a comment" field now sits below the existing comments instead of above
   them, so newest comments appear next to where you're typing.
 - Every three-dot/overflow menu across the app (task rows, task/project/list/tag/person detail,

@@ -5,6 +5,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
+import com.mj.yata.ui.theme.YataDur
+import com.mj.yata.ui.theme.YataEase
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -371,8 +374,10 @@ private fun SyncHistoryCard(
 
             AnimatedVisibility(
                 visible = isExpanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+                enter = fadeIn(tween(YataDur.sheet, easing = YataEase.emphasized)) +
+                    expandVertically(tween(YataDur.sheet, easing = YataEase.emphasized)),
+                exit = fadeOut(tween(YataDur.micro, easing = YataEase.emphasized)) +
+                    shrinkVertically(tween(YataDur.micro, easing = YataEase.emphasized))
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))

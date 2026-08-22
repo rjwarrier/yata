@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -55,12 +56,14 @@ fun YataStepper(
         AnimatedContent(
             targetState = value,
             transitionSpec = {
+                val spec = tween<IntOffset>(durationMillis = YataDur.micro, easing = YataEase.emphasized)
+                val fadeSpec = tween<Float>(durationMillis = YataDur.micro, easing = YataEase.emphasized)
                 if (targetState > initialState) {
-                    (slideInVertically { height -> height } + fadeIn()) togetherWith
-                            (slideOutVertically { height -> -height } + fadeOut())
+                    (slideInVertically(spec) { height -> height } + fadeIn(fadeSpec)) togetherWith
+                            (slideOutVertically(spec) { height -> -height } + fadeOut(fadeSpec))
                 } else {
-                    (slideInVertically { height -> -height } + fadeIn()) togetherWith
-                            (slideOutVertically { height -> height } + fadeOut())
+                    (slideInVertically(spec) { height -> -height } + fadeIn(fadeSpec)) togetherWith
+                            (slideOutVertically(spec) { height -> height } + fadeOut(fadeSpec))
                 }.using(
                     SizeTransform(clip = false)
                 )

@@ -3,9 +3,6 @@ package com.mj.yata.ui.screen.main
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +16,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -721,21 +719,28 @@ fun MainScreen(
                 ) {
                     // Today-only voice capture, stacked above the main FAB below.
                     // Matched in size to the main FAB on Today screen via IntrinsicSize.Max & fillMaxWidth.
+                    // Scale+fade only, deliberately no expandVertically/shrinkVertically: that
+                    // paired a layout-changing animation (this element's own measured height, which
+                    // forces the Column to remeasure and reposition the FAB below every frame) with
+                    // a draw-only one on the same element, and drove them off spring physics while
+                    // fade ran on a separate fixed-duration tween -- so alpha finished solid well
+                    // before scale/height settled, reading as the chip still growing after it
+                    // already looked done. Scale and fade now share one spring each direction, so
+                    // they settle together, and this element's own layout size is fixed the whole
+                    // time it's part of the tree -- only its paint transform animates.
                     AnimatedVisibility(
                         visible = selectedTab == 0 && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
-                        enter = fadeIn(tween(180)) + scaleIn(
+                        enter = scaleIn(
                             animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
                             initialScale = 0.85f
-                        ) + expandVertically(
-                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
-                            expandFrom = Alignment.Bottom
+                        ) + fadeIn(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
                         ),
-                        exit = fadeOut(tween(120)) + scaleOut(
+                        exit = scaleOut(
                             animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow),
                             targetScale = 0.85f
-                        ) + shrinkVertically(
-                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow),
-                            shrinkTowards = Alignment.Bottom
+                        ) + fadeOut(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow)
                         )
                     ) {
                         PressableScaleBox(
@@ -773,16 +778,23 @@ fun MainScreen(
                         }
                     }
 
+                    // Same reasoning as the voice FAB above: fade now shares the scale's spring
+                    // in each direction instead of racing it on a fixed tween, so opacity and size
+                    // settle together.
                     AnimatedVisibility(
                         visible = fabTarget != null && fabPosition != com.mj.yata.domain.model.FabPosition.HIDDEN,
                         enter = scaleIn(
                             animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
                             initialScale = 0.85f
-                        ) + fadeIn(tween(180)),
+                        ) + fadeIn(
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
+                        ),
                         exit = scaleOut(
                             animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow),
                             targetScale = 0.85f
-                        ) + fadeOut(tween(120))
+                        ) + fadeOut(
+                            animationSpec = spring(dampingRatio = 0.95f, stiffness = Spring.StiffnessMediumLow)
+                        )
                     ) {
                         val (fabLabel, sheetType) = fabTarget ?: ("New task" to MainSheetType.NewTask)
                         PressableScaleBox(
@@ -812,27 +824,43 @@ fun MainScreen(
                                     AnimatedContent(
                                         targetState = fabLabel,
                                         transitionSpec = {
+                                            // Slide and fade now share one spring per direction
+                                            // (previously fade ran on a separate fixed tween,
+                                            // finishing solid while the slide was still settling).
+                                            // sizeAnimationSpec snaps rather than animates: the
+                                            // parent Column already sizes itself off
+                                            // IntrinsicSize.Max, which reports each label's final
+                                            // width immediately, before any width animation here
+                                            // could get partway through it. Animating this size too
+                                            // just fought that outer snap instead of agreeing with
+                                            // it -- one instant width change reads cleaner than two
+                                            // mechanisms racing to different rates.
                                             val enterAnim = slideInVertically(
                                                 animationSpec = spring(
                                                     dampingRatio = 0.85f,
                                                     stiffness = Spring.StiffnessMediumLow
                                                 )
-                                            ) { height -> height } + fadeIn(tween(180))
+                                            ) { height -> height } + fadeIn(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.85f,
+                                                    stiffness = Spring.StiffnessMediumLow
+                                                )
+                                            )
                                             val exitAnim = slideOutVertically(
                                                 animationSpec = spring(
                                                     dampingRatio = 0.95f,
                                                     stiffness = Spring.StiffnessMediumLow
                                                 )
-                                            ) { height -> -height } + fadeOut(tween(120))
+                                            ) { height -> -height } + fadeOut(
+                                                animationSpec = spring(
+                                                    dampingRatio = 0.95f,
+                                                    stiffness = Spring.StiffnessMediumLow
+                                                )
+                                            )
                                             enterAnim.togetherWith(exitAnim).using(
                                                 SizeTransform(
                                                     clip = false,
-                                                    sizeAnimationSpec = { _, _ ->
-                                                        spring(
-                                                            dampingRatio = 0.85f,
-                                                            stiffness = Spring.StiffnessMediumLow
-                                                        )
-                                                    }
+                                                    sizeAnimationSpec = { _, _ -> snap() }
                                                 )
                                             )
                                         },
