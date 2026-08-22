@@ -110,8 +110,13 @@ class UserPreferences @Inject constructor(
          *   another. `JsonExporter` carries the photo bytes and rewrites the Uri itself.
          */
         val NON_PORTABLE_KEYS = setOf(
+            "app_lock_enabled",
             "app_lock_pin_hash",
             "app_lock_pin_salt",
+            "app_lock_timeout_minutes",
+            "app_lock_pin_length",
+            "app_lock_failed_attempts",
+            "app_lock_locked_until",
             "cloud_backup_enabled",
             "cloud_backup_account_email",
             "cloud_backup_last_at",
@@ -119,6 +124,11 @@ class UserPreferences @Inject constructor(
             "cloud_backup_interval_minutes",
             "cloud_backup_archive_months",
             "cloud_backup_keep_count",
+            "sftp_last_backup_at",
+            "sftp_host_key_fingerprint",
+            "github_token_expires_at",
+            "github_last_head_sha",
+            "github_last_canonical_hash",
             "last_primary_argb",
             "user_photo_uri"
         )
@@ -176,10 +186,9 @@ class UserPreferences @Inject constructor(
         // (FTPS, explicit AUTH TLS) and is only ever false if the user deliberately opts out,
         // which the config dialog makes an explicit, warned choice rather than a quiet toggle.
         val FTP_USE_TLS             = booleanPreferencesKey("ftp_use_tls")
-        // Off by default: commons-net's FTPSClient only checks the certificate chain unless this
-        // is on, and turning it on for an existing connection whose server certificate has no SAN
-        // matching the configured host (common on small self-hosted setups) would silently break
-        // backups that were working. See FtpBackupManager.connect for what this actually enables.
+        // On by default for new FTPS configs: commons-net's FTPSClient only checks the
+        // certificate chain unless this is enabled, so strict mode is the safe default. Existing
+        // installs that explicitly saved false keep that compatibility setting.
         val FTP_STRICT_TLS          = booleanPreferencesKey("ftp_strict_tls")
         val GITHUB_OWNER            = stringPreferencesKey("github_owner")
         val GITHUB_REPO             = stringPreferencesKey("github_repo")
@@ -436,7 +445,7 @@ class UserPreferences @Inject constructor(
         }
     }
     val ftpUseTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_USE_TLS] ?: true }
-    val ftpStrictTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_STRICT_TLS] ?: false }
+    val ftpStrictTlsFlow: Flow<Boolean> = prefsFlow.map { it[FTP_STRICT_TLS] ?: true }
     val githubOwnerFlow: Flow<String> = prefsFlow.map { it[GITHUB_OWNER] ?: "" }
     val githubRepoFlow: Flow<String> = prefsFlow.map { it[GITHUB_REPO] ?: "" }
     val githubBranchFlow: Flow<String> = prefsFlow.map { it[GITHUB_BRANCH] ?: "" }

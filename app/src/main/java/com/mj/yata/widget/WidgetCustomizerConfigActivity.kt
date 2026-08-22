@@ -101,8 +101,6 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                 appWidgetInfo?.provider?.className
             }
         }
-        Log.d("WidgetConfig", "Configuring widget $appWidgetId of type $providerClass")
-
         val listsState = repository.getLists().stateIn(lifecycleScope, SharingStarted.Eagerly, emptyList())
         val projectsState = repository.getProjects().stateIn(lifecycleScope, SharingStarted.Eagerly, emptyList())
         val tagsState = repository.getTags().stateIn(lifecycleScope, SharingStarted.Eagerly, emptyList())
@@ -197,7 +195,6 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
         opacity: Float,
         accentOverride: String?
     ) {
-        Log.d("WidgetConfig", "onConfigSaved: radius=$radius, label=$label, useM3=$useM3Colors, sourceId=$sourceId, sourceType=$sourceType, opacity=$opacity, accentOverride=$accentOverride, providerClass=$providerClass")
         lifecycleScope.launch {
             // Resolving the id and writing prefs is the part that must succeed for the save to
             // count as successful at all — kept in its own try/catch, distinct from the refresh
@@ -211,8 +208,6 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                 finish()
                 return@launch
             }
-            Log.d("WidgetConfig", "glanceId: $glanceId")
-
             try {
                 updateAppWidgetState(this@WidgetCustomizerConfigActivity, glanceId) { prefs ->
                     prefs[WIDGET_CORNER_RADIUS_KEY] = radius
@@ -244,7 +239,6 @@ class WidgetCustomizerConfigActivity : ComponentActivity() {
                         }
                     }
                 }
-                Log.d("WidgetConfig", "prefs written, forcing update for providerClass=$providerClass")
             } catch (e: Exception) {
                 Log.e("WidgetConfig", "onConfigSaved: prefs write failed for widget $appWidgetId (glanceId=$glanceId)", e)
                 showSaveFailedToast()

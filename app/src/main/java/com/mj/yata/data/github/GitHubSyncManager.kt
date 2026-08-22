@@ -142,7 +142,8 @@ class GitHubSyncManager @Inject constructor(
 
     private fun encodePayload(jsonBytes: ByteArray): ByteArray {
         val passphrase = credentialsStore.backupPassphrase
-        return if (passphrase == null) jsonBytes else BackupCrypto.encrypt(jsonBytes, passphrase)
+            ?: throw IllegalStateException("Set a backup passphrase before publishing GitHub sync data")
+        return BackupCrypto.encrypt(jsonBytes, passphrase)
     }
 
     private fun decodePayload(bytes: ByteArray): ByteArray {

@@ -110,7 +110,7 @@ internal fun defaultEntityExportOptions(context: Context, entityName: String): E
         fileNameBase = "yata_${sanitizeExportFileName(entityName)}",
         pdfPageSize = enumValueOrDefault(prefs.getString(ExportPrefKeys.PDF_PAGE_SIZE, null), ExportPdfPageSize.A4),
         imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD),
-        includeImportLink = prefs.getBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, true)
+        includeImportLink = prefs.getBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, false)
     )
 }
 
@@ -130,8 +130,8 @@ internal fun defaultTaskExportOptions(context: Context, title: String, systemDar
         systemDarkTheme
     }
     return TaskExportOptions(
-        includeNotes = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_NOTES, true),
-        includeComments = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_COMMENTS, true),
+        includeNotes = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_NOTES, false),
+        includeComments = !privacy && prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_COMMENTS, false),
         includeSubtasks = prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_SUBTASKS, true),
         includeScheduleDetails = prefs.getBoolean(ExportPrefKeys.TASK_INCLUDE_SCHEDULE, true),
         showMadeWithFooter = prefs.getBoolean(ExportPrefKeys.SHOW_FOOTER, true),
@@ -141,7 +141,7 @@ internal fun defaultTaskExportOptions(context: Context, title: String, systemDar
         pdfPageSize = enumValueOrDefault(prefs.getString(ExportPrefKeys.PDF_PAGE_SIZE, null), ExportPdfPageSize.A4),
         imageScale = enumValueOrDefault(prefs.getString(ExportPrefKeys.IMAGE_SCALE, null), ExportImageScale.STANDARD),
         imageDarkTheme = imageDarkTheme,
-        includeImportLink = prefs.getBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, true)
+        includeImportLink = prefs.getBoolean(ExportPrefKeys.INCLUDE_IMPORT_LINK, false)
     )
 }
 

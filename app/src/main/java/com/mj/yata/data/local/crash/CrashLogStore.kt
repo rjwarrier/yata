@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import com.mj.yata.BuildConfig
+import com.mj.yata.util.SecurityRedactor
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.PrintWriter
@@ -62,7 +63,9 @@ class CrashLogStore @Inject constructor(
             if (!dir.exists() && !dir.mkdirs()) return
 
             val now = System.currentTimeMillis()
-            val stackTrace = StringWriter().also { throwable.printStackTrace(PrintWriter(it)) }.toString()
+            val stackTrace = SecurityRedactor.redact(
+                StringWriter().also { throwable.printStackTrace(PrintWriter(it)) }.toString()
+            )
             val report = buildString {
                 appendLine("Time:      ${fileStamp(now)}")
                 appendLine("Type:      ${if (fatal) "Crash (uncaught)" else "Handled failure"}")

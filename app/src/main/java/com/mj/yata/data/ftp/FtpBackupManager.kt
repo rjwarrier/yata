@@ -138,14 +138,11 @@ class FtpBackupManager @Inject constructor(
                 val jsonBytes = primaryJson.toString(2).toByteArray(Charsets.UTF_8)
                 val zipped = zip(jsonBytes)
                 val backupPassphrase = credentialsStore.backupPassphrase
-                val bytes = if (backupPassphrase != null) {
-                    BackupCrypto.encrypt(zipped, backupPassphrase)
-                } else {
-                    zipped
-                }
+                    ?: throw IllegalStateException("Set a backup passphrase before publishing FTP backup data")
+                val bytes = BackupCrypto.encrypt(zipped, backupPassphrase)
                 val filename = FILENAME_PREFIX +
                     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                    (if (backupPassphrase != null) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+                    ENCRYPTED_SUFFIX
 
                 // The transfer runs NonCancellable once it has started. Cancelling mid-upload
                 // (screen closed, scope torn down) drops the socket without a TLS shutdown, and
@@ -248,10 +245,9 @@ class FtpBackupManager @Inject constructor(
 
                             if (encoded != null) {
                                 progress(92, "Saving backup copy")
-                                val encrypted = credentialsStore.backupPassphrase != null
                                 val backupName = FILENAME_PREFIX +
                                     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                                    (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+                                    ENCRYPTED_SUFFIX
                                 publishNewFile(client, backupName, encoded)
                                 pruneOldBackups(client, remoteDir, keepCount)
                             }
@@ -329,7 +325,8 @@ class FtpBackupManager @Inject constructor(
     private fun encodePayload(jsonBytes: ByteArray): ByteArray {
         val zipped = zip(jsonBytes)
         val passphrase = credentialsStore.backupPassphrase
-        return if (passphrase == null) zipped else BackupCrypto.encrypt(zipped, passphrase)
+            ?: throw IllegalStateException("Set a backup passphrase before publishing FTP sync data")
+        return BackupCrypto.encrypt(zipped, passphrase)
     }
 
     private fun decodePayload(bytes: ByteArray): ByteArray {
@@ -655,6 +652,12 @@ class FtpBackupManager @Inject constructor(
         name.startsWith(FILENAME_PREFIX) &&
             (name.endsWith(FILENAME_SUFFIX) || name.endsWith(ENCRYPTED_SUFFIX))
 
+    private fun requireRestoreFilename(name: String) {
+        require(name == name.substringAfterLast('/')) { "Invalid backup filename" }
+        require('\\' !in name && ".." !in name) { "Invalid backup filename" }
+        require(isHistoryBackupName(name)) { "Unsupported backup filename" }
+    }
+
     private fun listHistoryBackupNames(client: FTPClient): List<String> {
         val files = client.listFiles()
         check(FTPReply.isPositiveCompletion(client.replyCode)) {
@@ -754,6 +757,7 @@ class FtpBackupManager @Inject constructor(
 
     /** Downloads, verifies length, decrypts if needed, unzips if needed. */
     private suspend fun fetchBackupJson(filename: String): ByteArray {
+        requireRestoreFilename(filename)
         val remoteDir = userPreferences.sftpRemoteDirFlow.first()
         val client = connect()
         val bytes = try {
@@ -800,12 +804,16 @@ class FtpBackupManager @Inject constructor(
         val username = userPreferences.sftpUsernameFlow.first()
         val useTls = userPreferences.ftpUseTlsFlow.first()
         val strictTls = userPreferences.ftpStrictTlsFlow.first()
+        val backupPassphrase = credentialsStore.backupPassphrase
 
         if (host.isBlank() || username.isBlank()) {
             throw SftpNotConfiguredException("FTP host and username must be set")
         }
         val password = credentialsStore.password
             ?: throw SftpNotConfiguredException("No FTP password saved")
+        if (!useTls && backupPassphrase.isNullOrBlank()) {
+            throw IllegalStateException("Plain FTP requires a backup passphrase so backup contents are encrypted")
+        }
 
         // Explicit FTPS (AUTH TLS on the plain control port) rather than implicit FTPS (a
         // dedicated TLS-from-the-start port) -- explicit is what virtually every FTPS server
@@ -861,7 +869,7 @@ class FtpBackupManager @Inject constructor(
                 // file. With an encrypted payload the file is protected in transit and at rest by
                 // its own AES-GCM layer, so the data channel carries ciphertext either way; the
                 // login still goes over TLS on the control channel.
-                client.execPROT(if (credentialsStore.backupPassphrase != null) "C" else "P")
+                client.execPROT(if (backupPassphrase != null) "C" else "P")
             }
             configurePassiveDataMode(client)
             client.setFileType(FTP.BINARY_FILE_TYPE)

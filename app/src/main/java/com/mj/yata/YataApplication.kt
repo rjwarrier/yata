@@ -6,6 +6,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.mj.yata.notification.DailyAgendaWorker
 import com.mj.yata.notification.OverdueEscalationWorker
+import com.mj.yata.util.SecurityRedactor
 import dagger.hilt.android.HiltAndroidApp
 import java.io.File
 import java.io.PrintWriter
@@ -43,7 +44,7 @@ class YataApplication : Application(), Configuration.Provider {
             try {
                 val sw = StringWriter()
                 throwable.printStackTrace(PrintWriter(sw))
-                Log.e("YataCrash", "Uncaught exception on ${thread.name}:\n$sw")
+                Log.e("YataCrash", "Uncaught exception on ${thread.name}:\n${SecurityRedactor.redact(sw.toString())}")
                 // Kept as history rather than a single overwritten file, and readable in-app from
                 // Settings → Crash Logs. The process is already going down here, so the store
                 // writes synchronously and swallows its own errors.

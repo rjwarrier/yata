@@ -134,10 +134,9 @@ class SftpBackupManager @Inject constructor(
                 val keepCount = userPreferences.sftpKeepCountFlow.first()
                 val (primaryJson, _) = jsonExporter.buildSplitBackupJson(archiveMonths = 0)
                 val bytes = encodePayload(primaryJson.toString(2).toByteArray(Charsets.UTF_8))
-                val encrypted = credentialsStore.backupPassphrase != null
                 val filename = FILENAME_PREFIX +
                     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-                    (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+                    ENCRYPTED_SUFFIX
 
                 val tempFile = File.createTempFile("sftp_upload", ".json", context.cacheDir)
                 try {
@@ -343,6 +342,7 @@ class SftpBackupManager @Inject constructor(
         userPreferences.sftpHostFlow.first().isNotBlank()
 
     private suspend fun download(filename: String): ByteArray {
+        requireRestoreFilename(filename)
         val remoteDir = userPreferences.sftpRemoteDirFlow.first()
         buildClient().use { ssh ->
             ssh.newSFTPClient().use { sftp ->
@@ -372,7 +372,8 @@ class SftpBackupManager @Inject constructor(
 
     private fun encodePayload(jsonBytes: ByteArray): ByteArray {
         val passphrase = credentialsStore.backupPassphrase
-        return if (passphrase == null) jsonBytes else BackupCrypto.encrypt(jsonBytes, passphrase)
+            ?: throw IllegalStateException("Set a backup passphrase before publishing SFTP backup or sync data")
+        return BackupCrypto.encrypt(jsonBytes, passphrase)
     }
 
     private fun decodePayload(bytes: ByteArray): ByteArray {
@@ -509,10 +510,9 @@ class SftpBackupManager @Inject constructor(
     }
 
     private fun writeTimestampedBackup(sftp: SFTPClient, remoteDir: String, bytes: ByteArray) {
-        val encrypted = credentialsStore.backupPassphrase != null
         val filename = FILENAME_PREFIX +
             SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date()) +
-            (if (encrypted) ENCRYPTED_SUFFIX else FILENAME_SUFFIX)
+            ENCRYPTED_SUFFIX
         val finalPath = remotePath(remoteDir, filename)
         val temporaryPath = remotePath(remoteDir, ".$filename.${UUID.randomUUID()}.part")
         try {
@@ -698,6 +698,12 @@ class SftpBackupManager @Inject constructor(
     private fun isHistoryBackupName(name: String): Boolean =
         name.startsWith(FILENAME_PREFIX) &&
             (name.endsWith(FILENAME_SUFFIX) || name.endsWith(ENCRYPTED_SUFFIX))
+
+    private fun requireRestoreFilename(name: String) {
+        require(name == name.substringAfterLast('/')) { "Invalid backup filename" }
+        require('\\' !in name && ".." !in name) { "Invalid backup filename" }
+        require(isHistoryBackupName(name)) { "Unsupported backup filename" }
+    }
 
     private suspend fun buildClient(
         allowUnpinnedProbe: Boolean = false,
