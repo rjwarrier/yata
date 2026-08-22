@@ -200,4 +200,4 @@ There is no automated Compose UI test suite; UI-facing changes are verified manu
 
 ## Status
 
-Personal, actively-evolving project — schema and UI can change between commits. Current `versionName` (`app/build.gradle.kts`) is `0.5`.
+Personal, actively-evolving project — schema and UI can change between commits. Current `versionName` (`app/build.gradle.kts`) is `0.94.1`.
