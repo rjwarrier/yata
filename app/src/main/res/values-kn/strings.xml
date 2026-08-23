@@ -1099,7 +1099,7 @@
     <string name="notification_action_snooze_15m">15 ನಿಮಿಷ ಸ್ನೂಜ್</string>
     <string name="notification_action_snooze_1h">1 ಗಂಟೆ ಸ್ನೂಜ್</string>
     <string name="notification_action_snooze_tomorrow">ನಾಳೆಯವರೆಗೆ ಸ್ನೂಜ್</string>
-    <string name="snooze_next_weekday">ಮುಂದಿನ ವಾರದ ದಿನ</string>
+    <string name="snooze_next_weekday">ಮುಂದಿನ ಕೆಲಸದ ದಿನ</string>
     <string name="bulk_reschedule_selected">ಆಯ್ಕೆಮಾಡಿದ ಕಾರ್ಯಗಳನ್ನು ಮರುನಿಗದಿಪಡಿಸಿ</string>
     <string name="new_task_title">ಹೊಸ ಕಾರ್ಯ</string>
     <string name="new_task_title_hint">ಏನು ಮಾಡಬೇಕು? # ಟ್ಯಾಗ್, @ ವ್ಯಕ್ತಿ, + ಪ್ರಾಜೆಕ್ಟ್, = ಪಟ್ಟಿ ಪ್ರಯತ್ನಿಸಿ</string>

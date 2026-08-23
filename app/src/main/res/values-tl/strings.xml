@@ -1099,7 +1099,7 @@
     <string name="notification_action_snooze_15m">I-snooze ng 15 minuto</string>
     <string name="notification_action_snooze_1h">I-snooze ng 1 oras</string>
     <string name="notification_action_snooze_tomorrow">I-snooze hanggang bukas</string>
-    <string name="snooze_next_weekday">Susunod na weekday</string>
+    <string name="snooze_next_weekday">Susunod na araw ng trabaho</string>
     <string name="bulk_reschedule_selected">Baguhin ang iskedyul ng napili</string>
     <string name="new_task_title">Bagong gawain</string>
     <string name="new_task_title_hint">Ano ang kailangang gawin? Subukan ang # tag, @ tao, + proyekto, = listahan</string>

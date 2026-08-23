@@ -1016,7 +1016,7 @@
     <string name="notification_action_snooze_15m">Snooza 15 min</string>
     <string name="notification_action_snooze_1h">Snooza 1 timme</string>
     <string name="notification_action_snooze_tomorrow">Snooza till imorgon</string>
-    <string name="snooze_next_weekday">Nästa vardag</string>
+    <string name="snooze_next_weekday">Nästa arbetsdag</string>
     <string name="bulk_reschedule_selected">Boka om markerade uppgifter</string>
     <string name="new_task_title">Ny uppgift</string>
     <string name="new_task_title_hint">Vad behöver göras? Prova # tagg, @ person, + projekt, = lista</string>

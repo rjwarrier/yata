@@ -1099,7 +1099,7 @@
     <string name="notification_action_snooze_15m">Ahirisha dakika 15</string>
     <string name="notification_action_snooze_1h">Ahirisha saa 1</string>
     <string name="notification_action_snooze_tomorrow">Ahirisha hadi kesho</string>
-    <string name="snooze_next_weekday">Siku ya wiki ijayo</string>
+    <string name="snooze_next_weekday">Siku ya kazi inayofuata</string>
     <string name="bulk_reschedule_selected">Panga upya kazi zilizoteuliwa</string>
     <string name="new_task_title">Kazi mpya</string>
     <string name="new_task_title_hint">Nini kinatakiwa kufanywa? Jaribu # lebo, @ mtu, + mradi, = orodha</string>

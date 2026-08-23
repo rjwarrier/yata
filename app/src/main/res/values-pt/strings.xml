@@ -843,7 +843,7 @@
     <string name="notification_action_snooze_15m">Soneca 15 minutos</string>
     <string name="notification_action_snooze_1h">Adiar 1 hora</string>
     <string name="notification_action_snooze_tomorrow">Adiar até amanhã</string>
-    <string name="snooze_next_weekday">Próximo dia da semana</string>
+    <string name="snooze_next_weekday">Próximo dia útil</string>
     <string name="bulk_reschedule_selected">Reprogramar tarefas selecionadas</string>
     <string name="new_task_title">Nova tarefa</string>
     <string name="new_task_title_hint">O que precisa ser feito? Tente # etiqueta, @ pessoa, + projeto, = lista</string>

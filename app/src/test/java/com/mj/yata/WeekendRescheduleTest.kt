@@ -1,8 +1,11 @@
 package com.mj.yata
 
 import com.mj.yata.domain.model.DEFAULT_WEEKEND_DAYS
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.isRescheduledToWeekend
 import com.mj.yata.domain.model.isWeekendDate
+import com.mj.yata.domain.model.nextBusinessDay
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -62,5 +65,65 @@ class WeekendRescheduleTest {
     fun clearingOrMalformedDueDateNeverWarns() {
         assertFalse(isRescheduledToWeekend("2026-08-21", null, DEFAULT_WEEKEND_DAYS))
         assertFalse(isRescheduledToWeekend("2026-08-21", "not-a-date", DEFAULT_WEEKEND_DAYS))
+    }
+
+    // --- nextBusinessDay: backs the "Next business day" quick-snooze preset ---
+
+    @Test
+    fun nextBusinessDaySkipsPastAWeekendStartingOnIt() {
+        // Starting on the Saturday itself should land on Monday, not stay put.
+        assertEquals(LocalDate.parse("2026-08-24"), nextBusinessDay(LocalDate.parse("2026-08-22"), DEFAULT_WEEKEND_DAYS, emptyList()))
+    }
+
+    @Test
+    fun nextBusinessDayReturnsAnOrdinaryWeekdayUnchanged() {
+        assertEquals(LocalDate.parse("2026-08-18"), nextBusinessDay(LocalDate.parse("2026-08-18"), DEFAULT_WEEKEND_DAYS, emptyList()))
+    }
+
+    @Test
+    fun nextBusinessDaySkipsAHolidayThatIsNotAWeekend() {
+        // 2026-08-18 is a Tuesday -- a holiday there, with no weekend involved, still skips.
+        val holiday = Holiday("2026-08-18", "Made-up Holiday", recurring = false)
+        assertEquals(
+            LocalDate.parse("2026-08-19"),
+            nextBusinessDay(LocalDate.parse("2026-08-18"), DEFAULT_WEEKEND_DAYS, listOf(holiday))
+        )
+    }
+
+    @Test
+    fun nextBusinessDaySkipsARecurringHolidayAcrossYears() {
+        // Recurring holiday anchored in a different year must still be honored via month-day match.
+        val recurringHoliday = Holiday("2020-08-18", "Made-up Recurring Holiday", recurring = true)
+        assertEquals(
+            LocalDate.parse("2026-08-19"),
+            nextBusinessDay(LocalDate.parse("2026-08-18"), DEFAULT_WEEKEND_DAYS, listOf(recurringHoliday))
+        )
+    }
+
+    @Test
+    fun nextBusinessDaySkipsConsecutiveHolidayAndWeekend() {
+        // Friday 2026-08-21 is a holiday, Saturday/Sunday follow -- should land on Monday 2026-08-24.
+        val holiday = Holiday("2026-08-21", "Bridge Day", recurring = false)
+        assertEquals(
+            LocalDate.parse("2026-08-24"),
+            nextBusinessDay(LocalDate.parse("2026-08-21"), DEFAULT_WEEKEND_DAYS, listOf(holiday))
+        )
+    }
+
+    @Test
+    fun nextBusinessDayHonorsCustomWeekendDays() {
+        val friSat = setOf("FR", "SA")
+        assertEquals(
+            LocalDate.parse("2026-08-23"),
+            nextBusinessDay(LocalDate.parse("2026-08-21"), friSat, emptyList())
+        )
+    }
+
+    @Test
+    fun nextBusinessDayTerminatesEvenWhenEveryDayIsMarkedWeekend() {
+        val everyDay = setOf("MO", "TU", "WE", "TH", "FR", "SA", "SU")
+        val result = nextBusinessDay(LocalDate.parse("2026-08-18"), everyDay, emptyList())
+        // No real answer exists for this pathological config; just must not hang or throw.
+        assertEquals(LocalDate.parse("2026-08-18").plusDays(366), result)
     }
 }

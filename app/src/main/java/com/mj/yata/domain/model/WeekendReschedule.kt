@@ -43,3 +43,21 @@ fun rescheduledHolidayLabel(previousDue: String?, nextDue: String?, holidays: Li
     if (nextDue == null || nextDue == previousDue) return null
     return holidays.firstOrNull { it.matches(nextDue) }?.label
 }
+
+/** Advances [start] forward until it lands on neither a configured weekend day nor a holiday —
+ * the actual next business day, not just the next non-Saturday/Sunday date. Backs the
+ * "Next weekday" quick-snooze preset (renamed "Next business day" to match). [holidays] is looked
+ * up via [Holiday.index] rather than a linear scan since this can walk several days forward one at
+ * a time. The 366-day cap guards against a pathological config — every weekday marked as a
+ * weekend, say — that would otherwise loop forever; it's a config problem to fix, not something
+ * worth surfacing as an error from this function. */
+fun nextBusinessDay(start: LocalDate, weekendDays: Set<String>, holidays: List<Holiday>): LocalDate {
+    val holidayLookup = Holiday.index(holidays)
+    var date = start
+    var daysChecked = 0
+    while (daysChecked < 366 && (isWeekendDate(date, weekendDays) || holidayLookup(date.toString()) != null)) {
+        date = date.plusDays(1)
+        daysChecked++
+    }
+    return date
+}

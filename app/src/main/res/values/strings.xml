@@ -1352,7 +1352,7 @@
     <string name="notification_action_snooze_15m">Snooze 15 min</string>
     <string name="notification_action_snooze_1h">Snooze 1 hour</string>
     <string name="notification_action_snooze_tomorrow">Snooze until tomorrow</string>
-    <string name="snooze_next_weekday">Next weekday</string>
+    <string name="snooze_next_weekday">Next business day</string>
     <string name="bulk_reschedule_selected">Reschedule selected tasks</string>
     <string name="new_task_title">New task</string>
     <!-- The four mention triggers. Kept terse because it sits inside the input field. -->

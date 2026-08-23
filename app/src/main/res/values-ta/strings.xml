@@ -1099,7 +1099,7 @@
     <string name="notification_action_snooze_15m">15 நிமிடம் ஒத்திவை</string>
     <string name="notification_action_snooze_1h">1 மணி நேரம் ஒத்திவை</string>
     <string name="notification_action_snooze_tomorrow">நாளை வரை ஒத்திவை</string>
-    <string name="snooze_next_weekday">அடுத்த வார நாள்</string>
+    <string name="snooze_next_weekday">அடுத்த வேலை நாள்</string>
     <string name="bulk_reschedule_selected">தேர்ந்தெடுத்த பணிகளை மறு அட்டவணைப்படுத்து</string>
     <string name="new_task_title">புதிய பணி</string>
     <string name="new_task_title_hint">என்ன செய்ய வேண்டும்? # குறிச்சொல், @ நபர், + திட்டம், = பட்டியலை முயற்சிக்கவும்</string>

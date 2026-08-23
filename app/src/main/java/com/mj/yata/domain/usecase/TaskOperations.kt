@@ -1,13 +1,14 @@
 package com.mj.yata.domain.usecase
 
 import com.mj.yata.data.local.datastore.UserPreferences
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.nextBusinessDay
 import com.mj.yata.domain.model.nextPostponementCount
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.TaskScheduleUtils
 import kotlinx.coroutines.flow.first
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
@@ -265,19 +266,15 @@ class TaskOperations @Inject constructor(
                 userPreferences.snoozeTomorrowHourFlow.first(),
                 userPreferences.snoozeTomorrowMinuteFlow.first()
             )
-            QuickSnoozePreset.NEXT_WEEKDAY -> nextWeekday(today.plusDays(1)) to TaskScheduleUtils.formatTime(
-                userPreferences.snoozeTomorrowHourFlow.first(),
-                userPreferences.snoozeTomorrowMinuteFlow.first()
-            )
+            QuickSnoozePreset.NEXT_WEEKDAY -> {
+                val weekendDays = userPreferences.weekendDaysFlow.first()
+                val holidays = userPreferences.holidaysFlow.first().mapNotNull(Holiday::decode)
+                nextBusinessDay(today.plusDays(1), weekendDays, holidays) to TaskScheduleUtils.formatTime(
+                    userPreferences.snoozeTomorrowHourFlow.first(),
+                    userPreferences.snoozeTomorrowMinuteFlow.first()
+                )
+            }
         }
-    }
-
-    private fun nextWeekday(start: LocalDate): LocalDate {
-        var date = start
-        while (date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY) {
-            date = date.plusDays(1)
-        }
-        return date
     }
 
     suspend fun commitTaskOrder(orderedTasks: List<Task>) {

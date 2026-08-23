@@ -42,6 +42,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   tappable — and warns immediately with a titled, icon-led confirm dialog ("Non-working day" / "Use
   it anyway?") the moment you tap one, instead of only after saving via a snackbar. Start date,
   follow-up, and recurrence-end pickers are unchanged.
+- The "Next weekday" quick-snooze preset (task detail, Today swipe actions) is now genuinely "Next
+  business day" — it already skipped Saturday/Sunday, but hardcoded, ignoring your configured
+  weekend days; it now also skips your custom holidays, recurring and one-off alike. Renamed to
+  "Next business day" to match, in every locale that hadn't already translated "weekday" as
+  "working day" on its own.
 
 ### Changed
 - Tasker integration (Settings → Data Management) is now off by default rather than on. Any app on

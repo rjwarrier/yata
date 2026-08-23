@@ -843,7 +843,7 @@
     <string name="notification_action_snooze_15m">Répéter 15 minutes</string>
     <string name="notification_action_snooze_1h">Répéter 1 heure</string>
     <string name="notification_action_snooze_tomorrow">Répéter jusqu\'à demain</string>
-    <string name="snooze_next_weekday">Jour de la semaine prochain</string>
+    <string name="snooze_next_weekday">Prochain jour ouvré</string>
     <string name="bulk_reschedule_selected">Replanifier les tâches sélectionnées</string>
     <string name="new_task_title">Nouvelle tâche</string>
     <string name="new_task_title_hint">Que faut-il faire ? Essayez # balise, @ personne, + projet, = liste</string>

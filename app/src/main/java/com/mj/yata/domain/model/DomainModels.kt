@@ -117,7 +117,7 @@ data class Subtask(
 enum class QuickSnoozePreset(val label: String) {
     TONIGHT("Tonight"),
     TOMORROW_MORNING("Tomorrow morning"),
-    NEXT_WEEKDAY("Next weekday")
+    NEXT_WEEKDAY("Next business day")
 }
 
 data class Recurrence(
