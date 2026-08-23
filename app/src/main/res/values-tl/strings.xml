@@ -1537,8 +1537,8 @@
     <string name="settings_postponement_warning_threshold_desc">Bilang ng beses na maaaring ipagpaliban ang normal na gawain bago magbabala. Ang katamtamang prayoridad ay nagbabala pagkatapos ng %1$d, at ang mataas pagkatapos ng %2$d.</string>
     <string name="settings_weekend_days">Mga Araw ng Weekend</string>
     <string name="settings_weekend_days_desc">Kapag na-reschedule ang isang task sa isa sa mga araw na ito, may lalabas na babala. I-off ang lahat ng araw para i-disable ang babala.</string>
-    <string name="settings_holidays">Custom na holiday</string>
-    <string name="settings_holidays_desc">Magdagdag ng sarili mong mga petsa (mga pambansang holiday, pagsasara ng opisina) para magbabala kapag inireschedule ang isang task papunta sa mga ito. Walang holiday data na kasama o kinukuha — idagdag mo mismo ang mga petsa, at idagdag muli taun-taon ang mga gumagalaw na holiday (tulad ng Diwali o Easter).</string>
+    <string name="settings_holidays">Mga Holiday</string>
+    <string name="settings_holidays_desc">Piliin kung aling mga araw ng linggo ang binibilang bilang weekend, at magdagdag ng sarili mong mga petsa ng holiday (mga pambansang holiday, pagsasara ng opisina) — ang pag-reschedule ng task papunta sa alinman sa mga ito ay magpapakita ng babala. Walang holiday data na kasama o kinukuha; idagdag mo mismo ang mga petsa at idagdag muli taun-taon ang mga gumagalaw na holiday (tulad ng Diwali o Easter).</string>
     <string name="settings_holiday_pick_date">Pumili ng petsa</string>
     <string name="settings_holiday_name_label">Pangalan</string>
     <string name="settings_add_holiday">Magdagdag ng holiday</string>

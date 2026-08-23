@@ -1586,8 +1586,8 @@
     <string name="settings_postponement_warning_threshold_desc">Número de veces que se puede posponer una tarea de prioridad normal antes de avisar. La prioridad media avisa tras %1$d y la alta tras %2$d.</string>
     <string name="settings_weekend_days">Días de fin de semana</string>
     <string name="settings_weekend_days_desc">Si reprogramas una tarea a uno de estos días, se mostrará una advertencia. Desactiva todos los días para desactivar la advertencia.</string>
-    <string name="settings_holidays">Días festivos personalizados</string>
-    <string name="settings_holidays_desc">Añade tus propias fechas (festivos nacionales, cierres de oficina) para recibir una advertencia al reprogramar una tarea a esos días. No se incluye ni se descarga ningún dato de festivos: añade las fechas tú mismo y vuelve a añadir cada año los festivos móviles (como Diwali o Semana Santa).</string>
+    <string name="settings_holidays">Días festivos</string>
+    <string name="settings_holidays_desc">Elige qué días de la semana cuentan como fin de semana y añade tus propios festivos (festivos nacionales, cierres de oficina) — reprogramar una tarea a cualquiera de ellos muestra una advertencia. No se incluye ni se descarga ningún dato de festivos; añade las fechas tú mismo y vuelve a añadir cada año los festivos móviles (como Diwali o Semana Santa).</string>
     <string name="settings_holiday_pick_date">Elegir fecha</string>
     <string name="settings_holiday_name_label">Nombre</string>
     <string name="settings_add_holiday">Añadir festivo</string>

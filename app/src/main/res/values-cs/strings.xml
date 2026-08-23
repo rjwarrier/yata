@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">Počet odložení úkolu s běžnou prioritou před zobrazením upozornění. Střední priorita upozorní po %1$d a vysoká po %2$d.</string>
     <string name="settings_weekend_days">Víkendové dny</string>
     <string name="settings_weekend_days_desc">Přesunutí úkolu na některý z těchto dnů zobrazí varování. Chcete-li varování vypnout, zrušte výběr všech dnů.</string>
-    <string name="settings_holidays">Vlastní svátky</string>
-    <string name="settings_holidays_desc">Přidejte vlastní data (státní svátky, zavření kanceláře), o kterých se zobrazí varování při přesunutí úkolu na ně. Žádná data o svátcích nejsou součástí aplikace ani stahována — data přidejte sami a pohyblivé svátky (jako Velikonoce) každý rok přidejte znovu.</string>
+    <string name="settings_holidays">Svátky</string>
+    <string name="settings_holidays_desc">Vyberte, které dny v týdnu se počítají jako víkend, a přidejte vlastní svátky (státní svátky, zavření kanceláře) — přesunutí úkolu na kterýkoli z nich zobrazí varování. Žádná data o svátcích nejsou součástí aplikace ani stahována; data přidejte sami a pohyblivé svátky (jako Velikonoce) každý rok přidejte znovu.</string>
     <string name="settings_holiday_pick_date">Vybrat datum</string>
     <string name="settings_holiday_name_label">Název</string>
     <string name="settings_add_holiday">Přidat svátek</string>

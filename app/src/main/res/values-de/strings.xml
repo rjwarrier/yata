@@ -1697,8 +1697,8 @@
     <string name="settings_postponement_warning_threshold_desc">Anzahl der erlaubten Verschiebungen bei normaler Priorität vor einer Warnung. Mittlere Priorität warnt nach %1$d und hohe Priorität nach %2$d.</string>
     <string name="settings_weekend_days">Wochenendtage</string>
     <string name="settings_weekend_days_desc">Wird eine Aufgabe auf einen dieser Tage verschoben, erscheint eine Warnung. Deaktiviere alle Tage, um die Warnung auszuschalten.</string>
-    <string name="settings_holidays">Eigene Feiertage</string>
-    <string name="settings_holidays_desc">Füge eigene Termine hinzu (gesetzliche Feiertage, Bürostilllegungen), bei denen beim Verschieben einer Aufgabe eine Warnung erscheinen soll. Es sind keine Feiertagsdaten enthalten oder werden abgerufen — füge die Termine selbst hinzu und ergänze bewegliche Feiertage (wie Diwali oder Ostern) jedes Jahr erneut.</string>
+    <string name="settings_holidays">Feiertage</string>
+    <string name="settings_holidays_desc">Lege fest, welche Wochentage als Wochenende gelten, und füge eigene Feiertage (gesetzliche Feiertage, Bürostilllegungen) hinzu — das Verschieben einer Aufgabe auf einen davon zeigt eine Warnung. Es sind keine Feiertagsdaten enthalten oder werden abgerufen; füge die Termine selbst hinzu und ergänze bewegliche Feiertage (wie Diwali oder Ostern) jedes Jahr erneut.</string>
     <string name="settings_holiday_pick_date">Datum wählen</string>
     <string name="settings_holiday_name_label">Name</string>
     <string name="settings_add_holiday">Feiertag hinzufügen</string>

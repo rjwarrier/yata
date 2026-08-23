@@ -1541,8 +1541,8 @@
     <string name="settings_postponement_warning_threshold_desc">Aantal keren dat een taak met normale prioriteit kan worden uitgesteld voor een waarschuwing. Gemiddelde prioriteit waarschuwt na %1$d en hoge prioriteit na %2$d.</string>
     <string name="settings_weekend_days">Weekenddagen</string>
     <string name="settings_weekend_days_desc">Het verzetten van een taak naar een van deze dagen toont een waarschuwing. Schakel alle dagen uit om de waarschuwing uit te zetten.</string>
-    <string name="settings_holidays">Aangepaste feestdagen</string>
-    <string name="settings_holidays_desc">Voeg je eigen data toe (nationale feestdagen, kantoorsluitingen) om een waarschuwing te krijgen bij het verzetten van een taak naar die dag. Er zijn geen feestdaggegevens ingebouwd of opgehaald — voeg de data zelf toe en voeg beweeglijke feestdagen (zoals Diwali of Pasen) elk jaar opnieuw toe.</string>
+    <string name="settings_holidays">Feestdagen</string>
+    <string name="settings_holidays_desc">Kies welke weekdagen als weekend gelden en voeg je eigen feestdagen toe (nationale feestdagen, kantoorsluitingen) — het verzetten van een taak naar een van beide toont een waarschuwing. Er zijn geen feestdaggegevens ingebouwd of opgehaald; voeg de data zelf toe en voeg beweeglijke feestdagen (zoals Diwali of Pasen) elk jaar opnieuw toe.</string>
     <string name="settings_holiday_pick_date">Datum kiezen</string>
     <string name="settings_holiday_name_label">Naam</string>
     <string name="settings_add_holiday">Feestdag toevoegen</string>

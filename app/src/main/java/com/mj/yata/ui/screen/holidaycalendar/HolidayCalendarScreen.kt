@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -20,8 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
 import com.mj.yata.domain.model.Holiday
@@ -38,10 +42,12 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 /** Tap-a-date calendar for managing [Holiday]s, reached from Settings → Task Defaults →
- * "Custom holidays". Replaces typing an ISO date: tapping a marked day reopens it for editing,
- * tapping a blank one opens the same sheet to add one. The chip list below the grid stays the
- * primary way to audit/remove holidays in bulk, since a recurring holiday's grid marker repeats
- * every month-day match but its stored anchor date (and so its position in a flat list) doesn't. */
+ * "Holidays" — also hosts the weekend-day picker (moved here from Settings directly, since both
+ * configure what counts as a non-working day and share the same reschedule warning). Replaces
+ * typing an ISO date: tapping a marked day reopens it for editing, tapping a blank one opens the
+ * same sheet to add one. The chip list below the grid stays the primary way to audit/remove
+ * holidays in bulk, since a recurring holiday's grid marker repeats every month-day match but its
+ * stored anchor date (and so its position in a flat list) doesn't. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HolidayCalendarScreen(
@@ -50,6 +56,7 @@ fun HolidayCalendarScreen(
 ) {
     val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
     val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
     val holidayList = remember(holidaysRaw) {
         holidaysRaw.mapNotNull(Holiday::decode).sortedBy { it.date.takeLast(5) }
     }
@@ -101,6 +108,63 @@ fun HolidayCalendarScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.settings_weekend_days),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_weekend_days_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val orderedDays = listOf(
+                            DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                            DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY,
+                            DayOfWeek.SUNDAY
+                        )
+                        val codeFor = mapOf(
+                            DayOfWeek.MONDAY to "MO", DayOfWeek.TUESDAY to "TU",
+                            DayOfWeek.WEDNESDAY to "WE", DayOfWeek.THURSDAY to "TH",
+                            DayOfWeek.FRIDAY to "FR", DayOfWeek.SATURDAY to "SA",
+                            DayOfWeek.SUNDAY to "SU"
+                        )
+                        orderedDays.forEach { day ->
+                            val code = codeFor.getValue(day)
+                            val isSelected = code in weekendDays
+                            val fullLabel = day.getDisplayName(TextStyle.FULL, locale)
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(42.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
+                                    )
+                                    .clickable {
+                                        val updated = if (isSelected) weekendDays - code else weekendDays + code
+                                        viewModel.setWeekendDays(updated)
+                                    }
+                                    .semantics { contentDescription = fullLabel },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = day.getDisplayName(TextStyle.NARROW, locale),
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

@@ -1537,8 +1537,8 @@
     <string name="settings_postponement_warning_threshold_desc">Idadi ya mara ambazo kazi ya kipaumbele cha kawaida inaweza kuahirishwa kabla ya kuonya. Kipaumbele cha kati huonya baada ya %1$d, na cha juu baada ya %2$d.</string>
     <string name="settings_weekend_days">Siku za wikendi</string>
     <string name="settings_weekend_days_desc">Kupanga upya kazi hadi siku moja kati ya hizi kutaonyesha onyo. Zima siku zote ili kuzima onyo.</string>
-    <string name="settings_holidays">Sikukuu maalum</string>
-    <string name="settings_holidays_desc">Ongeza tarehe zako mwenyewe (sikukuu za kitaifa, kufungwa kwa ofisi) ili kuonya unapopanga upya kazi kwenye siku hizo. Hakuna data ya sikukuu iliyojumuishwa au kupatikana — ongeza tarehe mwenyewe, na ongeza tena kila mwaka sikukuu zinazobadilika (kama Diwali au Pasaka).</string>
+    <string name="settings_holidays">Sikukuu</string>
+    <string name="settings_holidays_desc">Chagua siku gani za wiki zinahesabiwa kama wikendi, na ongeza tarehe zako za sikukuu (sikukuu za kitaifa, kufungwa kwa ofisi) — kupanga upya kazi kwa mojawapo kutaonyesha onyo. Hakuna data ya sikukuu iliyojumuishwa au kupatikana; ongeza tarehe mwenyewe na ongeza tena kila mwaka sikukuu zinazobadilika (kama Diwali au Pasaka).</string>
     <string name="settings_holiday_pick_date">Chagua tarehe</string>
     <string name="settings_holiday_name_label">Jina</string>
     <string name="settings_add_holiday">Ongeza sikukuu</string>

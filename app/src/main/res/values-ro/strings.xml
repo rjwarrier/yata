@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">Numărul de amânări pentru o sarcină cu prioritate normală înainte de avertizare. Prioritatea medie avertizează după %1$d, iar prioritatea ridicată după %2$d.</string>
     <string name="settings_weekend_days">Zile de weekend</string>
     <string name="settings_weekend_days_desc">Reprogramarea unei sarcini într-una dintre aceste zile afișează un avertisment. Dezactivează toate zilele pentru a dezactiva avertismentul.</string>
-    <string name="settings_holidays">Sărbători personalizate</string>
-    <string name="settings_holidays_desc">Adaugă propriile date (sărbători naționale, închideri de birou) pentru a primi un avertisment la reprogramarea unei sarcini pe acele zile. Nu sunt incluse sau descărcate date despre sărbători — adaugă datele tu însuți și readaugă în fiecare an sărbătorile mobile (precum Paștele).</string>
+    <string name="settings_holidays">Sărbători</string>
+    <string name="settings_holidays_desc">Alege ce zile ale săptămânii contează ca weekend și adaugă propriile sărbători (sărbători naționale, închideri de birou) — reprogramarea unei sarcini pe oricare dintre acestea afișează un avertisment. Nu sunt incluse sau descărcate date despre sărbători; adaugă datele tu însuți și readaugă în fiecare an sărbătorile mobile (precum Paștele).</string>
     <string name="settings_holiday_pick_date">Alege data</string>
     <string name="settings_holiday_name_label">Nume</string>
     <string name="settings_add_holiday">Adaugă sărbătoare</string>

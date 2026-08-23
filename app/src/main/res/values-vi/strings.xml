@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">Số lần một công việc mức ưu tiên bình thường có thể bị hoãn trước khi cảnh báo. Mức ưu tiên trung bình cảnh báo sau %1$d lần và mức cao sau %2$d lần.</string>
     <string name="settings_weekend_days">Ngày cuối tuần</string>
     <string name="settings_weekend_days_desc">Việc dời một nhiệm vụ sang một trong những ngày này sẽ hiện cảnh báo. Tắt tất cả các ngày để tắt cảnh báo.</string>
-    <string name="settings_holidays">Ngày lễ tùy chỉnh</string>
-    <string name="settings_holidays_desc">Thêm ngày của riêng bạn (ngày lễ quốc gia, ngày nghỉ văn phòng) để nhận cảnh báo khi dời một nhiệm vụ sang những ngày đó. Không có dữ liệu ngày lễ nào được đóng gói sẵn hoặc tải về — tự thêm ngày, và thêm lại hằng năm các ngày lễ di động (như Tết hoặc Phục sinh).</string>
+    <string name="settings_holidays">Ngày lễ</string>
+    <string name="settings_holidays_desc">Chọn những ngày nào trong tuần được tính là cuối tuần, và thêm ngày lễ của riêng bạn (ngày lễ quốc gia, ngày nghỉ văn phòng) — dời một nhiệm vụ sang một trong hai loại này sẽ hiện cảnh báo. Không có dữ liệu ngày lễ nào được đóng gói sẵn hoặc tải về; tự thêm ngày và thêm lại hằng năm các ngày lễ di động (như Tết hoặc Phục sinh).</string>
     <string name="settings_holiday_pick_date">Chọn ngày</string>
     <string name="settings_holiday_name_label">Tên</string>
     <string name="settings_add_holiday">Thêm ngày lễ</string>

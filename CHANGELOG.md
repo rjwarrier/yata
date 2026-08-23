@@ -26,16 +26,15 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Task content and the app's screens are now hidden from the recents/Overview thumbnail and blocked
   from screenshots whenever app lock is enabled — previously the PIN/biometric gate protected
   nothing once you left the app, since the same content sat visible in Overview.
-- Added a "Weekend days" picker in Settings → Task Defaults. Rescheduling a task — editing its due
-  date, quick-snoozing it, or bulk-rescheduling several at once — onto one of the configured days
-  now shows a warning that it landed on the weekend. Defaults to Saturday/Sunday; turning every day
-  off disables the warning entirely.
-- Added a "Custom holidays" calendar, reached from Settings → Task Defaults. Tap a date to add or
-  edit a holiday (name + a "Repeats every year" toggle for fixed-date ones like Independence Day,
-  so they never need re-adding) instead of typing an ISO date; marked days show a dot, recurring
-  ones a distinct color. Rescheduling a task onto a holiday shows a warning naming it, same trigger
-  points as the weekend warning. No holiday data is bundled or fetched — add the dates yourself,
-  and re-add movable ones (Diwali, Easter) each year since they're left non-recurring.
+- Added a "Holidays" screen, reached from Settings → Task Defaults, combining weekend-day
+  configuration (which weekdays count as a weekend, defaulting to Saturday/Sunday) with a
+  tap-a-date calendar for custom holidays. Tap a date to add or edit a holiday (name + a "Repeats
+  every year" toggle for fixed-date ones like Independence Day, so they never need re-adding)
+  instead of typing an ISO date; marked days show a dot, recurring ones a distinct color.
+  Rescheduling a task onto either a configured weekend day or a holiday shows a warning naming it;
+  turning off every weekend day disables that half of the warning. No holiday data is bundled or
+  fetched — add the dates yourself, and re-add movable ones (Diwali, Easter) each year since
+  they're left non-recurring.
 - The due-date calendar (New Task and task detail) now greys out weekend/holiday days — still
   tappable — and warns immediately with a confirm dialog ("Use it anyway?") the moment you tap one,
   instead of only after saving via a snackbar. Start date, follow-up, and recurrence-end pickers are

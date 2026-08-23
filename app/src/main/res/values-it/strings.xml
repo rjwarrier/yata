@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">Numero di rinvii consentiti per un\'attività a priorità normale prima dell\'avviso. La priorità media avvisa dopo %1$d e quella alta dopo %2$d.</string>
     <string name="settings_weekend_days">Giorni del fine settimana</string>
     <string name="settings_weekend_days_desc">Riprogrammare un\'attività in uno di questi giorni mostra un avviso. Disattiva tutti i giorni per disattivare l\'avviso.</string>
-    <string name="settings_holidays">Festività personalizzate</string>
-    <string name="settings_holidays_desc">Aggiungi le tue date (festività nazionali, chiusure dell\'ufficio) per ricevere un avviso quando riprogrammi un\'attività su quei giorni. Nessun dato sulle festività è incluso o scaricato: aggiungi le date tu stesso e riaggiungi ogni anno quelle mobili (come Diwali o Pasqua).</string>
+    <string name="settings_holidays">Festività</string>
+    <string name="settings_holidays_desc">Scegli quali giorni della settimana contano come fine settimana e aggiungi le tue festività (festività nazionali, chiusure dell\'ufficio) — riprogrammare un\'attività su uno di questi giorni mostra un avviso. Nessun dato sulle festività è incluso o scaricato; aggiungi le date tu stesso e riaggiungi ogni anno quelle mobili (come Diwali o Pasqua).</string>
     <string name="settings_holiday_pick_date">Scegli data</string>
     <string name="settings_holiday_name_label">Nome</string>
     <string name="settings_add_holiday">Aggiungi festività</string>

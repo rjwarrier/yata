@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">Liczba odłożeń zadania o zwykłym priorytecie przed wyświetleniem ostrzeżenia. Średni priorytet ostrzega po %1$d, a wysoki po %2$d.</string>
     <string name="settings_weekend_days">Dni weekendowe</string>
     <string name="settings_weekend_days_desc">Zmiana terminu zadania na jeden z tych dni wyświetli ostrzeżenie. Aby wyłączyć ostrzeżenie, wyłącz wszystkie dni.</string>
-    <string name="settings_holidays">Własne święta</string>
-    <string name="settings_holidays_desc">Dodaj własne daty (święta państwowe, zamknięcia biura), przy których przeniesieniu zadania pojawi się ostrzeżenie. Żadne dane o świętach nie są dołączone ani pobierane — dodaj daty samodzielnie i co roku dodawaj ponownie święta ruchome (np. Wielkanoc).</string>
+    <string name="settings_holidays">Święta</string>
+    <string name="settings_holidays_desc">Wybierz, które dni tygodnia liczą się jako weekend, i dodaj własne święta (święta państwowe, zamknięcia biura) — zmiana terminu zadania na dowolny z nich wyświetli ostrzeżenie. Żadne dane o świętach nie są dołączone ani pobierane; dodaj daty samodzielnie i co roku dodawaj ponownie święta ruchome (np. Wielkanoc).</string>
     <string name="settings_holiday_pick_date">Wybierz datę</string>
     <string name="settings_holiday_name_label">Nazwa</string>
     <string name="settings_add_holiday">Dodaj święto</string>

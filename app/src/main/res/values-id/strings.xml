@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">Berapa kali tugas prioritas normal dapat ditunda sebelum peringatan muncul. Prioritas sedang memperingatkan setelah %1$d dan prioritas tinggi setelah %2$d.</string>
     <string name="settings_weekend_days">Hari akhir pekan</string>
     <string name="settings_weekend_days_desc">Menjadwalkan ulang tugas ke salah satu hari ini akan menampilkan peringatan. Matikan semua hari untuk menonaktifkan peringatan.</string>
-    <string name="settings_holidays">Hari libur khusus</string>
-    <string name="settings_holidays_desc">Tambahkan tanggal Anda sendiri (hari libur nasional, penutupan kantor) untuk diperingatkan saat menjadwalkan ulang tugas ke tanggal tersebut. Tidak ada data hari libur yang disertakan atau diambil — tambahkan tanggalnya sendiri, dan tambahkan kembali hari libur yang berubah-ubah (seperti Diwali atau Paskah) setiap tahun.</string>
+    <string name="settings_holidays">Hari libur</string>
+    <string name="settings_holidays_desc">Pilih hari mana yang dihitung sebagai akhir pekan, dan tambahkan tanggal hari libur Anda sendiri (hari libur nasional, penutupan kantor) — menjadwalkan ulang tugas ke salah satunya akan menampilkan peringatan. Tidak ada data hari libur yang disertakan atau diambil; tambahkan tanggalnya sendiri dan tambahkan kembali hari libur yang berubah-ubah (seperti Diwali atau Paskah) setiap tahun.</string>
     <string name="settings_holiday_pick_date">Pilih tanggal</string>
     <string name="settings_holiday_name_label">Nama</string>
     <string name="settings_add_holiday">Tambah hari libur</string>

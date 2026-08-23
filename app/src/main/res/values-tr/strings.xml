@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">Normal öncelikli bir görevin uyarılmadan önce kaç kez ertelenebileceği. Orta öncelik %1$d ertelemeden sonra, yüksek öncelik %2$d ertelemeden sonra uyarır.</string>
     <string name="settings_weekend_days">Hafta sonu günleri</string>
     <string name="settings_weekend_days_desc">Bir görevi bu günlerden birine ertelemek bir uyarı gösterir. Uyarıyı kapatmak için tüm günleri kapatın.</string>
-    <string name="settings_holidays">Özel tatiller</string>
-    <string name="settings_holidays_desc">Bir görevi bu tarihlere ertelediğinizde uyarı gösterilmesi için kendi tarihlerinizi (resmi tatiller, ofis kapanışları) ekleyin. Herhangi bir tatil verisi dahil edilmez veya alınmaz — tarihleri kendiniz ekleyin ve hareketli tatilleri her yıl yeniden ekleyin.</string>
+    <string name="settings_holidays">Tatiller</string>
+    <string name="settings_holidays_desc">Hangi hafta içi günlerin hafta sonu sayılacağını seçin ve kendi tatil tarihlerinizi (resmi tatiller, ofis kapanışları) ekleyin — bunlardan birine bir görevi ertelemek bir uyarı gösterir. Herhangi bir tatil verisi dahil edilmez veya alınmaz; tarihleri kendiniz ekleyin ve hareketli tatilleri her yıl yeniden ekleyin.</string>
     <string name="settings_holiday_pick_date">Tarih seç</string>
     <string name="settings_holiday_name_label">Ad</string>
     <string name="settings_add_holiday">Tatil ekle</string>

@@ -1709,8 +1709,8 @@
     <string name="settings_postponement_warning_threshold_desc">Number of times a normal-priority task can be postponed before warning. Medium priority warns after %1$d and high priority after %2$d.</string>
     <string name="settings_weekend_days">Weekend days</string>
     <string name="settings_weekend_days_desc">Rescheduling a task onto one of these days shows a warning. Turn all of them off to disable the warning.</string>
-    <string name="settings_holidays">Custom holidays</string>
-    <string name="settings_holidays_desc">Add your own dates (national holidays, office closures) to warn about when rescheduling a task onto them. No holiday data is bundled or fetched — add the dates yourself, and re-add movable ones (like Diwali or Easter) each year.</string>
+    <string name="settings_holidays">Holidays</string>
+    <string name="settings_holidays_desc">Choose which weekdays count as weekends, and add your own holiday dates (national holidays, office closures) — rescheduling a task onto either warns. No holiday data is bundled or fetched; add dates yourself and re-add movable ones (like Diwali or Easter) each year.</string>
     <string name="settings_holiday_pick_date">Pick date</string>
     <string name="settings_holiday_name_label">Name</string>
     <string name="settings_add_holiday">Add holiday</string>

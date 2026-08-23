@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">সতর্কতা দেখানোর আগে একটি স্বাভাবিক অগ্রাধিকারের কাজ যতবার স্থগিত করা যেতে পারে। মাঝারি অগ্রাধিকারে %1$d বার এবং উচ্চ অগ্রাধিকারে %2$d বার পর সতর্ক করা হয়।</string>
     <string name="settings_weekend_days">সাপ্তাহিক ছুটির দিন</string>
     <string name="settings_weekend_days_desc">কোনো কাজ পুনঃনির্ধারণ করে এই দিনগুলোর কোনো একটিতে আনলে একটি সতর্কতা দেখানো হবে। সতর্কতা বন্ধ করতে সবগুলো দিন বন্ধ করুন।</string>
-    <string name="settings_holidays">কাস্টম ছুটির দিন</string>
-    <string name="settings_holidays_desc">কাজ পুনঃনির্ধারণের সময় সতর্ক করতে নিজের তারিখ (জাতীয় ছুটি, অফিস বন্ধ) যোগ করুন। কোনো ছুটির তথ্য বান্ডিল বা আনা হয় না — নিজে তারিখ যোগ করুন, এবং পরিবর্তনশীল তারিখের ছুটি (যেমন দীপাবলি বা ইস্টার) প্রতি বছর আবার যোগ করুন।</string>
+    <string name="settings_holidays">ছুটির দিন</string>
+    <string name="settings_holidays_desc">কোন সপ্তাহের দিনগুলো সাপ্তাহিক ছুটি হিসেবে গণ্য হবে তা বেছে নিন, এবং নিজের ছুটির তারিখ (জাতীয় ছুটি, অফিস বন্ধ) যোগ করুন — এর যেকোনোটির উপর কাজ পুনঃনির্ধারণ করলে সতর্কতা দেখাবে। কোনো ছুটির তথ্য বান্ডিল বা আনা হয় না; নিজে তারিখ যোগ করুন এবং পরিবর্তনশীল তারিখের ছুটি (যেমন দীপাবলি বা ইস্টার) প্রতি বছর আবার যোগ করুন।</string>
     <string name="settings_holiday_pick_date">তারিখ বাছুন</string>
     <string name="settings_holiday_name_label">নাম</string>
     <string name="settings_add_holiday">ছুটি যোগ করুন</string>

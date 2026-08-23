@@ -311,7 +311,6 @@ fun SettingsScreen(
     val defaultDueDate by viewModel.defaultDueDate.collectAsStateWithLifecycle()
     val defaultPriority by viewModel.defaultPriority.collectAsStateWithLifecycle()
     val postponementWarningThreshold by viewModel.postponementWarningThreshold.collectAsStateWithLifecycle()
-    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
     val subtaskCompletionAction by viewModel.subtaskCompletionAction.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val todayShowUpcomingWhenEmpty by viewModel.todayShowUpcomingWhenEmpty.collectAsStateWithLifecycle()
@@ -1719,64 +1718,6 @@ fun SettingsScreen(
                             viewModel.setPostponementWarningThreshold(selected)
                         }
                     )
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_weekend_days),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_weekend_days_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        val orderedDays = listOf(
-                            java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.WEDNESDAY,
-                            java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.FRIDAY, java.time.DayOfWeek.SATURDAY,
-                            java.time.DayOfWeek.SUNDAY
-                        )
-                        val codeFor = mapOf(
-                            java.time.DayOfWeek.MONDAY to "MO", java.time.DayOfWeek.TUESDAY to "TU",
-                            java.time.DayOfWeek.WEDNESDAY to "WE", java.time.DayOfWeek.THURSDAY to "TH",
-                            java.time.DayOfWeek.FRIDAY to "FR", java.time.DayOfWeek.SATURDAY to "SA",
-                            java.time.DayOfWeek.SUNDAY to "SU"
-                        )
-                        val locale = java.util.Locale.getDefault()
-                        orderedDays.forEach { day ->
-                            val code = codeFor.getValue(day)
-                            val isSelected = code in weekendDays
-                            val fullLabel = day.getDisplayName(java.time.format.TextStyle.FULL, locale)
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(42.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(
-                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
-                                    )
-                                    .clickable {
-                                        val updated = if (isSelected) weekendDays - code else weekendDays + code
-                                        viewModel.setWeekendDays(updated)
-                                    }
-                                    .semantics { contentDescription = fullLabel },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = day.getDisplayName(java.time.format.TextStyle.NARROW, locale),
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))

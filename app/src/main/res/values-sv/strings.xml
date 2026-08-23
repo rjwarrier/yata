@@ -1540,8 +1540,8 @@
     <string name="settings_postponement_warning_threshold_desc">Antal gånger en uppgift med normal prioritet kan skjutas upp innan en varning visas. Medelprioritet varnar efter %1$d och hög prioritet efter %2$d.</string>
     <string name="settings_weekend_days">Helgdagar</string>
     <string name="settings_weekend_days_desc">Att flytta en uppgift till någon av dessa dagar visar en varning. Stäng av alla dagar för att stänga av varningen.</string>
-    <string name="settings_holidays">Egna helgdagar</string>
-    <string name="settings_holidays_desc">Lägg till egna datum (nationella helgdagar, kontorsstängningar) för att få en varning när en uppgift flyttas till dem. Ingen helgdagsdata medföljer eller hämtas — lägg till datumen själv, och lägg till rörliga helgdagar (som påsk) på nytt varje år.</string>
+    <string name="settings_holidays">Helgdagar</string>
+    <string name="settings_holidays_desc">Välj vilka veckodagar som räknas som helg, och lägg till egna helgdagar (nationella helgdagar, kontorsstängningar) — att flytta en uppgift till någon av dem visar en varning. Ingen helgdagsdata medföljer eller hämtas; lägg till datumen själv och lägg till rörliga helgdagar (som påsk) på nytt varje år.</string>
     <string name="settings_holiday_pick_date">Välj datum</string>
     <string name="settings_holiday_name_label">Namn</string>
     <string name="settings_add_holiday">Lägg till helgdag</string>

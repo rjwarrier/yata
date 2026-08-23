@@ -1542,8 +1542,8 @@
     <string name="settings_postponement_warning_threshold_desc">Nombre de reports autorisés pour une tâche de priorité normale avant avertissement. La priorité moyenne avertit après %1$d et la priorité haute après %2$d.</string>
     <string name="settings_weekend_days">Jours de week-end</string>
     <string name="settings_weekend_days_desc">Déplacer une tâche vers l\'un de ces jours affiche un avertissement. Désactivez-les tous pour désactiver l\'avertissement.</string>
-    <string name="settings_holidays">Jours fériés personnalisés</string>
-    <string name="settings_holidays_desc">Ajoutez vos propres dates (jours fériés nationaux, fermetures de bureau) pour afficher un avertissement lors du déplacement d\'une tâche vers ces jours. Aucune donnée de jours fériés n\'est incluse ni téléchargée — ajoutez les dates vous-même, et ajoutez à nouveau chaque année les fêtes mobiles (comme Diwali ou Pâques).</string>
+    <string name="settings_holidays">Jours fériés</string>
+    <string name="settings_holidays_desc">Choisissez les jours de la semaine comptant comme week-end, et ajoutez vos propres jours fériés (jours fériés nationaux, fermetures de bureau) — déplacer une tâche vers l\'un d\'eux affiche un avertissement. Aucune donnée de jours fériés n\'est incluse ni téléchargée ; ajoutez les dates vous-même et ajoutez à nouveau chaque année les fêtes mobiles (comme Diwali ou Pâques).</string>
     <string name="settings_holiday_pick_date">Choisir une date</string>
     <string name="settings_holiday_name_label">Nom</string>
     <string name="settings_add_holiday">Ajouter un jour férié</string>
