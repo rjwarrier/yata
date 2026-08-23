@@ -85,6 +85,10 @@ fun ProjectDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(com.mj.yata.domain.model.Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     val project = remember(projects, projectId) { projects.find { it.id == projectId } }
     val accents = LocalYataAccents.current
@@ -169,9 +173,9 @@ fun ProjectDetailScreen(
     // Tapping a hero stat behaves like search — a flat, non-draggable filtered list — since
     // committing a drag-reorder over a filtered subset would corrupt sortOrder for the tasks
     // the filter is hiding (same reasoning as searchFilteredTasks above).
-    val statFilteredTasks = remember(projectTasks, activeStatFilter, today) {
+    val statFilteredTasks = remember(projectTasks, activeStatFilter, today, weekendDays, holidays, observeNonWorkingDays) {
         val filter = activeStatFilter ?: return@remember emptyList()
-        projectTasks.filter { filter.matches(it, today) }
+        projectTasks.filter { filter.matches(it, today, weekendDays, holidays, observeNonWorkingDays) }
     }
 
     // Not keyed on pendingProjectTasks — any task write anywhere in the app (a reminder firing,
@@ -225,10 +229,14 @@ fun ProjectDetailScreen(
     val totalTasks = projectTasks.size
     val doneTasks = projectTasks.count { it.done }
     val progress = if (totalTasks > 0) doneTasks.toFloat() / totalTasks else 0f
-    val overdueCount = remember(projectTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(projectTasks) }
+    val overdueCount = remember(projectTasks, weekendDays, holidays, observeNonWorkingDays) {
+        com.mj.yata.util.AnalyticsUtils.overdueCount(projectTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays)
+    }
     val highPriorityCount = remember(projectTasks) { projectTasks.count { !it.done && it.priority == "high" } }
     val todayStr = com.mj.yata.util.AppClock.todayString
-    val dueTodayCount = remember(projectTasks, todayStr) { projectTasks.count { !it.done && it.due == todayStr } }
+    val dueTodayCount = remember(projectTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+        projectTasks.count { !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr }
+    }
 
     val projectPeople = remember(projectTasks, people) {
         val pids = projectTasks.flatMap { it.assigneeIds }.toSet()
@@ -584,7 +592,10 @@ fun ProjectDetailScreen(
                     onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                     onRenameTask = { viewModel.renameTask(task.id, it) },
                     density = taskRowDensity,
-                    showDueDate = true
+                    showDueDate = true,
+                    weekendDays = weekendDays,
+                    holidays = holidays,
+                    observeNonWorkingDays = observeNonWorkingDays
                 )
             }
 
@@ -836,6 +847,9 @@ fun ProjectDetailScreen(
                 people = people,
                 tasks = allTasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     viewModel.bulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()

@@ -979,7 +979,8 @@ data class WeekendRescheduleWarning(
     /** Every Analytics-screen metric, computed off the UI thread in [AnalyticsUtils.computeUiState]
      * whenever the underlying data or the selected period changes — the screen only renders this. */
     val analyticsUiState: StateFlow<AnalyticsUiState> = combine(
-        tasks, projects, people, tags, lists, analyticsPeriodFlow
+        tasks, projects, people, tags, lists, analyticsPeriodFlow,
+        userPreferences.weekendDaysFlow, userPreferences.holidaysFlow, userPreferences.observeNonWorkingDaysFlow
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         AnalyticsUtils.computeUiState(
@@ -988,7 +989,10 @@ data class WeekendRescheduleWarning(
             people = values[2] as List<Person>,
             tags = values[3] as List<Tag>,
             lists = values[4] as List<YataList>,
-            period = values[5] as AnalyticsPeriod
+            period = values[5] as AnalyticsPeriod,
+            weekendDays = values[6] as Set<String>,
+            holidays = (values[7] as Set<String>).mapNotNull(Holiday::decode),
+            observeNonWorkingDays = values[8] as Boolean
         )
     }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AnalyticsUiState())

@@ -25,7 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mj.yata.R
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.effectiveDue
 import java.time.LocalDate
 
 /** The three stats every entity-detail hero (and Today's header) show — kept in one place so
@@ -33,12 +35,21 @@ import java.time.LocalDate
 enum class HeroStatKind {
     OVERDUE, HIGH_PRIORITY, DUE_TODAY;
 
-    fun matches(task: Task, today: LocalDate): Boolean {
+    /** [weekendDays]/[holidays]/[observeNonWorkingDays] default to off, so every caller that
+     * hasn't been updated to pass real values compiles and behaves exactly as before. */
+    fun matches(
+        task: Task,
+        today: LocalDate,
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): Boolean {
         if (task.done) return false
+        val effective = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
         return when (this) {
-            OVERDUE -> task.due != null && runCatching { LocalDate.parse(task.due) }.getOrNull()?.isBefore(today) == true
+            OVERDUE -> effective != null && runCatching { LocalDate.parse(effective) }.getOrNull()?.isBefore(today) == true
             HIGH_PRIORITY -> task.priority == "high"
-            DUE_TODAY -> task.due == today.toString()
+            DUE_TODAY -> effective == today.toString()
         }
     }
 }

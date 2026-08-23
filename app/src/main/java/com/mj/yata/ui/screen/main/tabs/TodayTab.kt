@@ -737,6 +737,9 @@ fun TodayTab(
                                 density = taskRowDensity,
                                 horizontalPadding = 12.dp,
                                 showDueDate = false,
+                                weekendDays = weekendDays,
+                                holidays = holidays,
+                                observeNonWorkingDays = observeNonWorkingDays,
                                 modifier = Modifier
                                     .alpha(0.5f)
                                     .animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
@@ -794,6 +797,9 @@ fun TodayTab(
                         swipeEnabled = !selectionMode,
                         horizontalPadding = 12.dp,
                         showDueDate = true,
+                        weekendDays = weekendDays,
+                        holidays = holidays,
+                        observeNonWorkingDays = observeNonWorkingDays,
                         modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                     )
                 }
@@ -868,6 +874,9 @@ fun TodayTab(
                 people = people,
                 tasks = tasks,
                 todayStr = todayStr,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     onBulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()

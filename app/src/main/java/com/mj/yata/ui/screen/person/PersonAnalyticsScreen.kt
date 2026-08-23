@@ -55,6 +55,7 @@ import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.effectiveTagIds
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -100,6 +101,10 @@ fun PersonAnalyticsScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(com.mj.yata.domain.model.Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     val person = remember(people, personId) { people.find { it.id == personId } }
     val showMissingPerson = com.mj.yata.ui.widgets.rememberMissingContentVisible(personId, person == null)
@@ -123,7 +128,9 @@ fun PersonAnalyticsScreen(
         AnalyticsUtils.filterTasksByPeriod(assignedTasks, period, today)
     }
     val currentOpen = remember(assignedTasks) { assignedTasks.filter { !it.done } }
-    val currentOverdue = remember(currentOpen, today) { currentOpen.filter { it.isOverdue(today) } }
+    val currentOverdue = remember(currentOpen, today, weekendDays, holidays, observeNonWorkingDays) {
+        currentOpen.filter { it.isOverdue(today, weekendDays, holidays, observeNonWorkingDays) }
+    }
     val completedInPeriod = remember(assignedTasks, period, today) {
         AnalyticsUtils.completedInPeriod(assignedTasks, period, today)
     }
@@ -156,10 +163,18 @@ fun PersonAnalyticsScreen(
         }
     }
     val activity = remember(assignedTasks, period, today) { dailyCompletionRows(assignedTasks, period, today) }
-    val agingBuckets = remember(currentOverdue, today) { overdueBuckets(currentOverdue, today) }
-    val projectRows = remember(periodTasks, projects, today) { projectBreakdown(periodTasks, projects, today) }
-    val listRows = remember(periodTasks, lists, today) { listBreakdown(periodTasks, lists, today) }
-    val tagRows = remember(periodTasks, projects, tags, today) { tagBreakdown(periodTasks, projects, tags, today) }
+    val agingBuckets = remember(currentOverdue, today, weekendDays, holidays, observeNonWorkingDays) {
+        overdueBuckets(currentOverdue, today, weekendDays, holidays, observeNonWorkingDays)
+    }
+    val projectRows = remember(periodTasks, projects, today, weekendDays, holidays, observeNonWorkingDays) {
+        projectBreakdown(periodTasks, projects, today, weekendDays, holidays, observeNonWorkingDays)
+    }
+    val listRows = remember(periodTasks, lists, today, weekendDays, holidays, observeNonWorkingDays) {
+        listBreakdown(periodTasks, lists, today, weekendDays, holidays, observeNonWorkingDays)
+    }
+    val tagRows = remember(periodTasks, projects, tags, today, weekendDays, holidays, observeNonWorkingDays) {
+        tagBreakdown(periodTasks, projects, tags, today, weekendDays, holidays, observeNonWorkingDays)
+    }
 
     StatusBarColor(personColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.background))
     Scaffold(
@@ -683,8 +698,15 @@ private fun dailyCompletionRows(tasks: List<Task>, period: AnalyticsPeriod, toda
         .toList()
 }
 
-private fun overdueBuckets(tasks: List<Task>, today: LocalDate): List<AgingRow> {
-    fun age(task: Task) = task.due?.toLocalDateOrNull()?.let { ChronoUnit.DAYS.between(it, today).toInt() } ?: 0
+private fun overdueBuckets(
+    tasks: List<Task>,
+    today: LocalDate,
+    weekendDays: Set<String>,
+    holidays: List<com.mj.yata.domain.model.Holiday>,
+    observeNonWorkingDays: Boolean
+): List<AgingRow> {
+    fun age(task: Task) = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+        ?.toLocalDateOrNull()?.let { ChronoUnit.DAYS.between(it, today).toInt() } ?: 0
     val buckets = listOf(
         AgingRow("1-3 days", tasks.count { age(it) in 1..3 }),
         AgingRow("4-7 days", tasks.count { age(it) in 4..7 }),
@@ -693,7 +715,14 @@ private fun overdueBuckets(tasks: List<Task>, today: LocalDate): List<AgingRow> 
     return buckets.filter { it.count > 0 }
 }
 
-private fun projectBreakdown(tasks: List<Task>, projects: List<Project>, today: LocalDate): List<BreakdownRow> {
+private fun projectBreakdown(
+    tasks: List<Task>,
+    projects: List<Project>,
+    today: LocalDate,
+    weekendDays: Set<String>,
+    holidays: List<com.mj.yata.domain.model.Holiday>,
+    observeNonWorkingDays: Boolean
+): List<BreakdownRow> {
     val byProject = tasks.filter { it.projectId != null }.groupBy { it.projectId }
     return projects.mapNotNull { project ->
         val scoped = byProject[project.id].orEmpty()
@@ -703,12 +732,19 @@ private fun projectBreakdown(tasks: List<Task>, projects: List<Project>, today: 
             colorKey = project.color,
             total = scoped.size,
             done = scoped.count { it.done },
-            overdue = scoped.count { it.isOverdue(today) }
+            overdue = scoped.count { it.isOverdue(today, weekendDays, holidays, observeNonWorkingDays) }
         )
     }.sortedByDescending { it.total }
 }
 
-private fun listBreakdown(tasks: List<Task>, lists: List<YataList>, today: LocalDate): List<BreakdownRow> {
+private fun listBreakdown(
+    tasks: List<Task>,
+    lists: List<YataList>,
+    today: LocalDate,
+    weekendDays: Set<String>,
+    holidays: List<com.mj.yata.domain.model.Holiday>,
+    observeNonWorkingDays: Boolean
+): List<BreakdownRow> {
     val byList = tasks.filter { it.listId != null }.groupBy { it.listId }
     return lists.mapNotNull { list ->
         val scoped = byList[list.id].orEmpty()
@@ -718,7 +754,7 @@ private fun listBreakdown(tasks: List<Task>, lists: List<YataList>, today: Local
             colorKey = list.color,
             total = scoped.size,
             done = scoped.count { it.done },
-            overdue = scoped.count { it.isOverdue(today) }
+            overdue = scoped.count { it.isOverdue(today, weekendDays, holidays, observeNonWorkingDays) }
         )
     }.sortedByDescending { it.total }
 }
@@ -727,7 +763,10 @@ private fun tagBreakdown(
     tasks: List<Task>,
     projects: List<Project>,
     tags: List<Tag>,
-    today: LocalDate
+    today: LocalDate,
+    weekendDays: Set<String>,
+    holidays: List<com.mj.yata.domain.model.Holiday>,
+    observeNonWorkingDays: Boolean
 ): List<BreakdownRow> {
     val byTag = mutableMapOf<String, MutableList<Task>>()
     tasks.forEach { task ->
@@ -743,13 +782,17 @@ private fun tagBreakdown(
             colorKey = tag.color,
             total = scoped.size,
             done = scoped.count { it.done },
-            overdue = scoped.count { it.isOverdue(today) }
+            overdue = scoped.count { it.isOverdue(today, weekendDays, holidays, observeNonWorkingDays) }
         )
     }.sortedByDescending { it.total }
 }
 
-private fun Task.isOverdue(today: LocalDate): Boolean =
-    !done && due?.toLocalDateOrNull()?.isBefore(today) == true
+private fun Task.isOverdue(
+    today: LocalDate,
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<com.mj.yata.domain.model.Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false
+): Boolean = !done && effectiveDue(weekendDays, holidays, observeNonWorkingDays)?.toLocalDateOrNull()?.isBefore(today) == true
 
 private fun Long.toLocalDate(): LocalDate =
     Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()

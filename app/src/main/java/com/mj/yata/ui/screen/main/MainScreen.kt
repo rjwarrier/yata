@@ -1102,7 +1102,10 @@ fun MainScreen(
                             tagsEnabled = tagsFeatureEnabled,
                             projectsEnabled = projectsFeatureEnabled,
                             taskRowDensity = taskRowDensity,
-                            initialDataLoaded = initialDataLoaded
+                            initialDataLoaded = initialDataLoaded,
+                            weekendDays = weekendDays,
+                            holidays = holidays,
+                            observeNonWorkingDays = observeNonWorkingDays
                         )
                     }
                 }

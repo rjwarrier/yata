@@ -59,6 +59,7 @@ import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.inheritedTagIds
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -169,6 +170,7 @@ fun TaskDetailScreen(
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
     val dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel)
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
     val useWideDetail = rememberAdaptiveLayoutInfo().isWide
 
     val accents = LocalYataAccents.current
@@ -916,8 +918,9 @@ fun TaskDetailScreen(
 
                     // Carry forward — only makes sense for an open task that's already due
                     // today or overdue, not one that's done or scheduled for the future.
-                    val canCarryForward = !task.done && task.due != null &&
-                        task.due <= java.time.LocalDate.now().toString()
+                    val canCarryForward = !task.done &&
+                        task.effectiveDue(dueDatePickerContext.weekendDays, dueDatePickerContext.holidays, observeNonWorkingDays)
+                            ?.let { it <= java.time.LocalDate.now().toString() } == true
                     if (canCarryForward) {
                         YataSelectChip(
                             label = stringResource(R.string.task_detail_carry_forward),
@@ -1915,8 +1918,10 @@ fun TaskDetailScreen(
         val hasSubtasks = task.subtasks.isNotEmpty()
         val hasScheduleDetails = task.recurrence != null || task.reminder != null
         val exportAccentColor = project?.let { accents.getAccent(it.color) } ?: listColor
-        val exportOverdue = task.due != null && !task.done &&
-            com.mj.yata.util.TaskScheduleUtils.parseDate(task.due)?.isBefore(java.time.LocalDate.now()) == true
+        val exportOverdue = !task.done &&
+            com.mj.yata.util.TaskScheduleUtils.parseDate(
+                task.effectiveDue(dueDatePickerContext.weekendDays, dueDatePickerContext.holidays, observeNonWorkingDays)
+            )?.isBefore(java.time.LocalDate.now()) == true
         val exportTagChips = (inheritedTags + ownTags).distinctBy { it.id }.map { tag ->
             com.mj.yata.util.export.ExportTagChip(
                 tag.name,

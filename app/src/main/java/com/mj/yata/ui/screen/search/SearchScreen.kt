@@ -22,12 +22,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mj.yata.ui.widgets.showUndoSnackbar
 import com.mj.yata.R
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.model.archivedProjects
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.effectiveTagIds
 import com.mj.yata.domain.model.effectiveTags
 import com.mj.yata.util.NaturalLanguageParser
@@ -66,22 +68,34 @@ internal enum class SmartFilter(@StringRes val labelRes: Int) {
     DUE_TODAY(R.string.search_filter_due_today),
     NO_DUE_DATE(R.string.search_filter_no_due_date);
 
-    fun matches(task: Task, today: LocalDate, myId: String): Boolean = when (this) {
-        FOCUS -> !task.done && (task.flag || task.priority == "high" || task.due == today.toString() || task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true)
-        MORNING_REVIEW -> !task.done && (task.due == today.toString() || task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true)
-        EVENING_REVIEW -> !task.done && (task.due == today.plusDays(1).toString() || (task.due == null && task.priority != "none"))
-        STALE_TASKS -> !task.done && task.due == null && task.time == null && task.recurrence == null && task.priority == "none" && !task.flag
-        AT_RISK -> !task.done && (
-            task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true ||
-                (task.priority == "high" && task.due == null) ||
-                (task.flag && task.due == null)
-            )
-        ASSIGNED_TO_ME -> task.assigneeIds.contains(myId)
-        OVERDUE -> !task.done && task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true
-        HIGH_PRIORITY -> task.priority == "high"
-        FLAGGED -> task.flag
-        DUE_TODAY -> task.due == today.toString()
-        NO_DUE_DATE -> task.due == null
+    /** [weekendDays]/[holidays]/[observeNonWorkingDays] default to off, so a caller that hasn't
+     * been updated compiles and filters exactly as before. */
+    fun matches(
+        task: Task,
+        today: LocalDate,
+        myId: String,
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): Boolean {
+        val effectiveDue = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+        return when (this) {
+            FOCUS -> !task.done && (task.flag || task.priority == "high" || effectiveDue == today.toString() || effectiveDue?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true)
+            MORNING_REVIEW -> !task.done && (effectiveDue == today.toString() || effectiveDue?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true)
+            EVENING_REVIEW -> !task.done && (task.due == today.plusDays(1).toString() || (task.due == null && task.priority != "none"))
+            STALE_TASKS -> !task.done && task.due == null && task.time == null && task.recurrence == null && task.priority == "none" && !task.flag
+            AT_RISK -> !task.done && (
+                effectiveDue?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true ||
+                    (task.priority == "high" && task.due == null) ||
+                    (task.flag && task.due == null)
+                )
+            ASSIGNED_TO_ME -> task.assigneeIds.contains(myId)
+            OVERDUE -> !task.done && effectiveDue?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.isBefore(today) == true
+            HIGH_PRIORITY -> task.priority == "high"
+            FLAGGED -> task.flag
+            DUE_TODAY -> effectiveDue == today.toString()
+            NO_DUE_DATE -> task.due == null
+        }
     }
 }
 
@@ -375,6 +389,10 @@ fun SearchScreen(
     val archivedTasks by viewModel.archivedTasks.collectAsStateWithLifecycle()
     val deletedTasks by viewModel.deletedTasks.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     var query by remember { mutableStateOf("") }
     // The box always shows exactly what was typed — only the derived search text and filter
@@ -469,7 +487,7 @@ fun SearchScreen(
     // live tasks went through a SQL FTS query (prefix-token match, no project-inherited tags),
     // archived/trash went through this substring match, so the same query could find a task in
     // one bucket and miss its otherwise-identical archived copy. One matcher, one behavior.
-    val filteredTasks = remember(tasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), activeEntities, archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById) {
+    val filteredTasks = remember(tasks, archivedTasks, deletedTasks, debouncedQuery, activeFilters.toList(), activeEntities, archivedProjectIds, myId, includeArchived, includeTrash, peopleById, tagsById, projectsById, weekendDays, holidays, observeNonWorkingDays) {
         if (debouncedQuery.isBlank() && activeFilters.isEmpty() && activeEntities.isEmpty && !includeArchived && !includeTrash) {
             emptyList()
         } else {
@@ -496,7 +514,7 @@ fun SearchScreen(
             val sourceTasks = (activeSource + archivedSource + trashSource).distinctBy { it.id }
             sourceTasks.filter { task ->
                 if (!includeArchived && task.projectId in archivedProjectIds) return@filter false
-                activeFilters.all { it.matches(task, today, myId) } && task.matchesSearchEntities(activeEntities, projectsById)
+                activeFilters.all { it.matches(task, today, myId, weekendDays, holidays, observeNonWorkingDays) } && task.matchesSearchEntities(activeEntities, projectsById)
             }
         }
     }
@@ -938,6 +956,10 @@ private fun SearchResultsList(
 ) {
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -1293,7 +1315,10 @@ private fun SearchResultsList(
                         density = taskRowDensity,
                         onSwipeToDelete = { onSwipeToDelete(task) },
                         swipeEnabled = !selectionMode && task.id !in deletedTaskIds,
-                        showDueDate = true
+                        showDueDate = true,
+                        weekendDays = weekendDays,
+                        holidays = holidays,
+                        observeNonWorkingDays = observeNonWorkingDays
                     )
                 }
             }

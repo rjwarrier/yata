@@ -80,6 +80,10 @@ fun TagDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tagGroups by viewModel.tagGroups.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     val tag = remember(tags, tagId) { tags.find { it.id == tagId } }
     val accents = LocalYataAccents.current
@@ -164,10 +168,14 @@ fun TagDetailScreen(
     val doneTasks = allTaggedTasks.count { it.done }
     val openTasks = allTaggedTasks.size - doneTasks
     val progress = if (allTaggedTasks.isNotEmpty()) doneTasks.toFloat() / allTaggedTasks.size else 0f
-    val overdueCount = remember(allTaggedTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(allTaggedTasks) }
+    val overdueCount = remember(allTaggedTasks, weekendDays, holidays, observeNonWorkingDays) {
+        com.mj.yata.util.AnalyticsUtils.overdueCount(allTaggedTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays)
+    }
     val highPriorityCount = remember(allTaggedTasks) { allTaggedTasks.count { !it.done && it.priority == "high" } }
     val todayStr = com.mj.yata.util.AppClock.todayString
-    val dueTodayCount = remember(allTaggedTasks, todayStr) { allTaggedTasks.count { !it.done && it.due == todayStr } }
+    val dueTodayCount = remember(allTaggedTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+        allTaggedTasks.count { !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr }
+    }
 
     var hideCompleted by remember(tag.id) { mutableStateOf(tag.hideCompletedByDefault) }
     val sortMode by viewModel.sortModeTagDetail.collectAsStateWithLifecycle()
@@ -176,9 +184,9 @@ fun TagDetailScreen(
     val pendingTaggedTasks = remember(allTaggedTasks, searchQuery, sortMode) {
         allTaggedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
     }
-    val displayedPendingTaggedTasks = remember(pendingTaggedTasks, activeStatFilter, heroToday) {
+    val displayedPendingTaggedTasks = remember(pendingTaggedTasks, activeStatFilter, heroToday, weekendDays, holidays, observeNonWorkingDays) {
         val statFilter = activeStatFilter
-        pendingTaggedTasks.filter { statFilter == null || statFilter.matches(it, heroToday) }
+        pendingTaggedTasks.filter { statFilter == null || statFilter.matches(it, heroToday, weekendDays, holidays, observeNonWorkingDays) }
     }
     val completedTaggedTasks = remember(allTaggedTasks, hideCompleted, searchQuery) {
         if (hideCompleted) emptyList() else allTaggedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) }
@@ -512,7 +520,10 @@ fun TagDetailScreen(
                         density = taskRowDensity,
                         onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
                         swipeEnabled = !selectionMode,
-                        showDueDate = true
+                        showDueDate = true,
+                        weekendDays = weekendDays,
+                        holidays = holidays,
+                        observeNonWorkingDays = observeNonWorkingDays
                     )
                 }
 
@@ -703,6 +714,9 @@ fun TagDetailScreen(
                 people = people,
                 tasks = tasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     viewModel.bulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()
@@ -819,7 +833,7 @@ fun TagDetailScreen(
                             accentColor = tagColor,
                             doneCount = exportTasks.count { it.done },
                             totalCount = exportTasks.size,
-                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays),
                             tasks = exportTasks.map { task ->
                                 task.toExportRow(
                                     exportGroupLabel(task),

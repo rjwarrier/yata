@@ -49,9 +49,13 @@ test-only changes belong in the commit message, not here, unless they change beh
   "working day" on its own.
 - Added an "Observe non-working days" toggle (Settings → Task Defaults → Holidays, off by
   default). When on, a recurring task whose due date lands on a weekend or holiday is treated as
-  due the previous working day for Today's list and overdue count, the daily agenda digest, and
-  the overdue escalation notification — without changing the task's actual stored due date. A
-  one-off (non-recurring) task is never shifted, even with the setting on.
+  due the previous working day everywhere the app decides if it's due or overdue — Today's list,
+  overdue badges and counts on task rows and every project/list/tag/person detail screen, Search's
+  Overdue/Due Today/Focus/Morning Review/At Risk filters, Analytics (including the per-person/tag
+  breakdowns, aging report, and capacity forecast), the People/Staff analytics screens, the daily
+  agenda digest, the overdue escalation notification, and the Team Overdue/Upcoming/Progress
+  home-screen widgets — without changing the task's actual stored due date anywhere. A one-off
+  (non-recurring) task is never shifted, even with the setting on.
 
 ### Changed
 - Tasker integration (Settings → Data Management) is now off by default rather than on. Any app on

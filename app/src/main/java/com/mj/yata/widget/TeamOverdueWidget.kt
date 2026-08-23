@@ -32,8 +32,10 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.effectiveDue
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
@@ -56,15 +58,21 @@ class TeamOverdueWidget : GlanceAppWidget() {
         val opacity = prefs[WIDGET_OPACITY_KEY] ?: 1.0f
         val accentOverrideKey = prefs[WIDGET_ACCENT_OVERRIDE_KEY]
 
-        val repository = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).repository()
+        val entryPoint = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
+        val repository = entryPoint.repository()
+        val userPreferences = entryPoint.userPreferences()
         val tasks = repository.getTasks().first()
         val people = repository.getPeople().first().filter { !it.archived }
         val today = LocalDate.now()
+        val weekendDays = userPreferences.weekendDaysFlow.first()
+        val holidays = userPreferences.holidaysFlow.first().mapNotNull(Holiday::decode)
+        val observeNonWorkingDays = userPreferences.observeNonWorkingDaysFlow.first()
 
         val overdueByPerson = people.mapNotNull { person ->
             val count = tasks.count { task ->
                 if (task.done || person.id !in task.assigneeIds) return@count false
-                val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+                val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
                 due.isBefore(today)
             }
             if (count > 0) person to count else null

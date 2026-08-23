@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.theme.StatusBarColor
@@ -86,19 +87,23 @@ fun StaffAnalyticsScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(com.mj.yata.domain.model.Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     var period by remember { mutableStateOf(AnalyticsPeriod.MONTH) }
     val today = com.mj.yata.util.AppClock.today
     val activePeople = remember(people) { people.filter { !it.archived } }
-    val staffRows = remember(tasks, activePeople, period, today) {
-        staffAnalyticsRows(tasks, activePeople, period, today)
+    val staffRows = remember(tasks, activePeople, period, today, weekendDays, holidays, observeNonWorkingDays) {
+        staffAnalyticsRows(tasks, activePeople, period, today, weekendDays, holidays, observeNonWorkingDays)
     }
     val activeIds = remember(activePeople) { activePeople.map { it.id }.toSet() }
     val assignedOpen = remember(tasks, activeIds) {
         tasks.count { task -> !task.done && task.assigneeIds.any { it in activeIds } }
     }
-    val assignedOverdue = remember(tasks, activeIds, today) {
-        tasks.count { task -> !task.done && task.assigneeIds.any { it in activeIds } && task.isOverdue(today) }
+    val assignedOverdue = remember(tasks, activeIds, today, weekendDays, holidays, observeNonWorkingDays) {
+        tasks.count { task -> !task.done && task.assigneeIds.any { it in activeIds } && task.isOverdue(today, weekendDays, holidays, observeNonWorkingDays) }
     }
     val completedInPeriod = remember(tasks, activeIds, period, today) {
         AnalyticsUtils.completedInPeriod(
@@ -444,7 +449,10 @@ private fun staffAnalyticsRows(
     tasks: List<Task>,
     people: List<Person>,
     period: AnalyticsPeriod,
-    today: LocalDate
+    today: LocalDate,
+    weekendDays: Set<String>,
+    holidays: List<com.mj.yata.domain.model.Holiday>,
+    observeNonWorkingDays: Boolean
 ): List<StaffAnalyticsRow> {
     val byPerson = mutableMapOf<String, MutableList<Task>>()
     tasks.forEach { task ->
@@ -469,7 +477,7 @@ private fun staffAnalyticsRows(
         StaffAnalyticsRow(
             person = person,
             openCount = open.size,
-            overdueCount = open.count { it.isOverdue(today) },
+            overdueCount = open.count { it.isOverdue(today, weekendDays, holidays, observeNonWorkingDays) },
             completedInPeriod = completedInPeriod,
             onTimeRate = onTimeRate,
             oldestOpenAgeDays = open.mapNotNull { it.createdAt?.ageInDays(today) }.maxOrNull(),
@@ -489,8 +497,12 @@ private fun staffAnalyticsRows(
         )
 }
 
-private fun Task.isOverdue(today: LocalDate): Boolean =
-    !done && due?.toLocalDateOrNull()?.isBefore(today) == true
+private fun Task.isOverdue(
+    today: LocalDate,
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<com.mj.yata.domain.model.Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false
+): Boolean = !done && effectiveDue(weekendDays, holidays, observeNonWorkingDays)?.toLocalDateOrNull()?.isBefore(today) == true
 
 private fun Long.toLocalDate(): LocalDate =
     Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()

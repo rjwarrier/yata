@@ -82,6 +82,10 @@ fun ListDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     val list = remember(lists, listId) { lists.find { it.id == listId } }
     val accents = LocalYataAccents.current
@@ -161,9 +165,9 @@ fun ListDetailScreen(
     }
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
     val heroToday = com.mj.yata.util.AppClock.today
-    val statFilteredTasks = remember(listTasks, activeStatFilter, heroToday) {
+    val statFilteredTasks = remember(listTasks, activeStatFilter, heroToday, weekendDays, holidays, observeNonWorkingDays) {
         val filter = activeStatFilter ?: return@remember emptyList()
-        listTasks.filter { filter.matches(it, heroToday) }
+        listTasks.filter { filter.matches(it, heroToday, weekendDays, holidays, observeNonWorkingDays) }
     }
 
     // Not keyed on pendingListTasks — see ProjectDetailScreen for why: any task write anywhere
@@ -415,10 +419,14 @@ fun ListDetailScreen(
         }
     ) { innerPadding ->
         val progress = if (listTasks.isNotEmpty()) doneTasks.toFloat() / listTasks.size else 0f
-        val overdueCount = remember(listTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(listTasks) }
+        val overdueCount = remember(listTasks, weekendDays, holidays, observeNonWorkingDays) {
+            com.mj.yata.util.AnalyticsUtils.overdueCount(listTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays)
+        }
         val highPriorityCount = remember(listTasks) { listTasks.count { !it.done && it.priority == "high" } }
         val todayStr = com.mj.yata.util.AppClock.todayString
-        val dueTodayCount = remember(listTasks, todayStr) { listTasks.count { !it.done && it.due == todayStr } }
+        val dueTodayCount = remember(listTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+            listTasks.count { !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr }
+        }
 
         AdaptiveContentBox(
             modifier = modifier
@@ -497,7 +505,10 @@ fun ListDetailScreen(
                     onQuickSnooze = { viewModel.quickSnoozeTask(task.id, it) },
                     onRenameTask = { viewModel.renameTask(task.id, it) },
                     density = taskRowDensity,
-                    showDueDate = true
+                    showDueDate = true,
+                    weekendDays = weekendDays,
+                    holidays = holidays,
+                    observeNonWorkingDays = observeNonWorkingDays
                 )
             }
 
@@ -716,6 +727,9 @@ fun ListDetailScreen(
                 people = people,
                 tasks = allTasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     viewModel.bulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()
@@ -929,7 +943,7 @@ fun ListDetailScreen(
                             accentColor = listColor,
                             doneCount = exportTasks.count { it.done },
                             totalCount = exportTasks.size,
-                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays),
                             tasks = exportTasks.map { task ->
                                 task.toExportRow(
                                     exportGroupLabel(task),

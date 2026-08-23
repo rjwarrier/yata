@@ -11,7 +11,10 @@ import javax.inject.Singleton
 
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import com.mj.yata.data.local.datastore.UserPreferences
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
+import com.mj.yata.domain.model.Holiday
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.effectiveTagIds
 import com.mj.yata.domain.model.hiddenFromMainTaskListIds
 import com.mj.yata.domain.model.hiddenFromMainTaskProjectIds
@@ -35,7 +38,8 @@ class WidgetUpdaterImpl @Inject constructor(
     // Lazy breaks Dagger cycles
     private val backupOperations: Lazy<com.mj.yata.domain.usecase.BackupOperations>,
     private val yataRepository: Lazy<YataRepository>,
-    private val operationHistoryStore: OperationHistoryStore
+    private val operationHistoryStore: OperationHistoryStore,
+    private val userPreferences: Lazy<UserPreferences>
 ) : WidgetUpdater {
 
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -103,11 +107,15 @@ class WidgetUpdaterImpl @Inject constructor(
         val myId = people.firstOrNull { it.isMe }?.id
         val excludedProjectIds = projects.hiddenFromMainTaskProjectIds()
         val excludedListIds = lists.hiddenFromMainTaskListIds()
+        val prefs = userPreferences.get()
+        val weekendDays = prefs.weekendDaysFlow.first()
+        val holidays = prefs.holidaysFlow.first().mapNotNull(Holiday::decode)
+        val observeNonWorkingDays = prefs.observeNonWorkingDaysFlow.first()
 
         if (hasProgress) {
             val progressTasks = tasks
                 .filter {
-                    it.isActionableToday(todayStr, nowMillis, myId) &&
+                    it.isActionableToday(todayStr, nowMillis, myId, weekendDays, holidays, observeNonWorkingDays) &&
                         it.projectId !in excludedProjectIds &&
                         it.listId !in excludedListIds
                 }
@@ -155,7 +163,7 @@ class WidgetUpdaterImpl @Inject constructor(
         if (hasTeam) {
             val activePeople = people.filter { !it.archived }
             val teamHash = listOf(
-                tasks.filter { !it.done && it.due != null && isOverdue(it, today) }.map { task ->
+                tasks.filter { !it.done && it.due != null && isOverdue(it, today, weekendDays, holidays, observeNonWorkingDays) }.map { task ->
                     listOf(task.id, task.title, task.due, task.assigneeIds)
                 },
                 activePeople.map { person -> listOf(person.id, person.name, person.initials, person.color) }
@@ -197,7 +205,7 @@ class WidgetUpdaterImpl @Inject constructor(
         if (hasAppWidget) {
             val todayTasks = tasks
                 .filter {
-                    it.isActionableToday(todayStr, nowMillis, myId) &&
+                    it.isActionableToday(todayStr, nowMillis, myId, weekendDays, holidays, observeNonWorkingDays) &&
                         it.projectId !in excludedProjectIds &&
                         it.listId !in excludedListIds
                 }
@@ -225,9 +233,16 @@ class WidgetUpdaterImpl @Inject constructor(
         )
     }
 
-    private fun isOverdue(task: com.mj.yata.domain.model.Task, today: java.time.LocalDate): Boolean {
+    private fun isOverdue(
+        task: com.mj.yata.domain.model.Task,
+        today: java.time.LocalDate,
+        weekendDays: Set<String>,
+        holidays: List<Holiday>,
+        observeNonWorkingDays: Boolean
+    ): Boolean {
         if (task.done) return false
-        val due = task.due?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return false
+        val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+            ?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return false
         return due.isBefore(today)
     }
 

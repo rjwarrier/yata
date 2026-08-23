@@ -25,10 +25,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.ui.widgets.quickSnoozeLabel
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.YataList
@@ -293,7 +295,10 @@ fun TaskBulkAssignPersonSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     tasks: List<Task> = emptyList(),
-    todayStr: String? = null
+    todayStr: String? = null,
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false
 ) {
     val activePeople = people.activePeople()
     Column(
@@ -317,7 +322,12 @@ fun TaskBulkAssignPersonSheet(
         }
         activePeople.forEach { person ->
             val openTasks = tasks.filter { !it.done && person.id in it.assigneeIds }
-            val overdueCount = todayStr?.let { today -> openTasks.count { it.due != null && it.due < today } }
+            val overdueCount = todayStr?.let { today ->
+                openTasks.count { task ->
+                    val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                    due != null && due < today
+                }
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

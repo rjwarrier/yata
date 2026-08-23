@@ -86,6 +86,10 @@ fun PersonDetailScreen(
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val personGroups by viewModel.personGroups.collectAsStateWithLifecycle()
     val taskRowDensity by viewModel.taskRowDensity.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
 
     val person = remember(people, personId) { people.find { it.id == personId } }
     val accents = LocalYataAccents.current
@@ -183,8 +187,8 @@ fun PersonDetailScreen(
     val openTasks = remember(assignedTasks, searchQuery, sortMode) {
         assignedTasks.filter { !it.done && taskMatchesQuery(it, searchQuery) }.sortedByMode(sortMode)
     }
-    val displayedOpenTasks = remember(openTasks, activeStatFilter) {
-        openTasks.filter { activeStatFilter == null || activeStatFilter!!.matches(it, today) }
+    val displayedOpenTasks = remember(openTasks, activeStatFilter, today, weekendDays, holidays, observeNonWorkingDays) {
+        openTasks.filter { activeStatFilter == null || activeStatFilter!!.matches(it, today, weekendDays, holidays, observeNonWorkingDays) }
     }
     val completedTasks = remember(assignedTasks, searchQuery) { assignedTasks.filter { it.done && taskMatchesQuery(it, searchQuery) } }
 
@@ -427,15 +431,15 @@ fun PersonDetailScreen(
             // search-filtered, unlike openTasks/completedTasks below) so these always reflect the
             // person's real workload regardless of an active search query.
             item {
-                val overdueCount = remember(assignedTasks) {
-                    com.mj.yata.util.AnalyticsUtils.overdueCount(assignedTasks)
+                val overdueCount = remember(assignedTasks, weekendDays, holidays, observeNonWorkingDays) {
+                    com.mj.yata.util.AnalyticsUtils.overdueCount(assignedTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays)
                 }
                 val highPriorityCount = remember(assignedTasks) {
                     assignedTasks.count { !it.done && it.priority == "high" }
                 }
                 val todayStr = com.mj.yata.util.AppClock.todayString
-                val dueTodayCount = remember(assignedTasks, todayStr) {
-                    assignedTasks.count { !it.done && it.due == todayStr }
+                val dueTodayCount = remember(assignedTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+                    assignedTasks.count { !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr }
                 }
                 val totalCount = assignedTasks.size
                 val doneCount = assignedTasks.count { it.done }
@@ -465,12 +469,13 @@ fun PersonDetailScreen(
             // days, so a manager can see whether this person's backlog is growing or shrinking,
             // not just the live snapshot above.
             item {
-                val trend = remember(assignedTasks) {
+                val trend = remember(assignedTasks, weekendDays, holidays, observeNonWorkingDays) {
                     val today = java.time.LocalDate.now()
                     (6 downTo 0).map { offset ->
                         val day = today.minusDays(offset.toLong())
                         val overdueCount = assignedTasks.count { task ->
-                            val due = task.due?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return@count false
+                            val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                                ?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() } ?: return@count false
                             val completedDay = task.completedAt?.let {
                                 java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
                             }
@@ -611,7 +616,10 @@ fun PersonDetailScreen(
                             density = taskRowDensity,
                             onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
                             swipeEnabled = !selectionMode,
-                            showDueDate = true
+                            showDueDate = true,
+                            weekendDays = weekendDays,
+                            holidays = holidays,
+                            observeNonWorkingDays = observeNonWorkingDays
                         )
                     }
                 }
@@ -711,7 +719,10 @@ fun PersonDetailScreen(
                             density = taskRowDensity,
                             onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
                             swipeEnabled = !selectionMode,
-                            showDueDate = true
+                            showDueDate = true,
+                            weekendDays = weekendDays,
+                            holidays = holidays,
+                            observeNonWorkingDays = observeNonWorkingDays
                         )
                     }
                 }
@@ -752,7 +763,10 @@ fun PersonDetailScreen(
                         density = taskRowDensity,
                         onSwipeToDelete = { if (!selectionMode) deleteTaskWithUndo(task) },
                         swipeEnabled = !selectionMode,
-                        showDueDate = true
+                        showDueDate = true,
+                        weekendDays = weekendDays,
+                        holidays = holidays,
+                        observeNonWorkingDays = observeNonWorkingDays
                     )
                 }
             }
@@ -899,6 +913,9 @@ fun PersonDetailScreen(
                 people = people,
                 tasks = allTasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { targetPersonId ->
                     viewModel.bulkAssignPerson(selectedIds.toList(), targetPersonId)
                     selectedIds.clear()
@@ -1014,7 +1031,7 @@ fun PersonDetailScreen(
                             accentColor = personColor,
                             doneCount = exportTasks.count { it.done },
                             totalCount = exportTasks.size,
-                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks),
+                            overdueCount = com.mj.yata.util.AnalyticsUtils.overdueCount(exportTasks, weekendDays = weekendDays, holidays = holidays, observeNonWorkingDays = observeNonWorkingDays),
                             tasks = exportTasks.map { task ->
                                 task.toExportRow(
                                     exportGroupLabel(task),

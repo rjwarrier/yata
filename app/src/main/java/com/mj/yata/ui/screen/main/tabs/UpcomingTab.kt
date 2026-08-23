@@ -108,6 +108,10 @@ fun UpcomingTab(
     useWideLayout: Boolean = false,
     /** See TodayTab's parameter of the same name. */
     initialDataLoaded: Boolean = true,
+    /** See TodayTab's parameters of the same names — "observe non-working days". */
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<com.mj.yata.domain.model.Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val selectedIds = remember { mutableStateListOf<String>() }
@@ -645,6 +649,9 @@ fun UpcomingTab(
                                 density = taskRowDensity,
                                 onSwipeToDelete = { onSwipeToDelete(task.id) },
                                 swipeEnabled = !selectionMode,
+                                weekendDays = weekendDays,
+                                holidays = holidays,
+                                observeNonWorkingDays = observeNonWorkingDays,
                                 modifier = Modifier.animateItem(fadeInSpec = yataItemFade, placementSpec = yataItemPlacement, fadeOutSpec = yataItemFade)
                             )
                         }
@@ -701,6 +708,9 @@ fun UpcomingTab(
                 people = people,
                 tasks = tasks,
                 todayStr = com.mj.yata.util.AppClock.todayString,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays,
                 onSelectPerson = { personId ->
                     onBulkAssignPerson(selectedIds.toList(), personId)
                     selectedIds.clear()

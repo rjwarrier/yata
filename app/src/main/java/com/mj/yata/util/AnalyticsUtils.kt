@@ -271,18 +271,21 @@ object AnalyticsUtils {
         tags: List<Tag>,
         lists: List<YataList> = emptyList(),
         period: AnalyticsPeriod,
-        today: LocalDate = LocalDate.now()
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
     ): AnalyticsUiState {
         val periodTasks = filterTasksByPeriod(tasks, period, today)
         val totalCount = periodTasks.size
         val doneCount = periodTasks.count { it.done }
-        val delegationStats = byDelegation(tasks, people, period, today)
-        val delegationSummary = delegationSummary(tasks, people)
+        val delegationStats = byDelegation(tasks, people, period, today, weekendDays, holidays, observeNonWorkingDays)
+        val delegationSummary = delegationSummary(tasks, people, weekendDays, holidays, observeNonWorkingDays)
         val projectStats = byProject(periodTasks, projects)
-        val personStats = byPerson(periodTasks, tasks, people, today)
-        val tagStats = byTag(periodTasks, tasks, projects, tags, today)
+        val personStats = byPerson(periodTasks, tasks, people, today, weekendDays, holidays, observeNonWorkingDays)
+        val tagStats = byTag(periodTasks, tasks, projects, tags, today, weekendDays, holidays, observeNonWorkingDays)
         val listStats = byList(periodTasks, lists)
-        val overdueTrend = overdueTrend(tasks, period, today)
+        val overdueTrend = overdueTrend(tasks, period, today, weekendDays, holidays, observeNonWorkingDays)
         val onTimeRateTrend = onTimeRateTrend(tasks, period, today)
         val createdInPeriod = createdInPeriod(tasks, period, today)
         val completedInPeriod = completedInPeriod(tasks, period, today)
@@ -295,15 +298,15 @@ object AnalyticsUtils {
             completedInPeriod = completedInPeriod,
             previousPeriodCompleted = previousPeriodCompleted(tasks, period, today),
             currentStreak = currentStreak(tasks, today),
-            overdueCount = overdueCount(tasks, today),
-            zeroOverdueStreakDays = zeroOverdueStreak(tasks, today),
+            overdueCount = overdueCount(tasks, today, weekendDays, holidays, observeNonWorkingDays),
+            zeroOverdueStreakDays = zeroOverdueStreak(tasks, today, weekendDays, holidays, observeNonWorkingDays),
             overallOnTimeRate = overallOnTimeRate(tasks),
             overdueTrend = overdueTrend,
             onTimeRateTrend = onTimeRateTrend,
             createdInPeriod = createdInPeriod,
             dueNext7 = upcomingDueCount(tasks, 7, today),
             dueNext30 = upcomingDueCount(tasks, 30, today),
-            agingBuckets = agingBuckets(tasks, today),
+            agingBuckets = agingBuckets(tasks, today, weekendDays, holidays, observeNonWorkingDays),
             workloadShares = workloadShare(tasks, people),
             dailyActivity = dailyActivity(tasks, period, today),
             priorityStats = byPriority(periodTasks),
@@ -316,7 +319,7 @@ object AnalyticsUtils {
             medianTurnaroundDays = medianTurnaround(periodTasks.filter { it.done }),
             oldestOpenAgeDays = oldestOpenAge(tasks, today),
             openWithoutDueDate = tasks.count { !it.done && it.due == null },
-            capacity = capacitySnapshot(tasks, today),
+            capacity = capacitySnapshot(tasks, today, weekendDays, holidays, observeNonWorkingDays),
             postponedOpenTaskCount = postponedOpenTaskCount(tasks),
             maxPostponementCount = maxPostponementCount(tasks),
             mostPostponedTasks = mostPostponedTasks(tasks),
@@ -330,7 +333,10 @@ object AnalyticsUtils {
                 overdueTrend = overdueTrend,
                 onTimeRateTrend = onTimeRateTrend,
                 createdInPeriod = createdInPeriod,
-                completedInPeriod = completedInPeriod
+                completedInPeriod = completedInPeriod,
+                weekendDays = weekendDays,
+                holidays = holidays,
+                observeNonWorkingDays = observeNonWorkingDays
             )
         )
     }
@@ -454,8 +460,15 @@ object AnalyticsUtils {
      * metric the same way, and would in particular pin [zeroOverdueStreak] at zero forever for
      * anyone whose database predates that column.
      */
-    fun overdueCountOn(tasks: List<Task>, date: LocalDate): Int = tasks.count { task ->
-        val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+    fun overdueCountOn(
+        tasks: List<Task>,
+        date: LocalDate,
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): Int = tasks.count { task ->
+        val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+            ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
         if (!due.isBefore(date)) return@count false
         val completedDay = task.completedAt?.toLocalDate()
         when {
@@ -468,11 +481,17 @@ object AnalyticsUtils {
     /** Consecutive days (ending today) with zero tasks overdue at day's end — a team-management
      * metric (did the owner keep the team's backlog clean) rather than [currentStreak]'s personal
      * completion-activity metric. Looks back at most 60 days to bound the work. */
-    fun zeroOverdueStreak(tasks: List<Task>, today: LocalDate = LocalDate.now()): Int {
+    fun zeroOverdueStreak(
+        tasks: List<Task>,
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): Int {
         var day = today
         var streak = 0
         while (streak < 60) {
-            if (overdueCountOn(tasks, day) > 0) break
+            if (overdueCountOn(tasks, day, weekendDays, holidays, observeNonWorkingDays) > 0) break
             streak++
             day = day.minusDays(1)
         }
@@ -487,10 +506,17 @@ object AnalyticsUtils {
      * aggregate, because overdue is a level (a stock), not a flow: the meaningful question is
      * where the number is now versus where it was then, not how much accumulated in between.
      */
-    fun overdueTrend(tasks: List<Task>, period: AnalyticsPeriod, today: LocalDate = LocalDate.now()): MetricTrend? {
+    fun overdueTrend(
+        tasks: List<Task>,
+        period: AnalyticsPeriod,
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): MetricTrend? {
         if (period == AnalyticsPeriod.ALL) return null
-        val was = overdueCountOn(tasks, periodStart(period, today))
-        val delta = overdueCount(tasks, today) - was
+        val was = overdueCountOn(tasks, periodStart(period, today), weekendDays, holidays, observeNonWorkingDays)
+        val delta = overdueCount(tasks, today, weekendDays, holidays, observeNonWorkingDays) - was
         return MetricTrend(delta = delta, improved = delta < 0)
     }
 
@@ -535,11 +561,19 @@ object AnalyticsUtils {
      * the task counts elsewhere this is a live snapshot and ignores the period filter: effort
      * you still owe isn't a property of the window you happen to be looking at.
      */
-    fun capacitySnapshot(tasks: List<Task>, today: LocalDate = LocalDate.now()): CapacitySnapshot? {
+    fun capacitySnapshot(
+        tasks: List<Task>,
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): CapacitySnapshot? {
         val open = tasks.filter { !it.done }
         val openMinutes = EstimateUtils.plannedMinutes(open) ?: return null
         val next7End = today.plusDays(6)
         fun dueDate(task: Task) = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        fun effectiveDueDate(task: Task) =
+            task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
         return CapacitySnapshot(
             openMinutes = openMinutes,
             dueNext7Minutes = EstimateUtils.plannedMinutes(
@@ -549,7 +583,7 @@ object AnalyticsUtils {
                 }
             ) ?: 0,
             overdueMinutes = EstimateUtils.plannedMinutes(
-                open.filter { task -> dueDate(task)?.isBefore(today) == true }
+                open.filter { task -> effectiveDueDate(task)?.isBefore(today) == true }
             ) ?: 0,
             estimatedOpenCount = open.count { it.estimateMinutes != null },
             unestimatedOpenCount = EstimateUtils.unestimatedCount(open)
@@ -620,10 +654,17 @@ object AnalyticsUtils {
     /** Overdue-now tasks bucketed by how many days overdue they are — a classic MIS "aging"
      * view (like a debtor-aging report, but for slipped deadlines) so a manager can tell "a bit
      * late" apart from "seriously stuck." Buckets with zero tasks are omitted. */
-    fun agingBuckets(tasks: List<Task>, today: LocalDate = LocalDate.now()): List<AgingBucket> {
+    fun agingBuckets(
+        tasks: List<Task>,
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): List<AgingBucket> {
         val overdueDays = tasks.mapNotNull { task ->
             if (task.done) return@mapNotNull null
-            val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@mapNotNull null
+            val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@mapNotNull null
             if (!due.isBefore(today)) return@mapNotNull null
             java.time.temporal.ChronoUnit.DAYS.between(due, today).toInt()
         }
@@ -701,10 +742,18 @@ object AnalyticsUtils {
      * period that were actually completed (tasks with no due date, or completed on/before it,
      * count as on-time; tasks completed before `completedAt` existed have no timestamp to judge
      * and are excluded from the rate rather than assumed either way). */
-    private fun overdueAndOnTimeRate(periodEntityTasks: List<Task>, allEntityTasks: List<Task>, today: LocalDate): Pair<Int, Float?> {
+    private fun overdueAndOnTimeRate(
+        periodEntityTasks: List<Task>,
+        allEntityTasks: List<Task>,
+        today: LocalDate,
+        weekendDays: Set<String>,
+        holidays: List<Holiday>,
+        observeNonWorkingDays: Boolean
+    ): Pair<Int, Float?> {
         val overdue = allEntityTasks.count { task ->
             if (task.done) return@count false
-            val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+            val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
             due.isBefore(today)
         }
         val judgeable = periodEntityTasks.filter { it.done && it.completedAt != null }
@@ -739,26 +788,43 @@ object AnalyticsUtils {
         return map
     }
 
-    fun byPerson(periodTasks: List<Task>, allTasks: List<Task>, people: List<Person>, today: LocalDate = LocalDate.now()): List<EntityStat> {
+    fun byPerson(
+        periodTasks: List<Task>,
+        allTasks: List<Task>,
+        people: List<Person>,
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): List<EntityStat> {
         val periodTasksByPerson = periodTasks.groupByAssignee()
         val allTasksByPerson = allTasks.groupByAssignee()
         return people.mapNotNull { person ->
             val personPeriodTasks = periodTasksByPerson[person.id] ?: emptyList()
             if (personPeriodTasks.isEmpty()) return@mapNotNull null
             val personAllTasks = allTasksByPerson[person.id] ?: emptyList()
-            val (overdue, onTimeRate) = overdueAndOnTimeRate(personPeriodTasks, personAllTasks, today)
+            val (overdue, onTimeRate) = overdueAndOnTimeRate(personPeriodTasks, personAllTasks, today, weekendDays, holidays, observeNonWorkingDays)
             EntityStat(person.id, person.name, person.color, personPeriodTasks.size, personPeriodTasks.count { it.done }, overdue, onTimeRate)
         }.sortedByDescending { it.total }
     }
 
-    fun byTag(periodTasks: List<Task>, allTasks: List<Task>, projects: List<Project>, tags: List<Tag>, today: LocalDate = LocalDate.now()): List<EntityStat> {
+    fun byTag(
+        periodTasks: List<Task>,
+        allTasks: List<Task>,
+        projects: List<Project>,
+        tags: List<Tag>,
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): List<EntityStat> {
         val periodTasksByTag = periodTasks.groupByTag(projects)
         val allTasksByTag = allTasks.groupByTag(projects)
         return tags.mapNotNull { tag ->
             val tagPeriodTasks = periodTasksByTag[tag.id] ?: emptyList()
             if (tagPeriodTasks.isEmpty()) return@mapNotNull null
             val tagAllTasks = allTasksByTag[tag.id] ?: emptyList()
-            val (overdue, onTimeRate) = overdueAndOnTimeRate(tagPeriodTasks, tagAllTasks, today)
+            val (overdue, onTimeRate) = overdueAndOnTimeRate(tagPeriodTasks, tagAllTasks, today, weekendDays, holidays, observeNonWorkingDays)
             EntityStat(tag.id, tag.name, tag.color, tagPeriodTasks.size, tagPeriodTasks.count { it.done }, overdue, onTimeRate)
         }.sortedByDescending { it.total }
     }
@@ -830,7 +896,10 @@ object AnalyticsUtils {
         tasks: List<Task>,
         people: List<Person>,
         period: AnalyticsPeriod,
-        today: LocalDate = LocalDate.now()
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
     ): List<DelegationStat> {
         val start = periodStart(period, today)
         val byPerson = tasks.groupByAssignee()
@@ -844,7 +913,8 @@ object AnalyticsUtils {
             if (open.isEmpty() && completedInPeriod == 0) return@mapNotNull null
 
             val overdue = open.count { task ->
-                val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+                val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
                 due.isBefore(today)
             }
             val judgeable = theirs.filter { it.done && it.completedAt != null && it.due != null }
@@ -873,7 +943,13 @@ object AnalyticsUtils {
      * see [[com.mj.yata.ui.widgets.AssigneeStack]]), not merely carrying your name anywhere in
      * assigneeIds — a task you own but hand a collaborator on stays "self", since you're still
      * the one accountable for it. */
-    fun delegationSummary(tasks: List<Task>, people: List<Person>): DelegationSummary {
+    fun delegationSummary(
+        tasks: List<Task>,
+        people: List<Person>,
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): DelegationSummary {
         val myId = people.firstOrNull { it.isMe }?.id
         val open = tasks.filter { !it.done }
         var delegated = 0
@@ -892,7 +968,8 @@ object AnalyticsUtils {
         val othersWithOverdue = people.filter { !it.isMe }.count { person ->
             open.any { task ->
                 if (person.id !in task.assigneeIds) return@any false
-                val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@any false
+                val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@any false
                 due.isBefore(LocalDate.now())
             }
         }
@@ -916,7 +993,10 @@ object AnalyticsUtils {
         overdueTrend: MetricTrend? = null,
         onTimeRateTrend: MetricTrend? = null,
         createdInPeriod: Int = 0,
-        completedInPeriod: Int = 0
+        completedInPeriod: Int = 0,
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
     ): List<AnalyticsInsight> {
         val insights = mutableListOf<AnalyticsInsight>()
 
@@ -928,7 +1008,7 @@ object AnalyticsUtils {
         // section, which costs more than the insight is worth.
 
         overdueTrend?.takeIf { abs(it.delta) >= MATERIAL_OVERDUE_CHANGE }?.let { trend ->
-            val nowOverdue = overdueCount(tasks, today)
+            val nowOverdue = overdueCount(tasks, today, weekendDays, holidays, observeNonWorkingDays)
             insights += if (trend.improved) {
                 AnalyticsInsight(
                     headline = "Overdue down ${abs(trend.delta)} this period",

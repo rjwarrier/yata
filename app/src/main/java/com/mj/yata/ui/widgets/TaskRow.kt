@@ -49,6 +49,7 @@ import com.mj.yata.R
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.QuickSnoozePreset
 import com.mj.yata.domain.model.SwipeAction
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.isDeferredOn
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
@@ -116,7 +117,12 @@ fun TaskRow(
     // date, or Tag/Person/Search, which mix tasks from many places at once).
     showDueDate: Boolean = false,
     onQuickSnooze: ((QuickSnoozePreset) -> Unit)? = null,
-    onRenameTask: ((String) -> Unit)? = null
+    onRenameTask: ((String) -> Unit)? = null,
+    // "Observe non-working days" (Settings → Task Defaults → Holidays). Default off so every
+    // existing caller compiles and renders exactly as before until explicitly updated.
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<com.mj.yata.domain.model.Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false
 ) {
     val accents = LocalYataAccents.current
     val listColor = list?.let { accents.getAccent(it.color) } ?: MaterialTheme.colorScheme.primary
@@ -312,16 +318,19 @@ fun TaskRow(
             // preference, so it surfaces on every screen (Today, Upcoming, Tag, Person, Search)
             // rather than only the manual-order List/Project detail screens.
             val today = com.mj.yata.util.AppClock.today
-            val overdue = task.due != null && !task.done && TaskScheduleUtils.parseDate(task.due)?.isBefore(today) == true
+            val effectiveDue = remember(task, weekendDays, holidays, observeNonWorkingDays) {
+                task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+            }
+            val overdue = effectiveDue != null && !task.done && TaskScheduleUtils.parseDate(effectiveDue)?.isBefore(today) == true
             // A deferred task is filtered out of Today, but still listed in its project/list and
             // in search. Without a marker it reads as an ordinary task that Today is inexplicably
             // ignoring, so it gets a badge naming the date it becomes actionable. Takes precedence
             // over "Overdue": a task that is both is waiting, not late — the start date is the
             // reason it hasn't been done, and showing red here would be blaming the user for it.
             val deferred = remember(task, today) { task.isDeferredOn(today.toString()) }
-            val healthBadges = remember(task, overdue, today) {
+            val healthBadges = remember(task, overdue, today, effectiveDue) {
                 buildList {
-                    if (!task.done && task.due == today.toString()) add("Due today")
+                    if (!task.done && effectiveDue == today.toString()) add("Due today")
                     if (!task.done && task.due == null && task.priority == "high") add("Needs date")
                     if (!task.done && task.due == null && task.flag) add("Flagged no date")
                     if (!task.done && task.due == null && task.time == null && task.recurrence == null && task.priority == "none" && !task.flag) add("Unplanned")
