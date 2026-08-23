@@ -308,6 +308,32 @@
     <string name="action_this_can_t_be_undone">ਇਹ ਵਾਪਸ ਨਹੀਂ ਲਿਆ ਜਾ ਸਕਦਾ।</string>
     <string name="analytics_analytics">ਵਿਸ਼ਲੇਸ਼ਣ</string>
     <string name="analytics_has_overdue_tasks">ਬਕਾਇਆ ਕਾਰਜ ਹਨ</string>
+    <string name="analytics_action_high_priority">ਉੱਚ ਤਰਜੀਹ</string>
+    <string name="analytics_action_open_overdue">ਬਕਾਇਆ ਖੋਲ੍ਹੋ</string>
+    <string name="analytics_action_review_postponed">ਮੁਲਤਵੀ ਦੀ ਸਮੀਖਿਆ ਕਰੋ</string>
+    <string name="analytics_overview_all_clear">ਸਭ ਠੀਕ</string>
+    <string name="analytics_overview_all_clear_detail">ਕੋਈ ਬਕਾਇਆ ਕਾਰਜ ਨਹੀਂ। ਤੁਹਾਡਾ ਅਗਲਾ ਕੰਮ ਹੇਠਾਂ ਦਿਖਾਈ ਦੇ ਰਿਹਾ ਹੈ।</string>
+    <string name="analytics_overview_effort_line">%1$s ਇਸ ਹਫ਼ਤੇ ਬਕਾਇਆ, ਕੁੱਲ %2$s ਹਾਲੇ ਵੀ ਖੁੱਲ੍ਹੇ ਵਿੱਚੋਂ</string>
+    <string name="analytics_overview_estimates_complete">ਯੋਜਨਾਬੱਧ ਮਿਹਨਤ ਵਾਲੇ ਸਾਰੇ ਖੁੱਲ੍ਹੇ ਕਾਰਜਾਂ ਦਾ ਅਨੁਮਾਨ ਹੈ।</string>
+    <string name="analytics_overview_needs_attention">ਧਿਆਨ ਦੀ ਲੋੜ</string>
+    <string name="analytics_overview_next_30">ਅਗਲੇ 30 ਦਿਨ</string>
+    <string name="analytics_overview_next_7">ਅਗਲੇ 7 ਦਿਨ</string>
+    <string name="analytics_overview_no_estimates">ਕਾਰਜਭਾਰ ਦੀਆਂ ਭਵਿੱਖਬਾਣੀਆਂ ਨੂੰ ਵਧੇਰੇ ਲਾਭਦਾਇਕ ਬਣਾਉਣ ਲਈ ਕਾਰਜ ਅਨੁਮਾਨ ਸ਼ਾਮਲ ਕਰੋ।</string>
+    <string name="analytics_overview_on_deck">ਆ ਰਿਹਾ ਹੈ</string>
+    <string name="analytics_overview_on_time">ਸਮੇਂ ਸਿਰ</string>
+    <string name="analytics_overview_overdue">ਬਕਾਇਆ</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d ਕਾਰਜ ਅਗਲੇ 7 ਦਿਨਾਂ ਵਿੱਚ ਬਕਾਇਆ ਹੈ। ਹਫ਼ਤਾ ਭਰਨ ਤੋਂ ਪਹਿਲਾਂ ਮਿਹਨਤ ਦੀ ਜਾਂਚ ਕਰੋ।</item>
+        <item quantity="other">%d ਕਾਰਜ ਅਗਲੇ 7 ਦਿਨਾਂ ਵਿੱਚ ਬਕਾਇਆ ਹਨ। ਹਫ਼ਤਾ ਭਰਨ ਤੋਂ ਪਹਿਲਾਂ ਮਿਹਨਤ ਦੀ ਜਾਂਚ ਕਰੋ।</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d ਕਾਰਜ ਪਹਿਲਾਂ ਹੀ ਦੇਰੀ ਨਾਲ ਹੈ। ਬਾਕੀ ਰਿਪੋਰਟ ਪੜ੍ਹਨ ਤੋਂ ਪਹਿਲਾਂ ਇੱਥੋਂ ਸ਼ੁਰੂ ਕਰੋ।</item>
+        <item quantity="other">%d ਕਾਰਜ ਪਹਿਲਾਂ ਹੀ ਦੇਰੀ ਨਾਲ ਹਨ। ਬਾਕੀ ਰਿਪੋਰਟ ਪੜ੍ਹਨ ਤੋਂ ਪਹਿਲਾਂ ਇੱਥੋਂ ਸ਼ੁਰੂ ਕਰੋ।</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d ਖੁੱਲ੍ਹੇ ਕਾਰਜ ਦਾ ਕੋਈ ਅਨੁਮਾਨ ਨਹੀਂ, ਇਸ ਲਈ ਕਾਰਜਭਾਰ ਦਾ ਕੁੱਲ ਅਧੂਰਾ ਹੈ।</item>
+        <item quantity="other">%d ਖੁੱਲ੍ਹੇ ਕਾਰਜਾਂ ਦਾ ਕੋਈ ਅਨੁਮਾਨ ਨਹੀਂ, ਇਸ ਲਈ ਕਾਰਜਭਾਰ ਦਾ ਕੁੱਲ ਅਧੂਰਾ ਹੈ।</item>
+    </plurals>
     <string name="analytics_share_analytics">ਵਿਸ਼ਲੇਸ਼ਣ ਸਾਂਝਾ ਕਰੋ</string>
     <string name="analytics_day_streak">ਦਿਨ ਲੜੀ</string>
     <string name="analytics_days_clean">ਦਿਨ ਸਾਫ਼</string>
@@ -1500,12 +1526,16 @@
     <string name="analytics_most_postponed">ਸਭ ਤੋਂ ਵੱਧ ਮੁਲਤਵੀ</string>
     <string name="analytics_postponed_times">%1$d ਵਾਰ ਮੁਲਤਵੀ ਕੀਤਾ ਗਿਆ</string>
     <string name="analytics_no_postponed_tasks">ਅਜੇ ਤੱਕ ਕੋਈ ਮੁਲਤਵੀ ਕੰਮ ਨਹੀਂ ਹੈ।</string>
-    <string name="task_postponement_warning">"%1$s" ਨੂੰ %2$d ਵਾਰ ਮੁਲਤਵੀ ਕੀਤਾ ਗਿਆ ਹੈ।</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" ਨੂੰ %2$d ਵਾਰ ਮੁਲਤਵੀ ਕੀਤਾ ਗਿਆ ਹੈ।</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" ਹੁਣ ਵੀਕਐਂਡ (%2$s) ਨੂੰ ਨਿਯਤ ਹੈ।</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d ਵਾਰ</item>
         <item quantity="other">%1$d ਵਾਰ</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">ਮੁਲਤਵੀ ਚੇਤਾਵਨੀ ਸੀਮਾ</string>
     <string name="settings_postponement_warning_threshold_desc">ਚੇਤਾਵਨੀ ਦੇਣ ਤੋਂ ਪਹਿਲਾਂ ਆਮ ਤਰਜੀਹ ਵਾਲੇ ਕੰਮ ਨੂੰ ਕਿੰਨੀ ਵਾਰ ਮੁਲਤਵੀ ਕੀਤਾ ਜਾ ਸਕਦਾ ਹੈ। ਦਰਮਿਆਨੀ ਤਰਜੀਹ %1$d ਵਾਰ ਬਾਅਦ ਅਤੇ ਉੱਚ ਤਰਜੀਹ %2$d ਵਾਰ ਬਾਅਦ ਚੇਤਾਵਨੀ ਦਿੰਦੀ ਹੈ।</string>
+    <string name="settings_weekend_days">ਵੀਕਐਂਡ ਦੇ ਦਿਨ</string>
+    <string name="settings_weekend_days_desc">ਕਿਸੇ ਕੰਮ ਨੂੰ ਇਹਨਾਂ ਦਿਨਾਂ ਵਿੱਚੋਂ ਕਿਸੇ ਇੱਕ \'ਤੇ ਮੁੜ-ਤਹਿ ਕਰਨ \'ਤੇ ਇੱਕ ਚੇਤਾਵਨੀ ਦਿਖਾਈ ਦੇਵੇਗੀ। ਚੇਤਾਵਨੀ ਬੰਦ ਕਰਨ ਲਈ ਸਾਰੇ ਦਿਨ ਬੰਦ ਕਰੋ।</string>
     <string name="action_reopen">ਦੁਬਾਰਾ ਖੋਲ੍ਹੋ</string>
     <string name="action_complete">ਪੂਰਾ ਕਰੋ</string>
     <string name="action_open">ਖੋਲ੍ਹੋ</string>

@@ -393,6 +393,32 @@
     <string name="action_this_can_t_be_undone">इसे पूर्ववत नहीं किया जा सकता।</string>
     <string name="analytics_analytics">विश्लेषण</string>
     <string name="analytics_has_overdue_tasks">समयसीमातीत कार्य हैं</string>
+    <string name="analytics_action_high_priority">उच्च प्राथमिकता</string>
+    <string name="analytics_action_open_overdue">समयसीमातीत खोलें</string>
+    <string name="analytics_action_review_postponed">स्थगित की समीक्षा करें</string>
+    <string name="analytics_overview_all_clear">सब ठीक</string>
+    <string name="analytics_overview_all_clear_detail">कोई समयसीमातीत कार्य नहीं है। आपका अगला काम नीचे दिख रहा है।</string>
+    <string name="analytics_overview_effort_line">%1$s इस सप्ताह देय, कुल %2$s अभी भी खुले में से</string>
+    <string name="analytics_overview_estimates_complete">नियोजित प्रयास वाले सभी खुले कार्यों में अनुमान है।</string>
+    <string name="analytics_overview_needs_attention">ध्यान चाहिए</string>
+    <string name="analytics_overview_next_30">अगले 30 दिन</string>
+    <string name="analytics_overview_next_7">अगले 7 दिन</string>
+    <string name="analytics_overview_no_estimates">कार्यभार पूर्वानुमान को अधिक उपयोगी बनाने के लिए कार्य अनुमान जोड़ें।</string>
+    <string name="analytics_overview_on_deck">आगे आ रहा</string>
+    <string name="analytics_overview_on_time">समय पर</string>
+    <string name="analytics_overview_overdue">समयसीमातीत</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d कार्य अगले 7 दिनों में देय है। सप्ताह भरने से पहले प्रयास जांच लें।</item>
+        <item quantity="other">%d कार्य अगले 7 दिनों में देय हैं। सप्ताह भरने से पहले प्रयास जांच लें।</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d कार्य पहले ही देर हो चुका है। बाकी रिपोर्ट पढ़ने से पहले यहां से शुरू करें।</item>
+        <item quantity="other">%d कार्य पहले ही देर हो चुके हैं। बाकी रिपोर्ट पढ़ने से पहले यहां से शुरू करें।</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d खुले कार्य का कोई अनुमान नहीं है, इसलिए कार्यभार का कुल आंशिक है।</item>
+        <item quantity="other">%d खुले कार्यों का कोई अनुमान नहीं है, इसलिए कार्यभार का कुल आंशिक है।</item>
+    </plurals>
     <string name="analytics_share_analytics">विश्लेषण साझा करें</string>
     <string name="analytics_day_streak">दिन की लगातार गिनती</string>
     <string name="analytics_days_clean">बिना चूक के दिन</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">सर्वाधिक स्थगित</string>
     <string name="analytics_postponed_times">%1$d बार स्थगित किया गया</string>
     <string name="analytics_no_postponed_tasks">अभी तक कोई स्थगित कार्य नहीं है।</string>
-    <string name="task_postponement_warning">"%1$s" को %2$d बार स्थगित किया गया है।</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" को %2$d बार स्थगित किया गया है।</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" अब सप्ताहांत (%2$s) को नियत है।</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d बार</item>
         <item quantity="other">%1$d बार</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">स्थगन चेतावनी सीमा</string>
     <string name="settings_postponement_warning_threshold_desc">चेतावनी देने से पहले सामान्य प्राथमिकता वाले कार्य को कितनी बार स्थगित किया जा सकता है। मध्यम प्राथमिकता %1$d बार के बाद और उच्च प्राथमिकता %2$d बार के बाद चेतावनी देती है।</string>
+    <string name="settings_weekend_days">सप्ताहांत के दिन</string>
+    <string name="settings_weekend_days_desc">किसी कार्य को इनमें से किसी दिन पर पुनर्निर्धारित करने पर एक चेतावनी दिखेगी। चेतावनी बंद करने के लिए सभी दिन बंद करें।</string>
     <string name="action_reopen">फिर से खोलें</string>
     <string name="action_complete">पूरा करें</string>
     <string name="action_open">खोलें</string>

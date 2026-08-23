@@ -669,6 +669,32 @@
     <string name="action_this_can_t_be_undone">No se puede deshacer.</string>
     <string name="analytics_analytics">Analíticas</string>
     <string name="analytics_has_overdue_tasks">Tiene tareas atrasadas</string>
+    <string name="analytics_action_high_priority">Alta prioridad</string>
+    <string name="analytics_action_open_overdue">Abrir atrasadas</string>
+    <string name="analytics_action_review_postponed">Revisar pospuestas</string>
+    <string name="analytics_overview_all_clear">Todo despejado</string>
+    <string name="analytics_overview_all_clear_detail">No hay tareas atrasadas. Tu próximo trabajo aparece abajo.</string>
+    <string name="analytics_overview_effort_line">%1$s vencen esta semana de %2$s aún abiertas</string>
+    <string name="analytics_overview_estimates_complete">Todas las tareas abiertas con esfuerzo planeado tienen estimación.</string>
+    <string name="analytics_overview_needs_attention">Necesita atención</string>
+    <string name="analytics_overview_next_30">próximos 30 días</string>
+    <string name="analytics_overview_next_7">próximos 7 días</string>
+    <string name="analytics_overview_no_estimates">Añade estimaciones a las tareas para hacer más útiles las previsiones de carga.</string>
+    <string name="analytics_overview_on_deck">En camino</string>
+    <string name="analytics_overview_on_time">a tiempo</string>
+    <string name="analytics_overview_overdue">atrasadas</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d tarea vence en los próximos 7 días. Revisa el esfuerzo antes de que se llene la semana.</item>
+        <item quantity="other">%d tareas vencen en los próximos 7 días. Revisa el esfuerzo antes de que se llene la semana.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d tarea ya está atrasada. Empieza aquí antes de leer el resto del informe.</item>
+        <item quantity="other">%d tareas ya están atrasadas. Empieza aquí antes de leer el resto del informe.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d tarea abierta no tiene estimación, así que los totales de carga son parciales.</item>
+        <item quantity="other">%d tareas abiertas no tienen estimación, así que los totales de carga son parciales.</item>
+    </plurals>
     <string name="analytics_share_analytics">Compartir analíticas</string>
     <string name="cd_add_subtask">Añadir subtarea</string>
     <string name="cd_add_task">Añadir tarea</string>
@@ -1549,12 +1575,16 @@
     <string name="analytics_most_postponed">MÁS POSPUESTAS</string>
     <string name="analytics_postponed_times">Pospuesta %1$d veces</string>
     <string name="analytics_no_postponed_tasks">Aún no hay tareas pospuestas.</string>
-    <string name="task_postponement_warning">«%1$s» se ha pospuesto %2$d veces.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">«%1$s» se ha pospuesto %2$d veces.</string>
+    <string name="task_weekend_reschedule_warning">«%1$s» ahora vence en fin de semana (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d vez</item>
         <item quantity="other">%1$d veces</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Límite de aviso por posposición</string>
     <string name="settings_postponement_warning_threshold_desc">Número de veces que se puede posponer una tarea de prioridad normal antes de avisar. La prioridad media avisa tras %1$d y la alta tras %2$d.</string>
+    <string name="settings_weekend_days">Días de fin de semana</string>
+    <string name="settings_weekend_days_desc">Si reprogramas una tarea a uno de estos días, se mostrará una advertencia. Desactiva todos los días para desactivar la advertencia.</string>
     <string name="action_reopen">Reabrir</string>
     <string name="action_complete">Completar</string>
     <string name="action_open">Abrir</string>

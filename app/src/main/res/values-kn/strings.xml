@@ -308,6 +308,32 @@
     <string name="action_this_can_t_be_undone">ಇದನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗುವುದಿಲ್ಲ.</string>
     <string name="analytics_analytics">ವಿಶ್ಲೇಷಣೆ</string>
     <string name="analytics_has_overdue_tasks">ವಿಳಂಬಿತ ಕಾರ್ಯಗಳಿವೆ</string>
+    <string name="analytics_action_high_priority">ಹೆಚ್ಚಿನ ಆದ್ಯತೆ</string>
+    <string name="analytics_action_open_overdue">ವಿಳಂಬಿತ ತೆರೆಯಿರಿ</string>
+    <string name="analytics_action_review_postponed">ಮುಂದೂಡಿದವುಗಳನ್ನು ಪರಿಶೀಲಿಸಿ</string>
+    <string name="analytics_overview_all_clear">ಎಲ್ಲವೂ ಸರಿಯಾಗಿದೆ</string>
+    <string name="analytics_overview_all_clear_detail">ಯಾವುದೇ ವಿಳಂಬಿತ ಕಾರ್ಯಗಳಿಲ್ಲ. ನಿಮ್ಮ ಮುಂದಿನ ಕೆಲಸ ಕೆಳಗೆ ಕಾಣಿಸುತ್ತದೆ.</string>
+    <string name="analytics_overview_effort_line">%1$s ಈ ವಾರ ಬಾಕಿ, ಒಟ್ಟು %2$s ಇನ್ನೂ ತೆರೆದಿರುವುದರಲ್ಲಿ</string>
+    <string name="analytics_overview_estimates_complete">ಯೋಜಿತ ಪ್ರಯತ್ನವಿರುವ ಎಲ್ಲಾ ತೆರೆದ ಕಾರ್ಯಗಳಿಗೆ ಅಂದಾಜು ಇದೆ.</string>
+    <string name="analytics_overview_needs_attention">ಗಮನ ಬೇಕು</string>
+    <string name="analytics_overview_next_30">ಮುಂದಿನ 30 ದಿನಗಳು</string>
+    <string name="analytics_overview_next_7">ಮುಂದಿನ 7 ದಿನಗಳು</string>
+    <string name="analytics_overview_no_estimates">ಕೆಲಸದ ಹೊರೆಯ ಮುನ್ಸೂಚನೆಗಳನ್ನು ಹೆಚ್ಚು ಉಪಯುಕ್ತಗೊಳಿಸಲು ಕಾರ್ಯ ಅಂದಾಜುಗಳನ್ನು ಸೇರಿಸಿ.</string>
+    <string name="analytics_overview_on_deck">ಮುಂದೆ ಬರುತ್ತಿದೆ</string>
+    <string name="analytics_overview_on_time">ಸಮಯಕ್ಕೆ</string>
+    <string name="analytics_overview_overdue">ವಿಳಂಬಿತ</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d ಕಾರ್ಯ ಮುಂದಿನ 7 ದಿನಗಳಲ್ಲಿ ಬಾಕಿ ಇದೆ. ವಾರ ತುಂಬುವ ಮೊದಲು ಪ್ರಯತ್ನ ಪರಿಶೀಲಿಸಿ.</item>
+        <item quantity="other">%d ಕಾರ್ಯಗಳು ಮುಂದಿನ 7 ದಿನಗಳಲ್ಲಿ ಬಾಕಿ ಇವೆ. ವಾರ ತುಂಬುವ ಮೊದಲು ಪ್ರಯತ್ನ ಪರಿಶೀಲಿಸಿ.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d ಕಾರ್ಯ ಈಗಾಗಲೇ ವಿಳಂಬವಾಗಿದೆ. ಉಳಿದ ವರದಿಯನ್ನು ಓದುವ ಮೊದಲು ಇಲ್ಲಿಂದ ಪ್ರಾರಂಭಿಸಿ.</item>
+        <item quantity="other">%d ಕಾರ್ಯಗಳು ಈಗಾಗಲೇ ವಿಳಂಬವಾಗಿವೆ. ಉಳಿದ ವರದಿಯನ್ನು ಓದುವ ಮೊದಲು ಇಲ್ಲಿಂದ ಪ್ರಾರಂಭಿಸಿ.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d ತೆರೆದ ಕಾರ್ಯಕ್ಕೆ ಅಂದಾಜು ಇಲ್ಲ, ಆದ್ದರಿಂದ ಕೆಲಸದ ಹೊರೆಯ ಒಟ್ಟು ಅಪೂರ್ಣವಾಗಿದೆ.</item>
+        <item quantity="other">%d ತೆರೆದ ಕಾರ್ಯಗಳಿಗೆ ಅಂದಾಜು ಇಲ್ಲ, ಆದ್ದರಿಂದ ಕೆಲಸದ ಹೊರೆಯ ಒಟ್ಟು ಅಪೂರ್ಣವಾಗಿದೆ.</item>
+    </plurals>
     <string name="analytics_share_analytics">ವಿಶ್ಲೇಷಣೆ ಹಂಚಿಕೊಳ್ಳಿ</string>
     <string name="analytics_day_streak">ದಿನಗಳ ಸರಣಿ</string>
     <string name="analytics_days_clean">ಸ್ವಚ್ಛ ದಿನಗಳು</string>
@@ -1500,12 +1526,16 @@
     <string name="analytics_most_postponed">ಹೆಚ್ಚು ಮುಂದೂಡಲಾದವು</string>
     <string name="analytics_postponed_times">%1$d ಬಾರಿ ಮುಂದೂಡಲಾಗಿದೆ</string>
     <string name="analytics_no_postponed_tasks">ಇನ್ನೂ ಯಾವುದೇ ಮುಂದೂಡಲಾದ ಕಾರ್ಯಗಳಿಲ್ಲ.</string>
-    <string name="task_postponement_warning">"%1$s" ಅನ್ನು %2$d ಬಾರಿ ಮುಂದೂಡಲಾಗಿದೆ.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" ಅನ್ನು %2$d ಬಾರಿ ಮುಂದೂಡಲಾಗಿದೆ.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" ಈಗ ವಾರಾಂತ್ಯದಂದು (%2$s) ಗಡುವು ಹೊಂದಿದೆ.</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d ಬಾರಿ</item>
         <item quantity="other">%1$d ಬಾರಿ</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">ಮುಂದೂಡಿಕೆ ಎಚ್ಚರಿಕೆ ಮಿತಿ</string>
     <string name="settings_postponement_warning_threshold_desc">ಎಚ್ಚರಿಕೆ ನೀಡುವ ಮೊದಲು ಸಾಮಾನ್ಯ ಆದ್ಯತೆಯ ಕಾರ್ಯವನ್ನು ಎಷ್ಟು ಬಾರಿ ಮುಂದೂಡಬಹುದು. ಮಧ್ಯಮ ಆದ್ಯತೆಯು %1$d ನಂತರ ಮತ್ತು ಹೆಚ್ಚಿನ ಆದ್ಯತೆಯು %2$d ನಂತರ ಎಚ್ಚರಿಸುತ್ತದೆ.</string>
+    <string name="settings_weekend_days">ವಾರಾಂತ್ಯದ ದಿನಗಳು</string>
+    <string name="settings_weekend_days_desc">ಈ ದಿನಗಳಲ್ಲಿ ಒಂದಕ್ಕೆ ಕಾರ್ಯವನ್ನು ಮರುಹೊಂದಿಸಿದಾಗ ಎಚ್ಚರಿಕೆ ತೋರಿಸುತ್ತದೆ. ಎಚ್ಚರಿಕೆಯನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲು ಎಲ್ಲಾ ದಿನಗಳನ್ನು ಆಫ್ ಮಾಡಿ.</string>
     <string name="action_reopen">ಪುನಃ ತೆರೆಯಿರಿ</string>
     <string name="action_complete">ಪೂರ್ಣಗೊಳಿಸಿ</string>
     <string name="action_open">ತೆರೆಯಿರಿ</string>

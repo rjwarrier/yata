@@ -313,6 +313,32 @@
     <string name="action_this_can_t_be_undone">Această acțiune nu poate fi anulată.</string>
     <string name="analytics_analytics">Analiză</string>
     <string name="analytics_has_overdue_tasks">Are sarcini restante</string>
+    <string name="analytics_action_high_priority">Prioritate ridicată</string>
+    <string name="analytics_action_open_overdue">Deschide restante</string>
+    <string name="analytics_action_review_postponed">Revizuiește amânate</string>
+    <string name="analytics_overview_all_clear">Totul e în regulă</string>
+    <string name="analytics_overview_all_clear_detail">Nicio sarcină restantă. Următoarea ta activitate este vizibilă mai jos.</string>
+    <string name="analytics_overview_effort_line">%1$s scadente săptămâna aceasta din %2$s încă deschise</string>
+    <string name="analytics_overview_estimates_complete">Toate sarcinile deschise cu efort planificat au o estimare.</string>
+    <string name="analytics_overview_needs_attention">Necesită atenție</string>
+    <string name="analytics_overview_next_30">următoarele 30 de zile</string>
+    <string name="analytics_overview_next_7">următoarele 7 zile</string>
+    <string name="analytics_overview_no_estimates">Adaugă estimări sarcinilor pentru a face previziunile de volum de muncă mai utile.</string>
+    <string name="analytics_overview_on_deck">Urmează</string>
+    <string name="analytics_overview_on_time">la timp</string>
+    <string name="analytics_overview_overdue">restante</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d sarcină are termen în următoarele 7 zile. Verifică efortul înainte ca săptămâna să se umple.</item>
+        <item quantity="other">%d sarcini au termen în următoarele 7 zile. Verifică efortul înainte ca săptămâna să se umple.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d sarcină este deja întârziată. Începe de aici înainte de a citi restul raportului.</item>
+        <item quantity="other">%d sarcini sunt deja întârziate. Începe de aici înainte de a citi restul raportului.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d sarcină deschisă nu are estimare, deci totalurile de volum de muncă sunt parțiale.</item>
+        <item quantity="other">%d sarcini deschise nu au estimare, deci totalurile de volum de muncă sunt parțiale.</item>
+    </plurals>
     <string name="analytics_share_analytics">Distribuie analiza</string>
     <string name="analytics_day_streak">zile la rând</string>
     <string name="analytics_days_clean">zile fără restanțe</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">CELE MAI AMÂNATE</string>
     <string name="analytics_postponed_times">Amânată de %1$d ori</string>
     <string name="analytics_no_postponed_tasks">Nu există sarcini amânate încă.</string>
-    <string name="task_postponement_warning">„%1$s” a fost amânată de %2$d ori.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">„%1$s” a fost amânată de %2$d ori.</string>
+    <string name="task_weekend_reschedule_warning">„%1$s” are acum termenul în weekend (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d dată</item>
         <item quantity="other">%1$d ori</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Prag avertizare amânare</string>
     <string name="settings_postponement_warning_threshold_desc">Numărul de amânări pentru o sarcină cu prioritate normală înainte de avertizare. Prioritatea medie avertizează după %1$d, iar prioritatea ridicată după %2$d.</string>
+    <string name="settings_weekend_days">Zile de weekend</string>
+    <string name="settings_weekend_days_desc">Reprogramarea unei sarcini într-una dintre aceste zile afișează un avertisment. Dezactivează toate zilele pentru a dezactiva avertismentul.</string>
     <string name="action_reopen">Redeschide</string>
     <string name="action_complete">Finalizează</string>
     <string name="action_open">Deschide</string>

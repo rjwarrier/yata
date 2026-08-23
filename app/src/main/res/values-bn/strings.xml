@@ -313,6 +313,32 @@
     <string name="action_this_can_t_be_undone">এটি পূর্বাবস্থায় ফেরানো যাবে না।</string>
     <string name="analytics_analytics">বিশ্লেষণ</string>
     <string name="analytics_has_overdue_tasks">বকেয়া টাস্ক আছে</string>
+    <string name="analytics_action_high_priority">উচ্চ অগ্রাধিকার</string>
+    <string name="analytics_action_open_overdue">বকেয়া খুলুন</string>
+    <string name="analytics_action_review_postponed">স্থগিত পর্যালোচনা করুন</string>
+    <string name="analytics_overview_all_clear">সব পরিষ্কার</string>
+    <string name="analytics_overview_all_clear_detail">কোনো বকেয়া কাজ নেই। আপনার পরবর্তী কাজ নিচে দেখা যাচ্ছে।</string>
+    <string name="analytics_overview_effort_line">%1$s এই সপ্তাহে বাকি, মোট %2$s এখনো খোলা আছে তার মধ্যে</string>
+    <string name="analytics_overview_estimates_complete">পরিকল্পিত প্রচেষ্টাযুক্ত সব খোলা কাজের অনুমান দেওয়া আছে।</string>
+    <string name="analytics_overview_needs_attention">মনোযোগ প্রয়োজন</string>
+    <string name="analytics_overview_next_30">পরবর্তী ৩০ দিন</string>
+    <string name="analytics_overview_next_7">পরবর্তী ৭ দিন</string>
+    <string name="analytics_overview_no_estimates">কর্মভার পূর্বাভাস আরও কার্যকর করতে কাজের অনুমান যোগ করুন।</string>
+    <string name="analytics_overview_on_deck">শীঘ্রই আসছে</string>
+    <string name="analytics_overview_on_time">সময়মতো</string>
+    <string name="analytics_overview_overdue">বকেয়া</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d কাজ পরবর্তী ৭ দিনে বাকি। সপ্তাহ ভরে যাওয়ার আগে প্রচেষ্টা দেখে নিন।</item>
+        <item quantity="other">%d কাজ পরবর্তী ৭ দিনে বাকি। সপ্তাহ ভরে যাওয়ার আগে প্রচেষ্টা দেখে নিন।</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d কাজ ইতিমধ্যে দেরি হয়ে গেছে। বাকি প্রতিবেদন পড়ার আগে এখান থেকে শুরু করুন।</item>
+        <item quantity="other">%d কাজ ইতিমধ্যে দেরি হয়ে গেছে। বাকি প্রতিবেদন পড়ার আগে এখান থেকে শুরু করুন।</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d খোলা কাজের কোনো অনুমান নেই, তাই কর্মভারের মোট আংশিক।</item>
+        <item quantity="other">%d খোলা কাজের কোনো অনুমান নেই, তাই কর্মভারের মোট আংশিক।</item>
+    </plurals>
     <string name="analytics_share_analytics">বিশ্লেষণ শেয়ার করুন</string>
     <string name="analytics_day_streak">দিনের ধারা</string>
     <string name="analytics_days_clean">নির্মল দিন</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">সর্বাধিক স্থগিত</string>
     <string name="analytics_postponed_times">%1$d বার স্থগিত করা হয়েছে</string>
     <string name="analytics_no_postponed_tasks">এখনও কোনও স্থগিত কাজ নেই।</string>
-    <string name="task_postponement_warning">"%1$s" %2$d বার স্থগিত করা হয়েছে।</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" %2$d বার স্থগিত করা হয়েছে।</string>
+    <string name="task_weekend_reschedule_warning">"%1$s"-এর নতুন শেষ তারিখ এখন সাপ্তাহিক ছুটির দিনে (%2$s) পড়ছে।</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d বার</item>
         <item quantity="other">%1$d বার</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">স্থগিতাদেশ সতর্কবার্তা সীমা</string>
     <string name="settings_postponement_warning_threshold_desc">সতর্কতা দেখানোর আগে একটি স্বাভাবিক অগ্রাধিকারের কাজ যতবার স্থগিত করা যেতে পারে। মাঝারি অগ্রাধিকারে %1$d বার এবং উচ্চ অগ্রাধিকারে %2$d বার পর সতর্ক করা হয়।</string>
+    <string name="settings_weekend_days">সাপ্তাহিক ছুটির দিন</string>
+    <string name="settings_weekend_days_desc">কোনো কাজ পুনঃনির্ধারণ করে এই দিনগুলোর কোনো একটিতে আনলে একটি সতর্কতা দেখানো হবে। সতর্কতা বন্ধ করতে সবগুলো দিন বন্ধ করুন।</string>
     <string name="action_reopen">পুনরায় খুলুন</string>
     <string name="action_complete">সম্পন্ন করুন</string>
     <string name="action_open">খুলুন</string>

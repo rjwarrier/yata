@@ -308,6 +308,32 @@
     <string name="action_this_can_t_be_undone">આ પૂર્વવત્ થઈ શકતું નથી.</string>
     <string name="analytics_analytics">એનાલિટિક્સ</string>
     <string name="analytics_has_overdue_tasks">મુદતવીતી ટાસ્ક ધરાવે છે</string>
+    <string name="analytics_action_high_priority">ઉચ્ચ પ્રાધાન્ય</string>
+    <string name="analytics_action_open_overdue">મુદતવીતી ખોલો</string>
+    <string name="analytics_action_review_postponed">મોકૂફ સમીક્ષા કરો</string>
+    <string name="analytics_overview_all_clear">બધું સાફ</string>
+    <string name="analytics_overview_all_clear_detail">કોઈ મુદતવીતી કાર્ય નથી. તમારું આગલું કાર્ય નીચે દેખાય છે.</string>
+    <string name="analytics_overview_effort_line">%1$s આ અઠવાડિયે બાકી, કુલ %2$s હજુ ખુલ્લામાંથી</string>
+    <string name="analytics_overview_estimates_complete">આયોજિત પ્રયત્નવાળા બધા ખુલ્લા કાર્યોમાં અંદાજ છે.</string>
+    <string name="analytics_overview_needs_attention">ધ્યાન જરૂરી</string>
+    <string name="analytics_overview_next_30">આગામી 30 દિવસ</string>
+    <string name="analytics_overview_next_7">આગામી 7 દિવસ</string>
+    <string name="analytics_overview_no_estimates">કાર્યભારની આગાહીઓ વધુ ઉપયોગી બનાવવા કાર્ય અંદાજો ઉમેરો.</string>
+    <string name="analytics_overview_on_deck">આગળ આવી રહ્યું</string>
+    <string name="analytics_overview_on_time">સમયસર</string>
+    <string name="analytics_overview_overdue">મુદતવીતી</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d કાર્ય આગામી 7 દિવસમાં બાકી છે. અઠવાડિયું ભરાય એ પહેલાં પ્રયત્ન તપાસો.</item>
+        <item quantity="other">%d કાર્યો આગામી 7 દિવસમાં બાકી છે. અઠવાડિયું ભરાય એ પહેલાં પ્રયત્ન તપાસો.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d કાર્ય પહેલેથી જ મોડું છે. બાકીનો અહેવાલ વાંચતા પહેલા અહીંથી શરૂ કરો.</item>
+        <item quantity="other">%d કાર્યો પહેલેથી જ મોડા છે. બાકીનો અહેવાલ વાંચતા પહેલા અહીંથી શરૂ કરો.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d ખુલ્લા કાર્યનો કોઈ અંદાજ નથી, તેથી કાર્યભારના કુલ આંશિક છે.</item>
+        <item quantity="other">%d ખુલ્લા કાર્યોનો કોઈ અંદાજ નથી, તેથી કાર્યભારના કુલ આંશિક છે.</item>
+    </plurals>
     <string name="analytics_share_analytics">એનાલિટિક્સ શેર કરો</string>
     <string name="analytics_day_streak">દિવસ સ્ટ્રીક</string>
     <string name="analytics_days_clean">દિવસ ચોખ્ખા</string>
@@ -1500,12 +1526,16 @@
     <string name="analytics_most_postponed">સૌથી વધુ મોકૂફ</string>
     <string name="analytics_postponed_times">%1$d વખત મોકૂફ રાખવામાં આવ્યું</string>
     <string name="analytics_no_postponed_tasks">હજી સુધી કોઈ મોકૂફ કાર્ય નથી.</string>
-    <string name="task_postponement_warning">"%1$s" %2$d વખત મોકૂફ રાખવામાં આવ્યું છે.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" %2$d વખત મોકૂફ રાખવામાં આવ્યું છે.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s"-ની નવી નિયત તારીખ હવે સપ્તાહાંત (%2$s) પર છે.</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d વખત</item>
         <item quantity="other">%1$d વખત</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">મોકૂફી ચેતવણી મર્યાદા</string>
     <string name="settings_postponement_warning_threshold_desc">ચેતવણી આપતા પહેલા સામાન્ય પ્રાથમિકતાવાળા કાર્યને કેટલી વાર મોકૂફ રાખી શકાય. મધ્યમ પ્રાથમિકતા %1$d વખત પછી અને ઉચ્ચ પ્રાથમિકતા %2$d વખત પછી ચેતવણી આપે છે.</string>
+    <string name="settings_weekend_days">સપ્તાહાંતના દિવસો</string>
+    <string name="settings_weekend_days_desc">કોઈ કાર્યને આ દિવસોમાંથી કોઈ એક પર ફરીથી શેડ્યૂલ કરવાથી ચેતવણી બતાવવામાં આવશે. ચેતવણી બંધ કરવા બધા દિવસો બંધ કરો.</string>
     <string name="action_reopen">ફરીથી ખોલો</string>
     <string name="action_complete">પૂર્ણ કરો</string>
     <string name="action_open">ખોલો</string>

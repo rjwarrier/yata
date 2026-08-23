@@ -504,12 +504,20 @@ data class PostponementWarning(
     val postponementCount: Int
 )
 
+data class WeekendRescheduleWarning(
+    val taskTitle: String,
+    val dayLabel: String
+)
+
     // Data streams
     val tasks: StateFlow<List<Task>> = repository.getTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _postponementWarnings = MutableSharedFlow<PostponementWarning>()
     val postponementWarnings: SharedFlow<PostponementWarning> = _postponementWarnings.asSharedFlow()
+
+    private val _weekendRescheduleWarnings = MutableSharedFlow<WeekendRescheduleWarning>()
+    val weekendRescheduleWarnings: SharedFlow<WeekendRescheduleWarning> = _weekendRescheduleWarnings.asSharedFlow()
 
     val projects: StateFlow<List<Project>> = repository.getProjects()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -1023,6 +1031,9 @@ data class PostponementWarning(
             DEFAULT_POSTPONEMENT_WARNING_THRESHOLD
         )
 
+    val weekendDays: StateFlow<Set<String>> = userPreferences.weekendDaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_WEEKEND_DAYS)
+
     val subtaskCompletionAction: StateFlow<com.mj.yata.domain.model.SubtaskCompletionAction> =
         userPreferences.subtaskCompletionActionFlow
             .stateIn(
@@ -1142,6 +1153,10 @@ data class PostponementWarning(
 
     fun setPostponementWarningThreshold(threshold: Int) {
         safeLaunch { userPreferences.setPostponementWarningThreshold(threshold) }
+    }
+
+    fun setWeekendDays(days: Set<String>) {
+        safeLaunch { userPreferences.setWeekendDays(days) }
     }
 
     fun setDefaultProjectId(id: String) {
@@ -1769,6 +1784,7 @@ data class PostponementWarning(
             if (updated.postponementCount > (previous?.postponementCount ?: 0)) {
                 warnIfPostponedOften(updated)
             }
+            warnIfRescheduledToWeekend(previous?.due, updated)
         }
     }
 
@@ -1830,14 +1846,27 @@ data class PostponementWarning(
 
     fun quickSnoozeTask(id: String, preset: QuickSnoozePreset) {
         safeLaunch {
-            taskOperations.quickSnooze(id, preset)?.let { warnIfPostponedOften(it) }
+            val previous = tasks.value.find { it.id == id }
+            taskOperations.quickSnooze(id, preset)?.let { updated ->
+                if (updated.postponementCount > (previous?.postponementCount ?: 0)) {
+                    warnIfPostponedOften(updated)
+                }
+                warnIfRescheduledToWeekend(previous?.due, updated)
+            }
             userPreferences.recordRecentTask(id)
         }
     }
 
     fun bulkRescheduleTasks(ids: List<String>, preset: QuickSnoozePreset) {
         safeLaunch {
-            taskOperations.bulkReschedule(ids, preset).forEach { warnIfPostponedOften(it) }
+            val previousById = tasks.value.filter { it.id in ids }.associateBy { it.id }
+            taskOperations.bulkReschedule(ids, preset).forEach { updated ->
+                val previous = previousById[updated.id]
+                if (updated.postponementCount > (previous?.postponementCount ?: 0)) {
+                    warnIfPostponedOften(updated)
+                }
+                warnIfRescheduledToWeekend(previous?.due, updated)
+            }
             ids.take(8).forEach { userPreferences.recordRecentTask(it) }
         }
     }
@@ -1848,6 +1877,20 @@ data class PostponementWarning(
         if (task.postponementCount >= effectiveThreshold) {
             _postponementWarnings.emit(PostponementWarning(task.title, task.postponementCount))
         }
+    }
+
+    /** Independent of [warnIfPostponedOften] — this fires on where the task landed, not on
+     * whether the move counted as a postponement, so a reschedule to an *earlier* weekend date
+     * still warns even though it never touches the postponement counter. */
+    private suspend fun warnIfRescheduledToWeekend(previousDue: String?, task: Task) {
+        val weekendDays = userPreferences.weekendDaysFlow.first()
+        if (!isRescheduledToWeekend(previousDue, task.due, weekendDays)) return
+        val date = java.time.LocalDate.parse(task.due)
+        val dayLabel = date.dayOfWeek.getDisplayName(
+            java.time.format.TextStyle.FULL,
+            java.util.Locale.getDefault()
+        )
+        _weekendRescheduleWarnings.emit(WeekendRescheduleWarning(task.title, dayLabel))
     }
 
     fun deleteTask(task: Task) {

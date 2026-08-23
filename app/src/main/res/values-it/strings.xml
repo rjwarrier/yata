@@ -313,6 +313,32 @@
     <string name="action_this_can_t_be_undone">Questa azione non può essere annullata.</string>
     <string name="analytics_analytics">Statistiche</string>
     <string name="analytics_has_overdue_tasks">Ha attività in ritardo</string>
+    <string name="analytics_action_high_priority">Priorità alta</string>
+    <string name="analytics_action_open_overdue">Apri in ritardo</string>
+    <string name="analytics_action_review_postponed">Rivedi posticipate</string>
+    <string name="analytics_overview_all_clear">Tutto a posto</string>
+    <string name="analytics_overview_all_clear_detail">Nessuna attività in ritardo. Il prossimo lavoro è visibile qui sotto.</string>
+    <string name="analytics_overview_effort_line">%1$s in scadenza questa settimana su %2$s ancora aperte</string>
+    <string name="analytics_overview_estimates_complete">Tutte le attività aperte con impegno pianificato hanno una stima.</string>
+    <string name="analytics_overview_needs_attention">Richiede attenzione</string>
+    <string name="analytics_overview_next_30">prossimi 30 giorni</string>
+    <string name="analytics_overview_next_7">prossimi 7 giorni</string>
+    <string name="analytics_overview_no_estimates">Aggiungi stime alle attività per rendere più utili le previsioni del carico di lavoro.</string>
+    <string name="analytics_overview_on_deck">In arrivo</string>
+    <string name="analytics_overview_on_time">in orario</string>
+    <string name="analytics_overview_overdue">in ritardo</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d attività scade nei prossimi 7 giorni. Controlla l\'impegno prima che la settimana si riempia.</item>
+        <item quantity="other">%d attività scadono nei prossimi 7 giorni. Controlla l\'impegno prima che la settimana si riempia.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d attività è già in ritardo. Inizia da qui prima di leggere il resto del report.</item>
+        <item quantity="other">%d attività sono già in ritardo. Inizia da qui prima di leggere il resto del report.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d attività aperta non ha una stima, quindi i totali del carico di lavoro sono parziali.</item>
+        <item quantity="other">%d attività aperte non hanno una stima, quindi i totali del carico di lavoro sono parziali.</item>
+    </plurals>
     <string name="analytics_share_analytics">Condividi statistiche</string>
     <string name="analytics_day_streak">giorni consecutivi</string>
     <string name="analytics_days_clean">giorni senza ritardi</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">PIÙ POSTICIPATE</string>
     <string name="analytics_postponed_times">Posticipata %1$d volte</string>
     <string name="analytics_no_postponed_tasks">Nessuna attività posticipata per ora.</string>
-    <string name="task_postponement_warning">"%1$s" è stata posticipata %2$d volte.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" è stata posticipata %2$d volte.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" ora scade nel fine settimana (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d volta</item>
         <item quantity="other">%1$d volte</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Soglia avviso rinvio</string>
     <string name="settings_postponement_warning_threshold_desc">Numero di rinvii consentiti per un\'attività a priorità normale prima dell\'avviso. La priorità media avvisa dopo %1$d e quella alta dopo %2$d.</string>
+    <string name="settings_weekend_days">Giorni del fine settimana</string>
+    <string name="settings_weekend_days_desc">Riprogrammare un\'attività in uno di questi giorni mostra un avviso. Disattiva tutti i giorni per disattivare l\'avviso.</string>
     <string name="action_reopen">Riapri</string>
     <string name="action_complete">Completa</string>
     <string name="action_open">Apri</string>

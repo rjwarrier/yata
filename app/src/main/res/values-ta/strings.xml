@@ -308,6 +308,32 @@
     <string name="action_this_can_t_be_undone">இதைத் திரும்பப் பெற முடியாது.</string>
     <string name="analytics_analytics">பகுப்பாய்வு</string>
     <string name="analytics_has_overdue_tasks">தாமதமான பணிகள் உள்ளன</string>
+    <string name="analytics_action_high_priority">உயர் முன்னுரிமை</string>
+    <string name="analytics_action_open_overdue">தாமதமானவற்றைத் திற</string>
+    <string name="analytics_action_review_postponed">ஒத்திவைக்கப்பட்டவற்றை மதிப்பாய்வு செய்</string>
+    <string name="analytics_overview_all_clear">அனைத்தும் சரி</string>
+    <string name="analytics_overview_all_clear_detail">தாமதமான பணிகள் இல்லை. உங்கள் அடுத்த பணி கீழே தெரிகிறது.</string>
+    <string name="analytics_overview_effort_line">%1$s இந்த வாரம் நிலுவையில், மொத்தம் %2$s இன்னும் திறந்திருப்பதில்</string>
+    <string name="analytics_overview_estimates_complete">திட்டமிடப்பட்ட முயற்சி கொண்ட அனைத்து திறந்த பணிகளுக்கும் மதிப்பீடு உள்ளது.</string>
+    <string name="analytics_overview_needs_attention">கவனம் தேவை</string>
+    <string name="analytics_overview_next_30">அடுத்த 30 நாட்கள்</string>
+    <string name="analytics_overview_next_7">அடுத்த 7 நாட்கள்</string>
+    <string name="analytics_overview_no_estimates">பணிச்சுமை முன்னறிவிப்புகளை பயனுள்ளதாக்க பணி மதிப்பீடுகளைச் சேர்க்கவும்.</string>
+    <string name="analytics_overview_on_deck">அடுத்ததாக வருகிறது</string>
+    <string name="analytics_overview_on_time">சரியான நேரத்தில்</string>
+    <string name="analytics_overview_overdue">தாமதமானவை</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d பணி அடுத்த 7 நாட்களில் நிலுவையில் உள்ளது. வாரம் நிரம்புவதற்கு முன் முயற்சியைச் சரிபார்க்கவும்.</item>
+        <item quantity="other">%d பணிகள் அடுத்த 7 நாட்களில் நிலுவையில் உள்ளன. வாரம் நிரம்புவதற்கு முன் முயற்சியைச் சரிபார்க்கவும்.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d பணி ஏற்கனவே தாமதமாகிவிட்டது. மீதமுள்ள அறிக்கையைப் படிக்கும் முன் இங்கிருந்து தொடங்குங்கள்.</item>
+        <item quantity="other">%d பணிகள் ஏற்கனவே தாமதமாகிவிட்டன. மீதமுள்ள அறிக்கையைப் படிக்கும் முன் இங்கிருந்து தொடங்குங்கள்.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d திறந்த பணிக்கு மதிப்பீடு இல்லை, எனவே பணிச்சுமை மொத்தம் பகுதியளவே.</item>
+        <item quantity="other">%d திறந்த பணிகளுக்கு மதிப்பீடு இல்லை, எனவே பணிச்சுமை மொத்தம் பகுதியளவே.</item>
+    </plurals>
     <string name="analytics_share_analytics">பகுப்பாய்வைப் பகிர்</string>
     <string name="analytics_day_streak">நாள் தொடர்ச்சி</string>
     <string name="analytics_days_clean">தூய நாட்கள்</string>
@@ -1500,12 +1526,16 @@
     <string name="analytics_most_postponed">அதிகம் ஒத்திவைக்கப்பட்டவை</string>
     <string name="analytics_postponed_times">%1$d முறை ஒத்திவைக்கப்பட்டது</string>
     <string name="analytics_no_postponed_tasks">இன்னும் ஒத்திவைக்கப்பட்ட பணிகள் எதுவும் இல்லை.</string>
-    <string name="task_postponement_warning">"%1$s" %2$d முறை ஒத்திவைக்கப்பட்டுள்ளது.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" %2$d முறை ஒத்திவைக்கப்பட்டுள்ளது.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" இப்போது வார இறுதியில் (%2$s) நிலுவைத் தேதி கொண்டுள்ளது.</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d முறை</item>
         <item quantity="other">%1$d முறை</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">ஒத்திவைப்பு எச்சரிக்கை வரம்பு</string>
     <string name="settings_postponement_warning_threshold_desc">எச்சரிப்பதற்கு முன் சாதாரண முன்னுரிமை பணியை எத்தனை முறை ஒத்திவைக்கலாம். நடுத்தர முன்னுரிமை %1$d முறைக்குப் பிறகும், அதிக முன்னுரிமை %2$d முறைக்குப் பிறகும் எச்சரிக்கும்.</string>
+    <string name="settings_weekend_days">வார இறுதி நாட்கள்</string>
+    <string name="settings_weekend_days_desc">ஒரு பணியை இந்த நாட்களில் ஒன்றுக்கு மறு அட்டவணைப்படுத்தினால் எச்சரிக்கை காட்டப்படும். எச்சரிக்கையை முடக்க எல்லா நாட்களையும் அணைக்கவும்.</string>
     <string name="action_reopen">மீண்டும் திறக்கவும்</string>
     <string name="action_complete">முடிக்கவும்</string>
     <string name="action_open">திறக்கவும்</string>

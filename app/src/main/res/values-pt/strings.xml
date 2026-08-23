@@ -354,6 +354,32 @@
     <string name="action_this_can_t_be_undone">Isso não pode ser desfeito.</string>
     <string name="analytics_analytics">Análise</string>
     <string name="analytics_has_overdue_tasks">Tem tarefas atrasadas</string>
+    <string name="analytics_action_high_priority">Alta prioridade</string>
+    <string name="analytics_action_open_overdue">Abrir atrasadas</string>
+    <string name="analytics_action_review_postponed">Revisar adiadas</string>
+    <string name="analytics_overview_all_clear">Tudo em dia</string>
+    <string name="analytics_overview_all_clear_detail">Nenhuma tarefa atrasada. Seu próximo trabalho está visível abaixo.</string>
+    <string name="analytics_overview_effort_line">%1$s vencem esta semana de %2$s ainda abertas</string>
+    <string name="analytics_overview_estimates_complete">Todas as tarefas abertas com esforço planejado têm estimativa.</string>
+    <string name="analytics_overview_needs_attention">Precisa de atenção</string>
+    <string name="analytics_overview_next_30">próximos 30 dias</string>
+    <string name="analytics_overview_next_7">próximos 7 dias</string>
+    <string name="analytics_overview_no_estimates">Adicione estimativas às tarefas para tornar as previsões de carga mais úteis.</string>
+    <string name="analytics_overview_on_deck">A caminho</string>
+    <string name="analytics_overview_on_time">no prazo</string>
+    <string name="analytics_overview_overdue">atrasadas</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d tarefa vence nos próximos 7 dias. Verifique o esforço antes que a semana fique cheia.</item>
+        <item quantity="other">%d tarefas vencem nos próximos 7 dias. Verifique o esforço antes que a semana fique cheia.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d tarefa já está atrasada. Comece por aqui antes de ler o resto do relatório.</item>
+        <item quantity="other">%d tarefas já estão atrasadas. Comece por aqui antes de ler o resto do relatório.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d tarefa aberta não tem estimativa, então os totais de carga estão incompletos.</item>
+        <item quantity="other">%d tarefas abertas não têm estimativa, então os totais de carga estão incompletos.</item>
+    </plurals>
     <string name="analytics_share_analytics">Compartilhe análises</string>
     <string name="cd_add_subtask">Adicionar subtarefa</string>
     <string name="cd_add_task">Adicionar tarefa</string>
@@ -1505,12 +1531,16 @@
     <string name="analytics_most_postponed">MAIS ADIADAS</string>
     <string name="analytics_postponed_times">Adiada %1$d vezes</string>
     <string name="analytics_no_postponed_tasks">Nenhuma tarefa adiada até o momento.</string>
-    <string name="task_postponement_warning">"%1$s" foi adiada %2$d vezes.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" foi adiada %2$d vezes.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" agora vence no fim de semana (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d vez</item>
         <item quantity="other">%1$d vezes</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Limite de aviso de adiamento</string>
     <string name="settings_postponement_warning_threshold_desc">Número de vezes que uma tarefa de prioridade normal pode ser adiada antes do aviso. A prioridade média avisa após %1$d e a alta após %2$d.</string>
+    <string name="settings_weekend_days">Dias de fim de semana</string>
+    <string name="settings_weekend_days_desc">Reagendar uma tarefa para um desses dias mostra um aviso. Desative todos os dias para desativar o aviso.</string>
     <string name="action_reopen">Reabrir</string>
     <string name="action_complete">Concluir</string>
     <string name="action_open">Abrir</string>

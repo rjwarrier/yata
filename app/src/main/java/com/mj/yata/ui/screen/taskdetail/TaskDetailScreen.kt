@@ -276,6 +276,18 @@ fun TaskDetailScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.weekendRescheduleWarnings.collect { warning ->
+            snackbarHostState.showSnackbar(
+                context.getString(
+                    R.string.task_weekend_reschedule_warning,
+                    warning.taskTitle,
+                    warning.dayLabel
+                )
+            )
+        }
+    }
+
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
     val peopleFeatureEnabled by viewModel.peopleFeatureEnabled.collectAsStateWithLifecycle()
     val tagsFeatureEnabled by viewModel.tagsFeatureEnabled.collectAsStateWithLifecycle()

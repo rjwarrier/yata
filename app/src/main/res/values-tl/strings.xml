@@ -308,6 +308,32 @@
     <string name="action_this_can_t_be_undone">Hindi na ito maibabalik pa.</string>
     <string name="analytics_analytics">Analytics</string>
     <string name="analytics_has_overdue_tasks">May late nang gawain</string>
+    <string name="analytics_action_high_priority">Mataas na Priyoridad</string>
+    <string name="analytics_action_open_overdue">Buksan ang Late</string>
+    <string name="analytics_action_review_postponed">Suriin ang Ipinagpaliban</string>
+    <string name="analytics_overview_all_clear">Malinis Lahat</string>
+    <string name="analytics_overview_all_clear_detail">Walang late na gawain. Makikita sa ibaba ang susunod mong trabaho.</string>
+    <string name="analytics_overview_effort_line">%1$s due ngayong linggo mula sa %2$s na bukas pa</string>
+    <string name="analytics_overview_estimates_complete">Lahat ng bukas na gawain na may planadong pagsisikap ay may tantiya.</string>
+    <string name="analytics_overview_needs_attention">Kailangan ng Pansin</string>
+    <string name="analytics_overview_next_30">susunod na 30 araw</string>
+    <string name="analytics_overview_next_7">susunod na 7 araw</string>
+    <string name="analytics_overview_no_estimates">Magdagdag ng mga tantiya ng gawain para gawing mas kapaki-pakinabang ang mga forecast ng workload.</string>
+    <string name="analytics_overview_on_deck">Paparating</string>
+    <string name="analytics_overview_on_time">nasa oras</string>
+    <string name="analytics_overview_overdue">late</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d gawain ang due sa susunod na 7 araw. Suriin ang effort bago mapuno ang linggo.</item>
+        <item quantity="other">%d na gawain ang due sa susunod na 7 araw. Suriin ang effort bago mapuno ang linggo.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d gawain ang huli na. Magsimula dito bago basahin ang natitirang ulat.</item>
+        <item quantity="other">%d na gawain ang huli na. Magsimula dito bago basahin ang natitirang ulat.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d bukas na gawain ang walang tantiya, kaya bahagya lang ang kabuuang workload.</item>
+        <item quantity="other">%d na bukas na gawain ang walang tantiya, kaya bahagya lang ang kabuuang workload.</item>
+    </plurals>
     <string name="analytics_share_analytics">Ibahagi ang analytics</string>
     <string name="analytics_day_streak">araw nang sunud-sunod</string>
     <string name="analytics_days_clean">araw na malinis</string>
@@ -1500,12 +1526,16 @@
     <string name="analytics_most_postponed">PINAKAMARAMING PAGPAPALIBAN</string>
     <string name="analytics_postponed_times">Ipinagpaliban nang %1$d beses</string>
     <string name="analytics_no_postponed_tasks">Wala pang mga ipinagpalibang gawain.</string>
-    <string name="task_postponement_warning">Ang "%1$s" ay ipinagpaliban nang %2$d beses.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">Ang "%1$s" ay ipinagpaliban nang %2$d beses.</string>
+    <string name="task_weekend_reschedule_warning">Ang "%1$s" ay may due date na ngayon sa weekend (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d beses</item>
         <item quantity="other">%1$d beses</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Limitasyon ng babala sa pagpapaliban</string>
     <string name="settings_postponement_warning_threshold_desc">Bilang ng beses na maaaring ipagpaliban ang normal na gawain bago magbabala. Ang katamtamang prayoridad ay nagbabala pagkatapos ng %1$d, at ang mataas pagkatapos ng %2$d.</string>
+    <string name="settings_weekend_days">Mga Araw ng Weekend</string>
+    <string name="settings_weekend_days_desc">Kapag na-reschedule ang isang task sa isa sa mga araw na ito, may lalabas na babala. I-off ang lahat ng araw para i-disable ang babala.</string>
     <string name="action_reopen">Muling buksan</string>
     <string name="action_complete">Kumpletuhin</string>
     <string name="action_open">Buksan</string>

@@ -1118,6 +1118,7 @@
     <string name="task_detail_reminder">Reminder</string>
     <string name="task_detail_due_date">Due Date</string>
     <string name="task_postponement_warning">"%1$s" has been postponed %2$d times.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" is now due on the weekend (%2$s).</string>
     <string name="task_detail_carry_forward">Carry forward to next day</string>
     <string name="task_detail_repeats">Repeats</string>
     <string name="task_detail_streak_days">🔥 %1$d-day streak</string>
@@ -1705,6 +1706,8 @@
     </plurals>
     <string name="settings_postponement_warning_threshold">Postponement warning threshold</string>
     <string name="settings_postponement_warning_threshold_desc">Number of times a normal-priority task can be postponed before warning. Medium priority warns after %1$d and high priority after %2$d.</string>
+    <string name="settings_weekend_days">Weekend days</string>
+    <string name="settings_weekend_days_desc">Rescheduling a task onto one of these days shows a warning. Turn all of them off to disable the warning.</string>
     <string name="action_reopen">Reopen</string>
     <string name="action_complete">Complete</string>
     <string name="action_open">Open</string>

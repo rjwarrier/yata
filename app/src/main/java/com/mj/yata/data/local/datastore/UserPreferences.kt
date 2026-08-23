@@ -18,6 +18,7 @@ import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.domain.model.DEFAULT_POSTPONEMENT_WARNING_THRESHOLD
 import com.mj.yata.domain.model.MAX_POSTPONEMENT_WARNING_THRESHOLD
 import com.mj.yata.domain.model.MIN_POSTPONEMENT_WARNING_THRESHOLD
+import com.mj.yata.domain.model.DEFAULT_WEEKEND_DAYS
 import com.mj.yata.util.decodeSalt
 import com.mj.yata.util.encodeSalt
 import com.mj.yata.util.EntitySortMode
@@ -146,6 +147,7 @@ class UserPreferences @Inject constructor(
         val DEFAULT_TAG_IDS         = stringSetPreferencesKey("default_tag_ids")
         val DEFAULT_ESTIMATE_MINUTES = intPreferencesKey("default_estimate_minutes")
         val POSTPONEMENT_WARNING_THRESHOLD = intPreferencesKey("postponement_warning_threshold")
+        val WEEKEND_DAYS            = stringSetPreferencesKey("weekend_days")
         val START_OF_WEEK_SUNDAY    = booleanPreferencesKey("start_of_week_sunday")
         val DEFAULT_REMINDER_HOUR   = intPreferencesKey("default_reminder_hour")
         val DEFAULT_REMINDER_MINUTE = intPreferencesKey("default_reminder_minute")
@@ -479,6 +481,9 @@ class UserPreferences @Inject constructor(
         (prefs[POSTPONEMENT_WARNING_THRESHOLD] ?: DEFAULT_POSTPONEMENT_WARNING_THRESHOLD)
             .coerceIn(MIN_POSTPONEMENT_WARNING_THRESHOLD, MAX_POSTPONEMENT_WARNING_THRESHOLD)
     }
+    val weekendDaysFlow: Flow<Set<String>> = prefsFlow.map { prefs ->
+        prefs[WEEKEND_DAYS] ?: DEFAULT_WEEKEND_DAYS
+    }
     val subtaskCompletionActionFlow: Flow<SubtaskCompletionAction> = prefsFlow.map { prefs ->
         SubtaskCompletionAction.entries.firstOrNull { it.name == prefs[SUBTASK_COMPLETION_ACTION] }
             ?: SubtaskCompletionAction.ASK
@@ -767,6 +772,10 @@ class UserPreferences @Inject constructor(
                 MAX_POSTPONEMENT_WARNING_THRESHOLD
             )
         }
+    }
+
+    suspend fun setWeekendDays(days: Set<String>) {
+        dataStore.edit { it[WEEKEND_DAYS] = days }
     }
 
     suspend fun setSubtaskCompletionAction(action: SubtaskCompletionAction) {

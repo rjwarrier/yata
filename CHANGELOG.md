@@ -26,6 +26,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Task content and the app's screens are now hidden from the recents/Overview thumbnail and blocked
   from screenshots whenever app lock is enabled — previously the PIN/biometric gate protected
   nothing once you left the app, since the same content sat visible in Overview.
+- Added a "Weekend days" picker in Settings → Task Defaults. Rescheduling a task — editing its due
+  date, quick-snoozing it, or bulk-rescheduling several at once — onto one of the configured days
+  now shows a warning that it landed on the weekend. Defaults to Saturday/Sunday; turning every day
+  off disables the warning entirely.
 
 ### Changed
 - Tasker integration (Settings → Data Management) is now off by default rather than on. Any app on
@@ -70,6 +74,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   untranslated — mostly settings, diagnostics, widget configuration, and recurrence text — plus
   smaller gaps in Filipino, German, Indonesian, and nine other languages (mainly a stray
   untranslated "owner/repo" placeholder in the GitHub sync screen).
+- The Analytics screen's overview card (overdue/due-soon counts, workload effort line, "all
+  clear"/"needs attention"/"on deck" status, and the three action chips) was showing in English
+  regardless of app language — those 17 strings were never propagated to any of the 24 locales when
+  the feature was added. Now translated the same as the rest of the screen.
 
 ## [0.94] - 2026-08-18
 

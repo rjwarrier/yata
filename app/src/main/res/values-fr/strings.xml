@@ -354,6 +354,32 @@
     <string name="action_this_can_t_be_undone">Cela ne peut pas être annulé.</string>
     <string name="analytics_analytics">Analytique</string>
     <string name="analytics_has_overdue_tasks">A des tâches en retard</string>
+    <string name="analytics_action_high_priority">Priorité haute</string>
+    <string name="analytics_action_open_overdue">Ouvrir en retard</string>
+    <string name="analytics_action_review_postponed">Revoir reportées</string>
+    <string name="analytics_overview_all_clear">Tout est en ordre</string>
+    <string name="analytics_overview_all_clear_detail">Aucune tâche en retard. Votre prochain travail est visible ci-dessous.</string>
+    <string name="analytics_overview_effort_line">%1$s à échéance cette semaine sur %2$s encore ouvertes</string>
+    <string name="analytics_overview_estimates_complete">Toutes les tâches ouvertes avec un effort prévu ont une estimation.</string>
+    <string name="analytics_overview_needs_attention">Nécessite attention</string>
+    <string name="analytics_overview_next_30">30 prochains jours</string>
+    <string name="analytics_overview_next_7">7 prochains jours</string>
+    <string name="analytics_overview_no_estimates">Ajoutez des estimations aux tâches pour rendre les prévisions de charge plus utiles.</string>
+    <string name="analytics_overview_on_deck">À venir</string>
+    <string name="analytics_overview_on_time">à temps</string>
+    <string name="analytics_overview_overdue">en retard</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d tâche arrive à échéance dans les 7 prochains jours. Vérifiez l\'effort avant que la semaine ne se remplisse.</item>
+        <item quantity="other">%d tâches arrivent à échéance dans les 7 prochains jours. Vérifiez l\'effort avant que la semaine ne se remplisse.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d tâche est déjà en retard. Commencez ici avant de lire le reste du rapport.</item>
+        <item quantity="other">%d tâches sont déjà en retard. Commencez ici avant de lire le reste du rapport.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d tâche ouverte n\'a pas d\'estimation, donc les totaux de charge sont partiels.</item>
+        <item quantity="other">%d tâches ouvertes n\'ont pas d\'estimation, donc les totaux de charge sont partiels.</item>
+    </plurals>
     <string name="analytics_share_analytics">Partager des analyses</string>
     <string name="cd_add_subtask">Ajouter une sous-tâche</string>
     <string name="cd_add_task">Ajouter une tâche</string>
@@ -1505,12 +1531,16 @@
     <string name="analytics_most_postponed">LES PLUS REPORTÉES</string>
     <string name="analytics_postponed_times">Reportée %1$d fois</string>
     <string name="analytics_no_postponed_tasks">Aucune tâche reportée pour le moment.</string>
-    <string name="task_postponement_warning">« %1$s » a été reportée %2$d fois.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">« %1$s » a été reportée %2$d fois.</string>
+    <string name="task_weekend_reschedule_warning">« %1$s » est désormais prévue pour le week-end (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d fois</item>
         <item quantity="other">%1$d fois</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Seuil d\'avertissement de report</string>
     <string name="settings_postponement_warning_threshold_desc">Nombre de reports autorisés pour une tâche de priorité normale avant avertissement. La priorité moyenne avertit après %1$d et la priorité haute après %2$d.</string>
+    <string name="settings_weekend_days">Jours de week-end</string>
+    <string name="settings_weekend_days_desc">Déplacer une tâche vers l\'un de ces jours affiche un avertissement. Désactivez-les tous pour désactiver l\'avertissement.</string>
     <string name="action_reopen">Rouvrir</string>
     <string name="action_complete">Terminer</string>
     <string name="action_open">Ouvrir</string>

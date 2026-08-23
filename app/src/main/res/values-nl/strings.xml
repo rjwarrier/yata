@@ -393,6 +393,32 @@
     <string name="action_this_can_t_be_undone">Dit kan niet ongedaan worden gemaakt.</string>
     <string name="analytics_analytics">Analyses</string>
     <string name="analytics_has_overdue_tasks">Heeft achterstallige taken</string>
+    <string name="analytics_action_high_priority">Hoge prioriteit</string>
+    <string name="analytics_action_open_overdue">Achterstallige openen</string>
+    <string name="analytics_action_review_postponed">Uitgestelde bekijken</string>
+    <string name="analytics_overview_all_clear">Alles in orde</string>
+    <string name="analytics_overview_all_clear_detail">Geen achterstallige taken. Je volgende werk zie je hieronder.</string>
+    <string name="analytics_overview_effort_line">%1$s deze week te doen van in totaal %2$s nog open</string>
+    <string name="analytics_overview_estimates_complete">Alle open taken met geplande inspanning hebben een schatting.</string>
+    <string name="analytics_overview_needs_attention">Aandacht nodig</string>
+    <string name="analytics_overview_next_30">volgende 30 dagen</string>
+    <string name="analytics_overview_next_7">volgende 7 dagen</string>
+    <string name="analytics_overview_no_estimates">Voeg taakschattingen toe om werklastprognoses nuttiger te maken.</string>
+    <string name="analytics_overview_on_deck">Staat klaar</string>
+    <string name="analytics_overview_on_time">op tijd</string>
+    <string name="analytics_overview_overdue">achterstallig</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d taak vervalt binnen 7 dagen. Controleer de inspanning voordat de week vol raakt.</item>
+        <item quantity="other">%d taken vervallen binnen 7 dagen. Controleer de inspanning voordat de week vol raakt.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d taak is al te laat. Begin hier voordat je de rest van het rapport leest.</item>
+        <item quantity="other">%d taken zijn al te laat. Begin hier voordat je de rest van het rapport leest.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d open taak heeft geen schatting, dus de werklasttotalen zijn onvolledig.</item>
+        <item quantity="other">%d open taken hebben geen schatting, dus de werklasttotalen zijn onvolledig.</item>
+    </plurals>
     <string name="analytics_share_analytics">Analyses delen</string>
     <string name="analytics_day_streak">dagen reeks</string>
     <string name="analytics_days_clean">dagen schoon</string>
@@ -1504,12 +1530,16 @@
     <string name="analytics_most_postponed">MEEST UITGESTELD</string>
     <string name="analytics_postponed_times">%1$d keer uitgesteld</string>
     <string name="analytics_no_postponed_tasks">Nog geen uitgestelde taken.</string>
-    <string name="task_postponement_warning">„%1$s” is %2$d keer uitgesteld.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">„%1$s” is %2$d keer uitgesteld.</string>
+    <string name="task_weekend_reschedule_warning">„%1$s” vervalt nu in het weekend (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d keer</item>
         <item quantity="other">%1$d keer</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Waarschuwingsdrempel uitstel</string>
     <string name="settings_postponement_warning_threshold_desc">Aantal keren dat een taak met normale prioriteit kan worden uitgesteld voor een waarschuwing. Gemiddelde prioriteit waarschuwt na %1$d en hoge prioriteit na %2$d.</string>
+    <string name="settings_weekend_days">Weekenddagen</string>
+    <string name="settings_weekend_days_desc">Het verzetten van een taak naar een van deze dagen toont een waarschuwing. Schakel alle dagen uit om de waarschuwing uit te zetten.</string>
     <string name="action_reopen">Heropenen</string>
     <string name="action_complete">Voltooien</string>
     <string name="action_open">Openen</string>

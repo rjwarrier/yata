@@ -313,6 +313,32 @@
     <string name="action_this_can_t_be_undone">Ini tidak bisa dibatalkan.</string>
     <string name="analytics_analytics">Analitik</string>
     <string name="analytics_has_overdue_tasks">Memiliki tugas terlambat</string>
+    <string name="analytics_action_high_priority">Prioritas tinggi</string>
+    <string name="analytics_action_open_overdue">Buka terlambat</string>
+    <string name="analytics_action_review_postponed">Tinjau tertunda</string>
+    <string name="analytics_overview_all_clear">Semua aman</string>
+    <string name="analytics_overview_all_clear_detail">Tidak ada tugas terlambat. Pekerjaan berikutnya terlihat di bawah.</string>
+    <string name="analytics_overview_effort_line">%1$s jatuh tempo minggu ini dari %2$s yang masih terbuka</string>
+    <string name="analytics_overview_estimates_complete">Semua tugas terbuka dengan upaya terencana memiliki estimasi.</string>
+    <string name="analytics_overview_needs_attention">Perlu perhatian</string>
+    <string name="analytics_overview_next_30">30 hari ke depan</string>
+    <string name="analytics_overview_next_7">7 hari ke depan</string>
+    <string name="analytics_overview_no_estimates">Tambahkan estimasi tugas agar perkiraan beban kerja lebih berguna.</string>
+    <string name="analytics_overview_on_deck">Segera tiba</string>
+    <string name="analytics_overview_on_time">tepat waktu</string>
+    <string name="analytics_overview_overdue">terlambat</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d tugas jatuh tempo dalam 7 hari ke depan. Periksa upaya sebelum minggu ini penuh.</item>
+        <item quantity="other">%d tugas jatuh tempo dalam 7 hari ke depan. Periksa upaya sebelum minggu ini penuh.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d tugas sudah terlambat. Mulai dari sini sebelum membaca sisa laporan.</item>
+        <item quantity="other">%d tugas sudah terlambat. Mulai dari sini sebelum membaca sisa laporan.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d tugas terbuka tidak memiliki estimasi, jadi total beban kerja tidak lengkap.</item>
+        <item quantity="other">%d tugas terbuka tidak memiliki estimasi, jadi total beban kerja tidak lengkap.</item>
+    </plurals>
     <string name="analytics_share_analytics">Bagikan analitik</string>
     <string name="analytics_day_streak">hari beruntun</string>
     <string name="analytics_days_clean">hari bersih</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">PALING SERING DITUNDA</string>
     <string name="analytics_postponed_times">Ditunda %1$d kali</string>
     <string name="analytics_no_postponed_tasks">Belum ada tugas yang ditunda.</string>
-    <string name="task_postponement_warning">"%1$s" telah ditunda %2$d kali.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" telah ditunda %2$d kali.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" sekarang jatuh tempo di akhir pekan (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d kali</item>
         <item quantity="other">%1$d kali</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Batas peringatan penundaan</string>
     <string name="settings_postponement_warning_threshold_desc">Berapa kali tugas prioritas normal dapat ditunda sebelum peringatan muncul. Prioritas sedang memperingatkan setelah %1$d dan prioritas tinggi setelah %2$d.</string>
+    <string name="settings_weekend_days">Hari akhir pekan</string>
+    <string name="settings_weekend_days_desc">Menjadwalkan ulang tugas ke salah satu hari ini akan menampilkan peringatan. Matikan semua hari untuk menonaktifkan peringatan.</string>
     <string name="action_reopen">Buka kembali</string>
     <string name="action_complete">Selesai</string>
     <string name="action_open">Buka</string>

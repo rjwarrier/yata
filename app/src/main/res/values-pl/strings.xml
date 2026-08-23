@@ -313,6 +313,32 @@
     <string name="action_this_can_t_be_undone">Tej operacji nie można cofnąć.</string>
     <string name="analytics_analytics">Statystyki</string>
     <string name="analytics_has_overdue_tasks">Ma zaległe zadania</string>
+    <string name="analytics_action_high_priority">Wysoki priorytet</string>
+    <string name="analytics_action_open_overdue">Otwórz zaległe</string>
+    <string name="analytics_action_review_postponed">Sprawdź odłożone</string>
+    <string name="analytics_overview_all_clear">Wszystko w porządku</string>
+    <string name="analytics_overview_all_clear_detail">Brak zaległych zadań. Twoja kolejna praca jest widoczna poniżej.</string>
+    <string name="analytics_overview_effort_line">%1$s do zrobienia w tym tygodniu z %2$s wciąż otwartych</string>
+    <string name="analytics_overview_estimates_complete">Wszystkie otwarte zadania z zaplanowanym nakładem pracy mają szacunek.</string>
+    <string name="analytics_overview_needs_attention">Wymaga uwagi</string>
+    <string name="analytics_overview_next_30">kolejne 30 dni</string>
+    <string name="analytics_overview_next_7">kolejne 7 dni</string>
+    <string name="analytics_overview_no_estimates">Dodaj szacunki zadań, aby prognozy obciążenia były bardziej przydatne.</string>
+    <string name="analytics_overview_on_deck">Nadchodzi</string>
+    <string name="analytics_overview_on_time">na czas</string>
+    <string name="analytics_overview_overdue">zaległe</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d zadanie ma termin w ciągu najbliższych 7 dni. Sprawdź nakład pracy, zanim tydzień się zapełni.</item>
+        <item quantity="other">%d zadań ma termin w ciągu najbliższych 7 dni. Sprawdź nakład pracy, zanim tydzień się zapełni.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d zadanie jest już spóźnione. Zacznij tutaj, zanim przeczytasz resztę raportu.</item>
+        <item quantity="other">%d zadań jest już spóźnionych. Zacznij tutaj, zanim przeczytasz resztę raportu.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d otwarte zadanie nie ma szacunku, więc sumy obciążenia są niepełne.</item>
+        <item quantity="other">%d otwartych zadań nie ma szacunku, więc sumy obciążenia są niepełne.</item>
+    </plurals>
     <string name="analytics_share_analytics">Udostępnij statystyki</string>
     <string name="analytics_day_streak">dni z rzędu</string>
     <string name="analytics_days_clean">dni bez zaległości</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">NAJCZĘŚCIEJ ODKŁADANE</string>
     <string name="analytics_postponed_times">Odłożono %1$d razy</string>
     <string name="analytics_no_postponed_tasks">Brak odłożonych zadań.</string>
-    <string name="task_postponement_warning">Zadanie „%1$s” zostało odłożone %2$d razy.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">Zadanie „%1$s” zostało odłożone %2$d razy.</string>
+    <string name="task_weekend_reschedule_warning">Zadanie „%1$s” ma teraz termin w weekend (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d raz</item>
         <item quantity="other">%1$d razy</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Próg ostrzeżenia o odłożeniu</string>
     <string name="settings_postponement_warning_threshold_desc">Liczba odłożeń zadania o zwykłym priorytecie przed wyświetleniem ostrzeżenia. Średni priorytet ostrzega po %1$d, a wysoki po %2$d.</string>
+    <string name="settings_weekend_days">Dni weekendowe</string>
+    <string name="settings_weekend_days_desc">Zmiana terminu zadania na jeden z tych dni wyświetli ostrzeżenie. Aby wyłączyć ostrzeżenie, wyłącz wszystkie dni.</string>
     <string name="action_reopen">Otwórz ponownie</string>
     <string name="action_complete">Ukończ</string>
     <string name="action_open">Otwórz</string>

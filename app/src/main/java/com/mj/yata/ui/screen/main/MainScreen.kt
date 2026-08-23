@@ -193,6 +193,18 @@ fun MainScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.weekendRescheduleWarnings.collect { warning ->
+            snackbarHostState.showSnackbar(
+                context.getString(
+                    R.string.task_weekend_reschedule_warning,
+                    warning.taskTitle,
+                    warning.dayLabel
+                )
+            )
+        }
+    }
+
     // Main tabs state: 0=Today, 1=Projects, 2=People, 3=Tags, 4=Upcoming (Week/Month toggle inside)
     var selectedTab by rememberSaveable { mutableIntStateOf(if (initialTab >= 0) initialTab.coerceIn(0, 4) else 0) }
     var restoredHomeTab by remember { mutableStateOf(initialTab >= 0) }

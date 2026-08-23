@@ -313,6 +313,32 @@
     <string name="action_this_can_t_be_undone">Bu işlem geri alınamaz.</string>
     <string name="analytics_analytics">Analitik</string>
     <string name="analytics_has_overdue_tasks">Gecikmiş görevleri var</string>
+    <string name="analytics_action_high_priority">Yüksek öncelik</string>
+    <string name="analytics_action_open_overdue">Gecikmişleri aç</string>
+    <string name="analytics_action_review_postponed">Ertelenenleri gözden geçir</string>
+    <string name="analytics_overview_all_clear">Her şey yolunda</string>
+    <string name="analytics_overview_all_clear_detail">Gecikmiş görev yok. Bir sonraki işiniz aşağıda görünüyor.</string>
+    <string name="analytics_overview_effort_line">%1$s bu hafta bitiyor, toplam %2$s hâlâ açık olandan</string>
+    <string name="analytics_overview_estimates_complete">Planlı çaba içeren tüm açık görevlerin tahmini var.</string>
+    <string name="analytics_overview_needs_attention">Dikkat gerekiyor</string>
+    <string name="analytics_overview_next_30">sonraki 30 gün</string>
+    <string name="analytics_overview_next_7">sonraki 7 gün</string>
+    <string name="analytics_overview_no_estimates">İş yükü tahminlerini daha kullanışlı hale getirmek için görev tahminleri ekleyin.</string>
+    <string name="analytics_overview_on_deck">Sırada</string>
+    <string name="analytics_overview_on_time">zamanında</string>
+    <string name="analytics_overview_overdue">gecikmiş</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d görevin süresi önümüzdeki 7 gün içinde doluyor. Hafta dolmadan önce çabayı kontrol edin.</item>
+        <item quantity="other">%d görevin süresi önümüzdeki 7 gün içinde doluyor. Hafta dolmadan önce çabayı kontrol edin.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d görev zaten gecikti. Raporun geri kalanını okumadan önce buradan başlayın.</item>
+        <item quantity="other">%d görev zaten gecikti. Raporun geri kalanını okumadan önce buradan başlayın.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d açık görevin tahmini yok, bu yüzden iş yükü toplamları eksik.</item>
+        <item quantity="other">%d açık görevin tahmini yok, bu yüzden iş yükü toplamları eksik.</item>
+    </plurals>
     <string name="analytics_share_analytics">Analitiği paylaş</string>
     <string name="analytics_day_streak">günlük seri</string>
     <string name="analytics_days_clean">temiz gün</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">EN ÇOK ERTELENENLER</string>
     <string name="analytics_postponed_times">%1$d kez ertelendi</string>
     <string name="analytics_no_postponed_tasks">Henüz ertelenen görev yok.</string>
-    <string name="task_postponement_warning">"%1$s" %2$d kez ertelendi.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">"%1$s" %2$d kez ertelendi.</string>
+    <string name="task_weekend_reschedule_warning">"%1$s" artık hafta sonuna (%2$s) denk geliyor.</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d kez</item>
         <item quantity="other">%1$d kez</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Erteleme uyarı eşiği</string>
     <string name="settings_postponement_warning_threshold_desc">Normal öncelikli bir görevin uyarılmadan önce kaç kez ertelenebileceği. Orta öncelik %1$d ertelemeden sonra, yüksek öncelik %2$d ertelemeden sonra uyarır.</string>
+    <string name="settings_weekend_days">Hafta sonu günleri</string>
+    <string name="settings_weekend_days_desc">Bir görevi bu günlerden birine ertelemek bir uyarı gösterir. Uyarıyı kapatmak için tüm günleri kapatın.</string>
     <string name="action_reopen">Yeniden aç</string>
     <string name="action_complete">Tamamla</string>
     <string name="action_open">Aç</string>

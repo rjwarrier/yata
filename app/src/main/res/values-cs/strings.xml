@@ -313,6 +313,32 @@
     <string name="action_this_can_t_be_undone">Tuto akci nelze vrátit.</string>
     <string name="analytics_analytics">Statistiky</string>
     <string name="analytics_has_overdue_tasks">Má úkoly po termínu</string>
+    <string name="analytics_action_high_priority">Vysoká priorita</string>
+    <string name="analytics_action_open_overdue">Otevřít po termínu</string>
+    <string name="analytics_action_review_postponed">Zkontrolovat odložené</string>
+    <string name="analytics_overview_all_clear">Vše v pořádku</string>
+    <string name="analytics_overview_all_clear_detail">Žádné úkoly po termínu. Vaše další práce je vidět níže.</string>
+    <string name="analytics_overview_effort_line">%1$s splatných tento týden z celkových %2$s stále otevřených</string>
+    <string name="analytics_overview_estimates_complete">Všechny otevřené úkoly s plánovaným úsilím mají odhad.</string>
+    <string name="analytics_overview_needs_attention">Vyžaduje pozornost</string>
+    <string name="analytics_overview_next_30">příštích 30 dní</string>
+    <string name="analytics_overview_next_7">příštích 7 dní</string>
+    <string name="analytics_overview_no_estimates">Přidejte odhady úkolů, aby byly předpovědi zátěže užitečnější.</string>
+    <string name="analytics_overview_on_deck">Blíží se</string>
+    <string name="analytics_overview_on_time">včas</string>
+    <string name="analytics_overview_overdue">po termínu</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d úkol je splatný v příštích 7 dnech. Zkontrolujte úsilí, než se týden zaplní.</item>
+        <item quantity="other">%d úkolů je splatných v příštích 7 dnech. Zkontrolujte úsilí, než se týden zaplní.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d úkol už je po termínu. Začněte tady, než budete číst zbytek zprávy.</item>
+        <item quantity="other">%d úkolů už je po termínu. Začněte tady, než budete číst zbytek zprávy.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d otevřený úkol nemá odhad, takže součty zátěže jsou neúplné.</item>
+        <item quantity="other">%d otevřených úkolů nemá odhad, takže součty zátěže jsou neúplné.</item>
+    </plurals>
     <string name="analytics_share_analytics">Sdílet statistiky</string>
     <string name="analytics_day_streak">dní v řadě</string>
     <string name="analytics_days_clean">dní bez zpoždění</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">NEJVÍCE ODKLÁDANÉ</string>
     <string name="analytics_postponed_times">Odloženo %1$dkrát</string>
     <string name="analytics_no_postponed_tasks">Zatím žádné odložené úkoly.</string>
-    <string name="task_postponement_warning">Úkol „%1$s“ byl odložen %2$dkrát.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">Úkol „%1$s“ byl odložen %2$dkrát.</string>
+    <string name="task_weekend_reschedule_warning">Úkol „%1$s“ má nyní termín o víkendu (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$dkrát</item>
         <item quantity="other">%1$dkrát</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Limit upozornění na odložení</string>
     <string name="settings_postponement_warning_threshold_desc">Počet odložení úkolu s běžnou prioritou před zobrazením upozornění. Střední priorita upozorní po %1$d a vysoká po %2$d.</string>
+    <string name="settings_weekend_days">Víkendové dny</string>
+    <string name="settings_weekend_days_desc">Přesunutí úkolu na některý z těchto dnů zobrazí varování. Chcete-li varování vypnout, zrušte výběr všech dnů.</string>
     <string name="action_reopen">Znovu otevřít</string>
     <string name="action_complete">Dokončit</string>
     <string name="action_open">Otevřít</string>

@@ -313,6 +313,32 @@
     <string name="action_this_can_t_be_undone">Detta kan inte ångras.</string>
     <string name="analytics_analytics">Statistik</string>
     <string name="analytics_has_overdue_tasks">Har försenade uppgifter</string>
+    <string name="analytics_action_high_priority">Hög prioritet</string>
+    <string name="analytics_action_open_overdue">Öppna försenade</string>
+    <string name="analytics_action_review_postponed">Granska uppskjutna</string>
+    <string name="analytics_overview_all_clear">Allt klart</string>
+    <string name="analytics_overview_all_clear_detail">Inga försenade uppgifter. Ditt nästa arbete visas nedan.</string>
+    <string name="analytics_overview_effort_line">%1$s förfaller denna vecka av totalt %2$s fortfarande öppna</string>
+    <string name="analytics_overview_estimates_complete">Alla öppna uppgifter med planerad insats har en uppskattning.</string>
+    <string name="analytics_overview_needs_attention">Behöver uppmärksamhet</string>
+    <string name="analytics_overview_next_30">kommande 30 dagar</string>
+    <string name="analytics_overview_next_7">kommande 7 dagar</string>
+    <string name="analytics_overview_no_estimates">Lägg till uppgiftsuppskattningar för att göra arbetsbelastningsprognoser mer användbara.</string>
+    <string name="analytics_overview_on_deck">På gång</string>
+    <string name="analytics_overview_on_time">i tid</string>
+    <string name="analytics_overview_overdue">försenade</string>
+    <plurals name="analytics_overview_due_soon_detail">
+        <item quantity="one">%d uppgift förfaller inom 7 dagar. Kontrollera insatsen innan veckan fylls på.</item>
+        <item quantity="other">%d uppgifter förfaller inom 7 dagar. Kontrollera insatsen innan veckan fylls på.</item>
+    </plurals>
+    <plurals name="analytics_overview_overdue_detail">
+        <item quantity="one">%d uppgift är redan försenad. Börja här innan du läser resten av rapporten.</item>
+        <item quantity="other">%d uppgifter är redan försenade. Börja här innan du läser resten av rapporten.</item>
+    </plurals>
+    <plurals name="analytics_overview_unestimated_count">
+        <item quantity="one">%d öppen uppgift saknar uppskattning, så arbetsbelastningssummorna är ofullständiga.</item>
+        <item quantity="other">%d öppna uppgifter saknar uppskattning, så arbetsbelastningssummorna är ofullständiga.</item>
+    </plurals>
     <string name="analytics_share_analytics">Dela statistik</string>
     <string name="analytics_day_streak">dagars svit</string>
     <string name="analytics_days_clean">dagar utan missar</string>
@@ -1503,12 +1529,16 @@
     <string name="analytics_most_postponed">MEST UPPSKJUTNA</string>
     <string name="analytics_postponed_times">Sköts upp %1$d gånger</string>
     <string name="analytics_no_postponed_tasks">Inga uppskjutna uppgifter än.</string>
-    <string name="task_postponement_warning">”%1$s” har skjutits upp %2$d gånger.</string>    <plurals name="settings_postponement_threshold_value">
+    <string name="task_postponement_warning">”%1$s” har skjutits upp %2$d gånger.</string>
+    <string name="task_weekend_reschedule_warning">”%1$s” har nu förfallodatum en helgdag (%2$s).</string>
+    <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d gång</item>
         <item quantity="other">%1$d gånger</item>
     </plurals>
     <string name="settings_postponement_warning_threshold">Varningströskel för uppskjutning</string>
     <string name="settings_postponement_warning_threshold_desc">Antal gånger en uppgift med normal prioritet kan skjutas upp innan en varning visas. Medelprioritet varnar efter %1$d och hög prioritet efter %2$d.</string>
+    <string name="settings_weekend_days">Helgdagar</string>
+    <string name="settings_weekend_days_desc">Att flytta en uppgift till någon av dessa dagar visar en varning. Stäng av alla dagar för att stänga av varningen.</string>
     <string name="action_reopen">Öppna igen</string>
     <string name="action_complete">Slutför</string>
     <string name="action_open">Öppna</string>

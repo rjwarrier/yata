@@ -212,6 +212,12 @@ class TaskOperations @Inject constructor(
         )
     }
 
+    /** Returns the updated task (or null only if [id] no longer exists), regardless of whether
+     * the reschedule counts as a postponement — callers that only care about the postponement
+     * warning are responsible for that comparison themselves (see
+     * `MainViewModel.quickSnoozeTask`), since a second, independent warning (rescheduled onto a
+     * configured weekend day) also needs the full result of every reschedule, not just the ones
+     * that happened to move the due date later. */
     suspend fun quickSnooze(id: String, preset: QuickSnoozePreset): Task? {
         val task = currentTasks().find { it.id == id } ?: return null
         val (dueDate, dueTime) = presetSchedule(preset)
@@ -227,9 +233,10 @@ class TaskOperations @Inject constructor(
         repository.upsertTask(
             updated
         )
-        return updated.takeIf { it.postponementCount > task.postponementCount }
+        return updated
     }
 
+    /** See [quickSnooze] — returns every rescheduled task unfiltered, for the same reason. */
     suspend fun bulkReschedule(ids: List<String>, preset: QuickSnoozePreset): List<Task> {
         val byId = currentTasks().associateBy { it.id }
         val (dueDate, dueTime) = presetSchedule(preset)
@@ -244,7 +251,7 @@ class TaskOperations @Inject constructor(
             )
         }
         repository.upsertTasks(updated, notify = true, resyncReminder = true)
-        return updated.filter { task -> task.postponementCount > (byId[task.id]?.postponementCount ?: 0) }
+        return updated
     }
 
     private suspend fun presetSchedule(preset: QuickSnoozePreset): Pair<LocalDate, String> {
