@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.94.2] - 2026-08-23
+
+`versionCode 23`. Upgrades in place over 0.94.
+
 ### Added
 - Added a "Postponement warning threshold" slider (1–10) in Settings → Task Defaults for controlling
   how many times a task can be postponed before showing a warning snackbar. The configured value
@@ -1046,7 +1050,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.93.1...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.94.2...HEAD
+[0.94.2]: https://github.com/rjwarrier/yata/releases/tag/v0.94.2
 [0.93.1]: https://github.com/rjwarrier/yata/releases/tag/v0.93.1
 [0.93]: https://github.com/rjwarrier/yata/releases/tag/v0.93
 [0.92.2]: https://github.com/rjwarrier/yata/releases/tag/v0.92.2
