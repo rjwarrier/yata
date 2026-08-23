@@ -1549,6 +1549,7 @@
     <string name="holiday_recurring_badge">Yıllık</string>
     <string name="holiday_one_time_section">Tek seferlik</string>
     <string name="cd_remove_holiday">%1$s kaldır</string>
+    <string name="date_picker_nonworking_day_title">Çalışılmayan gün</string>
     <string name="date_picker_nonworking_day_warning">Bu tarih %1$s gününe denk geliyor. Yine de kullanılsın mı?</string>
     <string name="date_picker_use_anyway">Yine de kullan</string>
     <string name="action_reopen">Yeniden aç</string>

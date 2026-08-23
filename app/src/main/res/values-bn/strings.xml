@@ -1549,6 +1549,7 @@
     <string name="holiday_recurring_badge">বার্ষিক</string>
     <string name="holiday_one_time_section">একবারের</string>
     <string name="cd_remove_holiday">%1$s সরান</string>
+    <string name="date_picker_nonworking_day_title">কর্মহীন দিন</string>
     <string name="date_picker_nonworking_day_warning">এই তারিখ %1$s-এ পড়ছে। তবুও ব্যবহার করবেন?</string>
     <string name="date_picker_use_anyway">তবুও ব্যবহার করুন</string>
     <string name="action_reopen">পুনরায় খুলুন</string>

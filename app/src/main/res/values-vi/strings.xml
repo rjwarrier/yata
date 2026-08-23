@@ -1549,6 +1549,7 @@
     <string name="holiday_recurring_badge">Hằng năm</string>
     <string name="holiday_one_time_section">Một lần</string>
     <string name="cd_remove_holiday">Xóa %1$s</string>
+    <string name="date_picker_nonworking_day_title">Ngày không làm việc</string>
     <string name="date_picker_nonworking_day_warning">Ngày này rơi vào %1$s. Vẫn dùng chứ?</string>
     <string name="date_picker_use_anyway">Vẫn dùng</string>
     <string name="action_reopen">Mở lại</string>

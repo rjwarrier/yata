@@ -1546,6 +1546,7 @@
     <string name="holiday_recurring_badge">वार्षिक</string>
     <string name="holiday_one_time_section">एक-वेळ</string>
     <string name="cd_remove_holiday">%1$s काढा</string>
+    <string name="date_picker_nonworking_day_title">बिगर-कामाचा दिवस</string>
     <string name="date_picker_nonworking_day_warning">ही तारीख %1$s रोजी येते. तरीही वापरायची आहे का?</string>
     <string name="date_picker_use_anyway">तरीही वापरा</string>
     <string name="action_reopen">पुन्हा उघडा</string>

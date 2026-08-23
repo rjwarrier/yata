@@ -1550,6 +1550,7 @@
     <string name="holiday_recurring_badge">Jaarlijks</string>
     <string name="holiday_one_time_section">Eenmalig</string>
     <string name="cd_remove_holiday">%1$s verwijderen</string>
+    <string name="date_picker_nonworking_day_title">Niet-werkdag</string>
     <string name="date_picker_nonworking_day_warning">Deze datum valt op %1$s. Toch gebruiken?</string>
     <string name="date_picker_use_anyway">Toch gebruiken</string>
     <string name="action_reopen">Heropenen</string>

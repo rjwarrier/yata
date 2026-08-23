@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -195,6 +196,14 @@ fun DueDateCalendarDialog(
     pendingWarning?.let { (date, label) ->
         AlertDialog(
             onDismissRequest = { pendingWarning = null },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.WarningAmber,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary
+                )
+            },
+            title = { Text(stringResource(R.string.date_picker_nonworking_day_title)) },
             text = { Text(stringResource(R.string.date_picker_nonworking_day_warning, label)) },
             confirmButton = {
                 TextButton(onClick = {
@@ -205,7 +214,7 @@ fun DueDateCalendarDialog(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingWarning = null }) {
+                FilledTonalButton(onClick = { pendingWarning = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }

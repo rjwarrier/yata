@@ -1595,6 +1595,7 @@
     <string name="holiday_recurring_badge">Anual</string>
     <string name="holiday_one_time_section">Puntual</string>
     <string name="cd_remove_holiday">Eliminar %1$s</string>
+    <string name="date_picker_nonworking_day_title">Día no laborable</string>
     <string name="date_picker_nonworking_day_warning">Esta fecha cae en %1$s. ¿Usarla de todos modos?</string>
     <string name="date_picker_use_anyway">Usar de todos modos</string>
     <string name="action_reopen">Reabrir</string>

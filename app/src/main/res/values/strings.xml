@@ -1718,6 +1718,7 @@
     <string name="holiday_recurring_badge">Yearly</string>
     <string name="holiday_one_time_section">One-time</string>
     <string name="cd_remove_holiday">Remove %1$s</string>
+    <string name="date_picker_nonworking_day_title">Non-working day</string>
     <string name="date_picker_nonworking_day_warning">This date falls on %1$s. Use it anyway?</string>
     <string name="date_picker_use_anyway">Use anyway</string>
     <string name="action_reopen">Reopen</string>

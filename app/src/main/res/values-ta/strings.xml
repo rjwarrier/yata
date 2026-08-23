@@ -1546,6 +1546,7 @@
     <string name="holiday_recurring_badge">வருடாந்திரம்</string>
     <string name="holiday_one_time_section">ஒருமுறை</string>
     <string name="cd_remove_holiday">%1$s ஐ நீக்கு</string>
+    <string name="date_picker_nonworking_day_title">வேலை இல்லாத நாள்</string>
     <string name="date_picker_nonworking_day_warning">இந்த தேதி %1$s அன்று வருகிறது. இருந்தும் பயன்படுத்தவா?</string>
     <string name="date_picker_use_anyway">இருந்தும் பயன்படுத்து</string>
     <string name="action_reopen">மீண்டும் திறக்கவும்</string>

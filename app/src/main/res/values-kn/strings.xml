@@ -1546,6 +1546,7 @@
     <string name="holiday_recurring_badge">ವಾರ್ಷಿಕ</string>
     <string name="holiday_one_time_section">ಒಂದು ಬಾರಿ</string>
     <string name="cd_remove_holiday">%1$s ತೆಗೆದುಹಾಕಿ</string>
+    <string name="date_picker_nonworking_day_title">ಕೆಲಸವಲ್ಲದ ದಿನ</string>
     <string name="date_picker_nonworking_day_warning">ಈ ದಿನಾಂಕವು %1$s ಅಂದು ಬರುತ್ತದೆ. ಹಾಗಿದ್ದರೂ ಬಳಸುವುದೇ?</string>
     <string name="date_picker_use_anyway">ಹಾಗಿದ್ದರೂ ಬಳಸಿ</string>
     <string name="action_reopen">ಪುನಃ ತೆರೆಯಿರಿ</string>

@@ -1706,6 +1706,7 @@
     <string name="holiday_recurring_badge">Jährlich</string>
     <string name="holiday_one_time_section">Einmalig</string>
     <string name="cd_remove_holiday">%1$s entfernen</string>
+    <string name="date_picker_nonworking_day_title">Arbeitsfreier Tag</string>
     <string name="date_picker_nonworking_day_warning">Dieses Datum fällt auf %1$s. Trotzdem verwenden?</string>
     <string name="date_picker_use_anyway">Trotzdem verwenden</string>
     <string name="action_reopen">Wieder öffnen</string>

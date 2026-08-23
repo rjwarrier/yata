@@ -39,9 +39,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   arbitrary anchor year, so its section shows month and day only, while one-time entries show the
   real date since the year is the point there.
 - The due-date calendar (New Task and task detail) now greys out weekend/holiday days — still
-  tappable — and warns immediately with a confirm dialog ("Use it anyway?") the moment you tap one,
-  instead of only after saving via a snackbar. Start date, follow-up, and recurrence-end pickers are
-  unchanged.
+  tappable — and warns immediately with a titled, icon-led confirm dialog ("Non-working day" / "Use
+  it anyway?") the moment you tap one, instead of only after saving via a snackbar. Start date,
+  follow-up, and recurrence-end pickers are unchanged.
 
 ### Changed
 - Tasker integration (Settings → Data Management) is now off by default rather than on. Any app on
