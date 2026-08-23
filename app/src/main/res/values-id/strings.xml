@@ -1547,6 +1547,7 @@
     <string name="settings_add_holiday">Tambah hari libur</string>
     <string name="settings_holiday_recurring_label">Berulang setiap tahun</string>
     <string name="holiday_recurring_badge">Tahunan</string>
+    <string name="holiday_one_time_section">Satu kali</string>
     <string name="cd_remove_holiday">Hapus %1$s</string>
     <string name="date_picker_nonworking_day_warning">Tanggal ini jatuh pada %1$s. Tetap gunakan?</string>
     <string name="date_picker_use_anyway">Tetap gunakan</string>

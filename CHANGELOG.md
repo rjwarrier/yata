@@ -34,7 +34,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   Rescheduling a task onto either a configured weekend day or a holiday shows a warning naming it;
   turning off every weekend day disables that half of the warning. No holiday data is bundled or
   fetched — add the dates yourself, and re-add movable ones (Diwali, Easter) each year since
-  they're left non-recurring.
+  they're left non-recurring. The list below the calendar is split into "Yearly" and "One-time"
+  sections rather than one wrapped row of chips — a recurring holiday's stored date is just an
+  arbitrary anchor year, so its section shows month and day only, while one-time entries show the
+  real date since the year is the point there.
 - The due-date calendar (New Task and task detail) now greys out weekend/holiday days — still
   tappable — and warns immediately with a confirm dialog ("Use it anyway?") the moment you tap one,
   instead of only after saving via a snackbar. Start date, follow-up, and recurrence-end pickers are

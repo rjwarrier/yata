@@ -1547,6 +1547,7 @@
     <string name="settings_add_holiday">छुट्टी जोड़ें</string>
     <string name="settings_holiday_recurring_label">हर साल दोहराता है</string>
     <string name="holiday_recurring_badge">वार्षिक</string>
+    <string name="holiday_one_time_section">एक बार</string>
     <string name="cd_remove_holiday">%1$s हटाएं</string>
     <string name="date_picker_nonworking_day_warning">यह तारीख %1$s को पड़ती है। फिर भी उपयोग करें?</string>
     <string name="date_picker_use_anyway">फिर भी उपयोग करें</string>

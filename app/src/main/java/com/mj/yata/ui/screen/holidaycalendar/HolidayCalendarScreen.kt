@@ -32,22 +32,37 @@ import com.mj.yata.domain.model.Holiday
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.util.AdaptiveContentBox
 import com.mj.yata.ui.util.rememberAdaptiveSheetMaxWidth
+import com.mj.yata.ui.widgets.TaskSectionHeader
 import com.mj.yata.ui.widgets.YataCompactFieldShape
 import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.util.TaskScheduleUtils
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+
+/** For a recurring holiday the stored [Holiday.date] is just an arbitrary anchor year — showing
+ * it (via [TaskScheduleUtils.formatDueDate], which is relative to *today*'s year) would print a
+ * year for some entries and not others depending on when each happened to be added, with no
+ * meaning to the user either way. Recurring entries always show month + day only; one-time entries
+ * show the real date, since for those the year is the whole point. */
+private fun holidayDateLabel(holiday: Holiday, locale: Locale): String {
+    if (!holiday.recurring) return TaskScheduleUtils.formatDueDate(holiday.date)
+    val date = LocalDate.parse(holiday.date)
+    return date.format(DateTimeFormatter.ofPattern("d MMMM", locale))
+}
 
 /** Tap-a-date calendar for managing [Holiday]s, reached from Settings → Task Defaults →
  * "Holidays" — also hosts the weekend-day picker (moved here from Settings directly, since both
  * configure what counts as a non-working day and share the same reschedule warning). Replaces
  * typing an ISO date: tapping a marked day reopens it for editing, tapping a blank one opens the
- * same sheet to add one. The chip list below the grid stays the primary way to audit/remove
- * holidays in bulk, since a recurring holiday's grid marker repeats every month-day match but its
- * stored anchor date (and so its position in a flat list) doesn't. */
+ * same sheet to add one. The list below the grid, split into "Yearly"/"One-time" sections, stays
+ * the primary way to audit/remove holidays in bulk — a recurring holiday's grid marker repeats
+ * every month-day match but its stored anchor date (and so its position in a flat, date-sorted
+ * list) doesn't, which is also why the two kinds get separate sections instead of one interleaved
+ * list. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HolidayCalendarScreen(
@@ -216,30 +231,39 @@ fun HolidayCalendarScreen(
 
                 if (holidayList.isNotEmpty()) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        holidayList.forEach { holiday ->
-                            AssistChip(
-                                onClick = { sheetTargetDate = LocalDate.parse(holiday.date) },
-                                label = {
-                                    val recurringBadge = stringResource(R.string.holiday_recurring_badge)
-                                    Text(
-                                        "${TaskScheduleUtils.formatDueDate(holiday.date)} · ${holiday.label}" +
-                                            if (holiday.recurring) " · $recurringBadge" else ""
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(
-                                        onClick = { viewModel.removeHoliday(holiday.encode()) },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = stringResource(R.string.cd_remove_holiday, holiday.label),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
+                    val (recurring, oneTime) = remember(holidayList) { holidayList.partition { it.recurring } }
+                    if (recurring.isNotEmpty()) {
+                        Column {
+                            TaskSectionHeader(
+                                title = stringResource(R.string.holiday_recurring_badge),
+                                count = recurring.size,
+                                horizontalPadding = 0.dp
                             )
+                            recurring.forEach { holiday ->
+                                HolidayListRow(
+                                    holiday = holiday,
+                                    dateLabel = holidayDateLabel(holiday, locale),
+                                    onClick = { sheetTargetDate = LocalDate.parse(holiday.date) },
+                                    onDelete = { viewModel.removeHoliday(holiday.encode()) }
+                                )
+                            }
+                        }
+                    }
+                    if (oneTime.isNotEmpty()) {
+                        Column {
+                            TaskSectionHeader(
+                                title = stringResource(R.string.holiday_one_time_section),
+                                count = oneTime.size,
+                                horizontalPadding = 0.dp
+                            )
+                            oneTime.forEach { holiday ->
+                                HolidayListRow(
+                                    holiday = holiday,
+                                    dateLabel = holidayDateLabel(holiday, locale),
+                                    onClick = { sheetTargetDate = LocalDate.parse(holiday.date) },
+                                    onDelete = { viewModel.removeHoliday(holiday.encode()) }
+                                )
+                            }
                         }
                     }
                 }
@@ -262,6 +286,41 @@ fun HolidayCalendarScreen(
                 sheetTargetDate = null
             }
         )
+    }
+}
+
+@Composable
+private fun HolidayListRow(
+    holiday: Holiday,
+    dateLabel: String,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = holiday.label,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+            )
+            Text(
+                text = dateLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = onDelete) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.cd_remove_holiday, holiday.label),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
     }
 }
 

@@ -1544,6 +1544,7 @@
     <string name="settings_add_holiday">Magdagdag ng holiday</string>
     <string name="settings_holiday_recurring_label">Umuulit taun-taon</string>
     <string name="holiday_recurring_badge">Taunan</string>
+    <string name="holiday_one_time_section">Minsanan</string>
     <string name="cd_remove_holiday">Alisin ang %1$s</string>
     <string name="date_picker_nonworking_day_warning">Ang petsang ito ay bumabagsak sa %1$s. Gamitin pa rin?</string>
     <string name="date_picker_use_anyway">Gamitin pa rin</string>

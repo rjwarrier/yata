@@ -1544,6 +1544,7 @@
     <string name="settings_add_holiday">Ongeza sikukuu</string>
     <string name="settings_holiday_recurring_label">Hurudia kila mwaka</string>
     <string name="holiday_recurring_badge">Kila mwaka</string>
+    <string name="holiday_one_time_section">Mara moja</string>
     <string name="cd_remove_holiday">Ondoa %1$s</string>
     <string name="date_picker_nonworking_day_warning">Tarehe hii inaangukia %1$s. Itumie hata hivyo?</string>
     <string name="date_picker_use_anyway">Tumia hata hivyo</string>
