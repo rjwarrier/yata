@@ -47,6 +47,7 @@ fun ArchiveScreen(
     val projectsFeatureEnabled by viewModel.projectsFeatureEnabled.collectAsStateWithLifecycle()
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -198,6 +199,7 @@ fun ArchiveScreen(
                             onClick = { onNavigateToTaskDetail(task.id) },
                             onToggleSelect = { toggleSelect(task.id) },
                             onUnarchive = { unarchiveOneWithUndo(task) },
+                            weekendDays = weekendDays,
                             modifier = Modifier.animateItem(
                                 fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
                                 placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
@@ -216,6 +218,7 @@ fun ArchiveScreen(
                             onClick = { onNavigateToTaskDetail(task.id) },
                             onToggleSelect = { toggleSelect(task.id) },
                             onUnarchive = { unarchiveOneWithUndo(task) },
+                            weekendDays = weekendDays,
                             modifier = Modifier.animateItem(
                                 fadeInSpec = com.mj.yata.ui.theme.yataItemFade,
                                 placementSpec = com.mj.yata.ui.theme.yataItemPlacement,
@@ -249,6 +252,7 @@ private fun ArchiveTaskRow(
     selectionMode: Boolean = false,
     selected: Boolean = false,
     onToggleSelect: () -> Unit = {},
+    weekendDays: Set<String> = com.mj.yata.domain.model.DEFAULT_WEEKEND_DAYS,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -281,7 +285,7 @@ private fun ArchiveTaskRow(
                     maxLines = 2
                 )
                 Text(
-                    text = listOfNotNull(task.due, task.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) }).joinToString(" - "),
+                    text = listOfNotNull(task.due, task.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, weekendDays) }).joinToString(" - "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

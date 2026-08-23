@@ -1,5 +1,6 @@
 package com.mj.yata.util
 
+import com.mj.yata.domain.model.DEFAULT_WEEKEND_DAYS
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.domain.model.RecurrenceEnds
 import com.mj.yata.domain.model.Task
@@ -30,7 +31,11 @@ object RecurrenceEvaluator {
         "SU" to DayOfWeek.SUNDAY
     )
 
-    fun recurrenceSummary(r: Recurrence?): String {
+    /** [weekendDays] defaults to Saturday/Sunday, so every existing caller that hasn't been
+     * updated to pass the user's configured weekend days (Settings → Task Defaults → Holidays)
+     * compiles and reads exactly as before. Only matters when a weekly recurrence's [byday] is
+     * exactly the configured weekend/weekday set — otherwise the days are just listed by name. */
+    fun recurrenceSummary(r: Recurrence?, weekendDays: Set<String> = DEFAULT_WEEKEND_DAYS): String {
         if (r == null) return "Does not repeat"
         val n = r.interval
         val unit = when (r.freq) {
@@ -55,8 +60,8 @@ object RecurrenceEvaluator {
 
         if (r.freq == "weekly" && !r.byday.isNullOrEmpty()) {
             val sorted = r.byday.sortedBy { DAY_ORDER.indexOf(it) }
-            val isWeekdays = sorted.size == 5 && !sorted.contains("SA") && !sorted.contains("SU")
-            val isWeekends = sorted.size == 2 && sorted.contains("SA") && sorted.contains("SU")
+            val isWeekdays = weekendDays.isNotEmpty() && sorted.toSet() == (DAY_ORDER.toSet() - weekendDays)
+            val isWeekends = weekendDays.isNotEmpty() && sorted.toSet() == weekendDays
 
             base += when {
                 isWeekdays -> " on weekdays"

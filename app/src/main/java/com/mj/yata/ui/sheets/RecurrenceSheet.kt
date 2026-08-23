@@ -38,6 +38,7 @@ fun RecurrenceSheet(
     onSave: (Recurrence?) -> Unit,
     onDismiss: () -> Unit,
     referenceDate: String? = null,
+    weekendDays: Set<String> = com.mj.yata.domain.model.DEFAULT_WEEKEND_DAYS,
     modifier: Modifier = Modifier
 ) {
     var enabled by remember { mutableStateOf(initialRecurrence != null) }
@@ -68,8 +69,8 @@ fun RecurrenceSheet(
         )
     }
 
-    val liveSummary = remember(enabled, r) {
-        if (enabled) RecurrenceEvaluator.recurrenceSummary(r) else "Does not repeat"
+    val liveSummary = remember(enabled, r, weekendDays) {
+        if (enabled) RecurrenceEvaluator.recurrenceSummary(r, weekendDays) else "Does not repeat"
     }
 
     val liveRrule = remember(enabled, r) {

@@ -75,6 +75,7 @@ fun RecurringTasksScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.recurringTasksUiState.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
     val animateListChanges = uiState.rows.size <= LIGHTWEIGHT_SCREEN_ANIMATION_ROW_LIMIT
 
     Scaffold(
@@ -162,6 +163,7 @@ fun RecurringTasksScreen(
                             onEditTask = { onNavigateToTaskDetail(task.id) },
                             density = uiState.taskRowDensity,
                             animateSize = animateListChanges,
+                            weekendDays = weekendDays,
                             modifier = Modifier.let {
                                 if (animateListChanges) {
                                     it.animateItem(
@@ -279,13 +281,14 @@ private fun RecurringTaskCard(
     onEditTask: () -> Unit,
     density: com.mj.yata.domain.model.TaskRowDensity,
     animateSize: Boolean,
+    weekendDays: Set<String> = com.mj.yata.domain.model.DEFAULT_WEEKEND_DAYS,
     modifier: Modifier = Modifier
 ) {
     val formattedDueDate = remember(task.due) {
         task.due?.let { TaskScheduleUtils.formatDueDate(it) }
     }
-    val recurrenceSummary = remember(task.recurrence) {
-        RecurrenceEvaluator.recurrenceSummary(task.recurrence)
+    val recurrenceSummary = remember(task.recurrence, weekendDays) {
+        RecurrenceEvaluator.recurrenceSummary(task.recurrence, weekendDays)
     }
 
     Column(

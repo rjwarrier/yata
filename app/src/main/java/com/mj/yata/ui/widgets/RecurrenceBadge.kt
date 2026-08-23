@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mj.yata.R
+import com.mj.yata.domain.model.DEFAULT_WEEKEND_DAYS
 import com.mj.yata.domain.model.Recurrence
 import com.mj.yata.util.RecurrenceEvaluator
 
@@ -24,12 +25,13 @@ import com.mj.yata.util.RecurrenceEvaluator
 fun RecurrenceBadge(
     recurrence: Recurrence?,
     modifier: Modifier = Modifier,
-    compact: Boolean = false
+    compact: Boolean = false,
+    weekendDays: Set<String> = DEFAULT_WEEKEND_DAYS
 ) {
     if (recurrence == null) return
 
     val color = MaterialTheme.colorScheme.tertiary
-    val text = RecurrenceEvaluator.recurrenceSummary(recurrence)
+    val text = RecurrenceEvaluator.recurrenceSummary(recurrence, weekendDays)
 
     Row(
         modifier = modifier

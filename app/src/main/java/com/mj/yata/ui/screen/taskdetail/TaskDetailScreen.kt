@@ -707,7 +707,7 @@ fun TaskDetailScreen(
                                 })
                             },
                             quickAdd.recurrence?.takeIf { "recurrence" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}", { activeSheet = DetailSheetType.RecurrenceBuilder }, {
+                                Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)}", { activeSheet = DetailSheetType.RecurrenceBuilder }, {
                                     restoreSmartField("recurrence") { current, baseline -> current.copy(recurrence = baseline?.recurrence) }
                                 })
                             },
@@ -860,7 +860,7 @@ fun TaskDetailScreen(
                     )
 
                     val repeatsVal = task.recurrence?.let {
-                        com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)
+                        com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)
                     } ?: "Does not repeat"
                     MetaRowItem(
                         icon = Icons.Default.Repeat,
@@ -1746,7 +1746,8 @@ fun TaskDetailScreen(
                         viewModel.upsertTask(task.copy(recurrence = rec))
                         activeSheet = DetailSheetType.None
                     },
-                    onDismiss = { activeSheet = DetailSheetType.None }
+                    onDismiss = { activeSheet = DetailSheetType.None },
+                    weekendDays = dueDatePickerContext.weekendDays
                 )
                 DetailSheetType.ListPicker -> {
                     Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -2006,7 +2007,7 @@ fun TaskDetailScreen(
                         includeNotes = options.includeNotes,
                         comments = exportComments,
                         includeComments = options.includeComments,
-                        recurrenceLabel = task.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) },
+                        recurrenceLabel = task.recurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays) },
                         reminderLabel = task.reminder?.let { com.mj.yata.util.TaskScheduleUtils.formatReminder(it) },
                         subtasks = exportSubtasks,
                         includeSubtasks = options.includeSubtasks,

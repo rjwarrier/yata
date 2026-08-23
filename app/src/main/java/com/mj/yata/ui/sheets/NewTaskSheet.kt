@@ -1130,7 +1130,7 @@ fun NewTaskSheet(
                         })
                     },
                     quickAdd.recurrence?.takeIf { "recurrence" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it)}", {
+                        Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)}", {
                             activePanel = null
                             showRecurrenceSheet = true
                         }, {
@@ -1368,7 +1368,7 @@ fun NewTaskSheet(
                     showCheck = false
                 )
                 YataSelectChip(
-                    label = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) } ?: stringResource(R.string.new_task_repeat),
+                    label = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays) } ?: stringResource(R.string.new_task_repeat),
                     selected = selectedRecurrence != null,
                     onClick = { activePanel = if (activePanel == "Repeat") null else "Repeat" },
                     tint = MaterialTheme.colorScheme.tertiary,
@@ -1674,7 +1674,7 @@ fun NewTaskSheet(
                 .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val repeatText = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it) }
+            val repeatText = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays) }
             val contextText = listOfNotNull(project?.name, list?.name).joinToString(" · ").ifEmpty { context.getString(R.string.new_task_no_container) }
             Text(
                 text = contextText + (repeatText?.let { " · $it" } ?: ""),
@@ -1848,7 +1848,8 @@ fun NewTaskSheet(
                     showRecurrenceSheet = false
                 },
                 onDismiss = { showRecurrenceSheet = false },
-                referenceDate = selectedDueDate
+                referenceDate = selectedDueDate,
+                weekendDays = dueDatePickerContext.weekendDays
             )
         }
     }

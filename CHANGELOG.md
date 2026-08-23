@@ -83,6 +83,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   device's hardware-accelerated implementation, so encrypted backup and restore are quicker.
 
 ### Fixed
+- A recurring task's "repeats weekly on..." summary (task detail, new task sheet, recurring task
+  list, archive, task rows) now says "on weekends"/"on weekdays" based on your configured weekend
+  days instead of always assuming Saturday/Sunday.
 - A device restored from an Android backup (or a fresh reinstall that later signs back into the
   same account) could look "already synced" to a self-hosted/GitHub sync — showing no local tasks
   while its last known sync state still remembered data — and syncing in that state used to

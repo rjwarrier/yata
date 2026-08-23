@@ -441,7 +441,7 @@ fun TaskRow(
                     }
 
                     task.recurrence?.let {
-                        RecurrenceBadge(recurrence = it, compact = true)
+                        RecurrenceBadge(recurrence = it, compact = true, weekendDays = weekendDays)
                     }
 
                     // Subtask progress. Only worth the space once there is actually a checklist
