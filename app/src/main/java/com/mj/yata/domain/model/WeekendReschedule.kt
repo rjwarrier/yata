@@ -35,3 +35,11 @@ fun isRescheduledToWeekend(previousDue: String?, nextDue: String?, weekendDays: 
     val date = runCatching { LocalDate.parse(nextDue) }.getOrNull() ?: return false
     return isWeekendDate(date, weekendDays)
 }
+
+/** [holidays] entry whose [Holiday.date] matches [nextDue], if [nextDue] actually differs from
+ * [previousDue] — same "must have moved" guard as [isRescheduledToWeekend]. Returns the label
+ * (not just a boolean) since the holiday warning names the holiday, not just the day of week. */
+fun rescheduledHolidayLabel(previousDue: String?, nextDue: String?, holidays: List<Holiday>): String? {
+    if (nextDue == null || nextDue == previousDue) return null
+    return holidays.firstOrNull { it.matches(nextDue) }?.label
+}

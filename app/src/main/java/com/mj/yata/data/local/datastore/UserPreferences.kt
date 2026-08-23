@@ -11,6 +11,7 @@ import com.mj.yata.domain.model.BackgroundTint
 import com.mj.yata.domain.model.ColorIntensity
 import com.mj.yata.domain.model.DateAliasDefinition
 import com.mj.yata.domain.model.DefaultDueDate
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.MotionMode
 import com.mj.yata.domain.model.SavedThemePreset
 import com.mj.yata.domain.model.SubtaskCompletionAction
@@ -148,6 +149,7 @@ class UserPreferences @Inject constructor(
         val DEFAULT_ESTIMATE_MINUTES = intPreferencesKey("default_estimate_minutes")
         val POSTPONEMENT_WARNING_THRESHOLD = intPreferencesKey("postponement_warning_threshold")
         val WEEKEND_DAYS            = stringSetPreferencesKey("weekend_days")
+        val HOLIDAYS                = stringSetPreferencesKey("holidays")
         val START_OF_WEEK_SUNDAY    = booleanPreferencesKey("start_of_week_sunday")
         val DEFAULT_REMINDER_HOUR   = intPreferencesKey("default_reminder_hour")
         val DEFAULT_REMINDER_MINUTE = intPreferencesKey("default_reminder_minute")
@@ -484,6 +486,7 @@ class UserPreferences @Inject constructor(
     val weekendDaysFlow: Flow<Set<String>> = prefsFlow.map { prefs ->
         prefs[WEEKEND_DAYS] ?: DEFAULT_WEEKEND_DAYS
     }
+    val holidaysFlow: Flow<Set<String>> = prefsFlow.map { prefs -> prefs[HOLIDAYS] ?: emptySet() }
     val subtaskCompletionActionFlow: Flow<SubtaskCompletionAction> = prefsFlow.map { prefs ->
         SubtaskCompletionAction.entries.firstOrNull { it.name == prefs[SUBTASK_COMPLETION_ACTION] }
             ?: SubtaskCompletionAction.ASK
@@ -776,6 +779,28 @@ class UserPreferences @Inject constructor(
 
     suspend fun setWeekendDays(days: Set<String>) {
         dataStore.edit { it[WEEKEND_DAYS] = days }
+    }
+
+    /** Rejects a [holiday] with a blank label/date or an unparseable date outright, rather than
+     * persisting it and relying on [Holiday.decode] to filter it back out on every future read. */
+    suspend fun addHoliday(holiday: Holiday) {
+        if (holiday.date.isBlank() || holiday.label.isBlank()) return
+        if (runCatching { java.time.LocalDate.parse(holiday.date) }.isFailure) return
+        val encoded = holiday.encode()
+        dataStore.edit { prefs ->
+            val existing = prefs[HOLIDAYS] ?: emptySet()
+            val withoutConflicts = existing.filterNot { raw ->
+                Holiday.decode(raw)?.conflictsWith(holiday) == true
+            }.toSet()
+            prefs[HOLIDAYS] = withoutConflicts + encoded
+        }
+    }
+
+    suspend fun removeHoliday(encodedHoliday: String) {
+        dataStore.edit { prefs ->
+            val updated = (prefs[HOLIDAYS] ?: emptySet()) - encodedHoliday
+            if (updated.isEmpty()) prefs.remove(HOLIDAYS) else prefs[HOLIDAYS] = updated
+        }
     }
 
     suspend fun setSubtaskCompletionAction(action: SubtaskCompletionAction) {

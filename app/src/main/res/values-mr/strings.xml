@@ -1528,6 +1528,7 @@
     <string name="analytics_no_postponed_tasks">अजून कोणतीही पुढे ढकललेली कार्ये नाहीत.</string>
     <string name="task_postponement_warning">"%1$s" %2$d वेळा पुढे ढकलले गेले आहे.</string>
     <string name="task_weekend_reschedule_warning">"%1$s" आता आठवड्याच्या शेवटी (%2$s) देय आहे.</string>
+    <string name="task_holiday_reschedule_warning">"%1$s" आता सुट्टीच्या दिवशी (%2$s) देय आहे.</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d वेळ</item>
         <item quantity="other">%1$d वेळा</item>
@@ -1536,6 +1537,16 @@
     <string name="settings_postponement_warning_threshold_desc">चेतावणी देण्यापूर्वी सामान्य प्राधान्य कार्य किती वेळा पुढे ढकलले जाऊ शकते. मध्यम प्राधान्य %1$d वेळा नंतर आणि उच्च प्राधान्य %2$d वेळा नंतर चेतावणी देते.</string>
     <string name="settings_weekend_days">आठवड्याच्या शेवटचे दिवस</string>
     <string name="settings_weekend_days_desc">एखादे कार्य या दिवसांपैकी एका दिवशी पुनर्नियोजित केल्यास इशारा दाखवला जाईल. इशारा बंद करण्यासाठी सर्व दिवस बंद करा.</string>
+    <string name="settings_holidays">सानुकूल सुट्ट्या</string>
+    <string name="settings_holidays_desc">एखादे कार्य या तारखांना पुनर्नियोजित केल्यास इशारा दाखवण्यासाठी स्वतःच्या तारखा (राष्ट्रीय सुट्ट्या, कार्यालय बंद) जोडा. कोणताही सुट्टीचा डेटा समाविष्ट किंवा मिळवला जात नाही — तारखा स्वतः जोडा, आणि बदलत्या सुट्ट्या (जसे की दिवाळी किंवा इस्टर) दरवर्षी पुन्हा जोडा.</string>
+    <string name="settings_holiday_pick_date">तारीख निवडा</string>
+    <string name="settings_holiday_name_label">नाव</string>
+    <string name="settings_add_holiday">सुट्टी जोडा</string>
+    <string name="settings_holiday_recurring_label">दरवर्षी पुनरावृत्ती होते</string>
+    <string name="holiday_recurring_badge">वार्षिक</string>
+    <string name="cd_remove_holiday">%1$s काढा</string>
+    <string name="date_picker_nonworking_day_warning">ही तारीख %1$s रोजी येते. तरीही वापरायची आहे का?</string>
+    <string name="date_picker_use_anyway">तरीही वापरा</string>
     <string name="action_reopen">पुन्हा उघडा</string>
     <string name="action_complete">पूर्ण करा</string>
     <string name="action_open">उघडा</string>

@@ -388,6 +388,7 @@ fun NewTaskSheet(
     defaultEstimateMinutes: Int? = null,
     defaultProjectId: String? = null,
     defaultTagIds: Set<String> = emptySet(),
+    dueDatePickerContext: com.mj.yata.ui.widgets.DueDatePickerContext = com.mj.yata.ui.widgets.DueDatePickerContext.None,
     onDraftStateChanged: (Boolean) -> Unit = {}
 ) {
     var title by rememberSaveable(stateSaver = TextFieldValue.Saver) {
@@ -1726,8 +1727,9 @@ fun NewTaskSheet(
     }
 
     if (showDatePicker) {
-        YataDatePickerDialog(
+        com.mj.yata.ui.widgets.DueDateCalendarDialog(
             initialDate = selectedDueDate,
+            context = dueDatePickerContext,
             onDismiss = { showDatePicker = false },
             onConfirm = {
                 setDueDate(it)

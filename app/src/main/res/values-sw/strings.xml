@@ -1528,6 +1528,7 @@
     <string name="analytics_no_postponed_tasks">Hakuna kazi zilizoahirishwa bado.</string>
     <string name="task_postponement_warning">"%1$s" imeahirishwa mara %2$d.</string>
     <string name="task_weekend_reschedule_warning">"%1$s" sasa inatarajiwa wikendi (%2$s).</string>
+    <string name="task_holiday_reschedule_warning">"%1$s" sasa inatarajiwa siku ya sikukuu (%2$s).</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">mara %1$d</item>
         <item quantity="other">mara %1$d</item>
@@ -1536,6 +1537,16 @@
     <string name="settings_postponement_warning_threshold_desc">Idadi ya mara ambazo kazi ya kipaumbele cha kawaida inaweza kuahirishwa kabla ya kuonya. Kipaumbele cha kati huonya baada ya %1$d, na cha juu baada ya %2$d.</string>
     <string name="settings_weekend_days">Siku za wikendi</string>
     <string name="settings_weekend_days_desc">Kupanga upya kazi hadi siku moja kati ya hizi kutaonyesha onyo. Zima siku zote ili kuzima onyo.</string>
+    <string name="settings_holidays">Sikukuu maalum</string>
+    <string name="settings_holidays_desc">Ongeza tarehe zako mwenyewe (sikukuu za kitaifa, kufungwa kwa ofisi) ili kuonya unapopanga upya kazi kwenye siku hizo. Hakuna data ya sikukuu iliyojumuishwa au kupatikana — ongeza tarehe mwenyewe, na ongeza tena kila mwaka sikukuu zinazobadilika (kama Diwali au Pasaka).</string>
+    <string name="settings_holiday_pick_date">Chagua tarehe</string>
+    <string name="settings_holiday_name_label">Jina</string>
+    <string name="settings_add_holiday">Ongeza sikukuu</string>
+    <string name="settings_holiday_recurring_label">Hurudia kila mwaka</string>
+    <string name="holiday_recurring_badge">Kila mwaka</string>
+    <string name="cd_remove_holiday">Ondoa %1$s</string>
+    <string name="date_picker_nonworking_day_warning">Tarehe hii inaangukia %1$s. Itumie hata hivyo?</string>
+    <string name="date_picker_use_anyway">Tumia hata hivyo</string>
     <string name="action_reopen">Fungua tena</string>
     <string name="action_complete">Kamilisha</string>
     <string name="action_open">Fungua</string>

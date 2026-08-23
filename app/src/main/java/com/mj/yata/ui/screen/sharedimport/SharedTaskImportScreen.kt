@@ -199,6 +199,7 @@ fun SharedTaskImportScreen(
     }
 
     NewTaskSheet(
+        dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel),
         lists = lists,
         projects = activeProjects,
         people = activePeople,

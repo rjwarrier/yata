@@ -1528,6 +1528,7 @@
     <string name="analytics_no_postponed_tasks">ਅਜੇ ਤੱਕ ਕੋਈ ਮੁਲਤਵੀ ਕੰਮ ਨਹੀਂ ਹੈ।</string>
     <string name="task_postponement_warning">"%1$s" ਨੂੰ %2$d ਵਾਰ ਮੁਲਤਵੀ ਕੀਤਾ ਗਿਆ ਹੈ।</string>
     <string name="task_weekend_reschedule_warning">"%1$s" ਹੁਣ ਵੀਕਐਂਡ (%2$s) ਨੂੰ ਨਿਯਤ ਹੈ।</string>
+    <string name="task_holiday_reschedule_warning">"%1$s" ਹੁਣ ਛੁੱਟੀ (%2$s) ਨੂੰ ਨਿਯਤ ਹੈ।</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d ਵਾਰ</item>
         <item quantity="other">%1$d ਵਾਰ</item>
@@ -1536,6 +1537,16 @@
     <string name="settings_postponement_warning_threshold_desc">ਚੇਤਾਵਨੀ ਦੇਣ ਤੋਂ ਪਹਿਲਾਂ ਆਮ ਤਰਜੀਹ ਵਾਲੇ ਕੰਮ ਨੂੰ ਕਿੰਨੀ ਵਾਰ ਮੁਲਤਵੀ ਕੀਤਾ ਜਾ ਸਕਦਾ ਹੈ। ਦਰਮਿਆਨੀ ਤਰਜੀਹ %1$d ਵਾਰ ਬਾਅਦ ਅਤੇ ਉੱਚ ਤਰਜੀਹ %2$d ਵਾਰ ਬਾਅਦ ਚੇਤਾਵਨੀ ਦਿੰਦੀ ਹੈ।</string>
     <string name="settings_weekend_days">ਵੀਕਐਂਡ ਦੇ ਦਿਨ</string>
     <string name="settings_weekend_days_desc">ਕਿਸੇ ਕੰਮ ਨੂੰ ਇਹਨਾਂ ਦਿਨਾਂ ਵਿੱਚੋਂ ਕਿਸੇ ਇੱਕ \'ਤੇ ਮੁੜ-ਤਹਿ ਕਰਨ \'ਤੇ ਇੱਕ ਚੇਤਾਵਨੀ ਦਿਖਾਈ ਦੇਵੇਗੀ। ਚੇਤਾਵਨੀ ਬੰਦ ਕਰਨ ਲਈ ਸਾਰੇ ਦਿਨ ਬੰਦ ਕਰੋ।</string>
+    <string name="settings_holidays">ਕਸਟਮ ਛੁੱਟੀਆਂ</string>
+    <string name="settings_holidays_desc">ਕਿਸੇ ਕੰਮ ਨੂੰ ਇਹਨਾਂ ਤਾਰੀਖਾਂ \'ਤੇ ਮੁੜ-ਤਹਿ ਕਰਨ \'ਤੇ ਚੇਤਾਵਨੀ ਦਿਖਾਉਣ ਲਈ ਆਪਣੀਆਂ ਤਾਰੀਖਾਂ (ਰਾਸ਼ਟਰੀ ਛੁੱਟੀਆਂ, ਦਫ਼ਤਰ ਬੰਦ) ਸ਼ਾਮਲ ਕਰੋ। ਕੋਈ ਛੁੱਟੀ ਡਾਟਾ ਸ਼ਾਮਲ ਜਾਂ ਪ੍ਰਾਪਤ ਨਹੀਂ ਕੀਤਾ ਜਾਂਦਾ — ਤਾਰੀਖਾਂ ਖੁਦ ਸ਼ਾਮਲ ਕਰੋ, ਅਤੇ ਬਦਲਦੀਆਂ ਛੁੱਟੀਆਂ (ਜਿਵੇਂ ਦੀਵਾਲੀ ਜਾਂ ਈਸਟਰ) ਹਰ ਸਾਲ ਦੁਬਾਰਾ ਸ਼ਾਮਲ ਕਰੋ।</string>
+    <string name="settings_holiday_pick_date">ਤਾਰੀਖ ਚੁਣੋ</string>
+    <string name="settings_holiday_name_label">ਨਾਮ</string>
+    <string name="settings_add_holiday">ਛੁੱਟੀ ਸ਼ਾਮਲ ਕਰੋ</string>
+    <string name="settings_holiday_recurring_label">ਹਰ ਸਾਲ ਦੁਹਰਾਉਂਦਾ ਹੈ</string>
+    <string name="holiday_recurring_badge">ਸਾਲਾਨਾ</string>
+    <string name="cd_remove_holiday">%1$s ਹਟਾਓ</string>
+    <string name="date_picker_nonworking_day_warning">ਇਹ ਤਾਰੀਖ %1$s ਨੂੰ ਪੈਂਦੀ ਹੈ। ਫਿਰ ਵੀ ਵਰਤਣੀ ਹੈ?</string>
+    <string name="date_picker_use_anyway">ਫਿਰ ਵੀ ਵਰਤੋ</string>
     <string name="action_reopen">ਦੁਬਾਰਾ ਖੋਲ੍ਹੋ</string>
     <string name="action_complete">ਪੂਰਾ ਕਰੋ</string>
     <string name="action_open">ਖੋਲ੍ਹੋ</string>

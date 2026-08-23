@@ -1533,6 +1533,7 @@
     <string name="analytics_no_postponed_tasks">Aucune tâche reportée pour le moment.</string>
     <string name="task_postponement_warning">« %1$s » a été reportée %2$d fois.</string>
     <string name="task_weekend_reschedule_warning">« %1$s » est désormais prévue pour le week-end (%2$s).</string>
+    <string name="task_holiday_reschedule_warning">« %1$s » est désormais prévue pour un jour férié (%2$s).</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d fois</item>
         <item quantity="other">%1$d fois</item>
@@ -1541,6 +1542,16 @@
     <string name="settings_postponement_warning_threshold_desc">Nombre de reports autorisés pour une tâche de priorité normale avant avertissement. La priorité moyenne avertit après %1$d et la priorité haute après %2$d.</string>
     <string name="settings_weekend_days">Jours de week-end</string>
     <string name="settings_weekend_days_desc">Déplacer une tâche vers l\'un de ces jours affiche un avertissement. Désactivez-les tous pour désactiver l\'avertissement.</string>
+    <string name="settings_holidays">Jours fériés personnalisés</string>
+    <string name="settings_holidays_desc">Ajoutez vos propres dates (jours fériés nationaux, fermetures de bureau) pour afficher un avertissement lors du déplacement d\'une tâche vers ces jours. Aucune donnée de jours fériés n\'est incluse ni téléchargée — ajoutez les dates vous-même, et ajoutez à nouveau chaque année les fêtes mobiles (comme Diwali ou Pâques).</string>
+    <string name="settings_holiday_pick_date">Choisir une date</string>
+    <string name="settings_holiday_name_label">Nom</string>
+    <string name="settings_add_holiday">Ajouter un jour férié</string>
+    <string name="settings_holiday_recurring_label">Se répète chaque année</string>
+    <string name="holiday_recurring_badge">Annuel</string>
+    <string name="cd_remove_holiday">Supprimer %1$s</string>
+    <string name="date_picker_nonworking_day_warning">Cette date tombe un %1$s. L\'utiliser quand même ?</string>
+    <string name="date_picker_use_anyway">Utiliser quand même</string>
     <string name="action_reopen">Rouvrir</string>
     <string name="action_complete">Terminer</string>
     <string name="action_open">Ouvrir</string>

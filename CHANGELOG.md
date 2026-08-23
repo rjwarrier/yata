@@ -30,6 +30,16 @@ test-only changes belong in the commit message, not here, unless they change beh
   date, quick-snoozing it, or bulk-rescheduling several at once — onto one of the configured days
   now shows a warning that it landed on the weekend. Defaults to Saturday/Sunday; turning every day
   off disables the warning entirely.
+- Added a "Custom holidays" calendar, reached from Settings → Task Defaults. Tap a date to add or
+  edit a holiday (name + a "Repeats every year" toggle for fixed-date ones like Independence Day,
+  so they never need re-adding) instead of typing an ISO date; marked days show a dot, recurring
+  ones a distinct color. Rescheduling a task onto a holiday shows a warning naming it, same trigger
+  points as the weekend warning. No holiday data is bundled or fetched — add the dates yourself,
+  and re-add movable ones (Diwali, Easter) each year since they're left non-recurring.
+- The due-date calendar (New Task and task detail) now greys out weekend/holiday days — still
+  tappable — and warns immediately with a confirm dialog ("Use it anyway?") the moment you tap one,
+  instead of only after saving via a snackbar. Start date, follow-up, and recurrence-end pickers are
+  unchanged.
 
 ### Changed
 - Tasker integration (Settings → Data Management) is now off by default rather than on. Any app on
@@ -78,6 +88,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   clear"/"needs attention"/"on deck" status, and the three action chips) was showing in English
   regardless of app language — those 17 strings were never propagated to any of the 24 locales when
   the feature was added. Now translated the same as the rest of the screen.
+- Custom holidays: adding a recurring holiday from a different visible year than an existing one on
+  the same month-day (e.g. re-confirming "Independence Day" from a later year's calendar view) could
+  create a second entry that independently matched every year, instead of updating the original —
+  both would then show in the chip list and could double up the reschedule warning. A holiday label
+  is also now capped at 120 characters and a malformed/corrupted stored date is dropped instead of
+  crashing the calendar or silently never matching.
 
 ## [0.94] - 2026-08-18
 

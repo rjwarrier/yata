@@ -1532,6 +1532,7 @@
     <string name="analytics_no_postponed_tasks">Nog geen uitgestelde taken.</string>
     <string name="task_postponement_warning">„%1$s” is %2$d keer uitgesteld.</string>
     <string name="task_weekend_reschedule_warning">„%1$s” vervalt nu in het weekend (%2$s).</string>
+    <string name="task_holiday_reschedule_warning">„%1$s” vervalt nu op een feestdag (%2$s).</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d keer</item>
         <item quantity="other">%1$d keer</item>
@@ -1540,6 +1541,16 @@
     <string name="settings_postponement_warning_threshold_desc">Aantal keren dat een taak met normale prioriteit kan worden uitgesteld voor een waarschuwing. Gemiddelde prioriteit waarschuwt na %1$d en hoge prioriteit na %2$d.</string>
     <string name="settings_weekend_days">Weekenddagen</string>
     <string name="settings_weekend_days_desc">Het verzetten van een taak naar een van deze dagen toont een waarschuwing. Schakel alle dagen uit om de waarschuwing uit te zetten.</string>
+    <string name="settings_holidays">Aangepaste feestdagen</string>
+    <string name="settings_holidays_desc">Voeg je eigen data toe (nationale feestdagen, kantoorsluitingen) om een waarschuwing te krijgen bij het verzetten van een taak naar die dag. Er zijn geen feestdaggegevens ingebouwd of opgehaald — voeg de data zelf toe en voeg beweeglijke feestdagen (zoals Diwali of Pasen) elk jaar opnieuw toe.</string>
+    <string name="settings_holiday_pick_date">Datum kiezen</string>
+    <string name="settings_holiday_name_label">Naam</string>
+    <string name="settings_add_holiday">Feestdag toevoegen</string>
+    <string name="settings_holiday_recurring_label">Herhaalt elk jaar</string>
+    <string name="holiday_recurring_badge">Jaarlijks</string>
+    <string name="cd_remove_holiday">%1$s verwijderen</string>
+    <string name="date_picker_nonworking_day_warning">Deze datum valt op %1$s. Toch gebruiken?</string>
+    <string name="date_picker_use_anyway">Toch gebruiken</string>
     <string name="action_reopen">Heropenen</string>
     <string name="action_complete">Voltooien</string>
     <string name="action_open">Openen</string>

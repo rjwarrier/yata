@@ -1688,6 +1688,7 @@
     <string name="analytics_no_postponed_tasks">Noch keine verschobenen Aufgaben.</string>
     <string name="task_postponement_warning">„%1$s“ wurde %2$d Mal verschoben.</string>
     <string name="task_weekend_reschedule_warning">„%1$s“ ist jetzt am Wochenende (%2$s) fällig.</string>
+    <string name="task_holiday_reschedule_warning">„%1$s“ ist jetzt an einem Feiertag (%2$s) fällig.</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d Mal</item>
         <item quantity="other">%1$d Mal</item>
@@ -1696,6 +1697,16 @@
     <string name="settings_postponement_warning_threshold_desc">Anzahl der erlaubten Verschiebungen bei normaler Priorität vor einer Warnung. Mittlere Priorität warnt nach %1$d und hohe Priorität nach %2$d.</string>
     <string name="settings_weekend_days">Wochenendtage</string>
     <string name="settings_weekend_days_desc">Wird eine Aufgabe auf einen dieser Tage verschoben, erscheint eine Warnung. Deaktiviere alle Tage, um die Warnung auszuschalten.</string>
+    <string name="settings_holidays">Eigene Feiertage</string>
+    <string name="settings_holidays_desc">Füge eigene Termine hinzu (gesetzliche Feiertage, Bürostilllegungen), bei denen beim Verschieben einer Aufgabe eine Warnung erscheinen soll. Es sind keine Feiertagsdaten enthalten oder werden abgerufen — füge die Termine selbst hinzu und ergänze bewegliche Feiertage (wie Diwali oder Ostern) jedes Jahr erneut.</string>
+    <string name="settings_holiday_pick_date">Datum wählen</string>
+    <string name="settings_holiday_name_label">Name</string>
+    <string name="settings_add_holiday">Feiertag hinzufügen</string>
+    <string name="settings_holiday_recurring_label">Wiederholt sich jedes Jahr</string>
+    <string name="holiday_recurring_badge">Jährlich</string>
+    <string name="cd_remove_holiday">%1$s entfernen</string>
+    <string name="date_picker_nonworking_day_warning">Dieses Datum fällt auf %1$s. Trotzdem verwenden?</string>
+    <string name="date_picker_use_anyway">Trotzdem verwenden</string>
     <string name="action_reopen">Wieder öffnen</string>
     <string name="action_complete">Erledigen</string>
     <string name="action_open">Öffnen</string>

@@ -1528,6 +1528,7 @@
     <string name="analytics_no_postponed_tasks">ಇನ್ನೂ ಯಾವುದೇ ಮುಂದೂಡಲಾದ ಕಾರ್ಯಗಳಿಲ್ಲ.</string>
     <string name="task_postponement_warning">"%1$s" ಅನ್ನು %2$d ಬಾರಿ ಮುಂದೂಡಲಾಗಿದೆ.</string>
     <string name="task_weekend_reschedule_warning">"%1$s" ಈಗ ವಾರಾಂತ್ಯದಂದು (%2$s) ಗಡುವು ಹೊಂದಿದೆ.</string>
+    <string name="task_holiday_reschedule_warning">"%1$s" ಈಗ ರಜಾದಿನದಂದು (%2$s) ಗಡುವು ಹೊಂದಿದೆ.</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d ಬಾರಿ</item>
         <item quantity="other">%1$d ಬಾರಿ</item>
@@ -1536,6 +1537,16 @@
     <string name="settings_postponement_warning_threshold_desc">ಎಚ್ಚರಿಕೆ ನೀಡುವ ಮೊದಲು ಸಾಮಾನ್ಯ ಆದ್ಯತೆಯ ಕಾರ್ಯವನ್ನು ಎಷ್ಟು ಬಾರಿ ಮುಂದೂಡಬಹುದು. ಮಧ್ಯಮ ಆದ್ಯತೆಯು %1$d ನಂತರ ಮತ್ತು ಹೆಚ್ಚಿನ ಆದ್ಯತೆಯು %2$d ನಂತರ ಎಚ್ಚರಿಸುತ್ತದೆ.</string>
     <string name="settings_weekend_days">ವಾರಾಂತ್ಯದ ದಿನಗಳು</string>
     <string name="settings_weekend_days_desc">ಈ ದಿನಗಳಲ್ಲಿ ಒಂದಕ್ಕೆ ಕಾರ್ಯವನ್ನು ಮರುಹೊಂದಿಸಿದಾಗ ಎಚ್ಚರಿಕೆ ತೋರಿಸುತ್ತದೆ. ಎಚ್ಚರಿಕೆಯನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲು ಎಲ್ಲಾ ದಿನಗಳನ್ನು ಆಫ್ ಮಾಡಿ.</string>
+    <string name="settings_holidays">ಕಸ್ಟಮ್ ರಜಾದಿನಗಳು</string>
+    <string name="settings_holidays_desc">ಒಂದು ಕಾರ್ಯವನ್ನು ಈ ದಿನಾಂಕಗಳಿಗೆ ಮರುಹೊಂದಿಸಿದಾಗ ಎಚ್ಚರಿಕೆ ತೋರಿಸಲು ನಿಮ್ಮ ಸ್ವಂತ ದಿನಾಂಕಗಳನ್ನು (ರಾಷ್ಟ್ರೀಯ ರಜಾದಿನಗಳು, ಕಚೇರಿ ಮುಚ್ಚುವಿಕೆಗಳು) ಸೇರಿಸಿ. ಯಾವುದೇ ರಜಾದಿನ ಡೇಟಾ ಸೇರಿಸಲಾಗಿಲ್ಲ ಅಥವಾ ಪಡೆಯಲಾಗಿಲ್ಲ — ದಿನಾಂಕಗಳನ್ನು ನೀವೇ ಸೇರಿಸಿ, ಮತ್ತು ಚಲಿಸುವ ರಜಾದಿನಗಳನ್ನು (ದೀಪಾವಳಿ ಅಥವಾ ಈಸ್ಟರ್‌ನಂತಹ) ಪ್ರತಿ ವರ್ಷ ಮತ್ತೆ ಸೇರಿಸಿ.</string>
+    <string name="settings_holiday_pick_date">ದಿನಾಂಕ ಆರಿಸಿ</string>
+    <string name="settings_holiday_name_label">ಹೆಸರು</string>
+    <string name="settings_add_holiday">ರಜಾದಿನ ಸೇರಿಸಿ</string>
+    <string name="settings_holiday_recurring_label">ಪ್ರತಿ ವರ್ಷ ಪುನರಾವರ್ತನೆಯಾಗುತ್ತದೆ</string>
+    <string name="holiday_recurring_badge">ವಾರ್ಷಿಕ</string>
+    <string name="cd_remove_holiday">%1$s ತೆಗೆದುಹಾಕಿ</string>
+    <string name="date_picker_nonworking_day_warning">ಈ ದಿನಾಂಕವು %1$s ಅಂದು ಬರುತ್ತದೆ. ಹಾಗಿದ್ದರೂ ಬಳಸುವುದೇ?</string>
+    <string name="date_picker_use_anyway">ಹಾಗಿದ್ದರೂ ಬಳಸಿ</string>
     <string name="action_reopen">ಪುನಃ ತೆರೆಯಿರಿ</string>
     <string name="action_complete">ಪೂರ್ಣಗೊಳಿಸಿ</string>
     <string name="action_open">ತೆರೆಯಿರಿ</string>

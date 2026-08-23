@@ -397,6 +397,7 @@ fun AppNavigation(
                 onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
                 onNavigateToShareApp = { navController.navigate(Screen.ShareApp.route) },
                 onNavigateToRemoteSync = { navController.navigate(Screen.RemoteSync.route) },
+                onNavigateToHolidayCalendar = { navController.navigate(Screen.HolidayCalendar.route) },
                 onNavigateToSettingsDestination = { destination ->
                     navController.navigate(Screen.SettingsSection.createRoute(destination.routeSegment))
                 }
@@ -426,6 +427,7 @@ fun AppNavigation(
                 onNavigateToCrashLog = { navController.navigate(Screen.CrashLog.route) },
                 onNavigateToShareApp = { navController.navigate(Screen.ShareApp.route) },
                 onNavigateToRemoteSync = { navController.navigate(Screen.RemoteSync.route) },
+                onNavigateToHolidayCalendar = { navController.navigate(Screen.HolidayCalendar.route) },
                 settingsDestination = destination
             )
         }
@@ -565,6 +567,15 @@ fun AppNavigation(
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
                 onNavigateToTab = onNavigateToTab
+            )
+        }
+
+        // ── Custom holidays calendar ─────────────────────────────────────────
+        composable(Screen.HolidayCalendar.route) { backStackEntry ->
+            val viewModel: MainViewModel = backStackEntry.sharedViewModel(navController)
+            com.mj.yata.ui.screen.holidaycalendar.HolidayCalendarScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

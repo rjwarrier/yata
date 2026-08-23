@@ -798,6 +798,7 @@ fun ListDetailScreen(
             sheetMaxWidth = adaptiveSheetMaxWidth
         ) {
             NewTaskSheet(
+                dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel),
                 lists = listOf(list), // Force this list
                 projects = projects,
                 people = people,

@@ -75,6 +75,7 @@ sealed class Screen(val route: String) {
     object Inbox : Screen("inbox")
     object RecurringTasks : Screen("recurring_tasks")
     object NextDays : Screen("next_days")
+    object HolidayCalendar : Screen("holiday_calendar")
     object CrashLog : Screen("crash_log")
     object ShareApp : Screen("share_app")
     object RemoteSync : Screen("remote_sync")

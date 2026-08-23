@@ -1531,6 +1531,7 @@
     <string name="analytics_no_postponed_tasks">Brak odłożonych zadań.</string>
     <string name="task_postponement_warning">Zadanie „%1$s” zostało odłożone %2$d razy.</string>
     <string name="task_weekend_reschedule_warning">Zadanie „%1$s” ma teraz termin w weekend (%2$s).</string>
+    <string name="task_holiday_reschedule_warning">Zadanie „%1$s” ma teraz termin w święto (%2$s).</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d raz</item>
         <item quantity="other">%1$d razy</item>
@@ -1539,6 +1540,16 @@
     <string name="settings_postponement_warning_threshold_desc">Liczba odłożeń zadania o zwykłym priorytecie przed wyświetleniem ostrzeżenia. Średni priorytet ostrzega po %1$d, a wysoki po %2$d.</string>
     <string name="settings_weekend_days">Dni weekendowe</string>
     <string name="settings_weekend_days_desc">Zmiana terminu zadania na jeden z tych dni wyświetli ostrzeżenie. Aby wyłączyć ostrzeżenie, wyłącz wszystkie dni.</string>
+    <string name="settings_holidays">Własne święta</string>
+    <string name="settings_holidays_desc">Dodaj własne daty (święta państwowe, zamknięcia biura), przy których przeniesieniu zadania pojawi się ostrzeżenie. Żadne dane o świętach nie są dołączone ani pobierane — dodaj daty samodzielnie i co roku dodawaj ponownie święta ruchome (np. Wielkanoc).</string>
+    <string name="settings_holiday_pick_date">Wybierz datę</string>
+    <string name="settings_holiday_name_label">Nazwa</string>
+    <string name="settings_add_holiday">Dodaj święto</string>
+    <string name="settings_holiday_recurring_label">Powtarza się co roku</string>
+    <string name="holiday_recurring_badge">Coroczne</string>
+    <string name="cd_remove_holiday">Usuń %1$s</string>
+    <string name="date_picker_nonworking_day_warning">Ta data przypada na %1$s. Mimo to jej użyć?</string>
+    <string name="date_picker_use_anyway">Użyj mimo to</string>
     <string name="action_reopen">Otwórz ponownie</string>
     <string name="action_complete">Ukończ</string>
     <string name="action_open">Otwórz</string>

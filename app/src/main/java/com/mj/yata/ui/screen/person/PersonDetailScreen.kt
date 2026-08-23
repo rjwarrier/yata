@@ -770,6 +770,7 @@ fun PersonDetailScreen(
             )
         ) {
             NewTaskSheet(
+                dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel),
                 lists = lists,
                 projects = projects,
                 people = people,

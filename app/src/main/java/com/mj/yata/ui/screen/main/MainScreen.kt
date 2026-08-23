@@ -197,7 +197,8 @@ fun MainScreen(
         viewModel.weekendRescheduleWarnings.collect { warning ->
             snackbarHostState.showSnackbar(
                 context.getString(
-                    R.string.task_weekend_reschedule_warning,
+                    if (warning.isHoliday) R.string.task_holiday_reschedule_warning
+                    else R.string.task_weekend_reschedule_warning,
                     warning.taskTitle,
                     warning.dayLabel
                 )
@@ -1188,6 +1189,7 @@ fun MainScreen(
                     contentAlignment = if (useWideNavigation) Alignment.Center else Alignment.TopStart
                 ) {
                     NewTaskSheet(
+                        dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel),
                         lists = if (quickCaptureMode) emptyList() else lists,
                         projects = if (quickCaptureMode) emptyList() else activeProjects,
                         people = if (quickCaptureMode) emptyList() else activePeople,

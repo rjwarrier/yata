@@ -1577,6 +1577,7 @@
     <string name="analytics_no_postponed_tasks">Aún no hay tareas pospuestas.</string>
     <string name="task_postponement_warning">«%1$s» se ha pospuesto %2$d veces.</string>
     <string name="task_weekend_reschedule_warning">«%1$s» ahora vence en fin de semana (%2$s).</string>
+    <string name="task_holiday_reschedule_warning">«%1$s» ahora vence en un día festivo (%2$s).</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d vez</item>
         <item quantity="other">%1$d veces</item>
@@ -1585,6 +1586,16 @@
     <string name="settings_postponement_warning_threshold_desc">Número de veces que se puede posponer una tarea de prioridad normal antes de avisar. La prioridad media avisa tras %1$d y la alta tras %2$d.</string>
     <string name="settings_weekend_days">Días de fin de semana</string>
     <string name="settings_weekend_days_desc">Si reprogramas una tarea a uno de estos días, se mostrará una advertencia. Desactiva todos los días para desactivar la advertencia.</string>
+    <string name="settings_holidays">Días festivos personalizados</string>
+    <string name="settings_holidays_desc">Añade tus propias fechas (festivos nacionales, cierres de oficina) para recibir una advertencia al reprogramar una tarea a esos días. No se incluye ni se descarga ningún dato de festivos: añade las fechas tú mismo y vuelve a añadir cada año los festivos móviles (como Diwali o Semana Santa).</string>
+    <string name="settings_holiday_pick_date">Elegir fecha</string>
+    <string name="settings_holiday_name_label">Nombre</string>
+    <string name="settings_add_holiday">Añadir festivo</string>
+    <string name="settings_holiday_recurring_label">Se repite cada año</string>
+    <string name="holiday_recurring_badge">Anual</string>
+    <string name="cd_remove_holiday">Eliminar %1$s</string>
+    <string name="date_picker_nonworking_day_warning">Esta fecha cae en %1$s. ¿Usarla de todos modos?</string>
+    <string name="date_picker_use_anyway">Usar de todos modos</string>
     <string name="action_reopen">Reabrir</string>
     <string name="action_complete">Completar</string>
     <string name="action_open">Abrir</string>

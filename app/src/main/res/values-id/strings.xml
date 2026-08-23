@@ -1531,6 +1531,7 @@
     <string name="analytics_no_postponed_tasks">Belum ada tugas yang ditunda.</string>
     <string name="task_postponement_warning">"%1$s" telah ditunda %2$d kali.</string>
     <string name="task_weekend_reschedule_warning">"%1$s" sekarang jatuh tempo di akhir pekan (%2$s).</string>
+    <string name="task_holiday_reschedule_warning">"%1$s" sekarang jatuh tempo pada hari libur (%2$s).</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d kali</item>
         <item quantity="other">%1$d kali</item>
@@ -1539,6 +1540,16 @@
     <string name="settings_postponement_warning_threshold_desc">Berapa kali tugas prioritas normal dapat ditunda sebelum peringatan muncul. Prioritas sedang memperingatkan setelah %1$d dan prioritas tinggi setelah %2$d.</string>
     <string name="settings_weekend_days">Hari akhir pekan</string>
     <string name="settings_weekend_days_desc">Menjadwalkan ulang tugas ke salah satu hari ini akan menampilkan peringatan. Matikan semua hari untuk menonaktifkan peringatan.</string>
+    <string name="settings_holidays">Hari libur khusus</string>
+    <string name="settings_holidays_desc">Tambahkan tanggal Anda sendiri (hari libur nasional, penutupan kantor) untuk diperingatkan saat menjadwalkan ulang tugas ke tanggal tersebut. Tidak ada data hari libur yang disertakan atau diambil — tambahkan tanggalnya sendiri, dan tambahkan kembali hari libur yang berubah-ubah (seperti Diwali atau Paskah) setiap tahun.</string>
+    <string name="settings_holiday_pick_date">Pilih tanggal</string>
+    <string name="settings_holiday_name_label">Nama</string>
+    <string name="settings_add_holiday">Tambah hari libur</string>
+    <string name="settings_holiday_recurring_label">Berulang setiap tahun</string>
+    <string name="holiday_recurring_badge">Tahunan</string>
+    <string name="cd_remove_holiday">Hapus %1$s</string>
+    <string name="date_picker_nonworking_day_warning">Tanggal ini jatuh pada %1$s. Tetap gunakan?</string>
+    <string name="date_picker_use_anyway">Tetap gunakan</string>
     <string name="action_reopen">Buka kembali</string>
     <string name="action_complete">Selesai</string>
     <string name="action_open">Buka</string>

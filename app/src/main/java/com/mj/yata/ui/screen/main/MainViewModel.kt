@@ -506,7 +506,8 @@ data class PostponementWarning(
 
 data class WeekendRescheduleWarning(
     val taskTitle: String,
-    val dayLabel: String
+    val dayLabel: String,
+    val isHoliday: Boolean = false
 )
 
     // Data streams
@@ -1034,6 +1035,9 @@ data class WeekendRescheduleWarning(
     val weekendDays: StateFlow<Set<String>> = userPreferences.weekendDaysFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_WEEKEND_DAYS)
 
+    val holidays: StateFlow<Set<String>> = userPreferences.holidaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
     val subtaskCompletionAction: StateFlow<com.mj.yata.domain.model.SubtaskCompletionAction> =
         userPreferences.subtaskCompletionActionFlow
             .stateIn(
@@ -1157,6 +1161,16 @@ data class WeekendRescheduleWarning(
 
     fun setWeekendDays(days: Set<String>) {
         safeLaunch { userPreferences.setWeekendDays(days) }
+    }
+
+    fun addHoliday(date: String, label: String, recurring: Boolean) {
+        val trimmed = label.trim()
+        if (date.isBlank() || trimmed.isBlank()) return
+        safeLaunch { userPreferences.addHoliday(Holiday(date, trimmed, recurring)) }
+    }
+
+    fun removeHoliday(encodedHoliday: String) {
+        safeLaunch { userPreferences.removeHoliday(encodedHoliday) }
     }
 
     fun setDefaultProjectId(id: String) {
@@ -1768,7 +1782,12 @@ data class WeekendRescheduleWarning(
         }
     }
 
-    fun upsertTask(task: Task) {
+    /** [skipRescheduleWarning] lets a caller that already warned the user before this save — e.g.
+     * [DueDateCalendarDialog], which warns immediately when a holiday/weekend day is tapped and
+     * only calls back here once the user confirmed "use anyway" — skip the redundant save-time
+     * weekend/holiday snackbar for that same due-date change. Postponement-count warning is
+     * unrelated (it has no equivalent "moment of choice" to warn at) and always still applies. */
+    fun upsertTask(task: Task, skipRescheduleWarning: Boolean = false) {
         safeLaunch {
             val previous = tasks.value.find { it.id == task.id }
             val updated = previous?.let {
@@ -1784,7 +1803,9 @@ data class WeekendRescheduleWarning(
             if (updated.postponementCount > (previous?.postponementCount ?: 0)) {
                 warnIfPostponedOften(updated)
             }
-            warnIfRescheduledToWeekend(previous?.due, updated)
+            if (!skipRescheduleWarning) {
+                warnIfRescheduledToWeekend(previous?.due, updated)
+            }
         }
     }
 
@@ -1880,9 +1901,17 @@ data class WeekendRescheduleWarning(
     }
 
     /** Independent of [warnIfPostponedOften] — this fires on where the task landed, not on
-     * whether the move counted as a postponement, so a reschedule to an *earlier* weekend date
-     * still warns even though it never touches the postponement counter. */
+     * whether the move counted as a postponement, so a reschedule to an *earlier* weekend/holiday
+     * date still warns even though it never touches the postponement counter. Holiday takes
+     * priority over weekend when a date is both, since naming the holiday is more useful than
+     * just saying "weekend". */
     private suspend fun warnIfRescheduledToWeekend(previousDue: String?, task: Task) {
+        val holidays = userPreferences.holidaysFlow.first().mapNotNull(Holiday::decode)
+        val holidayLabel = rescheduledHolidayLabel(previousDue, task.due, holidays)
+        if (holidayLabel != null) {
+            _weekendRescheduleWarnings.emit(WeekendRescheduleWarning(task.title, holidayLabel, isHoliday = true))
+            return
+        }
         val weekendDays = userPreferences.weekendDaysFlow.first()
         if (!isRescheduledToWeekend(previousDue, task.due, weekendDays)) return
         val date = java.time.LocalDate.parse(task.due)

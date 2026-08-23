@@ -255,6 +255,7 @@ fun SettingsScreen(
     onNavigateToCrashLog: () -> Unit,
     onNavigateToShareApp: () -> Unit,
     onNavigateToRemoteSync: () -> Unit,
+    onNavigateToHolidayCalendar: () -> Unit,
     settingsDestination: SettingsDestination? = null,
     onNavigateToSettingsDestination: (SettingsDestination) -> Unit = {},
     modifier: Modifier = Modifier
@@ -1776,6 +1777,33 @@ fun SettingsScreen(
                             }
                         }
                     }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToHolidayCalendar() }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_holidays),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_holidays_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))

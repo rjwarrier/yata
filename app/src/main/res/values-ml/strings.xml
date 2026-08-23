@@ -1528,6 +1528,7 @@
     <string name="analytics_no_postponed_tasks">ഇതുവരെ മാറ്റിവച്ച ടാസ്ക്കുകളൊന്നുമില്ല.</string>
     <string name="task_postponement_warning">"%1$s" %2$d തവണ മാറ്റിവച്ചു.</string>
     <string name="task_weekend_reschedule_warning">"%1$s"-ന്റെ പുതിയ സമയപരിധി ഇപ്പോൾ വാരാന്ത്യത്തിലാണ് (%2$s).</string>
+    <string name="task_holiday_reschedule_warning">"%1$s"-ന്റെ പുതിയ സമയപരിധി ഇപ്പോൾ അവധി ദിനത്തിലാണ് (%2$s).</string>
     <plurals name="settings_postponement_threshold_value">
         <item quantity="one">%1$d തവണ</item>
         <item quantity="other">%1$d തവണ</item>
@@ -1536,6 +1537,16 @@
     <string name="settings_postponement_warning_threshold_desc">മുന്നറിയിപ്പ് നൽകുന്നതിന് മുൻപ് സാധാരണ മുൻഗണനയുള്ള ടാസ്ക് എത്ര തവണ മാറ്റിവയ്ക്കാം. ഇടത്തരം മുൻഗണന %1$d തവണയ്ക്ക് ശേഷവും ഉയർന്ന മുൻഗണന %2$d തവണയ്ക്ക് ശേഷവും മുന്നറിയിപ്പ് നൽകുന്നു.</string>
     <string name="settings_weekend_days">വാരാന്ത്യ ദിവസങ്ങൾ</string>
     <string name="settings_weekend_days_desc">ഒരു ടാസ്ക് ഈ ദിവസങ്ങളിൽ ഏതെങ്കിലും ഒന്നിലേക്ക് മാറ്റിവയ്ക്കുമ്പോൾ ഒരു മുന്നറിയിപ്പ് കാണിക്കും. മുന്നറിയിപ്പ് ഓഫാക്കാൻ എല്ലാ ദിവസങ്ങളും ഓഫാക്കുക.</string>
+    <string name="settings_holidays">ഇഷ്ടാനുസൃത അവധി ദിനങ്ങൾ</string>
+    <string name="settings_holidays_desc">ഒരു ടാസ്ക് ഈ തീയതികളിലേക്ക് മാറ്റിവയ്ക്കുമ്പോൾ മുന്നറിയിപ്പ് ലഭിക്കാൻ നിങ്ങളുടെ സ്വന്തം തീയതികൾ (ദേശീയ അവധികൾ, ഓഫീസ് അടച്ചിടലുകൾ) ചേർക്കുക. അവധി ദിന വിവരങ്ങളൊന്നും ഉൾപ്പെടുത്തിയിട്ടില്ല അല്ലെങ്കിൽ ശേഖരിക്കുന്നില്ല — തീയതികൾ നിങ്ങൾ തന്നെ ചേർക്കുക, ചലിക്കുന്ന അവധികൾ (ദീപാവലി അല്ലെങ്കിൽ ഈസ്റ്റർ പോലുള്ളവ) ഓരോ വർഷവും വീണ്ടും ചേർക്കുക.</string>
+    <string name="settings_holiday_pick_date">തീയതി തിരഞ്ഞെടുക്കുക</string>
+    <string name="settings_holiday_name_label">പേര്</string>
+    <string name="settings_add_holiday">അവധി ചേർക്കുക</string>
+    <string name="settings_holiday_recurring_label">എല്ലാ വർഷവും ആവർത്തിക്കുന്നു</string>
+    <string name="holiday_recurring_badge">വാർഷികം</string>
+    <string name="cd_remove_holiday">%1$s നീക്കം ചെയ്യുക</string>
+    <string name="date_picker_nonworking_day_warning">ഈ തീയതി %1$s ആണ്. എന്നിരുന്നാലും ഉപയോഗിക്കണോ?</string>
+    <string name="date_picker_use_anyway">എന്നിരുന്നാലും ഉപയോഗിക്കുക</string>
     <string name="action_reopen">വീണ്ടും തുറക്കുക</string>
     <string name="action_complete">പൂർത്തിയാക്കുക</string>
     <string name="action_open">തുറക്കുക</string>

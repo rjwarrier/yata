@@ -168,6 +168,7 @@ fun TaskDetailScreen(
     val people by viewModel.people.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val dueDatePickerContext = com.mj.yata.ui.widgets.rememberDueDatePickerContext(viewModel)
     val useWideDetail = rememberAdaptiveLayoutInfo().isWide
 
     val accents = LocalYataAccents.current
@@ -280,7 +281,8 @@ fun TaskDetailScreen(
         viewModel.weekendRescheduleWarnings.collect { warning ->
             snackbarHostState.showSnackbar(
                 context.getString(
-                    R.string.task_weekend_reschedule_warning,
+                    if (warning.isHoliday) R.string.task_holiday_reschedule_warning
+                    else R.string.task_weekend_reschedule_warning,
                     warning.taskTitle,
                     warning.dayLabel
                 )
@@ -1869,11 +1871,12 @@ fun TaskDetailScreen(
         }
     }
     if (showDatePicker) {
-        YataDatePickerDialog(
+        com.mj.yata.ui.widgets.DueDateCalendarDialog(
             initialDate = task.due,
+            context = dueDatePickerContext,
             onDismiss = { showDatePicker = false },
             onConfirm = {
-                viewModel.upsertTask(task.copy(due = it))
+                viewModel.upsertTask(task.copy(due = it), skipRescheduleWarning = true)
                 showDatePicker = false
             }
         )
