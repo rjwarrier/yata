@@ -150,6 +150,7 @@ class UserPreferences @Inject constructor(
         val POSTPONEMENT_WARNING_THRESHOLD = intPreferencesKey("postponement_warning_threshold")
         val WEEKEND_DAYS            = stringSetPreferencesKey("weekend_days")
         val HOLIDAYS                = stringSetPreferencesKey("holidays")
+        val OBSERVE_NON_WORKING_DAYS = booleanPreferencesKey("observe_non_working_days")
         val START_OF_WEEK_SUNDAY    = booleanPreferencesKey("start_of_week_sunday")
         val DEFAULT_REMINDER_HOUR   = intPreferencesKey("default_reminder_hour")
         val DEFAULT_REMINDER_MINUTE = intPreferencesKey("default_reminder_minute")
@@ -487,6 +488,10 @@ class UserPreferences @Inject constructor(
         prefs[WEEKEND_DAYS] ?: DEFAULT_WEEKEND_DAYS
     }
     val holidaysFlow: Flow<Set<String>> = prefsFlow.map { prefs -> prefs[HOLIDAYS] ?: emptySet() }
+    /** Off by default — shifting what counts as "due" is a bigger behavioral change than the
+     * weekend/holiday reschedule *warning*, which only ever informs and never alters filtering,
+     * overdue counts, or notifications on its own. */
+    val observeNonWorkingDaysFlow: Flow<Boolean> = prefsFlow.map { prefs -> prefs[OBSERVE_NON_WORKING_DAYS] ?: false }
     val subtaskCompletionActionFlow: Flow<SubtaskCompletionAction> = prefsFlow.map { prefs ->
         SubtaskCompletionAction.entries.firstOrNull { it.name == prefs[SUBTASK_COMPLETION_ACTION] }
             ?: SubtaskCompletionAction.ASK
@@ -779,6 +784,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setWeekendDays(days: Set<String>) {
         dataStore.edit { it[WEEKEND_DAYS] = days }
+    }
+
+    suspend fun setObserveNonWorkingDays(enabled: Boolean) {
+        dataStore.edit { it[OBSERVE_NON_WORKING_DAYS] = enabled }
     }
 
     /** Rejects a [holiday] with a blank label/date or an unparseable date outright, rather than

@@ -1542,6 +1542,8 @@
     <string name="settings_weekend_days">Weekenddagen</string>
     <string name="settings_weekend_days_desc">Het verzetten van een taak naar een van deze dagen toont een waarschuwing. Schakel alle dagen uit om de waarschuwing uit te zetten.</string>
     <string name="settings_holidays">Feestdagen</string>
+    <string name="settings_observe_non_working_days">Niet-werkdagen meenemen</string>
+    <string name="settings_observe_non_working_days_desc">Wanneer de vervaldatum van een terugkerende taak op een weekend of feestdag valt, wordt deze in Vandaag, achterstallige tellingen en meldingen behandeld alsof hij op de voorgaande werkdag vervalt. De opgeslagen vervaldatum van de taak zelf verandert niet.</string>
     <string name="settings_holidays_desc">Kies welke weekdagen als weekend gelden en voeg je eigen feestdagen toe (nationale feestdagen, kantoorsluitingen) — het verzetten van een taak naar een van beide toont een waarschuwing. Er zijn geen feestdaggegevens ingebouwd of opgehaald; voeg de data zelf toe en voeg beweeglijke feestdagen (zoals Diwali of Pasen) elk jaar opnieuw toe.</string>
     <string name="settings_holiday_pick_date">Datum kiezen</string>
     <string name="settings_holiday_name_label">Naam</string>

@@ -1541,6 +1541,8 @@
     <string name="settings_weekend_days">Hari akhir pekan</string>
     <string name="settings_weekend_days_desc">Menjadwalkan ulang tugas ke salah satu hari ini akan menampilkan peringatan. Matikan semua hari untuk menonaktifkan peringatan.</string>
     <string name="settings_holidays">Hari libur</string>
+    <string name="settings_observe_non_working_days">Perhitungkan hari libur kerja</string>
+    <string name="settings_observe_non_working_days_desc">Ketika tanggal jatuh tempo tugas berulang jatuh pada akhir pekan atau hari libur, anggap sebagai jatuh tempo pada hari kerja sebelumnya di Hari Ini, jumlah terlambat, dan notifikasi. Tanggal jatuh tempo tugas yang tersimpan sendiri tidak berubah.</string>
     <string name="settings_holidays_desc">Pilih hari mana yang dihitung sebagai akhir pekan, dan tambahkan tanggal hari libur Anda sendiri (hari libur nasional, penutupan kantor) — menjadwalkan ulang tugas ke salah satunya akan menampilkan peringatan. Tidak ada data hari libur yang disertakan atau diambil; tambahkan tanggalnya sendiri dan tambahkan kembali hari libur yang berubah-ubah (seperti Diwali atau Paskah) setiap tahun.</string>
     <string name="settings_holiday_pick_date">Pilih tanggal</string>
     <string name="settings_holiday_name_label">Nama</string>

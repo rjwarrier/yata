@@ -61,3 +61,18 @@ fun nextBusinessDay(start: LocalDate, weekendDays: Set<String>, holidays: List<H
     }
     return date
 }
+
+/** Mirror of [nextBusinessDay], walking backward instead of forward — the "observed" date a
+ * recurring task landing on a non-working day is treated as due on, per the "observe non-working
+ * days" setting ([Task.effectiveDue]). Never used to pick a new date to write; only to decide, at
+ * read time, what date a task should be compared against as "due". */
+fun previousBusinessDay(start: LocalDate, weekendDays: Set<String>, holidays: List<Holiday>): LocalDate {
+    val holidayLookup = Holiday.index(holidays)
+    var date = start
+    var daysChecked = 0
+    while (daysChecked < 366 && (isWeekendDate(date, weekendDays) || holidayLookup(date.toString()) != null)) {
+        date = date.minusDays(1)
+        daysChecked++
+    }
+    return date
+}

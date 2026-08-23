@@ -1541,6 +1541,8 @@
     <string name="settings_weekend_days">সাপ্তাহিক ছুটির দিন</string>
     <string name="settings_weekend_days_desc">কোনো কাজ পুনঃনির্ধারণ করে এই দিনগুলোর কোনো একটিতে আনলে একটি সতর্কতা দেখানো হবে। সতর্কতা বন্ধ করতে সবগুলো দিন বন্ধ করুন।</string>
     <string name="settings_holidays">ছুটির দিন</string>
+    <string name="settings_observe_non_working_days">নন-ওয়ার্কিং দিন লক্ষ্য করুন</string>
+    <string name="settings_observe_non_working_days_desc">একটি পুনরাবৃত্ত কাজের নির্ধারিত তারিখ সাপ্তাহিক ছুটি বা ছুটির দিনে পড়লে, Today, বকেয়া সংখ্যা এবং বিজ্ঞপ্তিতে এটিকে আগের কর্মদিবসে নির্ধারিত হিসেবে গণ্য করুন। কাজের সংরক্ষিত নির্ধারিত তারিখ নিজেই পরিবর্তন হয় না।</string>
     <string name="settings_holidays_desc">কোন সপ্তাহের দিনগুলো সাপ্তাহিক ছুটি হিসেবে গণ্য হবে তা বেছে নিন, এবং নিজের ছুটির তারিখ (জাতীয় ছুটি, অফিস বন্ধ) যোগ করুন — এর যেকোনোটির উপর কাজ পুনঃনির্ধারণ করলে সতর্কতা দেখাবে। কোনো ছুটির তথ্য বান্ডিল বা আনা হয় না; নিজে তারিখ যোগ করুন এবং পরিবর্তনশীল তারিখের ছুটি (যেমন দীপাবলি বা ইস্টার) প্রতি বছর আবার যোগ করুন।</string>
     <string name="settings_holiday_pick_date">তারিখ বাছুন</string>
     <string name="settings_holiday_name_label">নাম</string>

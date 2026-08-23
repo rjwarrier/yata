@@ -212,6 +212,27 @@ fun Task.isWaitingOn(nowMillis: Long, myId: String?): Boolean {
 }
 
 /**
+ * The date this task should be compared against as "due", for filtering/overdue purposes only —
+ * never written back to [due]. For a recurring task whose [due] lands on a weekend or configured
+ * holiday, when [observeNonWorkingDays] is on, that's the previous working day instead
+ * ([previousBusinessDay]) — the "observe non-working days" setting (Settings → Task Defaults →
+ * Holidays). A non-recurring task, a disabled setting, or a [due] that already falls on a working
+ * day all return [due] unchanged, which is the common case and kept cheap.
+ */
+fun Task.effectiveDue(
+    weekendDays: Set<String>,
+    holidays: List<Holiday>,
+    observeNonWorkingDays: Boolean
+): String? {
+    val dueDate = due ?: return null
+    if (!observeNonWorkingDays || recurrence == null) return dueDate
+    val parsed = runCatching { LocalDate.parse(dueDate) }.getOrNull() ?: return dueDate
+    val holidayLookup = Holiday.index(holidays)
+    if (!isWeekendDate(parsed, weekendDays) && holidayLookup(dueDate) == null) return dueDate
+    return previousBusinessDay(parsed, weekendDays, holidays).toString()
+}
+
+/**
  * True when this task belongs on a "your Today" surface — due or overdue as of [today], and
  * neither deferred ([isDeferredOn]) nor snoozed waiting on someone else ([isWaitingOn]).
  *
@@ -224,9 +245,22 @@ fun Task.isWaitingOn(nowMillis: Long, myId: String?): Boolean {
  * Callers still apply their own scoping on top (excludeFromToday containers, archived projects,
  * `wasPendingAsOf` for progress counts) — this covers the two task-level "not yet mine to do"
  * rules alone.
+ *
+ * [weekendDays]/[holidays]/[observeNonWorkingDays] default to off so every existing call site
+ * compiles and behaves exactly as before; only callers that explicitly opt in (currently: this
+ * StateFlow's own badge count and the Today tab) see [effectiveDue] applied.
  */
-fun Task.isActionableToday(today: String, nowMillis: Long, myId: String?): Boolean =
-    due != null && due <= today && !isDeferredOn(today) && !isWaitingOn(nowMillis, myId)
+fun Task.isActionableToday(
+    today: String,
+    nowMillis: Long,
+    myId: String?,
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false
+): Boolean {
+    val effective = effectiveDue(weekendDays, holidays, observeNonWorkingDays) ?: return false
+    return effective <= today && !isDeferredOn(today) && !isWaitingOn(nowMillis, myId)
+}
 
 /**
  * Tag IDs this task carries, including tag IDs its project live-syncs to every task

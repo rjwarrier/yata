@@ -1541,6 +1541,8 @@
     <string name="settings_weekend_days">Zile de weekend</string>
     <string name="settings_weekend_days_desc">Reprogramarea unei sarcini într-una dintre aceste zile afișează un avertisment. Dezactivează toate zilele pentru a dezactiva avertismentul.</string>
     <string name="settings_holidays">Sărbători</string>
+    <string name="settings_observe_non_working_days">Ia în calcul zilele nelucrătoare</string>
+    <string name="settings_observe_non_working_days_desc">Când termenul unei sarcini recurente cade într-un weekend sau o sărbătoare, tratează-l ca fiind scadent în ziua lucrătoare anterioară în Azi, numărătorile de restanțe și notificări. Termenul salvat al sarcinii în sine nu se schimbă.</string>
     <string name="settings_holidays_desc">Alege ce zile ale săptămânii contează ca weekend și adaugă propriile sărbători (sărbători naționale, închideri de birou) — reprogramarea unei sarcini pe oricare dintre acestea afișează un avertisment. Nu sunt incluse sau descărcate date despre sărbători; adaugă datele tu însuți și readaugă în fiecare an sărbătorile mobile (precum Paștele).</string>
     <string name="settings_holiday_pick_date">Alege data</string>
     <string name="settings_holiday_name_label">Nume</string>

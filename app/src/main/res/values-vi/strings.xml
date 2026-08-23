@@ -1541,6 +1541,8 @@
     <string name="settings_weekend_days">Ngày cuối tuần</string>
     <string name="settings_weekend_days_desc">Việc dời một nhiệm vụ sang một trong những ngày này sẽ hiện cảnh báo. Tắt tất cả các ngày để tắt cảnh báo.</string>
     <string name="settings_holidays">Ngày lễ</string>
+    <string name="settings_observe_non_working_days">Tính đến các ngày không làm việc</string>
+    <string name="settings_observe_non_working_days_desc">Khi ngày đến hạn của một nhiệm vụ lặp lại rơi vào cuối tuần hoặc ngày lễ, coi như nó đến hạn vào ngày làm việc trước đó trong mục Hôm nay, số lượng quá hạn và thông báo. Ngày đến hạn đã lưu của nhiệm vụ không thay đổi.</string>
     <string name="settings_holidays_desc">Chọn những ngày nào trong tuần được tính là cuối tuần, và thêm ngày lễ của riêng bạn (ngày lễ quốc gia, ngày nghỉ văn phòng) — dời một nhiệm vụ sang một trong hai loại này sẽ hiện cảnh báo. Không có dữ liệu ngày lễ nào được đóng gói sẵn hoặc tải về; tự thêm ngày và thêm lại hằng năm các ngày lễ di động (như Tết hoặc Phục sinh).</string>
     <string name="settings_holiday_pick_date">Chọn ngày</string>
     <string name="settings_holiday_name_label">Tên</string>

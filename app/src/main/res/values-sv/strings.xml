@@ -1541,6 +1541,8 @@
     <string name="settings_weekend_days">Helgdagar</string>
     <string name="settings_weekend_days_desc">Att flytta en uppgift till någon av dessa dagar visar en varning. Stäng av alla dagar för att stänga av varningen.</string>
     <string name="settings_holidays">Helgdagar</string>
+    <string name="settings_observe_non_working_days">Ta hänsyn till lediga dagar</string>
+    <string name="settings_observe_non_working_days_desc">När förfallodatumet för en återkommande uppgift infaller på en helg eller helgdag, behandla den som förfallen föregående arbetsdag i Idag, försenad-räknare och aviseringar. Uppgiftens sparade förfallodatum ändras inte.</string>
     <string name="settings_holidays_desc">Välj vilka veckodagar som räknas som helg, och lägg till egna helgdagar (nationella helgdagar, kontorsstängningar) — att flytta en uppgift till någon av dem visar en varning. Ingen helgdagsdata medföljer eller hämtas; lägg till datumen själv och lägg till rörliga helgdagar (som påsk) på nytt varje år.</string>
     <string name="settings_holiday_pick_date">Välj datum</string>
     <string name="settings_holiday_name_label">Namn</string>

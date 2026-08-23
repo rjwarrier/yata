@@ -72,6 +72,7 @@ fun HolidayCalendarScreen(
     val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
     val startOfWeekSunday by viewModel.startOfWeekSunday.collectAsStateWithLifecycle()
     val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
     val holidayList = remember(holidaysRaw) {
         holidaysRaw.mapNotNull(Holiday::decode).sortedBy { it.date.takeLast(5) }
     }
@@ -123,6 +124,30 @@ fun HolidayCalendarScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.settings_observe_non_working_days),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_observe_non_working_days_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = observeNonWorkingDays,
+                        onCheckedChange = { viewModel.setObserveNonWorkingDays(it) }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(

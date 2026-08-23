@@ -1541,6 +1541,8 @@
     <string name="settings_weekend_days">सप्ताहांत के दिन</string>
     <string name="settings_weekend_days_desc">किसी कार्य को इनमें से किसी दिन पर पुनर्निर्धारित करने पर एक चेतावनी दिखेगी। चेतावनी बंद करने के लिए सभी दिन बंद करें।</string>
     <string name="settings_holidays">छुट्टियां</string>
+    <string name="settings_observe_non_working_days">गैर-कार्य दिवसों को ध्यान में रखें</string>
+    <string name="settings_observe_non_working_days_desc">जब किसी दोहराए जाने वाले कार्य की नियत तारीख सप्ताहांत या छुट्टी पर पड़ती है, तो उसे आज, बकाया गणना और सूचनाओं में पिछले कार्यदिवस पर नियत मानें। कार्य की संग्रहीत नियत तारीख स्वयं नहीं बदलती।</string>
     <string name="settings_holidays_desc">कौन से सप्ताह के दिन सप्ताहांत माने जाएं यह चुनें, और अपनी खुद की छुट्टी की तारीखें (राष्ट्रीय अवकाश, ऑफिस बंद) जोड़ें — इनमें से किसी पर भी कार्य पुनर्निर्धारित करने पर चेतावनी दिखेगी। कोई छुट्टी डेटा बंडल या प्राप्त नहीं किया जाता; तारीखें खुद जोड़ें और चल तिथियों वाली छुट्टियां (जैसे दिवाली या ईस्टर) हर साल फिर से जोड़ें।</string>
     <string name="settings_holiday_pick_date">तारीख चुनें</string>
     <string name="settings_holiday_name_label">नाम</string>

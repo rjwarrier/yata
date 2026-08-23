@@ -1,10 +1,12 @@
 package com.mj.yata.util
 
+import com.mj.yata.domain.model.Holiday
 import com.mj.yata.domain.model.Person
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.effectiveDue
 import com.mj.yata.domain.model.effectiveTagIds
 import java.time.Instant
 import java.time.LocalDate
@@ -410,10 +412,21 @@ object AnalyticsUtils {
     }
 
     /** Tasks overdue right now — due before today and not done. Always "all time", ignores the period filter. */
-    fun overdueCount(tasks: List<Task>, today: LocalDate = LocalDate.now()): Int =
+    /** [weekendDays]/[holidays]/[observeNonWorkingDays] default to off, so every existing caller
+     * (the full Analytics screen included) compiles and behaves exactly as before; only a caller
+     * that explicitly opts in — currently just the Today tab's own overdue stat tile — sees
+     * Task.effectiveDue applied instead of the raw due date. */
+    fun overdueCount(
+        tasks: List<Task>,
+        today: LocalDate = LocalDate.now(),
+        weekendDays: Set<String> = emptySet(),
+        holidays: List<Holiday> = emptyList(),
+        observeNonWorkingDays: Boolean = false
+    ): Int =
         tasks.count { task ->
             if (task.done) return@count false
-            val due = task.due?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
+            val due = task.effectiveDue(weekendDays, holidays, observeNonWorkingDays)
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return@count false
             due.isBefore(today)
         }
 

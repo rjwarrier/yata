@@ -1538,6 +1538,8 @@
     <string name="settings_weekend_days">Siku za wikendi</string>
     <string name="settings_weekend_days_desc">Kupanga upya kazi hadi siku moja kati ya hizi kutaonyesha onyo. Zima siku zote ili kuzima onyo.</string>
     <string name="settings_holidays">Sikukuu</string>
+    <string name="settings_observe_non_working_days">Zingatia siku zisizo za kazi</string>
+    <string name="settings_observe_non_working_days_desc">Wakati tarehe ya mwisho ya kazi inayojirudia inapoangukia wikendi au sikukuu, ichukulie kuwa inatarajiwa siku ya kazi iliyopita katika Leo, hesabu za kuchelewa, na arifa. Tarehe ya mwisho iliyohifadhiwa ya kazi yenyewe haibadiliki.</string>
     <string name="settings_holidays_desc">Chagua siku gani za wiki zinahesabiwa kama wikendi, na ongeza tarehe zako za sikukuu (sikukuu za kitaifa, kufungwa kwa ofisi) — kupanga upya kazi kwa mojawapo kutaonyesha onyo. Hakuna data ya sikukuu iliyojumuishwa au kupatikana; ongeza tarehe mwenyewe na ongeza tena kila mwaka sikukuu zinazobadilika (kama Diwali au Pasaka).</string>
     <string name="settings_holiday_pick_date">Chagua tarehe</string>
     <string name="settings_holiday_name_label">Jina</string>

@@ -1711,6 +1711,8 @@
     <string name="settings_weekend_days_desc">Rescheduling a task onto one of these days shows a warning. Turn all of them off to disable the warning.</string>
     <string name="settings_holidays">Holidays</string>
     <string name="settings_holidays_desc">Choose which weekdays count as weekends, and add your own holiday dates (national holidays, office closures) — rescheduling a task onto either warns. No holiday data is bundled or fetched; add dates yourself and re-add movable ones (like Diwali or Easter) each year.</string>
+    <string name="settings_observe_non_working_days">Observe non-working days</string>
+    <string name="settings_observe_non_working_days_desc">When a recurring task\'s due date lands on a weekend or holiday, treat it as due the previous working day in Today, overdue counts, and notifications. The task\'s stored due date itself doesn\'t change.</string>
     <string name="settings_holiday_pick_date">Pick date</string>
     <string name="settings_holiday_name_label">Name</string>
     <string name="settings_add_holiday">Add holiday</string>

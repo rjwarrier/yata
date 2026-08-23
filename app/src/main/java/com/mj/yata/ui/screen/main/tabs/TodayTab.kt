@@ -119,6 +119,12 @@ fun TodayTab(
      * clickable/completable) instead of requiring the empty state's "Show upcoming tasks" button
      * to be tapped each time. Settings → Task Defaults. */
     showUpcomingWhenEmpty: Boolean = false,
+    /** "Observe non-working days" (Settings → Task Defaults → Holidays): when on, a recurring
+     * task whose due date lands on a weekend/holiday is treated as due the previous working day
+     * for the purposes of this screen's due/overdue split — see Task.effectiveDue. Off by default. */
+    weekendDays: Set<String> = emptySet(),
+    holidays: List<Holiday> = emptyList(),
+    observeNonWorkingDays: Boolean = false,
     useWideLayout: Boolean = false,
     /** False only for the brief window before Room's first query lands on cold start - see
      * MainViewModel.initialDataLoaded. An empty list here is ambiguous between "genuinely no
@@ -154,10 +160,10 @@ fun TodayTab(
     // Due-or-overdue, minus anything deferred or being waited on — see Task.isActionableToday,
     // which the home-screen widgets and the daily agenda digest share so they can't drift from
     // this screen. The container exclusions stay here since they're specific to the in-app view.
-    val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds, myId) {
+    val todayTasks = remember(tasks, todayStr, excludedProjectIds, excludedListIds, myId, weekendDays, holidays, observeNonWorkingDays) {
         val nowMillis = System.currentTimeMillis()
         tasks.filter {
-            it.isActionableToday(todayStr, nowMillis, myId) &&
+            it.isActionableToday(todayStr, nowMillis, myId, weekendDays, holidays, observeNonWorkingDays) &&
                 it.projectId !in excludedProjectIds && it.listId !in excludedListIds
         }
     }
@@ -198,9 +204,15 @@ fun TodayTab(
     val unestimatedCount = remember(openTodayTasks) { com.mj.yata.util.EstimateUtils.unestimatedCount(openTodayTasks) }
 
     var activeStatFilter by remember { mutableStateOf<com.mj.yata.ui.widgets.HeroStatKind?>(null) }
-    val overdueCount = remember(progressBaseTasks) { com.mj.yata.util.AnalyticsUtils.overdueCount(progressBaseTasks) }
+    val overdueCount = remember(progressBaseTasks, today, weekendDays, holidays, observeNonWorkingDays) {
+        com.mj.yata.util.AnalyticsUtils.overdueCount(progressBaseTasks, today, weekendDays, holidays, observeNonWorkingDays)
+    }
     val highPriorityCount = remember(progressBaseTasks) { progressBaseTasks.count { !it.done && it.priority == "high" } }
-    val dueTodayCount = remember(progressBaseTasks, todayStr) { progressBaseTasks.count { !it.done && it.due == todayStr } }
+    val dueTodayCount = remember(progressBaseTasks, todayStr, weekendDays, holidays, observeNonWorkingDays) {
+        progressBaseTasks.count {
+            !it.done && it.effectiveDue(weekendDays, holidays, observeNonWorkingDays) == todayStr
+        }
+    }
     val showHeroStats = overdueCount > 0 || highPriorityCount > 0 || dueTodayCount > 0
 
     LaunchedEffect(showHeroStats) {

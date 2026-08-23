@@ -256,6 +256,10 @@ fun MainScreen(
     // MainViewModel for why it has to observe the raw repository flows directly rather than any
     // of the StateFlows that chain feeds from.
     val initialDataLoaded by viewModel.initialDataLoaded.collectAsStateWithLifecycle()
+    val weekendDays by viewModel.weekendDays.collectAsStateWithLifecycle()
+    val holidaysRaw by viewModel.holidays.collectAsStateWithLifecycle()
+    val holidays = remember(holidaysRaw) { holidaysRaw.mapNotNull(com.mj.yata.domain.model.Holiday::decode) }
+    val observeNonWorkingDays by viewModel.observeNonWorkingDays.collectAsStateWithLifecycle()
     val tasks = uiState.tasks
     val projects = uiState.projects
     val activeProjects = uiState.activeProjects
@@ -986,6 +990,9 @@ fun MainScreen(
                             syncButtonEnabled = !syncInProgress,
                             onSyncClick = { runManualSync() },
                             showUpcomingWhenEmpty = todayShowUpcomingWhenEmpty,
+                            weekendDays = weekendDays,
+                            holidays = holidays,
+                            observeNonWorkingDays = observeNonWorkingDays,
                             useWideLayout = useWideNavigation,
                             initialDataLoaded = initialDataLoaded
                         )

@@ -1538,6 +1538,8 @@
     <string name="settings_weekend_days">ਵੀਕਐਂਡ ਦੇ ਦਿਨ</string>
     <string name="settings_weekend_days_desc">ਕਿਸੇ ਕੰਮ ਨੂੰ ਇਹਨਾਂ ਦਿਨਾਂ ਵਿੱਚੋਂ ਕਿਸੇ ਇੱਕ \'ਤੇ ਮੁੜ-ਤਹਿ ਕਰਨ \'ਤੇ ਇੱਕ ਚੇਤਾਵਨੀ ਦਿਖਾਈ ਦੇਵੇਗੀ। ਚੇਤਾਵਨੀ ਬੰਦ ਕਰਨ ਲਈ ਸਾਰੇ ਦਿਨ ਬੰਦ ਕਰੋ।</string>
     <string name="settings_holidays">ਛੁੱਟੀਆਂ</string>
+    <string name="settings_observe_non_working_days">ਗੈਰ-ਕੰਮਕਾਜੀ ਦਿਨਾਂ ਨੂੰ ਧਿਆਨ ਵਿੱਚ ਰੱਖੋ</string>
+    <string name="settings_observe_non_working_days_desc">ਜਦੋਂ ਕਿਸੇ ਦੁਹਰਾਉਣ ਵਾਲੇ ਕੰਮ ਦੀ ਨਿਯਤ ਤਾਰੀਖ ਵੀਕਐਂਡ ਜਾਂ ਛੁੱਟੀ \'ਤੇ ਪੈਂਦੀ ਹੈ, ਤਾਂ ਇਸਨੂੰ ਅੱਜ, ਬਕਾਇਆ ਗਿਣਤੀਆਂ ਅਤੇ ਸੂਚਨਾਵਾਂ ਵਿੱਚ ਪਿਛਲੇ ਕੰਮਕਾਜੀ ਦਿਨ ਨਿਯਤ ਮੰਨੋ। ਕੰਮ ਦੀ ਸੰਭਾਲੀ ਨਿਯਤ ਤਾਰੀਖ ਖੁਦ ਨਹੀਂ ਬਦਲਦੀ।</string>
     <string name="settings_holidays_desc">ਹਫ਼ਤੇ ਦੇ ਕਿਹੜੇ ਦਿਨ ਵੀਕਐਂਡ ਗਿਣੇ ਜਾਣ ਇਹ ਚੁਣੋ, ਅਤੇ ਆਪਣੀਆਂ ਛੁੱਟੀ ਦੀਆਂ ਤਾਰੀਖਾਂ (ਰਾਸ਼ਟਰੀ ਛੁੱਟੀਆਂ, ਦਫ਼ਤਰ ਬੰਦ) ਸ਼ਾਮਲ ਕਰੋ — ਇਹਨਾਂ ਵਿੱਚੋਂ ਕਿਸੇ ਵੀ ਇੱਕ \'ਤੇ ਕੰਮ ਮੁੜ-ਤਹਿ ਕਰਨ \'ਤੇ ਚੇਤਾਵਨੀ ਦਿਖਾਈ ਦੇਵੇਗੀ। ਕੋਈ ਛੁੱਟੀ ਡਾਟਾ ਸ਼ਾਮਲ ਜਾਂ ਪ੍ਰਾਪਤ ਨਹੀਂ ਕੀਤਾ ਜਾਂਦਾ; ਤਾਰੀਖਾਂ ਖੁਦ ਸ਼ਾਮਲ ਕਰੋ ਅਤੇ ਬਦਲਦੀਆਂ ਛੁੱਟੀਆਂ (ਜਿਵੇਂ ਦੀਵਾਲੀ ਜਾਂ ਈਸਟਰ) ਹਰ ਸਾਲ ਦੁਬਾਰਾ ਸ਼ਾਮਲ ਕਰੋ।</string>
     <string name="settings_holiday_pick_date">ਤਾਰੀਖ ਚੁਣੋ</string>
     <string name="settings_holiday_name_label">ਨਾਮ</string>

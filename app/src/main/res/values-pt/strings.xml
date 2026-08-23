@@ -1543,6 +1543,8 @@
     <string name="settings_weekend_days">Dias de fim de semana</string>
     <string name="settings_weekend_days_desc">Reagendar uma tarefa para um desses dias mostra um aviso. Desative todos os dias para desativar o aviso.</string>
     <string name="settings_holidays">Feriados</string>
+    <string name="settings_observe_non_working_days">Considerar dias não úteis</string>
+    <string name="settings_observe_non_working_days_desc">Quando a data de vencimento de uma tarefa recorrente cair em um fim de semana ou feriado, tratá-la como vencida no dia útil anterior em Hoje, nas contagens de atrasadas e nas notificações. A data de vencimento salva da tarefa em si não muda.</string>
     <string name="settings_holidays_desc">Escolha quais dias da semana contam como fim de semana e adicione seus próprios feriados (feriados nacionais, fechamentos de escritório) — reagendar uma tarefa para qualquer um deles mostra um aviso. Nenhum dado de feriados é incluído ou obtido; adicione as datas você mesmo e adicione novamente feriados móveis (como o Diwali ou a Páscoa) todos os anos.</string>
     <string name="settings_holiday_pick_date">Escolher data</string>
     <string name="settings_holiday_name_label">Nome</string>

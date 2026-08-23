@@ -1541,6 +1541,8 @@
     <string name="settings_weekend_days">Víkendové dny</string>
     <string name="settings_weekend_days_desc">Přesunutí úkolu na některý z těchto dnů zobrazí varování. Chcete-li varování vypnout, zrušte výběr všech dnů.</string>
     <string name="settings_holidays">Svátky</string>
+    <string name="settings_observe_non_working_days">Zohlednit nepracovní dny</string>
+    <string name="settings_observe_non_working_days_desc">Když termín opakujícího se úkolu připadne na víkend nebo svátek, považovat jej v sekci Dnes, počtu zpožděných úkolů a upozorněních za splatný předchozí pracovní den. Uložený termín úkolu se přitom nemění.</string>
     <string name="settings_holidays_desc">Vyberte, které dny v týdnu se počítají jako víkend, a přidejte vlastní svátky (státní svátky, zavření kanceláře) — přesunutí úkolu na kterýkoli z nich zobrazí varování. Žádná data o svátcích nejsou součástí aplikace ani stahována; data přidejte sami a pohyblivé svátky (jako Velikonoce) každý rok přidejte znovu.</string>
     <string name="settings_holiday_pick_date">Vybrat datum</string>
     <string name="settings_holiday_name_label">Název</string>

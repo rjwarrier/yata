@@ -590,20 +590,49 @@ data class WeekendRescheduleWarning(
      * Today tab and the home-screen widgets — this one had drifted from *them* too, checking only
      * project exclusion and neither deferral nor waiting-on, so the badge could show a count the
      * Today screen it links to didn't actually list. */
+    private data class NonWorkingDayContext(
+        val weekendDays: Set<String>,
+        val holidays: List<Holiday>,
+        val enabled: Boolean
+    )
+
+    private data class TodayCountInputs(
+        val tasks: List<Task>,
+        val projects: List<Project>,
+        val lists: List<YataList>,
+        val people: List<Person>,
+        val today: java.time.LocalDate
+    )
+
+    private val nonWorkingDayContext: Flow<NonWorkingDayContext> = combine(
+        userPreferences.weekendDaysFlow,
+        userPreferences.holidaysFlow,
+        userPreferences.observeNonWorkingDaysFlow
+    ) { weekendDays, holidaysRaw, enabled ->
+        NonWorkingDayContext(weekendDays, holidaysRaw.mapNotNull(Holiday::decode), enabled)
+    }
+
     val todayRemainingCount: StateFlow<Int> = combine(
-        tasks,
-        projects,
-        lists,
-        people,
-        com.mj.yata.util.AppClock.todayFlow
-    ) { list, projectList, listList, peopleList, today ->
-        val todayStr = today.toString()
-        val myId = peopleList.firstOrNull { it.isMe }?.id
-        val excludedProjectIds = projectList.hiddenFromMainTaskProjectIds()
-        val excludedListIds = listList.hiddenFromMainTaskListIds()
-        list.count {
-            it.isActionableToday(todayStr, System.currentTimeMillis(), myId) &&
-                it.projectId !in excludedProjectIds && it.listId !in excludedListIds
+        combine(
+            tasks,
+            projects,
+            lists,
+            people,
+            com.mj.yata.util.AppClock.todayFlow
+        ) { list, projectList, listList, peopleList, today ->
+            TodayCountInputs(list, projectList, listList, peopleList, today)
+        },
+        nonWorkingDayContext
+    ) { inputs, nonWorkingDays ->
+        val todayStr = inputs.today.toString()
+        val myId = inputs.people.firstOrNull { it.isMe }?.id
+        val excludedProjectIds = inputs.projects.hiddenFromMainTaskProjectIds()
+        val excludedListIds = inputs.lists.hiddenFromMainTaskListIds()
+        inputs.tasks.count {
+            it.isActionableToday(
+                todayStr, System.currentTimeMillis(), myId,
+                nonWorkingDays.weekendDays, nonWorkingDays.holidays, nonWorkingDays.enabled
+            ) && it.projectId !in excludedProjectIds && it.listId !in excludedListIds
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
@@ -1038,6 +1067,9 @@ data class WeekendRescheduleWarning(
     val holidays: StateFlow<Set<String>> = userPreferences.holidaysFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
+    val observeNonWorkingDays: StateFlow<Boolean> = userPreferences.observeNonWorkingDaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val subtaskCompletionAction: StateFlow<com.mj.yata.domain.model.SubtaskCompletionAction> =
         userPreferences.subtaskCompletionActionFlow
             .stateIn(
@@ -1161,6 +1193,10 @@ data class WeekendRescheduleWarning(
 
     fun setWeekendDays(days: Set<String>) {
         safeLaunch { userPreferences.setWeekendDays(days) }
+    }
+
+    fun setObserveNonWorkingDays(enabled: Boolean) {
+        safeLaunch { userPreferences.setObserveNonWorkingDays(enabled) }
     }
 
     fun addHoliday(date: String, label: String, recurring: Boolean) {

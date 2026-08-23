@@ -47,6 +47,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   weekend days; it now also skips your custom holidays, recurring and one-off alike. Renamed to
   "Next business day" to match, in every locale that hadn't already translated "weekday" as
   "working day" on its own.
+- Added an "Observe non-working days" toggle (Settings → Task Defaults → Holidays, off by
+  default). When on, a recurring task whose due date lands on a weekend or holiday is treated as
+  due the previous working day for Today's list and overdue count, the daily agenda digest, and
+  the overdue escalation notification — without changing the task's actual stored due date. A
+  one-off (non-recurring) task is never shifted, even with the setting on.
 
 ### Changed
 - Tasker integration (Settings → Data Management) is now off by default rather than on. Any app on

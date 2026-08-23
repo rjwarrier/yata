@@ -1543,6 +1543,8 @@
     <string name="settings_weekend_days">Jours de week-end</string>
     <string name="settings_weekend_days_desc">Déplacer une tâche vers l\'un de ces jours affiche un avertissement. Désactivez-les tous pour désactiver l\'avertissement.</string>
     <string name="settings_holidays">Jours fériés</string>
+    <string name="settings_observe_non_working_days">Tenir compte des jours non travaillés</string>
+    <string name="settings_observe_non_working_days_desc">Lorsque la date d\'échéance d\'une tâche récurrente tombe un week-end ou un jour férié, la considérer comme échue le jour ouvré précédent dans Aujourd\'hui, les compteurs de retard et les notifications. La date d\'échéance enregistrée de la tâche ne change pas.</string>
     <string name="settings_holidays_desc">Choisissez les jours de la semaine comptant comme week-end, et ajoutez vos propres jours fériés (jours fériés nationaux, fermetures de bureau) — déplacer une tâche vers l\'un d\'eux affiche un avertissement. Aucune donnée de jours fériés n\'est incluse ni téléchargée ; ajoutez les dates vous-même et ajoutez à nouveau chaque année les fêtes mobiles (comme Diwali ou Pâques).</string>
     <string name="settings_holiday_pick_date">Choisir une date</string>
     <string name="settings_holiday_name_label">Nom</string>

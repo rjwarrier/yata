@@ -1541,6 +1541,8 @@
     <string name="settings_weekend_days">Giorni del fine settimana</string>
     <string name="settings_weekend_days_desc">Riprogrammare un\'attività in uno di questi giorni mostra un avviso. Disattiva tutti i giorni per disattivare l\'avviso.</string>
     <string name="settings_holidays">Festività</string>
+    <string name="settings_observe_non_working_days">Considera i giorni non lavorativi</string>
+    <string name="settings_observe_non_working_days_desc">Quando la scadenza di un\'attività ricorrente cade in un fine settimana o in una festività, trattala come scaduta il giorno lavorativo precedente in Oggi, nei conteggi in ritardo e nelle notifiche. La data di scadenza salvata dell\'attività non cambia.</string>
     <string name="settings_holidays_desc">Scegli quali giorni della settimana contano come fine settimana e aggiungi le tue festività (festività nazionali, chiusure dell\'ufficio) — riprogrammare un\'attività su uno di questi giorni mostra un avviso. Nessun dato sulle festività è incluso o scaricato; aggiungi le date tu stesso e riaggiungi ogni anno quelle mobili (come Diwali o Pasqua).</string>
     <string name="settings_holiday_pick_date">Scegli data</string>
     <string name="settings_holiday_name_label">Nome</string>
