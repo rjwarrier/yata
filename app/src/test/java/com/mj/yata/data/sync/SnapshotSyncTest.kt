@@ -256,7 +256,10 @@ class SnapshotSyncTest {
                 setting("sftp_host", "string", "server"),
                 setting("github_owner", "string", "owner"),
                 setting("app_lock_enabled", "bool", true),
-                setting("saved", "stringSet", JSONArray().put("z").put("a"))
+                setting("saved", "stringSet", JSONArray().put("z").put("a")),
+                setting("weekend_days", "stringSet", JSONArray().put("SA").put("SU")),
+                setting("holidays", "stringSet", JSONArray().put("2026-01-26|Republic Day|true")),
+                setting("observe_non_working_days", "bool", true)
             )
         )
         raw.getJSONArray("people").getJSONObject(0)
@@ -265,8 +268,15 @@ class SnapshotSyncTest {
         val normalized = SnapshotMerger.normalizeForSync(raw)
         val settings = rows(normalized, "settings", idKey = "name")
 
-        assertEquals(setOf("theme_mode", "saved"), settings.keys)
+        // Weekend/holiday configuration is account-wide preference, not tied to one install, so
+        // it must survive normalization the same way "theme_mode"/"saved" do -- unlike
+        // sftp_host/github_owner/app_lock_enabled, which are genuinely per-device/per-connection.
+        assertEquals(
+            setOf("theme_mode", "saved", "weekend_days", "holidays", "observe_non_working_days"),
+            settings.keys
+        )
         assertEquals("a", settings.getValue("saved").getJSONArray("value").getString(0))
+        assertTrue(settings.getValue("observe_non_working_days").getBoolean("value"))
         assertFalse(normalized.getJSONArray("people").getJSONObject(0).has("photoUri"))
     }
 

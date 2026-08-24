@@ -123,6 +123,18 @@ class JsonExporterPhotoTest {
     }
 
     @Test
+    fun weekendAndHolidaySettings_areNotExcludedFromBackup() {
+        // exportPortableSettings()/importPortableSettings() read every DataStore key generically
+        // except NON_PORTABLE_KEYS, so a configured weekend and holiday list travels in a backup
+        // with no per-key wiring needed -- this guards against one of those three names quietly
+        // landing in that exclusion list in the future.
+        val excluded = com.mj.yata.data.local.datastore.UserPreferences.NON_PORTABLE_KEYS
+        assertTrue("weekend_days" !in excluded)
+        assertTrue("holidays" !in excluded)
+        assertTrue("observe_non_working_days" !in excluded)
+    }
+
+    @Test
     fun backupWithoutSettings_leavesCurrentSettingsAlone() {
         // An older backup has no settings array; the importer must skip rather than clear.
         val root = JSONObject().apply { put("version", 4) }
