@@ -1100,6 +1100,21 @@ data class WeekendRescheduleWarning(
     val overdueNudgesEnabled: StateFlow<Boolean> = userPreferences.overdueNudgesEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val quietHoursEnabled: StateFlow<Boolean> = userPreferences.quietHoursEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val quietHoursStartHour: StateFlow<Int> = userPreferences.quietHoursStartHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 22)
+
+    val quietHoursStartMinute: StateFlow<Int> = userPreferences.quietHoursStartMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val quietHoursEndHour: StateFlow<Int> = userPreferences.quietHoursEndHourFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 7)
+
+    val quietHoursEndMinute: StateFlow<Int> = userPreferences.quietHoursEndMinuteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
     val undoWindowSeconds: StateFlow<Int> = userPreferences.undoWindowSecondsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
 
@@ -1177,6 +1192,18 @@ data class WeekendRescheduleWarning(
 
     fun setOverdueNudgesEnabled(enabled: Boolean) {
         safeLaunch { userPreferences.setOverdueNudgesEnabled(enabled) }
+    }
+
+    fun setQuietHoursEnabled(enabled: Boolean) {
+        safeLaunch { userPreferences.setQuietHoursEnabled(enabled) }
+    }
+
+    fun setQuietHoursStart(hour: Int, minute: Int) {
+        safeLaunch { userPreferences.setQuietHoursStart(hour, minute) }
+    }
+
+    fun setQuietHoursEnd(hour: Int, minute: Int) {
+        safeLaunch { userPreferences.setQuietHoursEnd(hour, minute) }
     }
 
     fun setAutoArchiveDays(days: Int) {
@@ -1735,6 +1762,14 @@ data class WeekendRescheduleWarning(
 
     fun bulkAssignPerson(ids: List<String>, personId: String) {
         safeLaunch { taskOperations.bulkAssignPerson(ids, personId) }
+    }
+
+    fun bulkSetPriority(ids: List<String>, priority: String) {
+        safeLaunch { taskOperations.bulkSetPriority(ids, priority) }
+    }
+
+    fun bulkSetFlag(ids: List<String>, flag: Boolean) {
+        safeLaunch { taskOperations.bulkSetFlag(ids, flag) }
     }
 
     fun toggleTaskFlag(id: String) {

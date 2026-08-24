@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">நிகழ்ச்சி நிரல் நேரம்</string>
     <string name="settings_overdue_nudges">தாமத நினைவூட்டல்கள்</string>
     <string name="settings_overdue_nudges_desc">தாமதமாக விடப்பட்ட பணிகளுக்கான தொடர் அறிவிப்புகள்.</string>
+    <string name="settings_quiet_hours">அமைதி நேரம்</string>
+    <string name="settings_quiet_hours_desc">இந்த காலப்பகுதியில் ஒலிக்க வேண்டிய நினைவூட்டல்கள் அதற்கு பதிலாக இது முடியும் வரை காத்திருக்கும்.</string>
+    <string name="settings_quiet_hours_start">தொடக்கம்</string>
+    <string name="settings_quiet_hours_end">முடிவு</string>
     <string name="settings_app_language">ஆப்ஸ் மொழி</string>
     <string name="settings_app_language_desc">YATA காட்டப்படும் மொழியைத் தேர்ந்தெடுக்கவும்.</string>
     <string name="settings_language_system_default">சாதன இயல்புநிலை</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">தேர்ந்தெடு</string>
     <string name="cd_bulk_cancel_selection">தேர்வை ரத்து செய்</string>
     <string name="cd_bulk_mark_done">முடிந்ததாகக் குறி</string>
+    <string name="cd_bulk_flag">கொடியிடு</string>
+    <string name="cd_bulk_set_priority">முன்னுரிமை அமை</string>
     <string name="cd_bulk_add_tag">குறிச்சொல் சேர்</string>
     <string name="cd_bulk_assign_person">நபருக்கு ஒதுக்கு</string>
     <string name="cd_bulk_move">பட்டியல் அல்லது திட்டத்திற்கு நகர்த்து</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">தேர்ந்தெடுத்த பணிகளுக்கு குறிச்சொல் சேர்</string>
     <string name="bulk_no_tags">இன்னும் குறிச்சொற்கள் இல்லை - முதலில் குறிச்சொற்கள் தாவலில் ஒன்றை உருவாக்கவும்.</string>
     <string name="bulk_assign_title">தேர்ந்தெடுத்த பணிகளை இவருக்கு ஒதுக்கு</string>
+    <string name="bulk_set_priority_title">தேர்ந்தெடுத்த பணிகளுக்கு முன்னுரிமை அமை</string>
     <string name="bulk_no_people">இன்னும் நபர்கள் இல்லை - முதலில் நபர்கள் தாவலில் ஒருவரைச் சேர்க்கவும்.</string>
     <string name="today_show_completed">முடிந்த பணிகளைக் காட்டு</string>
     <string name="today_hide_completed">முடிந்த பணிகளை மறை</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">இந்த நாட்களில்</string>
     <string name="recurrence_day_of_month">மாதத்தின் தேதி</string>
     <string name="recurrence_last_day_of_month">மாதத்தின் கடைசி நாள்</string>
+    <string name="recurrence_monthly_mode_date">தேதி</string>
+    <string name="recurrence_monthly_mode_weekday">வார நாள்</string>
+    <string name="recurrence_monthly_position_last">கடைசி</string>
     <string name="recurrence_repeat_from">இதிலிருந்து திரும்பச் செய்</string>
     <string name="recurrence_when_you_finish_it">நீங்கள் அதை முடிக்கும் போது</string>
     <string name="recurrence_fixed_schedule">நிலையான அட்டவணை</string>

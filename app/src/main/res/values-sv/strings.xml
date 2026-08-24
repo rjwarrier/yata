@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">Agendatid</string>
     <string name="settings_overdue_nudges">Påminnelser om förseningar</string>
     <string name="settings_overdue_nudges_desc">Uppföljningsaviseringar för uppgifter som blivit försenade.</string>
+    <string name="settings_quiet_hours">Tysta timmar</string>
+    <string name="settings_quiet_hours_desc">Påminnelser som skulle utlösas under detta fönster väntar istället tills det är över.</string>
+    <string name="settings_quiet_hours_start">Börjar</string>
+    <string name="settings_quiet_hours_end">Slutar</string>
     <string name="settings_app_language">Appspråk</string>
     <string name="settings_app_language_desc">Välj vilket språk YATA visas på.</string>
     <string name="settings_language_system_default">Systemstandard</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">Markera</string>
     <string name="cd_bulk_cancel_selection">Avbryt markering</string>
     <string name="cd_bulk_mark_done">Markera som klar</string>
+    <string name="cd_bulk_flag">Flagga</string>
+    <string name="cd_bulk_set_priority">Ange prioritet</string>
     <string name="cd_bulk_add_tag">Lägg till tagg</string>
     <string name="cd_bulk_assign_person">Tilldela till person</string>
     <string name="cd_bulk_move">Flytta till lista eller projekt</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">Lägg till tagg på markerade uppgifter</string>
     <string name="bulk_no_tags">Inga taggar ännu - skapa en från fliken Taggar först.</string>
     <string name="bulk_assign_title">Tilldela markerade uppgifter till</string>
+    <string name="bulk_set_priority_title">Ange prioritet för markerade uppgifter</string>
     <string name="bulk_no_people">Inga personer ännu - lägg till en från fliken Personer först.</string>
     <string name="today_show_completed">Visa slutförda uppgifter</string>
     <string name="today_hide_completed">Dölj slutförda uppgifter</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">På dagar</string>
     <string name="recurrence_day_of_month">Dag i månaden</string>
     <string name="recurrence_last_day_of_month">Sista dagen i månaden</string>
+    <string name="recurrence_monthly_mode_date">Datum</string>
+    <string name="recurrence_monthly_mode_weekday">Veckodag</string>
+    <string name="recurrence_monthly_position_last">Sista</string>
     <string name="recurrence_repeat_from">Upprepa från</string>
     <string name="recurrence_when_you_finish_it">När du slutför den</string>
     <string name="recurrence_fixed_schedule">Fast schema</string>

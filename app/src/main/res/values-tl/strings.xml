@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">Oras ng agenda</string>
     <string name="settings_overdue_nudges">Mga paalala sa late na gawain</string>
     <string name="settings_overdue_nudges_desc">Mga sunud-sunod na abiso para sa mga gawaing naiwang late.</string>
+    <string name="settings_quiet_hours">Tahimik na oras</string>
+    <string name="settings_quiet_hours_desc">Ang mga paalala na dapat sanang tumunog sa panahong ito ay maghihintay na lang hanggang matapos ito.</string>
+    <string name="settings_quiet_hours_start">Nagsisimula</string>
+    <string name="settings_quiet_hours_end">Nagtatapos</string>
     <string name="settings_app_language">Wika ng app</string>
     <string name="settings_app_language_desc">Piliin ang wikang gagamitin ng YATA.</string>
     <string name="settings_language_system_default">Default ng sistema</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">Piliin</string>
     <string name="cd_bulk_cancel_selection">Kanselahin ang pagpili</string>
     <string name="cd_bulk_mark_done">I-mark bilang tapos</string>
+    <string name="cd_bulk_flag">I-flag</string>
+    <string name="cd_bulk_set_priority">Itakda ang prayoridad</string>
     <string name="cd_bulk_add_tag">Magdagdag ng tag</string>
     <string name="cd_bulk_assign_person">Italaga sa tao</string>
     <string name="cd_bulk_move">Ilipat sa listahan o proyekto</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">Magdagdag ng tag sa mga napiling gawain</string>
     <string name="bulk_no_tags">Wala pang tag - gumawa muna ng isa mula sa Mga Tag tab.</string>
     <string name="bulk_assign_title">Italaga ang mga napiling gawain kay</string>
+    <string name="bulk_set_priority_title">Itakda ang prayoridad ng mga napiling gawain</string>
     <string name="bulk_no_people">Wala pang tao - magdagdag muna ng isa mula sa Mga Tao tab.</string>
     <string name="today_show_completed">Ipakita ang mga natapos na gawain</string>
     <string name="today_hide_completed">Itago ang mga natapos na gawain</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">Sa mga araw</string>
     <string name="recurrence_day_of_month">Araw ng buwan</string>
     <string name="recurrence_last_day_of_month">Huling araw ng buwan</string>
+    <string name="recurrence_monthly_mode_date">Petsa</string>
+    <string name="recurrence_monthly_mode_weekday">Araw ng linggo</string>
+    <string name="recurrence_monthly_position_last">Huli</string>
     <string name="recurrence_repeat_from">Ulitin mula sa</string>
     <string name="recurrence_when_you_finish_it">Kapag natapos mo na ito</string>
     <string name="recurrence_fixed_schedule">Fixed na iskedyul</string>

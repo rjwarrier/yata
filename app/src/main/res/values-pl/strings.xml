@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">Godzina planu dnia</string>
     <string name="settings_overdue_nudges">Przypomnienia o zaległościach</string>
     <string name="settings_overdue_nudges_desc">Powiadomienia przypominające o zadaniach pozostawionych jako zaległe.</string>
+    <string name="settings_quiet_hours">Godziny ciszy</string>
+    <string name="settings_quiet_hours_desc">Przypomnienia, które miałyby się pojawić w tym oknie, czekają zamiast tego do jego końca.</string>
+    <string name="settings_quiet_hours_start">Początek</string>
+    <string name="settings_quiet_hours_end">Koniec</string>
     <string name="settings_app_language">Język aplikacji</string>
     <string name="settings_app_language_desc">Wybierz język, w którym wyświetlana jest YATA.</string>
     <string name="settings_language_system_default">Domyślny systemowy</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">Zaznacz</string>
     <string name="cd_bulk_cancel_selection">Anuluj zaznaczenie</string>
     <string name="cd_bulk_mark_done">Oznacz jako ukończone</string>
+    <string name="cd_bulk_flag">Oznacz flagą</string>
+    <string name="cd_bulk_set_priority">Ustaw priorytet</string>
     <string name="cd_bulk_add_tag">Dodaj tag</string>
     <string name="cd_bulk_assign_person">Przypisz do osoby</string>
     <string name="cd_bulk_move">Przenieś do listy lub projektu</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">Dodaj tag do zaznaczonych zadań</string>
     <string name="bulk_no_tags">Brak tagów - najpierw utwórz jeden z karty Tagi.</string>
     <string name="bulk_assign_title">Przypisz zaznaczone zadania do</string>
+    <string name="bulk_set_priority_title">Ustaw priorytet zaznaczonych zadań</string>
     <string name="bulk_no_people">Brak osób - najpierw dodaj jedną z karty Osoby.</string>
     <string name="today_show_completed">Pokaż ukończone zadania</string>
     <string name="today_hide_completed">Ukryj ukończone zadania</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">W dni</string>
     <string name="recurrence_day_of_month">Dzień miesiąca</string>
     <string name="recurrence_last_day_of_month">Ostatni dzień miesiąca</string>
+    <string name="recurrence_monthly_mode_date">Data</string>
+    <string name="recurrence_monthly_mode_weekday">Dzień tygodnia</string>
+    <string name="recurrence_monthly_position_last">Ostatni</string>
     <string name="recurrence_repeat_from">Powtarzaj od</string>
     <string name="recurrence_when_you_finish_it">Gdy je ukończysz</string>
     <string name="recurrence_fixed_schedule">Stały harmonogram</string>

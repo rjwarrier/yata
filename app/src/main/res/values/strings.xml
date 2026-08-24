@@ -309,6 +309,10 @@
     <string name="settings_daily_agenda_time">Agenda time</string>
     <string name="settings_overdue_nudges">Overdue reminders</string>
     <string name="settings_overdue_nudges_desc">Follow-up notifications for tasks left overdue.</string>
+    <string name="settings_quiet_hours">Quiet hours</string>
+    <string name="settings_quiet_hours_desc">Reminders that would fire during this window wait until it ends instead.</string>
+    <string name="settings_quiet_hours_start">Starts</string>
+    <string name="settings_quiet_hours_end">Ends</string>
 
     <!-- App language (Android 13+ per-app language picker) -->
     <string name="settings_app_language">App language</string>
@@ -409,6 +413,8 @@
     <string name="cd_bulk_select">Select</string>
     <string name="cd_bulk_cancel_selection">Cancel selection</string>
     <string name="cd_bulk_mark_done">Mark done</string>
+    <string name="cd_bulk_flag">Flag</string>
+    <string name="cd_bulk_set_priority">Set priority</string>
     <string name="cd_bulk_add_tag">Add tag</string>
     <string name="cd_bulk_assign_person">Assign to person</string>
     <string name="cd_bulk_move">Move to list or project</string>
@@ -1002,6 +1008,7 @@
     <string name="bulk_add_tag_title">Add tag to selected tasks</string>
     <string name="bulk_no_tags">No tags yet - create one from the Tags tab first.</string>
     <string name="bulk_assign_title">Assign selected tasks to</string>
+    <string name="bulk_set_priority_title">Set priority for selected tasks</string>
     <string name="bulk_no_people">No people yet - add one from the People tab first.</string>
 
     <!-- Today top bar -->
@@ -1412,6 +1419,9 @@
     <string name="recurrence_on_days">On days</string>
     <string name="recurrence_day_of_month">Day of month</string>
     <string name="recurrence_last_day_of_month">Last day of month</string>
+    <string name="recurrence_monthly_mode_date">Date</string>
+    <string name="recurrence_monthly_mode_weekday">Weekday</string>
+    <string name="recurrence_monthly_position_last">Last</string>
     <string name="recurrence_repeat_from">Repeat from</string>
     <string name="recurrence_when_you_finish_it">When you finish it</string>
     <string name="recurrence_fixed_schedule">Fixed schedule</string>

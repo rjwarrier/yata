@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">Ajanda saati</string>
     <string name="settings_overdue_nudges">Gecikme hatırlatmaları</string>
     <string name="settings_overdue_nudges_desc">Gecikmiş kalan görevler için takip bildirimleri.</string>
+    <string name="settings_quiet_hours">Sessiz saatler</string>
+    <string name="settings_quiet_hours_desc">Bu aralıkta çalması gereken hatırlatıcılar, bunun yerine bu aralık bitene kadar bekler.</string>
+    <string name="settings_quiet_hours_start">Başlangıç</string>
+    <string name="settings_quiet_hours_end">Bitiş</string>
     <string name="settings_app_language">Uygulama dili</string>
     <string name="settings_app_language_desc">YATA\'nın görüntülendiği dili seçin.</string>
     <string name="settings_language_system_default">Sistem varsayılanı</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">Seç</string>
     <string name="cd_bulk_cancel_selection">Seçimi iptal et</string>
     <string name="cd_bulk_mark_done">Tamamlandı olarak işaretle</string>
+    <string name="cd_bulk_flag">İşaretle</string>
+    <string name="cd_bulk_set_priority">Önceliği ayarla</string>
     <string name="cd_bulk_add_tag">Etiket ekle</string>
     <string name="cd_bulk_assign_person">Kişiye ata</string>
     <string name="cd_bulk_move">Liste veya projeye taşı</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">Seçilen görevlere etiket ekle</string>
     <string name="bulk_no_tags">Henüz etiket yok - önce Etiketler sekmesinden bir tane oluşturun.</string>
     <string name="bulk_assign_title">Seçilen görevleri şuna ata</string>
+    <string name="bulk_set_priority_title">Seçilen görevler için önceliği ayarla</string>
     <string name="bulk_no_people">Henüz kişi yok - önce Kişiler sekmesinden birini ekleyin.</string>
     <string name="today_show_completed">Tamamlanan görevleri göster</string>
     <string name="today_hide_completed">Tamamlanan görevleri gizle</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">Şu günlerde</string>
     <string name="recurrence_day_of_month">Ayın günü</string>
     <string name="recurrence_last_day_of_month">Ayın son günü</string>
+    <string name="recurrence_monthly_mode_date">Tarih</string>
+    <string name="recurrence_monthly_mode_weekday">Haftanın günü</string>
+    <string name="recurrence_monthly_position_last">Son</string>
     <string name="recurrence_repeat_from">Şuradan tekrarla</string>
     <string name="recurrence_when_you_finish_it">Bitirdiğinizde</string>
     <string name="recurrence_fixed_schedule">Sabit program</string>

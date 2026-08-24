@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">അജണ്ട സമയം</string>
     <string name="settings_overdue_nudges">കാലാവധി കഴിഞ്ഞവയ്ക്കുള്ള ഓർമ്മപ്പെടുത്തലുകൾ</string>
     <string name="settings_overdue_nudges_desc">കാലാവധി കഴിഞ്ഞ ടാസ്കുകൾക്കുള്ള തുടർ അറിയിപ്പുകൾ.</string>
+    <string name="settings_quiet_hours">നിശ്ശബ്ദ സമയം</string>
+    <string name="settings_quiet_hours_desc">ഈ സമയത്ത് മുഴങ്ങേണ്ട ഓർമ്മപ്പെടുത്തലുകൾ പകരം ഇത് അവസാനിക്കുന്നത് വരെ കാത്തിരിക്കും.</string>
+    <string name="settings_quiet_hours_start">തുടക്കം</string>
+    <string name="settings_quiet_hours_end">അവസാനം</string>
     <string name="settings_app_language">ആപ്പ് ഭാഷ</string>
     <string name="settings_app_language_desc">YATA കാണിക്കുന്ന ഭാഷ തിരഞ്ഞെടുക്കുക.</string>
     <string name="settings_language_system_default">സിസ്റ്റം സ്ഥിരസ്ഥിതി</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">തിരഞ്ഞെടുക്കുക</string>
     <string name="cd_bulk_cancel_selection">തിരഞ്ഞെടുപ്പ് റദ്ദാക്കുക</string>
     <string name="cd_bulk_mark_done">പൂർത്തിയായതായി അടയാളപ്പെടുത്തുക</string>
+    <string name="cd_bulk_flag">ഫ്ലാഗ് ചെയ്യുക</string>
+    <string name="cd_bulk_set_priority">മുൻഗണന സജ്ജമാക്കുക</string>
     <string name="cd_bulk_add_tag">ടാഗ് ചേർക്കുക</string>
     <string name="cd_bulk_assign_person">ഒരാൾക്ക് ഏൽപ്പിക്കുക</string>
     <string name="cd_bulk_move">ലിസ്റ്റിലേക്കോ പ്രോജക്റ്റിലേക്കോ നീക്കുക</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">തിരഞ്ഞെടുത്ത ടാസ്കുകളിലേക്ക് ടാഗ് ചേർക്കുക</string>
     <string name="bulk_no_tags">ടാഗുകളൊന്നും ഇതുവരെ ഇല്ല - ആദ്യം ടാഗുകൾ ടാബിൽ നിന്ന് ഒന്ന് സൃഷ്ടിക്കുക.</string>
     <string name="bulk_assign_title">തിരഞ്ഞെടുത്ത ടാസ്കുകൾ ഇവർക്ക് ഏൽപ്പിക്കുക</string>
+    <string name="bulk_set_priority_title">തിരഞ്ഞെടുത്ത ടാസ്കുകൾക്ക് മുൻഗണന സജ്ജമാക്കുക</string>
     <string name="bulk_no_people">ആരും ഇതുവരെ ഇല്ല - ആദ്യം ആളുകൾ ടാബിൽ നിന്ന് ഒരാളെ ചേർക്കുക.</string>
     <string name="today_show_completed">പൂർത്തിയായ ടാസ്കുകൾ കാണിക്കുക</string>
     <string name="today_hide_completed">പൂർത്തിയായ ടാസ്കുകൾ മറയ്ക്കുക</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">ഈ ദിവസങ്ങളിൽ</string>
     <string name="recurrence_day_of_month">മാസത്തിലെ ദിവസം</string>
     <string name="recurrence_last_day_of_month">മാസത്തിലെ അവസാന ദിവസം</string>
+    <string name="recurrence_monthly_mode_date">തീയതി</string>
+    <string name="recurrence_monthly_mode_weekday">ആഴ്ചയിലെ ദിവസം</string>
+    <string name="recurrence_monthly_position_last">അവസാനം</string>
     <string name="recurrence_repeat_from">ഇതിൽ നിന്ന് ആവർത്തിക്കുക</string>
     <string name="recurrence_when_you_finish_it">നിങ്ങൾ പൂർത്തിയാക്കുമ്പോൾ</string>
     <string name="recurrence_fixed_schedule">നിശ്ചിത ഷെഡ്യൂൾ</string>

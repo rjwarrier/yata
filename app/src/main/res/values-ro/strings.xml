@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">Ora agendei</string>
     <string name="settings_overdue_nudges">Mementouri de restanțe</string>
     <string name="settings_overdue_nudges_desc">Notificări de urmărire pentru sarcinile rămase restante.</string>
+    <string name="settings_quiet_hours">Ore de liniște</string>
+    <string name="settings_quiet_hours_desc">Mementourile care ar trebui să sune în acest interval așteaptă în schimb până se termină.</string>
+    <string name="settings_quiet_hours_start">Început</string>
+    <string name="settings_quiet_hours_end">Sfârșit</string>
     <string name="settings_app_language">Limba aplicației</string>
     <string name="settings_app_language_desc">Alege limba în care este afișată YATA.</string>
     <string name="settings_language_system_default">Implicit sistem</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">Selectează</string>
     <string name="cd_bulk_cancel_selection">Anulează selecția</string>
     <string name="cd_bulk_mark_done">Marchează finalizată</string>
+    <string name="cd_bulk_flag">Marchează</string>
+    <string name="cd_bulk_set_priority">Setează prioritatea</string>
     <string name="cd_bulk_add_tag">Adaugă etichetă</string>
     <string name="cd_bulk_assign_person">Atribuie unei persoane</string>
     <string name="cd_bulk_move">Mută în listă sau proiect</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">Adaugă etichetă la sarcinile selectate</string>
     <string name="bulk_no_tags">Nicio etichetă încă - creează una din fila Etichete mai întâi.</string>
     <string name="bulk_assign_title">Atribuie sarcinile selectate lui</string>
+    <string name="bulk_set_priority_title">Setează prioritatea sarcinilor selectate</string>
     <string name="bulk_no_people">Nicio persoană încă - adaugă una din fila Persoane mai întâi.</string>
     <string name="today_show_completed">Arată sarcinile finalizate</string>
     <string name="today_hide_completed">Ascunde sarcinile finalizate</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">În zilele</string>
     <string name="recurrence_day_of_month">Ziua lunii</string>
     <string name="recurrence_last_day_of_month">Ultima zi a lunii</string>
+    <string name="recurrence_monthly_mode_date">Dată</string>
+    <string name="recurrence_monthly_mode_weekday">Zi a săptămânii</string>
+    <string name="recurrence_monthly_position_last">Ultima</string>
     <string name="recurrence_repeat_from">Repetă de la</string>
     <string name="recurrence_when_you_finish_it">Când o finalizezi</string>
     <string name="recurrence_fixed_schedule">Program fix</string>

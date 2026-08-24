@@ -15,6 +15,19 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+- The multiselect toolbar (Today, Upcoming, Search, and Project/List/Tag/Person detail) now has
+  Flag and Set priority bulk actions alongside the existing complete/tag/assign/move/reschedule/
+  duplicate/delete — flag applies immediately to every selected task, priority opens a picker.
+- Monthly recurrence can now repeat on a weekday position ("2nd Tuesday", "last Friday") instead
+  of only a fixed day-of-month, for meetings and bills that don't land on the same date every
+  month. Set from the same Repeat sheet as a Date/Weekday toggle; carried through backups, GitHub
+  sync, and shared task links.
+- Added a "Quiet hours" toggle (Settings → Notifications, off by default). When on, a task
+  reminder that would otherwise fire inside the configured window (e.g. 22:00-07:00) waits until
+  the window ends instead; the daily overdue-escalation digest skips its run entirely if it lands
+  inside the window, since its next check-in is a day away rather than a few hours.
+
 ## [0.94.2] - 2026-08-23
 
 `versionCode 23`. Upgrades in place over 0.94.

@@ -2,7 +2,9 @@ package com.mj.yata.ui.sheets
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -12,7 +14,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -38,6 +42,7 @@ import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.theme.LocalYataAccents
 import com.mj.yata.ui.widgets.PersonAvatar
+import com.mj.yata.ui.widgets.PriorityBars
 
 /** Top bar shown in place of the normal header once one or more tasks are selected. */
 @Composable
@@ -51,6 +56,8 @@ fun TaskSelectionTopBar(
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     onAssign: () -> Unit = {},
+    onFlag: () -> Unit = {},
+    onSetPriority: () -> Unit = {},
     tagsEnabled: Boolean = true,
     peopleEnabled: Boolean = true,
     modifier: Modifier = Modifier
@@ -71,9 +78,18 @@ fun TaskSelectionTopBar(
                 style = MaterialTheme.typography.titleMedium
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             IconButton(onClick = onComplete) {
                 Icon(Icons.Default.Check, contentDescription = stringResource(R.string.cd_bulk_mark_done), tint = MaterialTheme.colorScheme.onSurface)
+            }
+            IconButton(onClick = onFlag) {
+                Icon(Icons.Default.Flag, contentDescription = stringResource(R.string.cd_bulk_flag), tint = MaterialTheme.colorScheme.onSurface)
+            }
+            IconButton(onClick = onSetPriority) {
+                Icon(Icons.Default.PriorityHigh, contentDescription = stringResource(R.string.cd_bulk_set_priority), tint = MaterialTheme.colorScheme.onSurface)
             }
             if (tagsEnabled) {
                 IconButton(onClick = onAddTag) {
@@ -275,6 +291,49 @@ fun TaskBulkTagPickerSheet(
             ) {
                 Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
                 Text(tag.name, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    }
+}
+
+/** Bottom sheet: set the priority of every currently-selected task. */
+@Composable
+fun TaskBulkPrioritySheet(
+    onSelectPriority: (String) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.bulk_set_priority_title),
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        listOf(
+            "none" to R.string.settings_priority_none,
+            "low" to R.string.settings_priority_low,
+            "med" to R.string.settings_priority_med,
+            "high" to R.string.settings_priority_high
+        ).forEach { (priority, labelRes) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onSelectPriority(priority) }
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.width(20.dp), contentAlignment = Alignment.Center) {
+                    PriorityBars(priority = priority)
+                }
+                Text(stringResource(labelRes), style = MaterialTheme.typography.bodyLarge)
             }
         }
     }

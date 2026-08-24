@@ -303,7 +303,9 @@ private fun encodeRecurrence(recurrence: Recurrence?): String {
         recurrence.byday.orEmpty().joinToString(","),
         recurrence.bymonthday?.toString().orEmpty(),
         ends,
-        recurrence.basedOnCompletion.toString()
+        recurrence.basedOnCompletion.toString(),
+        recurrence.byweekday.orEmpty(),
+        recurrence.bysetpos?.toString().orEmpty()
     ).joinToString("|") { android.net.Uri.encode(it) }
 }
 
@@ -322,7 +324,9 @@ private fun decodeRecurrence(value: String): Recurrence? {
             byday = parts[2].takeIf(String::isNotBlank)?.split(','),
             bymonthday = parts[3].toIntOrNull(),
             ends = ends,
-            basedOnCompletion = parts[5].toBoolean()
+            basedOnCompletion = parts[5].toBoolean(),
+            byweekday = parts.getOrNull(6)?.takeIf(String::isNotBlank),
+            bysetpos = parts.getOrNull(7)?.toIntOrNull()
         )
     }.getOrNull()
 }
@@ -2194,11 +2198,11 @@ private fun RepeatPanel(
             }
             val presets = listOf<Pair<String, Recurrence?>>(
                 stringResource(R.string.settings_none) to null,
-                stringResource(R.string.recurrence_daily) to Recurrence("daily", 1, null, null, RecurrenceEnds.Never),
-                stringResource(R.string.recurrence_weekdays) to Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, RecurrenceEnds.Never),
-                stringResource(R.string.recurrence_weekly) to Recurrence("weekly", 1, listOf(weeklyDay), null, RecurrenceEnds.Never),
-                stringResource(R.string.recurrence_monthly) to Recurrence("monthly", 1, null, baseDate.dayOfMonth, RecurrenceEnds.Never),
-                stringResource(R.string.recurrence_yearly) to Recurrence("yearly", 1, null, null, RecurrenceEnds.Never)
+                stringResource(R.string.recurrence_daily) to Recurrence("daily", 1, null, null, ends = RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_weekdays) to Recurrence("weekly", 1, listOf("MO", "TU", "WE", "TH", "FR"), null, ends = RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_weekly) to Recurrence("weekly", 1, listOf(weeklyDay), null, ends = RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_monthly) to Recurrence("monthly", 1, null, baseDate.dayOfMonth, ends = RecurrenceEnds.Never),
+                stringResource(R.string.recurrence_yearly) to Recurrence("yearly", 1, null, null, ends = RecurrenceEnds.Never)
             )
             presets.forEach { (label, rec) ->
                 val isSelected = if (rec == null) selectedRecurrence == null

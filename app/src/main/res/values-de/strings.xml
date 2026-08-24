@@ -266,6 +266,10 @@
     <string name="settings_daily_agenda_time">Agenda-Uhrzeit</string>
     <string name="settings_overdue_nudges">Erinnerungen an Überfälliges</string>
     <string name="settings_overdue_nudges_desc">Follow-up-Benachrichtigungen für überfällig gebliebene Aufgaben.</string>
+    <string name="settings_quiet_hours">Ruhezeiten</string>
+    <string name="settings_quiet_hours_desc">Erinnerungen, die in diesem Zeitfenster ausgelöst würden, warten stattdessen bis zu dessen Ende.</string>
+    <string name="settings_quiet_hours_start">Beginn</string>
+    <string name="settings_quiet_hours_end">Ende</string>
 
     <!-- App language (Android 13+ per-app language picker) -->
     <string name="settings_app_language">App-Sprache</string>
@@ -364,6 +368,8 @@
         <string name="cd_bulk_select">Auswählen</string>
     <string name="cd_bulk_cancel_selection">Auswahl abbrechen</string>
     <string name="cd_bulk_mark_done">Als erledigt markieren</string>
+    <string name="cd_bulk_flag">Markieren</string>
+    <string name="cd_bulk_set_priority">Priorität festlegen</string>
     <string name="cd_bulk_add_tag">Tag hinzufügen</string>
     <string name="cd_bulk_assign_person">Person zuweisen</string>
     <string name="cd_bulk_move">Zu Liste oder Projekt verschieben</string>
@@ -911,6 +917,7 @@
     <string name="bulk_add_tag_title">Tag zu ausgewählten Aufgaben hinzufügen</string>
     <string name="bulk_no_tags">Noch keine Tags - erstelle zuerst einen im Tab „Tags“.</string>
     <string name="bulk_assign_title">Ausgewählte Aufgaben zuweisen an</string>
+    <string name="bulk_set_priority_title">Priorität für ausgewählte Aufgaben festlegen</string>
     <string name="bulk_no_people">Noch keine Personen - füge zuerst eine im Tab „Personen“ hinzu.</string>
 
     <!-- Today top bar -->
@@ -1292,6 +1299,9 @@
     <string name="recurrence_on_days">An Tagen</string>
     <string name="recurrence_day_of_month">Tag des Monats</string>
     <string name="recurrence_last_day_of_month">Letzter Tag des Monats</string>
+    <string name="recurrence_monthly_mode_date">Datum</string>
+    <string name="recurrence_monthly_mode_weekday">Wochentag</string>
+    <string name="recurrence_monthly_position_last">Letzter</string>
     <string name="recurrence_repeat_from">Wiederholen ab</string>
     <string name="recurrence_when_you_finish_it">Wenn du sie erledigst</string>
     <string name="recurrence_fixed_schedule">Fester Zeitplan</string>

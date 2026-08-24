@@ -264,6 +264,14 @@ class UserPreferences @Inject constructor(
         val DAILY_AGENDA_HOUR     = intPreferencesKey("daily_agenda_hour")
         val DAILY_AGENDA_MINUTE   = intPreferencesKey("daily_agenda_minute")
         val OVERDUE_NUDGES_ENABLED = booleanPreferencesKey("overdue_nudges_enabled")
+        // Off by default — deferring a reminder is a bigger behavioral change than the reminder
+        // itself, so this needs an explicit opt-in rather than silently changing when notifications
+        // land for every existing install. Defaults (22:00-07:00) only take effect once enabled.
+        val QUIET_HOURS_ENABLED   = booleanPreferencesKey("quiet_hours_enabled")
+        val QUIET_HOURS_START_HOUR = intPreferencesKey("quiet_hours_start_hour")
+        val QUIET_HOURS_START_MINUTE = intPreferencesKey("quiet_hours_start_minute")
+        val QUIET_HOURS_END_HOUR = intPreferencesKey("quiet_hours_end_hour")
+        val QUIET_HOURS_END_MINUTE = intPreferencesKey("quiet_hours_end_minute")
         // Seconds an undo stays available after a delete. 4 matches the old SnackbarDuration.Short.
         val UNDO_WINDOW_SECONDS   = intPreferencesKey("undo_window_seconds")
         val SNOOZE_TONIGHT_HOUR   = intPreferencesKey("snooze_tonight_hour")
@@ -502,6 +510,11 @@ class UserPreferences @Inject constructor(
     val dailyAgendaHourFlow: Flow<Int> = prefsFlow.map { it[DAILY_AGENDA_HOUR] ?: 7 }
     val dailyAgendaMinuteFlow: Flow<Int> = prefsFlow.map { it[DAILY_AGENDA_MINUTE] ?: 30 }
     val overdueNudgesEnabledFlow: Flow<Boolean> = prefsFlow.map { it[OVERDUE_NUDGES_ENABLED] ?: true }
+    val quietHoursEnabledFlow: Flow<Boolean> = prefsFlow.map { it[QUIET_HOURS_ENABLED] ?: false }
+    val quietHoursStartHourFlow: Flow<Int> = prefsFlow.map { it[QUIET_HOURS_START_HOUR] ?: 22 }
+    val quietHoursStartMinuteFlow: Flow<Int> = prefsFlow.map { it[QUIET_HOURS_START_MINUTE] ?: 0 }
+    val quietHoursEndHourFlow: Flow<Int> = prefsFlow.map { it[QUIET_HOURS_END_HOUR] ?: 7 }
+    val quietHoursEndMinuteFlow: Flow<Int> = prefsFlow.map { it[QUIET_HOURS_END_MINUTE] ?: 0 }
     val undoWindowSecondsFlow: Flow<Int> = prefsFlow.map { it[UNDO_WINDOW_SECONDS] ?: 4 }
     val snoozeTonightHourFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TONIGHT_HOUR] ?: 18 }
     val snoozeTonightMinuteFlow: Flow<Int> = prefsFlow.map { it[SNOOZE_TONIGHT_MINUTE] ?: 0 }
@@ -838,6 +851,18 @@ class UserPreferences @Inject constructor(
 
     suspend fun setOverdueNudgesEnabled(enabled: Boolean) {
         dataStore.edit { it[OVERDUE_NUDGES_ENABLED] = enabled }
+    }
+
+    suspend fun setQuietHoursEnabled(enabled: Boolean) {
+        dataStore.edit { it[QUIET_HOURS_ENABLED] = enabled }
+    }
+
+    suspend fun setQuietHoursStart(hour: Int, minute: Int) {
+        dataStore.edit { it[QUIET_HOURS_START_HOUR] = hour; it[QUIET_HOURS_START_MINUTE] = minute }
+    }
+
+    suspend fun setQuietHoursEnd(hour: Int, minute: Int) {
+        dataStore.edit { it[QUIET_HOURS_END_HOUR] = hour; it[QUIET_HOURS_END_MINUTE] = minute }
     }
 
     suspend fun setAutoArchiveDays(days: Int) {
@@ -1310,6 +1335,8 @@ class UserPreferences @Inject constructor(
             prefs.remove(TODAY_TAB_ENABLED); prefs.remove(UPCOMING_TAB_ENABLED); prefs.remove(FAB_POSITION)
             prefs.remove(DEFAULT_DUE_DATE); prefs.remove(DEFAULT_PRIORITY); prefs.remove(SUBTASK_COMPLETION_ACTION); prefs.remove(DAILY_AGENDA_ENABLED)
             prefs.remove(DAILY_AGENDA_HOUR); prefs.remove(DAILY_AGENDA_MINUTE); prefs.remove(OVERDUE_NUDGES_ENABLED)
+            prefs.remove(QUIET_HOURS_ENABLED); prefs.remove(QUIET_HOURS_START_HOUR); prefs.remove(QUIET_HOURS_START_MINUTE)
+            prefs.remove(QUIET_HOURS_END_HOUR); prefs.remove(QUIET_HOURS_END_MINUTE)
             prefs.remove(UNDO_WINDOW_SECONDS); prefs.remove(TRASH_RETENTION_DAYS); prefs.remove(AUTO_ARCHIVE_DAYS)
             prefs.remove(SNOOZE_TONIGHT_HOUR); prefs.remove(SNOOZE_TONIGHT_MINUTE)
             prefs.remove(SNOOZE_TOMORROW_HOUR); prefs.remove(SNOOZE_TOMORROW_MINUTE)

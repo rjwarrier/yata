@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">అజెండా సమయం</string>
     <string name="settings_overdue_nudges">గడువు మీరిన రిమైండర్‌లు</string>
     <string name="settings_overdue_nudges_desc">గడువు మీరిన టాస్క్‌ల కోసం ఫాలో-అప్ నోటిఫికేషన్‌లు.</string>
+    <string name="settings_quiet_hours">నిశ్శబ్ద సమయం</string>
+    <string name="settings_quiet_hours_desc">ఈ వ్యవధిలో మోగవలసిన రిమైండర్‌లు బదులుగా ఇది ముగిసే వరకు వేచి ఉంటాయి.</string>
+    <string name="settings_quiet_hours_start">ప్రారంభం</string>
+    <string name="settings_quiet_hours_end">ముగింపు</string>
     <string name="settings_app_language">యాప్ భాష</string>
     <string name="settings_app_language_desc">యాటా ఏ భాషలో ప్రదర్శించబడుతుందో ఎంచుకోండి.</string>
     <string name="settings_language_system_default">సిస్టమ్ డిఫాల్ట్</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">ఎంచుకోండి</string>
     <string name="cd_bulk_cancel_selection">ఎంపిక రద్దు చేయండి</string>
     <string name="cd_bulk_mark_done">పూర్తయినట్లు గుర్తించండి</string>
+    <string name="cd_bulk_flag">ఫ్లాగ్ చేయండి</string>
+    <string name="cd_bulk_set_priority">ప్రాధాన్యత సెట్ చేయండి</string>
     <string name="cd_bulk_add_tag">ట్యాగ్ జోడించండి</string>
     <string name="cd_bulk_assign_person">వ్యక్తికి కేటాయించండి</string>
     <string name="cd_bulk_move">జాబితా లేదా ప్రాజెక్ట్‌కు తరలించండి</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">ఎంచుకున్న టాస్క్‌లకు ట్యాగ్ జోడించండి</string>
     <string name="bulk_no_tags">ఇంకా ట్యాగ్‌లు లేవు - ముందుగా ట్యాగ్‌ల ట్యాబ్ నుండి ఒకటి సృష్టించండి.</string>
     <string name="bulk_assign_title">ఎంచుకున్న టాస్క్‌లను వీరికి కేటాయించండి</string>
+    <string name="bulk_set_priority_title">ఎంచుకున్న టాస్క్‌లకు ప్రాధాన్యత సెట్ చేయండి</string>
     <string name="bulk_no_people">ఇంకా వ్యక్తులు లేరు - ముందుగా వ్యక్తుల ట్యాబ్ నుండి ఒకరిని జోడించండి.</string>
     <string name="today_show_completed">పూర్తయిన టాస్క్‌లు చూపండి</string>
     <string name="today_hide_completed">పూర్తయిన టాస్క్‌లు దాచండి</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">ఈ రోజుల్లో</string>
     <string name="recurrence_day_of_month">నెలలో రోజు</string>
     <string name="recurrence_last_day_of_month">నెల చివరి రోజు</string>
+    <string name="recurrence_monthly_mode_date">తేదీ</string>
+    <string name="recurrence_monthly_mode_weekday">వార దినం</string>
+    <string name="recurrence_monthly_position_last">చివరిది</string>
     <string name="recurrence_repeat_from">దీని నుండి పునరావృతం</string>
     <string name="recurrence_when_you_finish_it">మీరు దీన్ని పూర్తి చేసినప్పుడు</string>
     <string name="recurrence_fixed_schedule">నిర్ణీత షెడ్యూల్</string>

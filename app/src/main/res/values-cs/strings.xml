@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">Čas agendy</string>
     <string name="settings_overdue_nudges">Připomínky po termínu</string>
     <string name="settings_overdue_nudges_desc">Následná oznámení o úkolech, které zůstaly po termínu.</string>
+    <string name="settings_quiet_hours">Klidové hodiny</string>
+    <string name="settings_quiet_hours_desc">Připomínky, které by měly zaznít během tohoto okna, počkají místo toho do jeho konce.</string>
+    <string name="settings_quiet_hours_start">Začátek</string>
+    <string name="settings_quiet_hours_end">Konec</string>
     <string name="settings_app_language">Jazyk aplikace</string>
     <string name="settings_app_language_desc">Vyberte jazyk, ve kterém se YATA zobrazuje.</string>
     <string name="settings_language_system_default">Výchozí systému</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">Vybrat</string>
     <string name="cd_bulk_cancel_selection">Zrušit výběr</string>
     <string name="cd_bulk_mark_done">Označit jako dokončené</string>
+    <string name="cd_bulk_flag">Označit vlajkou</string>
+    <string name="cd_bulk_set_priority">Nastavit prioritu</string>
     <string name="cd_bulk_add_tag">Přidat štítek</string>
     <string name="cd_bulk_assign_person">Přiřadit osobě</string>
     <string name="cd_bulk_move">Přesunout do seznamu nebo projektu</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">Přidat štítek k vybraným úkolům</string>
     <string name="bulk_no_tags">Zatím žádné štítky - nejdřív jeden vytvořte na záložce Štítky.</string>
     <string name="bulk_assign_title">Přiřadit vybrané úkoly osobě</string>
+    <string name="bulk_set_priority_title">Nastavit prioritu vybraných úkolů</string>
     <string name="bulk_no_people">Zatím žádní lidé - nejdřív jednoho přidejte na záložce Lidé.</string>
     <string name="today_show_completed">Zobrazit dokončené úkoly</string>
     <string name="today_hide_completed">Skrýt dokončené úkoly</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">Ve dnech</string>
     <string name="recurrence_day_of_month">Den v měsíci</string>
     <string name="recurrence_last_day_of_month">Poslední den v měsíci</string>
+    <string name="recurrence_monthly_mode_date">Datum</string>
+    <string name="recurrence_monthly_mode_weekday">Den v týdnu</string>
+    <string name="recurrence_monthly_position_last">Poslední</string>
     <string name="recurrence_repeat_from">Opakovat od</string>
     <string name="recurrence_when_you_finish_it">Když ho dokončíte</string>
     <string name="recurrence_fixed_schedule">Pevný rozvrh</string>

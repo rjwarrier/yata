@@ -220,42 +220,121 @@ fun RecurrenceSheet(
                 }
             }
 
-            // Monthly day picker (Only for Monthly freq)
+            // Monthly day picker (Only for Monthly freq): either a fixed day-of-month, or an
+            // nth-weekday position ("2nd Tuesday", "last Friday") — the two modes are mutually
+            // exclusive on Recurrence, so switching one clears the other.
             if (r.freq == "monthly") {
-                val isLastDay = r.bymonthday == -1
+                val isWeekdayMode = r.byweekday != null && r.bysetpos != null
+                val dateModeLabel = stringResource(R.string.recurrence_monthly_mode_date)
+                val weekdayModeLabel = stringResource(R.string.recurrence_monthly_mode_weekday)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.recurrence_day_of_month),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                        )
-                        if (!isLastDay) {
-                            YataStepper(
-                                value = r.bymonthday?.takeIf { it > 0 } ?: 1,
-                                onChange = { r = r.copy(bymonthday = it) },
-                                min = 1,
-                                max = 31
+                    SegmentedControl(
+                        items = listOf(false, true),
+                        selectedItem = isWeekdayMode,
+                        onItemSelected = { toWeekdayMode ->
+                            r = if (toWeekdayMode) {
+                                val setPos = ((baseDate.dayOfMonth - 1) / 7) + 1
+                                r.copy(bymonthday = null, byweekday = baseWeekday, bysetpos = setPos)
+                            } else {
+                                r.copy(byweekday = null, bysetpos = null, bymonthday = baseDate.dayOfMonth)
+                            }
+                        },
+                        labelProvider = { if (it) weekdayModeLabel else dateModeLabel }
+                    )
+
+                    if (isWeekdayMode) {
+                        val lastLabel = stringResource(R.string.recurrence_monthly_position_last)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf(1, 2, 3, 4, -1).forEach { pos ->
+                                val isSelected = r.bysetpos == pos
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(42.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(
+                                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
+                                        )
+                                        .clickable { r = r.copy(bysetpos = pos) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (pos == -1) lastLabel else pos.toString(),
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val weekdays = listOf(
+                                Pair("MO", "M"), Pair("TU", "T"), Pair("WE", "W"),
+                                Pair("TH", "T"), Pair("FR", "F"), Pair("SA", "S"), Pair("SU", "S")
+                            )
+                            weekdays.forEach { (key, label) ->
+                                val isSelected = r.byweekday == key
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(42.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(
+                                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
+                                        )
+                                        .clickable { r = r.copy(byweekday = key) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        val isLastDay = r.bymonthday == -1
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.recurrence_day_of_month),
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                            )
+                            if (!isLastDay) {
+                                YataStepper(
+                                    value = r.bymonthday?.takeIf { it > 0 } ?: 1,
+                                    onChange = { r = r.copy(bymonthday = it) },
+                                    min = 1,
+                                    max = 31
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { r = r.copy(bymonthday = if (isLastDay) 1 else -1) }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Checkbox(checked = isLastDay, onCheckedChange = { r = r.copy(bymonthday = if (it) -1 else 1) })
+                            Text(
+                                text = stringResource(R.string.recurrence_last_day_of_month),
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { r = r.copy(bymonthday = if (isLastDay) 1 else -1) }
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Checkbox(checked = isLastDay, onCheckedChange = { r = r.copy(bymonthday = if (it) -1 else 1) })
-                        Text(
-                            text = stringResource(R.string.recurrence_last_day_of_month),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
                     }
                 }
             }

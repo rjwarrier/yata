@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">अजेंडा वेळ</string>
     <string name="settings_overdue_nudges">मुदत उलटलेल्या सूचना</string>
     <string name="settings_overdue_nudges_desc">मुदत उलटलेल्या कार्यांसाठी पाठपुरावा सूचना.</string>
+    <string name="settings_quiet_hours">शांत वेळ</string>
+    <string name="settings_quiet_hours_desc">या कालावधीत वाजणारे स्मरणपत्रे त्याऐवजी तो संपेपर्यंत थांबतात.</string>
+    <string name="settings_quiet_hours_start">सुरुवात</string>
+    <string name="settings_quiet_hours_end">शेवट</string>
     <string name="settings_app_language">अ‍ॅप भाषा</string>
     <string name="settings_app_language_desc">YATA कोणत्या भाषेत दाखवायचे ते निवडा.</string>
     <string name="settings_language_system_default">सिस्टीम पूर्वनिर्धारित</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">निवडा</string>
     <string name="cd_bulk_cancel_selection">निवड रद्द करा</string>
     <string name="cd_bulk_mark_done">पूर्ण म्हणून चिन्हांकित करा</string>
+    <string name="cd_bulk_flag">फ्लॅग करा</string>
+    <string name="cd_bulk_set_priority">प्राधान्य सेट करा</string>
     <string name="cd_bulk_add_tag">टॅग जोडा</string>
     <string name="cd_bulk_assign_person">व्यक्तीला नियुक्त करा</string>
     <string name="cd_bulk_move">यादी किंवा प्रकल्पात हलवा</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">निवडलेल्या कार्यांना टॅग जोडा</string>
     <string name="bulk_no_tags">अजून टॅग्ज नाहीत - प्रथम टॅग्ज टॅबमधून एक तयार करा.</string>
     <string name="bulk_assign_title">निवडलेली कार्ये यांना नियुक्त करा</string>
+    <string name="bulk_set_priority_title">निवडलेल्या कार्यांसाठी प्राधान्य सेट करा</string>
     <string name="bulk_no_people">अजून लोक नाहीत - प्रथम लोक टॅबमधून एक जोडा.</string>
     <string name="today_show_completed">पूर्ण झालेली कार्ये दाखवा</string>
     <string name="today_hide_completed">पूर्ण झालेली कार्ये लपवा</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">या दिवशी</string>
     <string name="recurrence_day_of_month">महिन्याचा दिवस</string>
     <string name="recurrence_last_day_of_month">महिन्याचा शेवटचा दिवस</string>
+    <string name="recurrence_monthly_mode_date">तारीख</string>
+    <string name="recurrence_monthly_mode_weekday">आठवड्याचा दिवस</string>
+    <string name="recurrence_monthly_position_last">शेवटचा</string>
     <string name="recurrence_repeat_from">इथून पुनरावृत्ती</string>
     <string name="recurrence_when_you_finish_it">तुम्ही ते पूर्ण करता तेव्हा</string>
     <string name="recurrence_fixed_schedule">निश्चित वेळापत्रक</string>

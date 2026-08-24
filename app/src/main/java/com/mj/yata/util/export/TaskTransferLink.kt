@@ -378,9 +378,11 @@ private fun Task.toTransferRow(
 }
 
 /** Mirrors the field set `JsonExporter` already persists for a recurrence, positionally:
- * [freq, interval, byday, bymonthday, endsType, endsValue, basedOnCompletion]. Kept in step with
- * that encoding on purpose — two different notions of "a serialized recurrence" in one codebase
- * is how they drift apart. */
+ * [freq, interval, byday, bymonthday, endsType, endsValue, basedOnCompletion, byweekday, bysetpos].
+ * Kept in step with that encoding on purpose — two different notions of "a serialized recurrence"
+ * in one codebase is how they drift apart. The last two fields were appended after the rest, so a
+ * link created before they existed simply omits them — [toRecurrenceOrNull] defaults them to null
+ * via `optString`/`optInt`, same as every other optional field here. */
 private fun Recurrence.toTransferRow(): JSONArray = JSONArray()
     .put(freq)
     .put(interval)
@@ -401,6 +403,15 @@ private fun Recurrence.toTransferRow(): JSONArray = JSONArray()
         }
     )
     .put(basedOnCompletion)
+    .also { array ->
+        // Only appended when actually used, so the vast majority of shared recurrences (which
+        // never touch this monthly-by-weekday-position mode) keep the exact link length they had
+        // before these two fields existed.
+        if (byweekday != null && bysetpos != null) {
+            array.put(byweekday)
+            array.put(bysetpos)
+        }
+    }
 
 private fun JSONArray?.toRecurrenceOrNull(): Recurrence? {
     val row = this ?: return null
@@ -419,7 +430,9 @@ private fun JSONArray?.toRecurrenceOrNull(): Recurrence? {
             "o" -> endsValue.takeIf { it.isNotBlank() }?.let { RecurrenceEnds.On(it) } ?: RecurrenceEnds.Never
             else -> RecurrenceEnds.Never
         },
-        basedOnCompletion = row.optBoolean(6, false)
+        basedOnCompletion = row.optBoolean(6, false),
+        byweekday = row.optString(7).takeIf { it.isNotBlank() },
+        bysetpos = row.optInt(8, 0).takeIf { it != 0 }
     )
 }
 

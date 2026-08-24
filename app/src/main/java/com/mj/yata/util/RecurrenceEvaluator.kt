@@ -7,6 +7,7 @@ import com.mj.yata.domain.model.Task
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -70,7 +71,10 @@ object RecurrenceEvaluator {
             }
         }
 
-        if (r.freq == "monthly" && r.bymonthday != null) {
+        if (r.freq == "monthly" && r.byweekday != null && r.bysetpos != null) {
+            val weekdayLabel = DAY_LABEL[r.byweekday] ?: r.byweekday
+            base += if (r.bysetpos == -1) " on the last $weekdayLabel" else " on the ${getOrdinal(r.bysetpos)} $weekdayLabel"
+        } else if (r.freq == "monthly" && r.bymonthday != null) {
             base += if (r.bymonthday == -1) " on the last day" else " on the ${getOrdinal(r.bymonthday)}"
         }
 
@@ -96,7 +100,9 @@ object RecurrenceEvaluator {
         if (r.freq == "weekly" && !r.byday.isNullOrEmpty()) {
             parts.add("BYDAY=${r.byday.joinToString(",")}")
         }
-        if (r.freq == "monthly" && r.bymonthday != null) {
+        if (r.freq == "monthly" && r.byweekday != null && r.bysetpos != null) {
+            parts.add("BYDAY=${r.bysetpos}${r.byweekday}")
+        } else if (r.freq == "monthly" && r.bymonthday != null) {
             parts.add("BYMONTHDAY=${r.bymonthday}")
         }
         when (val ends = r.ends) {
@@ -120,7 +126,9 @@ object RecurrenceEvaluator {
             "daily" -> baseDate.plusDays(interval.toLong())
             "yearly" -> baseDate.plusYears(interval.toLong())
             "monthly" -> {
-                if (r.bymonthday == -1) {
+                if (r.byweekday != null && r.bysetpos != null) {
+                    nextMonthlyWeekdayOccurrence(baseDate, r.byweekday, r.bysetpos, interval)
+                } else if (r.bymonthday == -1) {
                     // Last day of month.
                     val thisMonthLastDay = baseDate.withDayOfMonth(baseDate.lengthOfMonth())
                     if (baseDate.isBefore(thisMonthLastDay)) {
@@ -213,6 +221,28 @@ object RecurrenceEvaluator {
             streak++
         }
         return streak
+    }
+
+    /** The nth occurrence of [weekday] in [month], or the last one when [setPos] is -1. [setPos]
+     * outside 1..4 (or -1) is clamped to 4, since a 5th occurrence doesn't exist in every month —
+     * a recurrence saved when a month happened to have 5 Fridays would otherwise silently produce
+     * no date at all the next time that weekday only occurs 4 times. */
+    private fun nthWeekdayOfMonth(month: YearMonth, weekday: DayOfWeek, setPos: Int): LocalDate =
+        if (setPos == -1) {
+            month.atEndOfMonth().with(TemporalAdjusters.lastInMonth(weekday))
+        } else {
+            month.atDay(1).with(TemporalAdjusters.dayOfWeekInMonth(setPos.coerceIn(1, 4), weekday))
+        }
+
+    private fun nextMonthlyWeekdayOccurrence(baseDate: LocalDate, weekdayCode: String, setPos: Int, interval: Int): LocalDate {
+        val weekday = DAY_MAP[weekdayCode] ?: return baseDate.plusMonths(interval.toLong())
+        val currentMonth = YearMonth.from(baseDate)
+        val candidateThisMonth = nthWeekdayOfMonth(currentMonth, weekday, setPos)
+        return if (candidateThisMonth.isAfter(baseDate)) {
+            candidateThisMonth
+        } else {
+            nthWeekdayOfMonth(currentMonth.plusMonths(interval.toLong()), weekday, setPos)
+        }
     }
 
     private fun getOrdinal(n: Int): String {

@@ -126,7 +126,16 @@ data class Recurrence(
     val byday: List<String>? = null, // e.g. ["MO", "TU", ...]
     val bymonthday: Int? = null, // 1..31, or -1 to mean "last day of month"
     val ends: RecurrenceEnds = RecurrenceEnds.Never,
-    val basedOnCompletion: Boolean = false // true: next occurrence counts from completion date, not due date
+    val basedOnCompletion: Boolean = false, // true: next occurrence counts from completion date, not due date
+    // Monthly-by-weekday-position, e.g. "2nd Tuesday" (byweekday="TU", bysetpos=2) or "last Friday"
+    // (byweekday="FR", bysetpos=-1). Only meaningful when freq=="monthly"; when both are non-null
+    // they take priority over [bymonthday] for that month's occurrence — set at most one of the two
+    // monthly modes via the RecurrenceSheet UI, never both. Appended at the end (rather than next to
+    // [bymonthday], which would read more naturally) specifically so every pre-existing positional
+    // `Recurrence(freq, interval, byday, bymonthday, RecurrenceEnds...)` call site — the NL parser's
+    // recurrence rules build hundreds of these — keeps binding correctly instead of silently shifting.
+    val byweekday: String? = null, // "MO".."SU"
+    val bysetpos: Int? = null // 1..4, or -1 for "last"
 )
 
 sealed interface RecurrenceEnds {

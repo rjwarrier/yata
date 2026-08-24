@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">Orario agenda</string>
     <string name="settings_overdue_nudges">Promemoria ritardi</string>
     <string name="settings_overdue_nudges_desc">Notifiche di follow-up per le attività lasciate in ritardo.</string>
+    <string name="settings_quiet_hours">Ore silenziose</string>
+    <string name="settings_quiet_hours_desc">I promemoria che scatterebbero durante questa finestra attendono invece la sua fine.</string>
+    <string name="settings_quiet_hours_start">Inizio</string>
+    <string name="settings_quiet_hours_end">Fine</string>
     <string name="settings_app_language">Lingua dell\'app</string>
     <string name="settings_app_language_desc">Scegli la lingua in cui viene visualizzato YATA.</string>
     <string name="settings_language_system_default">Predefinita di sistema</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">Seleziona</string>
     <string name="cd_bulk_cancel_selection">Annulla selezione</string>
     <string name="cd_bulk_mark_done">Contrassegna come completata</string>
+    <string name="cd_bulk_flag">Contrassegna</string>
+    <string name="cd_bulk_set_priority">Imposta priorità</string>
     <string name="cd_bulk_add_tag">Aggiungi tag</string>
     <string name="cd_bulk_assign_person">Assegna a persona</string>
     <string name="cd_bulk_move">Sposta in elenco o progetto</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">Aggiungi tag alle attività selezionate</string>
     <string name="bulk_no_tags">Ancora nessun tag - creane uno prima dalla scheda Tag.</string>
     <string name="bulk_assign_title">Assegna le attività selezionate a</string>
+    <string name="bulk_set_priority_title">Imposta la priorità delle attività selezionate</string>
     <string name="bulk_no_people">Ancora nessuna persona - aggiungine una prima dalla scheda Persone.</string>
     <string name="today_show_completed">Mostra attività completate</string>
     <string name="today_hide_completed">Nascondi attività completate</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">Nei giorni</string>
     <string name="recurrence_day_of_month">Giorno del mese</string>
     <string name="recurrence_last_day_of_month">Ultimo giorno del mese</string>
+    <string name="recurrence_monthly_mode_date">Data</string>
+    <string name="recurrence_monthly_mode_weekday">Giorno della settimana</string>
+    <string name="recurrence_monthly_position_last">Ultimo</string>
     <string name="recurrence_repeat_from">Ripeti da</string>
     <string name="recurrence_when_you_finish_it">Quando la completi</string>
     <string name="recurrence_fixed_schedule">Pianificazione fissa</string>

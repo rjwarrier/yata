@@ -424,6 +424,12 @@ class JsonExporter @Inject constructor(
                 if (r.bymonthday != null) {
                     ro.put("bymonthday", r.bymonthday)
                 }
+                if (r.byweekday != null) {
+                    ro.put("byweekday", r.byweekday)
+                }
+                if (r.bysetpos != null) {
+                    ro.put("bysetpos", r.bysetpos)
+                }
                 val endsObj = JSONObject()
                 when (val ends = r.ends) {
                     is RecurrenceEnds.Never -> endsObj.put("type", "never")
@@ -839,6 +845,8 @@ class JsonExporter @Inject constructor(
                 recurrence.optJSONArray("byday")?.let { days ->
                     for (i in 0 until days.length()) days.getString(i)
                 }
+                recurrence.requireOptionalString("byweekday")
+                recurrence.requireOptionalNumber("bysetpos")
                 val ends = recurrence.getJSONObject("ends")
                 when (ends.requiredString("type", "tasks[$id].recurrence.ends")) {
                     "never" -> Unit
@@ -1136,6 +1144,8 @@ class JsonExporter @Inject constructor(
                 it.requireOptionalNumber("bymonthday")
                 it.requireOptionalBoolean("basedOnCompletion")
                 it.requireOptionalStringArray("byday")
+                it.requireOptionalString("byweekday")
+                it.requireOptionalNumber("bysetpos")
                 val ends = it.getJSONObject("ends")
                 when (ends.requiredString("type", "tasks[$taskId].recurrence.ends")) {
                     "never" -> Unit
@@ -1467,6 +1477,8 @@ class JsonExporter @Inject constructor(
                                     interval = recObj.getInt("interval"),
                                     byday = byday,
                                     bymonthday = if (recObj.has("bymonthday")) recObj.getInt("bymonthday") else null,
+                                    byweekday = if (recObj.has("byweekday")) recObj.getString("byweekday") else null,
+                                    bysetpos = if (recObj.has("bysetpos")) recObj.getInt("bysetpos") else null,
                                     ends = ends,
                                     basedOnCompletion = recObj.optBoolean("basedOnCompletion", false)
                                 )

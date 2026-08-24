@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">Muda wa ratiba</string>
     <string name="settings_overdue_nudges">Vikumbusho vya kuchelewa</string>
     <string name="settings_overdue_nudges_desc">Arifa za ufuatiliaji kwa kazi zilizoachwa zikiwa zimechelewa.</string>
+    <string name="settings_quiet_hours">Saa za utulivu</string>
+    <string name="settings_quiet_hours_desc">Vikumbusho ambavyo vingelia wakati wa kipindi hiki vinasubiri hadi kimalizike.</string>
+    <string name="settings_quiet_hours_start">Huanza</string>
+    <string name="settings_quiet_hours_end">Huisha</string>
     <string name="settings_app_language">Lugha ya programu</string>
     <string name="settings_app_language_desc">Chagua lugha ambayo YATA inaonyeshwa.</string>
     <string name="settings_language_system_default">Chaguo-msingi la mfumo</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">Chagua</string>
     <string name="cd_bulk_cancel_selection">Ghairi uteuzi</string>
     <string name="cd_bulk_mark_done">Weka imekamilika</string>
+    <string name="cd_bulk_flag">Weka alama</string>
+    <string name="cd_bulk_set_priority">Weka kipaumbele</string>
     <string name="cd_bulk_add_tag">Ongeza lebo</string>
     <string name="cd_bulk_assign_person">Kabidhi kwa mtu</string>
     <string name="cd_bulk_move">Hamishia kwenye orodha au mradi</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">Ongeza lebo kwenye kazi zilizoteuliwa</string>
     <string name="bulk_no_tags">Hakuna lebo bado - unda moja kutoka kichupo cha Lebo kwanza.</string>
     <string name="bulk_assign_title">Kabidhi kazi zilizoteuliwa kwa</string>
+    <string name="bulk_set_priority_title">Weka kipaumbele cha kazi zilizoteuliwa</string>
     <string name="bulk_no_people">Hakuna watu bado - ongeza mmoja kutoka kichupo cha Watu kwanza.</string>
     <string name="today_show_completed">Onyesha kazi zilizokamilika</string>
     <string name="today_hide_completed">Ficha kazi zilizokamilika</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">Siku</string>
     <string name="recurrence_day_of_month">Siku ya mwezi</string>
     <string name="recurrence_last_day_of_month">Siku ya mwisho ya mwezi</string>
+    <string name="recurrence_monthly_mode_date">Tarehe</string>
+    <string name="recurrence_monthly_mode_weekday">Siku ya wiki</string>
+    <string name="recurrence_monthly_position_last">Mwisho</string>
     <string name="recurrence_repeat_from">Rudia kutoka</string>
     <string name="recurrence_when_you_finish_it">Unapoikamilisha</string>
     <string name="recurrence_fixed_schedule">Ratiba isiyobadilika</string>

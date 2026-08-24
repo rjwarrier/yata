@@ -442,6 +442,7 @@ fun SearchScreen(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var previewTaskId by remember { mutableStateOf<String?>(null) }
     val adaptiveLayout = rememberAdaptiveLayoutInfo()
@@ -583,6 +584,8 @@ fun SearchScreen(
                     onDuplicate = { viewModel.bulkDuplicateTasks(selectedIds.toList()) { single -> onNavigateToTaskDetail(single.id) }; selectedIds.clear() },
                     onDelete = { showBulkDeleteDialog = true },
                     onAssign = { showBulkAssignSheet = true },
+                    onFlag = { viewModel.bulkSetFlag(selectedIds.toList(), true); selectedIds.clear() },
+                    onSetPriority = { showBulkPrioritySheet = true },
                     tagsEnabled = tagsFeatureEnabled,
                     peopleEnabled = peopleFeatureEnabled,
                     modifier = Modifier.statusBarsPadding()
@@ -818,6 +821,24 @@ fun SearchScreen(
                     showBulkTagSheet = false
                 },
                 onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkPrioritySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkPrioritySheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkPrioritySheet(
+                onSelectPriority = { priority ->
+                    viewModel.bulkSetPriority(selectedIds.toList(), priority)
+                    selectedIds.clear()
+                    showBulkPrioritySheet = false
+                },
+                onDismiss = { showBulkPrioritySheet = false }
             )
         }
     }

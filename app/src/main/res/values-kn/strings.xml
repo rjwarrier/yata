@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">ಅಜೆಂಡಾ ಸಮಯ</string>
     <string name="settings_overdue_nudges">ವಿಳಂಬಿತ ಜ್ಞಾಪನೆಗಳು</string>
     <string name="settings_overdue_nudges_desc">ವಿಳಂಬಿತವಾಗಿ ಉಳಿದ ಕಾರ್ಯಗಳಿಗೆ ಅನುಸರಣಾ ಅಧಿಸೂಚನೆಗಳು.</string>
+    <string name="settings_quiet_hours">ಶಾಂತ ಸಮಯ</string>
+    <string name="settings_quiet_hours_desc">ಈ ಅವಧಿಯಲ್ಲಿ ಬಾರಿಸಬೇಕಿದ್ದ ಜ್ಞಾಪನೆಗಳು ಬದಲಿಗೆ ಅದು ಮುಗಿಯುವವರೆಗೆ ಕಾಯುತ್ತವೆ.</string>
+    <string name="settings_quiet_hours_start">ಪ್ರಾರಂಭ</string>
+    <string name="settings_quiet_hours_end">ಅಂತ್ಯ</string>
     <string name="settings_app_language">ಆ್ಯಪ್ ಭಾಷೆ</string>
     <string name="settings_app_language_desc">YATA ಪ್ರದರ್ಶಿಸುವ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.</string>
     <string name="settings_language_system_default">ಸಿಸ್ಟಂ ಡೀಫಾಲ್ಟ್</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">ಆಯ್ಕೆಮಾಡಿ</string>
     <string name="cd_bulk_cancel_selection">ಆಯ್ಕೆ ರದ್ದುಮಾಡಿ</string>
     <string name="cd_bulk_mark_done">ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿ</string>
+    <string name="cd_bulk_flag">ಫ್ಲ್ಯಾಗ್ ಮಾಡಿ</string>
+    <string name="cd_bulk_set_priority">ಆದ್ಯತೆ ಹೊಂದಿಸಿ</string>
     <string name="cd_bulk_add_tag">ಟ್ಯಾಗ್ ಸೇರಿಸಿ</string>
     <string name="cd_bulk_assign_person">ವ್ಯಕ್ತಿಗೆ ನಿಯೋಜಿಸಿ</string>
     <string name="cd_bulk_move">ಪಟ್ಟಿ ಅಥವಾ ಪ್ರಾಜೆಕ್ಟ್‌ಗೆ ಸರಿಸಿ</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">ಆಯ್ಕೆಮಾಡಿದ ಕಾರ್ಯಗಳಿಗೆ ಟ್ಯಾಗ್ ಸೇರಿಸಿ</string>
     <string name="bulk_no_tags">ಇನ್ನೂ ಯಾವುದೇ ಟ್ಯಾಗ್ ಇಲ್ಲ - ಮೊದಲು ಟ್ಯಾಗ್‌ಗಳ ಟ್ಯಾಬ್‌ನಿಂದ ಒಂದನ್ನು ರಚಿಸಿ.</string>
     <string name="bulk_assign_title">ಆಯ್ಕೆಮಾಡಿದ ಕಾರ್ಯಗಳನ್ನು ಇವರಿಗೆ ನಿಯೋಜಿಸಿ</string>
+    <string name="bulk_set_priority_title">ಆಯ್ಕೆಮಾಡಿದ ಕಾರ್ಯಗಳಿಗೆ ಆದ್ಯತೆ ಹೊಂದಿಸಿ</string>
     <string name="bulk_no_people">ಇನ್ನೂ ಯಾರೂ ಇಲ್ಲ - ಮೊದಲು ಜನರ ಟ್ಯಾಬ್‌ನಿಂದ ಒಬ್ಬರನ್ನು ಸೇರಿಸಿ.</string>
     <string name="today_show_completed">ಪೂರ್ಣಗೊಂಡ ಕಾರ್ಯಗಳನ್ನು ತೋರಿಸಿ</string>
     <string name="today_hide_completed">ಪೂರ್ಣಗೊಂಡ ಕಾರ್ಯಗಳನ್ನು ಮರೆಮಾಡಿ</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">ಈ ದಿನಗಳಂದು</string>
     <string name="recurrence_day_of_month">ತಿಂಗಳ ದಿನ</string>
     <string name="recurrence_last_day_of_month">ತಿಂಗಳ ಕೊನೆಯ ದಿನ</string>
+    <string name="recurrence_monthly_mode_date">ದಿನಾಂಕ</string>
+    <string name="recurrence_monthly_mode_weekday">ವಾರದ ದಿನ</string>
+    <string name="recurrence_monthly_position_last">ಕೊನೆಯ</string>
     <string name="recurrence_repeat_from">ಇಲ್ಲಿಂದ ಪುನರಾವರ್ತಿಸಿ</string>
     <string name="recurrence_when_you_finish_it">ನೀವು ಮುಗಿಸಿದಾಗ</string>
     <string name="recurrence_fixed_schedule">ನಿಗದಿತ ವೇಳಾಪಟ್ಟಿ</string>

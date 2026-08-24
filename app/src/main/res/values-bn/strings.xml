@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">অ্যাজেন্ডার সময়</string>
     <string name="settings_overdue_nudges">বকেয়া রিমাইন্ডার</string>
     <string name="settings_overdue_nudges_desc">বকেয়া থেকে যাওয়া টাস্কের জন্য অনুসরণ বিজ্ঞপ্তি।</string>
+    <string name="settings_quiet_hours">শান্ত সময়</string>
+    <string name="settings_quiet_hours_desc">এই সময়ের মধ্যে বাজতে যাওয়া রিমাইন্ডার এর পরিবর্তে এই সময় শেষ না হওয়া পর্যন্ত অপেক্ষা করবে।</string>
+    <string name="settings_quiet_hours_start">শুরু</string>
+    <string name="settings_quiet_hours_end">শেষ</string>
     <string name="settings_app_language">অ্যাপের ভাষা</string>
     <string name="settings_app_language_desc">YATA কোন ভাষায় প্রদর্শিত হবে তা বেছে নিন।</string>
     <string name="settings_language_system_default">সিস্টেম ডিফল্ট</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">নির্বাচন করুন</string>
     <string name="cd_bulk_cancel_selection">নির্বাচন বাতিল করুন</string>
     <string name="cd_bulk_mark_done">সম্পন্ন চিহ্নিত করুন</string>
+    <string name="cd_bulk_flag">ফ্ল্যাগ করুন</string>
+    <string name="cd_bulk_set_priority">অগ্রাধিকার সেট করুন</string>
     <string name="cd_bulk_add_tag">ট্যাগ যোগ করুন</string>
     <string name="cd_bulk_assign_person">ব্যক্তিকে নিয়োগ করুন</string>
     <string name="cd_bulk_move">লিস্ট বা প্রজেক্টে সরান</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">নির্বাচিত টাস্কে ট্যাগ যোগ করুন</string>
     <string name="bulk_no_tags">এখনও কোনো ট্যাগ নেই - প্রথমে ট্যাগ ট্যাব থেকে একটি তৈরি করুন।</string>
     <string name="bulk_assign_title">নির্বাচিত টাস্ক নিয়োগ করুন এতে</string>
+    <string name="bulk_set_priority_title">নির্বাচিত টাস্কের অগ্রাধিকার সেট করুন</string>
     <string name="bulk_no_people">এখনও কোনো মানুষ নেই - প্রথমে মানুষ ট্যাব থেকে একজন যোগ করুন।</string>
     <string name="today_show_completed">সম্পন্ন টাস্ক দেখান</string>
     <string name="today_hide_completed">সম্পন্ন টাস্ক লুকান</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">এই দিনগুলোতে</string>
     <string name="recurrence_day_of_month">মাসের দিন</string>
     <string name="recurrence_last_day_of_month">মাসের শেষ দিন</string>
+    <string name="recurrence_monthly_mode_date">তারিখ</string>
+    <string name="recurrence_monthly_mode_weekday">সপ্তাহের দিন</string>
+    <string name="recurrence_monthly_position_last">শেষ</string>
     <string name="recurrence_repeat_from">এখান থেকে পুনরাবৃত্তি</string>
     <string name="recurrence_when_you_finish_it">যখন আপনি এটি শেষ করবেন</string>
     <string name="recurrence_fixed_schedule">নির্দিষ্ট সময়সূচী</string>

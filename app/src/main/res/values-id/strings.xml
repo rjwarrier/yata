@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">Waktu agenda</string>
     <string name="settings_overdue_nudges">Pengingat keterlambatan</string>
     <string name="settings_overdue_nudges_desc">Notifikasi lanjutan untuk tugas yang masih terlambat.</string>
+    <string name="settings_quiet_hours">Jam tenang</string>
+    <string name="settings_quiet_hours_desc">Pengingat yang seharusnya muncul selama periode ini akan menunggu hingga periode ini berakhir.</string>
+    <string name="settings_quiet_hours_start">Mulai</string>
+    <string name="settings_quiet_hours_end">Berakhir</string>
     <string name="settings_app_language">Bahasa aplikasi</string>
     <string name="settings_app_language_desc">Pilih bahasa yang digunakan YATA.</string>
     <string name="settings_language_system_default">Bawaan sistem</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">Pilih</string>
     <string name="cd_bulk_cancel_selection">Batalkan pilihan</string>
     <string name="cd_bulk_mark_done">Tandai selesai</string>
+    <string name="cd_bulk_flag">Tandai</string>
+    <string name="cd_bulk_set_priority">Atur prioritas</string>
     <string name="cd_bulk_add_tag">Tambah tag</string>
     <string name="cd_bulk_assign_person">Tugaskan ke orang</string>
     <string name="cd_bulk_move">Pindah ke daftar atau proyek</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">Tambah tag ke tugas terpilih</string>
     <string name="bulk_no_tags">Belum ada tag - buat satu dari tab Tag terlebih dahulu.</string>
     <string name="bulk_assign_title">Tugaskan tugas terpilih ke</string>
+    <string name="bulk_set_priority_title">Atur prioritas untuk tugas terpilih</string>
     <string name="bulk_no_people">Belum ada orang - tambahkan satu dari tab Orang terlebih dahulu.</string>
     <string name="today_show_completed">Tampilkan tugas selesai</string>
     <string name="today_hide_completed">Sembunyikan tugas selesai</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">Pada hari</string>
     <string name="recurrence_day_of_month">Tanggal dalam bulan</string>
     <string name="recurrence_last_day_of_month">Hari terakhir bulan</string>
+    <string name="recurrence_monthly_mode_date">Tanggal</string>
+    <string name="recurrence_monthly_mode_weekday">Hari dalam minggu</string>
+    <string name="recurrence_monthly_position_last">Terakhir</string>
     <string name="recurrence_repeat_from">Ulangi dari</string>
     <string name="recurrence_when_you_finish_it">Saat Anda menyelesaikannya</string>
     <string name="recurrence_fixed_schedule">Jadwal tetap</string>

@@ -685,6 +685,13 @@ class YataRepositoryImpl @Inject constructor(
             ?.distinct()
             ?.takeIf { it.isNotEmpty() }
         val bymonthday = recurrence.bymonthday?.takeIf { it == -1 || it in 1..31 }
+        val sanitizedWeekday = recurrence.byweekday?.uppercase()?.takeIf { it in VALID_RECURRENCE_DAYS }
+        val sanitizedSetPos = recurrence.bysetpos?.takeIf { it == -1 || it in 1..4 }
+        // Both-or-neither: a valid nth-weekday-of-month needs the weekday and its position
+        // together, so a partially malformed pair (e.g. an out-of-range position surviving with
+        // a valid weekday) degrades to "neither" rather than a half-specified recurrence.
+        val byweekday = sanitizedWeekday.takeIf { sanitizedSetPos != null }
+        val bysetpos = sanitizedSetPos.takeIf { sanitizedWeekday != null }
         val ends = when (val ends = recurrence.ends) {
             is RecurrenceEnds.After -> ends.takeIf { it.count > 0 } ?: RecurrenceEnds.Never
             is RecurrenceEnds.On -> ends.takeIf {
@@ -696,6 +703,8 @@ class YataRepositoryImpl @Inject constructor(
             interval = interval,
             byday = byday,
             bymonthday = bymonthday,
+            byweekday = byweekday,
+            bysetpos = bysetpos,
             ends = ends
         )
     }

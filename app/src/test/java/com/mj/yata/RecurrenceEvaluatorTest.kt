@@ -90,4 +90,47 @@ class RecurrenceEvaluatorTest {
         val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-10")
         assertEquals("2026-07-13", next)
     }
+
+    @Test
+    fun testMonthlyNthWeekdayRecurrenceWithinSameMonth() {
+        // 2026-07-02 is a Thursday; July's 2nd Tuesday (2026-07-14) is still ahead of it.
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "TU", bysetpos = 2)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-02")
+        assertEquals("2026-07-14", next)
+    }
+
+    @Test
+    fun testMonthlyNthWeekdayRecurrenceRollsToNextMonth() {
+        // Past July's 2nd Tuesday (2026-07-14) — the next one is August's (2026-08-11).
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "TU", bysetpos = 2)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-20")
+        assertEquals("2026-08-11", next)
+    }
+
+    @Test
+    fun testMonthlyLastWeekdayRecurrence() {
+        // July 2026's last Friday is 2026-07-31, still ahead of the 2nd.
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "FR", bysetpos = -1)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-02")
+        assertEquals("2026-07-31", next)
+    }
+
+    @Test
+    fun testMonthlyLastWeekdayRecurrenceRollsToNextMonth() {
+        // Already on July's last Friday — the next one is August's (2026-08-28).
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "FR", bysetpos = -1)
+        val next = RecurrenceEvaluator.calculateNextOccurrence(r, "2026-07-31")
+        assertEquals("2026-08-28", next)
+    }
+
+    @Test
+    fun testMonthlyNthWeekdaySummaryAndRRule() {
+        val r = Recurrence(freq = "monthly", interval = 1, byweekday = "TU", bysetpos = 2)
+        assertEquals("Monthly on the 2nd Tue", RecurrenceEvaluator.recurrenceSummary(r))
+        assertEquals("RRULE:FREQ=MONTHLY;BYDAY=2TU", RecurrenceEvaluator.toRRULE(r))
+
+        val r2 = Recurrence(freq = "monthly", interval = 1, byweekday = "FR", bysetpos = -1)
+        assertEquals("Monthly on the last Fri", RecurrenceEvaluator.recurrenceSummary(r2))
+        assertEquals("RRULE:FREQ=MONTHLY;BYDAY=-1FR", RecurrenceEvaluator.toRRULE(r2))
+    }
 }

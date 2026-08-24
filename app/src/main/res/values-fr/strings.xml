@@ -186,6 +186,10 @@
     <string name="settings_daily_agenda_time">Heure de l\'ordre du jour</string>
     <string name="settings_overdue_nudges">Rappels en retard</string>
     <string name="settings_overdue_nudges_desc">Notifications de suivi pour les tâches en retard.</string>
+    <string name="settings_quiet_hours">Heures calmes</string>
+    <string name="settings_quiet_hours_desc">Les rappels qui devraient se déclencher pendant cette période attendent plutôt sa fin.</string>
+    <string name="settings_quiet_hours_start">Début</string>
+    <string name="settings_quiet_hours_end">Fin</string>
     <string name="settings_app_language">Langue de l\'application</string>
     <string name="settings_app_language_desc">Choisissez la langue dans laquelle YATA est affiché.</string>
     <string name="settings_language_system_default">Langue du système</string>
@@ -268,6 +272,8 @@
         <string name="cd_bulk_select">Sélectionner</string>
     <string name="cd_bulk_cancel_selection">Annuler la sélection</string>
     <string name="cd_bulk_mark_done">Marquer comme terminé</string>
+    <string name="cd_bulk_flag">Marquer</string>
+    <string name="cd_bulk_set_priority">Définir la priorité</string>
     <string name="cd_bulk_add_tag">Ajouter une balise</string>
     <string name="cd_bulk_assign_person">Attribuer à une personne</string>
     <string name="cd_bulk_move">Déplacer vers une liste ou un projet</string>
@@ -622,6 +628,7 @@
     <string name="bulk_add_tag_title">Ajouter une balise aux tâches sélectionnées</string>
     <string name="bulk_no_tags">Aucune balise pour l\'instant : créez-en d\'abord une à partir de l\'onglet Balises.</string>
     <string name="bulk_assign_title">Attribuer les tâches sélectionnées à</string>
+    <string name="bulk_set_priority_title">Définir la priorité des tâches sélectionnées</string>
     <string name="bulk_no_people">Aucune personne pour l\'instant - ajoutez-en d\'abord une à partir de l\'onglet Personnes.</string>
     <string name="today_show_completed">Afficher les tâches terminées</string>
     <string name="today_hide_completed">Masquer les tâches terminées</string>
@@ -1262,6 +1269,9 @@
     <string name="recurrence_on_days">On days</string>
     <string name="recurrence_day_of_month">Jour du mois</string>
     <string name="recurrence_last_day_of_month">Dernier jour du mois</string>
+    <string name="recurrence_monthly_mode_date">Date</string>
+    <string name="recurrence_monthly_mode_weekday">Jour de la semaine</string>
+    <string name="recurrence_monthly_position_last">Dernier</string>
     <string name="recurrence_repeat_from">Répéter à partir de</string>
     <string name="recurrence_when_you_finish_it">Quand vous la terminez</string>
     <string name="recurrence_fixed_schedule">Calendrier fixe</string>

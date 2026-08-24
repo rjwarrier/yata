@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">એજન્ડા સમય</string>
     <string name="settings_overdue_nudges">મુદતવીતી રિમાઇન્ડર</string>
     <string name="settings_overdue_nudges_desc">મુદતવીતી રહી ગયેલા ટાસ્ક માટે ફોલો-અપ નોટિફિકેશન.</string>
+    <string name="settings_quiet_hours">શાંત સમય</string>
+    <string name="settings_quiet_hours_desc">આ સમયગાળા દરમિયાન વાગવાના રિમાઇન્ડર તેના બદલે તે પૂરો થાય ત્યાં સુધી રાહ જુએ છે.</string>
+    <string name="settings_quiet_hours_start">શરૂઆત</string>
+    <string name="settings_quiet_hours_end">અંત</string>
     <string name="settings_app_language">એપ ભાષા</string>
     <string name="settings_app_language_desc">YATA કઈ ભાષામાં દેખાય તે પસંદ કરો.</string>
     <string name="settings_language_system_default">સિસ્ટમ ડિફોલ્ટ</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">પસંદ કરો</string>
     <string name="cd_bulk_cancel_selection">પસંદગી રદ કરો</string>
     <string name="cd_bulk_mark_done">પૂર્ણ ચિહ્નિત કરો</string>
+    <string name="cd_bulk_flag">ફ્લેગ કરો</string>
+    <string name="cd_bulk_set_priority">પ્રાધાન્ય સેટ કરો</string>
     <string name="cd_bulk_add_tag">ટૅગ ઉમેરો</string>
     <string name="cd_bulk_assign_person">વ્યક્તિને સોંપો</string>
     <string name="cd_bulk_move">યાદી કે પ્રોજેક્ટમાં ખસેડો</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">પસંદ કરેલા ટાસ્કમાં ટૅગ ઉમેરો</string>
     <string name="bulk_no_tags">હજી કોઈ ટૅગ નથી - પહેલા Tags ટૅબમાંથી એક બનાવો.</string>
     <string name="bulk_assign_title">પસંદ કરેલા ટાસ્ક આને સોંપો</string>
+    <string name="bulk_set_priority_title">પસંદ કરેલા ટાસ્ક માટે પ્રાધાન્ય સેટ કરો</string>
     <string name="bulk_no_people">હજી કોઈ વ્યક્તિ નથી - પહેલા People ટૅબમાંથી એક ઉમેરો.</string>
     <string name="today_show_completed">પૂર્ણ થયેલા ટાસ્ક બતાવો</string>
     <string name="today_hide_completed">પૂર્ણ થયેલા ટાસ્ક છુપાવો</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">આ દિવસોમાં</string>
     <string name="recurrence_day_of_month">મહિનાનો દિવસ</string>
     <string name="recurrence_last_day_of_month">મહિનાનો છેલ્લો દિવસ</string>
+    <string name="recurrence_monthly_mode_date">તારીખ</string>
+    <string name="recurrence_monthly_mode_weekday">અઠવાડિયાનો દિવસ</string>
+    <string name="recurrence_monthly_position_last">છેલ્લો</string>
     <string name="recurrence_repeat_from">આનાથી પુનરાવર્તિત કરો</string>
     <string name="recurrence_when_you_finish_it">જ્યારે તમે તે પૂર્ણ કરો</string>
     <string name="recurrence_fixed_schedule">નિશ્ચિત શેડ્યુલ</string>

@@ -225,6 +225,10 @@
     <string name="settings_daily_agenda_time">Agendatijd</string>
     <string name="settings_overdue_nudges">Achterstallige herinneringen</string>
     <string name="settings_overdue_nudges_desc">Vervolgmeldingen voor taken die achterstallig blijven.</string>
+    <string name="settings_quiet_hours">Stille uren</string>
+    <string name="settings_quiet_hours_desc">Herinneringen die tijdens dit venster zouden afgaan, wachten in plaats daarvan tot het voorbij is.</string>
+    <string name="settings_quiet_hours_start">Begint</string>
+    <string name="settings_quiet_hours_end">Eindigt</string>
     <string name="settings_app_language">App-taal</string>
     <string name="settings_app_language_desc">Kies de taal waarin YATA wordt weergegeven.</string>
     <string name="settings_language_system_default">Systeemstandaard</string>
@@ -307,6 +311,8 @@
         <string name="cd_bulk_select">Selecteren</string>
     <string name="cd_bulk_cancel_selection">Selectie annuleren</string>
     <string name="cd_bulk_mark_done">Als voltooid markeren</string>
+    <string name="cd_bulk_flag">Markeren</string>
+    <string name="cd_bulk_set_priority">Prioriteit instellen</string>
     <string name="cd_bulk_add_tag">Tag toevoegen</string>
     <string name="cd_bulk_assign_person">Toewijzen aan persoon</string>
     <string name="cd_bulk_move">Verplaatsen naar lijst of project</string>
@@ -818,6 +824,7 @@
     <string name="bulk_add_tag_title">Tag toevoegen aan geselecteerde taken</string>
     <string name="bulk_no_tags">Nog geen tags - maak er eerst een aan vanuit het tabblad Tags.</string>
     <string name="bulk_assign_title">Geselecteerde taken toewijzen aan</string>
+    <string name="bulk_set_priority_title">Prioriteit instellen voor geselecteerde taken</string>
     <string name="bulk_no_people">Nog geen mensen - voeg er eerst een toe vanuit het tabblad Mensen.</string>
     <string name="today_show_completed">Voltooide taken tonen</string>
     <string name="today_hide_completed">Voltooide taken verbergen</string>
@@ -1183,6 +1190,9 @@
     <string name="recurrence_on_days">Op dagen</string>
     <string name="recurrence_day_of_month">Dag van de maand</string>
     <string name="recurrence_last_day_of_month">Laatste dag van de maand</string>
+    <string name="recurrence_monthly_mode_date">Datum</string>
+    <string name="recurrence_monthly_mode_weekday">Weekdag</string>
+    <string name="recurrence_monthly_position_last">Laatste</string>
     <string name="recurrence_repeat_from">Herhalen vanaf</string>
     <string name="recurrence_when_you_finish_it">Wanneer je hem afrondt</string>
     <string name="recurrence_fixed_schedule">Vast schema</string>

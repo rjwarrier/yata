@@ -22,6 +22,12 @@ fun serializeRecurrence(r: Recurrence?): String? {
     if (r.bymonthday != null) {
         obj.put("bymonthday", r.bymonthday)
     }
+    if (r.byweekday != null) {
+        obj.put("byweekday", r.byweekday)
+    }
+    if (r.bysetpos != null) {
+        obj.put("bysetpos", r.bysetpos)
+    }
     val endsObj = JSONObject()
     when (val ends = r.ends) {
         is RecurrenceEnds.Never -> endsObj.put("type", "never")
@@ -59,6 +65,9 @@ fun deserializeRecurrence(json: String?): Recurrence? {
             obj.getInt("bymonthday")
         } else null
 
+        val byweekday = if (obj.has("byweekday")) obj.getString("byweekday") else null
+        val bysetpos = if (obj.has("bysetpos")) obj.getInt("bysetpos") else null
+
         val endsObj = obj.getJSONObject("ends")
         val endsType = endsObj.getString("type")
         val ends = when (endsType) {
@@ -69,7 +78,7 @@ fun deserializeRecurrence(json: String?): Recurrence? {
 
         val basedOnCompletion = obj.optBoolean("basedOnCompletion", false)
 
-        Recurrence(freq, interval, byday, bymonthday, ends, basedOnCompletion)
+        Recurrence(freq, interval, byday, bymonthday, ends, basedOnCompletion, byweekday, bysetpos)
     } catch (e: Exception) {
         null
     }

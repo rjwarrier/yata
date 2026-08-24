@@ -82,6 +82,28 @@ class TaskOperations @Inject constructor(
         }
     }
 
+    suspend fun bulkSetPriority(ids: List<String>, priority: String) {
+        val byId = currentTasks().associateBy { it.id }
+        val updated = ids.mapNotNull { id ->
+            val task = byId[id] ?: return@mapNotNull null
+            if (task.priority == priority) null else task.copy(priority = priority)
+        }
+        if (updated.isNotEmpty()) {
+            repository.upsertTasks(updated, notify = true, resyncReminder = false)
+        }
+    }
+
+    suspend fun bulkSetFlag(ids: List<String>, flag: Boolean) {
+        val byId = currentTasks().associateBy { it.id }
+        val updated = ids.mapNotNull { id ->
+            val task = byId[id] ?: return@mapNotNull null
+            if (task.flag == flag) null else task.copy(flag = flag)
+        }
+        if (updated.isNotEmpty()) {
+            repository.upsertTasks(updated, notify = true, resyncReminder = false)
+        }
+    }
+
     suspend fun bulkSetProject(ids: List<String>, projectId: String?) {
         val tasks = currentTasks()
         val byId = tasks.associateBy { it.id }

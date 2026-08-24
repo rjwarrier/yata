@@ -196,6 +196,10 @@
     <string name="settings_daily_agenda_time">ਏਜੰਡਾ ਸਮਾਂ</string>
     <string name="settings_overdue_nudges">ਬਕਾਇਆ ਰੀਮਾਈਂਡਰ</string>
     <string name="settings_overdue_nudges_desc">ਬਕਾਇਆ ਰਹਿ ਗਏ ਕਾਰਜਾਂ ਲਈ ਫਾਲੋ-ਅਪ ਸੂਚਨਾਵਾਂ।</string>
+    <string name="settings_quiet_hours">ਸ਼ਾਂਤ ਸਮਾਂ</string>
+    <string name="settings_quiet_hours_desc">ਇਸ ਸਮੇਂ ਦੌਰਾਨ ਵੱਜਣ ਵਾਲੇ ਰੀਮਾਈਂਡਰ ਇਸ ਦੀ ਬਜਾਏ ਇਹ ਖਤਮ ਹੋਣ ਤੱਕ ਉਡੀਕ ਕਰਦੇ ਹਨ।</string>
+    <string name="settings_quiet_hours_start">ਸ਼ੁਰੂ</string>
+    <string name="settings_quiet_hours_end">ਖਤਮ</string>
     <string name="settings_app_language">ਐਪ ਭਾਸ਼ਾ</string>
     <string name="settings_app_language_desc">YATA ਕਿਸ ਭਾਸ਼ਾ ਵਿੱਚ ਦਿਖਾਈ ਦਿੰਦਾ ਹੈ ਚੁਣੋ।</string>
     <string name="settings_language_system_default">ਸਿਸਟਮ ਡਿਫਾਲਟ</string>
@@ -258,6 +262,8 @@
         <string name="cd_bulk_select">ਚੁਣੋ</string>
     <string name="cd_bulk_cancel_selection">ਚੋਣ ਰੱਦ ਕਰੋ</string>
     <string name="cd_bulk_mark_done">ਪੂਰਾ ਚਿੰਨ੍ਹਿਤ ਕਰੋ</string>
+    <string name="cd_bulk_flag">ਫਲੈਗ ਕਰੋ</string>
+    <string name="cd_bulk_set_priority">ਤਰਜੀਹ ਸੈੱਟ ਕਰੋ</string>
     <string name="cd_bulk_add_tag">ਟੈਗ ਜੋੜੋ</string>
     <string name="cd_bulk_assign_person">ਵਿਅਕਤੀ ਨੂੰ ਸੌਂਪੋ</string>
     <string name="cd_bulk_move">ਸੂਚੀ ਜਾਂ ਪ੍ਰੋਜੈਕਟ ਵਿੱਚ ਭੇਜੋ</string>
@@ -797,6 +803,7 @@
     <string name="bulk_add_tag_title">ਚੁਣੇ ਕਾਰਜਾਂ ਵਿੱਚ ਟੈਗ ਜੋੜੋ</string>
     <string name="bulk_no_tags">ਅਜੇ ਕੋਈ ਟੈਗ ਨਹੀਂ - ਪਹਿਲਾਂ ਟੈਗ ਟੈਬ ਤੋਂ ਇੱਕ ਬਣਾਓ।</string>
     <string name="bulk_assign_title">ਚੁਣੇ ਕਾਰਜ ਇਸਨੂੰ ਸੌਂਪੋ</string>
+    <string name="bulk_set_priority_title">ਚੁਣੇ ਕਾਰਜਾਂ ਲਈ ਤਰਜੀਹ ਸੈੱਟ ਕਰੋ</string>
     <string name="bulk_no_people">ਅਜੇ ਕੋਈ ਵਿਅਕਤੀ ਨਹੀਂ - ਪਹਿਲਾਂ ਲੋਕ ਟੈਬ ਤੋਂ ਇੱਕ ਜੋੜੋ।</string>
     <string name="today_show_completed">ਪੂਰੇ ਕਾਰਜ ਦਿਖਾਓ</string>
     <string name="today_hide_completed">ਪੂਰੇ ਕਾਰਜ ਲੁਕਾਓ</string>
@@ -1146,6 +1153,9 @@
     <string name="recurrence_on_days">ਇਹਨਾਂ ਦਿਨਾਂ \'ਤੇ</string>
     <string name="recurrence_day_of_month">ਮਹੀਨੇ ਦਾ ਦਿਨ</string>
     <string name="recurrence_last_day_of_month">ਮਹੀਨੇ ਦਾ ਆਖਰੀ ਦਿਨ</string>
+    <string name="recurrence_monthly_mode_date">ਤਾਰੀਖ</string>
+    <string name="recurrence_monthly_mode_weekday">ਹਫ਼ਤੇ ਦਾ ਦਿਨ</string>
+    <string name="recurrence_monthly_position_last">ਆਖਰੀ</string>
     <string name="recurrence_repeat_from">ਇਸ ਤੋਂ ਦੁਹਰਾਓ</string>
     <string name="recurrence_when_you_finish_it">ਜਦੋਂ ਤੁਸੀਂ ਇਸਨੂੰ ਪੂਰਾ ਕਰੋ</string>
     <string name="recurrence_fixed_schedule">ਸਥਿਰ ਸਮਾਂ-ਸਾਰਣੀ</string>

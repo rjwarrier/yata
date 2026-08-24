@@ -303,6 +303,11 @@ fun SettingsScreen(
     val dailyAgendaHour by viewModel.dailyAgendaHour.collectAsStateWithLifecycle()
     val dailyAgendaMinute by viewModel.dailyAgendaMinute.collectAsStateWithLifecycle()
     val overdueNudgesEnabled by viewModel.overdueNudgesEnabled.collectAsStateWithLifecycle()
+    val quietHoursEnabled by viewModel.quietHoursEnabled.collectAsStateWithLifecycle()
+    val quietHoursStartHour by viewModel.quietHoursStartHour.collectAsStateWithLifecycle()
+    val quietHoursStartMinute by viewModel.quietHoursStartMinute.collectAsStateWithLifecycle()
+    val quietHoursEndHour by viewModel.quietHoursEndHour.collectAsStateWithLifecycle()
+    val quietHoursEndMinute by viewModel.quietHoursEndMinute.collectAsStateWithLifecycle()
     val undoWindowSeconds by viewModel.undoWindowSeconds.collectAsStateWithLifecycle()
     val snoozeTonightHour by viewModel.snoozeTonightHour.collectAsStateWithLifecycle()
     val snoozeTonightMinute by viewModel.snoozeTonightMinute.collectAsStateWithLifecycle()
@@ -376,6 +381,8 @@ fun SettingsScreen(
     val dateFormat by viewModel.dateFormat.collectAsStateWithLifecycle()
     var showAgendaTimePicker by remember { mutableStateOf(false) }
     var showReminderTimePicker by remember { mutableStateOf(false) }
+    var showQuietHoursStartPicker by remember { mutableStateOf(false) }
+    var showQuietHoursEndPicker by remember { mutableStateOf(false) }
     var showSnoozeTonightPicker by remember { mutableStateOf(false) }
     var showSnoozeTomorrowPicker by remember { mutableStateOf(false) }
     var newDateAlias by rememberSaveable { mutableStateOf("") }
@@ -1972,6 +1979,30 @@ fun SettingsScreen(
                             }
                         }
                     )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                    SettingsToggleRow(
+                        title = stringResource(R.string.settings_quiet_hours),
+                        subtitle = stringResource(R.string.settings_quiet_hours_desc),
+                        checked = quietHoursEnabled,
+                        onCheckedChange = { viewModel.setQuietHoursEnabled(it) }
+                    )
+
+                    AnimatedVisibility(visible = quietHoursEnabled) {
+                        Column {
+                            SettingsRow(
+                                label = stringResource(R.string.settings_quiet_hours_start),
+                                value = TaskScheduleUtils.displayTime(quietHoursStartHour, quietHoursStartMinute),
+                                onClick = { showQuietHoursStartPicker = true }
+                            )
+                            SettingsRow(
+                                label = stringResource(R.string.settings_quiet_hours_end),
+                                value = TaskScheduleUtils.displayTime(quietHoursEndHour, quietHoursEndMinute),
+                                onClick = { showQuietHoursEndPicker = true }
+                            )
+                        }
+                    }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
@@ -3837,6 +3868,30 @@ fun SettingsScreen(
                 viewModel.setDefaultReminderTime(parsed.hour, parsed.minute)
             }
             showReminderTimePicker = false
+        }
+    )
+
+    YataTimePickerLauncher(
+        show = showQuietHoursStartPicker,
+        initialTime = TaskScheduleUtils.formatTime(quietHoursStartHour, quietHoursStartMinute),
+        onDismiss = { showQuietHoursStartPicker = false },
+        onConfirm = { formatted ->
+            TaskScheduleUtils.parseTime(formatted)?.let { parsed ->
+                viewModel.setQuietHoursStart(parsed.hour, parsed.minute)
+            }
+            showQuietHoursStartPicker = false
+        }
+    )
+
+    YataTimePickerLauncher(
+        show = showQuietHoursEndPicker,
+        initialTime = TaskScheduleUtils.formatTime(quietHoursEndHour, quietHoursEndMinute),
+        onDismiss = { showQuietHoursEndPicker = false },
+        onConfirm = { formatted ->
+            TaskScheduleUtils.parseTime(formatted)?.let { parsed ->
+                viewModel.setQuietHoursEnd(parsed.hour, parsed.minute)
+            }
+            showQuietHoursEndPicker = false
         }
     )
 

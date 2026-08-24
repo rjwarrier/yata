@@ -201,6 +201,10 @@
     <string name="settings_daily_agenda_time">Giờ gửi lịch trình</string>
     <string name="settings_overdue_nudges">Nhắc nhở quá hạn</string>
     <string name="settings_overdue_nudges_desc">Thông báo nhắc lại cho các việc còn quá hạn.</string>
+    <string name="settings_quiet_hours">Giờ yên lặng</string>
+    <string name="settings_quiet_hours_desc">Các nhắc nhở đáng lẽ sẽ vang lên trong khoảng thời gian này sẽ chờ đến khi khoảng thời gian đó kết thúc.</string>
+    <string name="settings_quiet_hours_start">Bắt đầu</string>
+    <string name="settings_quiet_hours_end">Kết thúc</string>
     <string name="settings_app_language">Ngôn ngữ ứng dụng</string>
     <string name="settings_app_language_desc">Chọn ngôn ngữ hiển thị của YATA.</string>
     <string name="settings_language_system_default">Mặc định hệ thống</string>
@@ -263,6 +267,8 @@
         <string name="cd_bulk_select">Chọn</string>
     <string name="cd_bulk_cancel_selection">Hủy chọn</string>
     <string name="cd_bulk_mark_done">Đánh dấu hoàn thành</string>
+    <string name="cd_bulk_flag">Gắn cờ</string>
+    <string name="cd_bulk_set_priority">Đặt mức ưu tiên</string>
     <string name="cd_bulk_add_tag">Thêm thẻ</string>
     <string name="cd_bulk_assign_person">Giao cho người</string>
     <string name="cd_bulk_move">Chuyển sang danh sách hoặc dự án</string>
@@ -714,6 +720,7 @@
     <string name="bulk_add_tag_title">Thêm thẻ vào việc đã chọn</string>
     <string name="bulk_no_tags">Chưa có thẻ nào - tạo một thẻ từ tab Thẻ trước.</string>
     <string name="bulk_assign_title">Giao việc đã chọn cho</string>
+    <string name="bulk_set_priority_title">Đặt mức ưu tiên cho việc đã chọn</string>
     <string name="bulk_no_people">Chưa có ai - thêm một người từ tab Con người trước.</string>
     <string name="today_show_completed">Hiện việc đã hoàn thành</string>
     <string name="today_hide_completed">Ẩn việc đã hoàn thành</string>
@@ -1063,6 +1070,9 @@
     <string name="recurrence_on_days">Vào các ngày</string>
     <string name="recurrence_day_of_month">Ngày trong tháng</string>
     <string name="recurrence_last_day_of_month">Ngày cuối tháng</string>
+    <string name="recurrence_monthly_mode_date">Ngày</string>
+    <string name="recurrence_monthly_mode_weekday">Thứ trong tuần</string>
+    <string name="recurrence_monthly_position_last">Cuối cùng</string>
     <string name="recurrence_repeat_from">Lặp lại từ</string>
     <string name="recurrence_when_you_finish_it">Khi bạn hoàn thành nó</string>
     <string name="recurrence_fixed_schedule">Lịch cố định</string>

@@ -64,6 +64,31 @@ class OverdueEscalationWorker @AssistedInject constructor(
             return@runOperationSafely Result.success()
         }
 
+        // This worker has no fixed time of day (it's a plain 24h periodic job), so unlike
+        // per-task due reminders it can't defer to the end of quiet hours — the next cycle is
+        // a day away, not a few hours. Skipping this cycle entirely rather than posting through
+        // quiet hours is the safer tradeoff for a non-urgent digest; the escalation itself is
+        // still there tomorrow if it recurs.
+        val now = System.currentTimeMillis()
+        val quietHoursEnabled = userPreferences.quietHoursEnabledFlow.first()
+        if (quietHoursEnabled) {
+            val deferred = com.mj.yata.util.QuietHours.deferIfWithinQuietHours(
+                now,
+                enabled = true,
+                startHour = userPreferences.quietHoursStartHourFlow.first(),
+                startMinute = userPreferences.quietHoursStartMinuteFlow.first(),
+                endHour = userPreferences.quietHoursEndHourFlow.first(),
+                endMinute = userPreferences.quietHoursEndMinuteFlow.first()
+            )
+            if (deferred != now) {
+                operationHistoryStore.recordSkipped(
+                    OperationHistoryStore.REMINDERS_OVERDUE_ESCALATION,
+                    "Skipped — within quiet hours"
+                )
+                return@runOperationSafely Result.success()
+            }
+        }
+
         NotificationHelper.createChannels(applicationContext)
         if (!NotificationPermissionUtils.areNotificationsEnabled(applicationContext)) {
             operationHistoryStore.recordSkipped(

@@ -97,6 +97,8 @@ fun TodayTab(
     onBulkDuplicate: (List<String>) -> Unit = {},
     onBulkAssignPerson: (List<String>, String) -> Unit = { _, _ -> },
     onBulkReschedule: (List<String>, QuickSnoozePreset) -> Unit = { _, _ -> },
+    onBulkSetPriority: (List<String>, String) -> Unit = { _, _ -> },
+    onBulkSetFlag: (List<String>, Boolean) -> Unit = { _, _ -> },
     onRenameTask: (String, String) -> Unit = { _, _ -> },
     onAddComment: (taskId: String, body: String) -> Unit = { _, _ -> },
     sortMode: com.mj.yata.util.TaskSortMode = com.mj.yata.util.TaskSortMode.MANUAL,
@@ -139,6 +141,7 @@ fun TodayTab(
     var showBulkMoveSheet by remember { mutableStateOf(false) }
     var showBulkAssignSheet by remember { mutableStateOf(false) }
     var showBulkRescheduleSheet by remember { mutableStateOf(false) }
+    var showBulkPrioritySheet by remember { mutableStateOf(false) }
     var showBulkDeleteDialog by remember { mutableStateOf(false) }
     var pendingCommentTask by remember { mutableStateOf<Task?>(null) }
     var previewTaskId by remember { mutableStateOf<String?>(null) }
@@ -382,6 +385,8 @@ fun TodayTab(
                 onDuplicate = { onBulkDuplicate(selectedIds.toList()); selectedIds.clear() },
                 onDelete = { showBulkDeleteDialog = true },
                 onAssign = { showBulkAssignSheet = true },
+                onFlag = { onBulkSetFlag(selectedIds.toList(), true); selectedIds.clear() },
+                onSetPriority = { showBulkPrioritySheet = true },
                 tagsEnabled = tagsEnabled,
                 peopleEnabled = peopleEnabled,
                 modifier = Modifier.statusBarsPadding()
@@ -859,6 +864,24 @@ fun TodayTab(
                     showBulkTagSheet = false
                 },
                 onDismiss = { showBulkTagSheet = false }
+            )
+        }
+    }
+
+    if (showBulkPrioritySheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBulkPrioritySheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            sheetMaxWidth = adaptiveSheetMaxWidth
+        ) {
+            com.mj.yata.ui.sheets.TaskBulkPrioritySheet(
+                onSelectPriority = { priority ->
+                    onBulkSetPriority(selectedIds.toList(), priority)
+                    selectedIds.clear()
+                    showBulkPrioritySheet = false
+                },
+                onDismiss = { showBulkPrioritySheet = false }
             )
         }
     }

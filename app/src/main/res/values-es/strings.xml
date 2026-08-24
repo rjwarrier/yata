@@ -198,6 +198,10 @@
     <string name="settings_daily_agenda_time">Hora de la agenda</string>
     <string name="settings_overdue_nudges">Recordatorios de atraso</string>
     <string name="settings_overdue_nudges_desc">Notificaciones de seguimiento para tareas atrasadas.</string>
+    <string name="settings_quiet_hours">Horas silenciosas</string>
+    <string name="settings_quiet_hours_desc">Los recordatorios que sonarían durante esta franja esperan hasta que termine.</string>
+    <string name="settings_quiet_hours_start">Empieza</string>
+    <string name="settings_quiet_hours_end">Termina</string>
     <string name="settings_app_language">Idioma de la app</string>
     <string name="settings_app_language_desc">Elige el idioma en el que se muestra YATA.</string>
     <string name="settings_language_system_default">Predeterminado del sistema</string>
@@ -284,6 +288,8 @@
         <string name="cd_bulk_select">Seleccionar</string>
     <string name="cd_bulk_cancel_selection">Cancelar selección</string>
     <string name="cd_bulk_mark_done">Marcar completadas</string>
+    <string name="cd_bulk_flag">Marcar</string>
+    <string name="cd_bulk_set_priority">Establecer prioridad</string>
     <string name="cd_bulk_add_tag">Añadir etiqueta</string>
     <string name="cd_bulk_assign_person">Asignar a persona</string>
     <string name="cd_bulk_move">Mover a lista o proyecto</string>
@@ -926,6 +932,7 @@
     <string name="bulk_add_tag_title">Añadir etiqueta a tareas seleccionadas</string>
     <string name="bulk_no_tags">Aún no hay etiquetas; crea una desde la pestaña Etiquetas primero.</string>
     <string name="bulk_assign_title">Asignar tareas seleccionadas a</string>
+    <string name="bulk_set_priority_title">Establecer prioridad de las tareas seleccionadas</string>
     <string name="bulk_no_people">Aún no hay personas; añade una desde la pestaña Personas primero.</string>
     <string name="today_show_completed">Mostrar tareas completadas</string>
     <string name="today_hide_completed">Ocultar tareas completadas</string>
@@ -1306,6 +1313,9 @@
     <string name="recurrence_on_days">On days</string>
     <string name="recurrence_day_of_month">Día del mes</string>
     <string name="recurrence_last_day_of_month">Último día del mes</string>
+    <string name="recurrence_monthly_mode_date">Fecha</string>
+    <string name="recurrence_monthly_mode_weekday">Día de la semana</string>
+    <string name="recurrence_monthly_position_last">Último</string>
     <string name="recurrence_repeat_from">Repetir desde</string>
     <string name="recurrence_when_you_finish_it">Cuando la terminas</string>
     <string name="recurrence_fixed_schedule">Horario fijo</string>
