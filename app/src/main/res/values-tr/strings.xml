@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">YARINDAN SONRAKİ GÜN</string>
     <string name="settings_today_show_upcoming_when_empty">Bugün boşken yaklaşan görevleri göster</string>
     <string name="settings_today_show_upcoming_when_empty_summary">\"Yaklaşan görevleri göster\" düğmesi yerine yarının ve ertesi günün görevlerini (soluk) otomatik olarak önizler.</string>
+    <string name="settings_due_countdown">Bitiş tarihi geri sayımı</string>
+    <string name="settings_due_countdown_desc">Görevin kartında ve ayrıntı ekranında bitiş tarihine/saatine kalan süreyi gösterir.</string>
     <string name="settings_search_help_summary">Özellik rehberi, sürüm ve uygulama bilgileri</string>
     <string name="settings_reset_settings">Uygulama ayarlarını sıfırla</string>
     <string name="settings_reset_dialog_title">Uygulama ayarları sıfırlansın mı?</string>

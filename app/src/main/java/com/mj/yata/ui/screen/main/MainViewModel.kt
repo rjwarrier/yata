@@ -1137,6 +1137,8 @@ data class WeekendRescheduleWarning(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     val todayShowUpcomingWhenEmpty: StateFlow<Boolean> = userPreferences.todayShowUpcomingWhenEmptyFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val dueCountdownEnabled: StateFlow<Boolean> = userPreferences.dueCountdownEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     val timeFormat: StateFlow<com.mj.yata.domain.model.TimeFormat> = userPreferences.timeFormatFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.mj.yata.domain.model.TimeFormat.SYSTEM)
     val dateFormat: StateFlow<com.mj.yata.domain.model.DateFormat> = userPreferences.dateFormatFlow
@@ -1144,6 +1146,10 @@ data class WeekendRescheduleWarning(
 
     fun setTodayShowUpcomingWhenEmpty(enabled: Boolean) {
         safeLaunch { userPreferences.setTodayShowUpcomingWhenEmpty(enabled) }
+    }
+
+    fun setDueCountdownEnabled(enabled: Boolean) {
+        safeLaunch { userPreferences.setDueCountdownEnabled(enabled) }
     }
 
     fun setSwipeRightAction(action: com.mj.yata.domain.model.SwipeAction) {

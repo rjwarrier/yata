@@ -129,6 +129,7 @@ fun TaskRow(
     val hapticsEnabled = com.mj.yata.ui.theme.LocalHapticsEnabled.current
     val soundEnabled = com.mj.yata.ui.theme.LocalCompletionSoundEnabled.current
     val taskSwipeActionsEnabled = com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled.current
+    val dueCountdownEnabled = com.mj.yata.ui.theme.LocalDueCountdownEnabled.current
     val swipeRightAction = com.mj.yata.ui.theme.LocalSwipeRightAction.current
     val swipeLeftAction = com.mj.yata.ui.theme.LocalSwipeLeftAction.current
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -328,6 +329,11 @@ fun TaskRow(
             // over "Overdue": a task that is both is waiting, not late — the start date is the
             // reason it hasn't been done, and showing red here would be blaming the user for it.
             val deferred = remember(task, today) { task.isDeferredOn(today.toString()) }
+            // Countdown reads the raw due date/time, not effectiveDue — a weekend/holiday
+            // reschedule shifts *when a task counts as overdue*, not the clock time the user typed.
+            val dueCountdown = if (dueCountdownEnabled && !task.done) {
+                remember(task.due, task.time) { TaskScheduleUtils.formatCountdown(task.due, task.time) }
+            } else null
             val healthBadges = remember(task, overdue, today, effectiveDue) {
                 buildList {
                     if (!task.done && effectiveDue == today.toString()) add("Due today")
@@ -338,7 +344,7 @@ fun TaskRow(
             }
 
             // Meta row below
-            if (task.time != null || (showList && list != null) || task.recurrence != null || task.subtasks.isNotEmpty() || task.estimateMinutes != null || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null)) {
+            if (task.time != null || (showList && list != null) || task.recurrence != null || task.subtasks.isNotEmpty() || task.estimateMinutes != null || tags.isNotEmpty() || overdue || deferred || healthBadges.isNotEmpty() || (showDueDate && task.due != null) || (task.done && task.completedAt != null) || dueCountdown != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 // FlowRow, not Row: the number of things in here varies (completed-at or due date,
                 // time, list, recurrence, up to two health badges, up to two tags) and a plain Row
@@ -412,6 +418,21 @@ fun TaskRow(
                             text = com.mj.yata.util.TaskScheduleUtils.displayTime(time) ?: time,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp)
+                        )
+                    }
+
+                    dueCountdown?.let { countdown ->
+                        Text(
+                            text = countdown,
+                            color = if (countdown.startsWith("Overdue")) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         )
                     }
 

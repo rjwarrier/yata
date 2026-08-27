@@ -1237,6 +1237,8 @@
     <string name="today_day_after_tomorrow_header">DAY AFTER TOMORROW</string>
     <string name="settings_today_show_upcoming_when_empty">Show upcoming tasks when Today is empty</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Automatically preview tomorrow\'s and the day after\'s tasks (dimmed) instead of showing a "Show upcoming tasks" button.</string>
+    <string name="settings_due_countdown">Due date countdown</string>
+    <string name="settings_due_countdown_desc">Show time remaining until a task\'s due date/time on its card and detail screen.</string>
     <string name="settings_search_help_summary">Feature guide, version, and app information</string>
     <string name="settings_reset_settings">Reset app settings</string>
     <string name="settings_reset_dialog_title">Reset app settings?</string>

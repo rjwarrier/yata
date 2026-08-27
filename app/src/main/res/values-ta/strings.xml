@@ -998,6 +998,8 @@
     <string name="today_day_after_tomorrow_header">நாளை மறுநாள்</string>
     <string name="settings_today_show_upcoming_when_empty">இன்று காலியாக இருக்கும்போது வரவிருக்கும் பணிகளைக் காட்டு</string>
     <string name="settings_today_show_upcoming_when_empty_summary">\"வரவிருக்கும் பணிகளைக் காட்டு\" பொத்தானைக் காட்டுவதற்குப் பதிலாக நாளை மற்றும் நாளை மறுநாளின் பணிகளை (மங்கலாக) தானாகவே முன்னோட்டமாகக் காட்டு.</string>
+    <string name="settings_due_countdown">இறுதி தேதி கவுண்ட்டவுன்</string>
+    <string name="settings_due_countdown_desc">பணியின் அட்டையிலும் விவர திரையிலும் இறுதி தேதி/நேரம் வரை மீதமுள்ள நேரத்தைக் காட்டு.</string>
     <string name="settings_search_help_summary">அம்ச வழிகாட்டி, பதிப்பு மற்றும் ஆப்ஸ் தகவல்</string>
     <string name="settings_reset_settings">ஆப்ஸ் அமைப்புகளை மீட்டமை</string>
     <string name="settings_reset_dialog_title">ஆப்ஸ் அமைப்புகளை மீட்டமைக்கவா?</string>

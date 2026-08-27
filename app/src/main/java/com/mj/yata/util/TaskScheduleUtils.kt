@@ -1,5 +1,6 @@
 package com.mj.yata.util
 
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -68,6 +69,30 @@ object TaskScheduleUtils {
         LocalTime.of(hour, minute).format(AppFormats.timeFormatter())
 
     fun formatReminder(reminder: String?): String = reminder ?: "None"
+
+    /**
+     * "in 2h 15m" / "in 3d" / "Overdue by 1h" style countdown for a task's due date/time, or null
+     * when there's no due date to count down to. A date with no time counts down to end-of-day
+     * (23:59:59) rather than midnight — a task due "today" isn't overdue at 9am.
+     */
+    fun formatCountdown(dueDate: String?, dueTime: String?, now: LocalDateTime = LocalDateTime.now()): String? {
+        val date = parseDate(dueDate) ?: return null
+        val time = dueTime?.let { parseTime(it) }
+        val target = if (time != null) date.atTime(time) else date.atTime(23, 59, 59)
+        val duration = Duration.between(now, target)
+        val overdue = duration.isNegative
+        val magnitude = if (overdue) duration.negated() else duration
+        val days = magnitude.toDays()
+        val hours = magnitude.toHours() % 24
+        val minutes = magnitude.toMinutes() % 60
+        val span = when {
+            days >= 1L -> if (hours > 0) "${days}d ${hours}h" else "${days}d"
+            magnitude.toHours() >= 1L -> if (minutes > 0) "${magnitude.toHours()}h ${minutes}m" else "${magnitude.toHours()}h"
+            magnitude.toMinutes() >= 1L -> "${magnitude.toMinutes()}m"
+            else -> "<1m"
+        }
+        return if (overdue) "Overdue by $span" else "in $span"
+    }
 
     fun formatCompletedAt(completedAt: Long?): String {
         if (completedAt == null) return ""

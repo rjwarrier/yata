@@ -354,6 +354,7 @@ class MainActivity : AppCompatActivity() {
             val completionSoundEnabled by userPreferences.completionSoundEnabledFlow.collectAsState(initial = true)
             val hapticsEnabled by userPreferences.hapticsEnabledFlow.collectAsState(initial = true)
             val taskSwipeActionsEnabled by userPreferences.taskSwipeActionsEnabledFlow.collectAsState(initial = true)
+            val dueCountdownEnabled by userPreferences.dueCountdownEnabledFlow.collectAsState(initial = true)
             val taskCardBackground by userPreferences.taskCardBackgroundFlow.collectAsState(initial = false)
             val swipeRightAction by userPreferences.swipeRightActionFlow
                 .collectAsState(initial = com.mj.yata.domain.model.SwipeAction.COMPLETE)
@@ -396,6 +397,7 @@ class MainActivity : AppCompatActivity() {
                 com.mj.yata.ui.theme.LocalHapticsEnabled provides hapticsEnabled,
                 com.mj.yata.ui.widgets.LocalUndoWindowSeconds provides undoWindowSeconds,
                 com.mj.yata.ui.theme.LocalTaskSwipeActionsEnabled provides taskSwipeActionsEnabled,
+                com.mj.yata.ui.theme.LocalDueCountdownEnabled provides dueCountdownEnabled,
                 com.mj.yata.ui.theme.LocalTaskCardBackground provides taskCardBackground,
                 com.mj.yata.ui.theme.LocalSwipeRightAction provides swipeRightAction,
                 com.mj.yata.ui.theme.LocalSwipeLeftAction provides swipeLeftAction,

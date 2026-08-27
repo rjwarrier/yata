@@ -382,6 +382,8 @@
     <string name="today_day_after_tomorrow_header">PASADO MAÑANA</string>
     <string name="settings_today_show_upcoming_when_empty">Mostrar tareas próximas cuando Hoy esté vacío</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Previsualiza automáticamente las tareas de mañana y pasado mañana (atenuadas) en vez de mostrar un botón “Mostrar tareas próximas”.</string>
+    <string name="settings_due_countdown">Cuenta atrás de vencimiento</string>
+    <string name="settings_due_countdown_desc">Muestra el tiempo restante hasta la fecha/hora de vencimiento de una tarea en su tarjeta y pantalla de detalles.</string>
     <string name="settings_reset_settings">Restablecer ajustes de la app</string>
     <string name="settings_reset_dialog_title">¿Restablecer ajustes?</string>
     <string name="settings_reset_dialog_body">Apariencia, navegación, respuesta, valores predeterminados de tareas y preferencias de notificaciones volverán a sus valores iniciales. Tu perfil, copias, PIN de seguridad, búsquedas guardadas y tareas no se tocan.</string>

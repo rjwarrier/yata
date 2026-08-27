@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">POZÍTŘÍ</string>
     <string name="settings_today_show_upcoming_when_empty">Zobrazit nadcházející úkoly, když je Dnes prázdné</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Automaticky zobrazit náhled zítřejších a pozítřejších úkolů (ztlumeně) místo tlačítka „Zobrazit nadcházející úkoly“.</string>
+    <string name="settings_due_countdown">Odpočet do termínu</string>
+    <string name="settings_due_countdown_desc">Zobrazit zbývající čas do termínu úkolu na jeho kartě a na obrazovce s podrobnostmi.</string>
     <string name="settings_search_help_summary">Přehled funkcí, verze a informace o aplikaci</string>
     <string name="settings_reset_settings">Obnovit nastavení aplikace</string>
     <string name="settings_reset_dialog_title">Obnovit nastavení aplikace?</string>

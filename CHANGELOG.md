@@ -27,6 +27,9 @@ test-only changes belong in the commit message, not here, unless they change beh
   reminder that would otherwise fire inside the configured window (e.g. 22:00-07:00) waits until
   the window ends instead; the daily overdue-escalation digest skips its run entirely if it lands
   inside the window, since its next check-in is a day away rather than a few hours.
+- Task cards and the task detail screen now show a countdown ("in 2h 15m", "Overdue by 1d") next
+  to any task with a due date/time set. Controlled by a "Due date countdown" toggle in Settings →
+  Task Defaults, on by default.
 
 ## [0.94.2] - 2026-08-23
 

@@ -319,6 +319,7 @@ fun SettingsScreen(
     val subtaskCompletionAction by viewModel.subtaskCompletionAction.collectAsStateWithLifecycle()
     val autoAssignToMe by viewModel.autoAssignToMe.collectAsStateWithLifecycle()
     val todayShowUpcomingWhenEmpty by viewModel.todayShowUpcomingWhenEmpty.collectAsStateWithLifecycle()
+    val dueCountdownEnabled by viewModel.dueCountdownEnabled.collectAsStateWithLifecycle()
     val peopleFeatureEnabled = uiState.peopleFeatureEnabled
     val tagsFeatureEnabled = uiState.tagsFeatureEnabled
     val projectsFeatureEnabled = uiState.projectsFeatureEnabled
@@ -1308,6 +1309,15 @@ fun SettingsScreen(
                     subtitle = stringResource(R.string.settings_today_show_upcoming_when_empty_summary),
                     checked = todayShowUpcomingWhenEmpty,
                     onCheckedChange = { viewModel.setTodayShowUpcomingWhenEmpty(it) }
+                )
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_due_countdown),
+                    subtitle = stringResource(R.string.settings_due_countdown_desc),
+                    checked = dueCountdownEnabled,
+                    onCheckedChange = { viewModel.setDueCountdownEnabled(it) }
                 )
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))

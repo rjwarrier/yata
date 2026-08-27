@@ -998,6 +998,8 @@
     <string name="today_day_after_tomorrow_header">ਪਰਸੋਂ</string>
     <string name="settings_today_show_upcoming_when_empty">ਜਦੋਂ ਅੱਜ ਖਾਲੀ ਹੋਵੇ ਤਾਂ ਆਉਣ ਵਾਲੇ ਕਾਰਜ ਦਿਖਾਓ</string>
     <string name="settings_today_show_upcoming_when_empty_summary">\"ਆਉਣ ਵਾਲੇ ਕਾਰਜ ਦਿਖਾਓ\" ਬਟਨ ਦੀ ਬਜਾਏ ਕੱਲ੍ਹ ਅਤੇ ਪਰਸੋਂ ਦੇ ਕਾਰਜਾਂ ਦੀ ਆਪਣੇ ਆਪ ਪੂਰਵ-ਝਲਕ (ਧੁੰਦਲੀ) ਦਿਖਾਓ।</string>
+    <string name="settings_due_countdown">ਨਿਯਤ ਮਿਤੀ ਕਾਊਂਟਡਾਊਨ</string>
+    <string name="settings_due_countdown_desc">ਟਾਸਕ ਦੇ ਕਾਰਡ ਅਤੇ ਵੇਰਵਾ ਸਕ੍ਰੀਨ \'ਤੇ ਨਿਯਤ ਮਿਤੀ/ਸਮੇਂ ਤੱਕ ਬਾਕੀ ਸਮਾਂ ਦਿਖਾਓ।</string>
     <string name="settings_search_help_summary">ਵਿਸ਼ੇਸ਼ਤਾ ਗਾਈਡ, ਸੰਸਕਰਣ, ਅਤੇ ਐਪ ਜਾਣਕਾਰੀ</string>
     <string name="settings_reset_settings">ਐਪ ਸੈਟਿੰਗਾਂ ਰੀਸੈੱਟ ਕਰੋ</string>
     <string name="settings_reset_dialog_title">ਐਪ ਸੈਟਿੰਗਾਂ ਰੀਸੈੱਟ ਕਰੀਏ?</string>

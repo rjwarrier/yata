@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">POIMÂINE</string>
     <string name="settings_today_show_upcoming_when_empty">Arată sarcinile viitoare când Azi este gol</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Previzualizează automat sarcinile de mâine și de poimâine (estompate) în loc să arate un buton „Arată sarcinile viitoare”.</string>
+    <string name="settings_due_countdown">Numărătoare inversă a termenului</string>
+    <string name="settings_due_countdown_desc">Afișează timpul rămas până la data/ora scadentă a unei sarcini pe cardul și ecranul de detalii al acesteia.</string>
     <string name="settings_search_help_summary">Ghid de funcții, versiune și informații despre aplicație</string>
     <string name="settings_reset_settings">Resetează setările aplicației</string>
     <string name="settings_reset_dialog_title">Resetezi setările aplicației?</string>

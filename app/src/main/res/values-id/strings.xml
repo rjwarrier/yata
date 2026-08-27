@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">LUSA</string>
     <string name="settings_today_show_upcoming_when_empty">Tampilkan tugas mendatang saat Hari Ini kosong</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Otomatis pratinjau tugas besok dan lusa (diredupkan) alih-alih menampilkan tombol "Tampilkan tugas mendatang".</string>
+    <string name="settings_due_countdown">Hitung mundur tenggat</string>
+    <string name="settings_due_countdown_desc">Tampilkan waktu tersisa hingga tanggal/waktu jatuh tempo tugas di kartu dan layar detailnya.</string>
     <string name="settings_search_help_summary">Panduan fitur, versi, dan informasi aplikasi</string>
     <string name="settings_reset_settings">Reset pengaturan aplikasi</string>
     <string name="settings_reset_dialog_title">Reset pengaturan aplikasi?</string>

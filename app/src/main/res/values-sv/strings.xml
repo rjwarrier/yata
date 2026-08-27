@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">I ÖVERMORGON</string>
     <string name="settings_today_show_upcoming_when_empty">Visa kommande uppgifter när Idag är tom</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Förhandsgranska automatiskt imorgondagens och i övermorgons uppgifter (nedtonade) istället för att visa en knapp för \"Visa kommande uppgifter\".</string>
+    <string name="settings_due_countdown">Nedräkning till förfallodatum</string>
+    <string name="settings_due_countdown_desc">Visa återstående tid till en uppgifts förfallodatum/-tid på dess kort och detaljskärm.</string>
     <string name="settings_search_help_summary">Funktionsguide, version och appinformation</string>
     <string name="settings_reset_settings">Återställ appinställningar</string>
     <string name="settings_reset_dialog_title">Återställ appinställningar?</string>

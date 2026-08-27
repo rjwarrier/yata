@@ -998,6 +998,8 @@
     <string name="today_day_after_tomorrow_header">ನಾಡಿದ್ದು</string>
     <string name="settings_today_show_upcoming_when_empty">ಇಂದು ಖಾಲಿಯಾದಾಗ ಮುಂಬರುವ ಕಾರ್ಯಗಳನ್ನು ತೋರಿಸಿ</string>
     <string name="settings_today_show_upcoming_when_empty_summary">"ಮುಂಬರುವ ಕಾರ್ಯಗಳನ್ನು ತೋರಿಸಿ" ಬಟನ್ ತೋರಿಸುವ ಬದಲು ನಾಳೆ ಮತ್ತು ನಾಡಿದ್ದಿನ ಕಾರ್ಯಗಳನ್ನು (ಮಬ್ಬಾಗಿ) ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಮುನ್ನೋಟ ಮಾಡಿ.</string>
+    <string name="settings_due_countdown">ಅಂತಿಮ ದಿನಾಂಕ ಕೌಂಟ್‌ಡೌನ್</string>
+    <string name="settings_due_countdown_desc">ಟಾಸ್ಕ್‌ನ ಕಾರ್ಡ್ ಮತ್ತು ವಿವರ ಪರದೆಯಲ್ಲಿ ಅಂತಿಮ ದಿನಾಂಕ/ಸಮಯದವರೆಗೆ ಉಳಿದ ಸಮಯವನ್ನು ತೋರಿಸಿ.</string>
     <string name="settings_search_help_summary">ವೈಶಿಷ್ಟ್ಯ ಮಾರ್ಗದರ್ಶಿ, ಆವೃತ್ತಿ, ಮತ್ತು ಆ್ಯಪ್ ಮಾಹಿತಿ</string>
     <string name="settings_reset_settings">ಆ್ಯಪ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಮರುಹೊಂದಿಸಿ</string>
     <string name="settings_reset_dialog_title">ಆ್ಯಪ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಮರುಹೊಂದಿಸುವುದೇ?</string>

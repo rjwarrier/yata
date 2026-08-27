@@ -1131,6 +1131,8 @@
     <string name="today_day_after_tomorrow_header">ÜBERMORGEN</string>
     <string name="settings_today_show_upcoming_when_empty">Anstehende Aufgaben anzeigen, wenn Heute leer ist</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Automatisch eine Vorschau der Aufgaben von morgen und übermorgen (abgeblendet) anzeigen, statt einer Schaltfläche „Anstehende Aufgaben anzeigen“.</string>
+    <string name="settings_due_countdown">Fälligkeits-Countdown</string>
+    <string name="settings_due_countdown_desc">Zeigt die verbleibende Zeit bis zum Fälligkeitsdatum/-zeit einer Aufgabe auf ihrer Karte und im Detailbildschirm an.</string>
     <string name="settings_search_help_summary">Funktionsleitfaden, Version und App-Informationen</string>
     <string name="settings_reset_settings">App-Einstellungen zurücksetzen</string>
     <string name="settings_reset_dialog_title">App-Einstellungen zurücksetzen?</string>

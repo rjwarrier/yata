@@ -998,6 +998,8 @@
     <string name="today_day_after_tomorrow_header">KESHOKUTWA</string>
     <string name="settings_today_show_upcoming_when_empty">Onyesha kazi zinazokuja Leo ikiwa tupu</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Onyesha awali kazi za kesho na kesho kutwa (zikiwa zimefifia) badala ya kuonyesha kitufe cha "Onyesha kazi zinazokuja".</string>
+    <string name="settings_due_countdown">Kihesabu muda cha tarehe ya mwisho</string>
+    <string name="settings_due_countdown_desc">Onyesha muda uliobaki hadi tarehe/saa ya mwisho ya kazi kwenye kadi yake na skrini ya maelezo.</string>
     <string name="settings_search_help_summary">Mwongozo wa vipengele, toleo, na taarifa za programu</string>
     <string name="settings_reset_settings">Rejesha mipangilio ya programu</string>
     <string name="settings_reset_dialog_title">Rejesha mipangilio ya programu?</string>

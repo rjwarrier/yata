@@ -998,6 +998,8 @@
     <string name="today_day_after_tomorrow_header">પરમ દિવસે</string>
     <string name="settings_today_show_upcoming_when_empty">Today ખાલી હોય ત્યારે આગામી ટાસ્ક બતાવો</string>
     <string name="settings_today_show_upcoming_when_empty_summary">\"Show upcoming tasks\" બટન બતાવવાને બદલે આવતીકાલના અને પરમ દિવસના ટાસ્કનું (ઝાંખું) આપોઆપ પૂર્વાવલોકન કરો.</string>
+    <string name="settings_due_countdown">ડ્યૂ ડેટ કાઉન્ટડાઉન</string>
+    <string name="settings_due_countdown_desc">ટાસ્કના કાર્ડ અને વિગત સ્ક્રીન પર ડ્યૂ તારીખ/સમય સુધીનો બાકી સમય બતાવો.</string>
     <string name="settings_search_help_summary">ફીચર માર્ગદર્શિકા, વર્ઝન અને એપ માહિતી</string>
     <string name="settings_reset_settings">એપ સેટિંગ્સ રીસેટ કરો</string>
     <string name="settings_reset_dialog_title">એપ સેટિંગ્સ રીસેટ કરવી છે?</string>

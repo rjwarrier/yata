@@ -998,6 +998,8 @@
     <string name="today_day_after_tomorrow_header">परवा</string>
     <string name="settings_today_show_upcoming_when_empty">आज रिकामे असताना आगामी कार्ये दाखवा</string>
     <string name="settings_today_show_upcoming_when_empty_summary">\"आगामी कार्ये दाखवा\" बटणाऐवजी उद्याची आणि परवाची कार्ये (फिकट) आपोआप दाखवा.</string>
+    <string name="settings_due_countdown">अंतिम तारीख काउंटडाउन</string>
+    <string name="settings_due_countdown_desc">टास्कच्या कार्डवर आणि तपशील स्क्रीनवर अंतिम तारीख/वेळेपर्यंत उरलेला वेळ दाखवा.</string>
     <string name="settings_search_help_summary">वैशिष्ट्य मार्गदर्शक, आवृत्ती आणि अ‍ॅप माहिती</string>
     <string name="settings_reset_settings">अ‍ॅप सेटिंग्ज रीसेट करा</string>
     <string name="settings_reset_dialog_title">अ‍ॅप सेटिंग्ज रीसेट करायच्या?</string>

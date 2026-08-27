@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">NGÀY KIA</string>
     <string name="settings_today_show_upcoming_when_empty">Hiện việc sắp tới khi Hôm nay trống</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Tự động xem trước việc của ngày mai và ngày kia (làm mờ) thay vì hiện nút \"Hiện việc sắp tới\".</string>
+    <string name="settings_due_countdown">Đếm ngược hạn chót</string>
+    <string name="settings_due_countdown_desc">Hiển thị thời gian còn lại cho đến ngày/giờ đến hạn của việc trên thẻ và màn hình chi tiết.</string>
     <string name="settings_search_help_summary">Hướng dẫn tính năng, phiên bản và thông tin ứng dụng</string>
     <string name="settings_reset_settings">Đặt lại cài đặt ứng dụng</string>
     <string name="settings_reset_dialog_title">Đặt lại cài đặt ứng dụng?</string>

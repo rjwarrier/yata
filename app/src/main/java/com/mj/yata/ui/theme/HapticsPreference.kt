@@ -33,3 +33,8 @@ val LocalTaskCardBackground = staticCompositionLocalOf { false }
  */
 val LocalSwipeRightAction = staticCompositionLocalOf { com.mj.yata.domain.model.SwipeAction.COMPLETE }
 val LocalSwipeLeftAction = staticCompositionLocalOf { com.mj.yata.domain.model.SwipeAction.DELETE }
+
+/** Settings → Task Defaults toggle for the due-date countdown shown on task rows/details. Read
+ * directly by TaskRow/TaskDetailScreen for the same reason as [LocalTaskCardBackground] — one
+ * provider at the root instead of threading a flag through every list screen's call site. */
+val LocalDueCountdownEnabled = staticCompositionLocalOf { true }

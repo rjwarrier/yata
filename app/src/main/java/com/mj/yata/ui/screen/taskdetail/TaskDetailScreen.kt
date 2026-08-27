@@ -261,6 +261,7 @@ fun TaskDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
+    val dueCountdownEnabled = com.mj.yata.ui.theme.LocalDueCountdownEnabled.current
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
@@ -827,12 +828,28 @@ fun TaskDetailScreen(
             item {
                 @Composable
                 fun CoreMetaRows(itemModifier: Modifier = Modifier) {
+                    val dueCountdown = if (dueCountdownEnabled && !task.done) {
+                        remember(task.due, task.time) { com.mj.yata.util.TaskScheduleUtils.formatCountdown(task.due, task.time) }
+                    } else null
                     MetaRowItem(
                         icon = Icons.Default.Today,
                         label = stringResource(R.string.task_detail_due_date),
                         value = com.mj.yata.util.TaskScheduleUtils.formatDueDateTime(task.due, task.time),
                         accentColor = MaterialTheme.colorScheme.primary,
                         modifier = itemModifier,
+                        rightContent = dueCountdown?.let { countdown ->
+                            {
+                                Text(
+                                    text = countdown,
+                                    color = if (countdown.startsWith("Overdue")) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium)
+                                )
+                            }
+                        },
                         onClick = { activeSheet = DetailSheetType.ScheduleEditor }
                     )
 
