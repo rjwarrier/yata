@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">DOPODOMANI</string>
     <string name="settings_today_show_upcoming_when_empty">Mostra attività in arrivo quando Oggi è vuoto</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Anteprima automatica delle attività di domani e dopodomani (in tono attenuato) invece di mostrare un pulsante \"Mostra attività in arrivo\".</string>
+    <string name="countdown_in">tra %1$s</string>
+    <string name="countdown_overdue_by">In ritardo di %1$s</string>
     <string name="settings_due_countdown">Conto alla rovescia scadenza</string>
     <string name="settings_due_countdown_desc">Mostra il tempo rimanente fino alla data/ora di scadenza di un\'attività nella sua scheda e nella schermata dei dettagli.</string>
     <string name="settings_search_help_summary">Guida alle funzionalità, versione e informazioni sull\'app</string>

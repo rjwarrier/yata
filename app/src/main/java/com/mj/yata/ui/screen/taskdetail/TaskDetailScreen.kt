@@ -895,8 +895,14 @@ fun TaskDetailScreen(
             item {
                 @Composable
                 fun CoreMetaRows(itemModifier: Modifier = Modifier) {
+                    // Keyed on AppClock.minute so it actually ticks — see TaskRow for the same
+                    // note. This screen has no Overdue badge competing with it, so unlike the row
+                    // it renders the overdue case here rather than folding it into one.
                     val dueCountdown = if (dueCountdownEnabled && !task.done) {
-                        remember(task.due, task.time) { com.mj.yata.util.TaskScheduleUtils.formatCountdown(task.due, task.time) }
+                        val nowMinute = com.mj.yata.util.AppClock.minute
+                        remember(task.due, task.time, nowMinute) {
+                            com.mj.yata.util.TaskScheduleUtils.dueCountdown(task.due, task.time, nowMinute)
+                        }
                     } else null
                     MetaRowItem(
                         icon = Icons.Default.Today,
@@ -907,8 +913,12 @@ fun TaskDetailScreen(
                         rightContent = dueCountdown?.let { countdown ->
                             {
                                 Text(
-                                    text = countdown,
-                                    color = if (countdown.startsWith("Overdue")) {
+                                    text = if (countdown.isOverdue) {
+                                        stringResource(R.string.countdown_overdue_by, countdown.span)
+                                    } else {
+                                        stringResource(R.string.countdown_in, countdown.span)
+                                    },
+                                    color = if (countdown.isOverdue) {
                                         MaterialTheme.colorScheme.error
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant

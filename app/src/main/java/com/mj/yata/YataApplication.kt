@@ -16,6 +16,7 @@ import javax.inject.Inject
 import com.mj.yata.util.AppClock
 import com.mj.yata.util.AppFormats
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -101,6 +102,31 @@ class YataApplication : Application(), Configuration.Provider {
                     AppClock.refresh()
                 }
                 com.mj.yata.widget.WidgetRefresher.refreshAll(this@YataApplication)
+            }
+        }
+
+        // The single writer for AppClock.minute, driving the due-date countdown. Unlike the
+        // midnight loop above this is gated on the setting: it wakes 1440x a day rather than once,
+        // which is not worth doing at all when nothing is reading the value. collectLatest cancels
+        // the running loop the moment the toggle flips off.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).launch {
+            try {
+                userPreferences.dueCountdownEnabledFlow.collectLatest { enabled ->
+                    if (!enabled) return@collectLatest
+                    while (true) {
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            AppClock.refreshMinute()
+                        }
+                        // Sleep to the next minute boundary rather than a flat 60s, so the
+                        // displayed value changes when the clock's minute actually changes
+                        // instead of drifting up to a minute behind it.
+                        val now = LocalDateTime.now()
+                        val nextMinute = now.truncatedTo(java.time.temporal.ChronoUnit.MINUTES).plusMinutes(1)
+                        delay(Duration.between(now, nextMinute).toMillis().coerceAtLeast(1000L))
+                    }
+                }
+            } catch (t: Throwable) {
+                Log.e("YataApplication", "Failed to observe due-countdown preference", t)
             }
         }
     }

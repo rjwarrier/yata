@@ -998,6 +998,8 @@
     <string name="today_day_after_tomorrow_header">മറ്റെന്നാൾ</string>
     <string name="settings_today_show_upcoming_when_empty">ഇന്ന് ശൂന്യമാകുമ്പോൾ വരാനിരിക്കുന്ന ടാസ്കുകൾ കാണിക്കുക</string>
     <string name="settings_today_show_upcoming_when_empty_summary">"വരാനിരിക്കുന്ന ടാസ്കുകൾ കാണിക്കുക" ബട്ടൺ കാണിക്കുന്നതിന് പകരം നാളെയുടെയും മറ്റെന്നാളിന്റെയും ടാസ്കുകൾ (മങ്ങിയത്) സ്വയമേവ പ്രിവ്യൂ ചെയ്യുക.</string>
+    <string name="countdown_in">%1$s കഴിഞ്ഞ്</string>
+    <string name="countdown_overdue_by">%1$s വൈകി</string>
     <string name="settings_due_countdown">അവസാന തീയതി കൗണ്ട്ഡൗൺ</string>
     <string name="settings_due_countdown_desc">ടാസ്കിന്റെ കാർഡിലും വിശദാംശ സ്ക്രീനിലും അവസാന തീയതി/സമയം വരെയുള്ള ശേഷിക്കുന്ന സമയം കാണിക്കുക.</string>
     <string name="settings_search_help_summary">ഫീച്ചർ ഗൈഡ്, പതിപ്പ്, ആപ്പ് വിവരം</string>

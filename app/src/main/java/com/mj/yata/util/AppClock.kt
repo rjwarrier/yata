@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 /**
  * "Today", readable from anywhere composition reaches. Same shape as [AppFormats]: plain snapshot
@@ -28,6 +30,23 @@ object AppClock {
     var today: LocalDate by mutableStateOf(LocalDate.now())
         private set
 
+    /**
+     * Now, truncated to the minute — the same idea as [today] one granularity down, for the
+     * due-date countdown, which has to re-render as time passes rather than freeze at whatever
+     * "in 5m" happened to be true when the row first composed.
+     *
+     * Truncated rather than raw so the value only changes on minute boundaries: it's Compose
+     * snapshot state, so every change recomposes each reader, and nothing displayed off this is
+     * finer-grained than a minute. Only composables that actually read it recompose, so rows
+     * without a countdown are unaffected.
+     *
+     * Its writer is gated on the countdown setting being on — see [YataApplication] — since a
+     * per-minute wakeup is worth avoiding entirely when nothing observes it, unlike [today]'s
+     * once-a-day one.
+     */
+    var minute: LocalDateTime by mutableStateOf(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
+        private set
+
     /** [today] as an ISO string, for the many call sites that compare dates as strings. */
     val todayString: String get() = today.toString()
 
@@ -37,5 +56,10 @@ object AppClock {
 
     fun refresh() {
         today = LocalDate.now()
+        refreshMinute()
+    }
+
+    fun refreshMinute() {
+        minute = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     }
 }

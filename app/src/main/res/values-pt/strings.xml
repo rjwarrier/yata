@@ -777,6 +777,8 @@
     <string name="today_day_after_tomorrow_header">DEPOIS DE AMANHÃ</string>
     <string name="settings_today_show_upcoming_when_empty">Mostrar as próximas tarefas quando Hoje estiver vazio</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Visualize automaticamente as tarefas de amanhã e do dia seguinte (esmaecidas) em vez de mostrar um botão "Mostrar tarefas futuras".</string>
+    <string name="countdown_in">em %1$s</string>
+    <string name="countdown_overdue_by">Atrasada em %1$s</string>
     <string name="settings_due_countdown">Contagem regressiva de vencimento</string>
     <string name="settings_due_countdown_desc">Mostra o tempo restante até a data/hora de vencimento de uma tarefa no seu cartão e na tela de detalhes.</string>
     <string name="settings_search_help_summary">Guia de recursos, versão e informações do aplicativo</string>

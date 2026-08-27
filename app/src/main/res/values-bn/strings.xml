@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">আগামী পরশু</string>
     <string name="settings_today_show_upcoming_when_empty">আজ খালি হলে আসন্ন টাস্ক দেখান</string>
     <string name="settings_today_show_upcoming_when_empty_summary">\"আসন্ন টাস্ক দেখান\" বোতাম দেখানোর বদলে স্বয়ংক্রিয়ভাবে আগামীকাল ও তার পরের দিনের টাস্ক (হালকা করে) পূর্বরূপ দেখান।</string>
+    <string name="countdown_in">%1$s পরে</string>
+    <string name="countdown_overdue_by">%1$s দেরি</string>
     <string name="settings_due_countdown">ডিউ ডেট কাউন্টডাউন</string>
     <string name="settings_due_countdown_desc">টাস্কের কার্ডে এবং বিস্তারিত স্ক্রিনে ডিউ তারিখ/সময় পর্যন্ত বাকি সময় দেখান।</string>
     <string name="settings_search_help_summary">ফিচার গাইড, সংস্করণ, এবং অ্যাপ তথ্য</string>

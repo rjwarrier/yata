@@ -777,6 +777,8 @@
     <string name="today_day_after_tomorrow_header">APRÈS DEMAIN</string>
     <string name="settings_today_show_upcoming_when_empty">Afficher les tâches à venir lorsque Aujourd\'hui est vide</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Prévisualisez automatiquement les tâches de demain et du lendemain (grisées) au lieu d\'afficher un bouton « Afficher les tâches à venir ».</string>
+    <string name="countdown_in">dans %1$s</string>
+    <string name="countdown_overdue_by">En retard de %1$s</string>
     <string name="settings_due_countdown">Compte à rebours d\'échéance</string>
     <string name="settings_due_countdown_desc">Affiche le temps restant avant la date/heure d\'échéance d\'une tâche sur sa carte et son écran de détails.</string>
     <string name="settings_search_help_summary">Guide des fonctionnalités, version et informations sur l\'application</string>

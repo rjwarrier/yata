@@ -1023,6 +1023,8 @@
     <string name="today_day_after_tomorrow_header">OVERMORGEN</string>
     <string name="settings_today_show_upcoming_when_empty">Aankomende taken tonen wanneer Vandaag leeg is</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Toon automatisch een voorbeeld van morgen en overmorgen (gedimd) in plaats van een knop \"Aankomende taken tonen\".</string>
+    <string name="countdown_in">over %1$s</string>
+    <string name="countdown_overdue_by">%1$s te laat</string>
     <string name="settings_due_countdown">Aftellen tot vervaldatum</string>
     <string name="settings_due_countdown_desc">Toon de resterende tijd tot de vervaldatum/-tijd van een taak op de kaart en het detailscherm.</string>
     <string name="settings_search_help_summary">Functiegids, versie en app-informatie</string>

@@ -998,6 +998,8 @@
     <string name="today_day_after_tomorrow_header">ఎల్లుండి</string>
     <string name="settings_today_show_upcoming_when_empty">ఈరోజు ఖాళీగా ఉన్నప్పుడు రాబోయే టాస్క్‌లు చూపండి</string>
     <string name="settings_today_show_upcoming_when_empty_summary">\"రాబోయే టాస్క్‌లు చూపండి\" బటన్‌ను చూపే బదులు రేపటి మరియు ఎల్లుండి టాస్క్‌లను (మసకగా) స్వయంచాలకంగా ప్రివ్యూ చేయండి.</string>
+    <string name="countdown_in">%1$s లో</string>
+    <string name="countdown_overdue_by">%1$s ఆలస్యం</string>
     <string name="settings_due_countdown">గడువు తేదీ కౌంట్‌డౌన్</string>
     <string name="settings_due_countdown_desc">టాస్క్ కార్డ్ మరియు వివరాల స్క్రీన్‌లో గడువు తేదీ/సమయం వరకు మిగిలిన సమయాన్ని చూపండి.</string>
     <string name="settings_search_help_summary">ఫీచర్ గైడ్, వెర్షన్ మరియు యాప్ సమాచారం</string>

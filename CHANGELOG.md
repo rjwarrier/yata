@@ -27,9 +27,12 @@ test-only changes belong in the commit message, not here, unless they change beh
   reminder that would otherwise fire inside the configured window (e.g. 22:00-07:00) waits until
   the window ends instead; the daily overdue-escalation digest skips its run entirely if it lands
   inside the window, since its next check-in is a day away rather than a few hours.
-- Task cards and the task detail screen now show a countdown ("in 2h 15m", "Overdue by 1d") next
-  to any task with a due date/time set. Controlled by a "Due date countdown" toggle in Settings →
-  Task Defaults, on by default.
+- Task cards and the task detail screen now show a live countdown ("in 2h 15m", "Overdue by 1d")
+  for any task with a due date set, ticking each minute rather than freezing at whatever was true
+  when the row first appeared. A task with a time counts down to the minute; one without counts
+  whole days, since an untimed task has no hour attached to it. On a task card the countdown is
+  carried by the existing Overdue badge rather than sitting beside it as a second copy of the same
+  word. Controlled by a "Due date countdown" toggle in Settings → Task Defaults, on by default.
 - In the new-task title field, Tab now accepts the top-ranked `#`/`@`/`+`/`=` mention suggestion
   without leaving the keyboard to tap the dropdown row.
 - The Quick Add widget's popup now has the same `#`/`@`/`+`/`=` mention autocomplete as New Task
@@ -54,6 +57,14 @@ test-only changes belong in the commit message, not here, unless they change beh
   date word was still recognized and claimed correctly, but the entity's capture had no boundary
   keyword to stop at, ran into that claim, and was discarded outright. It now truncates to the
   claim instead of giving up.
+- On devices whose locale writes the AM/PM marker in lowercase (en-IN among others), roughly half
+  of all stored task times could not be read back: times are written by two paths that disagree on
+  case ("3:00 pm" from the time picker, "3:00 PM" from natural-language parsing) and the parser was
+  case-sensitive. Nothing looked wrong, because times are displayed by echoing the stored text
+  verbatim — but everything that needed the actual parsed value, such as the reminder-offset
+  checks that decide whether a reminder is still in the future, silently took its "no time set"
+  branch. Times are now parsed case-insensitively, with a fallback that also accepts the canonical
+  English form so a time written on one device survives being restored or shared onto another.
 
 ## [0.94.2] - 2026-08-23
 

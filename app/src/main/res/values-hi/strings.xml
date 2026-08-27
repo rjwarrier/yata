@@ -1023,6 +1023,8 @@
     <string name="today_day_after_tomorrow_header">परसों</string>
     <string name="settings_today_show_upcoming_when_empty">जब आज खाली हो तो आगामी कार्य दिखाएं</string>
     <string name="settings_today_show_upcoming_when_empty_summary">\"आगामी कार्य दिखाएं\" बटन दिखाने के बजाय अपने आप कल और उसके अगले दिन के कार्यों की झलक (धुंधली) दिखाएं।</string>
+    <string name="countdown_in">%1$s में</string>
+    <string name="countdown_overdue_by">%1$s की देरी</string>
     <string name="settings_due_countdown">नियत तारीख काउंटडाउन</string>
     <string name="settings_due_countdown_desc">टास्क के कार्ड और विवरण स्क्रीन पर नियत तारीख/समय तक बचा समय दिखाएं।</string>
     <string name="settings_search_help_summary">फ़ीचर गाइड, वर्ज़न और ऐप जानकारी</string>

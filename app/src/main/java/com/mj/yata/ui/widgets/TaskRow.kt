@@ -329,11 +329,21 @@ fun TaskRow(
             // over "Overdue": a task that is both is waiting, not late — the start date is the
             // reason it hasn't been done, and showing red here would be blaming the user for it.
             val deferred = remember(task, today) { task.isDeferredOn(today.toString()) }
-            // Countdown reads the raw due date/time, not effectiveDue — a weekend/holiday
-            // reschedule shifts *when a task counts as overdue*, not the clock time the user typed.
+            // Counts down to effectiveDue, not the raw due date: when "observe non-working days"
+            // has pushed a weekend due date to Monday, the row must not call a task overdue that
+            // its own Overdue badge — computed off the same effectiveDue — says isn't yet.
+            // Keyed on AppClock.minute so it actually counts down; a plain remember(due, time)
+            // froze at whatever was true when the row first composed and never reached zero.
             val dueCountdown = if (dueCountdownEnabled && !task.done) {
-                remember(task.due, task.time) { TaskScheduleUtils.formatCountdown(task.due, task.time) }
+                val nowMinute = com.mj.yata.util.AppClock.minute
+                remember(effectiveDue, task.time, nowMinute) {
+                    TaskScheduleUtils.dueCountdown(effectiveDue, task.time, nowMinute)
+                }
             } else null
+            // Mirrors the if/else chain in the meta row below, whose earlier branches (completed,
+            // deferred) win over the Overdue badge — the standalone countdown keys off this so the
+            // two can't both claim the same overdue state.
+            val overdueBadgeShown = !(task.done && task.completedAt != null) && !deferred && overdue
             val healthBadges = remember(task, overdue, today, effectiveDue) {
                 buildList {
                     if (!task.done && effectiveDue == today.toString()) add("Due today")
@@ -394,7 +404,14 @@ fun TaskRow(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = stringResource(R.string.search_filter_overdue),
+                                // Carries the countdown when there is one ("Overdue by 3d")
+                                // rather than a bare "Overdue" beside a separate countdown chip
+                                // saying the same word twice — same badge, same space, more
+                                // information. Falls back to the plain label when the countdown
+                                // is switched off.
+                                text = dueCountdown?.takeIf { it.isOverdue }
+                                    ?.let { stringResource(R.string.countdown_overdue_by, it.span) }
+                                    ?: stringResource(R.string.search_filter_overdue),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.sp,
@@ -421,10 +438,18 @@ fun TaskRow(
                         )
                     }
 
-                    dueCountdown?.let { countdown ->
+                    // Skipped when the Overdue badge above is the thing rendering, since that
+                    // badge now carries the countdown itself. Note an overdue countdown can still
+                    // land here: the badge is date-only (`isBefore(today)`), so a task due today
+                    // at 09:00 read at 15:00 is past its time without the badge showing.
+                    dueCountdown?.takeIf { !overdueBadgeShown }?.let { countdown ->
                         Text(
-                            text = countdown,
-                            color = if (countdown.startsWith("Overdue")) {
+                            text = if (countdown.isOverdue) {
+                                stringResource(R.string.countdown_overdue_by, countdown.span)
+                            } else {
+                                stringResource(R.string.countdown_in, countdown.span)
+                            },
+                            color = if (countdown.isOverdue) {
                                 MaterialTheme.colorScheme.error
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant

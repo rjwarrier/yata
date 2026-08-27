@@ -915,6 +915,8 @@
     <string name="today_day_after_tomorrow_header">POJUTRZE</string>
     <string name="settings_today_show_upcoming_when_empty">Pokaż nadchodzące zadania, gdy Dziś jest puste</string>
     <string name="settings_today_show_upcoming_when_empty_summary">Automatycznie podglądaj zadania na jutro i pojutrze (przyciemnione) zamiast pokazywać przycisk „Pokaż nadchodzące zadania”.</string>
+    <string name="countdown_in">za %1$s</string>
+    <string name="countdown_overdue_by">Zaległe o %1$s</string>
     <string name="settings_due_countdown">Odliczanie do terminu</string>
     <string name="settings_due_countdown_desc">Pokazuj czas pozostały do terminu/godziny zadania na jego karcie i ekranie szczegółów.</string>
     <string name="settings_search_help_summary">Przewodnik po funkcjach, wersja i informacje o aplikacji</string>
