@@ -35,7 +35,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,16 +49,34 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.mj.yata.R
 import com.mj.yata.MainActivity
+import com.mj.yata.domain.model.Person
+import com.mj.yata.domain.model.Project
+import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
+import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activeLists
+import com.mj.yata.domain.model.activePeople
+import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.domain.repository.YataRepository
+import com.mj.yata.ui.sheets.initialsFor
+import com.mj.yata.ui.sheets.pickAccentFor
 import com.mj.yata.ui.theme.YataTheme
+import com.mj.yata.ui.widgets.MentionSuggestions
+import com.mj.yata.ui.widgets.TRIGGER_LIST
+import com.mj.yata.ui.widgets.TRIGGER_PERSON
+import com.mj.yata.ui.widgets.TRIGGER_PROJECT
+import com.mj.yata.ui.widgets.TRIGGER_TAG
 import com.mj.yata.ui.widgets.YataFieldShape
+import com.mj.yata.ui.widgets.consumeMentionToken
+import com.mj.yata.ui.widgets.detectMentionToken
 import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
@@ -102,10 +122,32 @@ class QuickAddDialogActivity : ComponentActivity() {
 
         setContent {
             YataTheme {
+                val lists by repository.getLists().collectAsState(initial = emptyList())
+                val projects by repository.getProjects().collectAsState(initial = emptyList())
+                val tags by repository.getTags().collectAsState(initial = emptyList())
+                val people by repository.getPeople().collectAsState(initial = emptyList())
+                val projectsEnabled by userPreferences.projectsFeatureEnabledFlow.collectAsState(initial = false)
+                val tagsEnabled by userPreferences.tagsFeatureEnabledFlow.collectAsState(initial = false)
+                val peopleEnabled by userPreferences.peopleFeatureEnabledFlow.collectAsState(initial = false)
+
                 var pendingDuplicate by remember { mutableStateOf<Task?>(null) }
                 var pendingTitle by remember { mutableStateOf("") }
+                var pendingProjectId by remember { mutableStateOf<String?>(null) }
+                var pendingListId by remember { mutableStateOf<String?>(null) }
+                var pendingTagIds by remember { mutableStateOf<List<String>>(emptyList()) }
+                var pendingAssigneeIds by remember { mutableStateOf<List<String>>(emptyList()) }
 
-                fun createTask(title: String) {
+                // explicitProjectId/explicitListId/explicitTagIds/explicitAssigneeIds come from the
+                // #/@/+/= mention picker (see QuickAddDialogContent) — an explicit choice, so it
+                // wins over whatever the NL parser would otherwise resolve from the remaining text
+                // or the widget's own preset target.
+                fun createTask(
+                    title: String,
+                    explicitProjectId: String?,
+                    explicitListId: String?,
+                    explicitTagIds: List<String>,
+                    explicitAssigneeIds: List<String>
+                ) {
                     lifecycleScope.launch {
                         val parsedTyped = NaturalLanguageParser.parse(title)
                         // Belt-and-suspenders re-check: the widget already drops a target once its
@@ -163,22 +205,32 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 peopleEnabled = peopleEnabled
                             )
                         } ?: typedResolution
-                        val hasDestination = finalResolution.listId != null ||
-                            finalResolution.projectId != null ||
+                        // An explicit #/@/+/= mention pick overrides whatever the NL parser or
+                        // widget preset would otherwise resolve — see createTask's doc comment.
+                        val resolvedProjectId = explicitProjectId ?: finalResolution.projectId
+                        val resolvedListId = when {
+                            explicitProjectId != null -> null
+                            explicitListId != null -> explicitListId
+                            else -> finalResolution.listId
+                        }
+                        val resolvedTagIds = (finalResolution.tagIds + explicitTagIds).distinct()
+                        val resolvedAssigneeIds = (finalResolution.assigneeIds + explicitAssigneeIds).distinct()
+                        val hasDestination = resolvedListId != null ||
+                            resolvedProjectId != null ||
                             presetList != null ||
                             presetProject != null
                         val due = parsedTyped.due
                             ?: parsedShared?.due
                             ?: finalResolution.projectDue
-                            ?: allProjects.find { it.id == finalResolution.projectId }?.due
+                            ?: allProjects.find { it.id == resolvedProjectId }?.due
                             ?: presetProject?.due
                             ?: if (hasDestination) LocalDate.now().toString() else null
                         repository.upsertTask(
                             Task(
                                 id = "t_" + UUID.randomUUID().toString(),
                                 title = parsedTyped.title.takeIf { it.isNotBlank() } ?: title,
-                                listId = finalResolution.listId,
-                                projectId = finalResolution.projectId,
+                                listId = resolvedListId,
+                                projectId = resolvedProjectId,
                                 section = "",
                                 // Destination-specific quick add stays Today-oriented. With no
                                 // preset or typed destination, this is capture-to-Inbox: no due
@@ -194,8 +246,8 @@ class QuickAddDialogActivity : ComponentActivity() {
                                 priority = parsedTyped.priority ?: "none",
                                 flag = parsedTyped.flag || (parsedShared?.flag == true),
                                 done = false,
-                                assigneeIds = finalResolution.assigneeIds,
-                                tagIds = finalResolution.tagIds,
+                                assigneeIds = resolvedAssigneeIds,
+                                tagIds = resolvedTagIds,
                                 recurrence = parsedTyped.recurrence ?: parsedShared?.recurrence,
                                 subtasks = emptyList(),
                                 notes = sharedNotes
@@ -203,7 +255,10 @@ class QuickAddDialogActivity : ComponentActivity() {
                         )
                         WidgetRefresher.refreshAll(this@QuickAddDialogActivity)
 
-                        val destination = presetProject?.name ?: presetList?.name
+                        val destination = allProjects.find { it.id == resolvedProjectId }?.name
+                            ?: allLists.find { it.id == resolvedListId }?.name
+                            ?: presetProject?.name
+                            ?: presetList?.name
                         val dueLabel = com.mj.yata.util.TaskScheduleUtils.formatDueDate(due)
                         android.widget.Toast.makeText(
                             this@QuickAddDialogActivity,
@@ -222,14 +277,35 @@ class QuickAddDialogActivity : ComponentActivity() {
                 QuickAddDialogContent(
                     targetName = targetName,
                     initialTitle = parsedShared?.title?.takeIf { it.isNotBlank() } ?: sharedFirstLine.orEmpty(),
-                    onSubmit = { title ->
+                    lists = lists,
+                    projects = projects,
+                    tags = tags,
+                    people = people,
+                    tagsEnabled = tagsEnabled,
+                    peopleEnabled = peopleEnabled,
+                    projectsEnabled = projectsEnabled,
+                    onCreateTag = { id, name, color ->
+                        lifecycleScope.launch { repository.upsertTag(Tag(id = id, name = name, color = color)) }
+                    },
+                    onCreatePerson = { id, name, color ->
+                        lifecycleScope.launch {
+                            repository.upsertPerson(
+                                Person(id = id, name = name, initials = initialsFor(name), color = color, isMe = false)
+                            )
+                        }
+                    },
+                    onSubmit = { title, projectId, listId, tagIds, assigneeIds ->
                         lifecycleScope.launch {
                             val duplicate = findSimilarTask(title, repository.getTasks().first())
                             if (duplicate != null) {
                                 pendingTitle = title
+                                pendingProjectId = projectId
+                                pendingListId = listId
+                                pendingTagIds = tagIds
+                                pendingAssigneeIds = assigneeIds
                                 pendingDuplicate = duplicate
                             } else {
-                                createTask(title)
+                                createTask(title, projectId, listId, tagIds, assigneeIds)
                             }
                         }
                     },
@@ -245,7 +321,7 @@ class QuickAddDialogActivity : ComponentActivity() {
                             TextButton(onClick = {
                                 val title = pendingTitle
                                 pendingDuplicate = null
-                                createTask(title)
+                                createTask(title, pendingProjectId, pendingListId, pendingTagIds, pendingAssigneeIds)
                             }) {
                                 Text(stringResource(R.string.action_ignore_and_create))
                             }
@@ -278,14 +354,50 @@ class QuickAddDialogActivity : ComponentActivity() {
 private fun QuickAddDialogContent(
     targetName: String?,
     initialTitle: String = "",
-    onSubmit: (String) -> Unit,
+    lists: List<YataList> = emptyList(),
+    projects: List<Project> = emptyList(),
+    tags: List<Tag> = emptyList(),
+    people: List<Person> = emptyList(),
+    tagsEnabled: Boolean = false,
+    peopleEnabled: Boolean = false,
+    projectsEnabled: Boolean = false,
+    onCreateTag: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
+    onCreatePerson: (id: String, name: String, color: String) -> Unit = { _, _, _ -> },
+    onSubmit: (title: String, projectId: String?, listId: String?, tagIds: List<String>, assigneeIds: List<String>) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var title by remember { mutableStateOf(initialTitle) }
-    val parsedPreview = remember(title) { NaturalLanguageParser.parse(title) }
+    var title by remember { mutableStateOf(TextFieldValue(initialTitle, TextRange(initialTitle.length))) }
+    // Mirrors NewTaskSheet's mention detection: same triggers, same feature gating (lists have no
+    // feature flag, so `=` needs none). Explicitly picking an entity here bypasses this dialog's
+    // usual NL-parse-on-submit path entirely for that field — see createTask's explicit* params.
+    val mention = remember(title, tagsEnabled, peopleEnabled, projectsEnabled) {
+        detectMentionToken(title.text, title.selection.end)?.takeIf {
+            when (it.trigger) {
+                TRIGGER_TAG -> tagsEnabled
+                TRIGGER_PERSON -> peopleEnabled
+                TRIGGER_PROJECT -> projectsEnabled
+                TRIGGER_LIST -> true
+                else -> false
+            }
+        }
+    }
+    var selectedProjectId by remember { mutableStateOf<String?>(null) }
+    var selectedListId by remember { mutableStateOf<String?>(null) }
+    val selectedTagIds = remember { mutableStateListOf<String>() }
+    val selectedAssigneeIds = remember { mutableStateListOf<String>() }
+    val activePeople = remember(people, selectedAssigneeIds.toList()) {
+        people.activePeople(includeIds = selectedAssigneeIds.toSet())
+    }
+    // An explicit mention pick overrides the preset widget target in this preview line, matching
+    // what createTask actually resolves — otherwise picking a different project here would leave
+    // the header still claiming "Adding to <old target>".
+    val effectiveDestinationName = selectedProjectId?.let { id -> projects.activeProjects().find { it.id == id }?.name }
+        ?: selectedListId?.let { id -> lists.activeLists().find { it.id == id }?.name }
+        ?: targetName
+    val parsedPreview = remember(title.text) { NaturalLanguageParser.parse(title.text) }
     val previewItems = listOfNotNull(
         parsedPreview.title
-            .takeIf { it.isNotBlank() && it != title.trim() }
+            .takeIf { it.isNotBlank() && it != title.text.trim() }
             ?.let { stringResource(R.string.quick_add_preview_title, it) },
         parsedPreview.due?.let { stringResource(R.string.quick_add_preview_due, TaskScheduleUtils.formatDueDate(it)) },
         parsedPreview.time?.let { stringResource(R.string.quick_add_preview_time, it) },
@@ -297,7 +409,7 @@ private fun QuickAddDialogContent(
         },
         parsedPreview.priority?.let { stringResource(R.string.quick_add_preview_priority, it.uppercase()) },
         stringResource(R.string.quick_add_preview_flagged).takeIf { parsedPreview.flag },
-        targetName?.let { stringResource(R.string.quick_add_preview_target, it) }
+        effectiveDestinationName?.let { stringResource(R.string.quick_add_preview_target, it) }
     )
     val focusRequester = remember { FocusRequester() }
     val noRipple = remember { MutableInteractionSource() }
@@ -312,7 +424,8 @@ private fun QuickAddDialogContent(
                 .filter { it.isNotBlank() }
                 .maxByOrNull { it.length }
             if (!spoken.isNullOrBlank()) {
-                title = if (title.isBlank()) spoken else title.trimEnd() + " " + spoken
+                val newText = if (title.text.isBlank()) spoken else title.text.trimEnd() + " " + spoken
+                title = TextFieldValue(newText, TextRange(newText.length))
             }
         }
     }
@@ -372,10 +485,15 @@ private fun QuickAddDialogContent(
             tonalElevation = 6.dp
         ) {
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                fun submit() {
+                    if (title.text.isNotBlank()) {
+                        onSubmit(title.text.trim(), selectedProjectId, selectedListId, selectedTagIds.toList(), selectedAssigneeIds.toList())
+                    }
+                }
                 Text(stringResource(R.string.quick_add_dialog_quick_add), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                if (targetName != null) {
+                if (effectiveDestinationName != null) {
                     Text(
-                        text = stringResource(R.string.quick_add_adding_to, targetName),
+                        text = stringResource(R.string.quick_add_adding_to, effectiveDestinationName),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -389,9 +507,7 @@ private fun QuickAddDialogContent(
                     // behaves as before and never inserts a newline.
                     maxLines = 4,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = { if (title.isNotBlank()) onSubmit(title.trim()) }
-                    ),
+                    keyboardActions = KeyboardActions(onDone = { submit() }),
                     trailingIcon = {
                         IconButton(onClick = startVoiceInput) {
                             Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.cd_add_task_by_voice))
@@ -403,6 +519,47 @@ private fun QuickAddDialogContent(
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
                 )
+                if (mention != null) {
+                    MentionSuggestions(
+                        mention = mention,
+                        tags = tags,
+                        people = activePeople,
+                        onSelectTag = { tag ->
+                            if (tag.id !in selectedTagIds) selectedTagIds.add(tag.id)
+                            title = consumeMentionToken(title, mention)
+                        },
+                        onSelectPerson = { person ->
+                            if (person.id !in selectedAssigneeIds) selectedAssigneeIds.add(person.id)
+                            title = consumeMentionToken(title, mention)
+                        },
+                        onCreateTag = { name ->
+                            val id = "tag_" + UUID.randomUUID().toString()
+                            onCreateTag(id, name, pickAccentFor(name))
+                            selectedTagIds.add(id)
+                            title = consumeMentionToken(title, mention)
+                        },
+                        onCreatePerson = { name ->
+                            val id = "p_" + UUID.randomUUID().toString()
+                            onCreatePerson(id, name, pickAccentFor(name))
+                            selectedAssigneeIds.add(id)
+                            title = consumeMentionToken(title, mention)
+                        },
+                        projects = projects,
+                        lists = lists,
+                        onSelectProject = { project ->
+                            // A task belongs to a project or a list, never both — same rule
+                            // NewTaskSheet's mention picker and its chip row enforce.
+                            selectedProjectId = project.id
+                            selectedListId = null
+                            title = consumeMentionToken(title, mention)
+                        },
+                        onSelectList = { list ->
+                            selectedListId = list.id
+                            selectedProjectId = null
+                            title = consumeMentionToken(title, mention)
+                        }
+                    )
+                }
                 if (previewItems.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
@@ -434,8 +591,8 @@ private fun QuickAddDialogContent(
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { if (title.isNotBlank()) onSubmit(title.trim()) },
-                        enabled = title.isNotBlank()
+                        onClick = { submit() },
+                        enabled = title.text.isNotBlank()
                     ) {
                         Text(stringResource(R.string.action_add))
                     }

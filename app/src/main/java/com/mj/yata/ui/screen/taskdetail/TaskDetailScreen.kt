@@ -57,6 +57,7 @@ import com.mj.yata.domain.model.SubtaskCompletionAction
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activeLists
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.domain.model.effectiveDue
@@ -80,6 +81,16 @@ import com.mj.yata.util.TaskScheduleUtils
 import com.mj.yata.util.findBestEntityMatch
 import com.mj.yata.util.withParsedQuickAdd
 import java.util.UUID
+
+/** One smart-add preview chip. [matched] is false for a project/list/tag/person mention that was
+ * typed but didn't resolve to an existing entity — see the smart-add chip row below for why that
+ * needs its own visual state instead of looking identical to a successful match. */
+private data class DetectedQuickAddChip(
+    val label: String,
+    val onClick: () -> Unit,
+    val onDismiss: () -> Unit,
+    val matched: Boolean = true
+)
 
 /** Equal-width rectangular (not pill-shaped) toggle for the Subtasks/Notes/Comments chip row —
  * highlighted while its section is visible, plain otherwise. While collapsed, [count] (if
@@ -691,65 +702,99 @@ fun TaskDetailScreen(
 
                     if (quickAddMatched) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        val detectedItems = listOfNotNull<Triple<String, () -> Unit, () -> Unit>>(
+                        // Resolved once here so the chip shows what actually matched rather than
+                        // the raw typed text — see DetectedQuickAddChip.
+                        val projectMatch = quickAdd.projectName?.let { name ->
+                            findBestEntityMatch(name, projects.activeProjects(), { it.name })
+                        }
+                        val listMatch = quickAdd.listName?.let { name ->
+                            findBestEntityMatch(name, lists.activeLists(), { it.name })
+                        }
+                        val matchedTagCount = quickAdd.tagNames.count { name ->
+                            findBestEntityMatch(name, tags, { tag -> tag.name }) != null
+                        }
+                        val matchedAssigneeCount = quickAdd.assigneeNames.count { name ->
+                            findBestEntityMatch(name, people.activePeople(includeIds = task.assigneeIds.toSet()), { person -> person.name }) != null
+                        }
+                        val detectedItems = listOfNotNull<DetectedQuickAddChip>(
                             quickAdd.due?.takeIf { "due" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple("Due ${TaskScheduleUtils.formatDueDate(it)}", { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                DetectedQuickAddChip("Due ${TaskScheduleUtils.formatDueDate(it)}", { activeSheet = DetailSheetType.ScheduleEditor }, {
                                     restoreSmartField("due") { current, baseline -> current.copy(due = baseline?.due) }
                                 })
                             },
                             quickAdd.startDate?.takeIf { "start" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple(stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)), { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                DetectedQuickAddChip(stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)), { activeSheet = DetailSheetType.ScheduleEditor }, {
                                     restoreSmartField("start") { current, baseline -> current.copy(startDate = baseline?.startDate) }
                                 })
                             },
                             quickAdd.time?.takeIf { "time" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple("Time $it", { activeSheet = DetailSheetType.ScheduleEditor }, {
+                                DetectedQuickAddChip("Time $it", { activeSheet = DetailSheetType.ScheduleEditor }, {
                                     restoreSmartField("time") { current, baseline -> current.copy(time = baseline?.time) }
                                 })
                             },
                             quickAdd.recurrence?.takeIf { "recurrence" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)}", { activeSheet = DetailSheetType.RecurrenceBuilder }, {
+                                DetectedQuickAddChip("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)}", { activeSheet = DetailSheetType.RecurrenceBuilder }, {
                                     restoreSmartField("recurrence") { current, baseline -> current.copy(recurrence = baseline?.recurrence) }
                                 })
                             },
                             quickAdd.reminder?.takeIf { "reminder" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple("Remind $it", { activeSheet = DetailSheetType.ReminderPicker }, {
+                                DetectedQuickAddChip("Remind $it", { activeSheet = DetailSheetType.ReminderPicker }, {
                                     restoreSmartField("reminder") { current, baseline -> current.copy(reminder = baseline?.reminder) }
                                 })
                             },
                             quickAdd.priority?.takeIf { "priority" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple("${it.uppercase()} priority", { }, {
+                                DetectedQuickAddChip("${it.uppercase()} priority", { }, {
                                     restoreSmartField("priority") { current, baseline -> current.copy(priority = baseline?.priority ?: "none") }
                                 })
                             },
                             "Flagged".takeIf { quickAdd.flag && "flag" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple(it, { viewModel.toggleTaskFlag(task.id) }, {
+                                DetectedQuickAddChip(it, { viewModel.toggleTaskFlag(task.id) }, {
                                     restoreSmartField("flag") { current, baseline -> current.copy(flag = baseline?.flag ?: false) }
                                 })
                             },
-                            quickAdd.projectName?.takeIf { projectsFeatureEnabled && "project" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple("Project $it", { activeSheet = DetailSheetType.ProjectPicker }, {
-                                    restoreSmartField("project") { current, baseline ->
-                                        current.copy(projectId = baseline?.projectId, listId = baseline?.listId, due = baseline?.due)
-                                    }
-                                })
+                            quickAdd.projectName?.takeIf { projectsFeatureEnabled && "project" !in effectiveIgnoredTitleQuickAddFields }?.let { typed ->
+                                DetectedQuickAddChip(
+                                    label = "Project ${projectMatch?.name ?: typed}",
+                                    onClick = { activeSheet = DetailSheetType.ProjectPicker },
+                                    onDismiss = {
+                                        restoreSmartField("project") { current, baseline ->
+                                            current.copy(projectId = baseline?.projectId, listId = baseline?.listId, due = baseline?.due)
+                                        }
+                                    },
+                                    matched = projectMatch != null
+                                )
                             },
-                            quickAdd.listName?.takeIf { "list" !in effectiveIgnoredTitleQuickAddFields }?.let {
-                                Triple("List $it", { activeSheet = DetailSheetType.ListPicker }, {
-                                    restoreSmartField("list") { current, baseline ->
-                                        current.copy(listId = baseline?.listId, projectId = baseline?.projectId)
-                                    }
-                                })
+                            quickAdd.listName?.takeIf { "list" !in effectiveIgnoredTitleQuickAddFields }?.let { typed ->
+                                DetectedQuickAddChip(
+                                    label = "List ${listMatch?.name ?: typed}",
+                                    onClick = { activeSheet = DetailSheetType.ListPicker },
+                                    onDismiss = {
+                                        restoreSmartField("list") { current, baseline ->
+                                            current.copy(listId = baseline?.listId, projectId = baseline?.projectId)
+                                        }
+                                    },
+                                    matched = listMatch != null
+                                )
                             },
                             quickAdd.tagNames.takeIf { tagsFeatureEnabled && it.isNotEmpty() && "tags" !in effectiveIgnoredTitleQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
-                                Triple("Tags $it", { activeSheet = DetailSheetType.TagPicker }, {
-                                    restoreSmartField("tags") { current, baseline -> current.copy(tagIds = baseline?.tagIds ?: current.tagIds) }
-                                })
+                                DetectedQuickAddChip(
+                                    label = "Tags $it",
+                                    onClick = { activeSheet = DetailSheetType.TagPicker },
+                                    onDismiss = {
+                                        restoreSmartField("tags") { current, baseline -> current.copy(tagIds = baseline?.tagIds ?: current.tagIds) }
+                                    },
+                                    matched = matchedTagCount > 0
+                                )
                             },
                             quickAdd.assigneeNames.takeIf { peopleFeatureEnabled && it.isNotEmpty() && "people" !in effectiveIgnoredTitleQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
-                                Triple("People $it", { activeSheet = DetailSheetType.AssigneePicker }, {
-                                    restoreSmartField("people") { current, baseline -> current.copy(assigneeIds = baseline?.assigneeIds ?: current.assigneeIds) }
-                                })
+                                DetectedQuickAddChip(
+                                    label = "People $it",
+                                    onClick = { activeSheet = DetailSheetType.AssigneePicker },
+                                    onDismiss = {
+                                        restoreSmartField("people") { current, baseline -> current.copy(assigneeIds = baseline?.assigneeIds ?: current.assigneeIds) }
+                                    },
+                                    matched = matchedAssigneeCount > 0
+                                )
                             }
                         )
                         if (detectedItems.isNotEmpty()) {
@@ -796,27 +841,49 @@ fun TaskDetailScreen(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    detectedItems.forEach { (item, onItemClick, onDismissItem) ->
+                                    detectedItems.forEach { chip ->
                                         InputChip(
                                             selected = true,
-                                            onClick = onItemClick,
-                                            label = { Text(item) },
-                                            colors = InputChipDefaults.inputChipColors(
-                                                selectedContainerColor = MaterialTheme.colorScheme.surface,
-                                                selectedLabelColor = MaterialTheme.colorScheme.onSurface,
-                                            selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                        ),
-                                        trailingIcon = {
-                                            Icon(
-                                                Icons.Default.Close,
-                                                contentDescription = stringResource(R.string.new_task_ignore_field, item),
-                                                modifier = Modifier
-                                                    .size(16.dp)
-                                                    .clickable { onDismissItem() }
-                                            )
-                                        }
-                                    )
-                                }
+                                            onClick = chip.onClick,
+                                            label = { Text(chip.label) },
+                                            // An unmatched project/list/tag/person mention tints
+                                            // error instead, so a typo that silently attached
+                                            // nothing looks different from a chip that worked —
+                                            // see DetectedQuickAddChip.
+                                            colors = if (chip.matched) {
+                                                InputChipDefaults.inputChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.surface,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            } else {
+                                                InputChipDefaults.inputChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
+                                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onErrorContainer
+                                                )
+                                            },
+                                            leadingIcon = if (!chip.matched) {
+                                                {
+                                                    Icon(
+                                                        Icons.Default.ErrorOutline,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            } else null,
+                                            trailingIcon = {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = stringResource(R.string.new_task_ignore_field, chip.label),
+                                                    modifier = Modifier
+                                                        .size(16.dp)
+                                                        .clickable { chip.onDismiss() }
+                                                )
+                                            }
+                                        )
+                                    }
                             }
                         }
                     }
