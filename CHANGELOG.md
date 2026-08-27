@@ -47,6 +47,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 - New Task's natural-language project/list matching now excludes archived projects/lists, matching
   the behavior the `+`/`=` mention autocomplete and quick-add's own resolver already had.
 
+### Fixed
+- Typing `project <name>`/`list <name>`/`assign to <name>` immediately followed by a date word
+  from a language the entity parser's own keyword list didn't cover (e.g. German "morgen") made
+  the project/list/assignee vanish from detection entirely rather than just mis-capturing it — the
+  date word was still recognized and claimed correctly, but the entity's capture had no boundary
+  keyword to stop at, ran into that claim, and was discarded outright. It now truncates to the
+  claim instead of giving up.
+
 ## [0.94.2] - 2026-08-23
 
 `versionCode 23`. Upgrades in place over 0.94.

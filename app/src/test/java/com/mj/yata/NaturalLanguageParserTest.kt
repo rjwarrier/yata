@@ -1511,4 +1511,31 @@ class NaturalLanguageParserTest {
             }
         }
     }
+
+    @Test
+    fun entityCaptureIsNotSwallowedByADateWordFromAnUnlistedLanguage() {
+        // ENTITY_BOUNDARY_KEYWORDS only lists EN/ES/PT/FR date/time vocabulary, so a project/list/
+        // assignee name followed directly by a date word in another NaturalLanguageLexicon
+        // language (German "morgen", Indonesian "besok") had no boundary keyword to stop the
+        // lazy capture at - the regex swallowed the whole rest of the string including that
+        // word's own already-claimed range, so the *entire* match failed isFree and the entity
+        // silently vanished (not merely mis-captured). The fix salvages by truncating the
+        // captured value right before the claim it ran into.
+        val german = NaturalLanguageParser.parse("project Work morgen", ref)
+        assertEquals("Work", german.projectName)
+        assertEquals("2026-07-05", german.due)
+        // Both the "project Work" mention and "morgen" are correctly claimed (visible via
+        // highlightRanges), leaving nothing for the title — cleanNaturalLanguageTitle's
+        // documented fallback for that case is the original text, not a blank title.
+        assertEquals("project Work morgen", german.title)
+        assertEquals(listOf(0..11, 13..18), german.highlightRanges)
+
+        val indonesian = NaturalLanguageParser.parse("list Groceries besok", ref)
+        assertEquals("Groceries", indonesian.listName)
+        assertEquals("2026-07-05", indonesian.due)
+
+        val assignee = NaturalLanguageParser.parse("assign to Jane Doe morgen", ref)
+        assertEquals(listOf("Jane Doe"), assignee.assigneeNames)
+        assertEquals("2026-07-05", assignee.due)
+    }
 }

@@ -33,6 +33,8 @@ internal class ParserContext(
 
     fun firstFreeMatch(regex: Regex): MatchResult? = claims.firstFreeMatch(regex, raw)
 
+    fun firstObstacleFrom(from: Int): Int? = claims.firstObstacleFrom(from)
+
     fun firstFreeWord(word: String, wordRegex: (String) -> Regex): MatchResult? =
         firstFreeMatch(wordRegex(word))
 

@@ -55,30 +55,30 @@ internal object EntityRules {
 
     fun apply(context: ParserContext): EntityParseResult {
         var projectName: String? = null
-        context.firstFreeMatch(projectEntityRegex)?.let { match ->
-            projectName = entityValue(match.groupValues[1])
-            context.claimProject(match.range)
+        firstResolvableMatch(context, projectEntityRegex)?.let { (range, rawValue) ->
+            projectName = entityValue(rawValue)
+            context.claimProject(range)
         }
 
         var listName: String? = null
-        context.firstFreeMatch(listEntityRegex)?.let { match ->
-            listName = entityValue(match.groupValues[1])
-            context.claimList(match.range)
+        firstResolvableMatch(context, listEntityRegex)?.let { (range, rawValue) ->
+            listName = entityValue(rawValue)
+            context.claimList(range)
         }
 
         val tagNames = mutableListOf<String>()
         for (match in tagEntityRegex.findAll(context.raw)) {
-            if (context.isFree(match.range)) {
-                tagNames.add(entityValue(match.groupValues[1]))
-                context.claimTag(match.range)
+            resolveMatch(context, match)?.let { (range, rawValue) ->
+                tagNames.add(entityValue(rawValue))
+                context.claimTag(range)
             }
         }
 
         val assigneeNames = mutableListOf<String>()
         for (match in assigneeEntityRegex.findAll(context.raw)) {
-            if (context.isFree(match.range)) {
-                assigneeNames.add(entityValue(match.groupValues[1]))
-                context.claimAssignee(match.range)
+            resolveMatch(context, match)?.let { (range, rawValue) ->
+                assigneeNames.add(entityValue(rawValue))
+                context.claimAssignee(range)
             }
         }
 
@@ -88,6 +88,40 @@ internal object EntityRules {
             tagNames = tagNames,
             assigneeNames = assigneeNames
         )
+    }
+
+    /** First regex match [resolveMatch] can actually use — same "first that works" shape as
+     * [ParserContext.firstFreeMatch], but per-candidate rather than requiring the whole match to
+     * already be free. Used for project/list, which take at most one match each. */
+    private fun firstResolvableMatch(context: ParserContext, regex: Regex, groupIndex: Int = 1): Pair<IntRange, String>? {
+        for (match in regex.findAll(context.raw)) {
+            resolveMatch(context, match, groupIndex)?.let { return it }
+        }
+        return null
+    }
+
+    /**
+     * Accepts [match] as-is when its full range is already free — identical to the plain
+     * `isFree` check every entity match used before this existed, so nothing that already passed
+     * changes. Otherwise, salvages a captured value that ran past `ENTITY_BOUNDARY_KEYWORDS`
+     * straight into an already-claimed range: this happens for a date/time word (or similar)
+     * that some *other* rule recognizes and claims but that isn't in this file's own hand-listed
+     * boundary keywords — most often because that word belongs to a language
+     * `NaturalLanguageLexicon` supports but this regex's EN/ES/PT/FR keyword list doesn't (e.g.
+     * German "morgen"/"tomorrow" in "project Work morgen"). Rather than duplicate every
+     * language's date vocabulary here too, the captured value is truncated to end right before
+     * the claim it ran into, and re-checked for freeness. Returns null if there's truly nothing
+     * usable (e.g. the value's own text is itself entirely claimed).
+     */
+    private fun resolveMatch(context: ParserContext, match: MatchResult, groupIndex: Int = 1): Pair<IntRange, String>? {
+        if (context.isFree(match.range)) return match.range to match.groupValues[groupIndex]
+        val group = match.groups[groupIndex] ?: return null
+        val obstacle = context.firstObstacleFrom(group.range.first) ?: return null
+        if (obstacle > group.range.last || obstacle <= group.range.first) return null
+        val truncatedValue = context.raw.substring(group.range.first, obstacle).trimEnd()
+        if (truncatedValue.isBlank()) return null
+        val truncatedRange = match.range.first..(group.range.first + truncatedValue.length - 1)
+        return if (context.isFree(truncatedRange)) truncatedRange to truncatedValue else null
     }
 
     private fun entityValue(rawValue: String): String =
