@@ -109,6 +109,29 @@ internal fun quickAddFieldsOwnedByMention(mention: MentionToken?): Set<String> =
         else -> emptySet()
     }
 
+/**
+ * Ranks mention candidates by how well they match the typed query: exact match first, then
+ * name-starts-with-query, then contains-elsewhere, alphabetical within each group. Plain
+ * alphabetical sorting let an early unrelated contains-match push a strong prefix match (typing
+ * "w" for "Work") out of the take(5) cutoff before the user finished typing it.
+ */
+internal fun <T> rankedMentionMatches(query: String, candidates: List<T>, nameOf: (T) -> String): List<T> {
+    val q = query.trim().lowercase()
+    if (q.isEmpty()) return candidates.sortedBy { nameOf(it).lowercase() }
+    return candidates
+        .filter { nameOf(it).contains(q, ignoreCase = true) }
+        .sortedWith(
+            compareBy<T> { candidate ->
+                val name = nameOf(candidate).lowercase()
+                when {
+                    name == q -> 0
+                    name.startsWith(q) -> 1
+                    else -> 2
+                }
+            }.thenBy { nameOf(it).lowercase() }
+        )
+}
+
 @Composable
 internal fun MentionSuggestions(
     mention: MentionToken,
@@ -139,9 +162,7 @@ internal fun MentionSuggestions(
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
             if (mention.trigger == TRIGGER_PROJECT) {
-                val matches = projects.activeProjects()
-                    .filter { it.name.contains(query, ignoreCase = true) }
-                    .sortedBy { it.name.lowercase() }
+                val matches = rankedMentionMatches(query, projects.activeProjects(), { it.name })
                 if (matches.isEmpty() && query.isBlank()) {
                     MentionPanelHint("Type to search projects")
                 }
@@ -168,9 +189,7 @@ internal fun MentionSuggestions(
                     MentionPanelHint("No project matches \"$query\"")
                 }
             } else if (mention.trigger == TRIGGER_LIST) {
-                val matches = lists.activeLists()
-                    .filter { it.name.contains(query, ignoreCase = true) }
-                    .sortedBy { it.name.lowercase() }
+                val matches = rankedMentionMatches(query, lists.activeLists(), { it.name })
                 if (matches.isEmpty() && query.isBlank()) {
                     MentionPanelHint("Type to search lists")
                 }
@@ -193,7 +212,7 @@ internal fun MentionSuggestions(
                     MentionPanelHint("No list matches \"$query\"")
                 }
             } else if (mention.trigger == TRIGGER_TAG) {
-                val matches = tags.filter { it.name.contains(query, ignoreCase = true) }.sortedBy { it.name.lowercase() }
+                val matches = rankedMentionMatches(query, tags, { it.name })
                 if (matches.isEmpty() && query.isBlank()) {
                     MentionPanelHint(stringResource(R.string.mention_hint_tag))
                 }
@@ -214,7 +233,7 @@ internal fun MentionSuggestions(
                     )
                 }
             } else {
-                val matches = people.filter { it.name.contains(query, ignoreCase = true) }.sortedBy { it.name.lowercase() }
+                val matches = rankedMentionMatches(query, people, { it.name })
                 if (matches.isEmpty() && query.isBlank()) {
                     MentionPanelHint(stringResource(R.string.mention_hint_person))
                 }

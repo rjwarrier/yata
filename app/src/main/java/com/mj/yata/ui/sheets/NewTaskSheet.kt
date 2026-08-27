@@ -38,6 +38,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
@@ -45,6 +50,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Folder
@@ -126,6 +132,7 @@ import com.mj.yata.domain.model.Subtask
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.domain.model.Task
 import com.mj.yata.domain.model.YataList
+import com.mj.yata.domain.model.activeLists
 import com.mj.yata.domain.model.activePeople
 import com.mj.yata.domain.model.activeProjects
 import com.mj.yata.ui.theme.LocalYataAccents
@@ -135,6 +142,7 @@ import com.mj.yata.ui.widgets.SegmentedControl
 import com.mj.yata.ui.widgets.consumeMentionToken
 import com.mj.yata.ui.widgets.detectMentionToken
 import com.mj.yata.ui.widgets.quickAddFieldsOwnedByMention
+import com.mj.yata.ui.widgets.rankedMentionMatches
 import com.mj.yata.ui.widgets.rememberQuickAddHighlightTransformation
 import com.mj.yata.ui.widgets.TRIGGER_LIST
 import com.mj.yata.ui.widgets.TRIGGER_PERSON
@@ -204,6 +212,16 @@ data class PendingSharedStructure(
 }
 
 data class ResolvedSharedTask(val draft: NewTaskDraft, val pending: PendingSharedStructure)
+
+/** One smart-add preview chip. [matched] is false for a project/list/tag/person mention that was
+ * typed but didn't resolve to an existing entity — see the smart-add chip row below for why that
+ * needs its own visual state instead of looking identical to a successful match. */
+private data class DetectedQuickAddChip(
+    val label: String,
+    val onClick: () -> Unit,
+    val onDismiss: () -> Unit,
+    val matched: Boolean = true
+)
 
 /**
  * Matches a [com.mj.yata.util.export.SharedTaskDraft] against locally-known lists/projects/tags
@@ -610,10 +628,10 @@ fun NewTaskSheet(
             if ("flag" !in effectiveIgnoredQuickAddFields && quickAdd.flag) selectedFlag = true
 
             if ("project" !in effectiveIgnoredQuickAddFields && selectedProjectId == null && quickAdd.projectName != null) {
-                findBestEntityMatch(quickAdd.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
+                findBestEntityMatch(quickAdd.projectName, projects.activeProjects(), { it.name })?.let { selectedProjectId = it.id }
             }
             if ("list" !in effectiveIgnoredQuickAddFields && selectedListId == null && quickAdd.listName != null) {
-                findBestEntityMatch(quickAdd.listName, lists, { it.name })?.let { selectedListId = it.id }
+                findBestEntityMatch(quickAdd.listName, lists.activeLists(), { it.name })?.let { selectedListId = it.id }
             }
             if ("tags" !in effectiveIgnoredQuickAddFields && quickAdd.tagNames.isNotEmpty()) {
                 val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
@@ -673,10 +691,10 @@ fun NewTaskSheet(
         if (parsed.priority != null) { selectedPriority = parsed.priority; priorityManuallySet = true }
         if (parsed.flag) selectedFlag = true
         if (projectsEnabled && parsed.projectName != null) {
-            findBestEntityMatch(parsed.projectName, projects, { it.name })?.let { selectedProjectId = it.id }
+            findBestEntityMatch(parsed.projectName, projects.activeProjects(), { it.name })?.let { selectedProjectId = it.id }
         }
         if (parsed.listName != null) {
-            findBestEntityMatch(parsed.listName, lists, { it.name })?.let { selectedListId = it.id }
+            findBestEntityMatch(parsed.listName, lists.activeLists(), { it.name })?.let { selectedListId = it.id }
         }
         if (tagsEnabled && parsed.tagNames.isNotEmpty()) {
             val matchedTagIds = parsed.tagNames.mapNotNull { target ->
@@ -917,6 +935,52 @@ fun NewTaskSheet(
                 enabled = quickAddMatched
             )
 
+            // Accepts the top-ranked suggestion for whatever mention is currently under the
+            // cursor (same ranking MentionSuggestions renders), so a hardware/attached keyboard
+            // can commit a mention via Tab without the hand leaving the keys to tap the dropdown
+            // row. False (and a no-op) when there's no active mention or nothing matches, so the
+            // caller can decide whether to consume the key event or let it fall through as usual.
+            fun acceptTopMentionMatch(): Boolean {
+                val activeMention = mention ?: return false
+                return when (activeMention.trigger) {
+                    TRIGGER_TAG -> {
+                        val match = rankedMentionMatches(activeMention.query, tags, { it.name }).firstOrNull()
+                        if (match != null) {
+                            if (match.id !in selectedTagIds) selectedTagIds.add(match.id)
+                            title = consumeMentionToken(title, activeMention)
+                            true
+                        } else false
+                    }
+                    TRIGGER_PERSON -> {
+                        val match = rankedMentionMatches(activeMention.query, activePeople, { it.name }).firstOrNull()
+                        if (match != null) {
+                            if (match.id !in selectedAssigneeIds) selectedAssigneeIds.add(match.id)
+                            title = consumeMentionToken(title, activeMention)
+                            true
+                        } else false
+                    }
+                    TRIGGER_PROJECT -> {
+                        val match = rankedMentionMatches(activeMention.query, projects.activeProjects(), { it.name }).firstOrNull()
+                        if (match != null) {
+                            selectedProjectId = match.id
+                            selectedListId = null
+                            title = consumeMentionToken(title, activeMention)
+                            true
+                        } else false
+                    }
+                    TRIGGER_LIST -> {
+                        val match = rankedMentionMatches(activeMention.query, lists.activeLists(), { it.name }).firstOrNull()
+                        if (match != null) {
+                            selectedListId = match.id
+                            selectedProjectId = null
+                            title = consumeMentionToken(title, activeMention)
+                            true
+                        } else false
+                    }
+                    else -> false
+                }
+            }
+
             // The title is the one field that must be obvious the instant the sheet opens, and a
             // 2dp underline didn't carry that — it read as the least emphasised control on a
             // screen full of filled chips. It's now a tonal container in the Expressive idiom,
@@ -988,6 +1052,16 @@ fun NewTaskSheet(
                         .weight(1f)
                         .focusRequester(focusRequester)
                         .onFocusChanged { titleFocused = it.isFocused }
+                        // Tab commits the top mention match instead of shifting focus off the
+                        // field — only intercepted while a mention is actually in progress, so
+                        // Tab still behaves normally (moving focus) the rest of the time.
+                        .onPreviewKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown && event.key == Key.Tab && mention != null) {
+                                acceptTopMentionMatch()
+                            } else {
+                                false
+                            }
+                        }
                         .padding(vertical = 14.dp)
                         .testTag("new_task_title_input"),
                     decorationBox = { inner ->
@@ -1110,15 +1184,32 @@ fun NewTaskSheet(
                     )
                 }
             } else if (quickAddMatched) {
-                val detectedItems = listOfNotNull<Triple<String, () -> Unit, () -> Unit>>(
+                // Resolved once here (not just for the dismiss handlers) so the chip can show what
+                // actually matched instead of the raw typed text — a mistyped "+wrk" and a matched
+                // "+work" used to render an identical "Project wrk" chip either way, so there was no
+                // visible difference between a successful attach and a silent no-op.
+                val projectMatch = quickAdd.projectName?.let { name ->
+                    findBestEntityMatch(name, projects.activeProjects(), { it.name })
+                }
+                val listMatch = quickAdd.listName?.let { name ->
+                    findBestEntityMatch(name, lists.activeLists(), { it.name })
+                }
+                val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
+                    findBestEntityMatch(target, tags, { tag -> tag.name })?.id
+                }.toSet()
+                val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
+                    findBestEntityMatch(target, activePeople, { person -> person.name })?.id
+                }.toSet()
+
+                val detectedItems = listOfNotNull<DetectedQuickAddChip>(
                     quickAdd.due?.takeIf { "due" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple("Due ${TaskScheduleUtils.formatDueDate(it)}", { activePanel = "DueDate" }, {
+                        DetectedQuickAddChip("Due ${TaskScheduleUtils.formatDueDate(it)}", { activePanel = "DueDate" }, {
                             setDueDate(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "due"
                         })
                     },
                     quickAdd.startDate?.takeIf { "start" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple(
+                        DetectedQuickAddChip(
                             stringResource(R.string.smart_add_starts, TaskScheduleUtils.formatDueDate(it)),
                             { activePanel = "StartDate" },
                             {
@@ -1128,13 +1219,13 @@ fun NewTaskSheet(
                         )
                     },
                     quickAdd.time?.takeIf { "time" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple("Time $it", { activePanel = "Time" }, {
+                        DetectedQuickAddChip("Time $it", { activePanel = "Time" }, {
                             setTime(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "time"
                         })
                     },
                     quickAdd.recurrence?.takeIf { "recurrence" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)}", {
+                        DetectedQuickAddChip("Repeat ${com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays)}", {
                             activePanel = null
                             showRecurrenceSheet = true
                         }, {
@@ -1143,52 +1234,66 @@ fun NewTaskSheet(
                         })
                     },
                     quickAdd.reminder?.takeIf { "reminder" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple("Remind $it", { activePanel = "Reminder" }, {
+                        DetectedQuickAddChip("Remind $it", { activePanel = "Reminder" }, {
                             setReminder(null)
                             ignoredQuickAddFields = ignoredQuickAddFields + "reminder"
                         })
                     },
                     quickAdd.priority?.takeIf { "priority" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple("${it.uppercase()} priority", { activePanel = "Priority" }, {
+                        DetectedQuickAddChip("${it.uppercase()} priority", { activePanel = "Priority" }, {
                             setPriority("none")
                             ignoredQuickAddFields = ignoredQuickAddFields + "priority"
                         })
                     },
                     "Flagged".takeIf { quickAdd.flag && "flag" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple(it, { selectedFlag = !selectedFlag }, {
+                        DetectedQuickAddChip(it, { selectedFlag = !selectedFlag }, {
                             selectedFlag = false
                             ignoredQuickAddFields = ignoredQuickAddFields + "flag"
                         })
                     },
-                    quickAdd.projectName?.takeIf { "project" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple("Project $it", { activePanel = "Project" }, {
-                            selectedProjectId = null
-                            ignoredQuickAddFields = ignoredQuickAddFields + "project"
-                        })
+                    quickAdd.projectName?.takeIf { "project" !in effectiveIgnoredQuickAddFields }?.let { typed ->
+                        DetectedQuickAddChip(
+                            label = "Project ${projectMatch?.name ?: typed}",
+                            onClick = { activePanel = "Project" },
+                            onDismiss = {
+                                selectedProjectId = null
+                                ignoredQuickAddFields = ignoredQuickAddFields + "project"
+                            },
+                            matched = projectMatch != null
+                        )
                     },
-                    quickAdd.listName?.takeIf { "list" !in effectiveIgnoredQuickAddFields }?.let {
-                        Triple("List $it", { activePanel = "List" }, {
-                            selectedListId = null
-                            ignoredQuickAddFields = ignoredQuickAddFields + "list"
-                        })
+                    quickAdd.listName?.takeIf { "list" !in effectiveIgnoredQuickAddFields }?.let { typed ->
+                        DetectedQuickAddChip(
+                            label = "List ${listMatch?.name ?: typed}",
+                            onClick = { activePanel = "List" },
+                            onDismiss = {
+                                selectedListId = null
+                                ignoredQuickAddFields = ignoredQuickAddFields + "list"
+                            },
+                            matched = listMatch != null
+                        )
                     },
                     quickAdd.tagNames.takeIf { it.isNotEmpty() && "tags" !in effectiveIgnoredQuickAddFields }?.joinToString(", ") { "#$it" }?.let {
-                        Triple("Tags $it", { activePanel = "Tags" }, {
-                            val matchedTagIds = quickAdd.tagNames.mapNotNull { target ->
-                                findBestEntityMatch(target, tags, { tag -> tag.name })?.id
-                            }.toSet()
-                            selectedTagIds.removeAll(matchedTagIds)
-                            ignoredQuickAddFields = ignoredQuickAddFields + "tags"
-                        })
+                        DetectedQuickAddChip(
+                            label = "Tags $it",
+                            onClick = { activePanel = "Tags" },
+                            onDismiss = {
+                                selectedTagIds.removeAll(matchedTagIds)
+                                ignoredQuickAddFields = ignoredQuickAddFields + "tags"
+                            },
+                            matched = matchedTagIds.isNotEmpty()
+                        )
                     },
                     quickAdd.assigneeNames.takeIf { it.isNotEmpty() && "people" !in effectiveIgnoredQuickAddFields }?.joinToString(", ") { "@$it" }?.let {
-                        Triple("People $it", { activePanel = "People" }, {
-                            val matchedAssigneeIds = quickAdd.assigneeNames.mapNotNull { target ->
-                                findBestEntityMatch(target, activePeople, { person -> person.name })?.id
-                            }.toSet()
-                            selectedAssigneeIds.removeAll(matchedAssigneeIds)
-                            ignoredQuickAddFields = ignoredQuickAddFields + "people"
-                        })
+                        DetectedQuickAddChip(
+                            label = "People $it",
+                            onClick = { activePanel = "People" },
+                            onDismiss = {
+                                selectedAssigneeIds.removeAll(matchedAssigneeIds)
+                                ignoredQuickAddFields = ignoredQuickAddFields + "people"
+                            },
+                            matched = matchedAssigneeIds.isNotEmpty()
+                        )
                     }
                 )
                 if (detectedItems.isNotEmpty()) {
@@ -1247,27 +1352,49 @@ fun NewTaskSheet(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        detectedItems.forEach { (item, onItemClick, onDismissItem) ->
+                        detectedItems.forEach { chip ->
                             InputChip(
                                 selected = true,
-                                onClick = onItemClick,
-                                label = { Text(item) },
+                                onClick = chip.onClick,
+                                label = { Text(chip.label) },
                                 // Explicit colours: the default selected chip is
                                 // secondaryContainer, which against a primaryContainer card is
                                 // blue on blue. `surface` lifts the chips off the card and keeps
-                                // onSurface as a guaranteed contrast pair for the label.
-                                colors = InputChipDefaults.inputChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.surface,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onSurface,
-                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                ),
+                                // onSurface as a guaranteed contrast pair for the label. An
+                                // unmatched project/list/tag/person name (typed but not found
+                                // among existing entities) tints error instead, so a mistyped
+                                // mention that silently attached nothing looks different from one
+                                // that worked, rather than both rendering the same chip.
+                                colors = if (chip.matched) {
+                                    InputChipDefaults.inputChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.surface,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                        selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else {
+                                    InputChipDefaults.inputChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
+                                        selectedTrailingIconColor = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                },
+                                leadingIcon = if (!chip.matched) {
+                                    {
+                                        Icon(
+                                            Icons.Default.ErrorOutline,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                } else null,
                                 trailingIcon = {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.new_task_ignore_field, item),
+                                        contentDescription = stringResource(R.string.new_task_ignore_field, chip.label),
                                         modifier = Modifier
                                             .size(16.dp)
-                                            .clickable { onDismissItem() }
+                                            .clickable { chip.onDismiss() }
                                     )
                                 }
                             )

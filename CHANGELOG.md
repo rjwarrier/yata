@@ -30,6 +30,20 @@ test-only changes belong in the commit message, not here, unless they change beh
 - Task cards and the task detail screen now show a countdown ("in 2h 15m", "Overdue by 1d") next
   to any task with a due date/time set. Controlled by a "Due date countdown" toggle in Settings →
   Task Defaults, on by default.
+- In the new-task title field, Tab now accepts the top-ranked `#`/`@`/`+`/`=` mention suggestion
+  without leaving the keyboard to tap the dropdown row.
+
+### Changed
+- New Task's smart-add preview chip for a `+project`/`=list` mention now shows the entity it
+  actually matched instead of the raw typed text, and renders in an error tint when nothing
+  matched — previously a typo and a successful match rendered an identical chip, with no way to
+  tell a silent no-op from a real attach. The same matched/unmatched distinction now applies to
+  the tag and person chips.
+- Mention autocomplete (`#`/`@`/`+`/`=`) now ranks exact and prefix matches ahead of plain
+  substring matches instead of sorting purely alphabetically, so a strong match while still typing
+  is less likely to be pushed out of the 5-row list by an unrelated earlier match.
+- New Task's natural-language project/list matching now excludes archived projects/lists, matching
+  the behavior the `+`/`=` mention autocomplete and quick-add's own resolver already had.
 
 ## [0.94.2] - 2026-08-23
 
