@@ -856,6 +856,7 @@
     <string name="cd_clear_start_date">ప్రారంభ తేదీ క్లియర్ చేయండి</string>
     <string name="task_start_date_hint">ఈ తేదీ వరకు ఈరోజు నుండి దాచబడింది</string>
     <string name="smart_add_starts">%1$s న ప్రారంభమవుతుంది</string>
+    <string name="smart_add_due">గడువు %1$s</string>
     <string name="new_task_ignore_field">%1$s వదిలేయండి</string>
     <string name="settings_set_pin">PIN సెట్ చేయండి</string>
     <string name="settings_settings">సెట్టింగ్‌లు</string>
@@ -1492,6 +1493,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d టాస్క్ సృష్టించండి</item>
         <item quantity="other">%1$d టాస్క్‌లు సృష్టించండి</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d లేని అంశాన్ని సృష్టించండి</item>
+        <item quantity="other">%1$d లేని అంశాలను సృష్టించండి</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d టాస్క్ గుర్తించబడింది — ప్రతి పంక్తి విడిగా విశ్లేషించి దాని సొంత టాస్క్‌గా మారుతుంది</item>

@@ -1082,6 +1082,7 @@
     <string name="cd_clear_start_date">Clear start date</string>
     <string name="task_start_date_hint">Hidden from Today until this date</string>
     <string name="smart_add_starts">Starts %1$s</string>
+    <string name="smart_add_due">Due %1$s</string>
     <!-- %1$s is a detected field label, e.g. "Due Tomorrow". -->
     <string name="new_task_ignore_field">Ignore %1$s</string>
     <string name="settings_set_pin">Set PIN</string>
@@ -1388,6 +1389,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Create %1$d task</item>
         <item quantity="other">Create %1$d tasks</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Create %1$d missing item</item>
+        <item quantity="other">Create %1$d missing items</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d task detected — each line becomes its own task, parsed separately</item>

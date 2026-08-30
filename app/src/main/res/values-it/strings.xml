@@ -773,6 +773,7 @@
     <string name="cd_clear_start_date">Cancella data di inizio</string>
     <string name="task_start_date_hint">Nascosta da Oggi fino a questa data</string>
     <string name="smart_add_starts">Inizia %1$s</string>
+    <string name="smart_add_due">Scadenza %1$s</string>
     <string name="new_task_ignore_field">Ignora %1$s</string>
     <string name="settings_set_pin">Imposta PIN</string>
     <string name="settings_settings">Impostazioni</string>
@@ -1409,6 +1410,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Crea %1$d attività</item>
         <item quantity="other">Crea %1$d attività</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Crea %1$d elemento mancante</item>
+        <item quantity="other">Crea %1$d elementi mancanti</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d attività rilevata — ogni riga diventa una propria attività, analizzata separatamente</item>

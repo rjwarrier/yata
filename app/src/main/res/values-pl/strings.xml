@@ -773,6 +773,7 @@
     <string name="cd_clear_start_date">Wyczyść datę rozpoczęcia</string>
     <string name="task_start_date_hint">Ukryte z Dziś do tej daty</string>
     <string name="smart_add_starts">Zaczyna się %1$s</string>
+    <string name="smart_add_due">Termin %1$s</string>
     <string name="new_task_ignore_field">Ignoruj %1$s</string>
     <string name="settings_set_pin">Ustaw kod PIN</string>
     <string name="settings_settings">Ustawienia</string>
@@ -1409,6 +1410,12 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Utwórz %1$d zadanie</item>
         <item quantity="other">Utwórz %1$d zadań</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Utwórz %1$d brakujący element</item>
+        <item quantity="few">Utwórz %1$d brakujące elementy</item>
+        <item quantity="many">Utwórz %1$d brakujących elementów</item>
+        <item quantity="other">Utwórz %1$d brakujących elementów</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">Wykryto %1$d zadanie — każda linia staje się osobnym zadaniem, analizowanym niezależnie</item>

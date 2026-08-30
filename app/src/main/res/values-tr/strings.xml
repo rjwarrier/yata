@@ -773,6 +773,7 @@
     <string name="cd_clear_start_date">Başlangıç tarihini temizle</string>
     <string name="task_start_date_hint">Bu tarihe kadar Bugün\'den gizli</string>
     <string name="smart_add_starts">Başlangıç: %1$s</string>
+    <string name="smart_add_due">Bitiş %1$s</string>
     <string name="new_task_ignore_field">%1$s\'i yoksay</string>
     <string name="settings_set_pin">PIN belirle</string>
     <string name="settings_settings">Ayarlar</string>
@@ -1409,6 +1410,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d görev oluştur</item>
         <item quantity="other">%1$d görev oluştur</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d eksik öğe oluştur</item>
+        <item quantity="other">%1$d eksik öğe oluştur</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d görev algılandı — her satır ayrı ayrı işlenerek kendi görevi olur</item>

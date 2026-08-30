@@ -856,6 +856,7 @@
     <string name="cd_clear_start_date">തുടക്ക തീയതി മായ്ക്കുക</string>
     <string name="task_start_date_hint">ഈ തീയതി വരെ ഇന്നിൽ നിന്ന് മറഞ്ഞിരിക്കും</string>
     <string name="smart_add_starts">%1$s തുടങ്ങുന്നു</string>
+    <string name="smart_add_due">അവസാന തീയതി %1$s</string>
     <string name="new_task_ignore_field">%1$s അവഗണിക്കുക</string>
     <string name="settings_set_pin">PIN സെറ്റ് ചെയ്യുക</string>
     <string name="settings_settings">ക്രമീകരണങ്ങൾ</string>
@@ -1492,6 +1493,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d ടാസ്ക് സൃഷ്ടിക്കുക</item>
         <item quantity="other">%1$d ടാസ്കുകൾ സൃഷ്ടിക്കുക</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d കാണാത്ത ഇനം സൃഷ്ടിക്കുക</item>
+        <item quantity="other">%1$d കാണാത്ത ഇനങ്ങൾ സൃഷ്ടിക്കുക</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d ടാസ്ക് കണ്ടെത്തി — ഓരോ വരിയും അതിന്റേതായ ടാസ്കായി, വെവ്വേറെ പാഴ്സ് ചെയ്യുന്നു</item>

@@ -881,6 +881,7 @@
     <string name="cd_clear_start_date">आरंभ तारीख साफ़ करें</string>
     <string name="task_start_date_hint">इस तारीख तक आज से छिपा रहता है</string>
     <string name="smart_add_starts">%1$s से शुरू</string>
+    <string name="smart_add_due">नियत %1$s</string>
     <string name="new_task_ignore_field">%1$s नज़रअंदाज़ करें</string>
     <string name="settings_set_pin">PIN सेट करें</string>
     <string name="settings_settings">सेटिंग्स</string>
@@ -1159,6 +1160,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d कार्य बनाएं</item>
         <item quantity="other">%1$d कार्य बनाएं</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d अनुपलब्ध आइटम बनाएं</item>
+        <item quantity="other">%1$d अनुपलब्ध आइटम बनाएं</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d कार्य पहचाना गया — हर लाइन अलग से पार्स होकर अपना कार्य बन जाती है</item>

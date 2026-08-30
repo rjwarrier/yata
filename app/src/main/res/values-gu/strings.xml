@@ -856,6 +856,7 @@
     <string name="cd_clear_start_date">શરૂઆતની તારીખ સાફ કરો</string>
     <string name="task_start_date_hint">આ તારીખ સુધી Today માંથી છુપાયેલું</string>
     <string name="smart_add_starts">%1$s થી શરૂ થાય છે</string>
+    <string name="smart_add_due">નિયત %1$s</string>
     <string name="new_task_ignore_field">%1$s અવગણો</string>
     <string name="settings_set_pin">PIN સેટ કરો</string>
     <string name="settings_settings">સેટિંગ્સ</string>
@@ -1492,6 +1493,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d ટાસ્ક બનાવો</item>
         <item quantity="other">%1$d ટાસ્ક બનાવો</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d ગુમ આઇટમ બનાવો</item>
+        <item quantity="other">%1$d ગુમ આઇટમ્સ બનાવો</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d ટાસ્ક શોધાયો — દરેક લાઇન અલગથી પાર્સ થઈને પોતાનો ટાસ્ક બને છે</item>

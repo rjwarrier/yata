@@ -856,6 +856,7 @@
     <string name="cd_clear_start_date">தொடக்க தேதியை அழி</string>
     <string name="task_start_date_hint">இந்த தேதி வரை இன்று திரையில் இருந்து மறைக்கப்பட்டது</string>
     <string name="smart_add_starts">%1$s தொடங்குகிறது</string>
+    <string name="smart_add_due">காலக்கெடு %1$s</string>
     <string name="new_task_ignore_field">%1$s ஐ புறக்கணி</string>
     <string name="settings_set_pin">PIN ஐ அமை</string>
     <string name="settings_settings">அமைப்புகள்</string>
@@ -1492,6 +1493,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d பணியை உருவாக்கு</item>
         <item quantity="other">%1$d பணிகளை உருவாக்கு</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d விடுபட்ட உருப்படியை உருவாக்கு</item>
+        <item quantity="other">%1$d விடுபட்ட உருப்படிகளை உருவாக்கு</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d பணி கண்டறியப்பட்டது — ஒவ்வொரு வரியும் தனித்தனியாகப் பகுப்பாய்வு செய்யப்பட்டு தனது சொந்தப் பணியாகிறது</item>

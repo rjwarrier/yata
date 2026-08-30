@@ -881,6 +881,7 @@
     <string name="cd_clear_start_date">Startdatum wissen</string>
     <string name="task_start_date_hint">Verborgen van Vandaag tot deze datum</string>
     <string name="smart_add_starts">Start %1$s</string>
+    <string name="smart_add_due">Vervalt %1$s</string>
     <string name="new_task_ignore_field">%1$s negeren</string>
     <string name="settings_set_pin">PIN instellen</string>
     <string name="settings_settings">Instellingen</string>
@@ -1159,6 +1160,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d taak aanmaken</item>
         <item quantity="other">%1$d taken aanmaken</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d ontbrekend item maken</item>
+        <item quantity="other">%1$d ontbrekende items maken</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d taak gedetecteerd — elke regel wordt een eigen taak, apart geïnterpreteerd</item>

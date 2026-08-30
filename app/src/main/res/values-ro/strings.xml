@@ -773,6 +773,7 @@
     <string name="cd_clear_start_date">Șterge data de început</string>
     <string name="task_start_date_hint">Ascunsă din Azi până la această dată</string>
     <string name="smart_add_starts">Începe %1$s</string>
+    <string name="smart_add_due">Scadent %1$s</string>
     <string name="new_task_ignore_field">Ignoră %1$s</string>
     <string name="settings_set_pin">Setează codul PIN</string>
     <string name="settings_settings">Setări</string>
@@ -1409,6 +1410,11 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Creează %1$d sarcină</item>
         <item quantity="other">Creează %1$d sarcini</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Creează %1$d element lipsă</item>
+        <item quantity="few">Creează %1$d elemente lipsă</item>
+        <item quantity="other">Creează %1$d elemente lipsă</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d sarcină detectată — fiecare rând devine propria sarcină, analizat separat</item>

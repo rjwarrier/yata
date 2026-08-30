@@ -664,6 +664,7 @@
     <string name="cd_clear_start_date">Effacer la date de début</string>
     <string name="task_start_date_hint">Masqué d\'aujourd\'hui jusqu\'à cette date</string>
     <string name="smart_add_starts">Démarre %1$s</string>
+    <string name="smart_add_due">Échéance %1$s</string>
     <string name="new_task_ignore_field">Ignorer %1$s</string>
     <string name="settings_set_pin">Définir le code PIN</string>
     <string name="settings_settings">Paramètres</string>
@@ -1415,6 +1416,10 @@
     <plurals name="analytics_unestimated_tasks">
         <item quantity="one">%d open tâche has no estimate</item>
         <item quantity="other">%d open tâches have no estimate</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Créer %1$d élément manquant</item>
+        <item quantity="other">Créer %1$d éléments manquants</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d tâche detected — each line becomes its own tâche, parsed separately</item>

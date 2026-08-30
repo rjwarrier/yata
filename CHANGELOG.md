@@ -40,6 +40,11 @@ test-only changes belong in the commit message, not here, unless they change beh
   relying on the name matching blind on submit, including creating a new tag/person inline.
 
 ### Changed
+- Pasting multiple lines into New Task (which creates one task per line, each parsed on its own)
+  now previews what the whole paste will apply — the shared due date, and every `#tag`, `+project`,
+  `=list` and `@person` it found — instead of only reporting how many lines it counted. A name that
+  matches nothing existing is flagged rather than silently dropped, with a "Create missing items"
+  button that makes the tags and projects in one go.
 - New Task's and Task Detail's smart-add preview chip for a `+project`/`=list` (and now `#tag`/
   `@person`) mention shows the entity it actually matched instead of the raw typed text, and
   renders in an error tint when nothing matched — previously a typo and a successful match

@@ -773,6 +773,7 @@
     <string name="cd_clear_start_date">Xóa ngày bắt đầu</string>
     <string name="task_start_date_hint">Ẩn khỏi Hôm nay cho đến ngày này</string>
     <string name="smart_add_starts">Bắt đầu %1$s</string>
+    <string name="smart_add_due">Đến hạn %1$s</string>
     <string name="new_task_ignore_field">Bỏ qua %1$s</string>
     <string name="settings_set_pin">Đặt mã PIN</string>
     <string name="settings_settings">Cài đặt</string>
@@ -1409,6 +1410,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Tạo %1$d việc cần làm</item>
         <item quantity="other">Tạo %1$d việc cần làm</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Tạo %1$d mục còn thiếu</item>
+        <item quantity="other">Tạo %1$d mục còn thiếu</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">Phát hiện %1$d việc — mỗi dòng thành một việc riêng, được phân tích độc lập</item>

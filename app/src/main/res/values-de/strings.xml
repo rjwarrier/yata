@@ -982,6 +982,7 @@
     <string name="cd_clear_start_date">Startdatum löschen</string>
     <string name="task_start_date_hint">Bis zu diesem Datum vor Heute verborgen</string>
     <string name="smart_add_starts">Beginnt %1$s</string>
+    <string name="smart_add_due">Fällig %1$s</string>
     <!-- %1$s is a detected field label, e.g. "Due Tomorrow". -->
     <string name="new_task_ignore_field">%1$s ignorieren</string>
     <string name="settings_set_pin">PIN festlegen</string>
@@ -1268,6 +1269,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d Aufgabe erstellen</item>
         <item quantity="other">%1$d Aufgaben erstellen</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d fehlendes Element erstellen</item>
+        <item quantity="other">%1$d fehlende Elemente erstellen</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d Aufgabe erkannt — jede Zeile wird zu einer eigenen, separat geparsten Aufgabe</item>

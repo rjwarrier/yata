@@ -971,6 +971,7 @@
     <string name="cd_clear_start_date">Borrar fecha de inicio</string>
     <string name="task_start_date_hint">Oculta de Hoy hasta esta fecha</string>
     <string name="smart_add_starts">Empieza %1$s</string>
+    <string name="smart_add_due">Vence %1$s</string>
     <string name="new_task_ignore_field">Ignorar %1$s</string>
     <string name="settings_set_pin">Configurar PIN</string>
     <string name="settings_settings">Ajustes</string>
@@ -1459,6 +1460,10 @@
     <plurals name="analytics_unestimated_tasks">
         <item quantity="one">%d open tarea has no estimate</item>
         <item quantity="other">%d open tareas have no estimate</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Crear %1$d elemento faltante</item>
+        <item quantity="other">Crear %1$d elementos faltantes</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d tarea detected — each line becomes its own tarea, parsed separately</item>

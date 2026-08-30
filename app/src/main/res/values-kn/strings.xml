@@ -856,6 +856,7 @@
     <string name="cd_clear_start_date">ಪ್ರಾರಂಭ ದಿನಾಂಕ ಅಳಿಸಿ</string>
     <string name="task_start_date_hint">ಈ ದಿನಾಂಕದವರೆಗೆ ಇಂದಿನಿಂದ ಮರೆಮಾಡಲಾಗಿದೆ</string>
     <string name="smart_add_starts">%1$s ಗೆ ಪ್ರಾರಂಭ</string>
+    <string name="smart_add_due">ಅಂತಿಮ ದಿನಾಂಕ %1$s</string>
     <string name="new_task_ignore_field">%1$s ನಿರ್ಲಕ್ಷಿಸಿ</string>
     <string name="settings_set_pin">PIN ಸೆಟ್ ಮಾಡಿ</string>
     <string name="settings_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
@@ -1492,6 +1493,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d ಕಾರ್ಯ ರಚಿಸಿ</item>
         <item quantity="other">%1$d ಕಾರ್ಯಗಳನ್ನು ರಚಿಸಿ</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d ಕಾಣೆಯಾದ ಐಟಂ ರಚಿಸಿ</item>
+        <item quantity="other">%1$d ಕಾಣೆಯಾದ ಐಟಂಗಳನ್ನು ರಚಿಸಿ</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d ಕಾರ್ಯ ಪತ್ತೆಯಾಗಿದೆ — ಪ್ರತಿ ಸಾಲು ಪ್ರತ್ಯೇಕವಾಗಿ ಪಾರ್ಸ್ ಮಾಡಲ್ಪಟ್ಟು ತನ್ನದೇ ಕಾರ್ಯವಾಗುತ್ತದೆ</item>

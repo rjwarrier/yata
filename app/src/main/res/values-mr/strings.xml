@@ -856,6 +856,7 @@
     <string name="cd_clear_start_date">सुरुवात तारीख साफ करा</string>
     <string name="task_start_date_hint">या तारखेपर्यंत आजमधून लपलेले</string>
     <string name="smart_add_starts">%1$s पासून सुरू</string>
+    <string name="smart_add_due">अंतिम तारीख %1$s</string>
     <string name="new_task_ignore_field">%1$s दुर्लक्षित करा</string>
     <string name="settings_set_pin">PIN सेट करा</string>
     <string name="settings_settings">सेटिंग्ज</string>
@@ -1492,6 +1493,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d कार्य तयार करा</item>
         <item quantity="other">%1$d कार्ये तयार करा</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d गहाळ आयटम तयार करा</item>
+        <item quantity="other">%1$d गहाळ आयटम तयार करा</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d कार्य आढळले — प्रत्येक ओळ स्वतंत्रपणे विश्लेषित होऊन स्वतःचे कार्य बनते</item>

@@ -773,6 +773,7 @@
     <string name="cd_clear_start_date">Vymazat datum zahájení</string>
     <string name="task_start_date_hint">Skryto z Dnes až do tohoto data</string>
     <string name="smart_add_starts">Začíná %1$s</string>
+    <string name="smart_add_due">Termín %1$s</string>
     <string name="new_task_ignore_field">Ignorovat %1$s</string>
     <string name="settings_set_pin">Nastavit PIN</string>
     <string name="settings_settings">Nastavení</string>
@@ -1409,6 +1410,12 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Vytvořit %1$d úkol</item>
         <item quantity="other">Vytvořit %1$d úkolů</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Vytvořit %1$d chybějící položku</item>
+        <item quantity="few">Vytvořit %1$d chybějící položky</item>
+        <item quantity="many">Vytvořit %1$d chybějící položky</item>
+        <item quantity="other">Vytvořit %1$d chybějících položek</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">Rozpoznán %1$d úkol — každý řádek se stane samostatným úkolem, zpracovaným zvlášť</item>

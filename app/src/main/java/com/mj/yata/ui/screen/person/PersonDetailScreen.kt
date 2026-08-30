@@ -803,6 +803,9 @@ fun PersonDetailScreen(
                     onNavigateToTaskDetail(id)
                 },
                 autoAssignToMe = autoAssignToMe,
+                onCreateProject = { id, name, color ->
+                    viewModel.upsertProject(com.mj.yata.domain.model.Project(id = id, name = name, color = color, icon = "layers"))
+                },
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(Tag(id = id, name = name, color = color))
                 },

@@ -856,6 +856,7 @@
     <string name="cd_clear_start_date">Futa tarehe ya kuanza</string>
     <string name="task_start_date_hint">Imefichwa kutoka Leo hadi tarehe hii</string>
     <string name="smart_add_starts">Huanza %1$s</string>
+    <string name="smart_add_due">Inaisha %1$s</string>
     <string name="new_task_ignore_field">Puuza %1$s</string>
     <string name="settings_set_pin">Weka PIN</string>
     <string name="settings_settings">Mipangilio</string>
@@ -1492,6 +1493,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Unda kazi %1$d</item>
         <item quantity="other">Unda kazi %1$d</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Unda kipengee %1$d kinachokosekana</item>
+        <item quantity="other">Unda vipengee %1$d vinavyokosekana</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">Kazi %1$d imegunduliwa — kila mstari huwa kazi yake, huchakatwa kando</item>

@@ -849,6 +849,9 @@ fun ListDetailScreen(
                     onNavigateToTaskDetail(id)
                 },
                 autoAssignToMe = autoAssignToMe,
+                onCreateProject = { id, name, color ->
+                    viewModel.upsertProject(com.mj.yata.domain.model.Project(id = id, name = name, color = color, icon = "layers"))
+                },
                 onCreateTag = { id, name, color ->
                     viewModel.upsertTag(com.mj.yata.domain.model.Tag(id = id, name = name, color = color))
                 },

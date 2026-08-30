@@ -773,6 +773,7 @@
     <string name="cd_clear_start_date">Hapus tanggal mulai</string>
     <string name="task_start_date_hint">Tersembunyi dari Hari Ini hingga tanggal ini</string>
     <string name="smart_add_starts">Mulai %1$s</string>
+    <string name="smart_add_due">Jatuh tempo %1$s</string>
     <string name="new_task_ignore_field">Abaikan %1$s</string>
     <string name="settings_set_pin">Atur PIN</string>
     <string name="settings_settings">Pengaturan</string>
@@ -1409,6 +1410,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">Buat %1$d tugas</item>
         <item quantity="other">Buat %1$d tugas</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">Buat %1$d item yang hilang</item>
+        <item quantity="other">Buat %1$d item yang hilang</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d tugas terdeteksi — setiap baris menjadi tugas tersendiri, diproses terpisah</item>

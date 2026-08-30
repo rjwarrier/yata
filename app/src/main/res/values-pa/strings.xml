@@ -856,6 +856,7 @@
     <string name="cd_clear_start_date">ਸ਼ੁਰੂਆਤੀ ਮਿਤੀ ਸਾਫ਼ ਕਰੋ</string>
     <string name="task_start_date_hint">ਇਸ ਮਿਤੀ ਤੱਕ ਅੱਜ ਤੋਂ ਲੁਕਿਆ</string>
     <string name="smart_add_starts">%1$s ਸ਼ੁਰੂ ਹੁੰਦਾ ਹੈ</string>
+    <string name="smart_add_due">ਨਿਯਤ %1$s</string>
     <string name="new_task_ignore_field">%1$s ਅਣਡਿੱਠ ਕਰੋ</string>
     <string name="settings_set_pin">PIN ਸੈੱਟ ਕਰੋ</string>
     <string name="settings_settings">ਸੈਟਿੰਗਾਂ</string>
@@ -1492,6 +1493,10 @@
     <plurals name="new_task_create_tasks">
         <item quantity="one">%1$d ਕਾਰਜ ਬਣਾਓ</item>
         <item quantity="other">%1$d ਕਾਰਜ ਬਣਾਓ</item>
+    </plurals>
+    <plurals name="new_task_bulk_create_missing">
+        <item quantity="one">%1$d ਗੁੰਮ ਆਈਟਮ ਬਣਾਓ</item>
+        <item quantity="other">%1$d ਗੁੰਮ ਆਈਟਮਾਂ ਬਣਾਓ</item>
     </plurals>
     <plurals name="new_task_bulk_lines_detected">
         <item quantity="one">%1$d ਕਾਰਜ ਖੋਜਿਆ — ਹਰ ਲਾਈਨ ਆਪਣਾ ਕਾਰਜ ਬਣ ਜਾਂਦੀ ਹੈ, ਵੱਖਰੇ ਤੌਰ \'ਤੇ ਪਾਰਸ ਕੀਤਾ</item>

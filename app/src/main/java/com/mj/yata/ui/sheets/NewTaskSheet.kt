@@ -384,6 +384,12 @@ fun NewTaskSheet(
     onAddTaskAndContinue: ((NewTaskDraft) -> Unit)? = null,
     onCreateTag: (id: String, name: String, color: String) -> Unit,
     onCreatePerson: (id: String, name: String, color: String) -> Unit,
+    /** Creates a project named in a pasted bulk line whose name matches nothing existing. Null
+     * means this host doesn't offer it, and such a name is shown as unmatched without a create
+     * affordance — projects carry colour/icon/description a name alone can't fill in, so this is
+     * never automatic (see MentionAutocomplete, which withholds its inline create row for the
+     * same reason); the bulk preview asks first. */
+    onCreateProject: ((id: String, name: String, color: String) -> Unit)? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     initialAssigneeId: String? = null,
@@ -574,6 +580,30 @@ fun NewTaskSheet(
         title.text.split("\n").map { it.trim() }.filter { it.isNotBlank() }
     }
     val isBulkTasks = !bulkModeDismissed && bulkTaskLines.size > 1
+
+    // What a bulk paste will actually produce. Bulk mode suppresses the single-task smart-add
+    // preview, so without this the whole operation is blind: every line is parsed and resolved at
+    // submit time, and a #tag or +project naming something that doesn't exist yet resolves to
+    // nothing and is dropped in silence — N tasks land with no tag and no project and nothing
+    // said so. Aggregated across lines rather than shown per line, since a paste of this shape
+    // usually repeats the same tag/project on every row.
+    val bulkParsedLines = remember(bulkTaskLines, isBulkTasks) {
+        if (isBulkTasks) bulkTaskLines.map { NaturalLanguageParser.parse(it) } else emptyList()
+    }
+    val bulkTagNames = remember(bulkParsedLines) { bulkParsedLines.flatMap { it.tagNames }.distinct() }
+    val bulkProjectNames = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.projectName }.distinct() }
+    val bulkListNames = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.listName }.distinct() }
+    val bulkPersonNames = remember(bulkParsedLines) { bulkParsedLines.flatMap { it.assigneeNames }.distinct() }
+    val bulkDueDates = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.due }.distinct() }
+    // Unmatched = the name resolves to no existing entity, so submitting now would drop it.
+    val bulkUnmatchedTags = remember(bulkTagNames, tags, tagsEnabled) {
+        if (!tagsEnabled) emptyList()
+        else bulkTagNames.filter { findBestEntityMatch(it, tags, { tag -> tag.name }) == null }
+    }
+    val bulkUnmatchedProjects = remember(bulkProjectNames, projects, projectsEnabled) {
+        if (!projectsEnabled) emptyList()
+        else bulkProjectNames.filter { findBestEntityMatch(it, projects.activeProjects(), { p -> p.name }) == null }
+    }
 
     // Lists have no feature flag — they are always available — so `=` needs no gate, unlike the
     // other three whose entity types can each be switched off in Settings.
@@ -1157,31 +1187,124 @@ fun NewTaskSheet(
             }
 
             if (isBulkTasks) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.List,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = pluralStringResource(R.plurals.new_task_bulk_lines_detected, bulkTaskLines.size, bulkTaskLines.size),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = stringResource(R.string.new_task_treat_as_a_single_task_instead),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clip(CircleShape)
-                            .clickable { bulkModeDismissed = true }
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.List,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = pluralStringResource(R.plurals.new_task_bulk_lines_detected, bulkTaskLines.size, bulkTaskLines.size),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.new_task_treat_as_a_single_task_instead),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .clickable { bulkModeDismissed = true }
+                        )
+                    }
+
+                    // One chip per distinct thing the paste will apply, flagged unmatched when the
+                    // name resolves to nothing and would otherwise be dropped without a word. The
+                    // due chip only appears when every line agrees on a date — with mixed dates
+                    // there is no single value to show, and the per-line dates still apply.
+                    val bulkChips = buildList<Pair<String, Boolean>> {
+                        bulkDueDates.singleOrNull()?.let {
+                            add(stringResource(R.string.smart_add_due, TaskScheduleUtils.formatDueDate(it)) to true)
+                        }
+                        if (tagsEnabled) bulkTagNames.forEach { add("#$it" to (it !in bulkUnmatchedTags)) }
+                        if (projectsEnabled) bulkProjectNames.forEach { add("+$it" to (it !in bulkUnmatchedProjects)) }
+                        bulkListNames.forEach { name ->
+                            add("=$name" to (findBestEntityMatch(name, lists.activeLists(), { it.name }) != null))
+                        }
+                        if (peopleEnabled) bulkPersonNames.forEach { name ->
+                            add("@$name" to (findBestEntityMatch(name, activePeople, { it.name }) != null))
+                        }
+                    }
+                    if (bulkChips.isNotEmpty()) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            bulkChips.forEach { (label, matched) ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (matched) MaterialTheme.colorScheme.surface
+                                            else MaterialTheme.colorScheme.errorContainer
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    if (!matched) {
+                                        Icon(
+                                            Icons.Default.ErrorOutline,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = if (matched) MaterialTheme.colorScheme.onSurface
+                                                else MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Creating is its own action rather than folded into Add: `tags`/`projects`
+                    // arrive from a Flow, so anything created here would not be back in those
+                    // lists in time for a submit happening in the same click.
+                    val creatableProjects = if (onCreateProject != null) bulkUnmatchedProjects else emptyList()
+                    val missingCount = bulkUnmatchedTags.size + creatableProjects.size
+                    if (missingCount > 0) {
+                        TextButton(
+                            onClick = {
+                                bulkUnmatchedTags.forEach { name ->
+                                    onCreateTag("tag_" + java.util.UUID.randomUUID().toString(), name, pickAccentFor(name))
+                                }
+                                creatableProjects.forEach { name ->
+                                    onCreateProject?.invoke("proj_" + java.util.UUID.randomUUID().toString(), name, pickAccentFor(name))
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = pluralStringResource(
+                                    R.plurals.new_task_bulk_create_missing, missingCount, missingCount
+                                ),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
                 }
             } else if (quickAddMatched) {
                 // Resolved once here (not just for the dismiss handlers) so the chip can show what
