@@ -41,6 +41,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -560,9 +562,29 @@ private fun WelcomeSetupSummaryPage(
 private fun WelcomeProfileSetupPage(viewModel: MainViewModel, accentColor: androidx.compose.ui.graphics.Color) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val userName by viewModel.userName.collectAsStateWithLifecycle()
-    val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
+    val storedUserName by viewModel.userName.collectAsStateWithLifecycle()
+    val storedUserEmail by viewModel.userEmail.collectAsStateWithLifecycle()
     val userPhotoUri by viewModel.userPhotoUri.collectAsStateWithLifecycle()
+
+    // These fields must not be driven straight off the preference flows they write to. Doing that
+    // sends every keystroke on a round trip — setUserName launches a coroutine that edits
+    // DataStore, the flow re-emits, and only then does the field see the new text. In between,
+    // recomposition hands the TextField the *previous* value, which snaps the cursor back a
+    // character; typing at any speed then drops and reorders letters.
+    //
+    // So the draft is the source of truth once editing starts, and the stored value only seeds it
+    // (covering a re-run of the tour with a profile already set). The same drafts feed the avatar
+    // preview below, so the initials still update as the name is typed. This mirrors the profile
+    // dialog in Settings, which seeds a draft on open and never binds the field to the flow.
+    var nameDraft by rememberSaveable { mutableStateOf(storedUserName) }
+    var emailDraft by rememberSaveable { mutableStateOf(storedUserEmail) }
+    var profileEdited by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(storedUserName, storedUserEmail) {
+        if (!profileEdited) {
+            nameDraft = storedUserName
+            emailDraft = storedUserEmail
+        }
+    }
 
     var pickedPhotoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -613,7 +635,7 @@ private fun WelcomeProfileSetupPage(viewModel: MainViewModel, accentColor: andro
 
             Box(modifier = Modifier.clickable { launchPhotoPicker() }) {
                 PersonAvatar(
-                    initials = initialsFor(userName),
+                    initials = initialsFor(nameDraft),
                     accentKey = "accentC",
                     size = 88.dp,
                     photoUri = userPhotoUri
@@ -638,8 +660,12 @@ private fun WelcomeProfileSetupPage(viewModel: MainViewModel, accentColor: andro
 
             Spacer(modifier = Modifier.height(24.dp))
             TextField(
-                value = userName,
-                onValueChange = { viewModel.setUserName(it) },
+                value = nameDraft,
+                onValueChange = {
+                    nameDraft = it
+                    profileEdited = true
+                    viewModel.setUserName(it)
+                },
                 singleLine = true,
                 label = { Text(stringResource(R.string.settings_profile_name_label)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -649,8 +675,12 @@ private fun WelcomeProfileSetupPage(viewModel: MainViewModel, accentColor: andro
             )
             Spacer(modifier = Modifier.height(10.dp))
             TextField(
-                value = userEmail,
-                onValueChange = { viewModel.setUserEmail(it) },
+                value = emailDraft,
+                onValueChange = {
+                    emailDraft = it
+                    profileEdited = true
+                    viewModel.setUserEmail(it)
+                },
                 singleLine = true,
                 label = { Text(stringResource(R.string.settings_profile_email_label)) },
                 keyboardOptions = KeyboardOptions(

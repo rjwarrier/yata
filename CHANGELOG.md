@@ -86,6 +86,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   the behavior the `+`/`=` mention autocomplete and quick-add's own resolver already had.
 
 ### Fixed
+- Typing a name or email on the welcome tour's profile step no longer moves the cursor back a
+  character on each keystroke, dropping and reordering letters as you type. Those two fields
+  were bound directly to the saved preference they write to, so every character made a round
+  trip through storage and the field was briefly re-rendered with the previous text.
 - The backslash escape, which keeps the next word out of the parser (`\tomorrow` stays in the
   title instead of setting a due date), now also covers the `#`/`@`/`+`/`=` mention triggers:
   `\#urgent`, `\@Sam`, `\+Acme` and `\=Inbox` stay literal. Previously the escape only matched a
