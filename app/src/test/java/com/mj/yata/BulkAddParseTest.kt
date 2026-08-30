@@ -2,6 +2,7 @@ package com.mj.yata
 
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
+import com.mj.yata.ui.sheets.bulkLinesFrom
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.ParsedQuickAdd
 import com.mj.yata.util.findBestEntityMatch
@@ -93,6 +94,52 @@ class BulkAddParseTest {
 
         // The line edited away must not be retained, or a long session pins every keystroke.
         assertEquals(200, memo.size)
+    }
+
+    @Test
+    fun stripsListMarkersOnlyWhenThePasteIsActuallyAList() {
+        // A roster pasted out of a numbered or bulleted list: the marker is formatting, not part
+        // of anyone's name. Previously "-" happened to be stripped by the title cleaner while
+        // "1.", "2)", "*" and bullets survived into the title, so the same paste came out
+        // inconsistently depending on which marker the source used.
+        val numbered = bulkLinesFrom("1. Jyothi\n2. Dhiphin\n3. TK Rajendran")
+        assertEquals(listOf("Jyothi", "Dhiphin", "TK Rajendran"), numbered)
+
+        val bulleted = bulkLinesFrom("- Jyothi\n* Dhiphin\n• TK Rajendran")
+        assertEquals(listOf("Jyothi", "Dhiphin", "TK Rajendran"), bulleted)
+
+        val parenthesised = bulkLinesFrom("1) Jyothi\n2) Dhiphin")
+        assertEquals(listOf("Jyothi", "Dhiphin"), parenthesised)
+    }
+
+    @Test
+    fun leavesNumbersAloneWhenTheyAreContentRatherThanFormatting() {
+        // Only a majority of marked lines counts as list formatting, so one line that merely
+        // starts with a numeral doesn't cost the others their leading text.
+        assertEquals(
+            listOf("1. Introduction", "Chapter about scope", "Chapter about method"),
+            bulkLinesFrom("1. Introduction\nChapter about scope\nChapter about method")
+        )
+        // Initials and decimals are never markers — the trailing-space rule is what protects them.
+        assertEquals(
+            listOf("P A Francis [United Marketing]", "1.5x review pass"),
+            bulkLinesFrom("P A Francis [United Marketing]\n1.5x review pass")
+        )
+    }
+
+    @Test
+    fun splitsOnEveryLineTerminatorNotJustNewline() {
+        // A spreadsheet or rich-text paste can arrive CR-separated or with U+2028/U+2029; a
+        // "\n"-only split turned the whole paste into one very long single task.
+        assertEquals(listOf("A", "B", "C"), bulkLinesFrom("A\r\nB\r\nC"))
+        assertEquals(listOf("A", "B"), bulkLinesFrom("A\rB"))
+        assertEquals(listOf("A", "B"), bulkLinesFrom("A\u2028B"))
+        assertEquals(listOf("A", "B"), bulkLinesFrom("A\u2029B"))
+    }
+
+    @Test
+    fun blankAndWhitespaceOnlyLinesAreDropped() {
+        assertEquals(listOf("A", "B"), bulkLinesFrom("A\n\n   \n\tB\n"))
     }
 
     @Test

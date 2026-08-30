@@ -858,6 +858,7 @@
     <string name="task_start_date_hint">या तारखेपर्यंत आजमधून लपलेले</string>
     <string name="smart_add_starts">%1$s पासून सुरू</string>
     <string name="smart_add_due">अंतिम तारीख %1$s</string>
+    <string name="new_task_bulk_mixed_dates">ओळींमध्ये तारखा भिन्न आहेत</string>
     <string name="new_task_bulk_more_detected">+%1$d अधिक</string>
     <string name="new_task_bulk_truncated">फक्त पहिल्या %1$d ओळी जोडल्या जातील — %2$d अधिक दुर्लक्षित.</string>
     <string name="new_task_ignore_field">%1$s दुर्लक्षित करा</string>

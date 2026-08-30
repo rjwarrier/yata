@@ -775,6 +775,7 @@
     <string name="task_start_date_hint">Nascosta da Oggi fino a questa data</string>
     <string name="smart_add_starts">Inizia %1$s</string>
     <string name="smart_add_due">Scadenza %1$s</string>
+    <string name="new_task_bulk_mixed_dates">Le date variano tra le righe</string>
     <string name="new_task_bulk_more_detected">+%1$d altri</string>
     <string name="new_task_bulk_truncated">Verranno aggiunte solo le prime %1$d righe: altre %2$d sono state ignorate.</string>
     <string name="new_task_ignore_field">Ignora %1$s</string>

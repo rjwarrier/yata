@@ -775,6 +775,7 @@
     <string name="task_start_date_hint">Bu tarihe kadar Bugün\'den gizli</string>
     <string name="smart_add_starts">Başlangıç: %1$s</string>
     <string name="smart_add_due">Bitiş %1$s</string>
+    <string name="new_task_bulk_mixed_dates">Tarihler satırlar arasında farklı</string>
     <string name="new_task_bulk_more_detected">+%1$d daha</string>
     <string name="new_task_bulk_truncated">Yalnızca ilk %1$d satır eklenecek — %2$d tanesi yoksayıldı.</string>
     <string name="new_task_ignore_field">%1$s\'i yoksay</string>

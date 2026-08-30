@@ -858,6 +858,7 @@
     <string name="task_start_date_hint">ਇਸ ਮਿਤੀ ਤੱਕ ਅੱਜ ਤੋਂ ਲੁਕਿਆ</string>
     <string name="smart_add_starts">%1$s ਸ਼ੁਰੂ ਹੁੰਦਾ ਹੈ</string>
     <string name="smart_add_due">ਨਿਯਤ %1$s</string>
+    <string name="new_task_bulk_mixed_dates">ਲਾਈਨਾਂ ਵਿੱਚ ਤਾਰੀਖਾਂ ਵੱਖਰੀਆਂ ਹਨ</string>
     <string name="new_task_bulk_more_detected">+%1$d ਹੋਰ</string>
     <string name="new_task_bulk_truncated">ਸਿਰਫ਼ ਪਹਿਲੀਆਂ %1$d ਲਾਈਨਾਂ ਜੋੜੀਆਂ ਜਾਣਗੀਆਂ — %2$d ਹੋਰ ਅਣਡਿੱਠ ਕੀਤੀਆਂ।</string>
     <string name="new_task_ignore_field">%1$s ਅਣਡਿੱਠ ਕਰੋ</string>

@@ -858,6 +858,7 @@
     <string name="task_start_date_hint">આ તારીખ સુધી Today માંથી છુપાયેલું</string>
     <string name="smart_add_starts">%1$s થી શરૂ થાય છે</string>
     <string name="smart_add_due">નિયત %1$s</string>
+    <string name="new_task_bulk_mixed_dates">લાઇનો વચ્ચે તારીખો અલગ છે</string>
     <string name="new_task_bulk_more_detected">+%1$d વધુ</string>
     <string name="new_task_bulk_truncated">ફક્ત પ્રથમ %1$d લાઇન ઉમેરાશે — %2$d વધુ અવગણાઈ.</string>
     <string name="new_task_ignore_field">%1$s અવગણો</string>

@@ -40,6 +40,19 @@ test-only changes belong in the commit message, not here, unless they change beh
   relying on the name matching blind on submit, including creating a new tag/person inline.
 
 ### Changed
+- Bulk paste now reads lines more reliably: it splits on every line terminator (a spreadsheet or
+  rich-text paste separated by carriage returns or Unicode line separators used to arrive as one
+  very long single task), and strips leading list markers — "1.", "2)", "*", bullets — when most
+  lines carry one, so a roster copied out of a numbered list no longer keeps the numbering in
+  every title. Previously "-" was stripped but "1.", "*" and bullets were not, so the same paste
+  came out differently depending on the source. A line whose only numeral is content ("1.
+  Introduction" among unnumbered lines), an initial ("P A Francis") and a decimal ("1.5x review")
+  are all left alone.
+- The bulk preview now says when the parsed dates differ between lines instead of hiding the date
+  chip. A paste meant to share one date is exactly where an extra date means a line was misread —
+  a person named "Sunday" or "May" whose name got taken for a day — and showing nothing removed
+  the only clue.
+
 - Project, list, tag and person names are now treated as case-insensitive when creating or
   renaming one, matching how every lookup in the app already compared them. Previously two
   projects or lists could both be created as "Work" and "work" — indistinguishable to natural

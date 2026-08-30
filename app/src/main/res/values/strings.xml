@@ -1084,6 +1084,7 @@
     <string name="task_start_date_hint">Hidden from Today until this date</string>
     <string name="smart_add_starts">Starts %1$s</string>
     <string name="smart_add_due">Due %1$s</string>
+    <string name="new_task_bulk_mixed_dates">Dates differ between lines</string>
     <string name="new_task_bulk_more_detected">+%1$d more</string>
     <string name="new_task_bulk_truncated">Only the first %1$d lines will be added — %2$d more were ignored.</string>
     <!-- %1$s is a detected field label, e.g. "Due Tomorrow". -->

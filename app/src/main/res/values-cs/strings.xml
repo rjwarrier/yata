@@ -775,6 +775,7 @@
     <string name="task_start_date_hint">Skryto z Dnes až do tohoto data</string>
     <string name="smart_add_starts">Začíná %1$s</string>
     <string name="smart_add_due">Termín %1$s</string>
+    <string name="new_task_bulk_mixed_dates">Data se mezi řádky liší</string>
     <string name="new_task_bulk_more_detected">+%1$d dalších</string>
     <string name="new_task_bulk_truncated">Přidá se jen prvních %1$d řádků — %2$d dalších bylo ignorováno.</string>
     <string name="new_task_ignore_field">Ignorovat %1$s</string>

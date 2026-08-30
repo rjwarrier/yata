@@ -858,6 +858,7 @@
     <string name="task_start_date_hint">ഈ തീയതി വരെ ഇന്നിൽ നിന്ന് മറഞ്ഞിരിക്കും</string>
     <string name="smart_add_starts">%1$s തുടങ്ങുന്നു</string>
     <string name="smart_add_due">അവസാന തീയതി %1$s</string>
+    <string name="new_task_bulk_mixed_dates">വരികൾക്കിടയിൽ തീയതികൾ വ്യത്യാസപ്പെടുന്നു</string>
     <string name="new_task_bulk_more_detected">+%1$d കൂടുതൽ</string>
     <string name="new_task_bulk_truncated">ആദ്യത്തെ %1$d വരികൾ മാത്രമേ ചേർക്കൂ — %2$d എണ്ണം അവഗണിച്ചു.</string>
     <string name="new_task_ignore_field">%1$s അവഗണിക്കുക</string>

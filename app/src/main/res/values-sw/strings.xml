@@ -858,6 +858,7 @@
     <string name="task_start_date_hint">Imefichwa kutoka Leo hadi tarehe hii</string>
     <string name="smart_add_starts">Huanza %1$s</string>
     <string name="smart_add_due">Inaisha %1$s</string>
+    <string name="new_task_bulk_mixed_dates">Tarehe zinatofautiana kati ya mistari</string>
     <string name="new_task_bulk_more_detected">+%1$d zaidi</string>
     <string name="new_task_bulk_truncated">Mistari %1$d ya kwanza pekee itaongezwa — %2$d zaidi imepuuzwa.</string>
     <string name="new_task_ignore_field">Puuza %1$s</string>

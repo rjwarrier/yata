@@ -177,6 +177,37 @@ private const val BULK_PREVIEW_CHIP_LIMIT = 12
 private const val MAX_BULK_TASKS = 500
 
 /**
+ * A bulleted or numbered list marker at the head of a pasted line — "1.", "2)", "-", "*", a
+ * bullet glyph. The trailing whitespace requirement is what keeps a decimal ("1.5x review") or an
+ * initial ("P A Francis") from being mistaken for one, and the numeral is capped at three digits
+ * so a title opening with a year survives.
+ */
+private val BULK_LIST_MARKER =
+    Regex("""^\s*(?:[-*•‣◦▪–—]|\(?\d{1,3}[.)\]])\s+""")
+
+/**
+ * Splits pasted text into the lines bulk mode turns into tasks.
+ *
+ * Splits on every line terminator rather than "\n" alone: text copied out of a spreadsheet or a
+ * rich-text editor can arrive separated by a lone carriage return, or by U+2028/U+2029, none of
+ * which a "\n" split catches — the entire paste would land as one very long single task.
+ *
+ * Leading list markers are stripped only when more than half the lines carry one. That majority
+ * test is what separates list *formatting* from content: a roster pasted out of a numbered list
+ * loses the numbering, while a single line that merely happens to start "1. " keeps it. Stripping
+ * is also all-or-nothing across the paste, so lines never end up inconsistently trimmed.
+ */
+internal fun bulkLinesFrom(text: String): List<String> {
+    val raw = text.split(Regex("""\r\n|\r|\n|\u2028|\u2029"""))
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+    if (raw.size < 2) return raw
+    val marked = raw.count { BULK_LIST_MARKER.containsMatchIn(it) }
+    if (marked * 2 <= raw.size) return raw
+    return raw.map { it.replace(BULK_LIST_MARKER, "").trim() }.filter { it.isNotBlank() }
+}
+
+/**
  * Everything the sheet collected for one new task, handed to the caller as a single value.
  *
  * This used to be fourteen positional lambda parameters, destructured identically at all six call
@@ -585,9 +616,7 @@ fun NewTaskSheet(
     // instead of a single task with a garbled multi-line title — each gets its own
     // NaturalLanguageParser pass (see bulkTaskLines below), same engine as single-task mode.
     var bulkModeDismissed by remember { mutableStateOf(false) }
-    val bulkAllLines = remember(title.text) {
-        title.text.split("\n").map { it.trim() }.filter { it.isNotBlank() }
-    }
+    val bulkAllLines = remember(title.text) { bulkLinesFrom(title.text) }
     // Hard ceiling on how much one paste can do. Parsing costs roughly a millisecond a line, and
     // each line becomes its own database write, so an accidental paste of a whole document would
     // otherwise block the main thread long enough to be killed as an ANR. The excess is reported
@@ -1301,12 +1330,23 @@ fun NewTaskSheet(
                     }
 
                     // One chip per distinct thing the paste will apply, flagged unmatched when the
-                    // name resolves to nothing and would otherwise be dropped without a word. The
-                    // due chip only appears when every line agrees on a date — with mixed dates
-                    // there is no single value to show, and the per-line dates still apply.
+                    // name resolves to nothing and would otherwise be dropped without a word.
+                    //
+                    // When the lines disagree on a date the chip says so rather than disappearing.
+                    // Showing nothing was the worst option: a paste meant to share one date is
+                    // exactly the case where a stray extra date means a line got misread — a
+                    // person named "Sunday" or "May", say, whose name the parser took for a day —
+                    // and silently hiding the chip removed the only clue that had happened.
                     val bulkChips = buildList<Pair<String, Boolean>> {
-                        bulkDueDates.singleOrNull()?.let {
-                            add(stringResource(R.string.smart_add_due, TaskScheduleUtils.formatDueDate(it)) to true)
+                        when (bulkDueDates.size) {
+                            0 -> Unit
+                            1 -> add(
+                                stringResource(
+                                    R.string.smart_add_due,
+                                    TaskScheduleUtils.formatDueDate(bulkDueDates.first())
+                                ) to true
+                            )
+                            else -> add(stringResource(R.string.new_task_bulk_mixed_dates) to false)
                         }
                         if (tagsEnabled) bulkTagNames.forEach { add("#$it" to (it !in bulkUnmatchedTags)) }
                         if (projectsEnabled) bulkProjectNames.forEach { add("+$it" to (it !in bulkUnmatchedProjects)) }

@@ -858,6 +858,7 @@
     <string name="task_start_date_hint">இந்த தேதி வரை இன்று திரையில் இருந்து மறைக்கப்பட்டது</string>
     <string name="smart_add_starts">%1$s தொடங்குகிறது</string>
     <string name="smart_add_due">காலக்கெடு %1$s</string>
+    <string name="new_task_bulk_mixed_dates">வரிகளுக்கு இடையே தேதிகள் வேறுபடுகின்றன</string>
     <string name="new_task_bulk_more_detected">+%1$d மேலும்</string>
     <string name="new_task_bulk_truncated">முதல் %1$d வரிகள் மட்டுமே சேர்க்கப்படும் — %2$d மேலும் புறக்கணிக்கப்பட்டன.</string>
     <string name="new_task_ignore_field">%1$s ஐ புறக்கணி</string>

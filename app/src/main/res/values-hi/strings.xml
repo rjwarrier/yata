@@ -883,6 +883,7 @@
     <string name="task_start_date_hint">इस तारीख तक आज से छिपा रहता है</string>
     <string name="smart_add_starts">%1$s से शुरू</string>
     <string name="smart_add_due">नियत %1$s</string>
+    <string name="new_task_bulk_mixed_dates">पंक्तियों में तारीखें अलग-अलग हैं</string>
     <string name="new_task_bulk_more_detected">+%1$d और</string>
     <string name="new_task_bulk_truncated">केवल पहली %1$d पंक्तियाँ जोड़ी जाएंगी — %2$d और अनदेखी की गईं।</string>
     <string name="new_task_ignore_field">%1$s नज़रअंदाज़ करें</string>

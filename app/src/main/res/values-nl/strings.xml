@@ -883,6 +883,7 @@
     <string name="task_start_date_hint">Verborgen van Vandaag tot deze datum</string>
     <string name="smart_add_starts">Start %1$s</string>
     <string name="smart_add_due">Vervalt %1$s</string>
+    <string name="new_task_bulk_mixed_dates">Datums verschillen per regel</string>
     <string name="new_task_bulk_more_detected">+%1$d meer</string>
     <string name="new_task_bulk_truncated">Alleen de eerste %1$d regels worden toegevoegd — %2$d meer genegeerd.</string>
     <string name="new_task_ignore_field">%1$s negeren</string>

@@ -858,6 +858,7 @@
     <string name="task_start_date_hint">ಈ ದಿನಾಂಕದವರೆಗೆ ಇಂದಿನಿಂದ ಮರೆಮಾಡಲಾಗಿದೆ</string>
     <string name="smart_add_starts">%1$s ಗೆ ಪ್ರಾರಂಭ</string>
     <string name="smart_add_due">ಅಂತಿಮ ದಿನಾಂಕ %1$s</string>
+    <string name="new_task_bulk_mixed_dates">ಸಾಲುಗಳ ನಡುವೆ ದಿನಾಂಕಗಳು ಭಿನ್ನವಾಗಿವೆ</string>
     <string name="new_task_bulk_more_detected">+%1$d ಇನ್ನಷ್ಟು</string>
     <string name="new_task_bulk_truncated">ಮೊದಲ %1$d ಸಾಲುಗಳನ್ನು ಮಾತ್ರ ಸೇರಿಸಲಾಗುತ್ತದೆ — %2$d ಹೆಚ್ಚಿನವನ್ನು ನಿರ್ಲಕ್ಷಿಸಲಾಗಿದೆ.</string>
     <string name="new_task_ignore_field">%1$s ನಿರ್ಲಕ್ಷಿಸಿ</string>
