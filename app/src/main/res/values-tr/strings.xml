@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">Sonraki iş günü</string>
     <string name="bulk_reschedule_selected">Seçilen görevleri yeniden zamanla</string>
     <string name="new_task_title">Yeni görev</string>
+    <string name="syntax_dialog_title">Yazma kısayolları</string>
+    <string name="syntax_tag">Etiket ekle, örn. #urgent</string>
+    <string name="syntax_person">Kişi ata, örn. @Sam</string>
+    <string name="syntax_project">Bir projeye koy, örn. +Acme</string>
+    <string name="syntax_list">Bir listeye koy, örn. =Groceries</string>
+    <string name="syntax_priority">Öncelik: yüksek, orta, düşük. p1, p2 ve p3 de çalışır.</string>
+    <string name="syntax_escape">Sonraki kelimeyi tüm bunların dışında tutar, örn. \\tomorrow veya \\@Sam başlıkta kalır. Bir ad aynı zamanda gün veya ay olduğunda işe yarar.</string>
+    <string name="syntax_plain_words">Tarihler, saatler ve tekrarlar simge istemez — sadece yazın: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">Ne yapılması gerekiyor? # etiket, @ kişi, + proje, = liste deneyin</string>
     <string name="new_task_smart_add_summary">Akıllı ekleme bu görevi şöyle anladı:</string>
     <string name="new_task_detected_title">Başlık: %1$s</string>

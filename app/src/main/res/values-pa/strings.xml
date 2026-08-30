@@ -1118,6 +1118,14 @@
     <string name="snooze_next_weekday">ਅਗਲਾ ਕੰਮਕਾਜੀ ਦਿਨ</string>
     <string name="bulk_reschedule_selected">ਚੁਣੇ ਕਾਰਜ ਮੁੜ-ਤਹਿ ਕਰੋ</string>
     <string name="new_task_title">ਨਵਾਂ ਕਾਰਜ</string>
+    <string name="syntax_dialog_title">ਟਾਈਪਿੰਗ ਸ਼ਾਰਟਕੱਟ</string>
+    <string name="syntax_tag">ਟੈਗ ਜੋੜੋ, ਜਿਵੇਂ #urgent</string>
+    <string name="syntax_person">ਵਿਅਕਤੀ ਸੌਂਪੋ, ਜਿਵੇਂ @Sam</string>
+    <string name="syntax_project">ਪ੍ਰੋਜੈਕਟ ਵਿੱਚ ਪਾਓ, ਜਿਵੇਂ +Acme</string>
+    <string name="syntax_list">ਸੂਚੀ ਵਿੱਚ ਪਾਓ, ਜਿਵੇਂ =Groceries</string>
+    <string name="syntax_priority">ਤਰਜੀਹ: ਉੱਚ, ਦਰਮਿਆਨੀ, ਘੱਟ। p1, p2 ਅਤੇ p3 ਵੀ ਚੱਲਦੇ ਹਨ।</string>
+    <string name="syntax_escape">ਅਗਲੇ ਸ਼ਬਦ ਨੂੰ ਇਸ ਸਭ ਤੋਂ ਬਾਹਰ ਰੱਖਦਾ ਹੈ, ਜਿਵੇਂ \\tomorrow ਜਾਂ \\@Sam ਸਿਰਲੇਖ ਵਿੱਚ ਰਹਿੰਦਾ ਹੈ। ਜਦੋਂ ਨਾਮ ਹੀ ਦਿਨ ਜਾਂ ਮਹੀਨਾ ਹੋਵੇ ਤਾਂ ਲਾਭਦਾਇਕ।</string>
+    <string name="syntax_plain_words">ਤਾਰੀਖ, ਸਮਾਂ ਅਤੇ ਦੁਹਰਾਓ ਲਈ ਕੋਈ ਚਿੰਨ੍ਹ ਨਹੀਂ ਚਾਹੀਦਾ — ਬਸ ਲਿਖੋ: “tomorrow 3pm”, “every monday”, “Aug 31”।</string>
     <string name="new_task_title_hint">ਕੀ ਕਰਨਾ ਹੈ? # ਟੈਗ, @ ਵਿਅਕਤੀ, + ਪ੍ਰੋਜੈਕਟ, = ਸੂਚੀ ਅਜ਼ਮਾਓ</string>
     <string name="new_task_smart_add_summary">ਸਮਾਰਟ ਜੋੜੋ ਨੇ ਇਸ ਕਾਰਜ ਨੂੰ ਇਸ ਤਰ੍ਹਾਂ ਸਮਝਿਆ:</string>
     <string name="new_task_detected_title">ਸਿਰਲੇਖ: %1$s</string>

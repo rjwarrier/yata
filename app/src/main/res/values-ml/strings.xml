@@ -1118,6 +1118,14 @@
     <string name="snooze_next_weekday">അടുത്ത പ്രവൃത്തി ദിവസം</string>
     <string name="bulk_reschedule_selected">തിരഞ്ഞെടുത്ത ടാസ്കുകൾ വീണ്ടും ഷെഡ്യൂൾ ചെയ്യുക</string>
     <string name="new_task_title">പുതിയ ടാസ്ക്</string>
+    <string name="syntax_dialog_title">ടൈപ്പിംഗ് കുറുക്കുവഴികൾ</string>
+    <string name="syntax_tag">ടാഗ് ചേർക്കുക, ഉദാ. #urgent</string>
+    <string name="syntax_person">ഒരാളെ ഏൽപ്പിക്കുക, ഉദാ. @Sam</string>
+    <string name="syntax_project">പ്രോജക്ടിൽ ഇടുക, ഉദാ. +Acme</string>
+    <string name="syntax_list">ലിസ്റ്റിൽ ഇടുക, ഉദാ. =Groceries</string>
+    <string name="syntax_priority">മുൻഗണന: ഉയർന്നത്, ഇടത്തരം, കുറഞ്ഞത്. p1, p2, p3 എന്നിവയും പ്രവർത്തിക്കും.</string>
+    <string name="syntax_escape">അടുത്ത വാക്കിനെ ഇതിൽ നിന്നെല്ലാം മാറ്റിനിർത്തുന്നു, ഉദാ. \\tomorrow അല്ലെങ്കിൽ \\@Sam തലക്കെട്ടിൽ നിലനിൽക്കും. പേര് ഒരു ദിവസമോ മാസമോ ആകുമ്പോൾ ഉപകാരപ്രദം.</string>
+    <string name="syntax_plain_words">തീയതി, സമയം, ആവർത്തനം എന്നിവയ്ക്ക് ചിഹ്നം വേണ്ട — എഴുതിയാൽ മതി: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">എന്താണ് ചെയ്യേണ്ടത്? # ടാഗ്, @ ആൾ, + പ്രോജക്റ്റ്, = ലിസ്റ്റ് പരീക്ഷിക്കുക</string>
     <string name="new_task_smart_add_summary">സ്മാർട്ട് ആഡ് ഈ ടാസ്ക് ഇങ്ങനെ മനസ്സിലാക്കി:</string>
     <string name="new_task_detected_title">തലക്കെട്ട്: %1$s</string>

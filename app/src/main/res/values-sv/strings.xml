@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">Nästa arbetsdag</string>
     <string name="bulk_reschedule_selected">Boka om markerade uppgifter</string>
     <string name="new_task_title">Ny uppgift</string>
+    <string name="syntax_dialog_title">Skrivgenvägar</string>
+    <string name="syntax_tag">Lägg till en tagg, t.ex. #urgent</string>
+    <string name="syntax_person">Tilldela en person, t.ex. @Sam</string>
+    <string name="syntax_project">Lägg den i ett projekt, t.ex. +Acme</string>
+    <string name="syntax_list">Lägg den i en lista, t.ex. =Groceries</string>
+    <string name="syntax_priority">Prioritet: hög, medel, låg. p1, p2 och p3 fungerar också.</string>
+    <string name="syntax_escape">Håller nästa ord utanför allt detta, t.ex. \\tomorrow eller \\@Sam blir kvar i titeln. Bra när ett namn också är en dag eller en månad.</string>
+    <string name="syntax_plain_words">Datum, tider och upprepningar behöver ingen symbol — skriv dem bara: ”tomorrow 3pm”, ”every monday”, ”Aug 31”.</string>
     <string name="new_task_title_hint">Vad behöver göras? Prova # tagg, @ person, + projekt, = lista</string>
     <string name="new_task_smart_add_summary">Smart tillägg tolkade uppgiften som:</string>
     <string name="new_task_detected_title">Titel: %1$s</string>

@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Mic
 import com.mj.yata.R
@@ -175,6 +176,65 @@ private const val BULK_PREVIEW_CHIP_LIMIT = 12
 /** Most tasks a single bulk paste will create. Chosen well above any realistic roster while
  * keeping the one-off parse-and-insert cost of a stray paste bounded. */
 private const val MAX_BULK_TASKS = 500
+
+/**
+ * The typing shorthand the parser understands, shown from the (i) in the New Task header.
+ *
+ * Every one of these already worked; none of them was discoverable. The title field's hint names
+ * four of the symbols and has no room for the rest, and the escape had no mention anywhere in the
+ * app at all.
+ */
+@Composable
+internal fun QuickAddSyntaxDialog(onDismiss: () -> Unit) {
+    val rows = listOf(
+        "#" to stringResource(R.string.syntax_tag),
+        "@" to stringResource(R.string.syntax_person),
+        "+" to stringResource(R.string.syntax_project),
+        "=" to stringResource(R.string.syntax_list),
+        "!1 !2 !3" to stringResource(R.string.syntax_priority),
+        "\\" to stringResource(R.string.syntax_escape)
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.syntax_dialog_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rows.forEach { (symbol, meaning) ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = symbol,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            ),
+                            color = MaterialTheme.colorScheme.primary,
+                            // Fixed column so the meanings line up rather than stepping in and
+                            // out with the width of each symbol.
+                            modifier = Modifier.width(84.dp)
+                        )
+                        Text(
+                            text = meaning,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Text(
+                    text = stringResource(R.string.syntax_plain_words),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
+        }
+    )
+}
 
 /**
  * A bulleted or numbered list marker at the head of a pasted line — "1.", "2)", "-", "*", a
@@ -977,6 +1037,10 @@ fun NewTaskSheet(
             // and the create button ends up behind the gesture nav bar.
             .safeDrawingPadding()
     ) {
+        var showSyntaxDialog by remember { mutableStateOf(false) }
+        if (showSyntaxDialog) {
+            QuickAddSyntaxDialog(onDismiss = { showSyntaxDialog = false })
+        }
         TopAppBar(
             title = {
                 Text(
@@ -987,6 +1051,14 @@ fun NewTaskSheet(
             navigationIcon = {
                 IconButton(onClick = onDismiss) {
                     Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.action_close))
+                }
+            },
+            actions = {
+                IconButton(onClick = { showSyntaxDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = stringResource(R.string.syntax_dialog_title)
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(

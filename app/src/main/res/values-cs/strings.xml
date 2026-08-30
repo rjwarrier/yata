@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">Další pracovní den</string>
     <string name="bulk_reschedule_selected">Přeplánovat vybrané úkoly</string>
     <string name="new_task_title">Nový úkol</string>
+    <string name="syntax_dialog_title">Klávesové zkratky psaní</string>
+    <string name="syntax_tag">Přidat štítek, např. #urgent</string>
+    <string name="syntax_person">Přiřadit osobu, např. @Sam</string>
+    <string name="syntax_project">Zařadit do projektu, např. +Acme</string>
+    <string name="syntax_list">Zařadit do seznamu, např. =Groceries</string>
+    <string name="syntax_priority">Priorita: vysoká, střední, nízká. Funguje i p1, p2 a p3.</string>
+    <string name="syntax_escape">Ponechá další slovo mimo toto vše, např. \\tomorrow nebo \\@Sam zůstane v názvu. Hodí se, když je jméno zároveň dnem nebo měsícem.</string>
+    <string name="syntax_plain_words">Data, časy a opakování nepotřebují symbol — stačí je napsat: „tomorrow 3pm“, „every monday“, „Aug 31“.</string>
     <string name="new_task_title_hint">Co je třeba udělat? Zkuste # štítek, @ osoba, + projekt, = seznam</string>
     <string name="new_task_smart_add_summary">Chytré přidání rozpoznalo tento úkol jako:</string>
     <string name="new_task_detected_title">Název: %1$s</string>

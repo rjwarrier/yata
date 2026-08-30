@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">Următoarea zi lucrătoare</string>
     <string name="bulk_reschedule_selected">Reprogramează sarcinile selectate</string>
     <string name="new_task_title">Sarcină nouă</string>
+    <string name="syntax_dialog_title">Scurtături de tastare</string>
+    <string name="syntax_tag">Adaugă o etichetă, ex. #urgent</string>
+    <string name="syntax_person">Atribuie o persoană, ex. @Sam</string>
+    <string name="syntax_project">Pune-o într-un proiect, ex. +Acme</string>
+    <string name="syntax_list">Pune-o într-o listă, ex. =Groceries</string>
+    <string name="syntax_priority">Prioritate: mare, medie, mică. Funcționează și p1, p2 și p3.</string>
+    <string name="syntax_escape">Ține cuvântul următor în afara tuturor acestora, ex. \\tomorrow sau \\@Sam rămâne în titlu. Util când un nume este și o zi sau o lună.</string>
+    <string name="syntax_plain_words">Datele, orele și repetările nu au nevoie de simbol — scrie-le pur și simplu: „tomorrow 3pm”, „every monday”, „Aug 31”.</string>
     <string name="new_task_title_hint">Ce ai de făcut? Încearcă # etichetă, @ persoană, + proiect, = listă</string>
     <string name="new_task_smart_add_summary">Adăugarea inteligentă a înțeles această sarcină ca:</string>
     <string name="new_task_detected_title">Titlu: %1$s</string>

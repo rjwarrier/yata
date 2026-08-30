@@ -1252,6 +1252,14 @@
     <string name="bulk_reschedule_selected">Ausgewählte Aufgaben neu planen</string>
     <string name="new_task_title">Neue Aufgabe</string>
     <!-- The four mention triggers. Kept terse because it sits inside the input field. -->
+    <string name="syntax_dialog_title">Tipp-Kürzel</string>
+    <string name="syntax_tag">Tag hinzufügen, z. B. #urgent</string>
+    <string name="syntax_person">Person zuweisen, z. B. @Sam</string>
+    <string name="syntax_project">In ein Projekt legen, z. B. +Acme</string>
+    <string name="syntax_list">In eine Liste legen, z. B. =Groceries</string>
+    <string name="syntax_priority">Priorität: hoch, mittel, niedrig. p1, p2 und p3 gehen auch.</string>
+    <string name="syntax_escape">Hält das nächste Wort aus alledem heraus, z. B. \\tomorrow oder \\@Sam bleibt im Titel. Praktisch, wenn ein Name zugleich ein Tag oder Monat ist.</string>
+    <string name="syntax_plain_words">Daten, Zeiten und Wiederholungen brauchen kein Symbol — einfach schreiben: „tomorrow 3pm“, „every monday“, „Aug 31“.</string>
     <string name="new_task_title_hint">Was ist zu tun? Probiere # Tag, @ Person, + Projekt, = Liste</string>
     <string name="new_task_smart_add_summary">Die Schnellerfassung hat diese Aufgabe so verstanden:</string>
     <string name="new_task_detected_title">Titel: %1$s</string>

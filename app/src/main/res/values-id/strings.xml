@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">Hari kerja berikutnya</string>
     <string name="bulk_reschedule_selected">Jadwalkan ulang tugas terpilih</string>
     <string name="new_task_title">Tugas baru</string>
+    <string name="syntax_dialog_title">Pintasan pengetikan</string>
+    <string name="syntax_tag">Tambahkan tag, mis. #urgent</string>
+    <string name="syntax_person">Tugaskan orang, mis. @Sam</string>
+    <string name="syntax_project">Masukkan ke proyek, mis. +Acme</string>
+    <string name="syntax_list">Masukkan ke daftar, mis. =Groceries</string>
+    <string name="syntax_priority">Prioritas: tinggi, sedang, rendah. p1, p2, dan p3 juga bisa.</string>
+    <string name="syntax_escape">Menjaga kata berikutnya dari semua ini, mis. \\tomorrow atau \\@Sam tetap di judul. Berguna saat sebuah nama juga nama hari atau bulan.</string>
+    <string name="syntax_plain_words">Tanggal, waktu, dan pengulangan tidak butuh simbol — tulis saja: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">Apa yang perlu dikerjakan? Coba # tag, @ orang, + proyek, = daftar</string>
     <string name="new_task_smart_add_summary">Tambah pintar memahami tugas ini sebagai:</string>
     <string name="new_task_detected_title">Judul: %1$s</string>

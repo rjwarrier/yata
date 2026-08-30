@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">Prossimo giorno feriale</string>
     <string name="bulk_reschedule_selected">Ripianifica le attività selezionate</string>
     <string name="new_task_title">Nuova attività</string>
+    <string name="syntax_dialog_title">Scorciatoie di scrittura</string>
+    <string name="syntax_tag">Aggiungi un tag, es. #urgent</string>
+    <string name="syntax_person">Assegna una persona, es. @Sam</string>
+    <string name="syntax_project">Mettila in un progetto, es. +Acme</string>
+    <string name="syntax_list">Mettila in un elenco, es. =Groceries</string>
+    <string name="syntax_priority">Priorità: alta, media, bassa. Funzionano anche p1, p2 e p3.</string>
+    <string name="syntax_escape">Tiene la parola successiva fuori da tutto questo, es. \\tomorrow o \\@Sam resta nel titolo. Utile quando un nome è anche un giorno o un mese.</string>
+    <string name="syntax_plain_words">Date, orari e ripetizioni non richiedono simboli: basta scriverli: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">Cosa c\'è da fare? Prova # tag, @ persona, + progetto, = elenco</string>
     <string name="new_task_smart_add_summary">L\'aggiunta intelligente ha interpretato questa attività come:</string>
     <string name="new_task_detected_title">Titolo: %1$s</string>

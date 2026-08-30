@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">পরবর্তী কর্মদিবস</string>
     <string name="bulk_reschedule_selected">নির্বাচিত টাস্ক পুনঃনির্ধারণ করুন</string>
     <string name="new_task_title">নতুন টাস্ক</string>
+    <string name="syntax_dialog_title">টাইপিং শর্টকাট</string>
+    <string name="syntax_tag">ট্যাগ যোগ করুন, যেমন #urgent</string>
+    <string name="syntax_person">ব্যক্তি নিযুক্ত করুন, যেমন @Sam</string>
+    <string name="syntax_project">প্রকল্পে রাখুন, যেমন +Acme</string>
+    <string name="syntax_list">তালিকায় রাখুন, যেমন =Groceries</string>
+    <string name="syntax_priority">অগ্রাধিকার: উচ্চ, মাঝারি, নিম্ন। p1, p2, p3ও কাজ করে।</string>
+    <string name="syntax_escape">পরের শব্দটিকে এসবের বাইরে রাখে, যেমন \\tomorrow বা \\@Sam শিরোনামে থেকে যায়। নাম যখন দিন বা মাসের নামও হয় তখন কাজে লাগে।</string>
+    <string name="syntax_plain_words">তারিখ, সময় ও পুনরাবৃত্তির জন্য কোনো চিহ্ন লাগে না — শুধু লিখুন: “tomorrow 3pm”, “every monday”, “Aug 31”।</string>
     <string name="new_task_title_hint">কী করা দরকার? চেষ্টা করুন # ট্যাগ, @ ব্যক্তি, + প্রজেক্ট, = লিস্ট</string>
     <string name="new_task_smart_add_summary">স্মার্ট যোগ এই টাস্কটি এভাবে বুঝেছে:</string>
     <string name="new_task_detected_title">শিরোনাম: %1$s</string>

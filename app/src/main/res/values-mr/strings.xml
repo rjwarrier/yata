@@ -1118,6 +1118,14 @@
     <string name="snooze_next_weekday">पुढील कामाचा दिवस</string>
     <string name="bulk_reschedule_selected">निवडलेल्या कार्यांचे पुनर्नियोजन करा</string>
     <string name="new_task_title">नवीन कार्य</string>
+    <string name="syntax_dialog_title">टायपिंग शॉर्टकट</string>
+    <string name="syntax_tag">टॅग जोडा, उदा. #urgent</string>
+    <string name="syntax_person">व्यक्ती नेमा, उदा. @Sam</string>
+    <string name="syntax_project">प्रकल्पात ठेवा, उदा. +Acme</string>
+    <string name="syntax_list">यादीत ठेवा, उदा. =Groceries</string>
+    <string name="syntax_priority">प्राधान्य: उच्च, मध्यम, कमी. p1, p2 आणि p3 सुद्धा चालतात.</string>
+    <string name="syntax_escape">पुढील शब्द या सर्वांपासून दूर ठेवते, उदा. \\tomorrow किंवा \\@Sam शीर्षकात राहते. नाव हेच दिवस किंवा महिना असताना उपयुक्त.</string>
+    <string name="syntax_plain_words">तारीख, वेळ आणि पुनरावृत्तीसाठी चिन्ह लागत नाही — फक्त लिहा: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">काय करायचे आहे? # टॅग, @ व्यक्ती, + प्रकल्प, = यादी वापरून पहा</string>
     <string name="new_task_smart_add_summary">स्मार्ट अ‍ॅडने हे कार्य असे समजले:</string>
     <string name="new_task_detected_title">शीर्षक: %1$s</string>

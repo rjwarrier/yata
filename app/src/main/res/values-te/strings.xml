@@ -1118,6 +1118,14 @@
     <string name="snooze_next_weekday">తర్వాతి పనిదినం</string>
     <string name="bulk_reschedule_selected">ఎంచుకున్న టాస్క్‌లు తిరిగి షెడ్యూల్ చేయండి</string>
     <string name="new_task_title">కొత్త టాస్క్</string>
+    <string name="syntax_dialog_title">టైపింగ్ షార్ట్‌కట్‌లు</string>
+    <string name="syntax_tag">ట్యాగ్ జోడించండి, ఉదా. #urgent</string>
+    <string name="syntax_person">వ్యక్తిని కేటాయించండి, ఉదా. @Sam</string>
+    <string name="syntax_project">ప్రాజెక్ట్‌లో ఉంచండి, ఉదా. +Acme</string>
+    <string name="syntax_list">జాబితాలో ఉంచండి, ఉదా. =Groceries</string>
+    <string name="syntax_priority">ప్రాధాన్యత: అధిక, మధ్యస్థ, తక్కువ. p1, p2, p3 కూడా పనిచేస్తాయి.</string>
+    <string name="syntax_escape">తదుపరి పదాన్ని వీటన్నింటి నుండి దూరంగా ఉంచుతుంది, ఉదా. \\tomorrow లేదా \\@Sam శీర్షికలో ఉంటుంది. పేరే ఒక రోజు లేదా నెల అయినప్పుడు ఉపయోగకరం.</string>
+    <string name="syntax_plain_words">తేదీలు, సమయాలు, పునరావృత్తికి గుర్తు అవసరం లేదు — రాస్తే చాలు: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">ఏమి చేయాలి? # ట్యాగ్, @ వ్యక్తి, + ప్రాజెక్ట్, = జాబితా ప్రయత్నించండి</string>
     <string name="new_task_smart_add_summary">స్మార్ట్ యాడ్ ఈ టాస్క్‌ను ఇలా అర్థం చేసుకుంది:</string>
     <string name="new_task_detected_title">శీర్షిక: %1$s</string>

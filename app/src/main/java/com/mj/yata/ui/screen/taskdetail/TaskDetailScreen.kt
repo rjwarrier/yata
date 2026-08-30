@@ -273,6 +273,7 @@ fun TaskDetailScreen(
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
     val dueCountdownEnabled = com.mj.yata.ui.theme.LocalDueCountdownEnabled.current
+    var showSyntaxDialog by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var exportFormatPending by remember { mutableStateOf<com.mj.yata.util.export.ExportFormat?>(null) }
@@ -370,7 +371,18 @@ fun TaskDetailScreen(
                     IconButton(onClick = { showExportMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                     }
+                    // The title field here takes the same #/@/+/= and backslash syntax the New
+                    // Task sheet does, so the same reference belongs within reach. It goes in the
+                    // overflow rather than as another top-bar icon: this bar already carries back,
+                    // flag and overflow, and unlike New Task there is no headline to sit beside.
                     YataDropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
+                        YataDropdownMenuItem(
+                            text = { Text(stringResource(R.string.syntax_dialog_title)) },
+                            onClick = {
+                                showExportMenu = false
+                                showSyntaxDialog = true
+                            }
+                        )
                         if (task.recurrence != null && !task.done) {
                             YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.task_detail_skip_this_occurrence)) },
@@ -2158,6 +2170,10 @@ fun TaskDetailScreen(
         com.mj.yata.util.export.ExportProgressDialog()
     }
     com.mj.yata.util.export.LongTaskLinkWarningDialog(longTaskLinkWarningGate)
+
+    if (showSyntaxDialog) {
+        com.mj.yata.ui.sheets.QuickAddSyntaxDialog(onDismiss = { showSyntaxDialog = false })
+    }
 
     pendingParentCompletionSubtasks?.let { completedSubtasks ->
         AlertDialog(

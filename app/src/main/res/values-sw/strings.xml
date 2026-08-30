@@ -1118,6 +1118,14 @@
     <string name="snooze_next_weekday">Siku ya kazi inayofuata</string>
     <string name="bulk_reschedule_selected">Panga upya kazi zilizoteuliwa</string>
     <string name="new_task_title">Kazi mpya</string>
+    <string name="syntax_dialog_title">Njia za mkato za kuandika</string>
+    <string name="syntax_tag">Ongeza lebo, mf. #urgent</string>
+    <string name="syntax_person">Kabidhi mtu, mf. @Sam</string>
+    <string name="syntax_project">Iweke katika mradi, mf. +Acme</string>
+    <string name="syntax_list">Iweke katika orodha, mf. =Groceries</string>
+    <string name="syntax_priority">Kipaumbele: juu, wastani, chini. p1, p2 na p3 pia hufanya kazi.</string>
+    <string name="syntax_escape">Huacha neno linalofuata nje ya haya yote, mf. \\tomorrow au \\@Sam hubaki katika kichwa. Inasaidia jina linapokuwa pia siku au mwezi.</string>
+    <string name="syntax_plain_words">Tarehe, saa na marudio hazihitaji alama — ziandike tu: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">Nini kinatakiwa kufanywa? Jaribu # lebo, @ mtu, + mradi, = orodha</string>
     <string name="new_task_smart_add_summary">Ongeza mahiri imeelewa kazi hii kama:</string>
     <string name="new_task_detected_title">Kichwa: %1$s</string>

@@ -1118,6 +1118,14 @@
     <string name="snooze_next_weekday">அடுத்த வேலை நாள்</string>
     <string name="bulk_reschedule_selected">தேர்ந்தெடுத்த பணிகளை மறு அட்டவணைப்படுத்து</string>
     <string name="new_task_title">புதிய பணி</string>
+    <string name="syntax_dialog_title">தட்டச்சு குறுக்குவழிகள்</string>
+    <string name="syntax_tag">குறிச்சொல் சேர்க்க, எ.கா. #urgent</string>
+    <string name="syntax_person">நபரை ஒதுக்க, எ.கா. @Sam</string>
+    <string name="syntax_project">திட்டத்தில் சேர்க்க, எ.கா. +Acme</string>
+    <string name="syntax_list">பட்டியலில் சேர்க்க, எ.கா. =Groceries</string>
+    <string name="syntax_priority">முன்னுரிமை: உயர், நடுத்தர, குறைவு. p1, p2, p3 உம் வேலை செய்யும்.</string>
+    <string name="syntax_escape">அடுத்த சொல்லை இவை அனைத்திலிருந்தும் விலக்கும், எ.கா. \\tomorrow அல்லது \\@Sam தலைப்பில் இருக்கும். பெயரே ஒரு நாள் அல்லது மாதமாக இருக்கும்போது பயனுள்ளது.</string>
+    <string name="syntax_plain_words">தேதி, நேரம், மீள்நிகழ்வுக்கு குறியீடு தேவையில்லை — எழுதினாலே போதும்: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">என்ன செய்ய வேண்டும்? # குறிச்சொல், @ நபர், + திட்டம், = பட்டியலை முயற்சிக்கவும்</string>
     <string name="new_task_smart_add_summary">ஸ்மார்ட் சேர்ப்பு இந்த பணியைப் புரிந்துகொண்டது:</string>
     <string name="new_task_detected_title">தலைப்பு: %1$s</string>

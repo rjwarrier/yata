@@ -1118,6 +1118,14 @@
     <string name="snooze_next_weekday">આગામી કાર્યકારી દિવસ</string>
     <string name="bulk_reschedule_selected">પસંદ કરેલા ટાસ્ક ફરીથી શેડ્યુલ કરો</string>
     <string name="new_task_title">નવો ટાસ્ક</string>
+    <string name="syntax_dialog_title">ટાઇપિંગ શોર્ટકટ</string>
+    <string name="syntax_tag">ટૅગ ઉમેરો, દા.ત. #urgent</string>
+    <string name="syntax_person">વ્યક્તિ સોંપો, દા.ત. @Sam</string>
+    <string name="syntax_project">પ્રોજેક્ટમાં મૂકો, દા.ત. +Acme</string>
+    <string name="syntax_list">યાદીમાં મૂકો, દા.ત. =Groceries</string>
+    <string name="syntax_priority">પ્રાધાન્ય: ઊંચું, મધ્યમ, નીચું. p1, p2 અને p3 પણ ચાલે.</string>
+    <string name="syntax_escape">આગળનો શબ્દ આ બધામાંથી બહાર રાખે, દા.ત. \\tomorrow કે \\@Sam શીર્ષકમાં રહે. નામ દિવસ કે મહિનો હોય ત્યારે ઉપયોગી.</string>
+    <string name="syntax_plain_words">તારીખ, સમય અને પુનરાવર્તન માટે કોઈ ચિહ્ન જરૂરી નથી — બસ લખો: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">શું કરવાનું છે? # ટૅગ, @ વ્યક્તિ, + પ્રોજેક્ટ, = યાદી અજમાવો</string>
     <string name="new_task_smart_add_summary">સ્માર્ટ ઉમેરાએ આ ટાસ્કને આ રીતે સમજ્યો:</string>
     <string name="new_task_detected_title">શીર્ષક: %1$s</string>

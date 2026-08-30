@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">Następny dzień roboczy</string>
     <string name="bulk_reschedule_selected">Przełóż zaznaczone zadania</string>
     <string name="new_task_title">Nowe zadanie</string>
+    <string name="syntax_dialog_title">Skróty pisania</string>
+    <string name="syntax_tag">Dodaj tag, np. #urgent</string>
+    <string name="syntax_person">Przypisz osobę, np. @Sam</string>
+    <string name="syntax_project">Umieść w projekcie, np. +Acme</string>
+    <string name="syntax_list">Umieść na liście, np. =Groceries</string>
+    <string name="syntax_priority">Priorytet: wysoki, średni, niski. Działają też p1, p2 i p3.</string>
+    <string name="syntax_escape">Zostawia następne słowo poza tym wszystkim, np. \\tomorrow lub \\@Sam zostaje w tytule. Przydatne, gdy imię jest zarazem dniem lub miesiącem.</string>
+    <string name="syntax_plain_words">Daty, godziny i powtórzenia nie wymagają symbolu — po prostu je wpisz: „tomorrow 3pm”, „every monday”, „Aug 31”.</string>
     <string name="new_task_title_hint">Co trzeba zrobić? Spróbuj # tag, @ osoba, + projekt, = lista</string>
     <string name="new_task_smart_add_summary">Inteligentne dodawanie zrozumiało to zadanie jako:</string>
     <string name="new_task_detected_title">Tytuł: %1$s</string>

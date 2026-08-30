@@ -465,6 +465,14 @@
     <string name="bulk_reschedule_selected">Reprogramar tareas seleccionadas</string>
 
     <string name="new_task_title">Nueva tarea</string>
+    <string name="syntax_dialog_title">Atajos de escritura</string>
+    <string name="syntax_tag">Añadir una etiqueta, p. ej. #urgent</string>
+    <string name="syntax_person">Asignar una persona, p. ej. @Sam</string>
+    <string name="syntax_project">Ponerla en un proyecto, p. ej. +Acme</string>
+    <string name="syntax_list">Ponerla en una lista, p. ej. =Groceries</string>
+    <string name="syntax_priority">Prioridad: alta, media, baja. También funcionan p1, p2 y p3.</string>
+    <string name="syntax_escape">Deja la palabra siguiente fuera de todo esto; p. ej. \\tomorrow o \\@Sam se queda en el título. Útil cuando un nombre es también un día o un mes.</string>
+    <string name="syntax_plain_words">Las fechas, horas y repeticiones no necesitan símbolo: solo escríbelas: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">¿Qué hay que hacer? Prueba # etiqueta, @ persona, + proyecto, = lista</string>
     <string name="new_task_smart_add_summary">Añadir inteligente entendió esta tarea como:</string>
     <string name="new_task_detected_title">Título: %1$s</string>

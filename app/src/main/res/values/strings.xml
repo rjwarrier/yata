@@ -1372,6 +1372,14 @@
     <string name="bulk_reschedule_selected">Reschedule selected tasks</string>
     <string name="new_task_title">New task</string>
     <!-- The four mention triggers. Kept terse because it sits inside the input field. -->
+    <string name="syntax_dialog_title">Typing shortcuts</string>
+    <string name="syntax_tag">Add a tag, e.g. #urgent</string>
+    <string name="syntax_person">Assign a person, e.g. @Sam</string>
+    <string name="syntax_project">Put it in a project, e.g. +Acme</string>
+    <string name="syntax_list">Put it in a list, e.g. =Groceries</string>
+    <string name="syntax_priority">Set priority: high, medium, low. p1, p2 and p3 work too.</string>
+    <string name="syntax_escape">Keep the next word out of all of this, e.g. \\tomorrow or \\@Sam stays in the title. Useful when a name is also a day or a month.</string>
+    <string name="syntax_plain_words">Dates, times and repeats need no symbol — just write them: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">What needs doing? Try # tag, @ person, + project, = list</string>
     <string name="new_task_smart_add_summary">Smart add understood this task as:</string>
     <string name="new_task_detected_title">Title: %1$s</string>

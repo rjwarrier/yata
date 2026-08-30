@@ -1143,6 +1143,14 @@
     <string name="snooze_next_weekday">Volgende werkdag</string>
     <string name="bulk_reschedule_selected">Geselecteerde taken verzetten</string>
     <string name="new_task_title">Nieuwe taak</string>
+    <string name="syntax_dialog_title">Typsnelkoppelingen</string>
+    <string name="syntax_tag">Een tag toevoegen, bv. #urgent</string>
+    <string name="syntax_person">Een persoon toewijzen, bv. @Sam</string>
+    <string name="syntax_project">In een project zetten, bv. +Acme</string>
+    <string name="syntax_list">In een lijst zetten, bv. =Groceries</string>
+    <string name="syntax_priority">Prioriteit: hoog, gemiddeld, laag. p1, p2 en p3 werken ook.</string>
+    <string name="syntax_escape">Houdt het volgende woord hier helemaal buiten, bv. \\tomorrow of \\@Sam blijft in de titel. Handig als een naam ook een dag of maand is.</string>
+    <string name="syntax_plain_words">Datums, tijden en herhalingen hebben geen symbool nodig — schrijf ze gewoon: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">Wat moet er gebeuren? Probeer # tag, @ persoon, + project, = lijst</string>
     <string name="new_task_smart_add_summary">Slim toevoegen heeft deze taak zo begrepen:</string>
     <string name="new_task_detected_title">Titel: %1$s</string>

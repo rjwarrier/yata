@@ -1035,6 +1035,14 @@
     <string name="snooze_next_weekday">Ngày làm việc kế tiếp</string>
     <string name="bulk_reschedule_selected">Đổi lịch việc đã chọn</string>
     <string name="new_task_title">Việc cần làm mới</string>
+    <string name="syntax_dialog_title">Phím tắt khi nhập</string>
+    <string name="syntax_tag">Thêm thẻ, ví dụ #urgent</string>
+    <string name="syntax_person">Giao cho một người, ví dụ @Sam</string>
+    <string name="syntax_project">Đưa vào một dự án, ví dụ +Acme</string>
+    <string name="syntax_list">Đưa vào một danh sách, ví dụ =Groceries</string>
+    <string name="syntax_priority">Ưu tiên: cao, trung bình, thấp. p1, p2 và p3 cũng được.</string>
+    <string name="syntax_escape">Giữ từ tiếp theo ngoài tất cả những thứ này, ví dụ \\tomorrow hoặc \\@Sam vẫn nằm trong tiêu đề. Hữu ích khi một cái tên cũng là một ngày hoặc một tháng.</string>
+    <string name="syntax_plain_words">Ngày, giờ và lặp lại không cần ký hiệu — cứ viết ra: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">Cần làm gì? Thử # thẻ, @ người, + dự án, = danh sách</string>
     <string name="new_task_smart_add_summary">Thêm thông minh hiểu việc này là:</string>
     <string name="new_task_detected_title">Tiêu đề: %1$s</string>

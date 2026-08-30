@@ -1118,6 +1118,14 @@
     <string name="snooze_next_weekday">Susunod na araw ng trabaho</string>
     <string name="bulk_reschedule_selected">Baguhin ang iskedyul ng napili</string>
     <string name="new_task_title">Bagong gawain</string>
+    <string name="syntax_dialog_title">Mga shortcut sa pagta-type</string>
+    <string name="syntax_tag">Magdagdag ng tag, hal. #urgent</string>
+    <string name="syntax_person">Mag-assign ng tao, hal. @Sam</string>
+    <string name="syntax_project">Ilagay sa isang proyekto, hal. +Acme</string>
+    <string name="syntax_list">Ilagay sa isang listahan, hal. =Groceries</string>
+    <string name="syntax_priority">Priyoridad: mataas, katamtaman, mababa. Gumagana rin ang p1, p2 at p3.</string>
+    <string name="syntax_escape">Inilalabas ang susunod na salita sa lahat ng ito, hal. \\tomorrow o \\@Sam ay mananatili sa pamagat. Kapaki-pakinabang kapag ang pangalan ay araw o buwan din.</string>
+    <string name="syntax_plain_words">Hindi kailangan ng simbolo ang mga petsa, oras at pag-uulit — isulat mo lang: “tomorrow 3pm”, “every monday”, “Aug 31”.</string>
     <string name="new_task_title_hint">Ano ang kailangang gawin? Subukan ang # tag, @ tao, + proyekto, = listahan</string>
     <string name="new_task_smart_add_summary">Naunawaan ng smart add ang gawaing ito bilang:</string>
     <string name="new_task_detected_title">Pamagat: %1$s</string>

@@ -862,6 +862,14 @@
     <string name="snooze_next_weekday">Prochain jour ouvré</string>
     <string name="bulk_reschedule_selected">Replanifier les tâches sélectionnées</string>
     <string name="new_task_title">Nouvelle tâche</string>
+    <string name="syntax_dialog_title">Raccourcis de saisie</string>
+    <string name="syntax_tag">Ajouter une étiquette, ex. #urgent</string>
+    <string name="syntax_person">Attribuer une personne, ex. @Sam</string>
+    <string name="syntax_project">Placer dans un projet, ex. +Acme</string>
+    <string name="syntax_list">Placer dans une liste, ex. =Groceries</string>
+    <string name="syntax_priority">Priorité : haute, moyenne, basse. p1, p2 et p3 marchent aussi.</string>
+    <string name="syntax_escape">Garde le mot suivant hors de tout cela, ex. \\tomorrow ou \\@Sam reste dans le titre. Pratique quand un nom est aussi un jour ou un mois.</string>
+    <string name="syntax_plain_words">Dates, heures et répétitions ne demandent aucun symbole : écrivez-les simplement : « tomorrow 3pm », « every monday », « Aug 31 ».</string>
     <string name="new_task_title_hint">Que faut-il faire ? Essayez # balise, @ personne, + projet, = liste</string>
     <string name="new_task_smart_add_summary">Smart Add a compris cette tâche comme :</string>
     <string name="new_task_detected_title">Titre : %1$s</string>
