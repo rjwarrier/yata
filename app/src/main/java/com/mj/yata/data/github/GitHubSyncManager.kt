@@ -16,6 +16,7 @@ import com.mj.yata.util.BackupCrypto
 import com.mj.yata.util.JsonExporter
 import com.mj.yata.util.syncDeviceLabel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
@@ -61,6 +62,8 @@ class GitHubSyncManager @Inject constructor(
                     userPreferences.setSftpLastBackupAt(System.currentTimeMillis())
                 }
                 syncResult
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "syncNow failed", e)
                 Result.failure<SyncRunReport>(e)
@@ -85,6 +88,8 @@ class GitHubSyncManager @Inject constructor(
                     createdAt = commit.authoredAt
                 )
             })
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "listRestorePoints failed", e)
             Result.failure(e)
@@ -108,6 +113,8 @@ class GitHubSyncManager @Inject constructor(
                 } else {
                     Result.failure(IllegalStateException("Restore failed - backup file unreadable"))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "restore failed", e)
                 Result.failure(e)
@@ -118,6 +125,8 @@ class GitHubSyncManager @Inject constructor(
     override suspend fun inspect(id: String): Result<BackupSummary> = withContext(Dispatchers.IO) {
         try {
             Result.success(jsonExporter.summarise(readSnapshot(id).getOrThrow()))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "inspect failed", e)
             Result.failure(e)
@@ -129,6 +138,8 @@ class GitHubSyncManager @Inject constructor(
             val config = config()
             val api = api(config)
             Result.success(publisher(api).readSnapshot(config, id))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "readSnapshot failed", e)
             Result.failure(e)
@@ -138,7 +149,8 @@ class GitHubSyncManager @Inject constructor(
     override suspend fun isConfigured(): Boolean =
         userPreferences.githubOwnerFlow.first().isNotBlank() &&
             userPreferences.githubRepoFlow.first().isNotBlank() &&
-            !credentialsStore.githubToken.isNullOrBlank()
+            !credentialsStore.githubToken.isNullOrBlank() &&
+            !credentialsStore.backupPassphrase.isNullOrBlank()
 
     private fun encodePayload(jsonBytes: ByteArray): ByteArray {
         val passphrase = credentialsStore.backupPassphrase
@@ -223,9 +235,7 @@ class GitHubSyncManager @Inject constructor(
 
         progress(12, "Checking GitHub")
         val repo = api.getRepo(config.owner, config.repo)
-        if (!repo.isPrivate) {
-            throw GitHubPublicRepoException()
-        }
+        repo.requirePrivateWriteAccess()
         val currentHead = try {
             api.getRef(config.owner, config.repo, config.branch).sha
         } catch (_: GitHubNotFoundException) {

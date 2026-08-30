@@ -70,7 +70,7 @@ class RemoteBackupCredentialsStore @Inject constructor(@ApplicationContext conte
     /**
      * Passphrase the backup *file itself* is encrypted with before it leaves the device — distinct
      * from [password] (which authenticates to the server) and from [passphrase] (which unlocks an
-     * SSH private key). Null means backups are uploaded unencrypted.
+     * SSH private key). Null means remote backup is not fully configured.
      *
      * Kept here so scheduled backups can run unattended, but unlike the other secrets this one is
      * unrecoverable-by-design: it never goes to the server, so a backup can only be restored by

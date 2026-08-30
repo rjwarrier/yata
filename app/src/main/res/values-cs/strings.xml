@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">Heslo je uloženo -- ponechte prázdné, chcete-li ho zachovat</string>
     <string name="remote_sync_passphrase_saved_hint">Heslová fráze je uložena -- ponechte prázdné, chcete-li ji zachovat</string>
     <string name="remote_sync_backup_encryption">Šifrování zálohy</string>
-    <string name="remote_sync_backup_encryption_summary">Volitelná heslová fráze pro šifrování každé zálohy, bez ohledu na použitého poskytovatele.</string>
+    <string name="remote_sync_backup_encryption_summary">Povinná heslová fráze používaná k šifrování každé vzdálené zálohy bez ohledu na poskytovatele.</string>
+    <string name="remote_sync_backup_passphrase_required">Před uložením vzdálené synchronizace nastavte heslovou frázi pro šifrování záloh.</string>
     <string name="remote_sync_github_title">Synchronizace přes GitHub</string>
     <string name="remote_sync_github_body">Synchronizace přes soukromý repozitář s historií commitů jako body obnovy.</string>
     <string name="remote_sync_ftp_title">Synchronizace přes FTP / FTPS</string>

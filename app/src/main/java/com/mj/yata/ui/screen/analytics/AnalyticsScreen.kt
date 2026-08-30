@@ -665,7 +665,6 @@ fun AnalyticsScreen(
         }
     }
 }
-
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -929,7 +928,6 @@ private fun TrendLabel(trend: com.mj.yata.util.MetricTrend, unit: String) {
         )
     }
 }
-
 /** Names the two series and carries their period totals, so the chart can be read without
  * counting bars. */
 @Composable
@@ -1411,4 +1409,3 @@ private fun MiniStat(
         )
     }
 }
-

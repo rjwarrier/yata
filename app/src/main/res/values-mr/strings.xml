@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">पासवर्ड जतन केला आहे -- तो ठेवण्यासाठी रिकामे सोडा</string>
     <string name="remote_sync_passphrase_saved_hint">पासफ्रेज जतन केला आहे -- तो ठेवण्यासाठी रिकामे सोडा</string>
     <string name="remote_sync_backup_encryption">बॅकअप एन्क्रिप्शन</string>
-    <string name="remote_sync_backup_encryption_summary">तुम्ही कोणताही प्रदाता वापरत असलात तरी प्रत्येक बॅकअप एन्क्रिप्ट करण्यासाठी वैकल्पिक पासफ्रेज.</string>
+    <string name="remote_sync_backup_encryption_summary">तुम्ही कोणताही प्रदाता वापरत असलात तरी प्रत्येक रिमोट बॅकअप एन्क्रिप्ट करण्यासाठी आवश्यक पासफ्रेज.</string>
+    <string name="remote_sync_backup_passphrase_required">रिमोट सिंक जतन करण्यापूर्वी बॅकअप एन्क्रिप्शन पासफ्रेज सेट करा.</string>
     <string name="remote_sync_github_title">GitHub सिंक</string>
     <string name="remote_sync_github_body">पुनर्स्थापना बिंदू म्हणून कमिट इतिहासासह खासगी रिपॉझिटरीद्वारे सिंक करा.</string>
     <string name="action_import">आयात करा</string>

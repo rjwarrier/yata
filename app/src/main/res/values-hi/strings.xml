@@ -492,7 +492,8 @@
     <string name="remote_sync_password_saved_hint">पासवर्ड सहेजा गया -- इसे बनाए रखने के लिए खाली छोड़ें</string>
     <string name="remote_sync_passphrase_saved_hint">पासफ़्रेज़ सहेजा गया -- इसे बनाए रखने के लिए खाली छोड़ें</string>
     <string name="remote_sync_backup_encryption">बैकअप एन्क्रिप्शन</string>
-    <string name="remote_sync_backup_encryption_summary">आप जो भी प्रदाता उपयोग करें, हर बैकअप को एन्क्रिप्ट करने के लिए वैकल्पिक पासफ़्रेज़।</string>
+    <string name="remote_sync_backup_encryption_summary">आप जो भी प्रदाता उपयोग करें, हर रिमोट बैकअप को एन्क्रिप्ट करने के लिए आवश्यक पासफ़्रेज़।</string>
+    <string name="remote_sync_backup_passphrase_required">रिमोट सिंक सहेजने से पहले बैकअप एन्क्रिप्शन पासफ़्रेज़ सेट करें।</string>
     <string name="remote_sync_github_title">GitHub सिंक</string>
     <string name="remote_sync_github_body">पुनर्स्थापन बिंदुओं के रूप में कमिट इतिहास वाली एक निजी रिपॉज़िटरी के ज़रिए सिंक करें।</string>
     <string name="remote_sync_ftp_title">FTP / FTPS सिंक</string>

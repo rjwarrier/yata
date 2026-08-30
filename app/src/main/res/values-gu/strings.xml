@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">પાસવર્ડ સાચવેલો છે -- તેને રાખવા ખાલી છોડો</string>
     <string name="remote_sync_passphrase_saved_hint">પાસફ્રેઝ સાચવેલી છે -- તેને રાખવા ખાલી છોડો</string>
     <string name="remote_sync_backup_encryption">બેકઅપ એન્ક્રિપ્શન</string>
-    <string name="remote_sync_backup_encryption_summary">તમે ગમે તે પ્રદાતા વાપરો, દરેક બેકઅપને એન્ક્રિપ્ટ કરવા વૈકલ્પિક પાસફ્રેઝ.</string>
+    <string name="remote_sync_backup_encryption_summary">તમે ગમે તે પ્રદાતા વાપરો, દરેક રિમોટ બેકઅપને એન્ક્રિપ્ટ કરવા માટે આવશ્યક પાસફ્રેઝ.</string>
+    <string name="remote_sync_backup_passphrase_required">રિમોટ સિંક્ને સાચવતા પહેલાં બેકઅપ એન્ક્રિપ્શન પાસફ્રેઝ સેટ કરો.</string>
     <string name="remote_sync_github_title">GitHub સિંક</string>
     <string name="remote_sync_github_body">પુનઃસ્થાપન બિંદુઓ તરીકે કમિટ ઇતિહાસ સાથે ખાનગી રિપોઝિટરી દ્વારા સિંક કરો.</string>
     <string name="action_import">આયાત કરો</string>

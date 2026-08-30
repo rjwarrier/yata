@@ -48,6 +48,8 @@ import com.mj.yata.domain.model.ThemeMode
 import com.mj.yata.ui.navigation.AppNavigation
 import com.mj.yata.ui.screen.lock.AppLockState
 import com.mj.yata.ui.screen.lock.LockScreen
+import com.mj.yata.ui.screen.lock.shouldDisableLockToAvoidStrandingOwner
+import com.mj.yata.ui.screen.lock.shouldLockOnAppLaunch
 import com.mj.yata.ui.theme.YataTheme
 import com.mj.yata.util.IcsExporter
 import com.mj.yata.util.JsonExporter
@@ -381,7 +383,13 @@ class MainActivity : AppCompatActivity() {
                 // (rotation/multi-window) this same check must not re-run and spuriously relock.
                 if (!AppLockState.hasCheckedInitialLock) {
                     AppLockState.hasCheckedInitialLock = true
-                    if (userPreferences.appLockEnabledFlow.first() && canAuthenticate()) {
+                    if (
+                        shouldLockOnAppLaunch(
+                            appLockEnabled = userPreferences.appLockEnabledFlow.first(),
+                            biometricOrDeviceCredentialAvailable = canAuthenticate(),
+                            pinSet = userPreferences.appLockPinSetFlow.first()
+                        )
+                    ) {
                         AppLockState.isLocked = true
                     }
                 }
@@ -441,8 +449,16 @@ class MainActivity : AppCompatActivity() {
                             // recovery would be clearing app data — every task gone, to protect a
                             // lock whose own precondition has been deleted. Opening is the lesser
                             // failure, so the lock stands down instead of stranding its owner.
-                            LaunchedEffect(biometricAvailable, pinSet) {
-                                if (!biometricAvailable && !pinSet) AppLockState.isLocked = false
+                            LaunchedEffect(appLockEnabledPref, biometricAvailable, pinSet) {
+                                if (
+                                    shouldDisableLockToAvoidStrandingOwner(
+                                        appLockEnabled = appLockEnabledPref,
+                                        biometricOrDeviceCredentialAvailable = biometricAvailable,
+                                        pinSet = pinSet
+                                    )
+                                ) {
+                                    AppLockState.isLocked = false
+                                }
                             }
 
                             LockScreen(

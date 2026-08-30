@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">Parola kaydedildi -- korumak için boş bırakın</string>
     <string name="remote_sync_passphrase_saved_hint">Parola cümlesi kaydedildi -- korumak için boş bırakın</string>
     <string name="remote_sync_backup_encryption">Yedekleme şifrelemesi</string>
-    <string name="remote_sync_backup_encryption_summary">Hangi sağlayıcıyı kullanırsanız kullanın, her yedeği şifrelemek için isteğe bağlı parola cümlesi.</string>
+    <string name="remote_sync_backup_encryption_summary">Hangi sağlayıcıyı kullanırsanız kullanın, her uzak yedeği şifrelemek için gerekli parola cümlesi.</string>
+    <string name="remote_sync_backup_passphrase_required">Uzak eşitlemeyi kaydetmeden önce bir yedek şifreleme parola cümlesi ayarlayın.</string>
     <string name="remote_sync_github_title">GitHub senkronizasyonu</string>
     <string name="remote_sync_github_body">Kurtarma noktası olarak commit geçmişine sahip özel bir depo üzerinden senkronize edin.</string>
     <string name="remote_sync_ftp_title">FTP / FTPS senkronizasyonu</string>

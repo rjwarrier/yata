@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">পাসওয়ার্ড সংরক্ষিত -- এটি রাখতে খালি রাখুন</string>
     <string name="remote_sync_passphrase_saved_hint">পাসফ্রেজ সংরক্ষিত -- এটি রাখতে খালি রাখুন</string>
     <string name="remote_sync_backup_encryption">ব্যাকআপ এনক্রিপশন</string>
-    <string name="remote_sync_backup_encryption_summary">যে প্রদানকারীই ব্যবহার করুন না কেন, প্রতিটি ব্যাকআপ এনক্রিপ্ট করতে ঐচ্ছিক পাসফ্রেজ।</string>
+    <string name="remote_sync_backup_encryption_summary">আপনি যে প্রদানকারীই ব্যবহার করুন না কেন, প্রতিটি রিমোট ব্যাকআপ এনক্রিপ্ট করার জন্য আবশ্যক পাসফ্রেজ।</string>
+    <string name="remote_sync_backup_passphrase_required">রিমোট সিঙ্ক সংরক্ষণ করার আগে একটি ব্যাকআপ এনক্রিপশন পাসফ্রেজ সেট করুন।</string>
     <string name="remote_sync_github_title">GitHub সিঙ্ক</string>
     <string name="remote_sync_github_body">পুনরুদ্ধার বিন্দু হিসেবে কমিট ইতিহাসসহ একটি ব্যক্তিগত রিপোজিটরির মাধ্যমে সিঙ্ক করুন।</string>
     <string name="remote_sync_ftp_title">FTP / FTPS সিঙ্ক</string>

@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">Lösenord sparat -- lämna tomt för att behålla det</string>
     <string name="remote_sync_passphrase_saved_hint">Lösenfras sparad -- lämna tomt för att behålla den</string>
     <string name="remote_sync_backup_encryption">Kryptering av säkerhetskopia</string>
-    <string name="remote_sync_backup_encryption_summary">Valfri lösenfras som används för att kryptera varje säkerhetskopia, oavsett vilken leverantör du använder.</string>
+    <string name="remote_sync_backup_encryption_summary">Obligatorisk lösenfras som används för att kryptera varje fjärrsäkerhetskopia, oavsett leverantör.</string>
+    <string name="remote_sync_backup_passphrase_required">Ange en lösenfras för säkerhetskopiekryptering innan du sparar fjärrsynk.</string>
     <string name="remote_sync_github_title">GitHub-synk</string>
     <string name="remote_sync_github_body">Synkronisera via ett privat repository med commit-historik som återställningspunkter.</string>
     <string name="remote_sync_ftp_title">FTP-/FTPS-synk</string>

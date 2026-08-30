@@ -1,6 +1,7 @@
 package com.mj.yata.data.github
 
 import com.mj.yata.domain.sync.SyncRunReport
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 
 internal data class GitHubSyncConfig(
@@ -34,11 +35,8 @@ internal class GitHubSnapshotPublisher(
             progress(12, "Connecting to GitHub")
             val repo = api.getRepo(config.owner, config.repo)
             // Re-checked every sync, not just at connect time - the repo could be made public on
-            // GitHub's side (or the config transferred/imported to a device that never ran the
-            // connect-time check) after YATA started syncing to it.
-            if (!repo.isPrivate) {
-                throw GitHubPublicRepoException()
-            }
+            // GitHub's side, or the token could lose push permission, after setup.
+            repo.requirePrivateWriteAccess()
 
             var attempt = 0
             while (true) {
@@ -142,6 +140,8 @@ internal class GitHubSnapshotPublisher(
                 onHeadSynced(syncedHeadSha, prepared.canonicalHash)
                 return Result.success(SyncRunReport(conflictsResolved = conflictsResolved))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             return Result.failure(e)
         }
@@ -162,12 +162,30 @@ internal class GitHubSnapshotPublisher(
         progress: (Int, String) -> Unit
     ): RemoteSnapshot {
         val blobSha = head.snapshotBlobSha ?: return RemoteSnapshot(bytes = null, isRecovery = false)
-        val headBytes = decode(readBlobVerified(config, blobSha))
+        val headBytes = try {
+            decode(readBlobVerified(config, blobSha))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            progress(44, "Finding GitHub recovery point")
+            val recovery = findRecoverySnapshot(
+                config = config,
+                excludedCommitSha = head.commitSha,
+                initialFailures = listOf("${head.commitSha.orEmpty().take(12).ifBlank { "head" }}: ${e.safeReason()}")
+            )
+            return recovery.bytes?.let { bytes ->
+                RemoteSnapshot(bytes = bytes, isRecovery = true)
+            } ?: throw GitHubTransportException(recovery.failureMessage())
+        }
         if (validateRemoteSnapshot(headBytes)) {
             return RemoteSnapshot(bytes = headBytes, isRecovery = false)
         }
         progress(44, "Finding GitHub recovery point")
-        val recovery = findRecoverySnapshot(config, excludedCommitSha = head.commitSha)
+        val recovery = findRecoverySnapshot(
+            config = config,
+            excludedCommitSha = head.commitSha,
+            initialFailures = listOf("${head.commitSha.orEmpty().take(12).ifBlank { "head" }}: snapshot did not validate")
+        )
         return recovery.bytes?.let { bytes ->
             RemoteSnapshot(bytes = bytes, isRecovery = true)
         } ?: throw GitHubTransportException(recovery.failureMessage())
@@ -175,9 +193,10 @@ internal class GitHubSnapshotPublisher(
 
     private suspend fun findRecoverySnapshot(
         config: GitHubSyncConfig,
-        excludedCommitSha: String?
+        excludedCommitSha: String?,
+        initialFailures: List<String> = emptyList()
     ): RecoverySearchResult {
-        val failures = mutableListOf<String>()
+        val failures = initialFailures.toMutableList()
         var checked = 0
         // +1: the excluded (damaged) head commit is filtered out below, but listCommits doesn't
         // know that, so ask for one extra to still get MAX_RECOVERY_COMMITS real candidates.
@@ -189,6 +208,8 @@ internal class GitHubSnapshotPublisher(
                 checked++
                 val bytes = try {
                     readSnapshot(config, commit.sha)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     failures += "${commit.sha.take(12)}: ${e.safeReason()}"
                     return@forEach

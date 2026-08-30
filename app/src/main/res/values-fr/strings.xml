@@ -1120,7 +1120,8 @@
     <string name="remote_sync_password_saved_hint">Mot de passe enregistré -- laissez vide pour le conserver</string>
     <string name="remote_sync_passphrase_saved_hint">Phrase secrète enregistrée -- laissez vide pour la conserver</string>
     <string name="remote_sync_backup_encryption">Chiffrement de sauvegarde</string>
-    <string name="remote_sync_backup_encryption_summary">Phrase secrète optionnelle utilisée pour chiffrer chaque sauvegarde, quel que soit le fournisseur.</string>
+    <string name="remote_sync_backup_encryption_summary">Phrase secrète obligatoire utilisée pour chiffrer chaque sauvegarde distante, quel que soit le fournisseur.</string>
+    <string name="remote_sync_backup_passphrase_required">Définissez une phrase secrète de chiffrement de sauvegarde avant d’enregistrer la synchronisation distante.</string>
     <string name="remote_sync_github_title">Synchronisation GitHub</string>
     <string name="remote_sync_github_body">Synchronisez via un dépôt privé avec l\'historique des commits comme points de restauration.</string>
     <string name="remote_sync_ftp_title">Synchronisation FTP / FTPS</string>

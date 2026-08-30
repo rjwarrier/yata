@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">Đã lưu mật khẩu -- để trống để giữ nguyên</string>
     <string name="remote_sync_passphrase_saved_hint">Đã lưu cụm mật khẩu -- để trống để giữ nguyên</string>
     <string name="remote_sync_backup_encryption">Mã hóa sao lưu</string>
-    <string name="remote_sync_backup_encryption_summary">Cụm mật khẩu tùy chọn để mã hóa mọi bản sao lưu, dù bạn dùng nhà cung cấp nào.</string>
+    <string name="remote_sync_backup_encryption_summary">Cụm mật khẩu bắt buộc để mã hóa mọi bản sao lưu từ xa, dù bạn dùng nhà cung cấp nào.</string>
+    <string name="remote_sync_backup_passphrase_required">Đặt cụm mật khẩu mã hóa sao lưu trước khi lưu đồng bộ hóa từ xa.</string>
     <string name="remote_sync_github_title">Đồng bộ GitHub</string>
     <string name="remote_sync_github_body">Đồng bộ qua một kho riêng tư, dùng lịch sử commit làm điểm khôi phục.</string>
     <string name="remote_sync_ftp_title">Đồng bộ FTP / FTPS</string>

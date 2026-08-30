@@ -13,10 +13,10 @@ import com.mj.yata.data.local.operationhistory.OperationHistoryEntry
 import com.mj.yata.data.local.operationhistory.OperationHistoryStore
 import com.mj.yata.data.github.GitHubApiBase
 import com.mj.yata.data.github.GitHubNotFoundException
-import com.mj.yata.data.github.GitHubPublicRepoException
 import com.mj.yata.data.github.GitHubConfigTransfer
 import com.mj.yata.data.github.GitHubConfigTransferPayload
 import com.mj.yata.data.github.HttpGitHubApi
+import com.mj.yata.data.github.requirePrivateWriteAccess
 import com.mj.yata.data.sftp.RemoteBackupCredentialsStore
 import com.mj.yata.data.sftp.SftpConnectionTestResult
 import com.mj.yata.domain.model.*
@@ -2963,6 +2963,8 @@ data class WeekendRescheduleWarning(
             val branch = userPreferences.githubBranchFlow.first().trim().ifBlank { "main" }
             val apiBase = userPreferences.githubApiBaseFlow.first().trim().ifBlank { "https://api.github.com" }
             val token = remoteBackupCredentialsStore.githubToken.orEmpty()
+            val backupPassphrase = remoteBackupCredentialsStore.backupPassphrase
+                ?: error("Set a backup passphrase before exporting GitHub sync configuration")
             GitHubConfigTransfer.encryptToJson(
                 GitHubConfigTransferPayload(
                     owner = owner,
@@ -2971,7 +2973,7 @@ data class WeekendRescheduleWarning(
                     apiBase = apiBase,
                     token = token,
                     tokenExpiresAt = userPreferences.githubTokenExpiresAtFlow.first(),
-                    backupPassphrase = remoteBackupCredentialsStore.backupPassphrase
+                    backupPassphrase = backupPassphrase
                 ),
                 password
             )
@@ -3055,9 +3057,7 @@ data class WeekendRescheduleWarning(
                             throw e
                         }
                     }
-                    if (!remoteRepo.isPrivate) {
-                        throw GitHubPublicRepoException()
-                    }
+                    remoteRepo.requirePrivateWriteAccess()
                     remoteBackupCredentialsStore.githubToken = tokenToUse
                     userPreferences.setGitHubConfiguration(
                         // The API's own owner login, not the possibly-stale one the user typed or
@@ -3121,7 +3121,7 @@ data class WeekendRescheduleWarning(
 
     fun hasRemoteBackupPassword(): Boolean = remoteBackupCredentialsStore.password != null
 
-    /** Passphrase the uploaded backup file is encrypted with; blank clears it (uploads in clear). */
+    /** Passphrase the uploaded backup file is encrypted with; blank clears the remote backup setup. */
     fun setRemoteBackupPassphrase(passphrase: String) {
         remoteBackupCredentialsStore.backupPassphrase = passphrase.ifBlank { null }
     }

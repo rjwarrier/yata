@@ -197,11 +197,8 @@ tasks.register("lintHardcodedStrings") {
  * feature, not a translation still pending — those fall back to English silently, so nothing else
  * catches it.
  *
- * Not wired into [releaseGate] yet: running this today reports a real, pre-existing gap — 65 keys
- * from several recent features (GitHub config transfer, Share YATA, Staff Analytics, task
- * defaults, subtask-completion setting, start-date custom days) were never propagated to any of
- * the 24 locales. Add it to releaseGate's dependsOn once that backlog is translated and closed —
- * the same staged approach [lintHardcodedStrings] uses for its own incremental debt.
+ * Wired into [releaseGate] now that the locale set is at parity. Translation quality still needs
+ * human review, but missing keys are no longer allowed to slip through silently.
  */
 tasks.register("lintLocaleParity") {
     group = "verification"
@@ -251,6 +248,7 @@ tasks.register("releaseGate") {
         "testDebugUnitTest",
         "compileDebugAndroidTestKotlin",
         "lintDebug",
+        "lintLocaleParity",
         "lintHardcodedStrings"
     )
 }

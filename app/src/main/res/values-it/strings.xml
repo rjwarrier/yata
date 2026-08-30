@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">Password salvata -- lascia vuoto per mantenerla</string>
     <string name="remote_sync_passphrase_saved_hint">Passphrase salvata -- lascia vuoto per mantenerla</string>
     <string name="remote_sync_backup_encryption">Crittografia del backup</string>
-    <string name="remote_sync_backup_encryption_summary">Passphrase facoltativa usata per crittografare ogni backup, con qualsiasi provider tu usi.</string>
+    <string name="remote_sync_backup_encryption_summary">Passphrase obbligatoria per crittografare ogni backup remoto, con qualsiasi provider tu usi.</string>
+    <string name="remote_sync_backup_passphrase_required">Imposta una passphrase di crittografia del backup prima di salvare la sincronizzazione remota.</string>
     <string name="remote_sync_github_title">Sincronizzazione GitHub</string>
     <string name="remote_sync_github_body">Sincronizza tramite un repository privato usando la cronologia dei commit come punti di ripristino.</string>
     <string name="remote_sync_ftp_title">Sincronizzazione FTP / FTPS</string>

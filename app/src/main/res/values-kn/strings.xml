@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">ಪಾಸ್‌ವರ್ಡ್ ಉಳಿಸಲಾಗಿದೆ -- ಅದನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲು ಖಾಲಿ ಬಿಡಿ</string>
     <string name="remote_sync_passphrase_saved_hint">ಪಾಸ್‌ಫ್ರೇಸ್ ಉಳಿಸಲಾಗಿದೆ -- ಅದನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲು ಖಾಲಿ ಬಿಡಿ</string>
     <string name="remote_sync_backup_encryption">ಬ್ಯಾಕಪ್ ಎನ್‌ಕ್ರಿಪ್ಶನ್</string>
-    <string name="remote_sync_backup_encryption_summary">ನೀವು ಯಾವ ಪೂರೈಕೆದಾರರನ್ನು ಬಳಸಿದರೂ ಪ್ರತಿ ಬ್ಯಾಕಪ್ ಅನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಲು ಬಳಸುವ ಐಚ್ಛಿಕ ಪಾಸ್‌ಫ್ರೇಸ್.</string>
+    <string name="remote_sync_backup_encryption_summary">ನೀವು ಯಾವ ಪೂರೈಕೆದಾರರನ್ನು ಬಳಸಿದರೂ ಪ್ರತಿ ರಿಮೋಟ್ ಬ್ಯಾಕಪ್ ಅನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಲು ಅಗತ್ಯವಾದ ಪಾಸ್‌ಫ್ರೇಸ್.</string>
+    <string name="remote_sync_backup_passphrase_required">ರಿಮೋಟ್ ಸಿಂಕ್ ಉಳಿಸುವ ಮೊದಲು ಬ್ಯಾಕಪ್ ಎನ್‌ಕ್ರಿಪ್ಷನ್ ಪಾಸ್‌ಫ್ರೇಸ್ ಅನ್ನು ಹೊಂದಿಸಿ.</string>
     <string name="remote_sync_github_title">GitHub ಸಿಂಕ್</string>
     <string name="remote_sync_github_body">ಮರುಸ್ಥಾಪನಾ ಬಿಂದುಗಳಾಗಿ ಕಮಿಟ್ ಇತಿಹಾಸದೊಂದಿಗೆ ಖಾಸಗಿ ರೆಪೊಸಿಟರಿ ಮೂಲಕ ಸಿಂಕ್ ಮಾಡಿ.</string>
     <string name="action_import">ಆಮದು ಮಾಡಿ</string>

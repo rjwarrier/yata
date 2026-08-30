@@ -20,13 +20,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
@@ -131,7 +131,7 @@ private val pages = listOf(
         description = "Assign tasks to yourself or teammates, and reassign as work shifts. The People tab shows who's carrying how much, including a 7-day overdue trend per person — so you can see who's falling behind before it becomes a problem. Add the Team Overdue widget to your home screen to keep an eye on it without opening the app."
     ),
     WelcomePage(
-        icon = Icons.Default.Label,
+        icon = Icons.AutoMirrored.Filled.Label,
         title = R.string.welcome_title_tags,
         description = "Flexible labels that cut across projects and lists — group by category, client type, or anything else that doesn't map to a single project. A task on a tagged project or list picks up that tag automatically, so you don't have to tag everything by hand. Star your most-used tags to pin them in the drawer."
     ),

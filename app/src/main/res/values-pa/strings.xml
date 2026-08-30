@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">ਪਾਸਵਰਡ ਸੇਵ ਕੀਤਾ ਗਿਆ -- ਇਸਨੂੰ ਰੱਖਣ ਲਈ ਖਾਲੀ ਛੱਡੋ</string>
     <string name="remote_sync_passphrase_saved_hint">ਪਾਸਫ੍ਰੇਜ਼ ਸੇਵ ਕੀਤਾ ਗਿਆ -- ਇਸਨੂੰ ਰੱਖਣ ਲਈ ਖਾਲੀ ਛੱਡੋ</string>
     <string name="remote_sync_backup_encryption">ਬੈਕਅੱਪ ਇਨਕ੍ਰਿਪਸ਼ਨ</string>
-    <string name="remote_sync_backup_encryption_summary">ਹਰ ਬੈਕਅੱਪ ਨੂੰ ਇਨਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਵਿਕਲਪਿਕ ਪਾਸਫ੍ਰੇਜ਼, ਭਾਵੇਂ ਤੁਸੀਂ ਕੋਈ ਵੀ ਪ੍ਰਦਾਤਾ ਵਰਤੋ।</string>
+    <string name="remote_sync_backup_encryption_summary">ਤੁਸੀਂ ਕੋਈ ਵੀ ਪ੍ਰਦਾਤਾ ਵਰਤੋ, ਹਰ ਰਿਮੋਟ ਬੈਕਅੱਪ ਨੂੰ ਇਨਕ੍ਰਿਪਟ ਕਰਨ ਲਈ ਲਾਜ਼ਮੀ ਪਾਸਫ੍ਰੇਜ਼।</string>
+    <string name="remote_sync_backup_passphrase_required">ਰਿਮੋਟ ਸਿੰਕ ਸੰਭਾਲਣ ਤੋਂ ਪਹਿਲਾਂ ਬੈਕਅੱਪ ਇਨਕ੍ਰਿਪਸ਼ਨ ਪਾਸਫ੍ਰੇਜ਼ ਸੈੱਟ ਕਰੋ।</string>
     <string name="remote_sync_github_title">GitHub ਸਿੰਕ</string>
     <string name="remote_sync_github_body">ਬਹਾਲੀ ਬਿੰਦੂਆਂ ਵਜੋਂ ਕਮਿਟ ਇਤਿਹਾਸ ਨਾਲ ਨਿੱਜੀ ਰਿਪੋਜ਼ਟਰੀ ਰਾਹੀਂ ਸਿੰਕ ਕਰੋ।</string>
     <string name="action_import">ਆਯਾਤ ਕਰੋ</string>

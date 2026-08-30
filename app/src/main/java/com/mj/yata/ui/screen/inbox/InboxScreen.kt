@@ -27,9 +27,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Today
@@ -547,7 +547,7 @@ private fun InboxTriageActions(
                     selected = true,
                     showCheck = false,
                     tint = MaterialTheme.colorScheme.secondary,
-                    leading = { ChipIcon(Icons.Default.DriveFileMove, MaterialTheme.colorScheme.secondary) },
+                    leading = { ChipIcon(Icons.AutoMirrored.Filled.DriveFileMove, MaterialTheme.colorScheme.secondary) },
                     onClick = onMove
                 )
             }

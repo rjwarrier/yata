@@ -1,5 +1,6 @@
 package com.mj.yata.data.github
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -56,7 +57,7 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
-    fun repoMetadataWithoutPushPermission_stillAttemptsPublish() = runTest {
+    fun repoMetadataWithoutPushPermission_failsBeforeMergeOrPublish() = runTest {
         val api = FakeGitHubApi().apply {
             canPush = false
             seedHead("server".bytes())
@@ -77,10 +78,29 @@ class GitHubSnapshotPublisherTest {
 
         val result = publisher.sync(config) { _, _ -> }
 
-        assertTrue(result.isSuccess)
-        assertTrue(prepared)
-        assertTrue(committed)
-        assertEquals(1, api.updateRefCalls)
+        assertTrue(result.exceptionOrNull() is GitHubPermissionException)
+        assertFalse(prepared)
+        assertFalse(committed)
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
+    fun syncCancellation_doesNotReturnFailureResult() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("server".bytes())
+        }
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _, _ -> throw CancellationException("cancelled prepare") },
+            commit = { 0 },
+            encode = { it },
+            decode = { it },
+            commitMessage = { "cancel" }
+        )
+
+        assertCancels("cancelled prepare") {
+            publisher.sync(config) { _, _ -> }
+        }
     }
 
     @Test
@@ -525,6 +545,75 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
+    fun damagedEncryptedHeadSnapshot_promotesValidHistoryCandidateOnFirstJoin() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("valid-history".bytes())
+            seedHead("damaged-head".bytes())
+            createdCommitParents.clear()
+        }
+        var preparedRemote: String? = null
+        var preparedWasRecovery = false
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { remoteBytes, _, remoteIsRecovery ->
+                preparedRemote = remoteBytes?.string()
+                preparedWasRecovery = remoteIsRecovery
+                GitHubPreparedSnapshot(canonicalBytes = remoteBytes ?: ByteArray(0), remoteNeedsPublish = false)
+            },
+            commit = { committed = true; 0 },
+            encode = { it },
+            decode = {
+                if (it.string() == "damaged-head") {
+                    error("Wrong backup passphrase, or the GitHub snapshot is damaged")
+                }
+                it
+            },
+            validateRemoteSnapshot = { true },
+            commitMessage = { "promote recovery" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertTrue(result.isSuccess)
+        assertTrue(committed)
+        assertTrue(preparedWasRecovery)
+        assertEquals("valid-history", preparedRemote)
+        assertEquals(1, api.updateRefCalls)
+    }
+
+    @Test
+    fun damagedEncryptedHeadSnapshot_recoverySearchKeepsCancellationCancellable() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("valid-history".bytes())
+            seedHead("damaged-head".bytes())
+            createdCommitParents.clear()
+        }
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _, _ ->
+                GitHubPreparedSnapshot(canonicalBytes = "unused".bytes(), remoteNeedsPublish = true)
+            },
+            commit = { 0 },
+            encode = { it },
+            decode = {
+                when (it.string()) {
+                    "damaged-head" -> error("Wrong backup passphrase, or the GitHub snapshot is damaged")
+                    "valid-history" -> throw CancellationException("cancelled recovery")
+                    else -> it
+                }
+            },
+            validateRemoteSnapshot = { true },
+            commitMessage = { "cancel recovery" }
+        )
+
+        assertCancels("cancelled recovery") {
+            publisher.sync(config) { _, _ -> }
+        }
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
     fun damagedHeadSnapshot_recoveryRejectedByPrepareDoesNotPublishOrCommit() = runTest {
         val api = FakeGitHubApi().apply {
             seedHead("valid-history".bytes())
@@ -581,6 +670,16 @@ class GitHubSnapshotPublisherTest {
         decode = { it },
         commitMessage = { "test commit" }
     )
+
+    private suspend fun assertCancels(message: String, block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            assertEquals(message, e.message)
+            return
+        }
+        throw AssertionError("Expected CancellationException")
+    }
 
     private class FakeGitHubApi : GitHubApi {
         private val blobs = linkedMapOf<String, ByteArray>()

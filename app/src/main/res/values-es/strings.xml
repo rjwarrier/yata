@@ -1164,7 +1164,8 @@
     <string name="remote_sync_password_saved_hint">Contraseña guardada -- déjala en blanco para conservarla</string>
     <string name="remote_sync_passphrase_saved_hint">Frase de paso guardada -- déjala en blanco para conservarla</string>
     <string name="remote_sync_backup_encryption">Encriptación de copia de seguridad</string>
-    <string name="remote_sync_backup_encryption_summary">Frase de paso opcional usada para encriptar cada copia de seguridad, sin importar el proveedor.</string>
+    <string name="remote_sync_backup_encryption_summary">Frase de cifrado obligatoria para cada copia de seguridad remota, sin importar el proveedor.</string>
+    <string name="remote_sync_backup_passphrase_required">Configura una frase de cifrado de copias antes de guardar la sincronización remota.</string>
     <string name="remote_sync_github_title">Sincronización con GitHub</string>
     <string name="remote_sync_github_body">Sincroniza a través de un repositorio privado con historial de commits como puntos de restauración.</string>
     <string name="remote_sync_ftp_title">Sincronización FTP / FTPS</string>

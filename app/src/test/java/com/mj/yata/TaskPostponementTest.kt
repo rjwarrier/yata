@@ -57,4 +57,3 @@ class TaskPostponementTest {
         assertEquals(6, postponementWarningThresholdFor("high", 15)) // 10 - 4 = 6
     }
 }
-

@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">Naka-save na ang password -- iwanang blangko para panatilihin ito</string>
     <string name="remote_sync_passphrase_saved_hint">Naka-save na ang passphrase -- iwanang blangko para panatilihin ito</string>
     <string name="remote_sync_backup_encryption">Pag-encrypt ng backup</string>
-    <string name="remote_sync_backup_encryption_summary">Opsyonal na passphrase na gagamitin para i-encrypt ang bawat backup, kahit anong provider ang gamit mo.</string>
+    <string name="remote_sync_backup_encryption_summary">Kinakailangang passphrase para i-encrypt ang bawat remote backup, kahit anong provider ang gamit mo.</string>
+    <string name="remote_sync_backup_passphrase_required">Magtakda ng backup encryption passphrase bago i-save ang remote sync.</string>
     <string name="remote_sync_github_title">GitHub sync</string>
     <string name="remote_sync_github_body">Mag-sync sa pamamagitan ng pribadong repository gamit ang commit history bilang mga punto ng pagbawi.</string>
     <string name="action_import">I-import</string>

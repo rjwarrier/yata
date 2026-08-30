@@ -200,6 +200,26 @@ fun RemoteSyncScreen(
         draftPassphrase.takeUnless { keyPassphraseAlreadySet && it == savedSecretPlaceholder }.orEmpty()
     fun enteredBackupPassphrase(): String =
         draftBackupPassphrase.takeUnless { backupPassphraseAlreadySet && it == savedSecretPlaceholder }.orEmpty()
+    fun hasRequiredBackupPassphrase(): Boolean =
+        backupPassphraseAlreadySet || enteredBackupPassphrase().isNotBlank()
+    fun showBackupPassphraseRequired() {
+        testResultOk = false
+        testResultMessage = context.getString(R.string.remote_sync_backup_passphrase_required)
+        isTestingConnection = false
+        isDownloadingGitHubSnapshot = false
+    }
+    fun requireBackupPassphrase(): Boolean {
+        if (hasRequiredBackupPassphrase()) return true
+        showBackupPassphraseRequired()
+        return false
+    }
+    fun persistBackupPassphraseDraft() {
+        enteredBackupPassphrase().takeIf { it.isNotBlank() }?.let { passphrase ->
+            viewModel.setRemoteBackupPassphrase(passphrase)
+            backupPassphraseAlreadySet = true
+            draftBackupPassphrase = savedSecretPlaceholder
+        }
+    }
 
     val createGitHubConfigExport = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
@@ -250,15 +270,8 @@ fun RemoteSyncScreen(
     }
 
     fun saveServerConfiguration(onSaved: () -> Unit = {}) {
-        // Blank means "keep whatever is stored" rather than "remove encryption" -- silently
-        // dropping to unencrypted uploads because a field was left empty is not a default anyone
-        // would want. Shared across all three transports, so this runs before the per-provider
-        // branches below (one of which returns early for GitHub).
-        enteredBackupPassphrase().takeIf { it.isNotBlank() }?.let { passphrase ->
-            viewModel.setRemoteBackupPassphrase(passphrase)
-            backupPassphraseAlreadySet = true
-            draftBackupPassphrase = savedSecretPlaceholder
-        }
+        if (!requireBackupPassphrase()) return
+        persistBackupPassphraseDraft()
         if (draftIsGitHub) {
             enteredGitHubToken().takeIf { it.isNotBlank() }?.let { token ->
                 viewModel.setGitHubToken(token)
@@ -386,7 +399,9 @@ fun RemoteSyncScreen(
     }
 
     fun save() {
-        if (draftIsGitHub && parseGitHubRepoDraft() == null) {
+        if (!requireBackupPassphrase()) {
+            return
+        } else if (draftIsGitHub && parseGitHubRepoDraft() == null) {
             testResultOk = false
             testResultMessage = "Enter the repo as owner/name"
         } else {
@@ -810,6 +825,10 @@ fun RemoteSyncScreen(
                     pendingTrustFingerprint = null
                     isHostKeyMismatch = false
                     isTestingConnection = true
+                    if (!requireBackupPassphrase()) {
+                        return@FilledTonalButton
+                    }
+                    persistBackupPassphraseDraft()
                     if (draftIsGitHub) {
                         viewModel.connectGitHubConfiguration(
                             repoText = draftGitHubRepo,
@@ -1072,6 +1091,10 @@ fun RemoteSyncScreen(
                         if (parseGitHubRepoDraft() == null) {
                             testResultOk = false
                             testResultMessage = "Enter the repo as owner/name"
+                            showGitHubForceDownloadDialog = false
+                            return@TextButton
+                        }
+                        if (!requireBackupPassphrase()) {
                             showGitHubForceDownloadDialog = false
                             return@TextButton
                         }

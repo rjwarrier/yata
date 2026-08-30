@@ -2,7 +2,6 @@ package com.mj.yata.data.github
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class GitHubConfigTransferTest {
@@ -51,11 +50,10 @@ class GitHubConfigTransferTest {
         GitHubConfigTransfer.decryptFromJson(exportText, "transfer password")
     }
 
-    @Test
-    fun missingBackupPassphraseStaysMissing() {
+    @Test(expected = IllegalArgumentException::class)
+    fun missingBackupPassphraseIsRejected() {
         val noPassphrase = payload.copy(backupPassphrase = null)
-        val exportText = GitHubConfigTransfer.encryptToJson(noPassphrase, "transfer password")
 
-        assertNull(GitHubConfigTransfer.decryptFromJson(exportText, "transfer password").backupPassphrase)
+        GitHubConfigTransfer.encryptToJson(noPassphrase, "transfer password")
     }
 }

@@ -71,6 +71,17 @@ data class GitHubRepo(
     val isPrivate: Boolean
 )
 
+fun GitHubRepo.requirePrivateWriteAccess() {
+    if (!isPrivate) {
+        throw GitHubPublicRepoException()
+    }
+    if (!canPush) {
+        throw GitHubPermissionException(
+            "GitHub token needs Contents read and write access to this private repo"
+        )
+    }
+}
+
 /** `status` is one of GitHub's compare values: "identical", "ahead", "behind", "diverged". */
 data class GitHubCompareResult(val status: String, val aheadBy: Int, val behindBy: Int)
 

@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">Kata sandi tersimpan -- biarkan kosong untuk mempertahankannya</string>
     <string name="remote_sync_passphrase_saved_hint">Frasa sandi tersimpan -- biarkan kosong untuk mempertahankannya</string>
     <string name="remote_sync_backup_encryption">Enkripsi cadangan</string>
-    <string name="remote_sync_backup_encryption_summary">Frasa sandi opsional yang digunakan untuk mengenkripsi setiap cadangan, apa pun penyedianya.</string>
+    <string name="remote_sync_backup_encryption_summary">Frasa sandi wajib untuk mengenkripsi setiap cadangan jarak jauh, apa pun penyedianya.</string>
+    <string name="remote_sync_backup_passphrase_required">Atur frasa sandi enkripsi cadangan sebelum menyimpan sinkronisasi jarak jauh.</string>
     <string name="remote_sync_github_title">Sinkronisasi GitHub</string>
     <string name="remote_sync_github_body">Sinkronkan melalui repositori privat dengan riwayat commit sebagai titik pemulihan.</string>
     <string name="remote_sync_ftp_title">Sinkronisasi FTP / FTPS</string>

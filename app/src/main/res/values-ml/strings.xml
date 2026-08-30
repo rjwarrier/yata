@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">പാസ്‌വേഡ് സേവ് ചെയ്തു -- അത് നിലനിർത്താൻ ശൂന്യമായി വിടുക</string>
     <string name="remote_sync_passphrase_saved_hint">പാസ്‌ഫ്രെയ്സ് സേവ് ചെയ്തു -- അത് നിലനിർത്താൻ ശൂന്യമായി വിടുക</string>
     <string name="remote_sync_backup_encryption">ബാക്കപ്പ് എൻക്രിപ്ഷൻ</string>
-    <string name="remote_sync_backup_encryption_summary">നിങ്ങൾ ഏത് ദാതാവ് ഉപയോഗിച്ചാലും ഓരോ ബാക്കപ്പും എൻക്രിപ്റ്റ് ചെയ്യാൻ ഉപയോഗിക്കുന്ന ഓപ്ഷണൽ പാസ്‌ഫ്രെയ്സ്.</string>
+    <string name="remote_sync_backup_encryption_summary">നിങ്ങൾ ഏത് ദാതാവ് ഉപയോഗിച്ചാലും ഓരോ റിമോട്ട് ബാക്കപ്പും എൻക്രിപ്റ്റ് ചെയ്യാൻ ആവശ്യമായ പാസ്‌ഫ്രെയ്സ്.</string>
+    <string name="remote_sync_backup_passphrase_required">റിമോട്ട് സിങ്ക് സംരക്ഷിക്കുന്നതിന് മുമ്പ് ബാക്കപ്പ് എൻക്രിപ്ഷൻ പാസ്‌ഫ്രെയ്സ് സജ്ജമാക്കുക.</string>
     <string name="remote_sync_github_title">GitHub സിങ്ക്</string>
     <string name="remote_sync_github_body">വീണ്ടെടുക്കൽ പോയിന്റുകളായി കമ്മിറ്റ് ചരിത്രമുള്ള ഒരു സ്വകാര്യ റെപ്പോസിറ്ററി വഴി സിങ്ക് ചെയ്യുക.</string>
     <string name="action_import">ഇംപോർട്ട് ചെയ്യുക</string>

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.IosShare
 // Section-heading icons.
 import androidx.compose.material.icons.filled.Build
@@ -45,7 +46,6 @@ import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Alarm
@@ -138,6 +138,7 @@ import com.mj.yata.notification.OverdueEscalationWorker
 import com.mj.yata.notification.NotificationPermissionUtils
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.mj.yata.ui.widgets.YataDropdownMenu
 import com.mj.yata.ui.widgets.YataDropdownMenuItem
 import com.mj.yata.ui.widgets.CircularImageCropper
@@ -433,7 +434,7 @@ fun SettingsScreen(
         SettingsHubDestination(stringResource(R.string.settings_section_appearance_display), stringResource(R.string.settings_search_appearance_display_summary), SettingsDestination.APPEARANCE_DISPLAY, Icons.Default.Palette),
         SettingsHubDestination(stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
         SettingsHubDestination(stringResource(R.string.settings_section_navigation_features), stringResource(R.string.settings_search_navigation_features_summary), SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Navigation),
-        SettingsHubDestination(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
+        SettingsHubDestination(stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), SettingsDestination.SOUND_FEEDBACK, Icons.AutoMirrored.Filled.VolumeUp),
         SettingsHubDestination(stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
         SettingsHubDestination(stringResource(R.string.settings_section_privacy), stringResource(R.string.settings_search_privacy_summary), SettingsDestination.PRIVACY_SECURITY, Icons.Default.Lock),
         SettingsHubDestination(stringResource(R.string.settings_section_data_management), stringResource(R.string.settings_search_data_summary), SettingsDestination.DATA_MANAGEMENT, Icons.Default.Storage),
@@ -451,7 +452,7 @@ fun SettingsScreen(
         SettingsSearchTarget("features", stringResource(R.string.settings_section_features), stringResource(R.string.settings_search_features_summary), "today upcoming projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
         SettingsSearchTarget("manage", stringResource(R.string.settings_section_manage), stringResource(R.string.settings_search_manage_summary), "manage projects people tags", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Build),
         SettingsSearchTarget("tasker", "Tasker", "Automation access for creating tasks", "tasker automation plugin create task", SettingsDestination.NAVIGATION_FEATURES, Icons.Default.Extension),
-        SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic voice language speech recognition", SettingsDestination.SOUND_FEEDBACK, Icons.Default.VolumeUp),
+        SettingsSearchTarget("sound_feedback", stringResource(R.string.settings_section_sound_feedback), stringResource(R.string.settings_search_feedback_summary), "sound haptic voice language speech recognition", SettingsDestination.SOUND_FEEDBACK, Icons.AutoMirrored.Filled.VolumeUp),
         SettingsSearchTarget("task_defaults", stringResource(R.string.settings_section_task_defaults), stringResource(R.string.settings_search_defaults_summary), "due priority list reminder week assign assignee me subtask complete completion auto ask undo window swipe confetti postponement postpone warning threshold", SettingsDestination.TASK_DEFAULTS, Icons.Default.TaskAlt),
         SettingsSearchTarget("date_aliases", "Date aliases", "Custom quick-add words for due dates", "quick add natural language date aliases keywords today tomorrow", SettingsDestination.TASK_DEFAULTS, Icons.Default.CalendarMonth),
         SettingsSearchTarget("notifications", stringResource(R.string.settings_section_notifications), stringResource(R.string.settings_search_notifications_summary), "alarm battery agenda overdue snooze delivery", SettingsDestination.NOTIFICATIONS, Icons.Default.Notifications),
@@ -1892,7 +1893,7 @@ fun SettingsScreen(
 
                     // Re-check when coming back from system settings (the app doesn't get a
                     // callback for these — only a lifecycle resume).
-                    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+                    val lifecycleOwner = LocalLifecycleOwner.current
                     DisposableEffect(lifecycleOwner) {
                         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
                             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {

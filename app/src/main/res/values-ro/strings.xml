@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">Parolă salvată -- lasă gol pentru a o păstra</string>
     <string name="remote_sync_passphrase_saved_hint">Frază de acces salvată -- lasă gol pentru a o păstra</string>
     <string name="remote_sync_backup_encryption">Criptarea backupului</string>
-    <string name="remote_sync_backup_encryption_summary">Frază de acces opțională folosită pentru a cripta fiecare backup, indiferent de furnizorul folosit.</string>
+    <string name="remote_sync_backup_encryption_summary">Frază de acces obligatorie folosită pentru a cripta fiecare backup la distanță, indiferent de furnizor.</string>
+    <string name="remote_sync_backup_passphrase_required">Setează o frază de acces pentru criptarea backupului înainte de a salva sincronizarea la distanță.</string>
     <string name="remote_sync_github_title">Sincronizare GitHub</string>
     <string name="remote_sync_github_body">Sincronizează printr-un depozit privat, cu istoricul de commit-uri ca puncte de restaurare.</string>
     <string name="remote_sync_ftp_title">Sincronizare FTP / FTPS</string>

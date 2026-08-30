@@ -412,7 +412,8 @@
     <string name="remote_sync_password_saved_hint">Hasło zapisane -- pozostaw puste, aby je zachować</string>
     <string name="remote_sync_passphrase_saved_hint">Hasło klucza zapisane -- pozostaw puste, aby je zachować</string>
     <string name="remote_sync_backup_encryption">Szyfrowanie kopii zapasowej</string>
-    <string name="remote_sync_backup_encryption_summary">Opcjonalne hasło używane do szyfrowania każdej kopii zapasowej, niezależnie od dostawcy.</string>
+    <string name="remote_sync_backup_encryption_summary">Wymagane hasło używane do szyfrowania każdej zdalnej kopii zapasowej, niezależnie od dostawcy.</string>
+    <string name="remote_sync_backup_passphrase_required">Ustaw hasło szyfrowania kopii zapasowej przed zapisaniem synchronizacji zdalnej.</string>
     <string name="remote_sync_github_title">Synchronizacja GitHub</string>
     <string name="remote_sync_github_body">Synchronizuj przez prywatne repozytorium z historią commitów jako punktami przywracania.</string>
     <string name="remote_sync_ftp_title">Synchronizacja FTP / FTPS</string>

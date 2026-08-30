@@ -492,7 +492,8 @@
     <string name="remote_sync_password_saved_hint">Wachtwoord opgeslagen -- laat leeg om te behouden</string>
     <string name="remote_sync_passphrase_saved_hint">Wachtwoordzin opgeslagen -- laat leeg om te behouden</string>
     <string name="remote_sync_backup_encryption">Back-upversleuteling</string>
-    <string name="remote_sync_backup_encryption_summary">Optionele wachtwoordzin om elke back-up te versleutelen, ongeacht welke provider je gebruikt.</string>
+    <string name="remote_sync_backup_encryption_summary">Vereiste wachtwoordzin om elke externe back-up te versleutelen, ongeacht welke provider je gebruikt.</string>
+    <string name="remote_sync_backup_passphrase_required">Stel een wachtwoordzin voor back-upversleuteling in voordat je externe synchronisatie opslaat.</string>
     <string name="remote_sync_github_title">GitHub-synchronisatie</string>
     <string name="remote_sync_github_body">Synchroniseer via een privé repository met commit-geschiedenis als herstelpunten.</string>
     <string name="remote_sync_ftp_title">FTP / FTPS-synchronisatie</string>

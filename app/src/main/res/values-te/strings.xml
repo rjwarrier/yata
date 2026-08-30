@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">పాస్‌వర్డ్ సేవ్ చేయబడింది -- దాన్ని ఉంచడానికి ఖాళీగా వదిలేయండి</string>
     <string name="remote_sync_passphrase_saved_hint">పాస్‌ఫ్రేజ్ సేవ్ చేయబడింది -- దాన్ని ఉంచడానికి ఖాళీగా వదిలేయండి</string>
     <string name="remote_sync_backup_encryption">బ్యాకప్ ఎన్‌క్రిప్షన్</string>
-    <string name="remote_sync_backup_encryption_summary">మీరు ఏ ప్రొవైడర్‌ను వాడినా, ప్రతి బ్యాకప్‌ను ఎన్‌క్రిప్ట్ చేయడానికి వాడే ఐచ్ఛిక పాస్‌ఫ్రేజ్.</string>
+    <string name="remote_sync_backup_encryption_summary">మీరు ఏ ప్రొవైడర్‌ను వాడినా, ప్రతి రిమోట్ బ్యాకప్‌ను ఎన్‌క్రిప్ట్ చేయడానికి అవసరమైన పాస్‌ఫ్రేజ్.</string>
+    <string name="remote_sync_backup_passphrase_required">రిమోట్ సింక్‌ను సేవ్ చేసే ముందు బ్యాకప్ ఎన్‌క్రిప్షన్ పాస్‌ఫ్రేజ్‌ను సెట్ చేయండి.</string>
     <string name="remote_sync_github_title">GitHub సింక్</string>
     <string name="remote_sync_github_body">పునరుద్ధరణ పాయింట్‌లుగా కమిట్ చరిత్రతో ప్రైవేట్ రిపోజిటరీ ద్వారా సింక్ చేయండి.</string>
     <string name="action_import">దిగుమతి చేయండి</string>

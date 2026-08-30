@@ -24,7 +24,7 @@ data class GitHubConfigTransferPayload(
  * Password-encrypted transfer format for moving GitHub sync credentials to another device.
  *
  * The exported file intentionally contains only a tiny plaintext envelope: type, version, KDF, salt,
- * IV, and ciphertext. Repo details, the GitHub token, and the optional backup encryption passphrase
+ * IV, and ciphertext. Repo details, the GitHub token, and the backup encryption passphrase
  * live inside AES-GCM authenticated ciphertext derived from the user-entered transfer password.
  */
 object GitHubConfigTransfer {
@@ -128,6 +128,8 @@ object GitHubConfigTransfer {
         val normalizedBranch = branch.trim().ifBlank { "main" }
         val normalizedApiBase = GitHubApiBase.validate(apiBase)
         val normalizedToken = token.trim()
+        val normalizedBackupPassphrase = backupPassphrase?.takeIf { it.isNotBlank() }
+            ?: throw IllegalArgumentException("Backup passphrase is required")
         require(normalizedOwner.isNotBlank()) { "GitHub owner is required" }
         require(normalizedRepo.isNotBlank()) { "GitHub repo is required" }
         require(normalizedToken.isNotBlank()) { "GitHub token is required" }
@@ -137,7 +139,7 @@ object GitHubConfigTransfer {
             branch = normalizedBranch,
             apiBase = normalizedApiBase,
             token = normalizedToken,
-            backupPassphrase = backupPassphrase?.takeIf { it.isNotBlank() }
+            backupPassphrase = normalizedBackupPassphrase
         )
     }
 

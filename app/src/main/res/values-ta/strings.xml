@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">கடவுச்சொல் சேமிக்கப்பட்டது -- அதைத் தக்க வைக்க காலியாக விடவும்</string>
     <string name="remote_sync_passphrase_saved_hint">கடவுச்சொற்றொடர் சேமிக்கப்பட்டது -- அதைத் தக்க வைக்க காலியாக விடவும்</string>
     <string name="remote_sync_backup_encryption">காப்புப்பிரதி மறைகுறியாக்கம்</string>
-    <string name="remote_sync_backup_encryption_summary">நீங்கள் பயன்படுத்தும் வழங்குநர் எதுவாக இருந்தாலும், ஒவ்வொரு காப்புப்பிரதியையும் மறைகுறியாக்க விருப்பமான கடவுச்சொற்றொடர்.</string>
+    <string name="remote_sync_backup_encryption_summary">நீங்கள் பயன்படுத்தும் வழங்குநர் எதுவாக இருந்தாலும், ஒவ்வொரு தொலைநிலை காப்புப்பிரதியையும் மறைகுறியாக்க தேவையான கடவுச்சொற்றொடர்.</string>
+    <string name="remote_sync_backup_passphrase_required">தொலைநிலை ஒத்திசைவைச் சேமிப்பதற்கு முன் காப்புப்பிரதி மறைகுறியாக்கக் கடவுச்சொற்றொடரை அமைக்கவும்.</string>
     <string name="remote_sync_github_title">GitHub ஒத்திசைவு</string>
     <string name="remote_sync_github_body">மீட்பு புள்ளிகளாக commit வரலாற்றுடன் தனிப்பட்ட களஞ்சியம் மூலம் ஒத்திசைக்கவும்.</string>
     <string name="action_import">இறக்குமதி செய்</string>

@@ -753,7 +753,8 @@ class FtpBackupManager @Inject constructor(
     override suspend fun readSnapshot(id: String): Result<ByteArray> = readBackupJson(id)
 
     override suspend fun isConfigured(): Boolean =
-        userPreferences.sftpHostFlow.first().isNotBlank()
+        userPreferences.sftpHostFlow.first().isNotBlank() &&
+            !credentialsStore.backupPassphrase.isNullOrBlank()
 
     /** Downloads, verifies length, decrypts if needed, unzips if needed. */
     private suspend fun fetchBackupJson(filename: String): ByteArray {

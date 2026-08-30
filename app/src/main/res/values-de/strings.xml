@@ -570,7 +570,8 @@
     <string name="remote_sync_password_saved_hint">Passwort gespeichert -- leer lassen, um es zu behalten</string>
     <string name="remote_sync_passphrase_saved_hint">Passphrase gespeichert -- leer lassen, um sie zu behalten</string>
     <string name="remote_sync_backup_encryption">Backup-Verschlüsselung</string>
-    <string name="remote_sync_backup_encryption_summary">Optionale Passphrase, mit der jedes Backup verschlüsselt wird, unabhängig vom Anbieter.</string>
+    <string name="remote_sync_backup_encryption_summary">Erforderliche Passphrase, mit der jedes Remote-Backup verschlüsselt wird, unabhängig vom Anbieter.</string>
+    <string name="remote_sync_backup_passphrase_required">Lege eine Backup-Verschlüsselungspassphrase fest, bevor du Remote-Sync speicherst.</string>
     <string name="remote_sync_github_title">GitHub-Sync</string>
     <string name="remote_sync_github_body">Über ein privates Repository mit Commit-Verlauf als Wiederherstellungspunkte synchronisieren.</string>
     <string name="remote_sync_ftp_title">FTP-/FTPS-Sync</string>

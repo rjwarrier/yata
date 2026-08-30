@@ -407,7 +407,8 @@
     <string name="remote_sync_password_saved_hint">Nenosiri limehifadhiwa -- acha wazi ili libaki</string>
     <string name="remote_sync_passphrase_saved_hint">Nenosiri la usimbaji limehifadhiwa -- acha wazi ili libaki</string>
     <string name="remote_sync_backup_encryption">Usimbaji wa Nakala Rudufu</string>
-    <string name="remote_sync_backup_encryption_summary">Nenosiri la hiari linalotumika kusimba kila nakala rudufu, bila kujali mtoa huduma unayetumia.</string>
+    <string name="remote_sync_backup_encryption_summary">Nenosiri linalohitajika kusimba kila nakala rudufu ya mbali, bila kujali mtoa huduma.</string>
+    <string name="remote_sync_backup_passphrase_required">Weka nenosiri la usimbaji wa nakala rudufu kabla ya kuhifadhi usawazishaji wa mbali.</string>
     <string name="remote_sync_github_title">Usawazishaji wa GitHub</string>
     <string name="remote_sync_github_body">Sawazisha kupitia hifadhi binafsi yenye historia ya kuhifadhi kama sehemu za kurejesha.</string>
     <string name="action_import">Leta</string>
