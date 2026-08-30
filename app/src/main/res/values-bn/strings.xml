@@ -547,6 +547,7 @@
     <string name="entity_editors_list_color">লিস্টের রঙ</string>
     <string name="entity_editors_list_icon">লিস্টের আইকন</string>
     <string name="entity_editors_person_s_name">ব্যক্তির নাম</string>
+    <string name="entity_name_taken">এই নামটি ইতিমধ্যে ব্যবহৃত। বড়/ছোট হাতের পার্থক্য গণ্য হয় না।</string>
     <string name="entity_editors_project_name">প্রজেক্টের নাম</string>
     <string name="entity_editors_remove_photo">ছবি সরান</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">একসাথে একাধিক যোগ করতে কমা দিয়ে একাধিক নাম আলাদা করুন।</string>

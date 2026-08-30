@@ -40,6 +40,14 @@ test-only changes belong in the commit message, not here, unless they change beh
   relying on the name matching blind on submit, including creating a new tag/person inline.
 
 ### Changed
+- Project, list, tag and person names are now treated as case-insensitive when creating or
+  renaming one, matching how every lookup in the app already compared them. Previously two
+  projects or lists could both be created as "Work" and "work" — indistinguishable to natural
+  language parsing, the `#`/`@`/`+`/`=` autocomplete, shared-link import and the Tasker plugin,
+  all of which match without regard to case, so whichever was found first won and the other
+  became unreachable by name. Tags and people already blocked this when creating, but greyed the
+  button out with no explanation, and allowed it outright when renaming; both now say why.
+
 - Pasting multiple lines into New Task (which creates one task per line, each parsed on its own)
   now previews what the whole paste will apply — the shared due date, and every `#tag`, `+project`,
   `=list` and `@person` it found — instead of only reporting how many lines it counted. A name that

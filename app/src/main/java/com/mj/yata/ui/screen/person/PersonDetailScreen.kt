@@ -832,6 +832,7 @@ fun PersonDetailScreen(
         ) {
             PersonEditorSheet(
                 initialName = person.name,
+                existingNames = people.map { it.name },
                 initialColor = person.color,
                 initialGroupId = person.groupId,
                 initialPhotoUri = person.photoUri,

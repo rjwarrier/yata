@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">Kulay ng listahan</string>
     <string name="entity_editors_list_icon">Icon ng listahan</string>
     <string name="entity_editors_person_s_name">Pangalan ng tao</string>
+    <string name="entity_name_taken">Ginagamit na ang pangalang iyan. Hindi binibilang ang laki ng titik.</string>
     <string name="entity_editors_project_name">Pangalan ng proyekto</string>
     <string name="entity_editors_remove_photo">Alisin ang larawan</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Paghiwalayin ng kuwit ang maraming pangalan para magdagdag ng ilan nang sabay-sabay.</string>

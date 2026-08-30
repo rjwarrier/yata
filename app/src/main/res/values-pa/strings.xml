@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">ਸੂਚੀ ਰੰਗ</string>
     <string name="entity_editors_list_icon">ਸੂਚੀ ਆਈਕਾਨ</string>
     <string name="entity_editors_person_s_name">ਵਿਅਕਤੀ ਦਾ ਨਾਮ</string>
+    <string name="entity_name_taken">ਇਹ ਨਾਮ ਪਹਿਲਾਂ ਹੀ ਵਰਤਿਆ ਗਿਆ ਹੈ। ਵੱਡੇ-ਛੋਟੇ ਅੱਖਰਾਂ ਦਾ ਫ਼ਰਕ ਨਹੀਂ ਪੈਂਦਾ।</string>
     <string name="entity_editors_project_name">ਪ੍ਰੋਜੈਕਟ ਦਾ ਨਾਮ</string>
     <string name="entity_editors_remove_photo">ਫੋਟੋ ਹਟਾਓ</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ਇੱਕੋ ਸਮੇਂ ਕਈ ਜੋੜਨ ਲਈ ਨਾਮਾਂ ਨੂੰ ਕੌਮੇ ਨਾਲ ਵੱਖ ਕਰੋ।</string>

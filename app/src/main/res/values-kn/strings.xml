@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">ಪಟ್ಟಿಯ ಬಣ್ಣ</string>
     <string name="entity_editors_list_icon">ಪಟ್ಟಿಯ ಐಕಾನ್</string>
     <string name="entity_editors_person_s_name">ವ್ಯಕ್ತಿಯ ಹೆಸರು</string>
+    <string name="entity_name_taken">ಈ ಹೆಸರು ಈಗಾಗಲೇ ಬಳಕೆಯಲ್ಲಿದೆ. ಅಕ್ಷರ ಗಾತ್ರ ಪರಿಗಣಿಸುವುದಿಲ್ಲ.</string>
     <string name="entity_editors_project_name">ಪ್ರಾಜೆಕ್ಟ್ ಹೆಸರು</string>
     <string name="entity_editors_remove_photo">ಫೋಟೋ ತೆಗೆದುಹಾಕಿ</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ಒಂದೇ ಬಾರಿಗೆ ಹಲವಾರು ಸೇರಿಸಲು ಹೆಸರುಗಳನ್ನು ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ.</string>

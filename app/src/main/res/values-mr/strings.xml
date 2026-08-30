@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">यादीचा रंग</string>
     <string name="entity_editors_list_icon">यादीचे चिन्ह</string>
     <string name="entity_editors_person_s_name">व्यक्तीचे नाव</string>
+    <string name="entity_name_taken">हे नाव आधीच वापरात आहे. लहान-मोठ्या अक्षरांचा फरक धरला जात नाही.</string>
     <string name="entity_editors_project_name">प्रकल्पाचे नाव</string>
     <string name="entity_editors_remove_photo">फोटो काढा</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">एकाच वेळी अनेक नावे जोडण्यासाठी स्वल्पविरामाने वेगळी करा.</string>

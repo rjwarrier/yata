@@ -547,6 +547,7 @@
     <string name="entity_editors_list_color">Listfärg</string>
     <string name="entity_editors_list_icon">Listikon</string>
     <string name="entity_editors_person_s_name">Personens namn</string>
+    <string name="entity_name_taken">Det namnet är redan taget. Versaler och gemener spelar ingen roll.</string>
     <string name="entity_editors_project_name">Projektnamn</string>
     <string name="entity_editors_remove_photo">Ta bort foto</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separera flera namn med komma för att lägga till flera samtidigt.</string>

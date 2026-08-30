@@ -811,6 +811,7 @@
     <string name="entity_editors_list_color">List color</string>
     <string name="entity_editors_list_icon">List icon</string>
     <string name="entity_editors_person_s_name">Person\'s name</string>
+    <string name="entity_name_taken">That name is already taken. Names ignore capitalization.</string>
     <string name="entity_editors_project_name">Project name</string>
     <string name="entity_editors_remove_photo">Remove photo</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separate multiple names with commas to add several at once.</string>

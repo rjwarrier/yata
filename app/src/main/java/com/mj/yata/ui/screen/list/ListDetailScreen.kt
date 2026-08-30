@@ -879,6 +879,7 @@ fun ListDetailScreen(
         ) {
             ListEditorSheet(
                 initialName = list.name,
+                existingNames = lists.map { it.name },
                 initialColor = list.color,
                 initialIcon = list.icon,
                 initialExcludeFromToday = list.excludeFromToday,

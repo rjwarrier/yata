@@ -547,6 +547,7 @@
     <string name="entity_editors_list_color">Liste rengi</string>
     <string name="entity_editors_list_icon">Liste simgesi</string>
     <string name="entity_editors_person_s_name">Kişinin adı</string>
+    <string name="entity_name_taken">Bu ad zaten kullanılıyor. Büyük-küçük harf farkı dikkate alınmaz.</string>
     <string name="entity_editors_project_name">Proje adı</string>
     <string name="entity_editors_remove_photo">Fotoğrafı kaldır</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Aynı anda birden fazla ad eklemek için virgülle ayırın.</string>

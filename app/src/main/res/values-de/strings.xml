@@ -730,6 +730,7 @@
     <string name="entity_editors_list_color">Listenfarbe</string>
     <string name="entity_editors_list_icon">Listensymbol</string>
     <string name="entity_editors_person_s_name">Name der Person</string>
+    <string name="entity_name_taken">Dieser Name ist bereits vergeben. Groß- und Kleinschreibung wird ignoriert.</string>
     <string name="entity_editors_project_name">Projektname</string>
     <string name="entity_editors_remove_photo">Foto entfernen</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Mehrere Namen durch Kommas trennen, um mehrere auf einmal hinzuzufügen.</string>

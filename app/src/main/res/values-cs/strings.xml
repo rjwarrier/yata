@@ -547,6 +547,7 @@
     <string name="entity_editors_list_color">Barva seznamu</string>
     <string name="entity_editors_list_icon">Ikona seznamu</string>
     <string name="entity_editors_person_s_name">Jméno osoby</string>
+    <string name="entity_name_taken">Tento název je již použit. Na velikosti písmen nezáleží.</string>
     <string name="entity_editors_project_name">Název projektu</string>
     <string name="entity_editors_remove_photo">Odebrat fotku</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Oddělte více jmen čárkami pro přidání několika najednou.</string>

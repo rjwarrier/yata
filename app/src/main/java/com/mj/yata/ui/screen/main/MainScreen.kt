@@ -1264,6 +1264,7 @@ fun MainScreen(
                 when (activeSheet) {
                     MainSheetType.NewProject -> ProjectEditorSheet(
                         tags = tags,
+                        existingNames = projects.map { it.name },
                         onSave = { name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday ->
                             viewModel.addProject(name, color, icon, due, commonTagIds, defaultReminder, description, excludeFromToday)
                             activeSheet = MainSheetType.None
@@ -1511,6 +1512,7 @@ fun MainScreen(
             sheetMaxWidth = if (useWideNavigation) 640.dp else BottomSheetDefaults.SheetMaxWidth
         ) {
             ListEditorSheet(
+                existingNames = lists.map { it.name },
                 onSave = { name, color, icon, excludeFromToday ->
                     viewModel.addList(name, color, icon = icon, excludeFromToday = excludeFromToday)
                     isNewListSheetOpen = false

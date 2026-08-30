@@ -547,6 +547,7 @@
     <string name="entity_editors_list_color">Culoarea listei</string>
     <string name="entity_editors_list_icon">Pictograma listei</string>
     <string name="entity_editors_person_s_name">Numele persoanei</string>
+    <string name="entity_name_taken">Acest nume este deja folosit. Majusculele nu contează.</string>
     <string name="entity_editors_project_name">Numele proiectului</string>
     <string name="entity_editors_remove_photo">Elimină fotografia</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separă mai multe nume prin virgulă pentru a adăuga mai multe deodată.</string>

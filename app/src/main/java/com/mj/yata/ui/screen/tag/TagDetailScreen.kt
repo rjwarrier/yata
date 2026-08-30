@@ -629,6 +629,7 @@ fun TagDetailScreen(
         ) {
             TagEditorSheet(
                 initialName = tag.name,
+                existingNames = tags.map { it.name },
                 initialColor = tag.color,
                 initialGroupId = tag.groupId,
                 initialHideCompletedByDefault = tag.hideCompletedByDefault,

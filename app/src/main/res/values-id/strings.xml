@@ -547,6 +547,7 @@
     <string name="entity_editors_list_color">Warna daftar</string>
     <string name="entity_editors_list_icon">Ikon daftar</string>
     <string name="entity_editors_person_s_name">Nama orang</string>
+    <string name="entity_name_taken">Nama itu sudah dipakai. Huruf besar-kecil tidak dibedakan.</string>
     <string name="entity_editors_project_name">Nama proyek</string>
     <string name="entity_editors_remove_photo">Hapus foto</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Pisahkan beberapa nama dengan koma untuk menambahkan beberapa sekaligus.</string>

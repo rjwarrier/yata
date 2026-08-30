@@ -547,6 +547,7 @@
     <string name="entity_editors_list_color">Colore elenco</string>
     <string name="entity_editors_list_icon">Icona elenco</string>
     <string name="entity_editors_person_s_name">Nome della persona</string>
+    <string name="entity_name_taken">Questo nome è già in uso. Le maiuscole non contano.</string>
     <string name="entity_editors_project_name">Nome progetto</string>
     <string name="entity_editors_remove_photo">Rimuovi foto</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separa più nomi con una virgola per aggiungerne diversi in una volta.</string>

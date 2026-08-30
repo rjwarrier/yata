@@ -647,6 +647,7 @@
     <string name="entity_editors_list_color">सूची का रंग</string>
     <string name="entity_editors_list_icon">सूची का आइकन</string>
     <string name="entity_editors_person_s_name">व्यक्ति का नाम</string>
+    <string name="entity_name_taken">यह नाम पहले से मौजूद है। बड़े-छोटे अक्षरों का अंतर नहीं गिना जाता।</string>
     <string name="entity_editors_project_name">परियोजना का नाम</string>
     <string name="entity_editors_remove_photo">फ़ोटो हटाएं</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">एक साथ कई नाम जोड़ने के लिए उन्हें अल्पविराम से अलग करें।</string>

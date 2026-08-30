@@ -1100,6 +1100,7 @@ fun ProjectDetailScreen(
         ) {
             ProjectEditorSheet(
                 initialName = project.name,
+                existingNames = projects.map { it.name },
                 initialColor = project.color,
                 initialIcon = project.icon,
                 initialDueDate = project.due,

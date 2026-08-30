@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">ലിസ്റ്റ് നിറം</string>
     <string name="entity_editors_list_icon">ലിസ്റ്റ് ഐക്കൺ</string>
     <string name="entity_editors_person_s_name">ആളുടെ പേര്</string>
+    <string name="entity_name_taken">ഈ പേര് ഇതിനകം ഉപയോഗത്തിലാണ്. വലിയ-ചെറിയ അക്ഷരങ്ങൾ കണക്കാക്കുന്നില്ല.</string>
     <string name="entity_editors_project_name">പ്രോജക്റ്റ് പേര്</string>
     <string name="entity_editors_remove_photo">ഫോട്ടോ നീക്കം ചെയ്യുക</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ഒന്നിലധികം പേരുകൾ ഒരുമിച്ച് ചേർക്കാൻ കോമയിട്ട് വേർതിരിക്കുക.</string>

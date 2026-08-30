@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">జాబితా రంగు</string>
     <string name="entity_editors_list_icon">జాబితా ఐకాన్</string>
     <string name="entity_editors_person_s_name">వ్యక్తి పేరు</string>
+    <string name="entity_name_taken">ఈ పేరు ఇప్పటికే వాడుకలో ఉంది. అక్షరాల పరిమాణం పరిగణించబడదు.</string>
     <string name="entity_editors_project_name">ప్రాజెక్ట్ పేరు</string>
     <string name="entity_editors_remove_photo">ఫోటో తీసివేయండి</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ఒకేసారి అనేకం జోడించడానికి బహుళ పేర్లను కామాలతో వేరు చేయండి.</string>

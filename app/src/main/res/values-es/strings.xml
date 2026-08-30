@@ -772,6 +772,7 @@
     <string name="entity_editors_list_name">Nombre de la lista</string>
     <string name="entity_editors_new_group">Nuevo grupo</string>
     <string name="entity_editors_person_s_name">Nombre de la persona</string>
+    <string name="entity_name_taken">Ese nombre ya está en uso. No se distinguen mayúsculas y minúsculas.</string>
     <string name="entity_editors_project_name">Nombre del proyecto</string>
     <string name="entity_editors_remove_photo">Quitar foto</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Separa varios nombres con comas para añadir varios a la vez.</string>

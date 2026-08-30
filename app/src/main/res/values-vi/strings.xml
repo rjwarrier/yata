@@ -547,6 +547,7 @@
     <string name="entity_editors_list_color">Màu danh sách</string>
     <string name="entity_editors_list_icon">Biểu tượng danh sách</string>
     <string name="entity_editors_person_s_name">Tên người</string>
+    <string name="entity_name_taken">Tên này đã được dùng. Không phân biệt chữ hoa chữ thường.</string>
     <string name="entity_editors_project_name">Tên dự án</string>
     <string name="entity_editors_remove_photo">Xóa ảnh</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Ngăn cách nhiều tên bằng dấu phẩy để thêm cùng lúc.</string>

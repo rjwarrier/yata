@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">યાદી રંગ</string>
     <string name="entity_editors_list_icon">યાદી આઇકોન</string>
     <string name="entity_editors_person_s_name">વ્યક્તિનું નામ</string>
+    <string name="entity_name_taken">આ નામ પહેલેથી વપરાયેલું છે. મોટા-નાના અક્ષરો ગણાતા નથી.</string>
     <string name="entity_editors_project_name">પ્રોજેક્ટનું નામ</string>
     <string name="entity_editors_remove_photo">ફોટો દૂર કરો</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">એકસાથે અનેક ઉમેરવા અલ્પવિરામથી બહુવિધ નામ અલગ કરો.</string>

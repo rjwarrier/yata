@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">Rangi ya orodha</string>
     <string name="entity_editors_list_icon">Aikoni ya orodha</string>
     <string name="entity_editors_person_s_name">Jina la mtu</string>
+    <string name="entity_name_taken">Jina hilo tayari linatumika. Herufi kubwa au ndogo hazizingatiwi.</string>
     <string name="entity_editors_project_name">Jina la mradi</string>
     <string name="entity_editors_remove_photo">Ondoa picha</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">Tenganisha majina mengi kwa koma ili kuongeza kadhaa mara moja.</string>

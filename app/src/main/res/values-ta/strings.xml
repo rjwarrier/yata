@@ -630,6 +630,7 @@
     <string name="entity_editors_list_color">பட்டியல் வண்ணம்</string>
     <string name="entity_editors_list_icon">பட்டியல் ஐகான்</string>
     <string name="entity_editors_person_s_name">நபரின் பெயர்</string>
+    <string name="entity_name_taken">இந்தப் பெயர் ஏற்கனவே பயன்பாட்டில் உள்ளது. பெரிய-சிறிய எழுத்து வேறுபாடு கணக்கில் இல்லை.</string>
     <string name="entity_editors_project_name">திட்டப் பெயர்</string>
     <string name="entity_editors_remove_photo">புகைப்படத்தை அகற்று</string>
     <string name="entity_editors_separate_multiple_names_with_commas_to_add">ஒரே நேரத்தில் பலவற்றைச் சேர்க்க பல பெயர்களை கமாவால் பிரிக்கவும்.</string>

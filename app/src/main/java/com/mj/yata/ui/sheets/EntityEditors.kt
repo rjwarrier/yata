@@ -40,6 +40,25 @@ private fun parseBulkNames(input: String): List<String> =
 private fun List<String>.excludingExisting(existingNames: List<String>): List<String> =
     filterNot { candidate -> existingNames.any { it.equals(candidate, ignoreCase = true) } }
 
+/**
+ * True when [candidate] collides with an existing entity name on everything but capitalisation.
+ *
+ * Every lookup in the app compares names case-insensitively — findBestEntityMatch (natural
+ * language and quick add), the #/@/+/= mention autocomplete, shared-link import, the Tasker
+ * plugin — so "Work" and "work" are not two entities the user can tell apart by name; they are
+ * one name where whichever row is found first wins and the other becomes permanently unreachable
+ * by name. Blocking the second at creation is the only point where that is still fixable.
+ *
+ * [selfName] is excluded so renaming an entity to a different capitalisation of its own name
+ * ("work" to "Work") stays allowed — that is a rename, not a collision.
+ */
+private fun nameCollides(candidate: String, existingNames: List<String>, selfName: String = ""): Boolean {
+    val trimmed = candidate.trim()
+    if (trimmed.isEmpty()) return false
+    if (trimmed.equals(selfName.trim(), ignoreCase = true)) return false
+    return existingNames.any { it.trim().equals(trimmed, ignoreCase = true) }
+}
+
 /** Cap for a single-entity name field (Project/List) — unbounded before this, unlike the
  * Project description field which already had a limit. */
 private const val NAME_LIMIT = 100
@@ -149,11 +168,16 @@ fun ProjectEditorSheet(
     initialDescription: String? = null,
     initialExcludeFromToday: Boolean = false,
     tags: List<com.mj.yata.domain.model.Tag> = emptyList(),
+    /** Names of the other projects, for the case-insensitive collision check — see [nameCollides]. */
+    existingNames: List<String> = emptyList(),
     onSave: (String, String, String, String?, List<String>, String?, String?, Boolean) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf(initialName) }
+    val nameTaken = remember(name, existingNames, initialName) {
+        nameCollides(name, existingNames, initialName)
+    }
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedIcon by remember { mutableStateOf(initialIcon) }
     var dueDate by remember { mutableStateOf<String?>(initialDueDate) }
@@ -223,6 +247,10 @@ fun ProjectEditorSheet(
             label = { Text(stringResource(R.string.entity_editors_project_name)) },
             placeholder = { Text(stringResource(R.string.entity_editors_e_g_work_list)) },
             singleLine = true,
+            isError = nameTaken,
+            supportingText = if (nameTaken) {
+                { Text(stringResource(R.string.entity_name_taken)) }
+            } else null,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
@@ -388,8 +416,8 @@ fun ProjectEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday) },
-                enabled = name.isNotBlank()
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, dueDate, selectedTagIds.toList(), defaultReminder, description.trim().ifBlank { null }, excludeFromToday) },
+                enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)
             }
@@ -505,6 +533,16 @@ fun PersonEditorSheet(
     val bulkNames = remember(name, isCreateMode, existingNames) {
         if (isCreateMode) parseBulkNames(name).excludingExisting(existingNames) else emptyList()
     }
+    // Every typed name already exists (case-insensitively), so excludingExisting emptied the list
+    // and the Create button below is disabled. Without saying so it just greys out for no visible
+    // reason — the user typed a perfectly good name, it merely differs in case from one already
+    // there, which is exactly the case they cannot see.
+    val allNamesTaken = remember(name, isCreateMode, bulkNames, existingNames, initialName) {
+        if (isCreateMode) name.isNotBlank() && bulkNames.isEmpty()
+        // Edit mode has no bulk list to empty — renaming onto another entity's name collides just
+        // as badly, and was previously allowed outright.
+        else nameCollides(name, existingNames, initialName)
+    }
     val isBulk = bulkNames.size > 1
 
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -578,9 +616,12 @@ fun PersonEditorSheet(
             onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
             label = { Text(stringResource(R.string.entity_editors_person_s_name)) },
             placeholder = { Text(if (isCreateMode) "e.g. Clara, Alex, Sam" else "e.g. Clara") },
-            supportingText = if (isCreateMode) {
-                { Text(stringResource(R.string.entity_editors_separate_multiple_names_with_commas_to_add)) }
-            } else null,
+            isError = allNamesTaken,
+            supportingText = when {
+                allNamesTaken -> { { Text(stringResource(R.string.entity_name_taken)) } }
+                isCreateMode -> { { Text(stringResource(R.string.entity_editors_separate_multiple_names_with_commas_to_add)) } }
+                else -> null
+            },
             singleLine = true,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
@@ -661,7 +702,7 @@ fun PersonEditorSheet(
                         onSave(name, selectedColor, selectedGroupId, photoUri)
                     }
                 },
-                enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()
+                enabled = if (isCreateMode) bulkNames.isNotEmpty() else (name.isNotBlank() && !allNamesTaken)
             ) {
                 Text(buttonText)
             }
@@ -699,6 +740,16 @@ fun TagEditorSheet(
     val bulkNames = remember(name, isCreateMode, existingNames) {
         if (isCreateMode) parseBulkNames(name).excludingExisting(existingNames) else emptyList()
     }
+    // Every typed name already exists (case-insensitively), so excludingExisting emptied the list
+    // and the Create button below is disabled. Without saying so it just greys out for no visible
+    // reason — the user typed a perfectly good name, it merely differs in case from one already
+    // there, which is exactly the case they cannot see.
+    val allNamesTaken = remember(name, isCreateMode, bulkNames, existingNames, initialName) {
+        if (isCreateMode) name.isNotBlank() && bulkNames.isEmpty()
+        // Edit mode has no bulk list to empty — renaming onto another entity's name collides just
+        // as badly, and was previously allowed outright.
+        else nameCollides(name, existingNames, initialName)
+    }
     val isBulk = bulkNames.size > 1
 
     Column(
@@ -725,9 +776,12 @@ fun TagEditorSheet(
             onValueChange = { if (it.length <= BULK_NAME_FIELD_LIMIT) name = it },
             label = { Text(stringResource(R.string.entity_editors_tag_label)) },
             placeholder = { Text(if (isCreateMode) "e.g. urgent, work, personal" else "e.g. urgent") },
-            supportingText = if (isCreateMode) {
-                { Text(stringResource(R.string.entity_editors_separate_multiple_tags_with_commas_to_crea)) }
-            } else null,
+            isError = allNamesTaken,
+            supportingText = when {
+                allNamesTaken -> { { Text(stringResource(R.string.entity_name_taken)) } }
+                isCreateMode -> { { Text(stringResource(R.string.entity_editors_separate_multiple_tags_with_commas_to_crea)) } }
+                else -> null
+            },
             singleLine = true,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
@@ -827,7 +881,7 @@ fun TagEditorSheet(
                         onSave(name, selectedColor, groupIdToSave, hideCompletedByDefault, descriptionToSave, selectedPendingGroup)
                     }
                 },
-                enabled = if (isCreateMode) bulkNames.isNotEmpty() else name.isNotBlank()
+                enabled = if (isCreateMode) bulkNames.isNotEmpty() else (name.isNotBlank() && !allNamesTaken)
             ) {
                 Text(buttonText)
             }
@@ -843,9 +897,14 @@ fun ListEditorSheet(
     initialExcludeFromToday: Boolean = false,
     onSave: (String, String, String, Boolean) -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Names of the other lists, for the case-insensitive collision check — see [nameCollides]. */
+    existingNames: List<String> = emptyList()
 ) {
     var name by remember { mutableStateOf(initialName) }
+    val nameTaken = remember(name, existingNames, initialName) {
+        nameCollides(name, existingNames, initialName)
+    }
     var selectedColor by remember { mutableStateOf(initialColor) }
     var selectedIcon by remember { mutableStateOf(initialIcon) }
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
@@ -875,6 +934,10 @@ fun ListEditorSheet(
             label = { Text(stringResource(R.string.entity_editors_list_name)) },
             placeholder = { Text(stringResource(R.string.entity_editors_e_g_personal)) },
             singleLine = true,
+            isError = nameTaken,
+            supportingText = if (nameTaken) {
+                { Text(stringResource(R.string.entity_name_taken)) }
+            } else null,
             shape = com.mj.yata.ui.widgets.YataCompactFieldShape,
             colors = com.mj.yata.ui.widgets.yataFieldColors(),
             modifier = Modifier.fillMaxWidth()
@@ -937,8 +1000,8 @@ fun ListEditorSheet(
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
-                onClick = { if (name.isNotBlank()) onSave(name, selectedColor, selectedIcon, excludeFromToday) },
-                enabled = name.isNotBlank()
+                onClick = { if (name.isNotBlank() && !nameTaken) onSave(name, selectedColor, selectedIcon, excludeFromToday) },
+                enabled = name.isNotBlank() && !nameTaken
             ) {
                 Text(buttonText)
             }
