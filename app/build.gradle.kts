@@ -30,8 +30,8 @@ android {
         applicationId = "com.mj.yata"
         minSdk = 26
         targetSdk = 35
-        versionCode = 24
-        versionName = "0.94.3"
+        versionCode = 25
+        versionName = "0.94.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
