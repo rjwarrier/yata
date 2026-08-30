@@ -900,7 +900,20 @@ object NaturalLanguageParser {
         null
     }
 
-    private val escapeRegex = Regex("\\\\(\\w+)")
+    /**
+     * A backslash marks the next token as literal text, so a word the parser would otherwise
+     * consume stays in the title: "buy milk \\tomorrow", "Meet \\Sunday Adekunle".
+     *
+     * Two alternatives, in order. The first covers an escaped *trigger symbol* and the token it
+     * introduces (\\#tag, \\@name, \\+project, \\=list) — these used to be unescapable, because
+     * the pattern demanded a word character straight after the backslash and none of #@+= is one.
+     * The escape simply did not match, the entity rules claimed the mention as usual, and the
+     * stray backslash was left sitting in the finished title.
+     *
+     * The second covers a plain word, Unicode-aware rather than ASCII \w so a non-Latin name can
+     * be escaped too, and allowing "-" so a hyphenated word escapes whole.
+     */
+    private val escapeRegex = Regex("""\\([#@+=]\S*|[\p{L}\p{N}_-]+)""")
     private val highlightPrepositionRegex =
         Regex("(?:^|\\s)(for|on|at|by|from|to|in|scheduled\\s+for|remind\\s+me\\s+for|remind\\s+me\\s+on|para|el|a\\s+las?|às?|à|programad[ao]\\s+para|recu[eé]rdame\\s+para|recu[eé]rdame\\s+el)\\s*$", RegexOption.IGNORE_CASE)
 

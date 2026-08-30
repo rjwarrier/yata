@@ -85,7 +85,8 @@ private val helpSections = listOf(
         bullets = listOf(
             "Try text like \"call Priya tomorrow 3pm high priority\".",
             "YATA can detect due dates, times, priority, and list names.",
-            "Quick Add also works from shortcuts, widgets, voice input, and share sheets."
+            "Quick Add also works from shortcuts, widgets, voice input, and share sheets.",
+            "Put \\ before a word to keep it literal - \\tomorrow, \\#urgent, \\@Sam or \\+Acme stay in the title instead of becoming a date, tag, person or project. Useful when a name is also a day or a month, like \\Sunday Adekunle."
         ),
         icon = Icons.Default.PostAdd
     ),

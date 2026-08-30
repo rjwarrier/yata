@@ -767,6 +767,60 @@ class NaturalLanguageParserTest {
     }
 
     @Test
+    fun escapeAlsoCoversTheEntityTriggerSymbols() {
+        // The escape pattern used to require a word character straight after the backslash, and
+        // none of #@+= is one — so the escape silently did not match, the mention was claimed as
+        // usual, and the orphaned backslash was left in the title ("Read RB# guide" came out as
+        // "Read RB guide" with the tag still attached).
+        val tag = NaturalLanguageParser.parse("Read \\#hashtag guide", ref)
+        assertTrue(tag.tagNames.isEmpty())
+        assertEquals("Read #hashtag guide", tag.title)
+
+        val project = NaturalLanguageParser.parse("Report for \\+ITR", ref)
+        assertNull(project.projectName)
+        assertEquals("Report for +ITR", project.title)
+
+        val person = NaturalLanguageParser.parse("Email \\@Jane about it", ref)
+        assertTrue(person.assigneeNames.isEmpty())
+        assertEquals("Email @Jane about it", person.title)
+
+        val list = NaturalLanguageParser.parse("Check \\=Inbox later", ref)
+        assertNull(list.listName)
+        assertEquals("Check =Inbox later", list.title)
+    }
+
+    @Test
+    fun escapeStopsAtWhitespaceSoOnlyTheMentionIsLiteral() {
+        // "\\@Jane about it" must protect "@Jane" alone — previously the assignee rule swallowed
+        // the trailing words and produced an assignee literally named "Jane about it".
+        val result = NaturalLanguageParser.parse("Email \\@Jane about it tomorrow", ref)
+        assertTrue(result.assigneeNames.isEmpty())
+        assertEquals("2026-07-05", result.due)
+        assertEquals("Email @Jane about it", result.title)
+    }
+
+    @Test
+    fun escapeProtectsANameTheDateRulesWouldOtherwiseEat() {
+        // A person whose name is a weekday: unescaped, the bare-weekday rule consumes it and
+        // invents a due date, taking the name out of the title with it.
+        val unescaped = NaturalLanguageParser.parse("Sunday Adekunle review", ref)
+        assertEquals("Adekunle review", unescaped.title)
+        assertNotNull(unescaped.due)
+
+        val escaped = NaturalLanguageParser.parse("\\Sunday Adekunle review", ref)
+        assertNull(escaped.due)
+        assertEquals("Sunday Adekunle review", escaped.title)
+    }
+
+    @Test
+    fun escapeHandlesNonAsciiWords() {
+        // The pattern matched ASCII word characters only, so an escaped non-Latin name was
+        // protected one letter deep.
+        val result = NaturalLanguageParser.parse("Ship \\Müller order", ref)
+        assertEquals("Ship Müller order", result.title)
+    }
+
+    @Test
     fun parsesRemindAtTimeKeyword() {
         val result = NaturalLanguageParser.parse("tomorrow remind at time pay rent", ref)
         assertEquals("At time", result.reminder)

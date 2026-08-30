@@ -80,6 +80,13 @@ test-only changes belong in the commit message, not here, unless they change beh
   the behavior the `+`/`=` mention autocomplete and quick-add's own resolver already had.
 
 ### Fixed
+- The backslash escape, which keeps the next word out of the parser (`\tomorrow` stays in the
+  title instead of setting a due date), now also covers the `#`/`@`/`+`/`=` mention triggers:
+  `\#urgent`, `\@Sam`, `\+Acme` and `\=Inbox` stay literal. Previously the escape only matched a
+  word character, so escaping a mention did nothing at all — the tag, person, project or list
+  was still attached and the orphaned backslash was left sitting in the title. Escaping is
+  also Unicode-aware now, so a non-Latin name is protected in full rather than one letter
+  deep, and it is documented under Help > Quick Add, where nothing previously mentioned it.
 - Typing `project <name>`/`list <name>`/`assign to <name>` immediately followed by a date word
   from a language the entity parser's own keyword list didn't cover (e.g. German "morgen") made
   the project/list/assignee vanish from detection entirely rather than just mis-capturing it — the
