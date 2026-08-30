@@ -774,6 +774,8 @@
     <string name="task_start_date_hint">Tersembunyi dari Hari Ini hingga tanggal ini</string>
     <string name="smart_add_starts">Mulai %1$s</string>
     <string name="smart_add_due">Jatuh tempo %1$s</string>
+    <string name="new_task_bulk_more_detected">+%1$d lagi</string>
+    <string name="new_task_bulk_truncated">Hanya %1$d baris pertama yang akan ditambahkan — %2$d lainnya diabaikan.</string>
     <string name="new_task_ignore_field">Abaikan %1$s</string>
     <string name="settings_set_pin">Atur PIN</string>
     <string name="settings_settings">Pengaturan</string>

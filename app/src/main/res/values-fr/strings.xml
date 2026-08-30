@@ -665,6 +665,8 @@
     <string name="task_start_date_hint">Masqué d\'aujourd\'hui jusqu\'à cette date</string>
     <string name="smart_add_starts">Démarre %1$s</string>
     <string name="smart_add_due">Échéance %1$s</string>
+    <string name="new_task_bulk_more_detected">+%1$d autres</string>
+    <string name="new_task_bulk_truncated">Seules les %1$d premières lignes seront ajoutées — %2$d autres ont été ignorées.</string>
     <string name="new_task_ignore_field">Ignorer %1$s</string>
     <string name="settings_set_pin">Définir le code PIN</string>
     <string name="settings_settings">Paramètres</string>

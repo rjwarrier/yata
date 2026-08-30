@@ -774,6 +774,8 @@
     <string name="task_start_date_hint">Ukryte z Dziś do tej daty</string>
     <string name="smart_add_starts">Zaczyna się %1$s</string>
     <string name="smart_add_due">Termin %1$s</string>
+    <string name="new_task_bulk_more_detected">+%1$d więcej</string>
+    <string name="new_task_bulk_truncated">Dodane zostanie tylko pierwszych %1$d wierszy — %2$d więcej zignorowano.</string>
     <string name="new_task_ignore_field">Ignoruj %1$s</string>
     <string name="settings_set_pin">Ustaw kod PIN</string>
     <string name="settings_settings">Ustawienia</string>

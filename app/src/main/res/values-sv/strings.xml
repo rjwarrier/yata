@@ -774,6 +774,8 @@
     <string name="task_start_date_hint">Dold från Idag fram till detta datum</string>
     <string name="smart_add_starts">Startar %1$s</string>
     <string name="smart_add_due">Förfaller %1$s</string>
+    <string name="new_task_bulk_more_detected">+%1$d till</string>
+    <string name="new_task_bulk_truncated">Endast de första %1$d raderna läggs till — %2$d till ignorerades.</string>
     <string name="new_task_ignore_field">Ignorera %1$s</string>
     <string name="settings_set_pin">Ange PIN-kod</string>
     <string name="settings_settings">Inställningar</string>

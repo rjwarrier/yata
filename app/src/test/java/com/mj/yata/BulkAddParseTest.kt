@@ -3,6 +3,8 @@ package com.mj.yata
 import com.mj.yata.domain.model.Project
 import com.mj.yata.domain.model.Tag
 import com.mj.yata.util.NaturalLanguageParser
+import com.mj.yata.util.ParsedQuickAdd
+import com.mj.yata.util.findBestEntityMatch
 import com.mj.yata.util.resolveParsedQuickAddEntities
 import org.junit.Assert.*
 import org.junit.Test
@@ -44,6 +46,53 @@ class BulkAddParseTest {
             // A trailing "+ITR" must not be mistaken for an assignee.
             assertTrue(p.assigneeNames.isEmpty())
         }
+    }
+
+    @Test
+    fun caseVariantsOfOneNameCollapseToASingleMissingEntity() {
+        // findBestEntityMatch is case-insensitive, so "#ITR"/"#itr"/"#Itr" all resolve to one tag
+        // once it exists. A plain distinct() sees three missing names and "Create missing items"
+        // would make three tags, two of which nothing would ever resolve to again.
+        val parsed = listOf("A #ITR +Work", "B #itr +work", "C #Itr +WORK")
+            .map { NaturalLanguageParser.parse(it, ref) }
+
+        fun List<String>.distinctNames() = distinctBy { it.trim().lowercase() }
+        assertEquals(listOf("ITR"), parsed.flatMap { it.tagNames }.distinctNames())
+        assertEquals(listOf("Work"), parsed.mapNotNull { it.projectName }.distinctNames())
+
+        // And creating only that one is genuinely enough for every spelling to attach.
+        val created = listOf(Tag(id = "t1", name = "ITR", color = "accentA"))
+        parsed.flatMap { it.tagNames }.forEach { name ->
+            assertEquals("t1", findBestEntityMatch(name, created, { t -> t.name })?.id)
+        }
+    }
+
+    @Test
+    fun perLineMemoizationMakesAnEditReparseOnlyTheEditedLine() {
+        // NaturalLanguageParser's own LRU holds 64 entries, so a longer paste evicts everything
+        // on each keystroke and re-parses every line. The sheet memoizes per line instead; this
+        // asserts the shape of that memo rather than a wall-clock number.
+        val lines = (1..200).map { "Person $it Aug 31 #Achu_STP +ITR" }
+        val memo = HashMap<String, ParsedQuickAdd>()
+        var parseCount = 0
+        fun pass(ls: List<String>) {
+            val fresh = LinkedHashMap<String, ParsedQuickAdd>()
+            ls.forEach { l ->
+                val v = memo[l] ?: NaturalLanguageParser.parse(l, ref).also { parseCount++ }
+                fresh[l] = v
+            }
+            memo.clear(); memo.putAll(fresh)
+        }
+
+        pass(lines)
+        assertEquals(200, parseCount)
+
+        parseCount = 0
+        pass(lines.dropLast(1) + (lines.last() + "x"))
+        assertEquals(1, parseCount)
+
+        // The line edited away must not be retained, or a long session pins every keystroke.
+        assertEquals(200, memo.size)
     }
 
     @Test

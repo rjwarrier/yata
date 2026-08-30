@@ -774,6 +774,8 @@
     <string name="task_start_date_hint">এই তারিখ পর্যন্ত আজ থেকে লুকানো</string>
     <string name="smart_add_starts">শুরু %1$s</string>
     <string name="smart_add_due">সময়সীমা %1$s</string>
+    <string name="new_task_bulk_more_detected">+আরও %1$d</string>
+    <string name="new_task_bulk_truncated">শুধু প্রথম %1$d লাইন যোগ করা হবে — আরও %2$d উপেক্ষা করা হয়েছে।</string>
     <string name="new_task_ignore_field">%1$s উপেক্ষা করুন</string>
     <string name="settings_set_pin">PIN সেট করুন</string>
     <string name="settings_settings">সেটিংস</string>

@@ -44,7 +44,10 @@ test-only changes belong in the commit message, not here, unless they change beh
   now previews what the whole paste will apply — the shared due date, and every `#tag`, `+project`,
   `=list` and `@person` it found — instead of only reporting how many lines it counted. A name that
   matches nothing existing is flagged rather than silently dropped, with a "Create missing items"
-  button that makes the tags and projects in one go.
+  button that makes the tags and projects in one go. Mixed-case references to one name
+  (`#ITR` and `#itr` in the same paste) count as a single missing entity rather than creating a
+  duplicate for each spelling, and a paste beyond 500 lines is capped with a visible warning
+  instead of blocking the app while it parses and inserts.
 - New Task's and Task Detail's smart-add preview chip for a `+project`/`=list` (and now `#tag`/
   `@person`) mention shows the entity it actually matched instead of the raw typed text, and
   renders in an error tint when nothing matched — previously a typo and a successful match

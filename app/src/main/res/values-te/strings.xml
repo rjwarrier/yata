@@ -857,6 +857,8 @@
     <string name="task_start_date_hint">ఈ తేదీ వరకు ఈరోజు నుండి దాచబడింది</string>
     <string name="smart_add_starts">%1$s న ప్రారంభమవుతుంది</string>
     <string name="smart_add_due">గడువు %1$s</string>
+    <string name="new_task_bulk_more_detected">+%1$d మరిన్ని</string>
+    <string name="new_task_bulk_truncated">మొదటి %1$d పంక్తులు మాత్రమే జోడించబడతాయి — %2$d మరిన్ని విస్మరించబడ్డాయి.</string>
     <string name="new_task_ignore_field">%1$s వదిలేయండి</string>
     <string name="settings_set_pin">PIN సెట్ చేయండి</string>
     <string name="settings_settings">సెట్టింగ్‌లు</string>

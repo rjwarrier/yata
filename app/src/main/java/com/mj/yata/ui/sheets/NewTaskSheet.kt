@@ -121,6 +121,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -166,6 +167,14 @@ internal fun pickAccentFor(name: String): String =
 /** Forced on every chip in the Assigned-to/Tags rows so mixed content (avatars, dots, dashed
  * "add" pills) never drifts out of alignment — matches the attribute-chip row's YataSelectChip height. */
 private val CHIP_ROW_HEIGHT = 34.dp
+
+/** Most entity chips the bulk preview will draw before collapsing the tail into a "+N more"
+ * count. A paste naming a distinct tag per line would otherwise render one chip per line. */
+private const val BULK_PREVIEW_CHIP_LIMIT = 12
+
+/** Most tasks a single bulk paste will create. Chosen well above any realistic roster while
+ * keeping the one-off parse-and-insert cost of a stray paste bounded. */
+private const val MAX_BULK_TASKS = 500
 
 /**
  * Everything the sheet collected for one new task, handed to the caller as a single value.
@@ -576,9 +585,15 @@ fun NewTaskSheet(
     // instead of a single task with a garbled multi-line title — each gets its own
     // NaturalLanguageParser pass (see bulkTaskLines below), same engine as single-task mode.
     var bulkModeDismissed by remember { mutableStateOf(false) }
-    val bulkTaskLines = remember(title.text) {
+    val bulkAllLines = remember(title.text) {
         title.text.split("\n").map { it.trim() }.filter { it.isNotBlank() }
     }
+    // Hard ceiling on how much one paste can do. Parsing costs roughly a millisecond a line, and
+    // each line becomes its own database write, so an accidental paste of a whole document would
+    // otherwise block the main thread long enough to be killed as an ANR. The excess is reported
+    // rather than dropped quietly — see the truncation warning in the preview card.
+    val bulkTaskLines = remember(bulkAllLines) { bulkAllLines.take(MAX_BULK_TASKS) }
+    val bulkTruncatedCount = bulkAllLines.size - bulkTaskLines.size
     val isBulkTasks = !bulkModeDismissed && bulkTaskLines.size > 1
 
     // What a bulk paste will actually produce. Bulk mode suppresses the single-task smart-add
@@ -587,22 +602,59 @@ fun NewTaskSheet(
     // nothing and is dropped in silence — N tasks land with no tag and no project and nothing
     // said so. Aggregated across lines rather than shown per line, since a paste of this shape
     // usually repeats the same tag/project on every row.
-    val bulkParsedLines = remember(bulkTaskLines, isBulkTasks) {
-        if (isBulkTasks) bulkTaskLines.map { NaturalLanguageParser.parse(it) } else emptyList()
+    //
+    // Parses are memoized per line rather than left to NaturalLanguageParser's own 64-entry LRU.
+    // That cache is sized for single-task typing; a paste longer than it evicts every entry on
+    // each keystroke, so *every* line re-parses on *every* character. Measured: 50 lines 2.4ms,
+    // but 200 lines 233ms and 1000 lines 920ms, per keystroke, on the main thread during
+    // composition. Keeping the results keyed by the line text means editing one line reparses
+    // only that line. Keyed on AppClock.today as well, so relative dates ("tomorrow") don't stay
+    // frozen on the wrong day if the sheet is open across midnight.
+    val bulkToday = com.mj.yata.util.AppClock.today
+    val bulkParseMemo = remember { mutableMapOf<String, ParsedQuickAdd>() }
+    val bulkParsedLines = remember(bulkTaskLines, isBulkTasks, bulkToday) {
+        if (!isBulkTasks) {
+            bulkParseMemo.clear()
+            emptyList()
+        } else {
+            val fresh = LinkedHashMap<String, ParsedQuickAdd>(bulkTaskLines.size)
+            val parsed = bulkTaskLines.map { line ->
+                val value = bulkParseMemo[line] ?: NaturalLanguageParser.parse(line, bulkToday)
+                fresh[line] = value
+                value
+            }
+            // Retain only lines still present, so an edited-away line can't pin memory forever.
+            bulkParseMemo.clear()
+            bulkParseMemo.putAll(fresh)
+            parsed
+        }
     }
-    val bulkTagNames = remember(bulkParsedLines) { bulkParsedLines.flatMap { it.tagNames }.distinct() }
-    val bulkProjectNames = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.projectName }.distinct() }
-    val bulkListNames = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.listName }.distinct() }
-    val bulkPersonNames = remember(bulkParsedLines) { bulkParsedLines.flatMap { it.assigneeNames }.distinct() }
+    // Deduplicated case-insensitively, keeping the first spelling seen. findBestEntityMatch is
+    // itself case-insensitive, so "#ITR" and "#itr" in the same paste resolve to one tag — but a
+    // plain distinct() treats them as two different missing names and "Create missing items"
+    // would dutifully create both, leaving a duplicate nothing subsequently resolves to.
+    fun List<String>.distinctNames(): List<String> = distinctBy { it.trim().lowercase() }
+    val bulkTagNames = remember(bulkParsedLines) { bulkParsedLines.flatMap { it.tagNames }.distinctNames() }
+    val bulkProjectNames = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.projectName }.distinctNames() }
+    val bulkListNames = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.listName }.distinctNames() }
+    val bulkPersonNames = remember(bulkParsedLines) { bulkParsedLines.flatMap { it.assigneeNames }.distinctNames() }
     val bulkDueDates = remember(bulkParsedLines) { bulkParsedLines.mapNotNull { it.due }.distinct() }
+    // Names already handed to onCreateTag/onCreateProject this session. `tags`/`projects` arrive
+    // from a Flow, so they still look unmatched for the moment it takes that write to come back —
+    // without this, a second tap on Create (or a recomposition-triggered re-read) creates the
+    // same tag again.
+    val bulkRequestedCreations = remember { mutableStateListOf<String>() }
+    fun String.creationRequested() = bulkRequestedCreations.any { it.equals(this.trim(), ignoreCase = true) }
     // Unmatched = the name resolves to no existing entity, so submitting now would drop it.
-    val bulkUnmatchedTags = remember(bulkTagNames, tags, tagsEnabled) {
+    val bulkUnmatchedTags = remember(bulkTagNames, tags, tagsEnabled, bulkRequestedCreations.size) {
         if (!tagsEnabled) emptyList()
-        else bulkTagNames.filter { findBestEntityMatch(it, tags, { tag -> tag.name }) == null }
+        else bulkTagNames.filter { findBestEntityMatch(it, tags, { tag -> tag.name }) == null && !it.creationRequested() }
     }
-    val bulkUnmatchedProjects = remember(bulkProjectNames, projects, projectsEnabled) {
+    val bulkUnmatchedProjects = remember(bulkProjectNames, projects, projectsEnabled, bulkRequestedCreations.size) {
         if (!projectsEnabled) emptyList()
-        else bulkProjectNames.filter { findBestEntityMatch(it, projects.activeProjects(), { p -> p.name }) == null }
+        else bulkProjectNames.filter {
+            findBestEntityMatch(it, projects.activeProjects(), { p -> p.name }) == null && !it.creationRequested()
+        }
     }
 
     // Lists have no feature flag — they are always available — so `=` needs no gate, unlike the
@@ -797,8 +849,11 @@ fun NewTaskSheet(
             // Each line gets its own NaturalLanguageParser pass — independent due/time/
             // priority/recurrence/flag per task — sharing only the sheet-level fields that
             // aren't naturally per-line (project/list/section/assignees/tags/notes/subtasks).
-            bulkTaskLines.forEach { line ->
-                val parsed = NaturalLanguageParser.parse(line)
+            // The same parses the preview above was computed from, not a fresh pass: re-parsing
+            // here would repeat the whole cost a second time, and — since the two passes would
+            // resolve relative dates against whatever "today" each happened to see — could create
+            // tasks that disagree with the preview the user just approved.
+            bulkParsedLines.forEach { parsed ->
                 val resolved = resolveParsedQuickAddEntities(
                     quickAdd = parsed,
                     baseListId = selectedListId,
@@ -1222,6 +1277,29 @@ fun NewTaskSheet(
                         )
                     }
 
+                    if (bulkTruncatedCount > 0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ErrorOutline,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.new_task_bulk_truncated,
+                                    MAX_BULK_TASKS,
+                                    bulkTruncatedCount
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+
                     // One chip per distinct thing the paste will apply, flagged unmatched when the
                     // name resolves to nothing and would otherwise be dropped without a word. The
                     // due chip only appears when every line agrees on a date — with mixed dates
@@ -1240,11 +1318,17 @@ fun NewTaskSheet(
                         }
                     }
                     if (bulkChips.isNotEmpty()) {
+                        // A paste naming a different tag on every line would otherwise render one
+                        // chip per line and bury the sheet. Unmatched ones sort first so the
+                        // things at risk of being dropped are never the ones cut from the list;
+                        // the Create button below still acts on all of them, not just the shown.
+                        val shownChips = bulkChips.sortedBy { it.second }.take(BULK_PREVIEW_CHIP_LIMIT)
+                        val hiddenChipCount = bulkChips.size - shownChips.size
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            bulkChips.forEach { (label, matched) ->
+                            shownChips.forEach { (label, matched) ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -1268,9 +1352,20 @@ fun NewTaskSheet(
                                         text = label,
                                         style = MaterialTheme.typography.labelMedium,
                                         color = if (matched) MaterialTheme.colorScheme.onSurface
-                                                else MaterialTheme.colorScheme.onErrorContainer
+                                                else MaterialTheme.colorScheme.onErrorContainer,
+                                        // A pathologically long name must not stretch the card.
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
+                            }
+                            if (hiddenChipCount > 0) {
+                                Text(
+                                    text = stringResource(R.string.new_task_bulk_more_detected, hiddenChipCount),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                                )
                             }
                         }
                     }
@@ -1283,10 +1378,15 @@ fun NewTaskSheet(
                     if (missingCount > 0) {
                         TextButton(
                             onClick = {
-                                bulkUnmatchedTags.forEach { name ->
+                                // Snapshotted before creating: recording each name flips it out of
+                                // the unmatched lists mid-loop otherwise.
+                                val tagsToCreate = bulkUnmatchedTags.toList()
+                                val projectsToCreate = creatableProjects.toList()
+                                bulkRequestedCreations.addAll(tagsToCreate + projectsToCreate)
+                                tagsToCreate.forEach { name ->
                                     onCreateTag("tag_" + java.util.UUID.randomUUID().toString(), name, pickAccentFor(name))
                                 }
-                                creatableProjects.forEach { name ->
+                                projectsToCreate.forEach { name ->
                                     onCreateProject?.invoke("proj_" + java.util.UUID.randomUUID().toString(), name, pickAccentFor(name))
                                 }
                             }

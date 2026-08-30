@@ -983,6 +983,8 @@
     <string name="task_start_date_hint">Bis zu diesem Datum vor Heute verborgen</string>
     <string name="smart_add_starts">Beginnt %1$s</string>
     <string name="smart_add_due">Fällig %1$s</string>
+    <string name="new_task_bulk_more_detected">+%1$d weitere</string>
+    <string name="new_task_bulk_truncated">Nur die ersten %1$d Zeilen werden hinzugefügt — %2$d weitere wurden ignoriert.</string>
     <!-- %1$s is a detected field label, e.g. "Due Tomorrow". -->
     <string name="new_task_ignore_field">%1$s ignorieren</string>
     <string name="settings_set_pin">PIN festlegen</string>

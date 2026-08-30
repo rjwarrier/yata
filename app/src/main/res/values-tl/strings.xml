@@ -857,6 +857,8 @@
     <string name="task_start_date_hint">Nakatago sa Ngayon hanggang sa petsang ito</string>
     <string name="smart_add_starts">Magsisimula %1$s</string>
     <string name="smart_add_due">Takdang %1$s</string>
+    <string name="new_task_bulk_more_detected">+%1$d pa</string>
+    <string name="new_task_bulk_truncated">Ang unang %1$d linya lang ang idadagdag — %2$d pa ang hindi isinama.</string>
     <string name="new_task_ignore_field">Huwag pansinin ang %1$s</string>
     <string name="settings_set_pin">Itakda ang PIN</string>
     <string name="settings_settings">Settings</string>
