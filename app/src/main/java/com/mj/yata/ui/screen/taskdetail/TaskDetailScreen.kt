@@ -364,6 +364,15 @@ fun TaskDetailScreen(
                             tint = if (task.flag) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
+                    // Beside the flag rather than buried in the overflow: the title field here
+                    // takes the same #/@/+/= and backslash syntax the New Task sheet does, and that
+                    // sheet surfaces the reference from its own header.
+                    IconButton(onClick = { showSyntaxDialog = true }) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = stringResource(R.string.syntax_dialog_title)
+                        )
+                    }
                     // Duplicate — clones the task (new id, done reset), keeps everything else
                     // Export as PDF/Image — options (include notes/comments) are confirmed via
                     // TaskExportOptionsDialog before the off-screen render actually happens.
@@ -371,18 +380,7 @@ fun TaskDetailScreen(
                     IconButton(onClick = { showExportMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_more_options))
                     }
-                    // The title field here takes the same #/@/+/= and backslash syntax the New
-                    // Task sheet does, so the same reference belongs within reach. It goes in the
-                    // overflow rather than as another top-bar icon: this bar already carries back,
-                    // flag and overflow, and unlike New Task there is no headline to sit beside.
                     YataDropdownMenu(expanded = showExportMenu, onDismissRequest = { showExportMenu = false }) {
-                        YataDropdownMenuItem(
-                            text = { Text(stringResource(R.string.syntax_dialog_title)) },
-                            onClick = {
-                                showExportMenu = false
-                                showSyntaxDialog = true
-                            }
-                        )
                         if (task.recurrence != null && !task.done) {
                             YataDropdownMenuItem(
                                 text = { Text(stringResource(R.string.task_detail_skip_this_occurrence)) },

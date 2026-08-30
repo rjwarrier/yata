@@ -19,9 +19,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 - An info button beside the New Task headline opens a "Typing shortcuts" reference listing every
   symbol the title field understands — `#` tag, `@` person, `+` project, `=` list, `!1`/`!2`/`!3`
   priority and the backslash escape — plus a note that dates, times and repeats need no symbol
-  at all. The same reference is reachable from the task detail overflow menu, whose title field
-  takes the same syntax. Only four of these were named anywhere before, in the title field's
-  hint, and the escape was named nowhere.
+  at all. Task detail carries the same button beside its flag icon, since its title field takes
+  the same syntax. Only four of these were named anywhere before, in the title field's hint,
+  and the escape was named nowhere.
 - The multiselect toolbar (Today, Upcoming, Search, and Project/List/Tag/Person detail) now has
   Flag and Set priority bulk actions alongside the existing complete/tag/assign/move/reschedule/
   duplicate/delete — flag applies immediately to every selected task, priority opens a picker.
