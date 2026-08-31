@@ -45,4 +45,14 @@ class AppLockPolicyTest {
             )
         )
     }
+
+    @Test
+    fun pinCountsAsAnAppLockUnlockPathWithoutBiometrics() {
+        assertTrue(
+            hasAppLockUnlockPath(
+                biometricOrDeviceCredentialAvailable = false,
+                pinSet = true
+            )
+        )
+    }
 }

@@ -1,5 +1,6 @@
 package com.mj.yata.ui.screen.settings
 
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -136,6 +137,7 @@ import com.mj.yata.ui.theme.colorSchemeFromSeed
 import com.mj.yata.notification.DailyAgendaWorker
 import com.mj.yata.notification.OverdueEscalationWorker
 import com.mj.yata.notification.NotificationPermissionUtils
+import com.mj.yata.ui.screen.lock.hasAppLockUnlockPath
 import com.mj.yata.ui.screen.main.MainViewModel
 import com.mj.yata.ui.theme.LocalYataAccents
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -2154,12 +2156,18 @@ fun SettingsScreen(
         item {
             // Privacy & Security Section
             val context = LocalContext.current
-            val biometricAvailable = remember {
-                androidx.biometric.BiometricManager.from(context).canAuthenticate(
+            val platformCredentialAvailable = remember {
+                val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK or
                         androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                } else {
+                    androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+                }
+                androidx.biometric.BiometricManager.from(context).canAuthenticate(
+                    authenticators
                 ) == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
             }
+            val appLockHasUnlockPath = hasAppLockUnlockPath(platformCredentialAvailable, appLockPinSet)
             var showPinDialog by remember { mutableStateOf(false) }
 
             Surface(
@@ -2179,22 +2187,26 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
                             )
                             Text(
-                                text = if (biometricAvailable)
-                                    "Require biometric or device unlock to open YATA."
-                                else
-                                    "No screen lock set up on this device.",
+                                text = when {
+                                    platformCredentialAvailable ->
+                                        "Require biometric or device unlock to open YATA."
+                                    appLockPinSet ->
+                                        "Require your YATA PIN to open YATA."
+                                    else ->
+                                        "No screen lock set up on this device."
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
-                            checked = appLockEnabled && biometricAvailable,
-                            enabled = biometricAvailable,
+                            checked = appLockEnabled && appLockHasUnlockPath,
+                            enabled = appLockHasUnlockPath,
                             onCheckedChange = { viewModel.setAppLockEnabled(it) }
                         )
                     }
 
-                    if (appLockEnabled && biometricAvailable) {
+                    if (appLockEnabled && appLockHasUnlockPath) {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                         Row(

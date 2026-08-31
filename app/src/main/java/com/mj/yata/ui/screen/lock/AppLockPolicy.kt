@@ -5,11 +5,17 @@ internal fun shouldLockOnAppLaunch(
     biometricOrDeviceCredentialAvailable: Boolean,
     pinSet: Boolean
 ): Boolean =
-    appLockEnabled && (biometricOrDeviceCredentialAvailable || pinSet)
+    appLockEnabled && hasAppLockUnlockPath(biometricOrDeviceCredentialAvailable, pinSet)
 
 internal fun shouldDisableLockToAvoidStrandingOwner(
     appLockEnabled: Boolean,
     biometricOrDeviceCredentialAvailable: Boolean,
     pinSet: Boolean
 ): Boolean =
-    appLockEnabled && !biometricOrDeviceCredentialAvailable && !pinSet
+    appLockEnabled && !hasAppLockUnlockPath(biometricOrDeviceCredentialAvailable, pinSet)
+
+internal fun hasAppLockUnlockPath(
+    biometricOrDeviceCredentialAvailable: Boolean,
+    pinSet: Boolean
+): Boolean =
+    biometricOrDeviceCredentialAvailable || pinSet

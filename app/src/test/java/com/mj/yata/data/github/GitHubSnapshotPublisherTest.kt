@@ -159,6 +159,37 @@ class GitHubSnapshotPublisherTest {
     }
 
     @Test
+    fun retryableBlobReadFailure_doesNotSearchRecoveryHistory() = runTest {
+        val api = FakeGitHubApi().apply {
+            seedHead("history".bytes())
+            seedHead("server".bytes())
+            blobReadFailure = GitHubTransportException("GitHub request timed out")
+        }
+        var prepared = false
+        var committed = false
+        val publisher = GitHubSnapshotPublisher(
+            api = api,
+            prepare = { _, _, _ ->
+                prepared = true
+                GitHubPreparedSnapshot(canonicalBytes = "merged".bytes(), remoteNeedsPublish = true)
+            },
+            commit = { committed = true; 0 },
+            encode = { it },
+            decode = { it },
+            validateRemoteSnapshot = { it.string() != "server" },
+            commitMessage = { "test commit" }
+        )
+
+        val result = publisher.sync(config) { _, _ -> }
+
+        assertEquals("GitHub request timed out", result.exceptionOrNull()?.message)
+        assertFalse(prepared)
+        assertFalse(committed)
+        assertEquals(0, api.listCommitsCalls)
+        assertEquals(0, api.updateRefCalls)
+    }
+
+    @Test
     fun uploadBlobShaMismatch_abortsBeforeRefMoveOrCommit() = runTest {
         val api = FakeGitHubApi().apply {
             seedHead("server".bytes())
@@ -697,6 +728,8 @@ class GitHubSnapshotPublisherTest {
         var createRefCalls = 0
         var updateRefCalls = 0
         var getRefCalls = 0
+        var listCommitsCalls = 0
+        var blobReadFailure: GitHubException? = null
         var beforeGetRef: ((Int, FakeGitHubApi) -> Unit)? = null
         val createdCommitParents = mutableListOf<List<String>>()
 
@@ -778,6 +811,7 @@ class GitHubSnapshotPublisherTest {
         }
 
         override suspend fun getBlob(owner: String, repo: String, sha: String): ByteArray {
+            blobReadFailure?.let { throw it }
             val bytes = blobs[sha] ?: throw GitHubNotFoundException()
             return if (corruptSnapshotBlobReads) bytes + "!".toByteArray(Charsets.UTF_8) else bytes
         }
@@ -796,8 +830,10 @@ class GitHubSnapshotPublisherTest {
             branch: String,
             path: String,
             maxResults: Int
-        ): List<GitHubCommitSummary> =
-            commits.keys.reversed().take(maxResults).map { GitHubCommitSummary(it, "commit", Instant.EPOCH) }
+        ): List<GitHubCommitSummary> {
+            listCommitsCalls++
+            return commits.keys.reversed().take(maxResults).map { GitHubCommitSummary(it, "commit", Instant.EPOCH) }
+        }
 
         // Not modeled by this fake - GitHubSnapshotPublisher falls back to a manual ancestry walk
         // when compare fails, and that walk is what these tests exercise.

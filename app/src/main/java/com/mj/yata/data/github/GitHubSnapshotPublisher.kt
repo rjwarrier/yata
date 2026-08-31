@@ -167,6 +167,7 @@ internal class GitHubSnapshotPublisher(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            if (!e.canRecoverWithHistorySnapshot()) throw e
             progress(44, "Finding GitHub recovery point")
             val recovery = findRecoverySnapshot(
                 config = config,
@@ -245,7 +246,8 @@ internal class GitHubSnapshotPublisher(
         val bytes = api.getBlob(config.owner, config.repo, sha)
         if (GitBlobSha.of(bytes) != sha) {
             throw GitHubTransportException(
-                "GitHub returned a snapshot whose content did not match its SHA"
+                message = "GitHub returned a snapshot whose content did not match its SHA",
+                retryable = false
             )
         }
         return bytes
@@ -383,6 +385,17 @@ internal class GitHubSnapshotPublisher(
         }
         return javaClass.simpleName.takeIf { it.isNotBlank() } ?: "failed"
     }
+
+    private fun Throwable.canRecoverWithHistorySnapshot(): Boolean =
+        when (this) {
+            is GitHubAuthException,
+            is GitHubRateLimitException,
+            is GitHubPermissionException,
+            is GitHubConflictException,
+            is GitHubHistoryRewrittenException -> false
+            is GitHubTransportException -> !retryable
+            else -> true
+        }
 
     companion object {
         const val SNAPSHOT_PATH = "yata/snapshot.json"
