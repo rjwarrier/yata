@@ -1848,41 +1848,6 @@ fun NewTaskSheet(
                         dotColor = if (list != null) listColor else null,
                         showCheck = false
                     )
-                    if (tagsEnabled) {
-                        selectedTagIds.forEach { tid ->
-                            val tag = tags.find { it.id == tid }
-                            if (tag != null) {
-                                TagChip(
-                                    name = tag.name,
-                                    accentKey = tag.color,
-                                    onRemoveClick = { selectedTagIds.remove(tid) },
-                                    modifier = Modifier.height(CHIP_ROW_HEIGHT)
-                                )
-                            }
-                        }
-                        YataDashedAddChip(
-                            label = stringResource(R.string.new_task_tag),
-                            onClick = { activePanel = if (activePanel == "Tags") null else "Tags" },
-                            height = CHIP_ROW_HEIGHT
-                        )
-                    }
-                    if (peopleEnabled) {
-                        selectedAssigneeIds.forEach { pid ->
-                            val person = people.find { it.id == pid }
-                            if (person != null) {
-                                AssignedPersonChip(
-                                    person = person,
-                                    accents = accents,
-                                    onRemove = { selectedAssigneeIds.remove(pid) }
-                                )
-                            }
-                        }
-                        YataDashedAddChip(
-                            label = stringResource(R.string.new_task_assign),
-                            onClick = { activePanel = if (activePanel == "People") null else "People" },
-                            height = CHIP_ROW_HEIGHT
-                        )
-                    }
                     YataSelectChip(
                         label = if (selectedPriority == "none") stringResource(R.string.new_task_priority) else selectedPriority.uppercase(),
                         selected = selectedPriority != "none",
@@ -1977,6 +1942,61 @@ fun NewTaskSheet(
                                 activePanel = null
                                 showRecurrenceSheet = true
                             }
+                        )
+                    }
+                }
+            }
+
+            // Assigned to — back on its own line so real avatar/name chips don't crowd Project/List.
+            if (peopleEnabled) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionLabel(stringResource(R.string.new_task_assigned_to))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedAssigneeIds.forEach { pid ->
+                            val person = people.find { it.id == pid }
+                            if (person != null) {
+                                AssignedPersonChip(
+                                    person = person,
+                                    accents = accents,
+                                    onRemove = { selectedAssigneeIds.remove(pid) }
+                                )
+                            }
+                        }
+                        YataDashedAddChip(
+                            label = if (selectedAssigneeIds.isEmpty()) stringResource(R.string.new_task_assign) else stringResource(R.string.action_add),
+                            onClick = { activePanel = if (activePanel == "People") null else "People" },
+                            height = CHIP_ROW_HEIGHT
+                        )
+                    }
+                }
+            }
+
+            // Tags — also gets its own line because users can add several of them.
+            if (tagsEnabled) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionLabel(stringResource(R.string.new_task_tags))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        selectedTagIds.forEach { tid ->
+                            val tag = tags.find { it.id == tid }
+                            if (tag != null) {
+                                TagChip(
+                                    name = tag.name,
+                                    accentKey = tag.color,
+                                    onRemoveClick = { selectedTagIds.remove(tid) },
+                                    modifier = Modifier.height(CHIP_ROW_HEIGHT)
+                                )
+                            }
+                        }
+                        YataDashedAddChip(
+                            label = if (selectedTagIds.isEmpty()) stringResource(R.string.new_task_tag) else stringResource(R.string.action_add),
+                            onClick = { activePanel = if (activePanel == "Tags") null else "Tags" },
+                            height = CHIP_ROW_HEIGHT
                         )
                     }
                 }
