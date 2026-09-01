@@ -1392,6 +1392,7 @@
     <string name="new_task_assign">Assign</string>
     <string name="new_task_tags">Tags</string>
     <string name="new_task_tag">Tag</string>
+    <string name="new_task_organize" translatable="false">Organize</string>
     <string name="new_task_notes">Notes</string>
     <string name="new_task_subtasks">Subtasks</string>
     <string name="new_task_create_another">Create another</string>

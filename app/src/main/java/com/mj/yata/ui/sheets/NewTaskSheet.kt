@@ -1778,6 +1778,7 @@ fun NewTaskSheet(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionLabel(stringResource(R.string.export_schedule_label))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1826,6 +1827,7 @@ fun NewTaskSheet(
                     )
                 }
 
+                SectionLabel(stringResource(R.string.new_task_organize))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
