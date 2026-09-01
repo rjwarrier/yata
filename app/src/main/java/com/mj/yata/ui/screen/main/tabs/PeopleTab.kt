@@ -514,6 +514,7 @@ fun PersonRow(
                     size = 32.dp,
                     strokeWidth = 3.dp,
                     activeColor = accentColor,
+                    quietWhenEmpty = true,
                     centerLabel = when {
                         openTasks <= 0 -> null
                         openTasks > 99 -> "99+"

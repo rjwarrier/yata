@@ -613,7 +613,8 @@ private fun TagRow(
                     progress = progress,
                     size = 32.dp,
                     strokeWidth = 3.dp,
-                    activeColor = tagColor
+                    activeColor = tagColor,
+                    quietWhenEmpty = true
                 )
             }
         }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
@@ -111,12 +110,6 @@ private fun CountdownBadge(text: String, isOverdue: Boolean) {
             .background(containerColor)
             .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.Schedule,
-            contentDescription = null,
-            tint = contentColor,
-            modifier = Modifier.size(11.dp)
-        )
         Text(
             text = text,
             color = contentColor,
@@ -581,42 +574,6 @@ fun TaskRow(
                         TagChip(name = t.name, accentKey = t.color, size = "sm")
                     }
                 }
-            }
-        }
-
-        if (onCommentClick != null) {
-            // Touch target expands to 48dp via minimumInteractiveComponentSize (same pattern as
-            // SpringyCheck's checkbox above, already shipped at 48dp in this same row) while the
-            // visible glyph stays exactly the 16dp it always was - only the invisible tap/ripple
-            // area grows, not the row's visual density.
-            Box(
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .minimumInteractiveComponentSize()
-                    .clip(CircleShape)
-                    .clickable { onCommentClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.Comment,
-                    contentDescription = stringResource(R.string.cd_task_add_comment),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        }
-
-        if (onRenameTask != null && !selectionMode) {
-            // No explicit .size() override - IconButton's own default already guarantees a 48dp
-            // touch target; the previous 32dp override shrank it below the accessibility minimum
-            // while the 18dp icon inside stayed the same either way.
-            IconButton(onClick = { showRenameDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = stringResource(R.string.cd_task_edit_title),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
-                )
             }
         }
 

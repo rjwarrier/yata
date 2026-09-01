@@ -654,6 +654,7 @@ fun UpcomingTab(
                                 density = taskRowDensity,
                                 onSwipeToDelete = { onSwipeToDelete(task.id) },
                                 swipeEnabled = !selectionMode,
+                                showDueTodayBadge = day != today,
                                 weekendDays = weekendDays,
                                 holidays = holidays,
                                 observeNonWorkingDays = observeNonWorkingDays,

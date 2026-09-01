@@ -48,6 +48,7 @@ fun ProgressRing(
     activeColor: Color = MaterialTheme.colorScheme.primary,
     inactiveColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
     showLabel: Boolean = true,
+    quietWhenEmpty: Boolean = false,
     /**
      * Replaces the percentage in the middle of the ring. Set it where the count matters more than
      * the completion figure — the People tab shows each person's open-task count here. Unlike the
@@ -100,9 +101,15 @@ fun ProgressRing(
             val stroke = Stroke(width = strokePx, cap = StrokeCap.Round)
             val radius = (this.size.minDimension - strokePx) / 2f
             val center = Offset(this.size.width / 2f, this.size.height / 2f)
+            val empty = animatedProgress <= 0f
+            val trackColor = if (quietWhenEmpty && empty) {
+                inactiveColor.copy(alpha = inactiveColor.alpha * 0.35f)
+            } else {
+                inactiveColor
+            }
 
             // Background track — plain smooth ring.
-            drawCircle(color = inactiveColor, radius = radius, style = stroke)
+            drawCircle(color = trackColor, radius = radius, style = stroke)
 
             if (animatedProgress > 0f) {
                 val sweepDegrees = animatedProgress * 360f
