@@ -15,6 +15,29 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.94.5] - 2026-09-01
+
+`versionCode 26`. Upgrades in place over 0.94.4.
+
+### Changed
+- New tasks created manually, from bulk paste, from voice entry, from the Quick Add widget, or from
+  Tasker now capitalize the first letter of the task sentence while preserving the rest of the
+  title as typed.
+- Task cards are calmer: countdowns use a subtler, more readable chip treatment; redundant
+  "Due today" badges are hidden on Today and Upcoming's Today section; always-visible add-comment
+  and edit-title actions were removed from the card surface; and empty entity progress rings and
+  unstarred row stars are quieter.
+- New Task's metadata chips are grouped under Schedule and Organize headings, with assignees and
+  tags kept on their own labeled lines for easier scanning.
+- Task Detail now uses the same subtle countdown treatment as task cards, de-emphasizes default
+  values such as "None" and "Does not repeat", and places Tags above Estimate.
+
+### Fixed
+- GitHub sync/recovery is more defensive around remote state, local recovery, and rollback paths,
+  and remote-backup setup now requires a passphrase before it can be saved.
+- PIN-only app lock settings no longer expose password/biometric options that do not apply to that
+  mode, and lock-screen launch behavior is hardened around app start and resume.
+
 ## [0.94.4] - 2026-08-30
 
 `versionCode 25`. Upgrades in place over 0.94.2.
@@ -1151,7 +1174,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.94.4...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.94.5...HEAD
+[0.94.5]: https://github.com/rjwarrier/yata/compare/v0.94.4...v0.94.5
 [0.94.4]: https://github.com/rjwarrier/yata/compare/v0.94.2...v0.94.4
 [0.94.2]: https://github.com/rjwarrier/yata/releases/tag/v0.94.2
 [0.93.1]: https://github.com/rjwarrier/yata/releases/tag/v0.93.1
