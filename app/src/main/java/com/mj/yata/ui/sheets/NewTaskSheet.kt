@@ -1777,88 +1777,127 @@ fun NewTaskSheet(
                 }
             }
 
-            // Attribute chip row
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                YataSelectChip(
-                    label = TaskScheduleUtils.formatDueDate(selectedDueDate),
-                    selected = selectedDueDate != null,
-                    onClick = { activePanel = if (activePanel == "DueDate") null else "DueDate" },
-                    tint = MaterialTheme.colorScheme.primary,
-                    leading = { Icon(Icons.Default.Today, contentDescription = null, tint = if (selectedDueDate != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
-                    showCheck = false
-                )
-                // Sits next to Due so the two dates read as a pair. Unset it shows no label text
-                // of its own — the icon alone keeps the row from growing for a field most tasks
-                // never use.
-                YataSelectChip(
-                    label = selectedStartDate?.let { TaskScheduleUtils.formatDueDate(it) } ?: stringResource(R.string.task_start_date),
-                    selected = selectedStartDate != null,
-                    onClick = { activePanel = if (activePanel == "StartDate") null else "StartDate" },
-                    tint = MaterialTheme.colorScheme.secondary,
-                    leading = { Icon(Icons.Default.EventAvailable, contentDescription = null, tint = if (selectedStartDate != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
-                    showCheck = false
-                )
-                if (projectsEnabled) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     YataSelectChip(
-                        label = project?.name ?: stringResource(R.string.entity_project),
-                        selected = project != null,
-                        onClick = { activePanel = if (activePanel == "Project") null else "Project" },
-                        tint = projectColor,
-                        dotColor = if (project != null) projectColor else null,
+                        label = TaskScheduleUtils.formatDueDate(selectedDueDate),
+                        selected = selectedDueDate != null,
+                        onClick = { activePanel = if (activePanel == "DueDate") null else "DueDate" },
+                        tint = MaterialTheme.colorScheme.primary,
+                        leading = { Icon(Icons.Default.Today, contentDescription = null, tint = if (selectedDueDate != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
+                        showCheck = false
+                    )
+                    YataSelectChip(
+                        label = selectedTime ?: stringResource(R.string.new_task_time),
+                        selected = selectedTime != null,
+                        onClick = { activePanel = if (activePanel == "Time") null else "Time" },
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        leading = { Icon(Icons.Default.AccessTime, contentDescription = null, tint = if (selectedTime != null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
+                        showCheck = false
+                    )
+                    YataSelectChip(
+                        label = TaskScheduleUtils.formatReminder(selectedReminder),
+                        selected = selectedReminder != null,
+                        onClick = { activePanel = if (activePanel == "Reminder") null else "Reminder" },
+                        tint = MaterialTheme.colorScheme.secondary,
+                        leading = { Icon(Icons.Default.Notifications, contentDescription = null, tint = if (selectedReminder != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
+                        showCheck = false
+                    )
+                    YataSelectChip(
+                        label = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays) } ?: stringResource(R.string.new_task_repeat),
+                        selected = selectedRecurrence != null,
+                        onClick = { activePanel = if (activePanel == "Repeat") null else "Repeat" },
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
+                        showCheck = false
+                    )
+                    // Start date stays with schedule settings, but trails the common due/time/
+                    // reminder/repeat actions so the first scan line is about when the task is due.
+                    YataSelectChip(
+                        label = selectedStartDate?.let { TaskScheduleUtils.formatDueDate(it) } ?: stringResource(R.string.task_start_date),
+                        selected = selectedStartDate != null,
+                        onClick = { activePanel = if (activePanel == "StartDate") null else "StartDate" },
+                        tint = MaterialTheme.colorScheme.secondary,
+                        leading = { Icon(Icons.Default.EventAvailable, contentDescription = null, tint = if (selectedStartDate != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(15.dp)) },
                         showCheck = false
                     )
                 }
-                YataSelectChip(
-                    label = listName,
-                    selected = list != null,
-                    onClick = { activePanel = if (activePanel == "List") null else "List" },
-                    tint = listColor,
-                    dotColor = if (list != null) listColor else null,
-                    showCheck = false
-                )
-                YataSelectChip(
-                    label = if (selectedPriority == "none") stringResource(R.string.new_task_priority) else selectedPriority.uppercase(),
-                    selected = selectedPriority != "none",
-                    onClick = { activePanel = if (activePanel == "Priority") null else "Priority" },
-                    tint = priorityChipColor(selectedPriority, accents),
-                    leading = {
-                        if (selectedPriority == "none") {
-                            Icon(Icons.Default.Flag, contentDescription = null, tint = priorityChipColor(selectedPriority, accents), modifier = Modifier.size(14.dp))
-                        } else {
-                            PriorityBars(priority = selectedPriority)
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (projectsEnabled) {
+                        YataSelectChip(
+                            label = project?.name ?: stringResource(R.string.entity_project),
+                            selected = project != null,
+                            onClick = { activePanel = if (activePanel == "Project") null else "Project" },
+                            tint = projectColor,
+                            dotColor = if (project != null) projectColor else null,
+                            showCheck = false
+                        )
+                    }
+                    YataSelectChip(
+                        label = listName,
+                        selected = list != null,
+                        onClick = { activePanel = if (activePanel == "List") null else "List" },
+                        tint = listColor,
+                        dotColor = if (list != null) listColor else null,
+                        showCheck = false
+                    )
+                    if (tagsEnabled) {
+                        selectedTagIds.forEach { tid ->
+                            val tag = tags.find { it.id == tid }
+                            if (tag != null) {
+                                TagChip(
+                                    name = tag.name,
+                                    accentKey = tag.color,
+                                    onRemoveClick = { selectedTagIds.remove(tid) },
+                                    modifier = Modifier.height(CHIP_ROW_HEIGHT)
+                                )
+                            }
                         }
-                    },
-                    showCheck = false
-                )
-                YataSelectChip(
-                    label = selectedRecurrence?.let { com.mj.yata.util.RecurrenceEvaluator.recurrenceSummary(it, dueDatePickerContext.weekendDays) } ?: stringResource(R.string.new_task_repeat),
-                    selected = selectedRecurrence != null,
-                    onClick = { activePanel = if (activePanel == "Repeat") null else "Repeat" },
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    leading = { Icon(Icons.Default.Repeat, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(14.dp)) },
-                    showCheck = false
-                )
-                // Time/Reminder live in this same row (not a separate one further down) so the
-                // reveal panel below always opens right under whichever chip triggered it.
-                YataSelectChip(
-                    label = selectedTime ?: stringResource(R.string.new_task_time),
-                    selected = selectedTime != null,
-                    onClick = { activePanel = if (activePanel == "Time") null else "Time" },
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    leading = { Icon(Icons.Default.AccessTime, contentDescription = null, tint = if (selectedTime != null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
-                    showCheck = false
-                )
-                YataSelectChip(
-                    label = TaskScheduleUtils.formatReminder(selectedReminder),
-                    selected = selectedReminder != null,
-                    onClick = { activePanel = if (activePanel == "Reminder") null else "Reminder" },
-                    tint = MaterialTheme.colorScheme.secondary,
-                    leading = { Icon(Icons.Default.Notifications, contentDescription = null, tint = if (selectedReminder != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp)) },
-                    showCheck = false
-                )
+                        YataDashedAddChip(
+                            label = stringResource(R.string.new_task_tag),
+                            onClick = { activePanel = if (activePanel == "Tags") null else "Tags" },
+                            height = CHIP_ROW_HEIGHT
+                        )
+                    }
+                    if (peopleEnabled) {
+                        selectedAssigneeIds.forEach { pid ->
+                            val person = people.find { it.id == pid }
+                            if (person != null) {
+                                AssignedPersonChip(
+                                    person = person,
+                                    accents = accents,
+                                    onRemove = { selectedAssigneeIds.remove(pid) }
+                                )
+                            }
+                        }
+                        YataDashedAddChip(
+                            label = stringResource(R.string.new_task_assign),
+                            onClick = { activePanel = if (activePanel == "People") null else "People" },
+                            height = CHIP_ROW_HEIGHT
+                        )
+                    }
+                    YataSelectChip(
+                        label = if (selectedPriority == "none") stringResource(R.string.new_task_priority) else selectedPriority.uppercase(),
+                        selected = selectedPriority != "none",
+                        onClick = { activePanel = if (activePanel == "Priority") null else "Priority" },
+                        tint = priorityChipColor(selectedPriority, accents),
+                        leading = {
+                            if (selectedPriority == "none") {
+                                Icon(Icons.Default.Flag, contentDescription = null, tint = priorityChipColor(selectedPriority, accents), modifier = Modifier.size(14.dp))
+                            } else {
+                                PriorityBars(priority = selectedPriority)
+                            }
+                        },
+                        showCheck = false
+                    )
+                }
             }
 
             // Reveal panel — right under the attribute chips that open it, so it never appears
@@ -1938,61 +1977,6 @@ fun NewTaskSheet(
                                 activePanel = null
                                 showRecurrenceSheet = true
                             }
-                        )
-                    }
-                }
-            }
-
-            // Assigned to — always shows real avatar+name chips, not a count
-            if (peopleEnabled) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionLabel(stringResource(R.string.new_task_assigned_to))
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        selectedAssigneeIds.forEach { pid ->
-                            val person = people.find { it.id == pid }
-                            if (person != null) {
-                                AssignedPersonChip(
-                                    person = person,
-                                    accents = accents,
-                                    onRemove = { selectedAssigneeIds.remove(pid) }
-                                )
-                            }
-                        }
-                        YataDashedAddChip(
-                            label = if (selectedAssigneeIds.isEmpty()) stringResource(R.string.new_task_assign) else stringResource(R.string.action_add),
-                            onClick = { activePanel = if (activePanel == "People") null else "People" },
-                            height = CHIP_ROW_HEIGHT
-                        )
-                    }
-                }
-            }
-
-            // Tags — always shows real tag chips, not a count
-            if (tagsEnabled) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionLabel(stringResource(R.string.new_task_tags))
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        selectedTagIds.forEach { tid ->
-                            val tag = tags.find { it.id == tid }
-                            if (tag != null) {
-                                TagChip(
-                                    name = tag.name,
-                                    accentKey = tag.color,
-                                    onRemoveClick = { selectedTagIds.remove(tid) },
-                                    modifier = Modifier.height(CHIP_ROW_HEIGHT)
-                                )
-                            }
-                        }
-                        YataDashedAddChip(
-                            label = if (selectedTagIds.isEmpty()) stringResource(R.string.new_task_tag) else stringResource(R.string.action_add),
-                            onClick = { activePanel = if (activePanel == "Tags") null else "Tags" },
-                            height = CHIP_ROW_HEIGHT
                         )
                     }
                 }

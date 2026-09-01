@@ -132,6 +132,33 @@ private fun SectionToggleChip(
     }
 }
 
+@Composable
+private fun DetailCountdownBadge(text: String, isOverdue: Boolean) {
+    val containerColor = if (isOverdue) {
+        MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+    }
+    val contentColor = if (isOverdue) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+
+    Text(
+        text = text,
+        color = contentColor,
+        style = MaterialTheme.typography.labelSmall.copy(
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium
+        ),
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(containerColor)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    )
+}
+
 private fun List<Subtask>.toExportSubtaskRows(): List<com.mj.yata.util.export.ExportSubtaskRow> {
     val childrenByParent = filter { it.parentSubtaskId != null }
         .groupBy { it.parentSubtaskId }
@@ -922,18 +949,13 @@ fun TaskDetailScreen(
                         modifier = itemModifier,
                         rightContent = dueCountdown?.let { countdown ->
                             {
-                                Text(
+                                DetailCountdownBadge(
                                     text = if (countdown.isOverdue) {
                                         stringResource(R.string.countdown_overdue_by, countdown.span)
                                     } else {
                                         stringResource(R.string.countdown_in, countdown.span)
                                     },
-                                    color = if (countdown.isOverdue) {
-                                        MaterialTheme.colorScheme.error
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium)
+                                    isOverdue = countdown.isOverdue
                                 )
                             }
                         },
@@ -991,7 +1013,7 @@ fun TaskDetailScreen(
                         icon = Icons.Default.Folder,
                         label = stringResource(R.string.entity_list),
                         value = taskList?.name ?: stringResource(R.string.task_detail_none),
-                        swatchColor = listColor,
+                        swatchColor = if (taskList != null) listColor else null,
                         defaultValue = taskList == null,
                         modifier = itemModifier,
                         onClick = { activeSheet = DetailSheetType.ListPicker }
@@ -2276,6 +2298,17 @@ fun MetaRowItem(
     rightContent: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
+    val iconTileColor = if (defaultValue) {
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.56f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val iconTint = when {
+        accentColor != null -> accentColor
+        defaultValue -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f)
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(16.dp),
@@ -2291,13 +2324,13 @@ fun MetaRowItem(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    .background(iconTileColor),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
-                    tint = accentColor ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = iconTint,
                     modifier = Modifier.size(18.dp)
                 )
             }
