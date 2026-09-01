@@ -105,12 +105,12 @@ private fun SectionToggleChip(
     count: Int? = null
 ) {
     val bgColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+        targetValue = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainerHigh,
         animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
         label = "sectionToggleBg"
     )
     val textColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
         label = "sectionToggleText"
     )
@@ -126,7 +126,7 @@ private fun SectionToggleChip(
     ) {
         Text(
             text = displayLabel,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
             color = textColor
         )
     }
@@ -959,6 +959,7 @@ fun TaskDetailScreen(
                         label = stringResource(R.string.task_detail_reminder),
                         value = com.mj.yata.util.TaskScheduleUtils.formatReminder(task.reminder),
                         accentColor = if (task.reminder != null) MaterialTheme.colorScheme.secondary else null,
+                        defaultValue = task.reminder == null,
                         modifier = itemModifier,
                         onClick = { activeSheet = DetailSheetType.ReminderPicker }
                     )
@@ -971,6 +972,7 @@ fun TaskDetailScreen(
                         label = stringResource(R.string.task_detail_repeats),
                         value = repeatsVal,
                         accentColor = if (task.recurrence != null) MaterialTheme.colorScheme.tertiary else null,
+                        defaultValue = task.recurrence == null,
                         modifier = itemModifier,
                         onClick = { activeSheet = DetailSheetType.RecurrenceBuilder }
                     )
@@ -979,6 +981,7 @@ fun TaskDetailScreen(
                             icon = Icons.Default.Layers,
                             label = stringResource(R.string.entity_project),
                             value = project?.name ?: stringResource(R.string.task_detail_none),
+                            defaultValue = project == null,
                             modifier = itemModifier,
                             onClick = { activeSheet = DetailSheetType.ProjectPicker }
                         )
@@ -989,6 +992,7 @@ fun TaskDetailScreen(
                         label = stringResource(R.string.entity_list),
                         value = taskList?.name ?: stringResource(R.string.task_detail_none),
                         swatchColor = listColor,
+                        defaultValue = taskList == null,
                         modifier = itemModifier,
                         onClick = { activeSheet = DetailSheetType.ListPicker }
                     )
@@ -999,6 +1003,7 @@ fun TaskDetailScreen(
                         label = stringResource(R.string.new_task_priority),
                         value = task.priority.uppercase(),
                         rightContent = { PriorityBars(priority = task.priority) },
+                        defaultValue = task.priority == "none",
                         modifier = itemModifier,
                         onClick = { viewModel.cycleTaskPriority(task.id) }
                     )
@@ -2237,7 +2242,13 @@ private fun LocalScheduleChip(
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(label) }
+        label = { Text(label) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+            selectedLabelColor = MaterialTheme.colorScheme.primary,
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f),
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     )
 }
 
@@ -2261,6 +2272,7 @@ fun MetaRowItem(
     modifier: Modifier = Modifier,
     accentColor: Color? = null,
     swatchColor: Color? = null,
+    defaultValue: Boolean = false,
     rightContent: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
@@ -2307,8 +2319,15 @@ fun MetaRowItem(
                     }
                     Text(
                         text = value,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium, fontSize = 15.sp),
-                        color = accentColor ?: MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = if (defaultValue) FontWeight.Normal else FontWeight.Medium,
+                            fontSize = 15.sp
+                        ),
+                        color = accentColor ?: if (defaultValue) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

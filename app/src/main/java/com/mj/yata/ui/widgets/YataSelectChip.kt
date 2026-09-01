@@ -41,7 +41,7 @@ import com.mj.yata.ui.theme.YataDur
 import com.mj.yata.ui.theme.YataEase
 
 /**
- * Tinted pill selector: accent@18% bg + accent text + check when selected.
+ * Tinted pill selector: low-accent bg + accent text + check when selected.
  * Mirrors handoff sheets.jsx / m3-widgets.jsx pill-chip language.
  */
 @Composable
@@ -57,12 +57,12 @@ fun YataSelectChip(
     height: Dp = 34.dp
 ) {
     val bgAnimated by animateColorAsState(
-        targetValue = if (selected) tint.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+        targetValue = if (selected) tint.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
         animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
         label = "selectChipBg"
     )
     val fgAnimated by animateColorAsState(
-        targetValue = if (selected) tint else MaterialTheme.colorScheme.onSurface,
+        targetValue = if (selected) tint else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphasized),
         label = "selectChipFg"
     )

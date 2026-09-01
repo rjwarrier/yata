@@ -1176,8 +1176,8 @@ fun NewTaskSheet(
             // Focus is shown by a primary ring that animates in, which is also the only state cue
             // left now that the underline is gone.
             val titleBorder by animateColorAsState(
-                targetValue = if (titleFocused) MaterialTheme.colorScheme.primary
-                              else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                targetValue = if (titleFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.72f)
+                              else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.24f),
                 // YataDur.micro rather than a literal, so the ring honours Reduce Motion.
                 animationSpec = tween(durationMillis = YataDur.micro, easing = YataEase.emphDecel),
                 label = "titleFieldBorder"
@@ -1196,7 +1196,7 @@ fun NewTaskSheet(
                     .heightIn(min = 92.dp)
                     .clip(RoundedCornerShape(28.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .border(2.dp, titleBorder, RoundedCornerShape(28.dp))
+                    .border(1.5.dp, titleBorder, RoundedCornerShape(28.dp))
                     .padding(start = 20.dp, end = 8.dp, top = 6.dp, bottom = 6.dp)
             ) {
                 BasicTextField(
