@@ -154,6 +154,7 @@ fun TaskRow(
     // grouping context to imply one (unlike Today/Upcoming/NextDays, which already group by
     // date, or Tag/Person/Search, which mix tasks from many places at once).
     showDueDate: Boolean = false,
+    showDueTodayBadge: Boolean = true,
     onQuickSnooze: ((QuickSnoozePreset) -> Unit)? = null,
     onRenameTask: ((String) -> Unit)? = null,
     // "Observe non-working days" (Settings → Task Defaults → Holidays). Default off so every
@@ -382,9 +383,9 @@ fun TaskRow(
             // deferred) win over the Overdue badge — the standalone countdown keys off this so the
             // two can't both claim the same overdue state.
             val overdueBadgeShown = !(task.done && task.completedAt != null) && !deferred && overdue
-            val healthBadges = remember(task, overdue, today, effectiveDue) {
+            val healthBadges = remember(task, overdue, today, effectiveDue, showDueTodayBadge) {
                 buildList {
-                    if (!task.done && effectiveDue == today.toString()) add("Due today")
+                    if (showDueTodayBadge && !task.done && effectiveDue == today.toString()) add("Due today")
                     if (!task.done && task.due == null && task.priority == "high") add("Needs date")
                     if (!task.done && task.due == null && task.flag) add("Flagged no date")
                     if (!task.done && task.due == null && task.time == null && task.recurrence == null && task.priority == "none" && !task.flag) add("Unplanned")

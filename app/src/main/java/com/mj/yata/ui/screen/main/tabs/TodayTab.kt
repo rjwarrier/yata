@@ -802,6 +802,7 @@ fun TodayTab(
                         swipeEnabled = !selectionMode,
                         horizontalPadding = 12.dp,
                         showDueDate = true,
+                        showDueTodayBadge = false,
                         weekendDays = weekendDays,
                         holidays = holidays,
                         observeNonWorkingDays = observeNonWorkingDays,
