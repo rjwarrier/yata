@@ -28,6 +28,7 @@ import com.mj.yata.util.AnalyticsPeriod
 import com.mj.yata.util.AnalyticsUiState
 import com.mj.yata.util.AnalyticsUtils
 import com.mj.yata.util.AppLanguageController
+import com.mj.yata.util.capitalizeTaskSentence
 import com.mj.yata.ui.error.AppErrorBus
 import com.mj.yata.ui.sheets.NewTaskDraft
 import com.mj.yata.util.NaturalLanguageParser
@@ -1841,7 +1842,7 @@ data class WeekendRescheduleWarning(
         safeLaunch {
             val newTask = Task(
                 id = "t_" + UUID.randomUUID().toString(),
-                title = title,
+                title = capitalizeTaskSentence(title),
                 listId = listId,
                 projectId = projectId,
                 section = section,

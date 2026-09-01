@@ -80,6 +80,7 @@ import com.mj.yata.ui.widgets.detectMentionToken
 import com.mj.yata.ui.widgets.yataFieldColors
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
+import com.mj.yata.util.capitalizeTaskSentence
 import com.mj.yata.util.findSimilarTask
 import com.mj.yata.util.resolveParsedQuickAddEntities
 import dagger.hilt.android.AndroidEntryPoint
@@ -228,7 +229,7 @@ class QuickAddDialogActivity : ComponentActivity() {
                         repository.upsertTask(
                             Task(
                                 id = "t_" + UUID.randomUUID().toString(),
-                                title = parsedTyped.title.takeIf { it.isNotBlank() } ?: title,
+                                title = capitalizeTaskSentence(parsedTyped.title.takeIf { it.isNotBlank() } ?: title),
                                 listId = resolvedListId,
                                 projectId = resolvedProjectId,
                                 section = "",

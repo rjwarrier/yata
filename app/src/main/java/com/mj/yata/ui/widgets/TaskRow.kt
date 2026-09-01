@@ -90,6 +90,44 @@ private fun TaskHealthBadge(label: String) {
     )
 }
 
+@Composable
+private fun CountdownBadge(text: String, isOverdue: Boolean) {
+    val containerColor = if (isOverdue) {
+        MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.tertiaryContainer
+    }
+    val contentColor = if (isOverdue) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(containerColor)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Schedule,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(12.dp)
+        )
+        Text(
+            text = text,
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        )
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TaskRow(
@@ -443,21 +481,13 @@ fun TaskRow(
                     // land here: the badge is date-only (`isBefore(today)`), so a task due today
                     // at 09:00 read at 15:00 is past its time without the badge showing.
                     dueCountdown?.takeIf { !overdueBadgeShown }?.let { countdown ->
-                        Text(
+                        CountdownBadge(
                             text = if (countdown.isOverdue) {
                                 stringResource(R.string.countdown_overdue_by, countdown.span)
                             } else {
                                 stringResource(R.string.countdown_in, countdown.span)
                             },
-                            color = if (countdown.isOverdue) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium
-                            )
+                            isOverdue = countdown.isOverdue
                         )
                     }
 

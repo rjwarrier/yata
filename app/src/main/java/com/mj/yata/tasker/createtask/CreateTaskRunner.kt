@@ -15,6 +15,7 @@ import com.mj.yata.domain.model.YataList
 import com.mj.yata.domain.repository.YataRepository
 import com.mj.yata.util.NaturalLanguageParser
 import com.mj.yata.util.TaskScheduleUtils
+import com.mj.yata.util.capitalizeTaskSentence
 import com.mj.yata.util.findSimilarTask
 import com.mj.yata.widget.WidgetEntryPoint
 import dagger.hilt.android.EntryPointAccessors
@@ -63,7 +64,7 @@ class CreateTaskRunner : TaskerPluginRunnerActionNoOutput<CreateTaskInput>() {
                 repository.upsertTask(
                     Task(
                         id = "t_" + UUID.randomUUID().toString(),
-                        title = title,
+                        title = capitalizeTaskSentence(title),
                         listId = listId,
                         projectId = projectId,
                         section = section,
