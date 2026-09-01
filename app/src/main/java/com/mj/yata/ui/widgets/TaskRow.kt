@@ -95,12 +95,12 @@ private fun CountdownBadge(text: String, isOverdue: Boolean) {
     val containerColor = if (isOverdue) {
         MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
     } else {
-        MaterialTheme.colorScheme.tertiaryContainer
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
     }
     val contentColor = if (isOverdue) {
         MaterialTheme.colorScheme.error
     } else {
-        MaterialTheme.colorScheme.onTertiaryContainer
+        MaterialTheme.colorScheme.primary
     }
 
     Row(
@@ -115,14 +115,14 @@ private fun CountdownBadge(text: String, isOverdue: Boolean) {
             imageVector = Icons.Default.Schedule,
             contentDescription = null,
             tint = contentColor,
-            modifier = Modifier.size(12.dp)
+            modifier = Modifier.size(11.dp)
         )
         Text(
             text = text,
             color = contentColor,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
             )
         )
     }
