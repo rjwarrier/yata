@@ -1314,6 +1314,9 @@ data class WeekendRescheduleWarning(
     val hideCompletedToday: StateFlow<Boolean> = userPreferences.hideCompletedTodayFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val hideCompletedNextDays: StateFlow<Boolean> = userPreferences.hideCompletedNextDaysFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val hideCompletedProject: StateFlow<Boolean> = userPreferences.hideCompletedProjectFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -2784,6 +2787,12 @@ data class WeekendRescheduleWarning(
     fun setHideCompletedToday(hide: Boolean) {
         safeLaunch {
             userPreferences.setHideCompletedToday(hide)
+        }
+    }
+
+    fun setHideCompletedNextDays(hide: Boolean) {
+        safeLaunch {
+            userPreferences.setHideCompletedNextDays(hide)
         }
     }
 

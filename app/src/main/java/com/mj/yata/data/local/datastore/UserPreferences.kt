@@ -234,6 +234,7 @@ class UserPreferences @Inject constructor(
         val UPCOMING_TAB_ENABLED    = booleanPreferencesKey("upcoming_tab_enabled")
         val FAB_POSITION            = stringPreferencesKey("fab_position")
         val HIDE_COMPLETED_TODAY    = booleanPreferencesKey("hide_completed_today")
+        val HIDE_COMPLETED_NEXT_DAYS = booleanPreferencesKey("hide_completed_next_days")
         val TODAY_SHOW_UPCOMING_WHEN_EMPTY = booleanPreferencesKey("today_show_upcoming_when_empty")
         val DUE_COUNTDOWN_ENABLED  = booleanPreferencesKey("due_countdown_enabled")
         val HIDE_COMPLETED_PROJECT  = booleanPreferencesKey("hide_completed_project")
@@ -468,6 +469,7 @@ class UserPreferences @Inject constructor(
     val githubLastHeadShaFlow: Flow<String?> = prefsFlow.map { it[GITHUB_LAST_HEAD_SHA] }
     val githubLastCanonicalHashFlow: Flow<String?> = prefsFlow.map { it[GITHUB_LAST_CANONICAL_HASH] }
     val hideCompletedTodayFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_TODAY] ?: false }
+    val hideCompletedNextDaysFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_NEXT_DAYS] ?: false }
     val todayShowUpcomingWhenEmptyFlow: Flow<Boolean> = prefsFlow.map { it[TODAY_SHOW_UPCOMING_WHEN_EMPTY] ?: false }
     val dueCountdownEnabledFlow: Flow<Boolean> = prefsFlow.map { it[DUE_COUNTDOWN_ENABLED] ?: true }
     val hideCompletedProjectFlow: Flow<Boolean> = prefsFlow.map { it[HIDE_COMPLETED_PROJECT] ?: false }
@@ -746,6 +748,10 @@ class UserPreferences @Inject constructor(
 
     suspend fun setHideCompletedToday(hide: Boolean) {
         dataStore.edit { it[HIDE_COMPLETED_TODAY] = hide }
+    }
+
+    suspend fun setHideCompletedNextDays(hide: Boolean) {
+        dataStore.edit { it[HIDE_COMPLETED_NEXT_DAYS] = hide }
     }
 
     suspend fun setTodayShowUpcomingWhenEmpty(enabled: Boolean) {

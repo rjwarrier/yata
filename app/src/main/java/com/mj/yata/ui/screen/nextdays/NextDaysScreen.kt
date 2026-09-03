@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -59,6 +61,7 @@ fun NextDaysScreen(
     val todayTabEnabled by viewModel.todayTabEnabled.collectAsStateWithLifecycle()
     val upcomingTabEnabled by viewModel.upcomingTabEnabled.collectAsStateWithLifecycle()
     val todayBadgeCount by viewModel.todayRemainingCount.collectAsStateWithLifecycle()
+    val hideCompleted by viewModel.hideCompletedNextDays.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
     val undoWindowSeconds = com.mj.yata.ui.widgets.LocalUndoWindowSeconds.current
@@ -78,9 +81,13 @@ fun NextDaysScreen(
     val todayStr = remember(today) { today.toString() }
     val endStr = remember(today) { today.plusDays((WINDOW_DAYS - 1).toLong()).toString() }
 
-    val upcomingTasks = remember(tasks, todayStr, endStr) {
-        tasks.filter { it.due != null && it.due >= todayStr && it.due <= endStr }
-            .sortedWith(compareBy({ it.due }, { it.sortOrder }))
+    val upcomingTasks = remember(tasks, todayStr, endStr, hideCompleted) {
+        tasks.filter {
+            it.due != null &&
+            it.due >= todayStr &&
+            it.due <= endStr &&
+            (!hideCompleted || !it.done)
+        }.sortedWith(compareBy({ it.due }, { it.sortOrder }))
     }
     val groupedByDate = remember(upcomingTasks) { upcomingTasks.groupBy { it.due!! } }
     val projectsById = remember(projects) { projects.associateBy { it.id } }
@@ -131,6 +138,19 @@ fun NextDaysScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
+                    }
+                },
+                actions = {
+                    com.mj.yata.ui.widgets.YataTopBarIconToggleButton(
+                        checked = hideCompleted,
+                        onCheckedChange = { viewModel.setHideCompletedNextDays(it) }
+                    ) {
+                        Icon(
+                            imageVector = if (hideCompleted) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = stringResource(
+                                if (hideCompleted) R.string.today_show_completed else R.string.today_hide_completed
+                            )
+                        )
                     }
                 }
             )
