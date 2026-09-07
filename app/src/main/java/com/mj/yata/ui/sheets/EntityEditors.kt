@@ -1,15 +1,27 @@
 package com.mj.yata.ui.sheets
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +29,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -186,6 +200,9 @@ fun ProjectEditorSheet(
     var description by remember { mutableStateOf(initialDescription ?: "") }
     var excludeFromToday by remember { mutableStateOf(initialExcludeFromToday) }
     val selectedTagIds = remember { mutableStateListOf<String>().apply { addAll(initialCommonTagIds) } }
+    var reminderExpanded by remember { mutableStateOf(initialDefaultReminder != null) }
+    var tagsExpanded by remember { mutableStateOf(initialCommonTagIds.isNotEmpty()) }
+    var appearanceExpanded by remember { mutableStateOf(false) }
     val descriptionLimit = 100
 
     val entranceScale = remember { androidx.compose.animation.core.Animatable(0.92f) }
@@ -229,10 +246,12 @@ fun ProjectEditorSheet(
             .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         val titleText = if (initialName.isEmpty()) "New project" else "Edit project"
         val buttonText = if (initialName.isEmpty()) "Create" else "Save"
+        val accents = com.mj.yata.ui.theme.LocalYataAccents.current
+        val selectedTagNames = tags.filter { it.id in selectedTagIds }.map { it.name }
 
         Text(
             text = titleText,
@@ -269,34 +288,29 @@ fun ProjectEditorSheet(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { excludeFromToday = !excludeFromToday },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(20.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.entity_editors_exclude_from_today),
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                )
-                Text(
-                    text = stringResource(R.string.entity_editors_exclude_from_today_summary),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.entity_editors_exclude_from_today)) },
+                supportingContent = { Text(stringResource(R.string.entity_editors_exclude_from_today_summary)) },
+                trailingContent = {
+                    Switch(checked = excludeFromToday, onCheckedChange = { excludeFromToday = it })
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable { excludeFromToday = !excludeFromToday }
+            )
         }
 
-        // Project Due Date Section
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = stringResource(R.string.entity_editors_project_due_date),
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        ProjectEditorSection(
+            title = stringResource(R.string.entity_editors_project_due_date),
+            summary = dueDate?.let { TaskScheduleUtils.formatDueDate(it) } ?: stringResource(R.string.date_no_due),
+            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
+            expanded = true,
+            onToggle = null
+        ) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -324,18 +338,19 @@ fun ProjectEditorSheet(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = stringResource(R.string.entity_editors_default_reminder),
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        ProjectEditorSection(
+            title = stringResource(R.string.entity_editors_default_reminder),
+            summary = defaultReminder ?: stringResource(R.string.settings_none),
+            leadingIcon = { Icon(Icons.Default.Notifications, contentDescription = null) },
+            expanded = reminderExpanded,
+            onToggle = { reminderExpanded = !reminderExpanded }
+        ) {
             Text(
                 text = stringResource(R.string.entity_editors_default_reminder_summary),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            androidx.compose.foundation.layout.FlowRow(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -347,19 +362,26 @@ fun ProjectEditorSheet(
         }
 
         if (tags.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(R.string.entity_editors_common_tags),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            ProjectEditorSection(
+                title = stringResource(R.string.entity_editors_common_tags),
+                summary = selectedTagNames.takeIf { it.isNotEmpty() }?.joinToString(limit = 2, truncated = "+${selectedTagNames.size - 2}") ?: stringResource(R.string.settings_default_tags_empty),
+                leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) },
+                expanded = tagsExpanded,
+                onToggle = { tagsExpanded = !tagsExpanded },
+                preview = {
+                    CompactTagPreview(
+                        tagNames = selectedTagNames,
+                        tags = tags,
+                        selectedTagIds = selectedTagIds
+                    )
+                }
+            ) {
                 Text(
                     text = stringResource(R.string.entity_editors_common_tags_summary),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                val accents = com.mj.yata.ui.theme.LocalYataAccents.current
-                androidx.compose.foundation.layout.FlowRow(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -380,28 +402,45 @@ fun ProjectEditorSheet(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = stringResource(R.string.entity_editors_project_color),
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        ProjectEditorSection(
+            title = stringResource(R.string.settings_section_appearance),
+            summary = stringResource(R.string.projects_project_icon),
+            leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null) },
+            expanded = appearanceExpanded,
+            onToggle = { appearanceExpanded = !appearanceExpanded },
+            preview = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(accents.getAccent(selectedColor))
+                    )
+                    Surface(
+                        shape = CircleShape,
+                        color = accents.getAccent(selectedColor).copy(alpha = 0.16f)
+                    ) {
+                        Icon(
+                            imageVector = com.mj.yata.ui.widgets.iconVectorFor(selectedIcon),
+                            contentDescription = null,
+                            tint = accents.getAccent(selectedColor),
+                            modifier = Modifier.padding(5.dp).size(16.dp)
+                        )
+                    }
+                }
+            }
+        ) {
+            SectionLabel(stringResource(R.string.entity_editors_project_color))
             ColorPicker(
                 selectedColorKey = selectedColor,
-                onColorSelected = { selectedColor = it }
+                onColorSelected = { selectedColor = it },
+                modifier = Modifier.padding(bottom = 8.dp)
             )
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = stringResource(R.string.projects_project_icon),
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            SectionLabel(stringResource(R.string.projects_project_icon))
             com.mj.yata.ui.widgets.IconPicker(
                 options = com.mj.yata.ui.widgets.FOLDER_ICON_KEYS,
                 selectedIconKey = selectedIcon,
-                accentColor = com.mj.yata.ui.theme.LocalYataAccents.current.getAccent(selectedColor),
+                accentColor = accents.getAccent(selectedColor),
                 onIconSelected = { selectedIcon = it }
             )
         }
@@ -433,6 +472,115 @@ fun ProjectEditorSheet(
                 showDatePicker = false
             }
         )
+    }
+}
+
+@Composable
+private fun ProjectEditorSection(
+    title: String,
+    summary: String,
+    leadingIcon: @Composable () -> Unit,
+    expanded: Boolean,
+    onToggle: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    preview: (@Composable RowScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Column {
+            ListItem(
+                leadingContent = {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(8.dp).size(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.primary) {
+                                leadingIcon()
+                            }
+                        }
+                    }
+                },
+                headlineContent = { Text(title) },
+                supportingContent = {
+                    Text(
+                        text = summary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                trailingContent = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        preview?.invoke(this)
+                        if (onToggle != null) {
+                            Icon(
+                                imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                                contentDescription = stringResource(if (expanded) R.string.cd_collapse_section else R.string.cd_expand_section),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = if (onToggle != null) Modifier.clickable(onClick = onToggle) else Modifier
+            )
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    content = content
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+private fun CompactTagPreview(
+    tagNames: List<String>,
+    tags: List<com.mj.yata.domain.model.Tag>,
+    selectedTagIds: List<String>
+) {
+    if (selectedTagIds.isEmpty()) return
+    val accents = com.mj.yata.ui.theme.LocalYataAccents.current
+    Row(horizontalArrangement = Arrangement.spacedBy((-6).dp)) {
+        tags.filter { it.id in selectedTagIds }.take(3).forEach { tag ->
+            val color = if (tag.color == "error") MaterialTheme.colorScheme.error else accents.getAccent(tag.color)
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+        }
+        if (tagNames.size > 3) {
+            Text(
+                text = "+${tagNames.size - 3}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 10.dp)
+            )
+        }
     }
 }
 
