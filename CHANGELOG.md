@@ -16,8 +16,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 ## [Unreleased]
 
 ### Changed
-- New Project is cleaner and more Material 3 aligned: reminder, common tags, color, and icon choices
-  now sit behind compact expandable rows with previews instead of filling the sheet all at once.
+- New Project, Person, Tag, and List editors are cleaner and more Material 3 aligned: secondary
+  choices now sit behind compact expandable rows with previews instead of filling each sheet all at
+  once.
 
 ## [0.94.5] - 2026-09-01
 
