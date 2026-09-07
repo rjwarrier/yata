@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.95] - 2026-09-07
+
+`versionCode 27`. Upgrades in place over 0.94.5.
+
 ### Changed
 - New Project, Person, Tag, and List editors are cleaner and more Material 3 aligned: secondary
   choices now sit behind compact expandable rows with previews instead of filling each sheet all at
@@ -1179,7 +1183,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.94.5...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.95...HEAD
+[0.95]: https://github.com/rjwarrier/yata/compare/v0.94.5...v0.95
 [0.94.5]: https://github.com/rjwarrier/yata/compare/v0.94.4...v0.94.5
 [0.94.4]: https://github.com/rjwarrier/yata/compare/v0.94.2...v0.94.4
 [0.94.2]: https://github.com/rjwarrier/yata/releases/tag/v0.94.2
