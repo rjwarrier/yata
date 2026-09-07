@@ -93,6 +93,11 @@ fun AppNavigation(
         navController    = navController,
         startDestination = Screen.Main.route,
         // Push: incoming slides 100%->0; outgoing shifts to -28% + fades to 0.5 (handoff m3-widgets.jsx nav motion)
+        // Pops (back navigation) run on YataDur.pop, ~half of nav: with predictive back enabled
+        // but a NavHost version without progress integration, the system's back preview is
+        // followed by the app's own pop animation — at the full push duration that compound
+        // reads as a laggy, delayed exit. A shorter pop keeps the same easings/motion language
+        // while making back feel decisive. Push transitions keep the full nav duration.
         enterTransition  = {
             if (reduceMotion) fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
             else slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
@@ -102,12 +107,12 @@ fun AppNavigation(
             else slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeOut(targetAlpha = 0.5f, animationSpec = tween(YataDur.nav))
         },
         popEnterTransition  = {
-            if (reduceMotion) fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
-            else slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
+            if (reduceMotion) fadeIn(tween(YataDur.pop, easing = YataEase.emphDecel))
+            else slideInHorizontally(tween(YataDur.pop, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeIn(tween(YataDur.pop, easing = YataEase.emphDecel))
         },
         popExitTransition   = {
             if (reduceMotion) fadeOut(tween(YataDur.fade))
-            else slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade))
+            else slideOutHorizontally(tween(YataDur.pop, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade))
         }
     ) {
         // ── Main Shell (5-tab navigation) ───────────────────────────────────
