@@ -43,11 +43,14 @@ object YataEase {
 /** Snapshot state so [applyMotionMode] registers as a state change app-wide. */
 object YataDur {
     private const val defaultNav = 380
+    private const val defaultPop = 200
     private const val defaultSheet = 340
     private const val defaultFade = 200
     private const val defaultMicro = 140
 
     var nav by mutableIntStateOf(defaultNav)
+        private set
+    var pop by mutableIntStateOf(defaultPop)
         private set
     var sheet by mutableIntStateOf(defaultSheet)
         private set
@@ -68,18 +71,21 @@ object YataDur {
         when (mode) {
             MotionMode.FULL -> {
                 nav = defaultNav
+                pop = defaultPop
                 sheet = defaultSheet
                 fade = defaultFade
                 micro = defaultMicro
             }
             MotionMode.REDUCED -> {
                 nav = defaultNav / 3
+                pop = defaultPop / 3
                 sheet = defaultSheet / 3
                 fade = defaultFade / 3
                 micro = defaultMicro / 3
             }
             MotionMode.OFF -> {
                 nav = 0
+                pop = 0
                 sheet = 0
                 fade = 0
                 micro = 0

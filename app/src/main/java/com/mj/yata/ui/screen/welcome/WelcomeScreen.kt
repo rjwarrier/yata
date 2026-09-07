@@ -20,15 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Tune
@@ -79,38 +76,52 @@ import kotlinx.coroutines.withContext
 private data class WelcomePage(
     val icon: ImageVector,
     @androidx.annotation.StringRes val title: Int,
-    val description: String
+    @androidx.annotation.StringRes val description: Int
 )
 
 private data class WelcomeSetupOption(
     val preset: WelcomeSetupPreset,
     val icon: ImageVector,
-    val title: String,
-    val description: String,
-    val changes: List<String>
+    @androidx.annotation.StringRes val title: Int,
+    @androidx.annotation.StringRes val description: Int,
+    val changes: List<Int>
 )
 
 private val setupOptions = listOf(
     WelcomeSetupOption(
         preset = WelcomeSetupPreset.SIMPLE_LIST,
         icon = Icons.Default.TaskAlt,
-        title = "Simple list",
-        description = "A lightweight setup for personal tasks without teams, tags, or project planning.",
-        changes = listOf("Personal list", "Today + Upcoming", "New tasks due today")
+        title = R.string.welcome_setup_simple_title,
+        description = R.string.welcome_setup_simple_description,
+        changes = listOf(
+            R.string.welcome_setup_change_personal_list,
+            R.string.welcome_setup_change_today_upcoming,
+            R.string.welcome_setup_change_due_today
+        )
     ),
     WelcomeSetupOption(
         preset = WelcomeSetupPreset.PERSONAL_PRODUCTIVITY,
         icon = Icons.Default.Person,
-        title = "Personal productivity",
-        description = "A focused personal workspace with projects, tags, estimates, and gentle daily nudges.",
-        changes = listOf("Today and Someday lists", "Goals project", "30m default estimate", "Agenda + overdue nudges")
+        title = R.string.welcome_setup_personal_title,
+        description = R.string.welcome_setup_personal_description,
+        changes = listOf(
+            R.string.welcome_setup_change_today_someday,
+            R.string.welcome_setup_change_goals_project,
+            R.string.welcome_setup_change_estimate,
+            R.string.welcome_setup_change_nudges
+        )
     ),
     WelcomeSetupOption(
         preset = WelcomeSetupPreset.TEAM_PROJECTS,
         icon = Icons.Default.Groups,
-        title = "Team projects",
-        description = "A project-oriented workspace for assigning work, tracking launch/backlog items, and planning before tasks hit Today.",
-        changes = listOf("Work list", "Launch + Backlog projects", "People enabled", "Auto-assign to you")
+        title = R.string.welcome_setup_team_title,
+        description = R.string.welcome_setup_team_description,
+        changes = listOf(
+            R.string.welcome_setup_change_work_list,
+            R.string.welcome_setup_change_launch_backlog,
+            R.string.welcome_setup_change_people_enabled,
+            R.string.welcome_setup_change_auto_assign
+        )
     )
 )
 
@@ -118,32 +129,17 @@ private val pages = listOf(
     WelcomePage(
         icon = Icons.Default.TaskAlt,
         title = R.string.welcome_title_intro,
-        description = "Yet Another Task App — organize your day, delegate to your team, and see everything at a glance. Natural-language quick add (\"call Priya tomorrow 3pm high priority\"), home-screen widgets, a Quick Settings tile, and self-hosted sync all come built in. A quick tour of the basics — replay it anytime from Settings → About."
+        description = R.string.welcome_intro_description
     ),
     WelcomePage(
         icon = Icons.Default.Layers,
-        title = R.string.welcome_title_projects_lists,
-        description = "Projects group related tasks and track their combined progress — good for something like a client engagement with a deadline. Lists are simpler flat groupings for anything that doesn't need project-level tracking. Star either one for quick access from the drawer, give it an accent color, and mark it \"Exclude from Today\" if it's backlog you don't want cluttering your daily view."
-    ),
-    WelcomePage(
-        icon = Icons.Default.People,
-        title = R.string.welcome_title_people_delegation,
-        description = "Assign tasks to yourself or teammates, and reassign as work shifts. The People tab shows who's carrying how much, including a 7-day overdue trend per person — so you can see who's falling behind before it becomes a problem. Add the Team Overdue widget to your home screen to keep an eye on it without opening the app."
-    ),
-    WelcomePage(
-        icon = Icons.AutoMirrored.Filled.Label,
-        title = R.string.welcome_title_tags,
-        description = "Flexible labels that cut across projects and lists — group by category, client type, or anything else that doesn't map to a single project. A task on a tagged project or list picks up that tag automatically, so you don't have to tag everything by hand. Star your most-used tags to pin them in the drawer."
-    ),
-    WelcomePage(
-        icon = Icons.Default.CalendarMonth,
-        title = R.string.welcome_title_today_upcoming,
-        description = "Today shows what's due now or overdue, with a progress ring based on what was actually pending when the day started — clearing old backlog doesn't inflate it. Upcoming gives you a week strip or full month view, and Next 10 Days lays out everything ahead in one scrollable, date-sorted list. Delete anything with a swipe — you get an Undo snackbar before it's gone for good."
+        title = R.string.welcome_title_organize,
+        description = R.string.welcome_organize_description
     ),
     WelcomePage(
         icon = Icons.Default.Analytics,
-        title = R.string.welcome_title_analytics,
-        description = "Completion streaks, overdue aging buckets, on-time delivery rate, and per-project/person/tag breakdowns — the numbers behind how you and your team are actually doing, not just what's on today's list. Switch between week and month views to spot trends early."
+        title = R.string.welcome_title_review,
+        description = R.string.welcome_review_description
     )
 )
 
@@ -173,17 +169,6 @@ fun WelcomeScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
         color = MaterialTheme.colorScheme.background
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                TextButton(onClick = onFinish) {
-                    Text(stringResource(R.string.welcome_skip))
-                }
-            }
-
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f)
@@ -220,7 +205,7 @@ fun WelcomeScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = item.description,
+                                text = stringResource(item.description),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
@@ -283,29 +268,43 @@ fun WelcomeScreen(viewModel: MainViewModel, onFinish: () -> Unit) {
             AdaptiveContentBox(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(76.dp)
+                    .height(120.dp)
             ) {
-                Button(
-                    onClick = {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         if (pagerState.currentPage < totalPageCount - 1) {
-                            scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                        } else {
-                            onFinish()
+                            TextButton(onClick = onFinish) {
+                                Text(stringResource(R.string.welcome_skip))
+                            }
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 24.dp)
-                        .height(52.dp)
-                ) {
-                    Text(
-                        if (pagerState.currentPage < totalPageCount - 1) {
-                            stringResource(R.string.welcome_next)
-                        } else {
-                            stringResource(R.string.welcome_get_started)
-                        }
-                    )
+                    }
+                    Button(
+                        onClick = {
+                            if (pagerState.currentPage < totalPageCount - 1) {
+                                scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                            } else {
+                                onFinish()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 24.dp)
+                            .height(52.dp)
+                    ) {
+                        Text(
+                            if (pagerState.currentPage < totalPageCount - 1) {
+                                stringResource(R.string.welcome_next)
+                            } else {
+                                stringResource(R.string.welcome_get_started)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -320,7 +319,6 @@ private fun WelcomeSetupPresetPage(
     onSelectPreset: (WelcomeSetupPreset) -> Unit,
     onApplyPreset: () -> Unit
 ) {
-    val selectedOption = setupOptions.first { it.preset == selectedPreset }
     val applied = appliedPreset == selectedPreset
 
     AdaptiveContentBox {
@@ -348,13 +346,13 @@ private fun WelcomeSetupPresetPage(
             }
             Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = "Choose your starting setup",
+                text = stringResource(R.string.welcome_setup_title),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "Pick a preset to create starter lists/projects/people and configure the features that match how you want to use YATA.",
+                text = stringResource(R.string.welcome_setup_description),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -373,40 +371,6 @@ private fun WelcomeSetupPresetPage(
             }
 
             Spacer(modifier = Modifier.height(18.dp))
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "This will configure",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        selectedOption.changes.forEach { change ->
-                            Surface(
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                shape = RoundedCornerShape(999.dp)
-                            ) {
-                                Text(
-                                    text = change,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(18.dp))
             Button(
                 onClick = onApplyPreset,
                 modifier = Modifier.fillMaxWidth()
@@ -417,13 +381,14 @@ private fun WelcomeSetupPresetPage(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(if (applied) "Setup applied" else "Apply this setup")
+                Text(stringResource(if (applied) R.string.welcome_setup_applied else R.string.welcome_setup_apply))
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun WelcomePresetCard(
     option: WelcomeSetupOption,
@@ -466,7 +431,7 @@ private fun WelcomePresetCard(
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = option.title,
+                        text = stringResource(option.title),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                     if (applied) {
@@ -479,7 +444,7 @@ private fun WelcomePresetCard(
                     }
                 }
                 Text(
-                    text = option.description,
+                    text = stringResource(option.description),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (selected) {
                         MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f)
@@ -487,6 +452,35 @@ private fun WelcomePresetCard(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
+                if (selected) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        option.changes.forEach { change ->
+                            Surface(
+                                color = if (selected) {
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
+                                } else {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                },
+                                contentColor = if (selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                },
+                                shape = RoundedCornerShape(999.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(change),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -500,6 +494,7 @@ private fun WelcomeSetupSummaryPage(
 ) {
     val option = setupOptions.first { it.preset == (appliedPreset ?: selectedPreset) }
     val hasApplied = appliedPreset != null
+    val optionTitle = stringResource(option.title)
 
     AdaptiveContentBox {
         Column(
@@ -526,16 +521,16 @@ private fun WelcomeSetupSummaryPage(
             }
             Spacer(modifier = Modifier.height(26.dp))
             Text(
-                text = if (hasApplied) "Your workspace is ready" else "Apply a setup when you're ready",
+                text = stringResource(if (hasApplied) R.string.welcome_summary_ready_title else R.string.welcome_summary_apply_title),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = if (hasApplied) {
-                    "${option.title} has been applied. You can change every list, project, person, and preference later from the app."
+                    stringResource(R.string.welcome_summary_applied_description, optionTitle)
                 } else {
-                    "You can start without a preset, or apply ${option.title} now to create the starter workspace before you continue."
+                    stringResource(R.string.welcome_summary_unapplied_description, optionTitle)
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -546,7 +541,7 @@ private fun WelcomeSetupSummaryPage(
                 Button(onClick = onApplyPreset, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Apply ${option.title}")
+                    Text(stringResource(R.string.welcome_summary_apply_preset, optionTitle))
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))

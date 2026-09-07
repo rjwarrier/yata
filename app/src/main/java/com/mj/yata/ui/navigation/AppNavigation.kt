@@ -111,6 +111,8 @@ fun AppNavigation(
         navController    = navController,
         startDestination = Screen.Main.route,
         // Push: incoming slides 100%->0; outgoing shifts to -28% + fades to 0.5 (handoff m3-widgets.jsx nav motion)
+        // Pops use a shorter duration so committed back gestures feel decisive after the system
+        // preview, without changing the established easing or push motion.
         enterTransition  = {
             if (reduceMotion) fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
             else slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
@@ -120,12 +122,12 @@ fun AppNavigation(
             else slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeOut(targetAlpha = 0.5f, animationSpec = tween(YataDur.nav))
         },
         popEnterTransition  = {
-            if (reduceMotion) fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
-            else slideInHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeIn(tween(YataDur.nav, easing = YataEase.emphDecel))
+            if (reduceMotion) fadeIn(tween(YataDur.pop, easing = YataEase.emphDecel))
+            else slideInHorizontally(tween(YataDur.pop, easing = YataEase.emphasized)) { -(it * 28 / 100) } + fadeIn(tween(YataDur.pop, easing = YataEase.emphDecel))
         },
         popExitTransition   = {
             if (reduceMotion) fadeOut(tween(YataDur.fade))
-            else slideOutHorizontally(tween(YataDur.nav, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade))
+            else slideOutHorizontally(tween(YataDur.pop, easing = YataEase.emphasized)) { it } + fadeOut(tween(YataDur.fade))
         }
     ) {
         // ── Main Shell (5-tab navigation) ───────────────────────────────────

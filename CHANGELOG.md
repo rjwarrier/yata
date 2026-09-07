@@ -19,7 +19,14 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 `versionCode 27`. Upgrades in place over 0.94.5.
 
+### Fixed
+- Welcome tour Skip now sits above the bottom action instead of near the status bar, and back
+  navigation pop transitions now use a shorter duration so returning to the previous screen feels
+  more immediate.
+
 ### Changed
+- Welcome tour is shorter and less dense, with setup details folded into the selected preset card
+  and onboarding copy moved into translatable resources.
 - New Project, Person, Tag, and List editors are cleaner and more Material 3 aligned: secondary
   choices now sit behind compact expandable rows with previews instead of filling each sheet all at
   once.
