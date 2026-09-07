@@ -94,17 +94,6 @@ fun WelcomeScreen(onFinish: () -> Unit) {
         color = MaterialTheme.colorScheme.background
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                TextButton(onClick = onFinish) {
-                    Text(stringResource(R.string.welcome_skip))
-                }
-            }
-
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f)
@@ -173,6 +162,22 @@ fun WelcomeScreen(onFinish: () -> Unit) {
                             .clip(CircleShape)
                             .background(dotColor)
                     )
+                }
+            }
+
+            // Skip sits directly above the Next/Get Started button instead of the top edge:
+            // the tour previously drew it with no inset handling, so on edge-to-edge devices it
+            // collided with the status bar and was hard to see and tap. The bottom placement
+            // keeps every dismiss affordance in one place; on the final page the Get Started
+            // button already finishes the tour, so Skip is hidden there.
+            if (pagerState.currentPage < pages.lastIndex) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TextButton(onClick = onFinish) {
+                        Text(stringResource(R.string.welcome_skip))
+                    }
                 }
             }
 
