@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Fixed
+- Welcome tour and setup copy is now translated in every supported app language instead of falling
+  back to English.
+
 ## [0.95] - 2026-09-07
 
 `versionCode 27`. Upgrades in place over 0.94.5.
