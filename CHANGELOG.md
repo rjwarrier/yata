@@ -15,6 +15,10 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+## [0.95.1] - 2026-09-14
+
+`versionCode 28`. Upgrades in place over 0.95.
+
 ### Fixed
 - Welcome tour and setup copy is now translated in every supported app language instead of falling
   back to English.
@@ -1194,7 +1198,8 @@ First signed release build.
 - Redesigned priority indicator (dots plus a coloured edge stripe).
 - Equal-width hero stat cards.
 
-[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.95...HEAD
+[Unreleased]: https://github.com/rjwarrier/yata/compare/v0.95.1...HEAD
+[0.95.1]: https://github.com/rjwarrier/yata/compare/v0.95...v0.95.1
 [0.95]: https://github.com/rjwarrier/yata/compare/v0.94.5...v0.95
 [0.94.5]: https://github.com/rjwarrier/yata/compare/v0.94.4...v0.94.5
 [0.94.4]: https://github.com/rjwarrier/yata/compare/v0.94.2...v0.94.4
