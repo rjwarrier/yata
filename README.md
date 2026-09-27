@@ -1,213 +1,193 @@
-# YATA — Yet Another To-Do App
+<div align="center">
+
+# YATA
+
+**Yet Another To-Do App** — pronounced *"YAH-tuh"*
 
 A Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt.
 
-<a href="https://www.buymeacoffee.com/ranjithj"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=ranjithj&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="40" /></a>
+[![Latest release](https://img.shields.io/github/v/release/rjwarrier/yata?label=release&color=E8735A)](https://github.com/rjwarrier/yata/releases/latest)
+[![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)](#requirements)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-M3%20Expressive-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 
-<img width="1080" height="1920" alt="yata-status-v5" src="https://github.com/user-attachments/assets/f23751e7-6288-424b-bddd-628c8d037061" />
-<img width="1080" height="1920" alt="yata-status-v4" src="https://github.com/user-attachments/assets/04997998-3970-4d53-b86c-e925f0f3a134" />
-<img width="1080" height="1920" alt="yata-status-v3" src="https://github.com/user-attachments/assets/1dbfe773-84ea-4a46-8db7-d6e5a99f654a" />
-<img width="1080" height="1920" alt="yata-status-v2" src="https://github.com/user-attachments/assets/f9dfd14f-5592-425a-b538-151c706dac2c" />
-<img width="1080" height="1920" alt="yata-status-v1" src="https://github.com/user-attachments/assets/07d877b7-c0f1-48dd-a8d0-e8d16903cf37" />
+[**Download APK**](https://github.com/rjwarrier/yata/releases/latest/download/app-release.apk) ·
+[Changelog](CHANGELOG.md) ·
+[Releases](https://github.com/rjwarrier/yata/releases)
 
+<br>
 
-## Contents
+<img src="https://github.com/user-attachments/assets/f23751e7-6288-424b-bddd-628c8d037061" width="19%" alt="YATA screenshot 1" />
+<img src="https://github.com/user-attachments/assets/04997998-3970-4d53-b86c-e925f0f3a134" width="19%" alt="YATA screenshot 2" />
+<img src="https://github.com/user-attachments/assets/1dbfe773-84ea-4a46-8db7-d6e5a99f654a" width="19%" alt="YATA screenshot 3" />
+<img src="https://github.com/user-attachments/assets/f9dfd14f-5592-425a-b538-151c706dac2c" width="19%" alt="YATA screenshot 4" />
+<img src="https://github.com/user-attachments/assets/07d877b7-c0f1-48dd-a8d0-e8d16903cf37" width="19%" alt="YATA screenshot 5" />
 
-- [Overview](#overview)
-- [Features](#features)
-- [Tech stack](#tech-stack)
-- [Architecture](#architecture)
-- [Project structure](#project-structure)
-- [Getting started](#getting-started)
-- [Testing](#testing)
-- [Design reference](#design-reference)
-- [Status](#status)
-- [Support](#support)
+</div>
 
-## Overview
+## About
 
-YATA is a single-user, offline-first task manager. Tasks can optionally be organized under **Projects**, folder-style **Lists**, **Tags**, and **People** (for delegation) — each of those entity types can be hidden entirely via a feature flag if you don't need it. The whole app is backed by one Room database and one large `MainViewModel`; screens are Compose destinations that read from it via `hiltViewModel()`.
+YATA is a single-user, offline-first task manager. Tasks can be organized under **Projects**, folder-style **Lists**, **Tags**, and **People** (for delegation) — and any of those can be switched off entirely if you don't need them. Everything lives on-device; sync and backup are opt-in and go to storage you control.
+
+## Highlights
+
+- **Natural-language quick add** — type or dictate *"Gym every monday 7am !1 #health"* and get the date, time, recurrence, priority, and tags parsed out, highlighted as you type.
+- **Today, Next 10 Days, Upcoming** — focused daily view, rolling agenda, and a week strip / month calendar.
+- **Recurring tasks, subtasks, start dates** — with streaks, deferral ("not before"), follow-ups, and estimates.
+- **Home-screen widgets** — six Glance widgets plus a Quick Settings tile for capture from anywhere.
+- **Analytics** — completion trends, on-time rate, aging, postponement tracking, and per-person workload.
+- **Your data, your storage** — JSON backup, encrypted sync via GitHub, SFTP, FTPS, or FTP. No account, no server of ours.
+- **24 languages** and adaptive layouts for tablets and foldables.
 
 ## Features
 
-**Task management**
-- Natural-language quick add — type a task and it parses out due date/time, priority, and list
-- Recurrence rules, subtasks, Markdown-rendered notes, per-task comments
-- Recurring-task streaks (2+ consecutive on-time completions) shown on the task detail screen
-- Priority levels, flags, per-task reminders
-- Duplicate-task detection when adding a new task
-- Voice quick add, share-to-task (share text/links from other apps straight into a new task)
-- Manual drag-and-drop reordering
-- Bulk actions (complete / delete / tag / move / assign / duplicate) from a multiselect toolbar
-- Delete-with-undo everywhere — soft-deletes to Trash, 30-day retention before permanent purge
+<details>
+<summary><b>Tasks</b></summary>
 
-**Organization**
-- Projects, Lists, Tags, People — each independently toggleable via feature flags
-- Starring for quick access from the nav drawer
-- A shared accent-color system (16 accent slots) used consistently across custom color/icon pickers
+- Natural-language quick add (typed or voice, on-device recognition) with a "smart add understood this as" preview
+- Recurrence rules, subtasks, Markdown notes, per-task comments
+- Priorities, flags, reminders, start dates, follow-ups, time estimates
+- Recurring-task streaks and postponement tracking with per-priority warnings
+- Optional warning when a task is rescheduled onto a weekend
+- Drag-and-drop reordering and project sections
+- Bulk complete / delete / tag / move / assign / duplicate / reschedule
+- Delete-with-undo everywhere; Trash with configurable retention; Archive for shelving without deleting
+- Share tasks, projects, or lists as a link — the receiver previews and imports them
 
-**Views & navigation**
-- **Today** — due-today + overdue tasks; progress ring reflects tasks pending as of the *start* of today (a task completed on a previous day no longer inflates the ring — only tasks still open, or completed *today*, count)
-- Tappable hero stats (Overdue / High priority / Due today) on Today and every entity-detail hero (Project/List/Tag/Person) filter the visible task list in place — tap again to clear, with a dismissible "Showing: X" banner
-- **Next 10 Days** — a flat, date-grouped agenda across a rolling 10-day window (reachable from the drawer and a shortcut button on Today)
-- **Upcoming** — 7-day strip or full month calendar, with a per-day agenda
-- **Projects / People / Tags** tabs, each with its own detail screen
-- Scoped **Search** across all tasks
-- **Analytics** — completion trends, streaks, on-time rate, workload share, aging buckets, breakdowns by project/person/tag
-- **Trash** — restore or permanently delete
-- First-run **welcome tour**
+</details>
 
-**Home-screen widgets (Glance)**
-- Full agenda widget, Single List, Quick Add (with a lightweight config dialog instead of launching the full app), Progress/Stats ring, Upcoming, Team Overdue
-- Per-widget corner radius, opacity, Material You dynamic color, accent override, and custom label
-- One shared refresh signal keeps every placed widget in sync after any task write
-- A Quick Settings tile opens the quick-add dialog straight from the notification shade
+<details>
+<summary><b>Views</b></summary>
 
-**Security**
-- Optional App Lock — PIN + biometric, with a configurable auto-lock timeout
+- **Today** — due and overdue tasks with a progress ring and tappable stat filters
+- **Next 10 Days** — flat, date-grouped agenda
+- **Upcoming** — 7-day strip or month calendar with per-day agenda
+- **Projects / People / Tags** tabs, each with a detail screen
+- **Search** across live, archived, and trashed tasks
+- **Command palette** with saved presets (My Work, Focus Mode, Morning/Evening Review, Stale Nudges, Task Health)
+- **Analytics**, per-person and team analytics
 
-**Notifications & reminders**
-- Per-task reminders scheduled via `AlarmManager`, rescheduled automatically on device reboot
-- Inline notification actions (e.g. mark done) without opening the app
-- Scheduled theme window (auto light/dark on a schedule)
+</details>
 
-**Team / People**
-- Assignment and delegation, per-person workload trend (overdue count over the last 7 days), Team Overdue widget
+<details>
+<summary><b>Widgets & integrations</b></summary>
 
-**Backup & export**
-- Full JSON backup/restore, CSV export/import
-- Self-hosted sync and backup over SFTP/FTPS/FTP, periodic + debounced background sync via WorkManager
-- Client-only multi-device sync over a self-hosted SFTP/FTPS/FTP folder: three-way snapshot merge, deletion propagation, remote writer lease, foreground/periodic/debounced pulls, and rotated rollback backups; no custom server daemon required. Devices in one sync set use the same protocol, remote folder, and encryption passphrase.
-- `.ics` calendar export, Markdown export for clipboard/share
-- Branded PDF/image export for any Project, Tag, or Person — accent-colored letterhead, stat chips + progress bar, tasks grouped by project/list with tag chips and assignee names, via an options sheet (include/exclude completed with an optional "older than N days" cutoff, strike-off toggle, show tags/assignees, Compact/Relaxed layout). PDFs paginate cleanly (never mid-row) with real page numbers and document metadata (Title/Author/Subject)
+- Agenda, Single List, Quick Add, Progress, Upcoming, and Team Overdue widgets
+- Per-widget corner radius, opacity, Material You color, accent override, custom label
+- Quick Settings tile for quick add
+- Share-to-task from any app
+- Tasker "Create Task" plugin action (off by default)
 
-**Customization**
-- Theme mode (light/dark/system) + dynamic color, scheduled theme window
-- App font, text scale, UI scale, FAB position, task-row density (compact/comfortable/spacious)
-- Haptics toggle, reduce-motion toggle, start-of-week (Sunday/Monday)
-- Independent visibility toggles per tab (Today/Upcoming/Projects/People/Tags)
-- Independent "hide completed" state persisted per screen (Today/Project/List/Person)
+</details>
 
-**Tasker integration**
-- A "Create Task" Tasker plugin action that writes directly to the repository, so it works outside the app's own running process
+<details>
+<summary><b>Backup, sync & export</b></summary>
 
-## Tech stack
+- Full JSON backup/restore (including profile photos), CSV import/export
+- Multi-device sync over **GitHub**, **SFTP**, **FTPS**, or **FTP** — three-way merge, deletion propagation, optional end-to-end encryption, automatic recovery backups
+- `.ics` calendar export, Markdown export
+- Branded PDF / image export for any project, tag, or person
 
-| Layer | Choice |
-|---|---|
-| Language | Kotlin 2.0.21 |
-| UI | Jetpack Compose, Material 3 Expressive (Compose BOM 2024.02.01) |
-| DI | Hilt 2.52 |
-| Persistence | Room 2.6.1 (hand-written migrations) + DataStore Preferences |
-| Navigation | Navigation-Compose 2.7.7 |
-| Home-screen widgets | Glance 1.1.1 (`glance-appwidget`, `glance-material3`) |
-| Background work | WorkManager + Hilt-Work (self-hosted and local backups) |
-| Self-hosted sync | Client-side SFTP/FTPS/FTP snapshot merge; no custom server daemon required |
-| Markdown | Markwon |
-| PDF metadata | `pdfbox-android` (Info-dictionary only — pages are rendered natively via `android.graphics.pdf.PdfDocument`) |
-| Tasker plugin | `taskerpluginlibrary` |
-| Build | AGP 8.7.2, KSP, JDK 17 |
+</details>
 
-## Architecture
+<details>
+<summary><b>Customization & privacy</b></summary>
 
-Two Gradle modules:
-- **`:app`** — the phone app, `com.mj.yata`, minSdk 26, compileSdk/targetSdk 35
-- **`:baselineprofile`** — generates the ART baseline profile packaged with the app
+- Light / dark / system / AMOLED themes, dynamic color, custom seed colors
+- App font, text scale, UI scale, row density, FAB position, start of week
+- Per-tab visibility and per-screen "hide completed"
+- Haptics and reduce-motion toggles
+- Optional App Lock (PIN + biometric) that also hides content from the recents screen
 
-Layering is one-directional:
+</details>
 
-```
-domain/model            plain Kotlin data classes, no Android/Room dependency
-   ↓
-data/local/db           Room entities + DAOs
-   ↓
-data/mapper             Entity ⇄ domain model conversion
-   ↓
-data/repository         YataRepositoryImpl (implements domain/repository/YataRepository, exposes Flows)
-   ↓
-ui/screen/main/MainViewModel   single ViewModel for the entire app (StateFlows + imperative methods)
-   ↓
-ui/screen/*             Compose screens, obtained via hiltViewModel()
-```
+## Requirements
 
-There is **one `MainViewModel` for the whole app**, not one per screen — every screen reads from and calls methods on the same instance. Room schema changes are hand-written `Migration` objects (no auto-migration); a missing forward migration throws rather than silently wiping data.
+- Android 8.0 (API 26) or newer
+- To build: JDK 17 and the Android SDK (compileSdk 35), or a recent Android Studio
 
-Navigation is single-Activity via `AppNavigation.kt` / `Screen.kt` over a `NavHost`. `Screen.Main` is a 5-tab shell (Today, Projects, People, Tags, Upcoming) with its own drawer, FAB, and a shared `SnackbarHostState` for cross-tab bulk actions; detail screens (task/project/list/tag/person, search, settings, trash, analytics, next-10-days) are separate top-level destinations.
-
-## Project structure
-
-```
-app/src/main/java/com/mj/yata/
-├── domain/model/          Task, Project, YataList, Person, Tag, ... (plain data classes)
-├── data/
-│   ├── local/db/          Room entities, DAOs, AppDatabase + migrations
-│   ├── local/datastore/   UserPreferences (DataStore-backed settings)
-│   ├── mapper/            Entity ⇄ domain model conversion
-│   └── repository/        YataRepositoryImpl
-├── ui/
-│   ├── screen/            main/ (tab shell + MainViewModel), task/project/person/tag/list detail,
-│   │                        search, settings, analytics, trash, welcome, nextdays
-│   ├── navigation/        Screen routes + AppNavigation NavHost
-│   ├── widgets/           Reusable Compose widgets (TaskRow, ProgressRing, pickers, ...)
-│   ├── sheets/            Bottom sheets (new/edit task, bulk actions, ...)
-│   └── theme/             M3 Expressive theme + accent system
-├── widget/                Home-screen Glance widgets
-├── notification/          Reminder scheduling + delivery
-├── tasker/createtask/     Tasker plugin integration
-└── util/                  Exporters, recurrence, NLP quick-add parser, analytics, ...
-    └── export/            Branded PDF/image entity export (compose-to-bitmap render, pagination, PDF metadata)
-```
-
-## Getting started
-
-### Prerequisites
-- Android Studio (recent stable) or a JDK 17 + Android SDK command-line setup
-- compileSdk/targetSdk 35; minSdk 26
-
-### Build & run
+## Building
 
 ```bash
 git clone https://github.com/rjwarrier/yata.git
 cd yata
-
-# Compile Kotlin only — fast correctness check, no packaging
-./gradlew :app:compileDebugKotlin -q
-
-# Full debug build
-./gradlew :app:assembleDebug -q
-
-# Install to a connected device/emulator
-./gradlew :app:installDebug -q
+./gradlew :app:assembleDebug
 ```
 
-On native Windows shells, use `gradlew.bat` in place of `./gradlew`.
+Install on a connected device with `./gradlew :app:installDebug`. On Windows, use `gradlew.bat`.
 
-## Testing
+<details>
+<summary><b>Tests</b></summary>
 
 ```bash
-# Unit tests (JVM, no device)
+# JVM unit tests
 ./gradlew :app:testDebugUnitTest
 
-# A single test class or method
-./gradlew :app:testDebugUnitTest --tests "com.mj.yata.RecurrenceEvaluatorTest"
+# A single class
 ./gradlew :app:testDebugUnitTest --tests "com.mj.yata.NaturalLanguageParserTest"
-
-# Instrumented tests — Room migrations — require a connected device/emulator
-./gradlew :app:connectedDebugAndroidTest --tests "com.mj.yata.data.local.db.AppDatabaseMigrationTest"
 ```
 
-There is no automated Compose UI test suite; UI-facing changes are verified manually on-device.
+Instrumented tests (Room migrations, Compose smoke tests) reinstall the app and write to its database, so they refuse to run without `-PdisposableDevice`. **Use an emulator or spare device — never a phone with real data.**
 
-## Design reference
+```bash
+./gradlew :app:connectedDebugAndroidTest -PdisposableDevice
+```
 
-`design/` and `design_handoff_yata/` contain the original HTML/JSX design tokens and handoff notes the M3 Expressive theme was built from. They're static references for design intent, not code imported into the build.
+</details>
 
-## Status
+## Tech stack
 
-Personal, actively-evolving project — schema and UI can change between commits. Current `versionName` (`app/build.gradle.kts`) is `0.94.1`.
+| | |
+|---|---|
+| **Language** | Kotlin 2.0 |
+| **UI** | Jetpack Compose, Material 3 Expressive (Compose BOM 2025.12) |
+| **DI** | Hilt |
+| **Storage** | Room (hand-written migrations), DataStore |
+| **Background** | WorkManager, AlarmManager |
+| **Widgets** | Glance |
+| **Other** | Markwon, sshj, Apache Commons Net, pdfbox-android, Tasker plugin library |
+
+## Architecture
+
+Single-activity app with two Gradle modules: `:app` and `:baselineprofile`. Layering is one-directional:
+
+```
+domain/model  →  data/local/db  →  data/mapper  →  data/repository  →  MainViewModel  →  ui/screen/*
+```
+
+One `MainViewModel` backs the whole app; heavier logic lives in injected use cases (`TaskOperations`, `BackupOperations`). See [`CLAUDE.md`](CLAUDE.md) for a detailed tour of the codebase.
+
+<details>
+<summary><b>Project structure</b></summary>
+
+```
+app/src/main/java/com/mj/yata/
+├── domain/          models, repository interface, use cases
+├── data/
+│   ├── local/       Room database, DataStore preferences, crash log
+│   ├── repository/  YataRepositoryImpl
+│   ├── sync/        snapshot merge engine
+│   ├── github/      GitHub sync transport
+│   ├── sftp/ ftp/   SFTP / FTP(S) transports
+│   └── voice/       on-device speech recognition
+├── ui/
+│   ├── screen/      one package per destination
+│   ├── widgets/     shared composables
+│   ├── sheets/      bottom sheets
+│   ├── navigation/  routes + NavHost
+│   └── theme/       M3 Expressive theme + accent system
+├── widget/          home-screen widgets
+├── notification/    reminders, agenda, overdue nudges
+├── tasker/          Tasker plugin
+└── util/            natural-language parser, exporters, recurrence
+```
+
+</details>
 
 ## Support
 
-If YATA is useful to you, you can support its development:
+YATA is a personal project, built in spare time. If it's useful to you:
 
 <a href="https://www.buymeacoffee.com/ranjithj"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=ranjithj&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="40" /></a>
+
+Bug reports and ideas are welcome in [Issues](https://github.com/rjwarrier/yata/issues).
