@@ -1,6 +1,9 @@
 # YATA — Yet Another To-Do App
 
 A Material 3 Expressive task manager for Android, built with Jetpack Compose, Room, and Hilt.
+
+<a href="https://www.buymeacoffee.com/ranjithj"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=ranjithj&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="40" /></a>
+
 <img width="1080" height="1920" alt="yata-status-v5" src="https://github.com/user-attachments/assets/f23751e7-6288-424b-bddd-628c8d037061" />
 <img width="1080" height="1920" alt="yata-status-v4" src="https://github.com/user-attachments/assets/04997998-3970-4d53-b86c-e925f0f3a134" />
 <img width="1080" height="1920" alt="yata-status-v3" src="https://github.com/user-attachments/assets/1dbfe773-84ea-4a46-8db7-d6e5a99f654a" />
@@ -19,6 +22,7 @@ A Material 3 Expressive task manager for Android, built with Jetpack Compose, Ro
 - [Testing](#testing)
 - [Design reference](#design-reference)
 - [Status](#status)
+- [Support](#support)
 
 ## Overview
 
@@ -201,3 +205,9 @@ There is no automated Compose UI test suite; UI-facing changes are verified manu
 ## Status
 
 Personal, actively-evolving project — schema and UI can change between commits. Current `versionName` (`app/build.gradle.kts`) is `0.94.1`.
+
+## Support
+
+If YATA is useful to you, you can support its development:
+
+<a href="https://www.buymeacoffee.com/ranjithj"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=ranjithj&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="40" /></a>
