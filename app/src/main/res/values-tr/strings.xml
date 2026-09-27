@@ -1517,6 +1517,7 @@
     <string name="settings_about_share">YATA\'yı paylaş</string>
     <string name="settings_about_share_text">YATA, Android için bir Material 3 Expressive görev yöneticisidir — göz atın: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">YATA web sitesi</string>
+    <string name="settings_about_support_dev">Geliştiriciyi destekle</string>
     <string name="settings_custom">Özel</string>
     <string name="settings_default_estimate">Tahmin</string>
     <string name="settings_default_estimate_custom_error">1-1440 dakika girin.</string>

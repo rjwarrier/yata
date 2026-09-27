@@ -1517,6 +1517,7 @@
     <string name="settings_about_share">Chia sẻ YATA</string>
     <string name="settings_about_share_text">YATA là ứng dụng quản lý công việc Material 3 Expressive cho Android — hãy xem thử: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Trang web YATA</string>
+    <string name="settings_about_support_dev">Ủng hộ nhà phát triển</string>
     <string name="settings_custom">Tùy chỉnh</string>
     <string name="settings_default_estimate">Ước tính</string>
     <string name="settings_default_estimate_custom_error">Nhập 1-1440 phút.</string>

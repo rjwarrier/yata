@@ -33,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.IosShare
+import androidx.compose.material.icons.filled.LocalCafe
 // Section-heading icons.
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudSync
@@ -4302,6 +4303,8 @@ private fun OtherAppsCard(modifier: Modifier = Modifier) {
 
 private const val YATA_GITHUB_URL = "https://github.com/rjwarrier/yata"
 private const val YATA_WEBSITE_URL = "https://ranjithj.in/yata/"
+private const val YATA_SUPPORT_URL = "https://www.buymeacoffee.com/ranjithj"
+private val BuyMeACoffeeYellow = Color(0xFFFFDD00)
 
 @Composable
 private fun GitHubAndShareRow(onNavigateToShareApp: () -> Unit, modifier: Modifier = Modifier) {
@@ -4365,6 +4368,29 @@ private fun GitHubAndShareRow(onNavigateToShareApp: () -> Unit, modifier: Modifi
             Text(
                 text = stringResource(R.string.settings_about_website),
                 style = MaterialTheme.typography.labelLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+        // Buy Me a Coffee's own brand colors (yellow fill, black outline and text) rather than theme
+        // colors, so it reads as the familiar BMC button in every theme.
+        Button(
+            onClick = { uriHandler.openUri(YATA_SUPPORT_URL) },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = BuyMeACoffeeYellow,
+                contentColor = Color.Black
+            ),
+            border = BorderStroke(1.dp, Color.Black),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Default.LocalCafe,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.settings_about_support_dev),
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }

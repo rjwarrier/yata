@@ -447,6 +447,7 @@
     <string name="settings_about_share">YATA ಹಂಚಿಕೊಳ್ಳಿ</string>
     <string name="settings_about_share_text">YATA ಎಂಬುದು Android ಗಾಗಿ Material 3 Expressive ಟಾಸ್ಕ್ ಮ್ಯಾನೇಜರ್ — ಇದನ್ನು ನೋಡಿ: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Yata ವೆಬ್‌ಸೈಟ್</string>
+    <string name="settings_about_support_dev">ಡೆವಲಪರ್‌ಗೆ ಬೆಂಬಲ ನೀಡಿ</string>
     <string name="settings_custom">ಕಸ್ಟಮ್</string>
     <string name="settings_default_estimate">ಅಂದಾಜು</string>
     <string name="settings_default_estimate_custom_error">1-1440 ನಿಮಿಷಗಳನ್ನು ನಮೂದಿಸಿ.</string>

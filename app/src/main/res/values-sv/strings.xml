@@ -1517,6 +1517,7 @@
     <string name="settings_about_share">Dela YATA</string>
     <string name="settings_about_share_text">YATA är en Material 3 Expressive-uppgiftshanterare för Android — kolla in den: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">YATA:s webbplats</string>
+    <string name="settings_about_support_dev">Stöd utvecklaren</string>
     <string name="settings_custom">Anpassad</string>
     <string name="settings_default_estimate">Uppskattning</string>
     <string name="settings_default_estimate_custom_error">Ange 1-1440 minuter.</string>

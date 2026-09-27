@@ -1519,6 +1519,7 @@
     <string name="settings_about_share">Sdílet YATA</string>
     <string name="settings_about_share_text">YATA je správce úkolů Material 3 Expressive pro Android — podívej se: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Web YATA</string>
+    <string name="settings_about_support_dev">Podpořit vývojáře</string>
     <string name="settings_custom">Vlastní</string>
     <string name="settings_default_estimate">Odhad</string>
     <string name="settings_default_estimate_custom_error">Zadej 1-1440 minut.</string>

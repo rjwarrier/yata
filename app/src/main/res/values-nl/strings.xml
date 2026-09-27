@@ -1518,6 +1518,7 @@
     <string name="settings_about_share">YATA delen</string>
     <string name="settings_about_share_text">YATA is een Material 3 Expressive taakbeheerder voor Android — bekijk het: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">YATA-website</string>
+    <string name="settings_about_support_dev">Steun de ontwikkelaar</string>
     <string name="settings_custom">Aangepast</string>
     <string name="settings_default_estimate">Schatting</string>
     <string name="settings_default_estimate_custom_error">Voer 1-1440 minuten in.</string>

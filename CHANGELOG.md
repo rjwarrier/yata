@@ -15,6 +15,9 @@ test-only changes belong in the commit message, not here, unless they change beh
 
 ## [Unreleased]
 
+### Added
+- A "Support Dev" button in Settings → Help & About opens the developer's Buy Me a Coffee page.
+
 ## [0.95.1] - 2026-09-14
 
 `versionCode 28`. Upgrades in place over 0.95.

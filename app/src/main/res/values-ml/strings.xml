@@ -447,6 +447,7 @@
     <string name="settings_about_share">YATA പങ്കിടുക</string>
     <string name="settings_about_share_text">YATA Android-നായുള്ള ഒരു Material 3 Expressive ടാസ്ക് മാനേജറാണ് — ഇത് പരിശോധിക്കുക: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Yata വെബ്‌സൈറ്റ്</string>
+    <string name="settings_about_support_dev">ഡെവലപ്പറെ പിന്തുണയ്ക്കൂ</string>
     <string name="settings_custom">ഇഷ്ടാനുസൃതം</string>
     <string name="settings_default_estimate">എസ്റ്റിമേറ്റ്</string>
     <string name="settings_default_estimate_custom_error">1-1440 മിനിറ്റ് നൽകുക.</string>

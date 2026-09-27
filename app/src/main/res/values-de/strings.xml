@@ -1674,6 +1674,7 @@
     <string name="settings_about_share">YATA teilen</string>
     <string name="settings_about_share_text">YATA ist ein Material 3 Expressive Aufgabenmanager für Android — schau es dir an: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">YATA-Website</string>
+    <string name="settings_about_support_dev">Entwickler unterstützen</string>
     <string name="settings_custom">Benutzerdefiniert</string>
     <string name="settings_default_estimate">Schätzung</string>
     <string name="settings_default_estimate_custom_error">Gib 1-1440 Minuten ein.</string>

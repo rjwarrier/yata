@@ -1517,6 +1517,7 @@
     <string name="settings_about_share">YATA शेयर करें</string>
     <string name="settings_about_share_text">YATA Android के लिए एक Material 3 Expressive टास्क मैनेजर है — देखें: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">YATA वेबसाइट</string>
+    <string name="settings_about_support_dev">डेवलपर को सपोर्ट करें</string>
     <string name="settings_custom">कस्टम</string>
     <string name="settings_default_estimate">अनुमान</string>
     <string name="settings_default_estimate_custom_error">1-1440 मिनट डालें।</string>

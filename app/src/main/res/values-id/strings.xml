@@ -1517,6 +1517,7 @@
     <string name="settings_about_share">Bagikan YATA</string>
     <string name="settings_about_share_text">YATA adalah pengelola tugas Material 3 Expressive untuk Android — lihat: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Situs web YATA</string>
+    <string name="settings_about_support_dev">Dukung pengembang</string>
     <string name="settings_custom">Kustom</string>
     <string name="settings_default_estimate">Estimasi</string>
     <string name="settings_default_estimate_custom_error">Masukkan 1-1440 menit.</string>

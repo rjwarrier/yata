@@ -447,6 +447,7 @@
     <string name="settings_about_share">Shiriki YATA</string>
     <string name="settings_about_share_text">YATA ni kidhibiti kazi cha Material 3 Expressive kwa Android — kiangalie: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Tovuti ya Yata</string>
+    <string name="settings_about_support_dev">Msaidie msanidi</string>
     <string name="settings_custom">Maalum</string>
     <string name="settings_default_estimate">Makadirio</string>
     <string name="settings_default_estimate_custom_error">Weka dakika 1-1440.</string>

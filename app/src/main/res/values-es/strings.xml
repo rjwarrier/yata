@@ -1563,6 +1563,7 @@
     <string name="settings_about_share">Compartir YATA</string>
     <string name="settings_about_share_text">YATA es un gestor de tareas Material 3 Expressive para Android — échale un vistazo: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Sitio web de YATA</string>
+    <string name="settings_about_support_dev">Apoyar al desarrollador</string>
     <string name="settings_custom">Personalizado</string>
     <string name="settings_default_estimate">Estimación</string>
     <string name="settings_default_estimate_custom_error">Introduce 1-1440 minutos.</string>

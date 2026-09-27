@@ -1517,6 +1517,7 @@
     <string name="settings_about_share">YATA শেয়ার করুন</string>
     <string name="settings_about_share_text">YATA হলো Android-এর জন্য একটি Material 3 Expressive টাস্ক ম্যানেজার — দেখুন: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">YATA ওয়েবসাইট</string>
+    <string name="settings_about_support_dev">ডেভেলপারকে সমর্থন করুন</string>
     <string name="settings_custom">কাস্টম</string>
     <string name="settings_default_estimate">অনুমান</string>
     <string name="settings_default_estimate_custom_error">1-1440 মিনিট লিখুন।</string>

@@ -447,6 +447,7 @@
     <string name="settings_about_share">YATA ਸਾਂਝਾ ਕਰੋ</string>
     <string name="settings_about_share_text">YATA Android ਲਈ ਇੱਕ Material 3 Expressive ਟਾਸਕ ਮੈਨੇਜਰ ਹੈ — ਇਸਨੂੰ ਦੇਖੋ: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Yata ਵੈੱਬਸਾਈਟ</string>
+    <string name="settings_about_support_dev">ਡਿਵੈਲਪਰ ਦਾ ਸਮਰਥਨ ਕਰੋ</string>
     <string name="settings_custom">ਕਸਟਮ</string>
     <string name="settings_default_estimate">ਅਨੁਮਾਨ</string>
     <string name="settings_default_estimate_custom_error">1-1440 ਮਿੰਟ ਦਰਜ ਕਰੋ।</string>

@@ -447,6 +447,7 @@
     <string name="settings_about_share">Ibahagi ang YATA</string>
     <string name="settings_about_share_text">Ang YATA ay isang Material 3 Expressive na task manager para sa Android — tingnan mo: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Website ng Yata</string>
+    <string name="settings_about_support_dev">Suportahan ang developer</string>
     <string name="settings_custom">Custom</string>
     <string name="settings_default_estimate">Tantiya</string>
     <string name="settings_default_estimate_custom_error">Maglagay ng 1-1440 minuto.</string>

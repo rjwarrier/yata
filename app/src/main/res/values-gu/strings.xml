@@ -447,6 +447,7 @@
     <string name="settings_about_share">YATA શેર કરો</string>
     <string name="settings_about_share_text">YATA એ Android માટે Material 3 Expressive ટાસ્ક મેનેજર છે — તેને જુઓ: https://github.com/rjwarrier/yata/releases</string>
     <string name="settings_about_website">Yata વેબસાઇટ</string>
+    <string name="settings_about_support_dev">ડેવલપરને સપોર્ટ કરો</string>
     <string name="settings_custom">કસ્ટમ</string>
     <string name="settings_default_estimate">અંદાજ</string>
     <string name="settings_default_estimate_custom_error">1-1440 મિનિટ દાખલ કરો.</string>
